@@ -62,7 +62,7 @@ export function ExploreStories() {
       title: "From Shadows to Light: My Journey to Hope",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "/placeholder.svg?height=400&width=600",
+      image: "https://avatar.vercel.sh/Jana Dorali",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
@@ -73,7 +73,7 @@ export function ExploreStories() {
       title: "The Glass Castle",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "/placeholder.svg?height=400&width=600",
+      image: "https://avatar.vercel.sh/Jana Dorali",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
@@ -84,7 +84,7 @@ export function ExploreStories() {
       title: "Man's Search for Meaning",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "/placeholder.svg?height=400&width=600",
+      image: "https://avatar.vercel.sh/Jana Dorali",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
@@ -104,7 +104,7 @@ export function ExploreStories() {
         onMouseLeave={() => setIsOpen(false)}
       >
         <div className={cn("flex items-center h-16 px-4 border-b")}>
-          <Image src="/placeholder.svg" alt="Logo" width={32} height={32} className="rounded-full" />
+          <Image src="/placeholder.svg?height=32&width=32" alt="Logo" width={32} height={32} className="rounded-full" />
           <div className={cn("ml-4 overflow-hidden transition-all duration-300 ease-in-out", isOpen ? "w-32" : "w-0")}>
             <span className="font-semibold">Refugee Stories</span>
           </div>
@@ -147,7 +147,7 @@ export function ExploreStories() {
             </span>
           </Link>
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <Image src="/placeholder.svg" alt="User" width={24} height={24} className="rounded-full" />
+            <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
             <span
               className={cn(
                 "overflow-hidden text-sm font-medium transition-all duration-300 ease-in-out",
@@ -221,7 +221,7 @@ export function ExploreStories() {
                   <h2 className="mb-2 text-xl font-bold">{story.title}</h2>
                   <div className="mb-4 flex items-center gap-2">
                     <Image
-                      src="/placeholder.svg"
+                      src={`https://avatar.vercel.sh/${story.author}`}
                       alt={story.author}
                       width={24}
                       height={24}
