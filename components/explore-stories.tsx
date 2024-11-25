@@ -163,9 +163,9 @@ export function ExploreStories() {
         </div>
       </aside>
 
-      <div 
+      <div
         className={cn(
-          "flex-1 transition-all duration-300 ease-in-out", 
+          "flex-1 transition-all duration-300 ease-in-out",
           isOpen ? "ml-[240px]" : "ml-[72px]"
         )}
       >
@@ -245,8 +245,13 @@ export function ExploreStories() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-4 p-6 pt-0">
-                  <Button className="flex-1 bg-purple-600 hover:bg-purple-700">Donate</Button>
+                  <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
+                    <Image src="/diamond.png" alt="wallet" width={24} height={24} />
+
+                    Donate
+                  </Button>
                   <Button variant="outline" className="flex-1">
+                    <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
                     Add to Collection
                   </Button>
                 </CardFooter>
