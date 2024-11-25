@@ -238,10 +238,20 @@ export function ExploreStories() {
                   <p className="mb-4 text-gray-600">{story.excerpt}</p>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span>{story.donationCount} donations</span>
-                      <span>{(story.donations / story.fundingGoal) * 100}% of funding goal</span>
+                      <span className='flex '>
+                        <div className='text-[#55DFAB] px-1 font-bold'>
+                          {story.donationCount}
+                        </div>
+                        donations
+                      </span>
+
+                      <span className='flex'>
+                        <div className='text-[#55DFAB] px-1 font-bold'>
+                          {(story.donations / story.fundingGoal) * 100}%
+                        </div>
+                        of funding goal</span>
                     </div>
-                    <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2" />
+                    <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2 " />
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-4 p-6 pt-0">
