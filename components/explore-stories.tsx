@@ -103,10 +103,13 @@ export function ExploreStories() {
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
       >
-        <div className={cn("flex items-center h-16 px-4 border-b")}>
-          <Image src="/placeholder.svg?height=32&width=32" alt="Logo" width={32} height={32} className="rounded-full" />
-          <div className={cn("ml-4 overflow-hidden transition-all duration-300 ease-in-out", isOpen ? "w-32" : "w-0")}>
-            <span className="font-semibold">Refugee Stories</span>
+        <div className={cn("flex items-center justify-center h-[100px] px-4 border-b py-8")}>
+          <div className='flex items-center justify-center w-full'>
+            {isOpen ? (
+              <Image src="/logo-full.png" alt="Logo" width={650} height={60} className="rounded-full" />
+            ) : (
+              <Image src="/logo-icon.png" alt="logo-icon" width={100} height={100} className="rounded" />
+            )}
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-2">
@@ -115,7 +118,7 @@ export function ExploreStories() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
+                "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
                 item.href === "/" && "bg-gray-100 text-gray-900"
               )}
             >
@@ -134,7 +137,7 @@ export function ExploreStories() {
         <div className="border-t p-2">
           <Link
             href="/settings"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
           >
             <Settings className="h-6 w-6" />
             <span
@@ -146,7 +149,7 @@ export function ExploreStories() {
               Settings
             </span>
           </Link>
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <div className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2">
             <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
             <span
               className={cn(
