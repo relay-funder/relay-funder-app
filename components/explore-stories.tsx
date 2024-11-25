@@ -98,7 +98,7 @@ export function ExploreStories() {
       <aside
         className={cn(
           "fixed left-0 top-0 z-40 flex h-full flex-col border-r bg-white transition-all duration-300 ease-in-out",
-          isOpen ? "w-[240px]" : "w-[72px]"
+          isOpen ? "w-[240px]" : "w-[70px]"
         )}
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
@@ -106,20 +106,20 @@ export function ExploreStories() {
         <div className={cn("flex items-center justify-center h-[100px] px-4 border-b py-8")}>
           <div className='flex items-center justify-center w-full'>
             {isOpen ? (
-              <Image src="/logo-full.png" alt="Logo" width={650} height={60} className="rounded-full" />
+              <Image src="/logo-full.png" alt="Logo" width={550} height={60} className="rounded-full" />
             ) : (
               <Image src="/logo-icon.png" alt="logo-icon" width={100} height={100} className="rounded" />
             )}
           </div>
         </div>
-        <nav className="flex-1 space-y-1 p-2">
+        <nav className="flex-1 space-y-1 p-3">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                item.href === "/" && "bg-gray-100 text-gray-900"
+                "flex items-center justify-center rounded-lg px-1 py-4 text-gray-800 transition-colors hover:bg-gray-100 hover:text-gray-900",
+                item.href === "/" && " bg-green-200 text-gray-900"
               )}
             >
               {item.icon}
@@ -169,19 +169,20 @@ export function ExploreStories() {
           isOpen ? "ml-[240px]" : "ml-[72px]"
         )}
       >
-        <header className="border-b bg-white px-4 py-4">
+        <header className=" px-4 py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-start gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-                <Input className="w-[300px] pl-10" placeholder="Search Stories" type="search" />
+                <Input className="w-[300px] pl-10 rounded-xl" placeholder="Search Stories" type="search" />
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" className="bg-purple-50 text-purple-600 hover:bg-purple-100">
+              <Button variant="outline" className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100">
                 Connect Wallet
+                <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />
               </Button>
-              <Button className="bg-emerald-400 hover:bg-emerald-500">Create Story</Button>
+              <Button className="bg-emerald-400 font-semibold hover:bg-emerald-500">Create Story</Button>
             </div>
           </div>
         </header>
