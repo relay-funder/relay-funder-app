@@ -1,7 +1,7 @@
 'use client'
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react'
-import { Grid, Home, Search, Settings, Star } from 'lucide-react'
+import { Grid, Home, Search, Settings, Star, LogOut } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { usePrivy } from '@privy-io/react-auth';
+import { CreateCampaign } from '@/components/create-campaign'
 
 interface Story {
   id: string
@@ -35,7 +37,9 @@ interface NavItem {
 }
 
 export function ExploreStories() {
+  const { logout } = usePrivy();
   const [isOpen, setIsOpen] = useState(false)
+  const [showCreateCampaign, setShowCreateCampaign] = useState(false)
 
   const navItems: NavItem[] = [
     { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
@@ -91,6 +95,8 @@ export function ExploreStories() {
       donationCount: 86,
     },
   ]
+
+  const { login, ready, authenticated } = usePrivy();
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -149,6 +155,13 @@ export function ExploreStories() {
               Settings
             </span>
           </Link>
+          <button 
+          onClick={logout}
+          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          Logout
+        </button>
           <div className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2">
             <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
             <span
@@ -178,96 +191,120 @@ export function ExploreStories() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100">
-                Connect Wallet
+              <Button 
+                variant="outline" 
+                className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
+                onClick={login}
+              >
+                {authenticated ? "Connected" : "Connect Wallet"}
                 <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />
               </Button>
-              <Button className="bg-emerald-400 font-semibold hover:bg-emerald-500">Create Story</Button>
+              <Button 
+                className="bg-emerald-400 font-semibold hover:bg-emerald-500"
+                onClick={() => setShowCreateCampaign(true)}
+              >
+                Create Story
+              </Button>
             </div>
           </div>
         </header>
 
         <main className="mx-auto max-w-7xl px-4 py-8">
-          <div className="text-center">
-            <h1 className="mb-4 text-3xl font-bold">Explore Stories</h1>
-            <p className="mx-auto mb-8 max-w-3xl text-gray-600">
-              Explore personal memories shared by refugees—each story offers a glimpse into their resilience, hopes, and dreams.
-              By taking in these moments, you help preserve their voices and honor their journeys.
-            </p>
-          </div>
-
-          <div className="mb-8 flex flex-wrap justify-center gap-2">
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant="outline"
-                className="flex items-center gap-2 rounded-full bg-white"
+          {showCreateCampaign ? (
+            <div className="mb-8">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateCampaign(false)}
+                className="mb-4"
               >
-                {category.icon}
-                {category.name}
+                ← Back to Stories
               </Button>
-            ))}
-          </div>
+              <CreateCampaign />
+            </div>
+          ) : (
+            <>
+              <div className="text-center">
+                <h1 className="mb-4 text-3xl font-bold">Explore Stories</h1>
+                <p className="mx-auto mb-8 max-w-3xl text-gray-600">
+                  Explore personal memories shared by refugees—each story offers a glimpse into their resilience, hopes, and dreams.
+                  By taking in these moments, you help preserve their voices and honor their journeys.
+                </p>
+              </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {stories.map((story) => (
-              <Card key={story.id} className="overflow-hidden">
-                <CardHeader className="p-0">
-                  <Image
-                    src={story.image}
-                    alt={story.title}
-                    width={600}
-                    height={400}
-                    className="h-[200px] w-full object-cover"
-                  />
-                </CardHeader>
-                <CardContent className="p-6">
-                  <h2 className="mb-2 text-xl font-bold">{story.title}</h2>
-                  <div className="mb-4 flex items-center gap-2">
-                    <Image
-                      src={`https://avatar.vercel.sh/${story.author}`}
-                      alt={story.author}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                    <span className="font-medium">{story.author}</span>
-                    <span className="text-gray-500">•</span>
-                    <span className="text-gray-500">{story.location}</span>
-                  </div>
-                  <p className="mb-4 text-gray-600">{story.excerpt}</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className='flex '>
-                        <div className='text-[#55DFAB] px-1 font-bold'>
-                          {story.donationCount}
-                        </div>
-                        donations
-                      </span>
-
-                      <span className='flex'>
-                        <div className='text-[#55DFAB] px-1 font-bold'>
-                          {(story.donations / story.fundingGoal) * 100}%
-                        </div>
-                        of funding goal</span>
-                    </div>
-                    <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2 " />
-                  </div>
-                </CardContent>
-                <CardFooter className="flex gap-4 p-6 pt-0">
-                  <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
-                    <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-
-                    Donate
+              <div className="mb-8 flex flex-wrap justify-center gap-2">
+                {categories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant="outline"
+                    className="flex items-center gap-2 rounded-full bg-white"
+                  >
+                    {category.icon}
+                    {category.name}
                   </Button>
-                  <Button variant="outline" className="flex-1">
-                    <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
-                    Add to Collection
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                ))}
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {stories.map((story) => (
+                  <Card key={story.id} className="overflow-hidden">
+                    <CardHeader className="p-0">
+                      <Image
+                        src={story.image}
+                        alt={story.title}
+                        width={600}
+                        height={400}
+                        className="h-[200px] w-full object-cover"
+                      />
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <h2 className="mb-2 text-xl font-bold">{story.title}</h2>
+                      <div className="mb-4 flex items-center gap-2">
+                        <Image
+                          src={`https://avatar.vercel.sh/${story.author}`}
+                          alt={story.author}
+                          width={24}
+                          height={24}
+                          className="rounded-full"
+                        />
+                        <span className="font-medium">{story.author}</span>
+                        <span className="text-gray-500">•</span>
+                        <span className="text-gray-500">{story.location}</span>
+                      </div>
+                      <p className="mb-4 text-gray-600">{story.excerpt}</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className='flex '>
+                            <div className='text-[#55DFAB] px-1 font-bold'>
+                              {story.donationCount}
+                            </div>
+                            donations
+                          </span>
+
+                          <span className='flex'>
+                            <div className='text-[#55DFAB] px-1 font-bold'>
+                              {(story.donations / story.fundingGoal) * 100}%
+                            </div>
+                            of funding goal</span>
+                        </div>
+                        <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2 " />
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex gap-4 p-6 pt-0">
+                      <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
+                        <Image src="/diamond.png" alt="wallet" width={24} height={24} />
+
+                        Donate
+                      </Button>
+                      <Button variant="outline" className="flex-1">
+                        <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+                        Add to Collection
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </main>
       </div>
     </div>
