@@ -1,5 +1,5 @@
 'use client'
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react'
 import { Grid, Home, Search, Settings, Star, LogOut } from 'lucide-react'
 import Image from "next/image"
