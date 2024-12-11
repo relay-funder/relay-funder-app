@@ -66,7 +66,7 @@ export function ExploreStories() {
       title: "From Shadows to Light: My Journey to Hope",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "https://avatar.vercel.sh/Jana Dorali",
+      image: "./images/c1.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
