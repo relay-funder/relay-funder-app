@@ -70,9 +70,9 @@ export function ExploreStories() {
       image: "/images/c3.png",
       authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 50,
+      donations: 80,
       fundingGoal: 100,
-      donationCount: 86,
+      donationCount: 96,
     },
     {
       id: "2",
@@ -82,9 +82,9 @@ export function ExploreStories() {
       image: "/images/c1.png",
       authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 50,
+      donations: 40,
       fundingGoal: 100,
-      donationCount: 86,
+      donationCount: 56,
     },
     {
       id: "3",
@@ -94,9 +94,9 @@ export function ExploreStories() {
       image: "/images/c2.png",
       authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 50,
+      donations: 10,
       fundingGoal: 100,
-      donationCount: 86,
+      donationCount: 26,
     },
   ]
 
@@ -304,7 +304,6 @@ export function ExploreStories() {
                     <CardFooter className="flex gap-4 p-6 pt-0">
                       <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
                         <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-
                         Donate
                       </Button>
                       <Button variant="outline" className="flex-1">
