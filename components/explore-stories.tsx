@@ -11,13 +11,14 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { usePrivy } from '@privy-io/react-auth';
 import { CreateCampaign } from '@/components/create-campaign'
-
+import { IoLocationSharp } from "react-icons/io5";
 interface Story {
   id: string
   title: string
   author: string
   location: string
   image: string
+  authorImage: string
   excerpt: string
   donations: number
   fundingGoal: number
@@ -67,6 +68,7 @@ export function ExploreStories() {
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
       image: "/images/c3.png",
+      authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
@@ -78,6 +80,7 @@ export function ExploreStories() {
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
       image: "/images/c1.png",
+      authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
@@ -89,6 +92,7 @@ export function ExploreStories() {
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
       image: "/images/c2.png",
+      authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
       donations: 50,
       fundingGoal: 100,
@@ -155,13 +159,13 @@ export function ExploreStories() {
               Settings
             </span>
           </Link>
-          <button 
-          onClick={logout}
-          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </button>
+          <button
+            onClick={logout}
+            className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            Logout
+          </button>
           <div className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2">
             <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
             <span
@@ -191,15 +195,15 @@ export function ExploreStories() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
                 onClick={login}
               >
                 {authenticated ? "Connected" : "Connect Wallet"}
                 <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />
               </Button>
-              <Button 
+              <Button
                 className="bg-emerald-400 font-semibold hover:bg-emerald-500"
                 onClick={() => setShowCreateCampaign(true)}
               >
@@ -212,8 +216,8 @@ export function ExploreStories() {
         <main className="mx-auto max-w-7xl px-4 py-8">
           {showCreateCampaign ? (
             <div className="mb-8">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowCreateCampaign(false)}
                 className="mb-4"
               >
@@ -258,20 +262,28 @@ export function ExploreStories() {
                     </CardHeader>
                     <CardContent className="p-6">
                       <h2 className="mb-2 text-xl font-bold">{story.title}</h2>
-                      <div className="mb-4 flex items-center gap-2">
-                        <Image
-                          src={`https://avatar.vercel.sh/${story.author}`}
-                          alt={story.author}
-                          width={24}
-                          height={24}
-                          className="rounded-full"
-                        />
-                        <span className="font-medium">{story.author}</span>
-                        <span className="text-gray-500">•</span>
-                        <span className="text-gray-500">{story.location}</span>
+                      <div className="flex justify-between items-center mb-4 gap-2">
+                        <div className="flex align self-start">
+
+                          <Image
+                            src={story.authorImage}
+                            alt={story.author}
+                            width={24}
+                            height={24}
+                            className="rounded-full"
+                          />
+                          <span className="font-medium">{story.author}</span>
+                        </div>
+                        <div className="flex align self-start">
+
+                          <IoLocationSharp className='text-[#55DFAB] mt-1' />
+                          <span className="text-gray-900">{story.location}</span>
+                        </div>
                       </div>
-                      <p className="mb-4 text-gray-600">{story.excerpt}</p>
-                      <div className="space-y-2">
+                      <p className="text-gray-600 text-[12px]">{story.excerpt}</p>
+                      <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">Read More</div>
+
+                      <div className="space-y-2 pt-5">
                         <div className="flex items-center justify-between text-sm">
                           <span className='flex '>
                             <div className='text-[#55DFAB] px-1 font-bold'>
