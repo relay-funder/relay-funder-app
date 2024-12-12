@@ -6,6 +6,7 @@ import { createConfig, http, WagmiProvider } from 'wagmi'
 import { sepolia, celoAlfajores, mainnet } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CollectionProvider } from '@/contexts/CollectionContext'
+import { SidebarProvider } from '@/contexts/SidebarContext'
 
 const config = createConfig({
   chains: [sepolia, celoAlfajores, mainnet],
@@ -52,7 +53,9 @@ export default function Providers({ children }: { children: ReactNode }) {
           }}
         >
           <CollectionProvider>
-            {children}
+            <SidebarProvider>
+              {children}
+            </SidebarProvider>
           </CollectionProvider>
         </PrivyProvider>
       </QueryClientProvider>
