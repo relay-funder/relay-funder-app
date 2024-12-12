@@ -3,15 +3,16 @@
 import { PrivyProvider } from '@privy-io/react-auth';
 import { ReactNode } from 'react';
 import { createConfig, http, WagmiProvider } from 'wagmi'
-import { mainnet, sepolia, holesky } from 'wagmi/chains'
+import { sepolia, celoAlfajores, mainnet } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { CollectionProvider } from '@/contexts/CollectionContext'
 
 const config = createConfig({
-  chains: [mainnet, sepolia, holesky],
+  chains: [sepolia, celoAlfajores, mainnet],
   transports: {
+    [celoAlfajores.id]: http(),
     [sepolia.id]: http(),
-    [mainnet.id]: http(),
-    [holesky.id]: http()
+    [mainnet.id]: http()
   }
 })
 
@@ -50,7 +51,9 @@ export default function Providers({ children }: { children: ReactNode }) {
             }
           }}
         >
-          {children}
+          <CollectionProvider>
+            {children}
+          </CollectionProvider>
         </PrivyProvider>
       </QueryClientProvider>
     </WagmiProvider>
