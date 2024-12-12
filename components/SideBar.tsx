@@ -1,13 +1,12 @@
 'use client'
 
-import React from 'react'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { usePrivy } from '@privy-io/react-auth'
-import { Grid, Home, Search, Settings, Star, LogOut } from 'lucide-react'
+// import { usePrivy } from '@privy-io/react-auth'
+import { Grid, Home, Settings, Star } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
-
+import { useSidebar } from '@/contexts/SidebarContext'
 
 interface NavItem {
     icon: JSX.Element
@@ -16,7 +15,7 @@ interface NavItem {
 }
 
 export const SideBar = () => {
-    const [isOpen, setIsOpen] = useState(false)
+    const { isOpen, setIsOpen } = useSidebar()
 
     const navItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
@@ -83,13 +82,6 @@ export const SideBar = () => {
                             Settings
                         </span>
                     </Link>
-                    {/* <button
-            onClick={logout}
-          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </button> */}
                     <div className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2">
                         <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
                         <span
