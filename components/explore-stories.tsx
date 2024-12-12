@@ -250,7 +250,7 @@ export function ExploreStories() {
 
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {stories.map((story) => (
-                  <Card key={story.id} className="overflow-hidden">
+                  <Card key={story.id} className="overflow-hidden flex flex-col h-full">
                     <CardHeader className="p-0">
                       <Image
                         src={story.image}
@@ -276,33 +276,35 @@ export function ExploreStories() {
                         </div>
                         <div className="flex align self-start">
 
-                          <IoLocationSharp className='text-[#55DFAB] mt-1' />
-                          <span className="text-gray-900">{story.location}</span>
+                          <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
+                          <span className="text-gray-900 text-sm">{story.location}</span>
                         </div>
                       </div>
                       <p className="text-gray-600 text-[12px]">{story.excerpt}</p>
                       <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">Read More</div>
 
-                      <div className="space-y-2 pt-5">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className='flex '>
-                            <div className='text-[#55DFAB] px-1 font-bold'>
-                              {story.donationCount}
-                            </div>
-                            donations
-                          </span>
+                    </CardContent>
+                    <div className="mt-auto px-6 py-4 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className='flex '>
+                          <div className='text-[#55DFAB] px-1 font-bold'>
+                            {story.donationCount}
+                          </div>
+                          donations
+                        </span>
 
-                          <span className='flex'>
-                            <div className='text-[#55DFAB] px-1 font-bold'>
-                              {(story.donations / story.fundingGoal) * 100}%
-                            </div>
-                            of funding goal</span>
-                        </div>
+                        <span className='flex'>
+                          <div className='text-[#55DFAB] px-1 font-bold'>
+                            {(story.donations / story.fundingGoal) * 100}%
+                          </div>
+                          of funding goal</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
                         <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2 " />
                       </div>
-                    </CardContent>
-                    <CardFooter className="flex gap-4 p-6 pt-0">
-                      <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
+                    </div>
+                    <CardFooter className="mt-auto gap-4 p-6 pt-0">
+                      <Button className="flex bg-purple-600 hover:bg-purple-700">
                         <Image src="/diamond.png" alt="wallet" width={24} height={24} />
                         Donate
                       </Button>
