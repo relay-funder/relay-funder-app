@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { keccak256, toHex, stringToHex } from 'viem'
 
 export function CreateCampaign() {
   const { address } = useAccount()
@@ -26,34 +27,26 @@ export function CreateCampaign() {
   })
 
   const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted')
 
     if (!writeContract || !address) {
       console.log('Missing writeContract or address')
       return
     }
 
-    console.log('Preparing to write contract with data:', {
-      address: campaignInfoFactory,
-      abi: CampaignInfoFactoryABI,
-      functionName: 'createCampaign',
-      args: [
-        address,
-        ('0x' + '1'.repeat(64)),
-        [('0x' + '2'.repeat(64))],
-        [('0x' + '3'.repeat(64))],
-        [('0x' + '4'.repeat(64))],
-        {
-          title: formData.title,
-          description: formData.description,
-          fundingGoal: parseEther(formData.fundingGoal || '0'),
-          startTime: BigInt(new Date(formData.startTime).getTime() / 1000),
-          endTime: BigInt(new Date(formData.endTime).getTime() / 1000)
-        }
-      ]
-    })
+    // Generate a unique identifier hash for the campaign
+    const identifierHash = keccak256(
+      stringToHex(`${address}-${Date.now()}`)
+    )
+
+    // Create campaign data structure
+    const campaignData = {
+      startTime: BigInt(new Date(formData.startTime).getTime() / 1000),
+      endTime: BigInt(new Date(formData.endTime).getTime() / 1000),
+      fundingGoal: parseEther(formData.fundingGoal || '0'),
+    }
 
     try {
       await writeContract({
@@ -61,18 +54,12 @@ export function CreateCampaign() {
         abi: CampaignInfoFactoryABI,
         functionName: 'createCampaign',
         args: [
-          address as `0x${string}`,
-          ('0x' + '1'.repeat(64)) as `0x${string}`,
-          [('0x' + '2'.repeat(64)) as `0x${string}`],
-          [('0x' + '3'.repeat(64)) as `0x${string}`],
-          [('0x' + '4'.repeat(64)) as `0x${string}`],
-          {
-            title: formData.title,
-            description: formData.description,
-            fundingGoal: parseEther(formData.fundingGoal || '0'),
-            startTime: BigInt(new Date(formData.startTime).getTime() / 1000),
-            endTime: BigInt(new Date(formData.endTime).getTime() / 1000)
-          }
+          address,
+          identifierHash,
+          [(process.env.NEXT_PUBLIC_PLATFORM_HASH) as `0x${string}`], 
+          [], // Platform data keys
+          [], // Platform data values 
+          campaignData
         ]
       })
       console.log('Contract write successful')
@@ -132,8 +119,8 @@ export function CreateCampaign() {
         />
       </div>
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         disabled={isPending || !writeContract}
         className="w-full"
       >
