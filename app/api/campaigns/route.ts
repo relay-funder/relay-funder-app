@@ -8,7 +8,6 @@ export async function GET() {
       chain: mainnet,
       transport: http()
     })
-
     const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`
 
     const logs = await client.getLogs({

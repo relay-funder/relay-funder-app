@@ -23,15 +23,20 @@ type CampaignDetails = {
 export function CampaignList() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchCampaigns() {
       try {
         const response = await fetch('/api/campaigns')
+        if (!response.ok) {
+          throw new Error('Failed to fetch campaigns')
+        }
         const data = await response.json()
         setCampaigns(data.campaigns)
       } catch (error) {
         console.error('Error fetching campaigns:', error)
+        setError('Failed to load campaigns')
       } finally {
         setLoading(false)
       }
@@ -41,15 +46,19 @@ export function CampaignList() {
   }, [])
 
   if (loading) {
-    return <div>Loading campaigns...</div>
+    return <div className="text-center p-6">Loading campaigns...</div>
+  }
+
+  if (error) {
+    return <div className="text-center text-red-500 p-6">{error}</div>
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
       {campaigns.map((campaign) => (
-        <CampaignCard 
-          key={campaign.identifierHash} 
-          campaignAddress={campaign.campaignInfoAddress} 
+        <CampaignCard
+          key={campaign.identifierHash}
+          campaignAddress={campaign.campaignInfoAddress}
         />
       ))}
     </div>
