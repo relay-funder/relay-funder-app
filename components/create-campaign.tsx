@@ -48,21 +48,34 @@ export function CreateCampaign() {
       fundingGoal: parseEther(formData.fundingGoal || '0'),
     }
 
+    const campaignData2 = {
+      launchTime: BigInt(new Date(formData.startTime).getTime() / 1000),
+      deadline: BigInt(new Date(formData.endTime).getTime() / 1000),
+      goalAmount: parseEther(formData.fundingGoal || '0'),
+    }
+
+    const campaignData3 = [
+      BigInt(new Date(formData.startTime).getTime() / 1000),
+      BigInt(new Date(formData.endTime).getTime() / 1000),
+      parseEther(formData.fundingGoal || '0')
+    ]
+
     try {
-      await writeContract({
+      const result = await writeContract({
         address: campaignInfoFactory as `0x${string}`,
         abi: CampaignInfoFactoryABI,
         functionName: 'createCampaign',
         args: [
           address,
           identifierHash,
-          [(process.env.NEXT_PUBLIC_PLATFORM_HASH) as `0x${string}`], 
+          [(process.env.NEXT_PUBLIC_PLATFORM_HASH) as `0x${string}`],
           [], // Platform data keys
           [], // Platform data values 
-          campaignData
+          campaignData2
         ]
       })
-      console.log('Contract write successful')
+
+      console.log('Contract write successful', result)
     } catch (error) {
       console.error('Error writing contract:', error)
     }
