@@ -4,10 +4,15 @@ import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
 
 export async function GET() {
   try {
+    if (!process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY) {
+      throw new Error('Campaign factory address not configured')
+    }
+
     const client = createPublicClient({
       chain: mainnet,
       transport: http()
     })
+
     const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`
 
     const logs = await client.getLogs({
@@ -33,6 +38,9 @@ export async function GET() {
     return Response.json({ campaigns })
   } catch (error) {
     console.error('Error fetching campaigns:', error)
-    return Response.json({ error: 'Failed to fetch campaigns' }, { status: 500 })
+    return Response.json(
+      { error: 'Failed to fetch campaigns' }, 
+      { status: 500 }
+    )
   }
 } 
