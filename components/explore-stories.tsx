@@ -11,13 +11,23 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { usePrivy } from '@privy-io/react-auth';
 import { CreateCampaign } from '@/components/create-campaign'
-
+import { IoLocationSharp } from "react-icons/io5";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dailog"
+import { useCollection } from '@/contexts/CollectionContext'
+import { SideBar } from '@/components/SideBar'
+import { useSidebar } from '@/contexts/SidebarContext'
 interface Story {
   id: string
   title: string
   author: string
   location: string
   image: string
+  authorImage: string
   excerpt: string
   donations: number
   fundingGoal: number
@@ -38,8 +48,14 @@ interface NavItem {
 
 export function ExploreStories() {
   const { logout } = usePrivy();
-  const [isOpen, setIsOpen] = useState(false)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+  const [showCollectionModal, setShowCollectionModal] = useState(false)
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null)
+  const [selectedCollection, setSelectedCollection] = useState<string>('')
+  const { addToCollection } = useCollection()
+
+  const { isOpen } = useSidebar()
+
 
   const navItems: NavItem[] = [
     { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
@@ -66,115 +82,50 @@ export function ExploreStories() {
       title: "From Shadows to Light: My Journey to Hope",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "https://avatar.vercel.sh/Jana Dorali",
+      image: "/images/c3.png",
+      authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 50,
+      donations: 80,
       fundingGoal: 100,
-      donationCount: 86,
+      donationCount: 96,
     },
     {
       id: "2",
       title: "The Glass Castle",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "https://avatar.vercel.sh/Jana Dorali",
+      image: "/images/c1.png",
+      authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 50,
+      donations: 40,
       fundingGoal: 100,
-      donationCount: 86,
+      donationCount: 56,
     },
     {
       id: "3",
       title: "Man's Search for Meaning",
       author: "Jana Dorali",
       location: "Pagirinya, Uganda",
-      image: "https://avatar.vercel.sh/Jana Dorali",
+      image: "/images/c2.png",
+      authorImage: "/images/profiles/jana.png",
       excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 50,
+      donations: 10,
       fundingGoal: 100,
-      donationCount: 86,
+      donationCount: 26,
     },
+  ]
+
+  const collections = [
+    { id: 1, name: "Curation Lorem", initial: "C" },
+    { id: 2, name: "Ipsum Curation", initial: "I" },
   ]
 
   const { login, ready, authenticated } = usePrivy();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen w-screen bg-gray-50">
       {/* Side Navigation */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-40 flex h-full flex-col border-r bg-white transition-all duration-300 ease-in-out",
-          isOpen ? "w-[240px]" : "w-[70px]"
-        )}
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-      >
-        <div className={cn("flex items-center justify-center h-[100px] px-4 border-b py-8")}>
-          <div className='flex items-center justify-center w-full'>
-            {isOpen ? (
-              <Image src="/logo-full.png" alt="Logo" width={550} height={60} className="rounded-full" />
-            ) : (
-              <Image src="/logo-icon.png" alt="logo-icon" width={100} height={100} className="rounded" />
-            )}
-          </div>
-        </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center justify-center rounded-lg px-1 py-4 text-gray-800 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                item.href === "/" && " bg-green-200 text-gray-900"
-              )}
-            >
-              {item.icon}
-              <span
-                className={cn(
-                  "overflow-hidden transition-all duration-300 ease-in-out",
-                  isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
-                )}
-              >
-                {item.label}
-              </span>
-            </Link>
-          ))}
-        </nav>
-        <div className="border-t p-2">
-          <Link
-            href="/settings"
-            className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Settings className="h-6 w-6" />
-            <span
-              className={cn(
-                "overflow-hidden transition-all duration-300 ease-in-out",
-                isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
-              )}
-            >
-              Settings
-            </span>
-          </Link>
-          <button 
-          onClick={logout}
-          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </button>
-          <div className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2">
-            <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
-            <span
-              className={cn(
-                "overflow-hidden text-sm font-medium transition-all duration-300 ease-in-out",
-                isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
-              )}
-            >
-              User Name
-            </span>
-          </div>
-        </div>
-      </aside>
+      <SideBar />
 
       <div
         className={cn(
@@ -191,15 +142,15 @@ export function ExploreStories() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
                 onClick={login}
               >
                 {authenticated ? "Connected" : "Connect Wallet"}
                 <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />
               </Button>
-              <Button 
+              <Button
                 className="bg-emerald-400 font-semibold hover:bg-emerald-500"
                 onClick={() => setShowCreateCampaign(true)}
               >
@@ -212,8 +163,8 @@ export function ExploreStories() {
         <main className="mx-auto max-w-7xl px-4 py-8">
           {showCreateCampaign ? (
             <div className="mb-8">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowCreateCampaign(false)}
                 className="mb-4"
               >
@@ -246,7 +197,7 @@ export function ExploreStories() {
 
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {stories.map((story) => (
-                  <Card key={story.id} className="overflow-hidden">
+                  <Card key={story.id} className="overflow-hidden flex flex-col h-full">
                     <CardHeader className="p-0">
                       <Image
                         src={story.image}
@@ -258,44 +209,60 @@ export function ExploreStories() {
                     </CardHeader>
                     <CardContent className="p-6">
                       <h2 className="mb-2 text-xl font-bold">{story.title}</h2>
-                      <div className="mb-4 flex items-center gap-2">
-                        <Image
-                          src={`https://avatar.vercel.sh/${story.author}`}
-                          alt={story.author}
-                          width={24}
-                          height={24}
-                          className="rounded-full"
-                        />
-                        <span className="font-medium">{story.author}</span>
-                        <span className="text-gray-500">•</span>
-                        <span className="text-gray-500">{story.location}</span>
-                      </div>
-                      <p className="mb-4 text-gray-600">{story.excerpt}</p>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className='flex '>
-                            <div className='text-[#55DFAB] px-1 font-bold'>
-                              {story.donationCount}
-                            </div>
-                            donations
-                          </span>
+                      <div className="flex justify-between items-center mb-4 gap-2">
+                        <div className="flex align self-start">
 
-                          <span className='flex'>
-                            <div className='text-[#55DFAB] px-1 font-bold'>
-                              {(story.donations / story.fundingGoal) * 100}%
-                            </div>
-                            of funding goal</span>
+                          <Image
+                            src={story.authorImage}
+                            alt={story.author}
+                            width={24}
+                            height={24}
+                            className="rounded-full"
+                          />
+                          <span className="font-medium">{story.author}</span>
                         </div>
+                        <div className="flex align self-start">
+
+                          <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
+                          <span className="text-gray-900 text-sm">{story.location}</span>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-[12px]">{story.excerpt}</p>
+                      <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">Read More</div>
+
+                    </CardContent>
+                    <div className="mt-auto px-6 py-4 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className='flex '>
+                          <div className='text-[#55DFAB] px-1 font-bold'>
+                            {story.donationCount}
+                          </div>
+                          donations
+                        </span>
+
+                        <span className='flex'>
+                          <div className='text-[#55DFAB] px-1 font-bold'>
+                            {(story.donations / story.fundingGoal) * 100}%
+                          </div>
+                          of funding goal</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
                         <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2 " />
                       </div>
-                    </CardContent>
-                    <CardFooter className="flex gap-4 p-6 pt-0">
-                      <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
+                    </div>
+                    <CardFooter className="mt-auto gap-4 p-6 pt-0">
+                      <Button className="flex bg-purple-600 hover:bg-purple-700">
                         <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-
                         Donate
                       </Button>
-                      <Button variant="outline" className="flex-1">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedStory(story)
+                          setShowCollectionModal(true)
+                        }}
+                      >
                         <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
                         Add to Collection
                       </Button>
@@ -307,6 +274,127 @@ export function ExploreStories() {
           )}
         </main>
       </div>
+
+      <Dialog 
+        open={showCollectionModal} 
+        onOpenChange={(open) => {
+          setShowCollectionModal(open)
+          if (!open) {
+            setSelectedCollection('')
+            setSelectedStory(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span className="text-2xl font-bold">Add to Collection</span>
+              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
+            <div className="space-y-2">
+              {collections.map((collection) => (
+                <div
+                  key={collection.id}
+                  className={cn(
+                    "flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer",
+                    selectedCollection === collection.name && "border-emerald-400 bg-green-50"
+                  )}
+                  onClick={() => setSelectedCollection(collection.name)}
+                >
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                    {collection.initial}
+                  </div>
+                  <span className="flex-grow">{collection.name}</span>
+                  <div className={cn(
+                    "w-6 h-6 rounded-full border-2",
+                    selectedCollection === collection.name 
+                      ? "border-emerald-400 bg-emerald-400" 
+                      : "border-gray-200"
+                  )} />
+                </div>
+              ))}
+              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
+                <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
+                  +
+                </div>
+                <span className="text-purple-600">New Collection</span>
+              </div>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <Button
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={!selectedCollection || !selectedStory}
+                onClick={() => {
+                  if (selectedStory && selectedCollection) {
+                    addToCollection(selectedStory, selectedCollection)
+                    setShowCollectionModal(false)
+                    setSelectedCollection('')
+                    setSelectedStory(null)
+                  }
+                }}
+              >
+                Save
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCollectionModal(false)}
+              >
+                Cancel
+              </Button>
+
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* <Dialog open={showCollectionModal} onOpenChange={setShowCollectionModal}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span className="text-2xl font-bold">Add to Collection</span>
+              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
+            <div className="space-y-2">
+              {collections.map((collection) => (
+                <div
+                  key={collection.id}
+                  className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer"
+                >
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                    {collection.initial}
+                  </div>
+                  <span className="flex-grow">{collection.name}</span>
+                  <div className="w-6 h-6 rounded-full border-2 border-emerald-400" />
+                </div>
+              ))}
+              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
+                <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
+                  +
+                </div>
+                <span className="text-purple-600">New Collection</span>
+              </div>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                Save
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCollectionModal(false)}
+              >
+                Cancel
+              </Button>
+
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog> */}
     </div>
   )
 }
