@@ -29,10 +29,12 @@ export function CampaignList() {
     async function fetchCampaigns() {
       try {
         const response = await fetch('/api/campaigns')
+        console.log("response:", response)
         if (!response.ok) {
           throw new Error('Failed to fetch campaigns')
         }
         const data = await response.json()
+        console.log("data:", data)
         setCampaigns(data.campaigns)
       } catch (error) {
         console.error('Error fetching campaigns:', error)
