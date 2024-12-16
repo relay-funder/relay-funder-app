@@ -1,5 +1,5 @@
-import { createPublicClient, http } from 'viem'
-import { celoAlfajores, celo } from 'viem/chains'
+//import { createPublicClient, http } from 'viem'
+//import { celoAlfajores, celo } from 'viem/chains'
 import { ethers } from 'ethers';
 import { NextResponse } from 'next/server';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
