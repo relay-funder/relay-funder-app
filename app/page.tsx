@@ -1,5 +1,5 @@
 import { ExploreStories } from '@/components/explore-stories'
-import { CampaignList } from '@/components/campaign-list'
+import CampaignList from '@/components/campaign-list'
 
 export default function HomePage() {
   return (
