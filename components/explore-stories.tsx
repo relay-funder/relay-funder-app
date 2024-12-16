@@ -1,9 +1,8 @@
 'use client'
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react'
-import { Grid, Home, Search, Settings, Star, LogOut } from 'lucide-react'
+import { Search } from 'lucide-react'
 import Image from "next/image"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -40,14 +39,15 @@ interface Category {
   icon: JSX.Element
 }
 
-interface NavItem {
-  icon: JSX.Element
-  label: string
-  href: string
-}
+// interface NavItem {
+//   icon: JSX.Element
+//   label: string
+//   href: string
+// }
 
 export function ExploreStories() {
   const { logout } = usePrivy();
+  console.log("logout", logout)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [showCollectionModal, setShowCollectionModal] = useState(false)
   const [selectedStory, setSelectedStory] = useState<Story | null>(null)
@@ -56,12 +56,11 @@ export function ExploreStories() {
 
   const { isOpen } = useSidebar()
 
-
-  const navItems: NavItem[] = [
-    { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
-    { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
-    { icon: <Star className="h-6 w-6" />, label: "Favorites", href: "/favorites" },
-  ]
+  // const navItems: NavItem[] = [
+  //   { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
+  //   { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
+  //   { icon: <Star className="h-6 w-6" />, label: "Favorites", href: "/favorites" },
+  // ]
 
   const categories: Category[] = [
     { id: "visual-arts", name: "Visual Arts", icon: <span className="text-xl">🎨</span> },
@@ -120,7 +119,7 @@ export function ExploreStories() {
     { id: 2, name: "Ipsum Curation", initial: "I" },
   ]
 
-  const { login, ready, authenticated } = usePrivy();
+  const { login, authenticated } = usePrivy();
 
   return (
     <div className="flex min-h-screen w-screen bg-gray-50">
@@ -275,8 +274,8 @@ export function ExploreStories() {
         </main>
       </div>
 
-      <Dialog 
-        open={showCollectionModal} 
+      <Dialog
+        open={showCollectionModal}
         onOpenChange={(open) => {
           setShowCollectionModal(open)
           if (!open) {
@@ -310,8 +309,8 @@ export function ExploreStories() {
                   <span className="flex-grow">{collection.name}</span>
                   <div className={cn(
                     "w-6 h-6 rounded-full border-2",
-                    selectedCollection === collection.name 
-                      ? "border-emerald-400 bg-emerald-400" 
+                    selectedCollection === collection.name
+                      ? "border-emerald-400 bg-emerald-400"
                       : "border-gray-200"
                   )} />
                 </div>

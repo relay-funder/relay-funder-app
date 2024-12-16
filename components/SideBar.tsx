@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { cn } from '@/lib/utils'
 // import { usePrivy } from '@privy-io/react-auth'
 import { Grid, Home, Settings, Star } from 'lucide-react'
