@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { keccak256, toHex, stringToHex } from 'viem'
+import { keccak256, stringToHex } from 'viem'
 
 export function CreateCampaign() {
   const { address } = useAccount()
@@ -36,23 +36,20 @@ export function CreateCampaign() {
       return
     }
 
-    // Generate a unique identifier hash for the campaign
-    const identifierHash = keccak256(
-      stringToHex(`${address}-${Date.now()}`)
-    )
+    const identifierHash = keccak256(stringToHex("KickStarter"));
 
     const campaignData = {
-      launchTime: BigInt(new Date(formData.startTime).getTime() / 1000),
-      deadline: BigInt(new Date(formData.endTime).getTime() / 1000),
+      launchTime: BigInt(new Date(formData.startTime ?? '').getTime() / 1000),
+      deadline: BigInt(new Date(formData.endTime ?? '').getTime() / 1000),
       goalAmount: parseEther(formData.fundingGoal || '0'),
     }
 
     // using array instead of object to maintain order
-    const campaignData1 = [
-      BigInt(new Date(formData.startTime).getTime() / 1000),
-      BigInt(new Date(formData.endTime).getTime() / 1000),
-      parseEther(formData.fundingGoal || '0')
-    ]
+    // const campaignDataArray = [
+    //   BigInt(new Date(formData.startTime ?? '').getTime() / 1000),
+    //   BigInt(new Date(formData.endTime ?? '').getTime() / 1000),
+    //   parseEther(formData.fundingGoal || '0')
+    // ]
 
     try {
       const result = await writeContract({
