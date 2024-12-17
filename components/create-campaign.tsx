@@ -42,7 +42,7 @@ export function CreateCampaign() {
       args: [
         address,
         ('0x' + '1'.repeat(64)),
-        [('0x' + '2'.repeat(64))],
+        [(process.env.NEXT_PUBLIC_PLATFORM_HASH) as `0x${string}`],
         [('0x' + '3'.repeat(64))],
         [('0x' + '4'.repeat(64))],
         {
@@ -63,7 +63,7 @@ export function CreateCampaign() {
         args: [
           address as `0x${string}`,
           ('0x' + '1'.repeat(64)) as `0x${string}`,
-          [('0x' + '2'.repeat(64)) as `0x${string}`],
+          [(process.env.NEXT_PUBLIC_PLATFORM_HASH) as `0x${string}`],
           [('0x' + '3'.repeat(64)) as `0x${string}`],
           [('0x' + '4'.repeat(64)) as `0x${string}`],
           {
