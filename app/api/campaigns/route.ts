@@ -1,41 +1,44 @@
-//import { createPublicClient, http } from 'viem'
-//import { celoAlfajores, celo } from 'viem/chains'
-import { ethers } from 'ethers';
+import { createPublicClient, http, getContract } from 'viem';
+import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 
-const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+const CAMPAIGN_INFO_FACTORY = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
 export async function GET() {
   try {
-    if (!FACTORY_ADDRESS) {
-      throw new Error('Campaign factory address not configured')
+    if (!CAMPAIGN_INFO_FACTORY || !RPC_URL) {
+      throw new Error('Campaign factory address or RPC URL not configured');
     }
 
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-    const factory = new ethers.Contract(
-      FACTORY_ADDRESS!,
-      CampaignInfoFactoryABI,
-      provider
-    );
+    const client = createPublicClient({
+      chain: celoAlfajores,
+      transport: http(RPC_URL)
+    });
 
     // Get campaign created events
-    const filter = factory.filters.CampaignInfoFactoryCampaignCreated();
-    const events = await factory.queryFilter(filter);
+    const events = await client.getLogs({
+      address: CAMPAIGN_INFO_FACTORY as `0x${string}`,
+      event: {
+        type: 'event',
+        name: 'CampaignInfoFactoryCampaignCreated',
+        inputs: [
+          { type: 'bytes32', name: 'identifierHash', indexed: true },
+          { type: 'address', name: 'campaignInfoAddress', indexed: true }
+        ]
+      },
+      fromBlock: 0n,
+      toBlock: 'latest'
+    });
 
     // Fetch details for each campaign
     const campaigns = await Promise.all(
       events.map(async (event) => {
-        const campaignAddress = event.args?.info;
-        const campaign = new ethers.Contract(
-          campaignAddress,
-          CampaignInfoABI,
-          provider
-        );
-
-        // Get campaign details
+        const campaignAddress = event.args.campaignInfoAddress;
+        
+        // Get campaign details using contract reads
         const [
           owner,
           launchTime,
@@ -43,11 +46,31 @@ export async function GET() {
           goalAmount,
           totalRaised,
         ] = await Promise.all([
-          campaign.owner(),
-          campaign.getLaunchTime(),
-          campaign.getDeadline(),
-          campaign.getGoalAmount(),
-          campaign.getTotalRaisedAmount(),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI,
+            functionName: 'owner'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI,
+            functionName: 'getLaunchTime'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI,
+            functionName: 'getDeadline'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI,
+            functionName: 'getGoalAmount'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI,
+            functionName: 'getTotalRaisedAmount'
+          })
         ]);
 
         return {
@@ -55,8 +78,8 @@ export async function GET() {
           owner,
           launchTime: launchTime.toString(),
           deadline: deadline.toString(),
-          goalAmount: ethers.utils.formatEther(goalAmount),
-          totalRaised: ethers.utils.formatEther(totalRaised),
+          goalAmount: (Number(goalAmount) / 1e18).toString(),
+          totalRaised: (Number(totalRaised) / 1e18).toString(),
         };
       })
     );
