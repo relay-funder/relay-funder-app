@@ -54,8 +54,11 @@ export default function DashboardPage() {
                         )
                         .map(async (campaign: Campaign) => {
                             // Check approval status from smart contract - pending
-                            const approvalStatus = await fetch(`/api/campaigns/${campaign.address}/approval`)
-                            const { isApproved } = await approvalStatus.json()
+                            const approvalStatusResponse = await fetch(`/api/campaigns/${campaign.address}/approval`)
+                            console.log(approvalStatusResponse)
+                            // const approvalStatus = await approvalStatusResponse.json()
+                            // const isApproved = approvalStatusResponse?.ok ? approvalStatus?.isApproved : false
+                            const isApproved = false
                             return { ...campaign, isApproved }
                         })
                 )
