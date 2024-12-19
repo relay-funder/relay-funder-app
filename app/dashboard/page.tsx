@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
 
 interface Campaign {
     address: string
@@ -19,6 +20,7 @@ interface Campaign {
     deadline: string
     goalAmount: string
     totalRaised: string
+    isApproved?: boolean
 }
 
 export default function DashboardPage() {
@@ -44,9 +46,18 @@ export default function DashboardPage() {
                     throw new Error(data.error || 'Failed to fetch campaigns')
                 }
 
-                // Filter campaigns owned by the current user
-                const userCampaigns = data.campaigns.filter(
-                    (campaign: Campaign) => campaign.owner.toLowerCase() === address.toLowerCase()
+                // Filter campaigns owned by the current user and add approval status
+                const userCampaigns = await Promise.all(
+                    data.campaigns
+                        .filter((campaign: Campaign) =>
+                            campaign.owner.toLowerCase() === address.toLowerCase()
+                        )
+                        .map(async (campaign: Campaign) => {
+                            // Check approval status from smart contract - pending
+                            const approvalStatus = await fetch(`/api/campaigns/${campaign.address}/approval`)
+                            const { isApproved } = await approvalStatus.json()
+                            return { ...campaign, isApproved }
+                        })
                 )
                 setCampaigns(userCampaigns)
             } catch (err) {
@@ -63,6 +74,8 @@ export default function DashboardPage() {
     }
 
     const getCampaignStatus = (campaign: Campaign) => {
+        if (!campaign.isApproved) return 'Pending'
+
         const now = Math.floor(Date.now() / 1000)
         const launchTime = parseInt(campaign.launchTime)
         const deadline = parseInt(campaign.deadline)
@@ -70,6 +83,24 @@ export default function DashboardPage() {
         if (now < launchTime) return 'Upcoming'
         if (now > deadline) return 'Ended'
         return 'Active'
+    }
+
+    const calculateStats = (campaigns: Campaign[]) => {
+        return {
+            totalCampaigns: campaigns.length,
+            totalRaised: campaigns.reduce((sum, campaign) => sum + Number(campaign.totalRaised), 0),
+            activeCampaigns: campaigns.filter(campaign => {
+                const now = Math.floor(Date.now() / 1000)
+                const launchTime = parseInt(campaign.launchTime)
+                const deadline = parseInt(campaign.deadline)
+                return now >= launchTime && now <= deadline
+            }).length,
+            averageProgress: campaigns.length > 0
+                ? campaigns.reduce((sum, campaign) =>
+                    sum + (Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100, 0
+                ) / campaigns.length
+                : 0
+        }
     }
 
     if (!address) {
@@ -98,7 +129,59 @@ export default function DashboardPage() {
                 isOpen ? "ml-[240px]" : "ml-[70px]"
             )}>
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-8">My Campaigns</h1>
+                    <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+
+                    {!loading && !error && (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                                        <Users className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
+                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalCampaigns}</h3>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                                        <Coins className="h-6 w-6 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Total Raised</p>
+                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} ETH</h3>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
+                                        <Calendar className="h-6 w-6 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
+                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).activeCampaigns}</h3>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mr-4">
+                                        <TrendingUp className="h-6 w-6 text-yellow-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Average Progress</p>
+                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).averageProgress.toFixed(1)}%</h3>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     {loading ? (
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -140,19 +223,24 @@ export default function DashboardPage() {
                                             height={400}
                                             className="h-[200px] w-full object-cover"
                                         />
-                                        <div className={cn(
-                                            "absolute top-4 right-4 px-3 py-1 rounded-full text-sm",
-                                            {
-                                                'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
-                                                'bg-yellow-100 text-yellow-600': getCampaignStatus(campaign) === 'Upcoming',
-                                                'bg-gray-100 text-gray-600': getCampaignStatus(campaign) === 'Ended'
-                                            }
-                                        )}>
-                                            {getCampaignStatus(campaign)}
-                                        </div>
                                     </CardHeader>
                                     <CardContent className="p-6">
-                                        <h2 className="text-xl font-bold mb-4">Campaign</h2>
+                                        <div className="flex justify-between items-center">
+
+                                            <h2 className="text-xl font-bold mb-4">Campaign</h2>
+                                            <div className={cn(
+                                                "top-4 right-4 px-3 py-1 rounded-full text-sm inline-block",
+                                                {
+                                                    'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
+                                                    'bg-yellow-100 text-yellow-600': getCampaignStatus(campaign) === 'Upcoming',
+                                                    'bg-gray-100 text-gray-600': getCampaignStatus(campaign) === 'Ended',
+                                                    'bg-orange-100 text-orange-600': getCampaignStatus(campaign) === 'Pending'
+                                                }
+                                            )}>
+                                                {getCampaignStatus(campaign)}
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-2">
                                             <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>
                                             <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>
