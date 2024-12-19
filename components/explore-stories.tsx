@@ -115,8 +115,8 @@ export function ExploreStories() {
   ]
 
   const collections = [
-    { id: 1, name: "Curation Lorem", initial: "C" },
-    { id: 2, name: "Ipsum Curation", initial: "I" },
+    { id: 1, name: "Collection 1", initial: "1" },
+    { id: 2, name: "Collection 2", initial: "2" },
   ]
 
   const { login, authenticated } = usePrivy();
