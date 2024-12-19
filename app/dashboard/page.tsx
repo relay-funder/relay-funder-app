@@ -29,35 +29,34 @@ export default function DashboardPage() {
     const { isOpen } = useSidebar()
 
     useEffect(() => {
-        fetchUserCampaigns()
-    }, [address])
-
-    const fetchUserCampaigns = async () => {
-        if (!address) {
-            setError('Please connect your wallet to view your campaigns')
-            setLoading(false)
-            return
-        }
-
-        try {
-            const response = await fetch('/api/campaigns')
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to fetch campaigns')
+        const fetchUserCampaigns = async () => {
+            if (!address) {
+                setError('Please connect your wallet to view your campaigns')
+                setLoading(false)
+                return
             }
 
-            // Filter campaigns owned by the current user
-            const userCampaigns = data.campaigns.filter(
-                (campaign: Campaign) => campaign.owner.toLowerCase() === address.toLowerCase()
-            )
-            setCampaigns(userCampaigns)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
-        } finally {
-            setLoading(false)
+            try {
+                const response = await fetch('/api/campaigns')
+                const data = await response.json()
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch campaigns')
+                }
+
+                // Filter campaigns owned by the current user
+                const userCampaigns = data.campaigns.filter(
+                    (campaign: Campaign) => campaign.owner.toLowerCase() === address.toLowerCase()
+                )
+                setCampaigns(userCampaigns)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An error occurred')
+            } finally {
+                setLoading(false)
+            }
         }
-    }
+        fetchUserCampaigns()
+    }, [address])
 
     const formatDate = (timestamp: string) => {
         return new Date(parseInt(timestamp) * 1000).toLocaleDateString()
@@ -124,7 +123,7 @@ export default function DashboardPage() {
                         </Alert>
                     ) : campaigns.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-gray-500">You haven't created any campaigns yet.</p>
+                            <p className="text-gray-500">You haven&apos;t created any campaigns yet.</p>
                             <Button className="mt-4" onClick={() => window.location.href = '/'}>
                                 Create Your First Campaign
                             </Button>
