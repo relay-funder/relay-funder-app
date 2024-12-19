@@ -2,8 +2,8 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
-// import { usePrivy } from '@privy-io/react-auth'
-import { Grid, Home, Settings, Star } from 'lucide-react'
+import { usePrivy } from '@privy-io/react-auth'
+import { Grid, Home, LogOut, Settings, Star } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
@@ -18,7 +18,11 @@ interface NavItem {
 export const SideBar = () => {
     const { isOpen, setIsOpen } = useSidebar()
     const pathname = usePathname()
-
+    const { user, logout } = usePrivy()
+    console.log("user", user)
+    const shortenAddress = (address: string) => {
+        return `${address.slice(0, 6)}...${address.slice(-4)}`
+    }
     const navItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
         { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
@@ -51,10 +55,13 @@ export const SideBar = () => {
                             href={item.href}
                             className={cn(
                                 "flex items-center justify-center rounded-lg px-1 py-4 text-gray-800 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                                pathname === item.href && "bg-green-200 text-gray-900"
+                                isOpen ? "px-4" : "justify-start px-[9px]",
+                                pathname === item.href && "bg-green-200 text-gray-900 flex-grow"
                             )}
                         >
-                            {item.icon}
+                            <div className="flex items-center justify-center">
+                                {item.icon}
+                            </div>
                             <span
                                 className={cn(
                                     "ml-3 overflow-hidden transition-all duration-300 ease-in-out",
@@ -71,7 +78,7 @@ export const SideBar = () => {
                         href="/settings"
                         className={cn(
                             "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                            pathname === "/settings" && "bg-green-200 text-gray-900"
+                            pathname === "/settings" && "bg-green-200 text-gray-900 flex-grow"
                         )}
                     >
                         <Settings className="h-6 w-6" />
@@ -92,8 +99,10 @@ export const SideBar = () => {
                                 isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
                             )}
                         >
-                            User Name
+                            {user?.wallet?.address ? shortenAddress(user.wallet.address) : 'User'}
                         </span>
+                        {/* create logout react icon */}
+                        <LogOut className="h-6 w-6" onClick={() => logout()} />
                     </div>
                 </div>
             </aside>
