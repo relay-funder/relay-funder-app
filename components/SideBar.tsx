@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Grid, Home, Settings, Star } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/contexts/SidebarContext'
 
 interface NavItem {
@@ -16,6 +17,7 @@ interface NavItem {
 
 export const SideBar = () => {
     const { isOpen, setIsOpen } = useSidebar()
+    const pathname = usePathname()
 
     const navItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
@@ -25,14 +27,11 @@ export const SideBar = () => {
 
     return (
         <div>
-            {/* Side Navigation */}
-            < aside
-                className={
-                    cn(
-                        "fixed left-0 top-0 z-40 flex h-full flex-col border-r bg-white transition-all duration-300 ease-in-out",
-                        isOpen ? "w-[240px]" : "w-[70px]"
-                    )
-                }
+            <aside
+                className={cn(
+                    "fixed left-0 top-0 z-40 flex h-full flex-col border-r bg-white transition-all duration-300 ease-in-out",
+                    isOpen ? "w-[240px]" : "w-[70px]"
+                )}
                 onMouseEnter={() => setIsOpen(true)}
                 onMouseLeave={() => setIsOpen(false)}
             >
@@ -52,13 +51,13 @@ export const SideBar = () => {
                             href={item.href}
                             className={cn(
                                 "flex items-center justify-center rounded-lg px-1 py-4 text-gray-800 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                                item.href === "/" && " bg-green-200 text-gray-900"
+                                pathname === item.href && "bg-green-200 text-gray-900"
                             )}
                         >
                             {item.icon}
                             <span
                                 className={cn(
-                                    "overflow-hidden transition-all duration-300 ease-in-out",
+                                    "ml-3 overflow-hidden transition-all duration-300 ease-in-out",
                                     isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
                                 )}
                             >
@@ -70,7 +69,10 @@ export const SideBar = () => {
                 <div className="border-t p-2">
                     <Link
                         href="/settings"
-                        className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                        className={cn(
+                            "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
+                            pathname === "/settings" && "bg-green-200 text-gray-900"
+                        )}
                     >
                         <Settings className="h-6 w-6" />
                         <span
@@ -82,7 +84,7 @@ export const SideBar = () => {
                             Settings
                         </span>
                     </Link>
-                    <div className="flex items-center justify-center  gap-3 rounded-lg px-3 py-2">
+                    <div className="flex items-center justify-center gap-3 rounded-lg px-3 py-2">
                         <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
                         <span
                             className={cn(
@@ -94,9 +96,7 @@ export const SideBar = () => {
                         </span>
                     </div>
                 </div>
-            </aside >
+            </aside>
         </div>
-
-
     )
 }
