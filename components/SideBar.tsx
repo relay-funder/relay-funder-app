@@ -78,7 +78,7 @@ export const SideBar = () => {
                         href="/settings"
                         className={cn(
                             "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                            pathname === "/settings" && "bg-green-200 text-gray-900 flex-grow"
+                            pathname === "/settings" && "bg-green-200 text-gray-900"
                         )}
                     >
                         <Settings className="h-6 w-6" />
@@ -101,8 +101,9 @@ export const SideBar = () => {
                         >
                             {user?.wallet?.address ? shortenAddress(user.wallet.address) : 'User'}
                         </span>
-                        {/* create logout react icon */}
-                        <LogOut className="h-6 w-6" onClick={() => logout()} />
+                        {user && (
+                            <LogOut className="h-6 w-6" onClick={() => logout()} />
+                        )}
                     </div>
                 </div>
             </aside>
