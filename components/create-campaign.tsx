@@ -10,6 +10,7 @@ import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { keccak256, stringToHex } from 'viem'
 import { useToast } from "@/hooks/use-toast"
+import { Log } from 'viem'
 
 
 export function CreateCampaign() {
@@ -62,8 +63,10 @@ export function CreateCampaign() {
 
             // Then find the event and update campaign address
             const event = receipt.logs.find(
-              (log: any) => log.transactionHash === hash
+              (log: Log) => log.transactionHash === hash
             );
+
+            console.log('Event:', event)
 
             // depends on campaign got approved
             // if (event) {
@@ -131,7 +134,7 @@ export function CreateCampaign() {
       toast({
         title: "Transaction Confirmed",
         description: "Your transaction has been confirmed on the blockchain.",
-        variant: "success",
+        variant: "default",
       })
     }
   }, [isPending, isConfirming, isSuccess, toast])
