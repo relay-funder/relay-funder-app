@@ -32,28 +32,61 @@ export function CreateCampaign() {
   useEffect(() => {
     const updateCampaign = async () => {
       if (hash && isSuccess && campaignId && receipt) {
-        console.log('Processing hash:', hash)
         try {
           console.log('Receipt:', receipt)
           
-          // Find the CampaignInfoFactoryCampaignCreated event
-          const response = await fetch(`/api/campaigns/${campaignId}`, {
+          if (receipt.status === 'success') {
+            // First update the campaign status to pending_approval
+            const response = await fetch(`/api/campaigns/${campaignId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                status: 'pending_approval',
+                transactionHash: hash,
+              }),
+            })
+
+            if (!response.ok) {
+              throw new Error('Failed to update campaign status')
+            }
+
+            // Then find the event and update campaign address
+            const event = receipt.logs.find(
+              (log: any) => log.transactionHash === hash
+            );
+
+            // if (event) {
+            //   const campaignAddress = event.args.campaignInfoAddress;
+              
+            //   // Update with campaign address
+            //   await fetch(`/api/campaigns/${campaignId}`, {
+            //     method: 'PATCH',
+            //     headers: {
+            //       'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({
+            //       campaignAddress,
+            //     }),
+            //   });
+            // }
+          }
+        } catch (error) {
+          console.error('Error processing transaction:', error)
+          setDbError('Transaction failed. Campaign remains in draft state.')
+          
+          // Update campaign status to failed
+          await fetch(`/api/campaigns/${campaignId}`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              status: 'active',
+              status: 'failed',
               transactionHash: hash,
             }),
-          })
-
-          if (!response.ok) {
-            throw new Error('Failed to update campaign status')
-          }
-        } catch (error) {
-          console.error('Error processing transaction:', error)
-          setDbError('Failed to process transaction. Please try again.')
+          });
         }
       }
     }
@@ -75,7 +108,7 @@ export function CreateCampaign() {
     }
 
     try {
-      // First, save to database with pending status
+      // First, save to database with draft status
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {
@@ -88,13 +121,15 @@ export function CreateCampaign() {
           startTime: formData.startTime,
           endTime: formData.endTime,
           creatorAddress: address,
-          status: 'pending',
+          status: 'draft',
         }),
       })
 
       if (!response.ok) {
         throw new Error('Failed to save campaign')
       }
+
+      console.log('Campaign saved to database', response)
 
       const { campaignId: newCampaignId } = await response.json()
       setCampaignId(newCampaignId)
@@ -124,7 +159,7 @@ export function CreateCampaign() {
 
     } catch (error) {
       console.error('Error:', error)
-      setDbError('Failed to create campaign. Please try again.')
+      setDbError('Failed to create campaign. Your campaign has been saved as draft.')
     }
   }
 
