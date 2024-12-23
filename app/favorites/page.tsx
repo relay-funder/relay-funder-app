@@ -37,7 +37,7 @@ export default function FavoritesPage() {
             donations: 80,
             fundingGoal: 100,
             donationCount: 96,
-            collectionName: "Curation Lorem"
+            collectionName: "Collection 1"
         },
     ])
 
