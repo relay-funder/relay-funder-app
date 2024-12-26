@@ -29,15 +29,23 @@ import { CardFooter } from "@/components/ui/card";
 
 
 interface Campaign {
+  id: number;
+  title: string;
+  description: string;
+  fundingGoal: string;
+  startTime: Date;
+  endTime: Date;
+  creatorAddress: string;
+  status: string;
+  transactionHash: string | null;
+  campaignAddress: string;
   address: string;
   owner: string;
   launchTime: string;
   deadline: string;
   goalAmount: string;
   totalRaised: string;
-  title: string;
-  description: string;
-  location: string;
+  location?: string;
   imageUrl?: string;
 }
 
@@ -55,8 +63,12 @@ export default function CampaignList() {
       const response = await fetch('/api/campaigns');
       const data = await response.json();
 
+      console.log("response", response);
+      console.log("data", data);
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch campaigns');
+        console.log("response error", error);
       }
 
       setCampaigns(data.campaigns);
@@ -123,7 +135,7 @@ export default function CampaignList() {
                 height={24}
                 className="rounded-full"
               />
-              <span className="font-medium">{`${campaign.owner.slice(0, 10)}...` || 'Campaign Author'}</span>
+              {/* <span className="font-medium">{`${campaign.owner.slice(0, 10)}...` || 'Campaign Author'}</span> */}
               <span className="text-gray-500">•</span>
               <span className="text-gray-500">{campaign.location || 'Earth'}</span>
             </div>

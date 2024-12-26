@@ -1,4 +1,4 @@
-import { createPublicClient, http, Abi} from 'viem';
+import { createPublicClient, http, Abi } from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
@@ -98,6 +98,29 @@ export async function GET() {
       transport: http(RPC_URL)
     });
 
+    // First, fetch all campaigns from the database
+    const dbCampaigns = await prisma.campaign.findMany({
+      where: {
+        status: {
+          in: ['active', 'pending_approval'] // Only fetch active and pending campaigns
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        fundingGoal: true,
+        startTime: true,
+        endTime: true,
+        creatorAddress: true,
+        status: true,
+        transactionHash: true,
+        campaignAddress: true,
+      }
+    });
+
+    console.log("dbCampaigns", dbCampaigns);
+
     // Get campaign created events
     const events = await client.getLogs({
       address: FACTORY_ADDRESS as `0x${string}`,
@@ -113,91 +136,83 @@ export async function GET() {
       toBlock: 'latest'
     });
 
-    // Fetch details for each campaign
-    const onChainCampaigns = await Promise.all(
-      events.map(async (event) => {
-        const campaignAddress = event.args.campaignInfoAddress as `0x${string}`;
+    console.log("events", events);
 
-        // Ensure campaignAddress is defined
-        if (!campaignAddress) {
-          throw new Error('Campaign address is undefined');
-        }
-        console.log('Campaign address:', campaignAddress);
-        // Get campaign details using contract reads
-        const [
-          owner,
-          launchTime,
-          deadline,
-          goalAmount,
-          totalRaised,
-        ] = await Promise.all([
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'owner'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getLaunchTime'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getDeadline'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getGoalAmount'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getTotalRaisedAmount'
-          })
-        ]);
-
+    // Combine data from events and database
+    const combinedCampaigns = dbCampaigns.map(dbCampaign => {
+      const event = events.find(e => e.transactionHash.toLowerCase() === dbCampaign.transactionHash?.toLowerCase());
+      if (event) {
         return {
-          address: campaignAddress,
-          owner,
-          launchTime: String(launchTime),
-          deadline: String(deadline),
-          goalAmount: (Number(goalAmount) / 1e18).toString(),
-          totalRaised: (Number(totalRaised) / 1e18).toString(),
+          ...dbCampaign,
+          owner: event.args.owner,
+          launchTime: String(event.args.launchTime),
+          deadline: String(event.args.deadline),
+          goalAmount: (Number(event.args.goalAmount) / 1e18).toString(),
         };
-      })
-    );
-
-    // Fetch all campaigns from the database
-    const dbCampaigns = await prisma.campaign.findMany();
-
-    // Combine the data based on matching creator address and owner
-    const combinedCampaigns: CombinedCampaignData[] = onChainCampaigns.map(onChainCampaign => {
-      const dbCampaign = dbCampaigns.find(
-        db => db.campaignAddress?.toLowerCase() === onChainCampaign.address.toLowerCase()
-      );
-
-      if (!dbCampaign) {
-        return {
-          ...onChainCampaign,
-          id: 0,
-          title: '',
-          description: '',
-          fundingGoal: onChainCampaign.goalAmount,
-          startTime: new Date(Number(onChainCampaign.launchTime) * 1000),
-          endTime: new Date(Number(onChainCampaign.deadline) * 1000),
-          creatorAddress: onChainCampaign.owner as string,
-          status: 'UNKNOWN',
-          transactionHash: null
-        } as CombinedCampaignData;
       }
-
-      return {
-        ...onChainCampaign,
-        ...dbCampaign,
-      } as CombinedCampaignData;
+      return dbCampaign; // Return the dbCampaign if no event is found
     });
+
+
+    // Get campaign details from blockchain
+    // const approvedCampaigns = await Promise.all(
+    //   dbCampaigns
+    //     .filter(campaign => campaign.transactionHash) // Only process campaigns with txn hash
+    //     .map(async (campaign) => {
+    //       console.log("campaign before campaignAddress", campaign);
+    //       const campaignAddress = campaign.campaignAddress as `0x${string}`;
+    //       console.log("campaignAddress", campaignAddress);
+    //       try {
+    //         const [
+    //           owner,
+    //           launchTime,
+    //           deadline,
+    //           goalAmount,
+    //           totalRaised,
+    //         ] = await Promise.all([
+    //           client.readContract({
+    //             address: campaignAddress,
+    //             abi: CampaignInfoABI as Abi,
+    //             functionName: 'owner'
+    //           }),
+    //           client.readContract({
+    //             address: campaignAddress,
+    //             abi: CampaignInfoABI as Abi,
+    //             functionName: 'getLaunchTime'
+    //           }),
+    //           client.readContract({
+    //             address: campaignAddress,
+    //             abi: CampaignInfoABI as Abi,
+    //             functionName: 'getDeadline'
+    //           }),
+    //           client.readContract({
+    //             address: campaignAddress,
+    //             abi: CampaignInfoABI as Abi,
+    //             functionName: 'getGoalAmount'
+    //           }),
+    //           client.readContract({
+    //             address: campaignAddress,
+    //             abi: CampaignInfoABI as Abi,
+    //             functionName: 'getTotalRaisedAmount'
+    //           })
+    //         ]);
+
+    //         return {
+    //           ...campaign,
+    //           address: campaignAddress,
+    //           owner: owner as string,
+    //           launchTime: String(launchTime),
+    //           deadline: String(deadline),
+    //           goalAmount: (Number(goalAmount) / 1e18).toString(),
+    //           totalRaised: (Number(totalRaised) / 1e18).toString(),
+    //         };
+    //       } catch (error) {
+    //         console.error(`Error fetching data for campaign ${campaignAddress}:`, error);
+    //         return null;
+    //       }
+    //     })
+    // );
+    // const validCampaigns = onChainCampaigns.filter(campaign => campaign !== null);
 
     return NextResponse.json({ campaigns: combinedCampaigns });
   } catch (error) {

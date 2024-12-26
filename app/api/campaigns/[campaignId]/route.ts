@@ -1,31 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { campaignId: string } }
+  req: NextRequest
 ) {
   try {
-    const body = await request.json()
-    const { status, transactionHash, campaignAddress } = body
+    const campaignId = req.nextUrl.searchParams.get('campaignId');
+    const body = await req.json();
+    const { status, transactionHash, campaignAddress } = body;
+
+    if (!campaignId) {
+      return new NextResponse(JSON.stringify({ error: 'Campaign ID is required' }), { status: 400 });
+    }
 
     const campaign = await prisma.campaign.update({
       where: {
-        id: parseInt(params.campaignId)
+        id: parseInt(campaignId, 10)
       },
       data: {
         status,
         transactionHash,
         campaignAddress
       },
-    })
+    });
 
-    return NextResponse.json(campaign)
+    return new NextResponse(JSON.stringify(campaign), { status: 200 });
   } catch (error) {
-    console.error('Failed to update campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to update campaign' },
-      { status: 500 }
-    )
+    console.error('Failed to update campaign:', error);
+    return new NextResponse(JSON.stringify({ error: 'Failed to update campaign' }), { status: 500 });
   }
 } 
