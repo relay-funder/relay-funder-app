@@ -2,28 +2,9 @@ import { createPublicClient, http } from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 // import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
-
 import { prisma } from '@/lib/prisma';
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
-
-// type CombinedCampaignData = {
-//   id: number;
-//   title: string;
-//   description: string;
-//   fundingGoal: string;
-//   startTime: Date;
-//   endTime: Date;
-//   creatorAddress: string;
-//   status: string;
-//   transactionHash: string | null;
-//   address: string;
-//   owner: string;
-//   launchTime: string;
-//   deadline: string;
-//   goalAmount: string;
-//   totalRaised: string;
-// };
 
 export async function POST(request: Request) {
   try {
@@ -100,11 +81,11 @@ export async function GET() {
       transport: http(RPC_URL)
     });
 
-    // First, fetch all campaigns from the database
+    // First, fetch active and pending campaigns from the database
     const dbCampaigns = await prisma.campaign.findMany({
       where: {
         status: {
-          in: ['active', 'pending_approval'] // Only fetch active and pending campaigns
+          in: ['active', 'pending_approval']
         }
       },
       select: {
@@ -137,86 +118,32 @@ export async function GET() {
     });
 
     // Combine data from events and database
-    const combinedCampaigns = dbCampaigns.map(dbCampaign => {
-      // First check if the campaign has a transaction hash
-      if (!dbCampaign.transactionHash) return dbCampaign;
+    const combinedCampaigns = dbCampaigns
+      .filter(campaign => campaign.transactionHash) // Only include campaigns with transaction hash and address
+      .map(dbCampaign => {
+        const event = events.find(e => 
+          e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
+        );
 
-      const event = events.find(e => 
-        e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
-      );
+        if (!event || !event.args) {
+          console.error('No matching event found for campaign:', dbCampaign.id);
+          return null;
+        }
 
-      if (event && event.args) {
         return {
-          ...dbCampaign,
-          owner: event.args.owner,
-          launchTime: String(event.args.launchTime),
-          deadline: String(event.args.deadline),
-          goalAmount: (Number(event.args.goalAmount) / 1e18).toString(),
+          id: dbCampaign.id,
+          title: dbCampaign.title,
+          description: dbCampaign.description,
+          status: dbCampaign.status,
+          address: dbCampaign.campaignAddress,
+          owner: dbCampaign.creatorAddress,
+          launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
+          deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
+          goalAmount: dbCampaign.fundingGoal,
+          totalRaised: '0' // This will be implemented later with contract calls
         };
-      }
-      console.log("dbCampaign", dbCampaign);
-      return dbCampaign; // Return the dbCampaign if no event is found
-    });
-
-    // Get campaign details from blockchain
-    // const approvedCampaigns = await Promise.all(
-    //   dbCampaigns
-    //     .filter(campaign => campaign.transactionHash) // Only process campaigns with txn hash
-    //     .map(async (campaign) => {
-    //       console.log("campaign before campaignAddress", campaign);
-    //       const campaignAddress = campaign.campaignAddress as `0x${string}`;
-    //       console.log("campaignAddress", campaignAddress);
-    //       try {
-    //         const [
-    //           owner,
-    //           launchTime,
-    //           deadline,
-    //           goalAmount,
-    //           totalRaised,
-    //         ] = await Promise.all([
-    //           client.readContract({
-    //             address: campaignAddress,
-    //             abi: CampaignInfoABI as Abi,
-    //             functionName: 'owner'
-    //           }),
-    //           client.readContract({
-    //             address: campaignAddress,
-    //             abi: CampaignInfoABI as Abi,
-    //             functionName: 'getLaunchTime'
-    //           }),
-    //           client.readContract({
-    //             address: campaignAddress,
-    //             abi: CampaignInfoABI as Abi,
-    //             functionName: 'getDeadline'
-    //           }),
-    //           client.readContract({
-    //             address: campaignAddress,
-    //             abi: CampaignInfoABI as Abi,
-    //             functionName: 'getGoalAmount'
-    //           }),
-    //           client.readContract({
-    //             address: campaignAddress,
-    //             abi: CampaignInfoABI as Abi,
-    //             functionName: 'getTotalRaisedAmount'
-    //           })
-    //         ]);
-
-    //         return {
-    //           ...campaign,
-    //           address: campaignAddress,
-    //           owner: owner as string,
-    //           launchTime: String(launchTime),
-    //           deadline: String(deadline),
-    //           goalAmount: (Number(goalAmount) / 1e18).toString(),
-    //           totalRaised: (Number(totalRaised) / 1e18).toString(),
-    //         };
-    //       } catch (error) {
-    //         console.error(`Error fetching data for campaign ${campaignAddress}:`, error);
-    //         return null;
-    //       }
-    //     })
-    // );
-    // const validCampaigns = onChainCampaigns.filter(campaign => campaign !== null);
+      })
+      .filter(Boolean); // Remove any null values
 
     console.log("combinedCampaigns", combinedCampaigns);
     return NextResponse.json({ campaigns: combinedCampaigns });
