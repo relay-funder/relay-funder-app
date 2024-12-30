@@ -62,8 +62,8 @@ export function CreateCampaign() {
             })
 
             if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Failed to update campaign status')
+              const errorData = await response.json(); 
+              throw new Error(errorData.error || errorData.error || 'Failed to update campaign status')
             }
 
             // Then find the event and update campaign address
@@ -76,7 +76,7 @@ export function CreateCampaign() {
             if (event) {
               // Get the campaign address from the event topics
               const campaignAddress = event.address;
-
+              
               if (campaignAddress) {
                 const addressResponse = await fetch('/api/campaigns/user', {
                   method: 'PATCH',

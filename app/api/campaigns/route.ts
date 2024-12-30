@@ -3,7 +3,6 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 // import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 import { prisma } from '@/lib/prisma';
-
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
@@ -36,7 +35,6 @@ type CombinedCampaignData = {
 //     { error: message },
 //     { status: 500 }
 //   );
-// };
 
 export async function POST(request: Request) {
   try {
@@ -112,11 +110,11 @@ export async function GET() {
       transport: http(RPC_URL)
     });
 
-    // First, fetch active and pending campaigns from the database
+    // First, fetch all campaigns from the database
     const dbCampaigns = await prisma.campaign.findMany({
       where: {
         status: {
-          in: ['active', 'pending_approval']
+          in: ['active', 'pending_approval'] // Only fetch active and pending campaigns
         }
       },
       select: {
