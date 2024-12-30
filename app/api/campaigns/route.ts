@@ -110,11 +110,11 @@ export async function GET() {
       transport: http(RPC_URL)
     });
 
-    // First, fetch all campaigns from the database
+    // First, fetch active and pending campaigns from the database
     const dbCampaigns = await prisma.campaign.findMany({
       where: {
         status: {
-          in: ['active', 'pending_approval'] // Only fetch active and pending campaigns
+          in: ['active', 'pending_approval']
         }
       },
       select: {
