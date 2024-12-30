@@ -44,19 +44,21 @@ export function CreateCampaign() {
             })
 
             // First update the campaign status to pending_approval
-            const response = await fetch(`/api/campaigns/${campaignId}`, {
+            const response = await fetch('/api/campaigns/user', {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
+                campaignId,
                 status: 'pending_approval',
                 transactionHash: hash,
               }),
             })
 
             if (!response.ok) {
-              throw new Error('Failed to update campaign status')
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to update campaign status')
             }
 
             // Then find the event and update campaign address
@@ -66,42 +68,51 @@ export function CreateCampaign() {
 
             console.log('Event:', event)
 
-            // depends on campaign got approved
-            // if (event) {
-            //   const campaignAddress = event.args.campaignInfoAddress;
+            if (event) {
+              // Get the campaign address from the event topics
+              const campaignAddress = event.address;
               
-            //   await fetch(`/api/campaigns/${campaignId}`, {
-            //     method: 'PATCH',
-            //     headers: {
-            //       'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify({
-            //       campaignAddress,
-            //     }),
-            //   });
+              if (campaignAddress) {
+                const addressResponse = await fetch('/api/campaigns/user', {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    campaignId,
+                    campaignAddress,
+                  }),
+                });
 
-            //   toast({
-            //     title: "Success!",
-            //     description: "Campaign created successfully and pending approval.",
-            //     variant: "success",
-            //   })
-            // }
+                if (!addressResponse.ok) {
+                  const errorData = await addressResponse.json();
+                  console.error('Failed to update campaign address:', errorData);
+                }
+              }
+
+              toast({
+                title: "Success!",
+                description: "Campaign created successfully and pending approval.",
+                variant: "default",
+              })
+            }
           }
         } catch (error) {
           console.error('Error processing transaction:', error)
           toast({
             variant: "destructive",
             title: "Transaction Failed",
-            description: "Campaign remains in draft state. Please try again.",
+            description: error instanceof Error ? error.message : "Campaign remains in draft state. Please try again.",
           })
           
           // Update campaign status to failed
-          await fetch(`/api/campaigns/${campaignId}`, {
+          await fetch('/api/campaigns/user', {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              campaignId,
               status: 'failed',
               transactionHash: hash,
             }),

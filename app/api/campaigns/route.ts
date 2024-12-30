@@ -1,10 +1,29 @@
 import { createPublicClient, http } from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+// import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 
+import { prisma } from '@/lib/prisma';
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
+
+// type CombinedCampaignData = {
+//   id: number;
+//   title: string;
+//   description: string;
+//   fundingGoal: string;
+//   startTime: Date;
+//   endTime: Date;
+//   creatorAddress: string;
+//   status: string;
+//   transactionHash: string | null;
+//   address: string;
+//   owner: string;
+//   launchTime: string;
+//   deadline: string;
+//   goalAmount: string;
+//   totalRaised: string;
+// };
 
 export async function POST(request: Request) {
   try {
@@ -40,6 +59,7 @@ export async function POST(request: Request) {
     )
   }
 }
+
 export async function PATCH(
   request: Request,
   { params }: { params: { campaignId: string } }
@@ -68,31 +88,23 @@ export async function PATCH(
     )
   }
 }
-export async function GET(request: Request) {
+
+export async function GET() {
   try {
     if (!FACTORY_ADDRESS || !RPC_URL) {
       throw new Error('Campaign factory address or RPC URL not configured');
     }
-
-    const { searchParams } = new URL(request.url);
-    const creatorAddress = searchParams.get('creatorAddress');
-    const view = searchParams.get('view'); // 'dashboard' or 'list'
 
     const client = createPublicClient({
       chain: celoAlfajores,
       transport: http(RPC_URL)
     });
 
-    // First, fetch campaigns from the database based on view type
+    // First, fetch all campaigns from the database
     const dbCampaigns = await prisma.campaign.findMany({
       where: {
-        ...(creatorAddress ? { creatorAddress } : {}),
-        // For campaign list view, only show active and pending_approval campaigns
-        // For dashboard view, show all statuses
-        status: view !== 'dashboard' ? {
-          in: ['active', 'pending_approval']
-        } : {
-          in: ['draft', 'pending_approval', 'active', 'failed', 'completed']
+        status: {
+          in: ['active', 'pending_approval'] // Only fetch active and pending campaigns
         }
       },
       select: {
@@ -117,11 +129,7 @@ export async function GET(request: Request) {
         name: 'CampaignInfoFactoryCampaignCreated',
         inputs: [
           { type: 'bytes32', name: 'identifierHash', indexed: true },
-          { type: 'address', name: 'campaignInfoAddress', indexed: true },
-          { type: 'address', name: 'owner' },
-          { type: 'uint256', name: 'launchTime' },
-          { type: 'uint256', name: 'deadline' },
-          { type: 'uint256', name: 'goalAmount' }
+          { type: 'address', name: 'campaignInfoAddress', indexed: true }
         ]
       },
       fromBlock: 0n,
@@ -131,18 +139,7 @@ export async function GET(request: Request) {
     // Combine data from events and database
     const combinedCampaigns = dbCampaigns.map(dbCampaign => {
       // First check if the campaign has a transaction hash
-      if (!dbCampaign.transactionHash) {
-        // For campaigns without transaction hash (draft, etc), use database values
-        return {
-          ...dbCampaign,
-          address: dbCampaign.campaignAddress || '',
-          owner: dbCampaign.creatorAddress,
-          launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
-          deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
-          goalAmount: dbCampaign.fundingGoal,
-          totalRaised: '0'
-        };
-      }
+      if (!dbCampaign.transactionHash) return dbCampaign;
 
       const event = events.find(e => 
         e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
@@ -151,27 +148,15 @@ export async function GET(request: Request) {
       if (event && event.args) {
         return {
           ...dbCampaign,
-          address: dbCampaign.campaignAddress || '',
-          owner: event.args.owner || dbCampaign.creatorAddress,
-          launchTime: String(event.args.launchTime || Math.floor(new Date(dbCampaign.startTime).getTime() / 1000)),
-          deadline: String(event.args.deadline || Math.floor(new Date(dbCampaign.endTime).getTime() / 1000)),
-          goalAmount: event.args.goalAmount ? (Number(event.args.goalAmount) / 1e18).toString() : dbCampaign.fundingGoal,
-          totalRaised: '0' // We'll implement this later when we have the contract
+          owner: event.args.owner,
+          launchTime: String(event.args.launchTime),
+          deadline: String(event.args.deadline),
+          goalAmount: (Number(event.args.goalAmount) / 1e18).toString(),
         };
       }
-
-      // Fallback to database values if event parsing fails
-      return {
-        ...dbCampaign,
-        address: dbCampaign.campaignAddress || '',
-        owner: dbCampaign.creatorAddress,
-        launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
-        deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
-        goalAmount: dbCampaign.fundingGoal,
-        totalRaised: '0'
-      };
+      console.log("dbCampaign", dbCampaign);
+      return dbCampaign; // Return the dbCampaign if no event is found
     });
-
 
     // Get campaign details from blockchain
     // const approvedCampaigns = await Promise.all(
@@ -233,9 +218,7 @@ export async function GET(request: Request) {
     // );
     // const validCampaigns = onChainCampaigns.filter(campaign => campaign !== null);
 
-    console.log('Final combined campaigns:', combinedCampaigns);
-
-
+    console.log("combinedCampaigns", combinedCampaigns);
     return NextResponse.json({ campaigns: combinedCampaigns });
   } catch (error) {
     console.error('Error fetching campaigns:', error);
