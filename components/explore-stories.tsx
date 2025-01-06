@@ -174,10 +174,10 @@ export function ExploreStories() {
             <>
               <div className="text-center">
                 <div className="mb-4 text-3xl font-bold">Explore Stories</div>
-                <div className="mx-auto mb-8 max-w-3xl text-gray-600">
+                <p className="mx-auto mb-8 max-w-3xl text-gray-600">
                   Explore personal memories shared by refugees—each story offers a glimpse into their resilience, hopes, and dreams.
                   By taking in these moments, you help preserve their voices and honor their journeys.
-                </div>
+                </p>
               </div>
 
               <div className="mb-8 flex flex-wrap justify-center gap-2">
@@ -225,7 +225,7 @@ export function ExploreStories() {
                           <span className="text-gray-900 text-sm">{story.location}</span>
                         </div>
                       </div>
-                      <div className="text-gray-600 text-[12px]">{story.excerpt}</div>
+                      <p className="text-gray-600 text-[12px]">{story.excerpt}</p>
                       <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">Read More</div>
 
                     </CardContent>
@@ -291,7 +291,7 @@ export function ExploreStories() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <div className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</div>
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
             <div className="space-y-2">
               {collections.map((collection) => (
                 <div
@@ -357,7 +357,7 @@ export function ExploreStories() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <div className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</div>
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
             <div className="space-y-2">
               {collections.map((collection) => (
                 <div
