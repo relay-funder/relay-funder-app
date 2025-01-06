@@ -2,8 +2,8 @@ import { createPublicClient, http, Abi} from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
-
 import { prisma } from '@/lib/prisma';
+
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
@@ -23,6 +23,19 @@ type CombinedCampaignData = {
   deadline: string;
   goalAmount: string;
   totalRaised: string;
+  images: {
+    id: number;
+    imageUrl: string;
+    isMainImage: boolean;
+  }[];
+};
+
+const handleApiError = (error: unknown, message: string) => {
+  console.error(`${message}:`, error);
+  return NextResponse.json(
+    { error: message },
+    { status: 500 }
+  );
 };
 
 export async function POST(request: Request) {
@@ -52,41 +65,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 })
   } catch (error) {
-    console.error('Failed to create campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to create campaign' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Failed to create campaign');
   }
 }
-export async function PATCH(
-  request: Request,
-  { params }: { params: { campaignId: string } }
-) {
-  try {
-    const body = await request.json()
-    const { status, transactionHash, campaignAddress } = body
 
-    const campaign = await prisma.campaign.update({
-      where: {
-        id: parseInt(params.campaignId)
-      },
-      data: {
-        status,
-        transactionHash,
-        campaignAddress
-      },
-    })
-
-    return NextResponse.json(campaign)
-  } catch (error) {
-    console.error('Failed to update campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to update campaign' },
-      { status: 500 }
-    )
-  }
-}
 export async function GET() {
   try {
     if (!FACTORY_ADDRESS || !RPC_URL) {
@@ -170,7 +152,11 @@ export async function GET() {
     );
 
     // Fetch all campaigns from the database
-    const dbCampaigns = await prisma.campaign.findMany();
+    const dbCampaigns = await prisma.campaign.findMany({
+      include: {
+        images: true
+      }
+    });
 
     // Combine the data based on matching creator address and owner
     const combinedCampaigns: CombinedCampaignData[] = onChainCampaigns.map(onChainCampaign => {
@@ -189,7 +175,8 @@ export async function GET() {
           endTime: new Date(Number(onChainCampaign.deadline) * 1000),
           creatorAddress: onChainCampaign.owner as string,
           status: 'UNKNOWN',
-          transactionHash: null
+          transactionHash: null,
+          images: []
         } as CombinedCampaignData;
       }
 
@@ -201,10 +188,6 @@ export async function GET() {
 
     return NextResponse.json({ campaigns: combinedCampaigns });
   } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error fetching campaigns');
   }
 }

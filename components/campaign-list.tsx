@@ -38,7 +38,11 @@ interface Campaign {
   title: string;
   description: string;
   location: string;
-  imageUrl?: string;
+  images: {
+    id: number;
+    imageUrl: string;
+    isMainImage: boolean;
+  }[];
 }
 
 export default function CampaignList() {
@@ -58,7 +62,7 @@ export default function CampaignList() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch campaigns');
       }
-
+      console.log("Campaigns", data.campaigns.map((campaign: Campaign) => campaign.address));
       setCampaigns(data.campaigns);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -106,7 +110,7 @@ export default function CampaignList() {
         <Card key={campaign.address} className="overflow-hidden hover:shadow-lg transition-shadow">
           <CardHeader className="p-0">
             <Image
-              src={campaign.imageUrl || '/images/placeholder.svg'}
+              src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
               alt={campaign.title || campaign.address}
               width={600}
               height={400}
