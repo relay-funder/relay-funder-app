@@ -123,11 +123,73 @@ export default function DashboardPage() {
                     "flex-1 p-8 transition-all duration-300 ease-in-out",
                     isOpen ? "ml-[240px]" : "ml-[70px]"
                 )}>
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>Please connect your wallet to view your campaigns</AlertDescription>
-                    </Alert>
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-3xl font-bold mb-8">Dashboard</div>
+                        
+                        {/* Stats Cards in Loading State */}
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <Users className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <div className="text-sm font-medium text-gray-600">Total Campaigns</div>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <Coins className="h-6 w-6 text-green-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <div className="text-sm font-medium text-gray-600">Total Raised</div>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <Calendar className="h-6 w-6 text-purple-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <div className="text-sm font-medium text-gray-600">Active Campaigns</div>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <TrendingUp className="h-6 w-6 text-yellow-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <div className="text-sm font-medium text-gray-600">Average Progress</div>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Beautiful Login Message */}
+                        <Card className="border-2 border-dashed border-gray-200 bg-white/50 backdrop-blur-sm">
+                            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
+                                    <Users className="h-8 w-8 text-blue-600" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Login to your account</h3>
+                                <div className="text-gray-500 mb-6 max-w-md">
+                                    Please connect your wallet to view your campaign dashboard and manage your fundraising activities.
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         )
@@ -151,7 +213,7 @@ export default function DashboardPage() {
                                         <Users className="h-6 w-6 text-blue-600" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
+                                        <div className="text-sm font-medium text-gray-600">Total Campaigns</div>
                                         <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalCampaigns}</h3>
                                     </div>
                                 </CardContent>
@@ -163,7 +225,7 @@ export default function DashboardPage() {
                                         <Coins className="h-6 w-6 text-green-600" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Raised</p>
+                                        <div className="text-sm font-medium text-gray-600">Total Raised</div>
                                         <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} ETH</h3>
                                     </div>
                                 </CardContent>
@@ -175,7 +237,7 @@ export default function DashboardPage() {
                                         <Calendar className="h-6 w-6 text-purple-600" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
+                                        <div className="text-sm font-medium text-gray-600">Active Campaigns</div>
                                         <h3 className="text-2xl font-bold">{calculateStats(campaigns).activeCampaigns}</h3>
                                     </div>
                                 </CardContent>
@@ -187,7 +249,7 @@ export default function DashboardPage() {
                                         <TrendingUp className="h-6 w-6 text-yellow-600" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-600">Average Progress</p>
+                                        <div className="text-sm font-medium text-gray-600">Average Progress</div>
                                         <h3 className="text-2xl font-bold">{calculateStats(campaigns).averageProgress.toFixed(1)}%</h3>
                                     </div>
                                 </CardContent>
@@ -218,7 +280,7 @@ export default function DashboardPage() {
                         </Alert>
                     ) : campaigns.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-gray-500">You haven&apos;t created any campaigns yet.</p>
+                            <div className="text-gray-500">You haven&apos;t created any campaigns yet.</div>
                             <Button className="mt-4" onClick={() => window.location.href = '/'}>
                                 Create Your First Campaign
                             </Button>
@@ -256,11 +318,11 @@ export default function DashboardPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <p><strong>Description:</strong> {campaign.description}</p>
-                                            {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
-                                            {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
-                                            <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
-                                            {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
+                                            <div><strong>Description:</strong> {campaign.description}</div>
+                                            {campaign.launchTime && <div><strong>Launch:</strong> {formatDate(campaign.launchTime)}</div>}
+                                            {campaign.deadline && <div><strong>Deadline:</strong> {formatDate(campaign.deadline)}</div>}
+                                            <div><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</div>
+                                            {campaign.totalRaised && <div><strong>Raised:</strong> {campaign.totalRaised} ETH</div>}
                                             {campaign.totalRaised && campaign.goalAmount && (
                                                 <div className="mt-4">
                                                     <div className="flex justify-between text-sm mb-2">
