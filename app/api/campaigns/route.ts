@@ -42,17 +42,15 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(
-  request: Request,
-  // @ts-expect-error - Nextjs App Router type mismatch
-  { params }: { params: { campaignId: string } }
+  request: Request
 ) {
   try {
     const body = await request.json()
-    const { status, transactionHash, campaignAddress } = body
+    const { status, transactionHash, campaignAddress, campaignId } = body
 
     const campaign = await prisma.campaign.update({
       where: {
-        id: parseInt(params.campaignId)
+        id: parseInt(campaignId)
       },
       data: {
         status,
