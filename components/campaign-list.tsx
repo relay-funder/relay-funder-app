@@ -64,11 +64,10 @@ export default function CampaignList() {
 
   const fetchCampaigns = async () => {
     try {
-      const response = await fetch('/api/campaigns');
+      const response = await fetch('/api/campaigns?view=list');
       const data = await response.json();
 
-      console.log("response", response);
-      console.log("data", data);
+      console.log("dataapi", data.campaigns[0]);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch campaigns');
