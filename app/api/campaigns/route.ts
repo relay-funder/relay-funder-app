@@ -43,6 +43,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(
   request: Request,
+  // @ts-expect-error - Nextjs App Router type mismatch
   { params }: { params: { campaignId: string } }
 ) {
   try {

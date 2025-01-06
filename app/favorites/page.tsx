@@ -90,7 +90,7 @@ export default function FavoritesPage() {
                                             <span className="text-gray-900 text-sm">{story.location}</span>
                                         </div>
                                     </div>
-                                    <p className="text-gray-600 text-[12px]">{story.excerpt}</p>
+                                    <div className="text-gray-600 text-[12px]">{story.excerpt}</div>
                                     <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
                                         Read More
                                     </div>
