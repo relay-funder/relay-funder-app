@@ -143,12 +143,12 @@ export default function CampaignList() {
               <span className="text-gray-500">{campaign.location || 'Earth'}</span>
             </div>
             <div className="space-y-2 py-5 ">
-              <div className="text-gray-600">{campaign.description || 'Campaign Description'}</div>
+              <p className="text-gray-600">{campaign.description || 'Campaign Description'}</p>
 
-              <div className="text-sm"><strong>Launch:</strong> {formatDate(campaign.launchTime)}</div>
-              <div className="text-sm"><strong>Deadline:</strong> {formatDate(campaign.deadline)}</div>
-              <div className="text-sm"><strong>Goal:</strong> {campaign.goalAmount} ETH</div>
-              <div className="text-sm"><strong>Raised:</strong> {campaign.totalRaised} ETH</div>
+              <p className="text-sm"><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>
+              <p className="text-sm"><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>
+              <p className="text-sm"><strong>Goal:</strong> {campaign.goalAmount} ETH</p>
+              <p className="text-sm"><strong>Raised:</strong> {campaign.totalRaised} ETH</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
