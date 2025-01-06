@@ -47,7 +47,6 @@ interface Category {
 
 export function ExploreStories() {
   const { logout } = usePrivy();
-  console.log("logout", logout)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [showCollectionModal, setShowCollectionModal] = useState(false)
   const [selectedStory, setSelectedStory] = useState<Story | null>(null)
