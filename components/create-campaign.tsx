@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
-import { useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { keccak256, stringToHex } from 'viem'
 
 export function CreateCampaign() {

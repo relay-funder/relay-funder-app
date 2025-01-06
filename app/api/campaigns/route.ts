@@ -2,8 +2,8 @@ import { createPublicClient, http, Abi} from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
-
 import { prisma } from '@/lib/prisma';
+
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
@@ -38,14 +38,6 @@ const handleApiError = (error: unknown, message: string) => {
   );
 };
 
-const readCampaignContract = async (client: any, address: `0x${string}`, functionName: string) => {
-  return client.readContract({
-    address,
-    abi: CampaignInfoABI as Abi,
-    functionName
-  });
-};
-
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -76,30 +68,7 @@ export async function POST(request: Request) {
     return handleApiError(error, 'Failed to create campaign');
   }
 }
-export async function PATCH(
-  request: Request,
-  { params }: { params: { campaignId: string } }
-) {
-  try {
-    const body = await request.json()
-    const { status, transactionHash, campaignAddress } = body
 
-    const campaign = await prisma.campaign.update({
-      where: {
-        id: parseInt(params.campaignId)
-      },
-      data: {
-        status,
-        transactionHash,
-        campaignAddress
-      },
-    })
-
-    return NextResponse.json(campaign)
-  } catch (error) {
-    return handleApiError(error, 'Failed to update campaign');
-  }
-}
 export async function GET() {
   try {
     if (!FACTORY_ADDRESS || !RPC_URL) {
@@ -144,11 +113,31 @@ export async function GET() {
           goalAmount,
           totalRaised,
         ] = await Promise.all([
-          readCampaignContract(client, campaignAddress, 'owner'),
-          readCampaignContract(client, campaignAddress, 'getLaunchTime'),
-          readCampaignContract(client, campaignAddress, 'getDeadline'),
-          readCampaignContract(client, campaignAddress, 'getGoalAmount'),
-          readCampaignContract(client, campaignAddress, 'getTotalRaisedAmount')
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI as Abi,
+            functionName: 'owner'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI as Abi,
+            functionName: 'getLaunchTime'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI as Abi,
+            functionName: 'getDeadline'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI as Abi,
+            functionName: 'getGoalAmount'
+          }),
+          client.readContract({
+            address: campaignAddress,
+            abi: CampaignInfoABI as Abi,
+            functionName: 'getTotalRaisedAmount'
+          })
         ]);
 
         return {
