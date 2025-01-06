@@ -123,11 +123,71 @@ export default function DashboardPage() {
                     "flex-1 p-8 transition-all duration-300 ease-in-out",
                     isOpen ? "ml-[240px]" : "ml-[70px]"
                 )}>
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>Please connect your wallet to view your campaigns</AlertDescription>
-                    </Alert>
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-3xl font-bold mb-8">Dashboard</div>
+                        
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <Users className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <Coins className="h-6 w-6 text-green-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <p className="text-sm font-medium text-gray-600">Total Raised</p>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <Calendar className="h-6 w-6 text-purple-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="flex items-center p-6">
+                                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mr-4 animate-pulse">
+                                        <TrendingUp className="h-6 w-6 text-yellow-600" />
+                                    </div>
+                                    <div className="w-full">
+                                        <p className="text-sm font-medium text-gray-600">Average Progress</p>
+                                        <div className="h-8 bg-gray-200 rounded mt-1 animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card className="border-2 border-dashed border-gray-200 bg-white/50 backdrop-blur-sm">
+                            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-6">
+                                    <Users className="h-8 w-8 text-blue-600" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Login to your account</h3>
+                                <p className="text-gray-500 mb-6 max-w-md">
+                                    Please connect your wallet to view your campaign dashboard and manage your fundraising activities.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         )
@@ -225,7 +285,7 @@ export default function DashboardPage() {
                         </div>
                     ) : (
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {campaigns.map((campaign) => (
+                            {[...campaigns].reverse().map((campaign) => (
                                 <Card key={campaign.id || campaign.address} className="overflow-hidden">
                                     <CardHeader className="p-0">
                                         <Image
