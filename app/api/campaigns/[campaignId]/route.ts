@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { campaignId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const body = await request.json()
@@ -11,7 +11,7 @@ export async function PATCH(
 
     const campaign = await prisma.campaign.update({
       where: {
-        id: parseInt(params.campaignId)
+        id: parseInt((await params).campaignId)
       },
       data: {
         status,
