@@ -1,58 +1,110 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { parseEther } from 'viem'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi'
 import { keccak256, stringToHex } from 'viem'
 
 export function CreateCampaign() {
   const { address } = useAccount()
+  const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     fundingGoal: '',
-    startTime: '',
-    endTime: ''
+    startTime: new Date().toISOString().slice(0, 16),
+    endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
   })
 
   const { data: hash, isPending, writeContract } = useWriteContract()
+  const [campaignId, setCampaignId] = useState<number | null>(null)
 
-  const { isSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
     hash,
   })
 
-  const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+  useEffect(() => {
+    const updateCampaign = async () => {
+      if (hash && isSuccess && campaignId && receipt) {
+        try {
+          const campaignAddress = receipt.logs[0].address
+          
+          const response = await fetch(`/api/campaigns/${campaignId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              status: 'pending',
+              transactionHash: hash,
+              campaignAddress: campaignAddress,
+            }),
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to update campaign status')
+          }
+        } catch (error) {
+          console.error('Error processing transaction:', error)
+          setDbError('Failed to process transaction. Please try again.')
+        }
+      }
+    }
+
+    updateCampaign()
+  }, [hash, isSuccess, campaignId, receipt])
+
+  const [dbError, setDbError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setDbError(null)
 
     if (!writeContract || !address) {
       console.log('Missing writeContract or address')
       return
     }
 
-    const identifierHash = keccak256(stringToHex("KickStarter"));
-
-    const campaignData = {
-      launchTime: BigInt(new Date(formData.startTime ?? '').getTime() / 1000),
-      deadline: BigInt(new Date(formData.endTime ?? '').getTime() / 1000),
-      goalAmount: parseEther(formData.fundingGoal || '0'),
-    }
-
-    // using array instead of object to maintain order
-    // const campaignDataArray = [
-    //   BigInt(new Date(formData.startTime ?? '').getTime() / 1000),
-    //   BigInt(new Date(formData.endTime ?? '').getTime() / 1000),
-    //   parseEther(formData.fundingGoal || '0')
-    // ]
-
     try {
-      const result = await writeContract({
+      // First, save to database with pending status
+      const response = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          fundingGoal: formData.fundingGoal,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          creatorAddress: address,
+          status: 'draft',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save campaign')
+      }
+
+      const { campaignId: newCampaignId } = await response.json()
+      setCampaignId(newCampaignId)
+
+      const campaignData = {
+        launchTime: BigInt(new Date(formData.startTime ?? '').getTime() / 1000),
+        deadline: BigInt(new Date(formData.endTime ?? '').getTime() / 1000),
+        goalAmount: parseEther(formData.fundingGoal || '0'),
+      }
+
+      // Then proceed with blockchain transaction
+      const identifierHash = keccak256(stringToHex("KickStarter"))
+      await writeContract({
         address: campaignInfoFactory as `0x${string}`,
         abi: CampaignInfoFactoryABI,
         functionName: 'createCampaign',
@@ -66,9 +118,9 @@ export function CreateCampaign() {
         ]
       })
 
-      console.log('Contract write successful', result)
     } catch (error) {
-      console.error('Error writing contract:', error)
+      console.error('Error:', error)
+      setDbError('Failed to create campaign. Please try again.')
     }
   }
 
@@ -125,11 +177,17 @@ export function CreateCampaign() {
 
       <Button
         type="submit"
-        disabled={isPending || !writeContract}
+        disabled={isPending || isConfirming || !writeContract}
         className="w-full"
       >
-        {isPending ? 'Creating...' : 'Create Campaign'}
+        {isPending || isConfirming ? 'Creating...' : 'Create Campaign'}
       </Button>
+
+      {dbError && (
+        <div className="text-red-600 text-center">
+          {dbError}
+        </div>
+      )}
 
       {isSuccess && (
         <div className="text-green-600 text-center">
