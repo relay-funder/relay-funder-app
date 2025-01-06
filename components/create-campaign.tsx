@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi'
 import { keccak256, stringToHex } from 'viem'
 
 export function CreateCampaign() {
   const { address } = useAccount()
+  const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -23,8 +25,6 @@ export function CreateCampaign() {
   const { data: hash, isPending, writeContract } = useWriteContract()
   const [campaignId, setCampaignId] = useState<number | null>(null)
 
-  console.log('Current transaction hash:', hash)
-
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
     hash,
   })
@@ -32,19 +32,18 @@ export function CreateCampaign() {
   useEffect(() => {
     const updateCampaign = async () => {
       if (hash && isSuccess && campaignId && receipt) {
-        console.log('Processing hash:', hash)
         try {
-          console.log('Receipt:', receipt)
+          const campaignAddress = receipt.logs[0].address
           
-          // Find the CampaignInfoFactoryCampaignCreated event
           const response = await fetch(`/api/campaigns/${campaignId}`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              status: 'active',
+              status: 'pending',
               transactionHash: hash,
+              campaignAddress: campaignAddress,
             }),
           })
 
@@ -60,8 +59,6 @@ export function CreateCampaign() {
 
     updateCampaign()
   }, [hash, isSuccess, campaignId, receipt])
-
-  const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 
   const [dbError, setDbError] = useState<string | null>(null)
 
@@ -88,7 +85,7 @@ export function CreateCampaign() {
           startTime: formData.startTime,
           endTime: formData.endTime,
           creatorAddress: address,
-          status: 'pending',
+          status: 'draft',
         }),
       })
 
@@ -106,7 +103,6 @@ export function CreateCampaign() {
       }
 
       // Then proceed with blockchain transaction
-      console.log('About to call writeContract...')
       const identifierHash = keccak256(stringToHex("KickStarter"))
       await writeContract({
         address: campaignInfoFactory as `0x${string}`,
