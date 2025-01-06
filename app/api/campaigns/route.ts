@@ -23,6 +23,27 @@ type CombinedCampaignData = {
   deadline: string;
   goalAmount: string;
   totalRaised: string;
+  images: {
+    id: number;
+    imageUrl: string;
+    isMainImage: boolean;
+  }[];
+};
+
+const handleApiError = (error: unknown, message: string) => {
+  console.error(`${message}:`, error);
+  return NextResponse.json(
+    { error: message },
+    { status: 500 }
+  );
+};
+
+const readCampaignContract = async (client: any, address: `0x${string}`, functionName: string) => {
+  return client.readContract({
+    address,
+    abi: CampaignInfoABI as Abi,
+    functionName
+  });
 };
 
 export async function POST(request: Request) {
@@ -52,11 +73,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 })
   } catch (error) {
-    console.error('Failed to create campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to create campaign' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Failed to create campaign');
   }
 }
 export async function PATCH(
@@ -80,11 +97,7 @@ export async function PATCH(
 
     return NextResponse.json(campaign)
   } catch (error) {
-    console.error('Failed to update campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to update campaign' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Failed to update campaign');
   }
 }
 export async function GET() {
@@ -131,31 +144,11 @@ export async function GET() {
           goalAmount,
           totalRaised,
         ] = await Promise.all([
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'owner'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getLaunchTime'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getDeadline'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getGoalAmount'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getTotalRaisedAmount'
-          })
+          readCampaignContract(client, campaignAddress, 'owner'),
+          readCampaignContract(client, campaignAddress, 'getLaunchTime'),
+          readCampaignContract(client, campaignAddress, 'getDeadline'),
+          readCampaignContract(client, campaignAddress, 'getGoalAmount'),
+          readCampaignContract(client, campaignAddress, 'getTotalRaisedAmount')
         ]);
 
         return {
@@ -170,7 +163,11 @@ export async function GET() {
     );
 
     // Fetch all campaigns from the database
-    const dbCampaigns = await prisma.campaign.findMany();
+    const dbCampaigns = await prisma.campaign.findMany({
+      include: {
+        images: true
+      }
+    });
 
     // Combine the data based on matching creator address and owner
     const combinedCampaigns: CombinedCampaignData[] = onChainCampaigns.map(onChainCampaign => {
@@ -189,7 +186,8 @@ export async function GET() {
           endTime: new Date(Number(onChainCampaign.deadline) * 1000),
           creatorAddress: onChainCampaign.owner as string,
           status: 'UNKNOWN',
-          transactionHash: null
+          transactionHash: null,
+          images: []
         } as CombinedCampaignData;
       }
 
@@ -201,10 +199,6 @@ export async function GET() {
 
     return NextResponse.json({ campaigns: combinedCampaigns });
   } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error fetching campaigns');
   }
 }
