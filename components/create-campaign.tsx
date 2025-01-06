@@ -130,14 +130,26 @@ export function CreateCampaign() {
         description: "Waiting for blockchain confirmation...",
       })
     }
-    if (isSuccess) {
+    if (isSuccess && hash) {
       toast({
         title: "Transaction Confirmed",
-        description: "Your transaction has been confirmed on the blockchain.",
+        description: (
+          <div>
+            Transaction successful!{" "}
+            <a 
+              href={`https://alfajores.celoscan.io/tx/${hash}`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline text-blue-500 hover:text-blue-600"
+            >
+              View on Explorer
+            </a>
+          </div>
+        ),
         variant: "default",
       })
     }
-  }, [isPending, isConfirming, isSuccess, toast])
+  }, [isPending, isConfirming, isSuccess, hash, toast])
 
   const [dbError, setDbError] = useState<string | null>(null)
 
