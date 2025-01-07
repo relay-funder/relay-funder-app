@@ -40,6 +40,11 @@ interface Campaign {
   status: string;
   transactionHash: string | null;
   campaignAddress: string | null;
+  images: {
+    id: number;
+    imageUrl: string;
+    isMainImage: boolean;
+  }[];
 }
 
 // const handleApiError = (error: unknown, message: string) => {
@@ -130,20 +135,11 @@ export async function GET() {
           in: ['active', 'pending_approval']
         }
       },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        fundingGoal: true,
-        startTime: true,
-        endTime: true,
-        creatorAddress: true,
-        status: true,
-        transactionHash: true,
-        campaignAddress: true,
+      include: {
+        images: true
       }
     });
-
+    console.log("dbCampaigns", dbCampaigns);
     // Get campaign created events
     const events = await client.getLogs({
       address: FACTORY_ADDRESS as `0x${string}`,
@@ -158,17 +154,32 @@ export async function GET() {
       fromBlock: 0n,
       toBlock: 'latest'
     });
+// Log all event addresses before the mapping
+console.log("All blockchain event addresses:", events.map(e => e.address?.toLowerCase()));
+
+    // Log all campaign addresses from event args
+    console.log("All blockchain campaign addresses:", events.map(e => e.args?.campaignInfoAddress?.toLowerCase()));
 
     // Combine data from events and database
     const combinedCampaigns = dbCampaigns
       .filter((campaign: Campaign) => campaign.transactionHash)
       .map((dbCampaign: Campaign) => {
-        const event = events.find(e =>
-          e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
+        // Log the comparison values
+        console.log('Comparing addresses:', {
+          dbAddress: dbCampaign.campaignAddress?.toLowerCase(),
+          eventAddresses: events.map(e => e.args?.campaignInfoAddress?.toLowerCase())
+        });
+
+        const event = events.find(onChainCampaign =>
+          onChainCampaign.args?.campaignInfoAddress?.toLowerCase() === dbCampaign.campaignAddress?.toLowerCase()
         );
 
         if (!event || !event.args) {
-          console.error('No matching event found for campaign:', dbCampaign.id);
+          console.error('No matching event found for campaign:', {
+            campaignId: dbCampaign.id,
+            campaignAddress: dbCampaign.campaignAddress,
+            availableEventAddresses: events.map(e => e.args?.campaignInfoAddress)
+          });
           return null;
         }
 
@@ -182,7 +193,8 @@ export async function GET() {
           launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
           deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
           goalAmount: dbCampaign.fundingGoal,
-          totalRaised: '0' // implemented later with contract calls
+          totalRaised: '0',
+          images: dbCampaign.images
         };
       })
       .filter(Boolean); // Remove any null values
