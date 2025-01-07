@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running lint..."
+npm run lint || exit 1
+
+echo "Running Next.js build..."
+npm run build || exit 1
+
+echo "Running Vercel build..."
+vercel build || exit 1 
