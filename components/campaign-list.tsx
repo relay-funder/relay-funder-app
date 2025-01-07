@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -58,20 +58,15 @@ export default function CampaignList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     try {
-      const response = await fetch('/api/campaigns?view=list');
+      const response = await fetch('/api/campaigns');
       const data = await response.json();
 
       console.log("dataapi", data.campaigns[0]);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch campaigns');
-        console.log("response error", error);
       }
       console.log("Campaigns", data.campaigns.map((campaign: Campaign) => campaign.address));
       setCampaigns(data.campaigns);
@@ -80,7 +75,11 @@ export default function CampaignList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, [fetchCampaigns]);
 
   const formatDate = (timestamp: string) => {
     return new Date(parseInt(timestamp) * 1000).toLocaleDateString();
