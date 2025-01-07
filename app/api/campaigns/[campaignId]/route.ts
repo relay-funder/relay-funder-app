@@ -15,7 +15,7 @@ export async function PATCH(
 
     const campaign = await prisma.campaign.update({
       where: {
-        id: parseInt(campaignId, 10)
+        id: parseInt(campaignId)
       },
       data: {
         status,
@@ -29,4 +29,4 @@ export async function PATCH(
     console.error('Failed to update campaign:', error);
     return new NextResponse(JSON.stringify({ error: 'Failed to update campaign' }), { status: 500 });
   }
-} 
+}
