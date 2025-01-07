@@ -6,6 +6,21 @@ import { prisma } from '@/lib/prisma';
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
+type DbCampaign = {
+    id: number;
+    description: string;
+    title: string;
+    fundingGoal: string;
+    startTime: Date;
+    endTime: Date;
+    creatorAddress: string;
+    status: string;
+    transactionHash: string | null;
+    campaignAddress: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
 export async function GET(request: Request) {
     try {
         if (!FACTORY_ADDRESS || !RPC_URL) {
@@ -36,6 +51,8 @@ export async function GET(request: Request) {
                 status: true,
                 transactionHash: true,
                 campaignAddress: true,
+                createdAt: true,
+                updatedAt: true
             }
         });
 
@@ -59,7 +76,7 @@ export async function GET(request: Request) {
         });
 
         // Combine data from events and database
-        const combinedCampaigns = dbCampaigns.map(dbCampaign => {
+        const combinedCampaigns = dbCampaigns.map((dbCampaign: DbCampaign) => {
             // For campaigns without transaction hash (draft, etc), use database values
             if (!dbCampaign.transactionHash) {
                 return {
