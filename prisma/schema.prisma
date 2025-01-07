@@ -20,4 +20,13 @@ model Campaign {
   campaignAddress String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  images          CampaignImage[]
+}
+
+model CampaignImage {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String
+  isMainImage Boolean  @default(false)
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  campaignId  Int
 }

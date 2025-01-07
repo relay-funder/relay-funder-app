@@ -14,7 +14,10 @@ async function getPublicClient() {
   
   return createPublicClient({
     chain: celoAlfajores,
-    transport: http(RPC_URL)
+    transport: http(RPC_URL),
+    batch: {
+      multicall: true
+    }
   });
 }
 
@@ -47,7 +50,14 @@ async function getCampaignCreatedEvents(client: ReturnType<typeof createPublicCl
   });
 }
 
-function formatCampaignData(dbCampaign: Campaign, event: any) {
+type CampaignCreatedEvent = {
+  args: {
+    identifierHash: `0x${string}`,
+    campaignInfoAddress: `0x${string}`
+  }
+}
+
+function formatCampaignData(dbCampaign: Campaign, event: CampaignCreatedEvent | undefined) {
   if (!event || !event.args) {
     console.error('No matching event found for campaign:', {
       campaignId: dbCampaign.id,
@@ -139,6 +149,7 @@ export async function GET() {
     const client = await getPublicClient();
     const [dbCampaigns, events] = await Promise.all([
       getActiveCampaigns(),
+      // @ts-expect-error - Ignoring viem type mismatch for chain compatibility
       getCampaignCreatedEvents(client)
     ]);
 
@@ -147,7 +158,7 @@ export async function GET() {
       .map((dbCampaign: Campaign) => {
         const event = events.find(onChainCampaign =>
           onChainCampaign.args?.campaignInfoAddress?.toLowerCase() === dbCampaign.campaignAddress?.toLowerCase()
-        );
+        ) as CampaignCreatedEvent | undefined;
         return formatCampaignData(dbCampaign, event);
       })
       .filter(Boolean);
