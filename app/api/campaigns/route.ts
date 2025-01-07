@@ -29,6 +29,19 @@ const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 //   }[];
 // };
 
+interface Campaign {
+  id: number;
+  title: string;
+  description: string;
+  fundingGoal: string;
+  startTime: Date;
+  endTime: Date;
+  creatorAddress: string;
+  status: string;
+  transactionHash: string | null;
+  campaignAddress: string | null;
+}
+
 // const handleApiError = (error: unknown, message: string) => {
 //   console.error(`${message}:`, error);
 //   return NextResponse.json(
@@ -49,7 +62,7 @@ export async function POST(request: Request) {
       status
     } = body
 
-    const campaign = await prisma.campaign.create({
+    const campaign: Campaign = await prisma.campaign.create({
       data: {
         title,
         description,
@@ -150,7 +163,7 @@ export async function GET() {
     const combinedCampaigns = dbCampaigns
       .filter(campaign => campaign.transactionHash) // Only include campaigns with transaction hash and address
       .map(dbCampaign => {
-        const event = events.find(e => 
+        const event = events.find(e =>
           e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
         );
 
