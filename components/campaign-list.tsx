@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -29,14 +29,22 @@ import { CardFooter } from "@/components/ui/card";
 
 
 interface Campaign {
+  id: number;
+  title: string;
+  description: string;
+  fundingGoal: string;
+  startTime: Date;
+  endTime: Date;
+  creatorAddress: string;
+  status: string;
+  transactionHash: string | null;
+  campaignAddress: string;
   address: string;
   owner: string;
   launchTime: string;
   deadline: string;
   goalAmount: string;
   totalRaised: string;
-  title: string;
-  description: string;
   location: string;
   images: {
     id: number;
@@ -50,14 +58,12 @@ export default function CampaignList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     try {
       const response = await fetch('/api/campaigns');
       const data = await response.json();
+
+      console.log("dataapi", data.campaigns[0]);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch campaigns');
@@ -69,7 +75,11 @@ export default function CampaignList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, [fetchCampaigns]);
 
   const formatDate = (timestamp: string) => {
     return new Date(parseInt(timestamp) * 1000).toLocaleDateString();
@@ -127,7 +137,7 @@ export default function CampaignList() {
                 height={24}
                 className="rounded-full"
               />
-              <span className="font-medium">{`${campaign.owner.slice(0, 10)}...` || 'Campaign Author'}</span>
+              {/* <span className="font-medium">{`${campaign.owner.slice(0, 10)}...` || 'Campaign Author'}</span> */}
               <span className="text-gray-500">•</span>
               <span className="text-gray-500">{campaign.location || 'Earth'}</span>
             </div>
