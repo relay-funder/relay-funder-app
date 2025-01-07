@@ -162,7 +162,7 @@ export async function GET() {
     // Combine data from events and database
     const combinedCampaigns = dbCampaigns
       .filter((campaign: Campaign) => campaign.transactionHash)
-      .map(dbCampaign => {
+      .map((dbCampaign: Campaign) => {
         const event = events.find(e =>
           e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
         );
