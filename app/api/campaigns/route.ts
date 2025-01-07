@@ -6,28 +6,28 @@ import { prisma } from '@/lib/prisma';
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
-type CombinedCampaignData = {
-  id: number;
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: Date;
-  endTime: Date;
-  creatorAddress: string;
-  status: string;
-  transactionHash: string | null;
-  address: string;
-  owner: string;
-  launchTime: string;
-  deadline: string;
-  goalAmount: string;
-  totalRaised: string;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-  }[];
-};
+// type CombinedCampaignData = {
+//   id: number;
+//   title: string;
+//   description: string;
+//   fundingGoal: string;
+//   startTime: Date;
+//   endTime: Date;
+//   creatorAddress: string;
+//   status: string;
+//   transactionHash: string | null;
+//   address: string;
+//   owner: string;
+//   launchTime: string;
+//   deadline: string;
+//   goalAmount: string;
+//   totalRaised: string;
+//   images: {
+//     id: number;
+//     imageUrl: string;
+//     isMainImage: boolean;
+//   }[];
+// };
 
 // const handleApiError = (error: unknown, message: string) => {
 //   console.error(`${message}:`, error);
