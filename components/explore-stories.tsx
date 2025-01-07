@@ -196,7 +196,6 @@ export function ExploreStories() {
               </div>
 
               <CampaignList />
-              
             </>
           )}
         </main>
