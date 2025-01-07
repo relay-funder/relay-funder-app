@@ -3,56 +3,9 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 // import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 import { prisma } from '@/lib/prisma';
+import { Campaign } from '@/app/types/campaign';
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
-
-// type CombinedCampaignData = {
-//   id: number;
-//   title: string;
-//   description: string;
-//   fundingGoal: string;
-//   startTime: Date;
-//   endTime: Date;
-//   creatorAddress: string;
-//   status: string;
-//   transactionHash: string | null;
-//   address: string;
-//   owner: string;
-//   launchTime: string;
-//   deadline: string;
-//   goalAmount: string;
-//   totalRaised: string;
-//   images: {
-//     id: number;
-//     imageUrl: string;
-//     isMainImage: boolean;
-//   }[];
-// };
-
-interface Campaign {
-  id: number;
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: Date;
-  endTime: Date;
-  creatorAddress: string;
-  status: string;
-  transactionHash: string | null;
-  campaignAddress: string | null;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-  }[];
-}
-
-// const handleApiError = (error: unknown, message: string) => {
-//   console.error(`${message}:`, error);
-//   return NextResponse.json(
-//     { error: message },
-//     { status: 500 }
-//   );
 
 export async function POST(request: Request) {
   try {
