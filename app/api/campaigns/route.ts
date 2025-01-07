@@ -161,7 +161,7 @@ export async function GET() {
 
     // Combine data from events and database
     const combinedCampaigns = dbCampaigns
-      .filter(campaign => campaign.transactionHash) // Only include campaigns with transaction hash and address
+      .filter((campaign: Campaign) => campaign.transactionHash)
       .map(dbCampaign => {
         const event = events.find(e =>
           e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
@@ -182,7 +182,7 @@ export async function GET() {
           launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
           deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
           goalAmount: dbCampaign.fundingGoal,
-          totalRaised: '0' // This will be implemented later with contract calls
+          totalRaised: '0' // implemented later with contract calls
         };
       })
       .filter(Boolean); // Remove any null values
