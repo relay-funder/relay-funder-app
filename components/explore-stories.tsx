@@ -20,6 +20,8 @@ import {
 import { useCollection } from '@/contexts/CollectionContext'
 import { SideBar } from '@/components/SideBar'
 import { useSidebar } from '@/contexts/SidebarContext'
+import CampaignList from '@/components/campaign-list';
+
 interface Story {
   id: string
   title: string
@@ -74,7 +76,7 @@ export function ExploreStories() {
     { id: "community-goods", name: "Community & Public Goods", icon: <span className="text-xl">🤝</span> },
   ]
 
-  const stories: Story[] = [
+  const campaigns: Story[] = [
     {
       id: "1",
       title: "From Shadows to Light: My Journey to Hope",
@@ -193,81 +195,8 @@ export function ExploreStories() {
                 ))}
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {stories.map((story) => (
-                  <Card key={story.id} className="overflow-hidden flex flex-col h-full">
-                    <CardHeader className="p-0">
-                      <Image
-                        src={story.image}
-                        alt={story.title}
-                        width={600}
-                        height={400}
-                        className="h-[200px] w-full object-cover"
-                      />
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <h2 className="mb-2 text-xl font-bold">{story.title}</h2>
-                      <div className="flex justify-between items-center mb-4 gap-2">
-                        <div className="flex align self-start">
-
-                          <Image
-                            src={story.authorImage}
-                            alt={story.author}
-                            width={24}
-                            height={24}
-                            className="rounded-full"
-                          />
-                          <span className="font-medium">{story.author}</span>
-                        </div>
-                        <div className="flex align self-start">
-
-                          <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
-                          <span className="text-gray-900 text-sm">{story.location}</span>
-                        </div>
-                      </div>
-                      <p className="text-gray-600 text-[12px]">{story.excerpt}</p>
-                      <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">Read More</div>
-
-                    </CardContent>
-                    <div className="mt-auto px-6 py-4 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className='flex '>
-                          <div className='text-[#55DFAB] px-1 font-bold'>
-                            {story.donationCount}
-                          </div>
-                          donations
-                        </span>
-
-                        <span className='flex'>
-                          <div className='text-[#55DFAB] px-1 font-bold'>
-                            {(story.donations / story.fundingGoal) * 100}%
-                          </div>
-                          of funding goal</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <Progress value={(story.donations / story.fundingGoal) * 100} className="h-2 " />
-                      </div>
-                    </div>
-                    <CardFooter className="mt-auto gap-4 p-6 pt-0">
-                      <Button className="flex bg-purple-600 hover:bg-purple-700">
-                        <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-                        Donate
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => {
-                          setSelectedStory(story)
-                          setShowCollectionModal(true)
-                        }}
-                      >
-                        <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
-                        Add to Collection
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+              <CampaignList />
+              
             </>
           )}
         </main>
