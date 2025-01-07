@@ -9,11 +9,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { keccak256, stringToHex } from 'viem'
+import { useToast } from "@/hooks/use-toast"
+import { Log } from 'viem'
+
 
 export function CreateCampaign() {
   const { address } = useAccount()
   const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-  
+
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,6 +29,8 @@ export function CreateCampaign() {
   const { data: hash, isPending, writeContract } = useWriteContract()
   const [campaignId, setCampaignId] = useState<number | null>(null)
 
+  console.log('Current transaction hash:', hash)
+
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
     hash,
   })
@@ -32,33 +38,131 @@ export function CreateCampaign() {
   useEffect(() => {
     const updateCampaign = async () => {
       if (hash && isSuccess && campaignId && receipt) {
+        const campaignAddress = receipt.logs[0].address
+
         try {
-          const campaignAddress = receipt.logs[0].address
-          
-          const response = await fetch(`/api/campaigns/${campaignId}`, {
+          if (receipt.status === 'success') {
+            toast({
+              title: "Transaction Confirmed",
+              description: "Updating campaign status...",
+            })
+
+            // First update the campaign status to pending_approval
+            const response = await fetch('/api/campaigns/user', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                campaignId,
+                transactionHash: hash,
+                campaignAddress: campaignAddress,
+                status: 'pending_approval',
+              }),
+            })
+
+            if (!response.ok) {
+              const errorData = await response.json(); 
+              throw new Error(errorData.error || errorData.error || 'Failed to update campaign status')
+            }
+
+            // Then find the event and update campaign address
+            const event = receipt.logs.find(
+              (log: Log) => log.transactionHash === hash
+            );
+
+            console.log('Event:', event)
+
+            if (event) {
+              // Get the campaign address from the event topics
+              const campaignAddress = event.address;
+              
+              if (campaignAddress) {
+                const addressResponse = await fetch('/api/campaigns/user', {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    campaignId,
+                    campaignAddress,
+                  }),
+                });
+
+                if (!addressResponse.ok) {
+                  const errorData = await addressResponse.json();
+                  console.error('Failed to update campaign address:', errorData);
+                }
+              }
+
+              toast({
+                title: "Success!",
+                description: "Campaign created successfully and pending approval.",
+                variant: "default",
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Error processing transaction:', error)
+          toast({
+            variant: "destructive",
+            title: "Transaction Failed",
+            description: error instanceof Error ? error.message : "Campaign remains in draft state. Please try again.",
+          })
+
+          // Update campaign status to failed
+          await fetch('/api/campaigns/user', {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              status: 'pending',
+              campaignId,
+              status: 'failed',
               transactionHash: hash,
-              campaignAddress: campaignAddress,
             }),
-          })
-
-          if (!response.ok) {
-            throw new Error('Failed to update campaign status')
-          }
-        } catch (error) {
-          console.error('Error processing transaction:', error)
-          setDbError('Failed to process transaction. Please try again.')
+          });
         }
       }
     }
 
     updateCampaign()
-  }, [hash, isSuccess, campaignId, receipt])
+  }, [hash, isSuccess, campaignId, receipt, toast])
+
+  // Also add loading state toasts
+  useEffect(() => {
+    if (isPending) {
+      toast({
+        title: "Transaction Pending",
+        description: "Please confirm the transaction in your wallet...",
+      })
+    }
+    if (isConfirming) {
+      toast({
+        title: "Transaction Confirming",
+        description: "Waiting for blockchain confirmation...",
+      })
+    }
+    if (isSuccess && hash) {
+      toast({
+        title: "Transaction Confirmed",
+        description: (
+          <div>
+            Transaction successful!{" "}
+            <a
+              href={`https://alfajores.celoscan.io/tx/${hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-blue-500 hover:text-blue-600"
+            >
+              View on Explorer
+            </a>
+          </div>
+        ),
+        variant: "default",
+      })
+    }
+  }, [isPending, isConfirming, isSuccess, hash, toast])
 
   const [dbError, setDbError] = useState<string | null>(null)
 
@@ -67,12 +171,21 @@ export function CreateCampaign() {
     setDbError(null)
 
     if (!writeContract || !address) {
-      console.log('Missing writeContract or address')
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Wallet not connected or contract not available",
+      })
       return
     }
 
     try {
-      // First, save to database with pending status
+      toast({
+        title: "Creating Campaign",
+        description: "Saving campaign details to database...",
+      })
+
+      // First, save to database with draft status
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {
@@ -92,6 +205,11 @@ export function CreateCampaign() {
       if (!response.ok) {
         throw new Error('Failed to save campaign')
       }
+
+      toast({
+        title: "Campaign Saved",
+        description: "Initiating blockchain transaction...",
+      })
 
       const { campaignId: newCampaignId } = await response.json()
       setCampaignId(newCampaignId)
@@ -120,7 +238,12 @@ export function CreateCampaign() {
 
     } catch (error) {
       console.error('Error:', error)
-      setDbError('Failed to create campaign. Please try again.')
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create campaign. Your campaign has been saved as draft.",
+      })
+      setDbError('Failed to create campaign. Your campaign has been saved as draft.')
     }
   }
 

@@ -1,13 +1,35 @@
-import { createPublicClient, http, Abi} from 'viem';
+import { createPublicClient, http } from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
-import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
+// import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 import { prisma } from '@/lib/prisma';
-
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
-type CombinedCampaignData = {
+// type CombinedCampaignData = {
+//   id: number;
+//   title: string;
+//   description: string;
+//   fundingGoal: string;
+//   startTime: Date;
+//   endTime: Date;
+//   creatorAddress: string;
+//   status: string;
+//   transactionHash: string | null;
+//   address: string;
+//   owner: string;
+//   launchTime: string;
+//   deadline: string;
+//   goalAmount: string;
+//   totalRaised: string;
+//   images: {
+//     id: number;
+//     imageUrl: string;
+//     isMainImage: boolean;
+//   }[];
+// };
+
+interface Campaign {
   id: number;
   title: string;
   description: string;
@@ -17,26 +39,15 @@ type CombinedCampaignData = {
   creatorAddress: string;
   status: string;
   transactionHash: string | null;
-  address: string;
-  owner: string;
-  launchTime: string;
-  deadline: string;
-  goalAmount: string;
-  totalRaised: string;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-  }[];
-};
+  campaignAddress: string | null;
+}
 
-const handleApiError = (error: unknown, message: string) => {
-  console.error(`${message}:`, error);
-  return NextResponse.json(
-    { error: message },
-    { status: 500 }
-  );
-};
+// const handleApiError = (error: unknown, message: string) => {
+//   console.error(`${message}:`, error);
+//   return NextResponse.json(
+//     { error: message },
+//     { status: 500 }
+//   );
 
 export async function POST(request: Request) {
   try {
@@ -51,7 +62,7 @@ export async function POST(request: Request) {
       status
     } = body
 
-    const campaign = await prisma.campaign.create({
+    const campaign: Campaign = await prisma.campaign.create({
       data: {
         title,
         description,
@@ -65,7 +76,39 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 })
   } catch (error) {
-    return handleApiError(error, 'Failed to create campaign');
+    console.error('Failed to create campaign:', error)
+    return NextResponse.json(
+      { error: 'Failed to create campaign' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(
+  request: Request
+) {
+  try {
+    const body = await request.json()
+    const { status, transactionHash, campaignAddress, campaignId } = body
+
+    const campaign = await prisma.campaign.update({
+      where: {
+        id: parseInt(campaignId)
+      },
+      data: {
+        status,
+        transactionHash,
+        campaignAddress
+      },
+    })
+
+    return NextResponse.json(campaign)
+  } catch (error) {
+    console.error('Failed to update campaign:', error)
+    return NextResponse.json(
+      { error: 'Failed to update campaign' },
+      { status: 500 }
+    )
   }
 }
 
@@ -78,6 +121,27 @@ export async function GET() {
     const client = createPublicClient({
       chain: celoAlfajores,
       transport: http(RPC_URL)
+    });
+
+    // First, fetch active and pending campaigns from the database
+    const dbCampaigns = await prisma.campaign.findMany({
+      where: {
+        status: {
+          in: ['active', 'pending_approval']
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        fundingGoal: true,
+        startTime: true,
+        endTime: true,
+        creatorAddress: true,
+        status: true,
+        transactionHash: true,
+        campaignAddress: true,
+      }
     });
 
     // Get campaign created events
@@ -95,99 +159,41 @@ export async function GET() {
       toBlock: 'latest'
     });
 
-    // Fetch details for each campaign
-    const onChainCampaigns = await Promise.all(
-      events.map(async (event) => {
-        const campaignAddress = event.args.campaignInfoAddress as `0x${string}`;
+    // Combine data from events and database
+    const combinedCampaigns = dbCampaigns
+      .filter((campaign: Campaign) => campaign.transactionHash)
+      .map((dbCampaign: Campaign) => {
+        const event = events.find(e =>
+          e.transactionHash?.toLowerCase() === dbCampaign.transactionHash?.toLowerCase()
+        );
 
-        // Ensure campaignAddress is defined
-        if (!campaignAddress) {
-          throw new Error('Campaign address is undefined');
+        if (!event || !event.args) {
+          console.error('No matching event found for campaign:', dbCampaign.id);
+          return null;
         }
-        console.log('Campaign address:', campaignAddress);
-        // Get campaign details using contract reads
-        const [
-          owner,
-          launchTime,
-          deadline,
-          goalAmount,
-          totalRaised,
-        ] = await Promise.all([
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'owner'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getLaunchTime'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getDeadline'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getGoalAmount'
-          }),
-          client.readContract({
-            address: campaignAddress,
-            abi: CampaignInfoABI as Abi,
-            functionName: 'getTotalRaisedAmount'
-          })
-        ]);
 
         return {
-          address: campaignAddress,
-          owner,
-          launchTime: String(launchTime),
-          deadline: String(deadline),
-          goalAmount: (Number(goalAmount) / 1e18).toString(),
-          totalRaised: (Number(totalRaised) / 1e18).toString(),
+          id: dbCampaign.id,
+          title: dbCampaign.title,
+          description: dbCampaign.description,
+          status: dbCampaign.status,
+          address: dbCampaign.campaignAddress,
+          owner: dbCampaign.creatorAddress,
+          launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
+          deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
+          goalAmount: dbCampaign.fundingGoal,
+          totalRaised: '0' // implemented later with contract calls
         };
       })
-    );
+      .filter(Boolean); // Remove any null values
 
-    // Fetch all campaigns from the database
-    const dbCampaigns = await prisma.campaign.findMany({
-      include: {
-        images: true
-      }
-    });
-
-    // Combine the data based on matching creator address and owner
-    const combinedCampaigns: CombinedCampaignData[] = onChainCampaigns.map(onChainCampaign => {
-      const dbCampaign = dbCampaigns.find(
-        db => db.campaignAddress?.toLowerCase() === onChainCampaign.address.toLowerCase()
-      );
-
-      if (!dbCampaign) {
-        return {
-          ...onChainCampaign,
-          id: 0,
-          title: '',
-          description: '',
-          fundingGoal: onChainCampaign.goalAmount,
-          startTime: new Date(Number(onChainCampaign.launchTime) * 1000),
-          endTime: new Date(Number(onChainCampaign.deadline) * 1000),
-          creatorAddress: onChainCampaign.owner as string,
-          status: 'UNKNOWN',
-          transactionHash: null,
-          images: []
-        } as CombinedCampaignData;
-      }
-
-      return {
-        ...onChainCampaign,
-        ...dbCampaign,
-      } as CombinedCampaignData;
-    });
-
+    console.log("combinedCampaigns", combinedCampaigns);
     return NextResponse.json({ campaigns: combinedCampaigns });
   } catch (error) {
-    return handleApiError(error, 'Error fetching campaigns');
+    console.error('Error fetching campaigns:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch campaigns' },
+      { status: 500 }
+    );
   }
 }
