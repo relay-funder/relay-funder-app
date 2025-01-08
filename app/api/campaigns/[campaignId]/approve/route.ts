@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { adminAddress } from '@/lib/constant'
 import { ethers } from 'ethers'
@@ -31,12 +31,18 @@ interface TreasuryDeployedEvent {
 }
 
 export async function POST(
-    request: Request,
-    { params }: { params: { campaignId: string } }
+    req: NextRequest,
 ) {
     try {
-        const { adminAddress: requestAddress } = await request.json()
-        const campaignId = parseInt(params.campaignId)
+        const campaignId = req.nextUrl.searchParams.get('campaignId');
+        if (!campaignId) {
+            return NextResponse.json(
+                { error: 'Campaign ID is required' },
+                { status: 400 }
+            )
+        }
+
+        const { adminAddress: requestAddress } = await req.json()
 
         // Verify required environment variables
         if (!process.env.PLATFORM_ADMIN_PRIVATE_KEY) {
@@ -57,7 +63,7 @@ export async function POST(
 
         // Get campaign info from database
         const campaign = await prisma.campaign.findUnique({
-            where: { id: campaignId }
+            where: { id: parseInt(campaignId) }
         })
 
         if (!campaign) {
@@ -67,9 +73,9 @@ export async function POST(
             )
         }
 
-        if (!campaign.contractAddress) {
+        if (!campaign.campaignAddress) {
             return NextResponse.json(
-                { error: 'Campaign contract address not found' },
+                { error: 'Campaign address not found' },
                 { status: 400 }
             )
         }
@@ -83,20 +89,20 @@ export async function POST(
             treasuryFactoryAddress: platformConfig.treasuryFactoryAddress,
             globalParamsAddress: platformConfig.globalParamsAddress,
             platformBytes: platformConfig.platformBytes,
-            campaignInfoAddress: campaign.contractAddress,
+            campaignInfoAddress: campaign.campaignAddress,
             signer: adminWallet
         })
 
         // Update campaign status and treasury address in database
         const updatedCampaign = await prisma.campaign.update({
-            where: { id: campaignId },
+            where: { id: parseInt(campaignId) },
             data: {
                 status: 'active',
-                treasuryAddress: result.treasuryAddress
+                campaignAddress: result.treasuryAddress
             }
         })
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             campaign: updatedCampaign,
             transaction: result.transactionHash
         })
@@ -108,7 +114,7 @@ export async function POST(
             { status: 500 }
         )
     }
-} 
+}
 
 async function approveCampaign({
     treasuryFactoryAddress,
