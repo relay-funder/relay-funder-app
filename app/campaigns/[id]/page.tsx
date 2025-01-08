@@ -24,11 +24,14 @@ const mockCampaign: Campaign = {
   totalRaised: "75000",
   amountRaised: "75000",
   location: "Amazon Rainforest",
+  createdAt: new Date("2023-01-01"),
+  updatedAt: new Date("2023-01-01"),
   images: [
     {
       id: 1,
       imageUrl: "/placeholder.svg?height=300&width=600",
-      isMainImage: true
+      isMainImage: true,
+      campaignId: 1
     }
   ]
 }

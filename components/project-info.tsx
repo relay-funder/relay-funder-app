@@ -40,7 +40,7 @@ export default function ProjectInfo({ campaign }: ProjectInfoProps) {
 
         <div>
           <div className="text-sm text-muted-foreground">Raised</div>
-          <div className="text-2xl font-bold">${parseFloat(campaign.amountRaised).toLocaleString()}</div>
+          <div className="text-2xl font-bold">${parseFloat(campaign.amountRaised || '0').toLocaleString()}</div>
         </div>
 
         <p className="text-muted-foreground">

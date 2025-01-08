@@ -12,7 +12,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
-import { Campaign } from '../types/campaign'
+import { Campaign } from '@/types/campaign'
 
 export default function DashboardPage() {
     const { address } = useAccount()

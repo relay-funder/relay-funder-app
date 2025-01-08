@@ -1,4 +1,4 @@
-export interface Campaign {
+export interface DbCampaign {
   id: number;
   title: string;
   description: string;
@@ -8,19 +8,38 @@ export interface Campaign {
   creatorAddress: string;
   status: string;
   transactionHash: string | null;
-  campaignAddress: string;
+  campaignAddress: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  images: {
+    id: number;
+    imageUrl: string;
+    isMainImage: boolean;
+    campaignId: number;
+  }[];
+}
+
+export interface Campaign extends DbCampaign {
   address: string;
   owner: string;
   launchTime: string;
   deadline: string;
   goalAmount: string;
   totalRaised: string;
-  amountRaised: string;
-  location: string;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-  }[];
+  location?: string;
+  amountRaised?: string;
 }
 
+export interface CombinedCampaignData {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  address: string;
+  owner: string;
+  launchTime: string;
+  deadline: string;
+  goalAmount: string;
+  totalRaised: string;
+  images: DbCampaign['images'];
+}
