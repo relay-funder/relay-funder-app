@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip"
-import { Campaign } from "../../../types/campaign"
+import { Campaign } from "@/types/campaign"
 
 interface DonationFormProps {
   campaign: Campaign;
@@ -50,7 +50,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
     <Card className="border-0 shadow-none">
       <CardContent className="space-y-6">
         {error && (
-          <Alert variant="info" className="border-indigo-100 bg-indigo-50">
+          <Alert variant="default" className="border-indigo-100 bg-indigo-50">
             <Info className="h-4 w-4 text-indigo-600" />
             <AlertDescription className="text-indigo-600">
               {error}

@@ -28,32 +28,7 @@ import { Progress } from "@/components/ui/progress";
 import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
 import Link from "next/link";
-
-
-interface Campaign {
-  id: number;
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: Date;
-  endTime: Date;
-  creatorAddress: string;
-  status: string;
-  transactionHash: string | null;
-  campaignAddress: string;
-  address: string;
-  owner: string;
-  launchTime: string;
-  deadline: string;
-  goalAmount: string;
-  totalRaised: string;
-  location: string;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-  }[];
-}
+import { Campaign } from "../types/campaign";
 
 export default function CampaignList() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
