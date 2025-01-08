@@ -27,32 +27,8 @@ import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
 import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
-
-
-interface Campaign {
-  id: number;
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: Date;
-  endTime: Date;
-  creatorAddress: string;
-  status: string;
-  transactionHash: string | null;
-  campaignAddress: string;
-  address: string;
-  owner: string;
-  launchTime: string;
-  deadline: string;
-  goalAmount: string;
-  totalRaised: string;
-  location: string;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-  }[];
-}
+import Link from "next/link";
+import { Campaign } from "../types/campaign";
 
 export default function CampaignList() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -172,11 +148,12 @@ export default function CampaignList() {
           </div>
 
           <CardFooter className="mt-auto gap-4 p-6 pt-0">
-            <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
-              <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-
-              Donate
-            </Button>
+            <Link href={`/campaigns/${campaign.address}`} className="flex-1">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                <Image src="/diamond.png" alt="wallet" width={24} height={24} />
+                Donate
+              </Button>
+            </Link>
             <Button variant="outline" className="flex-1">
               <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
               Add to Collection
