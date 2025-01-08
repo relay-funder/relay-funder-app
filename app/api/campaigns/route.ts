@@ -1,9 +1,8 @@
 import { createPublicClient, http } from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
-// import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 import { prisma } from '@/lib/prisma';
-import { Campaign } from '@/app/types/campaign';
+import { DbCampaign } from '@/types/campaign'
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
@@ -57,7 +56,7 @@ type CampaignCreatedEvent = {
   }
 }
 
-function formatCampaignData(dbCampaign: Campaign, event: CampaignCreatedEvent | undefined) {
+function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent | undefined) {
   if (!event || !event.args) {
     console.error('No matching event found for campaign:', {
       campaignId: dbCampaign.id,
@@ -94,7 +93,7 @@ export async function POST(request: Request) {
       status
     } = body
 
-    const campaign: Campaign = await prisma.campaign.create({
+    const campaign = await prisma.campaign.create({
       data: {
         title,
         description,
@@ -154,8 +153,8 @@ export async function GET() {
     ]);
 
     const combinedCampaigns = dbCampaigns
-      .filter((campaign: Campaign) => campaign.transactionHash)
-      .map((dbCampaign: Campaign) => {
+      .filter((campaign) => campaign.transactionHash)
+      .map((dbCampaign) => {
         const event = events.find(onChainCampaign =>
           onChainCampaign.args?.campaignInfoAddress?.toLowerCase() === dbCampaign.campaignAddress?.toLowerCase()
         ) as CampaignCreatedEvent | undefined;
