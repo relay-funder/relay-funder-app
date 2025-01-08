@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Badge } from "./ui/badge"
-import { Card, CardContent } from "./ui/card"
+import { Card } from "./ui/card"
 import Image from "next/image"
 import Link from "next/link"
 import { Campaign } from "../types/campaign"
