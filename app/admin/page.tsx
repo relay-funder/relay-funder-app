@@ -12,6 +12,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
+import { adminAddress } from '@/lib/constant'
 
 interface Campaign {
     id: number
@@ -32,8 +33,6 @@ interface Campaign {
     totalRaised?: string
     isApproved?: boolean
 }
-
-const adminAddress = "0x30BCD2e90B3C05e54446568d823408B2ddfa7A01";
 
 export default function AdminPage() {
     const { address } = useAccount()
