@@ -2,16 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { adminAddress } from '@/lib/constant'
 import { ethers } from 'ethers'
-
-// Contract ABIs
-const GlobalParamsABI = [
-    "function getPlatformAdminAddress(bytes32 platformId) view returns (address)"
-]
-
-const TreasuryFactoryABI = [
-    "function deploy(bytes32 platformId, uint256 bytecodeIndex, address campaignInfo) returns (address)",
-    "event TreasuryFactoryTreasuryDeployed(address indexed treasuryAddress, address indexed campaignInfo)"
-]
+import { GlobalParamsABI } from '@/contracts/abi/GlobalParams'
+import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory'
 
 // Platform configuration from environment variables
 const platformConfig = {
@@ -21,7 +13,6 @@ const platformConfig = {
     rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
 }
 
-// Types for the approveCampaign function
 interface ApproveCampaignParams {
     treasuryFactoryAddress: string;
     globalParamsAddress: string;
