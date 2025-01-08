@@ -27,6 +27,7 @@ import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
 import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
+import Link from "next/link";
 
 
 interface Campaign {
@@ -172,11 +173,12 @@ export default function CampaignList() {
           </div>
 
           <CardFooter className="mt-auto gap-4 p-6 pt-0">
-            <Button className="flex-1 bg-purple-600 hover:bg-purple-700">
-              <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-
-              Donate
-            </Button>
+            <Link href={`/campaigns/${campaign.address}`} className="flex-1">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                <Image src="/diamond.png" alt="wallet" width={24} height={24} />
+                Donate
+              </Button>
+            </Link>
             <Button variant="outline" className="flex-1">
               <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
               Add to Collection
