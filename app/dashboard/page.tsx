@@ -12,26 +12,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
-
-interface Campaign {
-    id: number
-    title: string
-    description: string
-    fundingGoal: string
-    startTime: Date
-    endTime: Date
-    creatorAddress: string
-    status: string
-    transactionHash?: string
-    campaignAddress?: string
-    address?: string
-    owner?: string
-    launchTime?: string
-    deadline?: string
-    goalAmount?: string
-    totalRaised?: string
-    isApproved?: boolean
-}
+import { Campaign } from '../types/campaign'
 
 export default function DashboardPage() {
     const { address } = useAccount()

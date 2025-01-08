@@ -15,6 +15,7 @@ export interface Campaign {
   deadline: string;
   goalAmount: string;
   totalRaised: string;
+  amountRaised: string;
   location: string;
   images: {
     id: number;
@@ -23,16 +24,3 @@ export interface Campaign {
   }[];
 }
 
-export interface CombinedCampaignData {
-  id: number;
-  title: string;
-  description: string;
-  status: string;
-  address: string;
-  owner: string;
-  launchTime: string;
-  deadline: string;
-  goalAmount: string;
-  totalRaised: string;
-  images: Campaign['images'];
-}
