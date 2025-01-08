@@ -1,16 +1,12 @@
 'use client'
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react'
 import { Search } from 'lucide-react'
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { usePrivy } from '@privy-io/react-auth';
 import { CreateCampaign } from '@/components/create-campaign'
-import { IoLocationSharp } from "react-icons/io5";
 import {
   Dialog,
   DialogContent,
@@ -41,14 +37,7 @@ interface Category {
   icon: JSX.Element
 }
 
-// interface NavItem {
-//   icon: JSX.Element
-//   label: string
-//   href: string
-// }
-
 export function ExploreStories() {
-  const { logout } = usePrivy();
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [showCollectionModal, setShowCollectionModal] = useState(false)
   const [selectedStory, setSelectedStory] = useState<Story | null>(null)
@@ -56,12 +45,6 @@ export function ExploreStories() {
   const { addToCollection } = useCollection()
 
   const { isOpen } = useSidebar()
-
-  // const navItems: NavItem[] = [
-  //   { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
-  //   { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
-  //   { icon: <Star className="h-6 w-6" />, label: "Favorites", href: "/favorites" },
-  // ]
 
   const categories: Category[] = [
     { id: "visual-arts", name: "Visual Arts", icon: <span className="text-xl">🎨</span> },
@@ -76,45 +59,6 @@ export function ExploreStories() {
     { id: "community-goods", name: "Community & Public Goods", icon: <span className="text-xl">🤝</span> },
   ]
 
-  const campaigns: Story[] = [
-    {
-      id: "1",
-      title: "From Shadows to Light: My Journey to Hope",
-      author: "Jana Dorali",
-      location: "Pagirinya, Uganda",
-      image: "/images/c3.png",
-      authorImage: "/images/profiles/jana.png",
-      excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 80,
-      fundingGoal: 100,
-      donationCount: 96,
-    },
-    {
-      id: "2",
-      title: "The Glass Castle",
-      author: "Jana Dorali",
-      location: "Pagirinya, Uganda",
-      image: "/images/c1.png",
-      authorImage: "/images/profiles/jana.png",
-      excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 40,
-      fundingGoal: 100,
-      donationCount: 56,
-    },
-    {
-      id: "3",
-      title: "Man's Search for Meaning",
-      author: "Jana Dorali",
-      location: "Pagirinya, Uganda",
-      image: "/images/c2.png",
-      authorImage: "/images/profiles/jana.png",
-      excerpt: "I left my home with nothing but a dream—to find safety and a future. The road was long, filled with uncertainty, but ev...",
-      donations: 10,
-      fundingGoal: 100,
-      donationCount: 26,
-    },
-  ]
-
   const collections = [
     { id: 1, name: "Collection 1", initial: "1" },
     { id: 2, name: "Collection 2", initial: "2" },
@@ -124,7 +68,6 @@ export function ExploreStories() {
 
   return (
     <div className="flex min-h-screen w-screen bg-gray-50">
-      {/* Side Navigation */}
       <SideBar />
 
       <div
@@ -275,52 +218,6 @@ export function ExploreStories() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* <Dialog open={showCollectionModal} onOpenChange={setShowCollectionModal}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle className="flex justify-between items-center">
-              <span className="text-2xl font-bold">Add to Collection</span>
-              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
-            <div className="space-y-2">
-              {collections.map((collection) => (
-                <div
-                  key={collection.id}
-                  className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer"
-                >
-                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
-                    {collection.initial}
-                  </div>
-                  <span className="flex-grow">{collection.name}</span>
-                  <div className="w-6 h-6 rounded-full border-2 border-emerald-400" />
-                </div>
-              ))}
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
-                <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
-                  +
-                </div>
-                <span className="text-purple-600">New Collection</span>
-              </div>
-            </div>
-            <div className="flex gap-4 mt-6">
-              <Button className="bg-purple-600 hover:bg-purple-700">
-                Save
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setShowCollectionModal(false)}
-              >
-                Cancel
-              </Button>
-
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog> */}
     </div>
   )
 }
