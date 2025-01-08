@@ -3,6 +3,9 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign'
+import { writeFile } from 'fs/promises'
+import { join } from 'path'
+
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
@@ -93,25 +96,36 @@ interface CampaignCreateBody {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as CampaignCreateBody;
-    const {
-      title,
-      description,
-      fundingGoal,
-      startTime,
-      endTime,
-      creatorAddress,
-      status
-    } = body;
+    const formData = await request.formData()
+    
+    // Extract form fields
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string
+    const fundingGoal = formData.get('fundingGoal') as string
+    const startTime = formData.get('startTime') as string
+    const endTime = formData.get('endTime') as string
+    const creatorAddress = formData.get('creatorAddress') as string
+    const status = formData.get('status') as string
+    const location = formData.get('location') as string
+    const bannerImage = formData.get('bannerImage') as File | null
 
-    // Generate a unique slug
-    const baseSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    const uniqueSuffix = Date.now().toString(36);
-    const slug = `${baseSlug}-${uniqueSuffix}`;
+    let imageUrl = null
+    if (bannerImage) {
+      // Create a unique filename
+      const bytes = new Uint8Array(8)
+      crypto.getRandomValues(bytes)
+      const uniqueId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+      const fileName = `${uniqueId}-${bannerImage.name}`
+      
+      // Save the file to public/campaign-images
+      const buffer = Buffer.from(await bannerImage.arrayBuffer())
+      const imagePath = join(process.cwd(), 'public', 'campaign-images')
+      await writeFile(join(imagePath, fileName), buffer)
+      
+      imageUrl = `/campaign-images/${fileName}`
+    }
 
+    // Create campaign with location and image
     const campaign = await prisma.campaign.create({
       data: {
         title,
@@ -121,9 +135,18 @@ export async function POST(request: Request) {
         endTime: new Date(endTime),
         creatorAddress,
         status,
-        slug
+        location,
+        images: imageUrl ? {
+          create: {
+            imageUrl,
+            isMainImage: true
+          }
+        } : undefined
       },
-    });
+      include: {
+        images: true
+      }
+    })
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
   } catch (error) {
