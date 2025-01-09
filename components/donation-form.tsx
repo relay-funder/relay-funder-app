@@ -33,7 +33,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   const [amount, setAmount] = useState('')
   const [percentage, setPercentage] = useState(10)
   const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, ] = useState<string | null>(null)
 
   // Simulated values - in a real app these would come from an API or wallet
   const tokenPrice = 1 // USD per ETH
