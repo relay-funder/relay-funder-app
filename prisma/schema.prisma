@@ -9,18 +9,21 @@ datasource db {
 
 model Campaign {
   id              Int      @id @default(autoincrement())
+  slug            String    @unique
   title           String
   description     String
   fundingGoal     String
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
-  status          String   // 'draft', 'pending_approval', 'active', 'failed', 'completed'
+  status          String    @default("draft")
   transactionHash String?
-  campaignAddress String?
+  campaignAddress String?   @unique
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   images          CampaignImage[]
+
+  @@index([creatorAddress])
 }
 
 model CampaignImage {

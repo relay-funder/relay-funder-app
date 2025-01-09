@@ -80,9 +80,19 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
   };
 }
 
+interface CampaignCreateBody {
+  title: string;
+  description: string;
+  fundingGoal: string;
+  startTime: string;
+  endTime: string;
+  creatorAddress: string;
+  status: string;
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json() as CampaignCreateBody;
     const {
       title,
       description,
@@ -91,7 +101,15 @@ export async function POST(request: Request) {
       endTime,
       creatorAddress,
       status
-    } = body
+    } = body;
+
+    // Generate a unique slug
+    const baseSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const uniqueSuffix = Date.now().toString(36);
+    const slug = `${baseSlug}-${uniqueSuffix}`;
 
     const campaign = await prisma.campaign.create({
       data: {
@@ -101,11 +119,12 @@ export async function POST(request: Request) {
         startTime: new Date(startTime),
         endTime: new Date(endTime),
         creatorAddress,
-        status
+        status,
+        slug
       },
-    })
+    });
 
-    return NextResponse.json({ campaignId: campaign.id }, { status: 201 })
+    return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
   } catch (error) {
     console.error('Failed to create campaign:', error)
     return NextResponse.json(
