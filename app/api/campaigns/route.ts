@@ -3,11 +3,26 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { existsSync } from 'fs'
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
+
+// Function to ensure slug uniqueness
+async function generateUniqueSlug(): Promise<string> {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD format
+  const randomStr = Math.random().toString(36).substring(2, 7); // 5 random alphanumeric chars
+  return `camp-${date}-${randomStr}`;
+}
+
+// Function to ensure directory exists
+async function ensureDirectoryExists(dirPath: string) {
+  if (!existsSync(dirPath)) {
+    await mkdir(dirPath, { recursive: true });
+  }
+}
 
 async function getPublicClient() {
   if (!FACTORY_ADDRESS || !RPC_URL) {
@@ -109,25 +124,56 @@ export async function POST(request: Request) {
     const location = formData.get('location') as string
     const bannerImage = formData.get('bannerImage') as File | null
 
+    // Log received data for debugging
+    console.log('Received form data:', {
+      title,
+      description,
+      fundingGoal,
+      startTime,
+      endTime,
+      creatorAddress,
+      status,
+      location,
+      hasBannerImage: !!bannerImage
+    });
+
+    // Generate unique slug
+    const slug = await generateUniqueSlug();
+
     let imageUrl = null
     if (bannerImage) {
-      // Create a unique filename
-      const bytes = new Uint8Array(8)
-      crypto.getRandomValues(bytes)
-      const uniqueId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
-      const fileName = `${uniqueId}-${bannerImage.name}`
-      
-      // Save the file to public/campaign-images
-      const buffer = Buffer.from(await bannerImage.arrayBuffer())
-      const imagePath = join(process.cwd(), 'public', 'campaign-images')
-      await writeFile(join(imagePath, fileName), buffer)
-      
-      imageUrl = `/campaign-images/${fileName}`
+      try {
+        // Create a unique filename
+        const bytes = new Uint8Array(8)
+        crypto.getRandomValues(bytes)
+        const uniqueId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+        const fileName = `${uniqueId}-${bannerImage.name}`
+        
+        // Ensure the campaign-images directory exists
+        const imagePath = join(process.cwd(), 'public', 'campaign-images')
+        await ensureDirectoryExists(imagePath)
+        
+        // Save the file to public/campaign-images
+        const buffer = Buffer.from(await bannerImage.arrayBuffer())
+        await writeFile(join(imagePath, fileName), buffer)
+        
+        imageUrl = `/campaign-images/${fileName}`
+      } catch (imageError) {
+        console.error('Error processing image:', imageError)
+        return NextResponse.json(
+          { 
+            error: 'Failed to process campaign image',
+            details: imageError instanceof Error ? imageError.message : 'Unknown error processing image'
+          },
+          { status: 500 }
+        )
+      }
     }
 
     // Create campaign with location and image
     const campaign = await prisma.campaign.create({
       data: {
+        slug,
         title,
         description,
         fundingGoal,
@@ -150,9 +196,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create campaign:', error)
+    console.error('Failed to create campaign. Details:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
+    
     return NextResponse.json(
-      { error: 'Failed to create campaign' },
+      { 
+        error: 'Failed to create campaign',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

@@ -239,7 +239,8 @@ export function CreateCampaign() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save campaign')
+        const errorData = await response.json()
+        throw new Error(errorData.details || errorData.error || 'Failed to save campaign')
       }
 
       toast({
