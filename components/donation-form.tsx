@@ -29,14 +29,14 @@ interface DonationFormProps {
 }
 
 export default function DonationForm({ campaign }: DonationFormProps) {
-  const [selectedToken, setSelectedToken] = useState('CELO')
+  const [selectedToken, setSelectedToken] = useState('USDC')
   const [amount, setAmount] = useState('')
   const [percentage, setPercentage] = useState(10)
-  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(true)
+  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Simulated values - in a real app these would come from an API or wallet
-  const tokenPrice = 3337.67 // USD per ETH
+  const tokenPrice = 1 // USD per ETH
   const availableBalance = 0.067484 // ETH
   
   const numericAmount = parseFloat(amount) || 0
@@ -87,9 +87,9 @@ export default function DonationForm({ campaign }: DonationFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CELO">Celo</SelectItem>
-                    {/* <SelectItem value="USDC">USDC</SelectItem>
-                    <SelectItem value="DAI">DAI</SelectItem> */}
+                    {/* <SelectItem value="CELO">Celo</SelectItem> */}
+                    <SelectItem value="USDC">USDC</SelectItem>
+                    {/* <SelectItem value="DAI">DAI</SelectItem> */}
                   </SelectContent>
                 </Select>
                 <Input
@@ -123,12 +123,12 @@ export default function DonationForm({ campaign }: DonationFormProps) {
               <Switch
                 checked={isDonatingToAkashic}
                 onCheckedChange={(checked) => {
-                  if (!numericAmount) {
-                    setError('Please enter an amount first')
-                    return
-                  }
-                  setError(null)
                   setIsDonatingToAkashic(checked)
+                  // if (checked && !numericAmount) {
+                  //   setError('Please enter an amount first')
+                  // } else {
+                  //   setError(null)
+                  // }
                 }}
               />
               <span className="text-sm">Donate to Akashic</span>
