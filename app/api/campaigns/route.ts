@@ -171,8 +171,7 @@ export async function GET() {
       // @ts-expect-error - Ignoring viem type mismatch for chain compatibility
       getCampaignCreatedEvents(client)
     ]);
-    console.log("dbCampaigns is ", dbCampaigns)
-
+    
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
       .map((dbCampaign) => {
