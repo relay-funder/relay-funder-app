@@ -11,6 +11,7 @@ import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { keccak256, stringToHex } from 'viem'
 import { useToast } from "@/hooks/use-toast"
 import { Log } from 'viem'
+import { Label } from "./ui/label"
 
 
 export function CreateCampaign() {
@@ -34,6 +35,13 @@ export function CreateCampaign() {
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({
     hash,
   })
+
+  const [slug, setSlug] = useState('');
+  
+  // Add validation for slug
+  const validateSlug = (value: string) => {
+    return value.length === 6 && /^[a-zA-Z0-9-]+$/.test(value);
+  };
 
   useEffect(() => {
     const updateCampaign = async () => {
@@ -179,6 +187,11 @@ export function CreateCampaign() {
       return
     }
 
+    if (!validateSlug(slug)) {
+      // Handle invalid slug
+      return;
+    }
+
     try {
       toast({
         title: "Creating Campaign",
@@ -199,6 +212,7 @@ export function CreateCampaign() {
           endTime: formData.endTime,
           creatorAddress: address,
           status: 'draft',
+          slug: slug,
         }),
       })
 
@@ -218,6 +232,7 @@ export function CreateCampaign() {
         launchTime: BigInt(new Date(formData.startTime ?? '').getTime() / 1000),
         deadline: BigInt(new Date(formData.endTime ?? '').getTime() / 1000),
         goalAmount: parseEther(formData.fundingGoal || '0'),
+        slug: slug,
       }
 
       // Then proceed with blockchain transaction
@@ -296,6 +311,22 @@ export function CreateCampaign() {
           onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
           required
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="slug">Campaign Slug (6 characters)</Label>
+        <Input
+          id="slug"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value.slice(0, 6))}
+          placeholder="abc123"
+          maxLength={6}
+        />
+        {slug && !validateSlug(slug) && (
+          <p className="text-sm text-red-500">
+            Slug must be exactly 6 characters and contain only letters, numbers, or hyphens
+          </p>
+        )}
       </div>
 
       <Button
