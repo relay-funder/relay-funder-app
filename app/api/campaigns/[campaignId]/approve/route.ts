@@ -32,9 +32,11 @@ interface TreasuryDeployedEvent {
 
 export async function POST(
     req: NextRequest,
+    { params }: { params: Promise<{ campaignId: string }> }
 ) {
     try {
-        const campaignId = req.nextUrl.searchParams.get('campaignId');
+        const campaignId = parseInt((await params).campaignId)
+
         if (!campaignId) {
             return NextResponse.json(
                 { error: 'Campaign ID is required' },
@@ -63,7 +65,7 @@ export async function POST(
 
         // Get campaign info from database
         const campaign = await prisma.campaign.findUnique({
-            where: { id: parseInt(campaignId) }
+            where: { id: campaignId }
         })
 
         if (!campaign) {
@@ -95,7 +97,7 @@ export async function POST(
 
         // Update campaign status and treasury address in database
         const updatedCampaign = await prisma.campaign.update({
-            where: { id: parseInt(campaignId) },
+            where: { id: campaignId },
             data: {
                 status: 'active',
                 campaignAddress: result.treasuryAddress
