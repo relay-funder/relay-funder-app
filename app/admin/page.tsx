@@ -40,8 +40,24 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const { isOpen } = useSidebar()
+    const [campaignStatuses, setCampaignStatuses] = useState<Record<string, string>>({})
+    const [isClient, setIsClient] = useState(false)
 
-    const isAdmin = address?.toLowerCase() === adminAddress?.toLowerCase()
+    const isAdmin = address === adminAddress
+
+    useEffect(() => {
+        setIsClient(true)
+    }, [])
+
+    const formatDate = (timestamp: string | undefined) => {
+        if (!timestamp || !isClient) return 'Not set'
+        try {
+            const date = new Date(parseInt(timestamp) * 1000)
+            return date.toISOString().split('T')[0]
+        } catch {
+            return 'Invalid date'
+        }
+    }
 
     const approveCampaign = async (campaignId: number) => {
         try {
@@ -105,26 +121,46 @@ export default function AdminPage() {
         fetchAllCampaigns()
     }, [address, isAdmin])
 
-    const formatDate = (timestamp: string | undefined) => {
-        if (!timestamp) return 'Not set'
-        return new Date(parseInt(timestamp) * 1000).toLocaleDateString()
-    }
+    useEffect(() => {
+        const updateCampaignStatuses = () => {
+            const now = Math.floor(Date.now() / 1000)
+            const newStatuses: Record<string, string> = {}
+            
+            campaigns.forEach(campaign => {
+                if (campaign.status === 'draft') {
+                    newStatuses[campaign.id] = 'Draft'
+                } else if (campaign.status === 'pending_approval') {
+                    newStatuses[campaign.id] = 'Pending Approval'
+                } else if (campaign.status === 'failed') {
+                    newStatuses[campaign.id] = 'Failed'
+                } else if (campaign.status === 'completed') {
+                    newStatuses[campaign.id] = 'Completed'
+                } else {
+                    const launchTime = campaign.launchTime ? parseInt(campaign.launchTime) : now
+                    const deadline = campaign.deadline ? parseInt(campaign.deadline) : now
+
+                    if (now < launchTime) {
+                        newStatuses[campaign.id] = 'Upcoming'
+                    } else if (now > deadline) {
+                        newStatuses[campaign.id] = 'Ended'
+                    } else {
+                        newStatuses[campaign.id] = 'Active'
+                    }
+                }
+            })
+            
+            setCampaignStatuses(newStatuses)
+        }
+
+        updateCampaignStatuses()
+        // Update statuses every minute
+        const interval = setInterval(updateCampaignStatuses, 60000)
+        
+        return () => clearInterval(interval)
+    }, [campaigns])
 
     const getCampaignStatus = (campaign: Campaign) => {
-        // If campaign is in draft or pending_approval state, show that first
-        if (campaign.status === 'draft') return 'Draft'
-        if (campaign.status === 'pending_approval') return 'Pending Approval'
-        if (campaign.status === 'failed') return 'Failed'
-        if (campaign.status === 'completed') return 'Completed'
-
-        // For active campaigns, show more detailed status
-        const now = Math.floor(Date.now() / 1000)
-        const launchTime = campaign.launchTime ? parseInt(campaign.launchTime) : now
-        const deadline = campaign.deadline ? parseInt(campaign.deadline) : now
-
-        if (now < launchTime) return 'Upcoming'
-        if (now > deadline) return 'Ended'
-        return 'Active'
+        return campaignStatuses[campaign.id] || 'Unknown'
     }
 
     const calculateStats = (campaigns: Campaign[]) => {
@@ -134,12 +170,9 @@ export default function AdminPage() {
                 const raised = campaign.totalRaised ? Number(campaign.totalRaised) : 0
                 return sum + raised
             }, 0),
-            activeCampaigns: campaigns.filter(campaign => {
-                const now = Math.floor(Date.now() / 1000)
-                const launchTime = campaign.launchTime ? parseInt(campaign.launchTime) : now
-                const deadline = campaign.deadline ? parseInt(campaign.deadline) : now
-                return now >= launchTime && now <= deadline && campaign.status === 'active'
-            }).length,
+            activeCampaigns: campaigns.filter(campaign => 
+                campaignStatuses[campaign.id] === 'Active' && campaign.status === 'active'
+            ).length,
             averageProgress: campaigns.length > 0
                 ? campaigns.reduce((sum, campaign) => {
                     if (!campaign.totalRaised || !campaign.goalAmount) return sum
@@ -148,6 +181,10 @@ export default function AdminPage() {
                 }, 0) / campaigns.length
                 : 0
         }
+    }
+
+    if (!isClient) {
+        return null
     }
 
     if (!address || !isAdmin) {
