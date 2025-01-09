@@ -76,7 +76,8 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
     deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
     goalAmount: dbCampaign.fundingGoal,
     totalRaised: '0',
-    images: dbCampaign.images
+    images: dbCampaign.images,
+    slug: dbCampaign.slug
   };
 }
 
@@ -170,6 +171,7 @@ export async function GET() {
       // @ts-expect-error - Ignoring viem type mismatch for chain compatibility
       getCampaignCreatedEvents(client)
     ]);
+    console.log("dbCampaigns is ", dbCampaigns)
 
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
