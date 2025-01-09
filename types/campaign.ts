@@ -17,6 +17,7 @@ export interface DbCampaign {
     isMainImage: boolean;
     campaignId: number;
   }[];
+  slug: string;
 }
 
 export interface Campaign extends DbCampaign {
