@@ -65,15 +65,35 @@ function generateSlug(title: string): string {
 async function main() {
   const imageUrls = ['/images/c1.png', '/images/c2.png', '/images/c3.png'];
 
-  const campaigns = Array.from({ length: 10 }, (_, i) => ({
-    title: `Campaign ${i + 1}`,
-    description: `Description for campaign ${i + 1}`,
-    fundingGoal: "1.0",
-    startTime: new Date(),
-    endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    creatorAddress: "0x1234567890123456789012345678901234567890",
-    status: "active",
-    slug: `camp${(i + 1).toString().padStart(2, '0')}` // e.g., camp01, camp02, etc.
+  const campaigns = campaignAddresses.map((address, index) => ({
+    title: campaignTitles[index],
+    description: `Supporting displaced communities through ${campaignTitles[
+      index
+    ].toLowerCase()}. This initiative aims to provide immediate assistance and sustainable solutions for refugees and displaced persons.`,
+    slug: `camp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    fundingGoal: Math.floor(
+      Math.random() * (100000 - 10000) + 10000
+    ).toString(),
+    startTime: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000),
+    endTime: new Date(
+      Date.now() + (30 + Math.random() * 60) * 24 * 60 * 60 * 1000
+    ),
+    creatorAddress: address,
+    campaignAddress: address,
+    status: 'active',
+    transactionHash: `0x${Math.random().toString(16).substr(2, 40)}`,
+    images: {
+      create: [
+        {
+          imageUrl: imageUrls[Math.floor(Math.random() * imageUrls.length)],
+          isMainImage: true
+        },
+        {
+          imageUrl: imageUrls[Math.floor(Math.random() * imageUrls.length)],
+          isMainImage: false
+        }
+      ]
+    }
   }));
 
   for (const campaign of campaigns) {

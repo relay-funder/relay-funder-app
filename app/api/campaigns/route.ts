@@ -154,7 +154,8 @@ export async function POST(request: Request) {
         await ensureDirectoryExists(imagePath)
         
         // Save the file to public/campaign-images
-        const buffer = Buffer.from(await bannerImage.arrayBuffer())
+        const arrayBuffer = await bannerImage.arrayBuffer()
+        const buffer = new Uint8Array(arrayBuffer)
         await writeFile(join(imagePath, fileName), buffer)
         
         imageUrl = `/campaign-images/${fileName}`
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
         endTime: new Date(endTime),
         creatorAddress,
         status,
-        location,
+        location: location || undefined,
         images: imageUrl ? {
           create: {
             imageUrl,
