@@ -1,1 +1,1 @@
-export const adminAddress = process.env.NEXT_PUBLIC_ADMIN_ADDRESS;
+export const adminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
