@@ -148,7 +148,7 @@ export default function CampaignList() {
           </div>
 
           <CardFooter className="mt-auto gap-4 p-6 pt-0">
-            <Link href={`/campaigns/${campaign.address}`} className="flex-1">
+            <Link href={`/campaigns/${campaign.slug}`} className="flex-1">
               <Button className="w-full bg-purple-600 hover:bg-purple-700">
                 <Image src="/diamond.png" alt="wallet" width={24} height={24} />
                 Donate
