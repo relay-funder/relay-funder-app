@@ -14,6 +14,7 @@ import { Log } from 'viem'
 import { Label } from "./ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
+import { countries } from '@/lib/constants'
 
 export function CreateCampaign() {
   const { address } = useAccount()
@@ -30,11 +31,6 @@ export function CreateCampaign() {
     bannerImage: null as File | null,
     bannerImagePreview: ''
   })
-
-  const countries = [
-    "United States", "Canada", "United Kingdom", "Australia", "Germany", "France", "Japan", 
-    "India", "Brazil", "South Africa", "China", "Russia", "Mexico", "Spain", "Italy"
-  ].sort()
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
