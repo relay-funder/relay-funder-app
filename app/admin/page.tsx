@@ -13,6 +13,25 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
 import { adminAddress } from '@/lib/constant'
+import { GlobalParamsABI } from '@/contracts/abi/GlobalParams'
+import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory'
+import { ethers } from 'ethers'
+
+// Add platform config
+const platformConfig = {
+    treasuryFactoryAddress: process.env.NEXT_PUBLIC_TREASURY_FACTORY as string,
+    globalParamsAddress: process.env.NEXT_PUBLIC_Global_Params as string,
+    platformBytes: process.env.NEXT_PUBLIC_PLATFORM_HASH as string,
+    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
+}
+
+// Debug log platform config
+console.log('Platform Config:', {
+    treasuryFactoryAddress: platformConfig.treasuryFactoryAddress,
+    globalParamsAddress: platformConfig.globalParamsAddress,
+    platformBytes: platformConfig.platformBytes,
+    rpcUrl: platformConfig.rpcUrl
+})
 
 interface Campaign {
     id: number
@@ -32,6 +51,14 @@ interface Campaign {
     goalAmount?: string
     totalRaised?: string
     isApproved?: boolean
+}
+
+interface TreasuryDeployedEvent {
+    event: string;
+    args: {
+        treasuryAddress: string;
+        campaignInfo: string;
+    };
 }
 
 export default function AdminPage() {
@@ -60,30 +87,119 @@ export default function AdminPage() {
     }
 
     const approveCampaign = async (campaignId: number) => {
-        try {
-            const response = await fetch(`/api/campaigns/${campaignId}/approve`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ adminAddress: address }),
-            })
+        const campaignAddress = "0x878f840fac42b6d1f1284a9d0605a5dee48efa9c"
 
-            const data = await response.json()
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to approve campaign')
+        try {
+            console.log('Starting campaign approval process...')
+            console.log('Campaign ID:', campaignId)
+            console.log('Campaign Address:', campaignAddress)
+
+            if (!address) {
+                throw new Error('Wallet not connected')
+            }
+            console.log('Connected wallet address:', address)
+
+            if (!window.ethereum) {
+                throw new Error('No ethereum wallet found')
+            }
+            console.log('Ethereum wallet found')
+
+            // Validate contract addresses
+            if (!platformConfig.globalParamsAddress) {
+                throw new Error('Global Params contract address is not configured')
+            }
+            if (!platformConfig.treasuryFactoryAddress) {
+                throw new Error('Treasury Factory contract address is not configured')
+            }
+            if (!platformConfig.platformBytes) {
+                throw new Error('Platform bytes is not configured')
             }
 
-            // Update the local state to reflect the approval
-            setCampaigns(prevCampaigns =>
-                prevCampaigns.map(campaign =>
-                    campaign.id === campaignId
-                        ? { ...campaign, status: 'active', isApproved: true }
-                        : campaign
-                )
+            // Setup provider and signer
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            const signer = provider.getSigner()
+            const signerAddress = await signer.getAddress()
+            console.log('Signer address:', signerAddress)
+
+            console.log('Contract Addresses:', {
+                globalParams: platformConfig.globalParamsAddress,
+                treasuryFactory: platformConfig.treasuryFactoryAddress
+            })
+            console.log('Platform Bytes:', platformConfig.platformBytes)
+
+            // First verify that the signer is actually the PLATFORM_ADMIN
+            console.log('Creating GlobalParams contract instance...')
+            const globalParams = new ethers.Contract(
+                platformConfig.globalParamsAddress,
+                GlobalParamsABI,
+                provider
             )
+            console.log('GlobalParams contract instance created')
+
+            console.log('Getting platform admin address...')
+            const platformAdmin = await globalParams.getPlatformAdminAddress(platformConfig.platformBytes)
+            console.log('Platform admin address:', platformAdmin)
+            console.log('Current signer address:', signerAddress)
+
+            if (platformAdmin.toLowerCase() !== signerAddress.toLowerCase()) {
+                throw new Error('Not authorized as platform admin')
+            }
+            console.log('Admin authorization confirmed')
+
+            // Initialize TreasuryFactory contract
+            console.log('Creating TreasuryFactory contract instance...')
+            const treasuryFactory = new ethers.Contract(
+                platformConfig.treasuryFactoryAddress,
+                TreasuryFactoryABI,
+                signer
+            )
+            console.log('TreasuryFactory contract instance created', treasuryFactory)
+
+            // Deploy treasury for the campaign
+            console.log('Deploying treasury with params:', {
+                platformBytes: platformConfig.platformBytes,
+                bytecodeIndex: 0,
+                campaignAddress: campaignAddress
+            })
+            const tx = await treasuryFactory.deploy(
+                platformConfig.platformBytes,
+                0,
+                campaignAddress
+            )
+            console.log('Deploy transaction sent:', tx.hash)
+
+            // Wait for transaction to be mined
+            console.log('Waiting for transaction confirmation...')
+            const receipt = await tx.wait()
+            console.log('Transaction confirmed:', receipt)
+
+            // Find the treasury deployment event
+            console.log('Looking for TreasuryFactoryTreasuryDeployed event...')
+            const deployEvent = receipt.events?.find(
+                (e: TreasuryDeployedEvent) => e.event === 'TreasuryFactoryTreasuryDeployed'
+            )
+
+            if (!deployEvent) {
+                throw new Error('Treasury deployment event not found')
+            }
+            console.log('Deploy event found:', deployEvent)
+
+            const treasuryAddress = deployEvent.args.treasuryAddress
+            console.log('Treasury deployed at:', treasuryAddress)
+
+            // Update local state
+            // console.log('Updating local state...')
+            // setCampaigns(prevCampaigns =>
+            //     prevCampaigns.map(campaign =>
+            //         campaign.id === campaignId
+            //             ? { ...campaign, status: 'active', isApproved: true, campaignAddress: treasuryAddress }
+            //             : campaign
+            //     )
+            // )
+            console.log('Local state updated')
+
         } catch (err) {
-            console.error('Error approving campaign:', err)
+            console.error('Error details:', err)
             setError(err instanceof Error ? err.message : 'Failed to approve campaign')
         }
     }
@@ -125,7 +241,7 @@ export default function AdminPage() {
         const updateCampaignStatuses = () => {
             const now = Math.floor(Date.now() / 1000)
             const newStatuses: Record<string, string> = {}
-            
+
             campaigns.forEach(campaign => {
                 if (campaign.status === 'draft') {
                     newStatuses[campaign.id] = 'Draft'
@@ -148,14 +264,14 @@ export default function AdminPage() {
                     }
                 }
             })
-            
+
             setCampaignStatuses(newStatuses)
         }
 
         updateCampaignStatuses()
         // Update statuses every minute
         const interval = setInterval(updateCampaignStatuses, 60000)
-        
+
         return () => clearInterval(interval)
     }, [campaigns])
 
@@ -170,7 +286,7 @@ export default function AdminPage() {
                 const raised = campaign.totalRaised ? Number(campaign.totalRaised) : 0
                 return sum + raised
             }, 0),
-            activeCampaigns: campaigns.filter(campaign => 
+            activeCampaigns: campaigns.filter(campaign =>
                 campaignStatuses[campaign.id] === 'Active' && campaign.status === 'active'
             ).length,
             averageProgress: campaigns.length > 0
@@ -205,7 +321,7 @@ export default function AdminPage() {
                                     {!address ? 'Connect Wallet' : 'Unauthorized Access'}
                                 </h3>
                                 <p className="text-gray-500 mb-6 max-w-md">
-                                    {!address 
+                                    {!address
                                         ? 'Please connect your wallet to access the admin dashboard.'
                                         : 'This page is restricted to admin users only.'}
                                 </p>
@@ -343,9 +459,9 @@ export default function AdminPage() {
                                             {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
                                             <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
                                             {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
-                                            
+
                                             {campaign.status === 'pending_approval' && (
-                                                <Button 
+                                                <Button
                                                     onClick={() => approveCampaign(campaign.id)}
                                                     className="w-full mt-4 bg-green-600 hover:bg-green-700"
                                                 >
