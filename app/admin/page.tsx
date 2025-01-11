@@ -25,14 +25,6 @@ const platformConfig = {
     rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
 }
 
-// Debug log platform config
-console.log('Platform Config:', {
-    treasuryFactoryAddress: platformConfig.treasuryFactoryAddress,
-    globalParamsAddress: platformConfig.globalParamsAddress,
-    platformBytes: platformConfig.platformBytes,
-    rpcUrl: platformConfig.rpcUrl
-})
-
 interface Campaign {
     id: number
     title: string
@@ -44,6 +36,7 @@ interface Campaign {
     status: string
     transactionHash?: string
     campaignAddress?: string
+    treasuryAddress?: string
     address?: string
     owner?: string
     launchTime?: string
@@ -86,25 +79,18 @@ export default function AdminPage() {
         }
     }
 
-    const approveCampaign = async (campaignId: number) => {
-        const campaignAddress = "0x878f840fac42b6d1f1284a9d0605a5dee48efa9c"
-
+    const approveCampaign = async (campaignId: number, campaignAddress: string) => {
         try {
-            console.log('Starting campaign approval process...')
-            console.log('Campaign ID:', campaignId)
-            console.log('Campaign Address:', campaignAddress)
 
-            if (!address) {
+            if (!campaignId || !campaignAddress) {
+                throw new Error('Campaign ID and address are required')
+            }
+
+            console.log('Campaign ID:', campaignId, 'Campaign Address:', campaignAddress)
+
+            if (!address || !window.ethereum) {
                 throw new Error('Wallet not connected')
             }
-            console.log('Connected wallet address:', address)
-
-            if (!window.ethereum) {
-                throw new Error('No ethereum wallet found')
-            }
-            console.log('Ethereum wallet found')
-
-            // Validate contract addresses
             if (!platformConfig.globalParamsAddress) {
                 throw new Error('Global Params contract address is not configured')
             }
@@ -115,20 +101,16 @@ export default function AdminPage() {
                 throw new Error('Platform bytes is not configured')
             }
 
-            // Setup provider and signer
             const provider = new ethers.providers.Web3Provider(window.ethereum)
             const signer = provider.getSigner()
             const signerAddress = await signer.getAddress()
             console.log('Signer address:', signerAddress)
-
             console.log('Contract Addresses:', {
                 globalParams: platformConfig.globalParamsAddress,
                 treasuryFactory: platformConfig.treasuryFactoryAddress
             })
             console.log('Platform Bytes:', platformConfig.platformBytes)
 
-            // First verify that the signer is actually the PLATFORM_ADMIN
-            console.log('Creating GlobalParams contract instance...')
             const globalParams = new ethers.Contract(
                 platformConfig.globalParamsAddress,
                 GlobalParamsABI,
@@ -138,8 +120,7 @@ export default function AdminPage() {
 
             console.log('Getting platform admin address...')
             const platformAdmin = await globalParams.getPlatformAdminAddress(platformConfig.platformBytes)
-            console.log('Platform admin address:', platformAdmin)
-            console.log('Current signer address:', signerAddress)
+            console.log('admin address:', platformAdmin, "signer address:", signerAddress)
 
             if (platformAdmin.toLowerCase() !== signerAddress.toLowerCase()) {
                 throw new Error('Not authorized as platform admin')
@@ -147,7 +128,6 @@ export default function AdminPage() {
             console.log('Admin authorization confirmed')
 
             // Initialize TreasuryFactory contract
-            console.log('Creating TreasuryFactory contract instance...')
             const treasuryFactory = new ethers.Contract(
                 platformConfig.treasuryFactoryAddress,
                 TreasuryFactoryABI,
@@ -155,7 +135,6 @@ export default function AdminPage() {
             )
             console.log('TreasuryFactory contract instance created', treasuryFactory)
 
-            // Deploy treasury for the campaign
             console.log('Deploying treasury with params:', {
                 platformBytes: platformConfig.platformBytes,
                 bytecodeIndex: 0,
@@ -168,8 +147,6 @@ export default function AdminPage() {
             )
             console.log('Deploy transaction sent:', tx.hash)
 
-            // Wait for transaction to be mined
-            console.log('Waiting for transaction confirmation...')
             const receipt = await tx.wait()
             console.log('Transaction confirmed:', receipt)
 
@@ -187,15 +164,39 @@ export default function AdminPage() {
             const treasuryAddress = deployEvent.args.treasuryAddress
             console.log('Treasury deployed at:', treasuryAddress)
 
+            // Update campaign status in database
+            console.log('Updating campaign status in database...')
+            if (campaignId && treasuryAddress) {
+                const updateResponse = await fetch(`/api/campaigns/${campaignId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        treasuryAddress,
+                        adminAddress: address,
+                        status: 'active'
+                    })
+                })
+                if (!updateResponse.ok) {
+                    throw new Error('Failed to update campaign status')
+                }
+            }
+
             // Update local state
-            // console.log('Updating local state...')
-            // setCampaigns(prevCampaigns =>
-            //     prevCampaigns.map(campaign =>
-            //         campaign.id === campaignId
-            //             ? { ...campaign, status: 'active', isApproved: true, campaignAddress: treasuryAddress }
-            //             : campaign
-            //     )
-            // )
+            setCampaigns(prevCampaigns =>
+                prevCampaigns.map(campaign =>
+                    campaign.id === campaignId
+                        ? {
+                            ...campaign,
+                            status: 'active',
+                            isApproved: true,
+                            treasuryAddress: treasuryAddress,
+                            campaignAddress: campaignAddress
+                        }
+                        : campaign
+                )
+            )
             console.log('Local state updated')
 
         } catch (err) {
@@ -226,7 +227,11 @@ export default function AdminPage() {
                     throw new Error(data.error || 'Failed to fetch campaigns')
                 }
 
-                setCampaigns(data.campaigns)
+                // Filter out campaigns without a campaignAddress
+                const filteredCampaigns = data.campaigns.filter((campaign: Campaign) => campaign.address)
+                console.log('data.campaigns', data.campaigns)
+                console.log('filteredCampaigns', filteredCampaigns)
+                setCampaigns(filteredCampaigns)
             } catch (err) {
                 console.error('Error fetching campaigns:', err)
                 setError(err instanceof Error ? err.message : 'An error occurred')
@@ -454,7 +459,7 @@ export default function AdminPage() {
 
                                         <div className="space-y-2">
                                             <p><strong>Description:</strong> {campaign.description}</p>
-                                            <p><strong>Creator:</strong> {campaign.creatorAddress}</p>
+                                            <p><strong>Creator:</strong> {campaign.owner}</p>
                                             {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
                                             {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
                                             <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
@@ -462,7 +467,7 @@ export default function AdminPage() {
 
                                             {campaign.status === 'pending_approval' && (
                                                 <Button
-                                                    onClick={() => approveCampaign(campaign.id)}
+                                                    onClick={() => approveCampaign(campaign.id, campaign.address || '')}
                                                     className="w-full mt-4 bg-green-600 hover:bg-green-700"
                                                 >
                                                     Approve Campaign
