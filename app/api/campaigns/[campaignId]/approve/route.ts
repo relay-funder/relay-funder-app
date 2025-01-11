@@ -31,6 +31,8 @@ export async function POST(
             where: { id: campaignId }
         })
 
+        console.log('campaign', campaign)
+
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campaign not found' },
@@ -45,14 +47,17 @@ export async function POST(
             )
         }
 
+        console.log('campaign.campaignAddress', campaign.campaignAddress, 'treasuryAddress', treasuryAddress)
+
         // Update campaign status and treasury address in database
         const updatedCampaign = await prisma.campaign.update({
             where: { id: campaignId },
             data: {
                 status: 'active',
-                campaignAddress: treasuryAddress
             }
         })
+
+        console.log('updatedCampaign', updatedCampaign)
 
         return NextResponse.json({
             campaign: updatedCampaign
