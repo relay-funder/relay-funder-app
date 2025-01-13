@@ -54,12 +54,12 @@ export const SideBar = () => {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex items-center justify-center rounded-lg px-1 py-4 text-gray-800 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                                isOpen ? "px-4" : "justify-start px-[9px]",
+                                "flex items-center rounded-lg px-1 py-4 text-gray-800 transition-colors hover:bg-gray-100 hover:text-gray-900",
+                                isOpen ? "px-4" : "px-[9px]",
                                 pathname === item.href && "bg-green-200 text-gray-900 flex-grow"
                             )}
                         >
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center">
                                 {item.icon}
                             </div>
                             <span

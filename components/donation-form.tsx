@@ -29,7 +29,7 @@ interface DonationFormProps {
 }
 
 export default function DonationForm({ campaign }: DonationFormProps) {
-  const [selectedToken, setSelectedToken] = useState('ETH')
+  const [selectedToken, setSelectedToken] = useState('CELO')
   const [amount, setAmount] = useState('')
   const [percentage, setPercentage] = useState(10)
   const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(true)
@@ -74,7 +74,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
 
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="bg-teal-50 text-teal-600 hover:bg-teal-50">
-            <span className="mr-1">👋</span> GIVbacks eligible
+            <span className="mr-1">👋</span> Eligible for matching
           </Badge>
         </div>
 
@@ -87,9 +87,9 @@ export default function DonationForm({ campaign }: DonationFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ETH">ETH</SelectItem>
-                    <SelectItem value="USDC">USDC</SelectItem>
-                    <SelectItem value="DAI">DAI</SelectItem>
+                    <SelectItem value="CELO">Celo</SelectItem>
+                    {/* <SelectItem value="USDC">USDC</SelectItem>
+                    <SelectItem value="DAI">DAI</SelectItem> */}
                   </SelectContent>
                 </Select>
                 <Input
