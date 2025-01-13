@@ -76,13 +76,24 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
     deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
     goalAmount: dbCampaign.fundingGoal,
     totalRaised: '0',
-    images: dbCampaign.images
+    images: dbCampaign.images,
+    slug: dbCampaign.slug
   };
+}
+
+interface CampaignCreateBody {
+  title: string;
+  description: string;
+  fundingGoal: string;
+  startTime: string;
+  endTime: string;
+  creatorAddress: string;
+  status: string;
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json() as CampaignCreateBody;
     const {
       title,
       description,
@@ -91,7 +102,15 @@ export async function POST(request: Request) {
       endTime,
       creatorAddress,
       status
-    } = body
+    } = body;
+
+    // Generate a unique slug
+    const baseSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const uniqueSuffix = Date.now().toString(36);
+    const slug = `${baseSlug}-${uniqueSuffix}`;
 
     const campaign = await prisma.campaign.create({
       data: {
@@ -101,11 +120,12 @@ export async function POST(request: Request) {
         startTime: new Date(startTime),
         endTime: new Date(endTime),
         creatorAddress,
-        status
+        status,
+        slug
       },
-    })
+    });
 
-    return NextResponse.json({ campaignId: campaign.id }, { status: 201 })
+    return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
   } catch (error) {
     console.error('Failed to create campaign:', error)
     return NextResponse.json(
@@ -151,7 +171,7 @@ export async function GET() {
       // @ts-expect-error - Ignoring viem type mismatch for chain compatibility
       getCampaignCreatedEvents(client)
     ]);
-
+    
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
       .map((dbCampaign) => {

@@ -25,8 +25,8 @@ export default function ProjectInfo({ campaign }: ProjectInfoProps) {
       </Card>
 
       <div className="flex gap-2">
-        <Badge className="bg-indigo-600">GIVBACKS ELIGIBLE</Badge>
-        <Badge variant="secondary">VOUCHED</Badge>
+        <Badge className="bg-indigo-600">Verified</Badge>
+        {/* <Badge variant="secondary">VOUCHED</Badge> */}
       </div>
 
       <div className="space-y-4">

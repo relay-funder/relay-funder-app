@@ -8,6 +8,7 @@ import BackButton from '@/app/components/back-button'
 const mockCampaign: Campaign = {
   id: 1,
   title: "Save the Rainforest",
+  slug: "save-the-rainforest",
   description: "Help us protect and restore the Amazon rainforest. Your donation will go towards conservation efforts and supporting local communities.",
   fundingGoal: "100000",
   startTime: new Date("2023-01-01"),
