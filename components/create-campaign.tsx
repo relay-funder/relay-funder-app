@@ -12,7 +12,9 @@ import { keccak256, stringToHex } from 'viem'
 import { useToast } from "@/hooks/use-toast"
 import { Log } from 'viem'
 import { Label } from "./ui/label"
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Image from "next/image"
+import { countries } from '@/lib/constant'
 
 export function CreateCampaign() {
   const { address } = useAccount()
@@ -24,7 +26,10 @@ export function CreateCampaign() {
     description: '',
     fundingGoal: '',
     startTime: new Date().toISOString().slice(0, 16),
-    endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
+    endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    location: '',
+    bannerImage: null as File | null,
+    bannerImagePreview: ''
   })
 
   const { data: hash, isPending, writeContract } = useWriteContract()
@@ -174,6 +179,18 @@ export function CreateCampaign() {
 
   const [dbError, setDbError] = useState<string | null>(null)
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        bannerImage: file,
+        bannerImagePreview: URL.createObjectURL(file)
+      }))
+    }
+  }
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setDbError(null)
@@ -198,23 +215,27 @@ export function CreateCampaign() {
         description: "Saving campaign details to database...",
       })
 
-      // First, save to database with draft status
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          fundingGoal: formData.fundingGoal,
-          startTime: formData.startTime,
-          endTime: formData.endTime,
-          creatorAddress: address,
-          status: 'draft',
-          slug: slug,
-        }),
-      })
+        // Create FormData for multipart/form-data
+        const formDataToSend = new FormData()
+        formDataToSend.append('title', formData.title)
+        formDataToSend.append('description', formData.description)
+        formDataToSend.append('fundingGoal', formData.fundingGoal)
+        formDataToSend.append('startTime', formData.startTime)
+        formDataToSend.append('endTime', formData.endTime)
+        formDataToSend.append('creatorAddress', address)
+        formDataToSend.append('status', 'draft')
+        formDataToSend.append('location', formData.location)
+        formDataToSend.append('slug', slug)
+        if (formData.bannerImage) {
+          formDataToSend.append('bannerImage', formData.bannerImage)
+        }
+  
+        // First, save to database with draft status
+        const response = await fetch('/api/campaigns', {
+          method: 'POST',
+          body: formDataToSend,
+        })
+  
 
       if (!response.ok) {
         throw new Error('Failed to save campaign')
@@ -280,6 +301,48 @@ export function CreateCampaign() {
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
           required
         />
+      </div>
+
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Location</label>
+        <Select
+          value={formData.location}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a country" />
+          </SelectTrigger>
+          <SelectContent>
+            {countries.map((country) => (
+              <SelectItem key={country} value={country}>
+                {country}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Campaign Banner Image</label>
+        <div className="mt-2">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="mb-2"
+          />
+          {formData.bannerImagePreview && (
+            <div className="relative w-full h-48 rounded-lg overflow-hidden">
+              <Image
+                src={formData.bannerImagePreview}
+                alt="Campaign banner preview"
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
