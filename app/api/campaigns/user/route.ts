@@ -28,7 +28,15 @@ export async function GET(request: Request) {
         }
 
         const { searchParams } = new URL(request.url);
-        const creatorAddress = searchParams.get('creatorAddress');
+        const creatorAddress = searchParams.get('address');
+        console.log('Creator address:', creatorAddress);
+
+        if (!creatorAddress) {
+            return NextResponse.json(
+                { error: 'Wallet address is required' },
+                { status: 400 }
+            );
+        }
 
         const client = createPublicClient({
             chain: celoAlfajores,
@@ -38,7 +46,7 @@ export async function GET(request: Request) {
         // First, fetch all campaigns from the database
         const dbCampaigns = await prisma.campaign.findMany({
             where: {
-                ...(creatorAddress ? { creatorAddress } : {}), // Filter by creator if provided
+                creatorAddress
             },
             select: {
                 id: true,
