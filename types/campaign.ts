@@ -18,6 +18,7 @@ export interface DbCampaign {
     campaignId: number;
   }[];
   slug: string;
+  location: string | null;
 }
 
 export interface Campaign extends DbCampaign {
@@ -27,7 +28,7 @@ export interface Campaign extends DbCampaign {
   deadline: string;
   goalAmount: string;
   totalRaised: string;
-  location?: string;
+  location: string | null;
   amountRaised?: string;
 }
 
@@ -43,4 +44,5 @@ export interface CombinedCampaignData {
   goalAmount: string;
   totalRaised: string;
   images: DbCampaign['images'];
+  location: string | null;
 }

@@ -10,13 +10,6 @@ import { existsSync } from 'fs'
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
-// Function to ensure slug uniqueness
-// async function generateUniqueSlug(): Promise<string> {
-//   const date = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD format
-//   const randomStr = Math.random().toString(36).substring(2, 7); // 5 random alphanumeric chars
-//   return `camp-${date}-${randomStr}`;
-// }
-
 async function ensureDirectoryExists(dirPath: string) {
   if (!existsSync(dirPath)) {
     await mkdir(dirPath, { recursive: true });
@@ -95,19 +88,10 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
     goalAmount: dbCampaign.fundingGoal,
     totalRaised: '0',
     images: dbCampaign.images,
-    slug: dbCampaign.slug
+    slug: dbCampaign.slug,
+    location: dbCampaign.location
   };
 }
-
-// interface CampaignCreateBody {
-//   title: string;
-//   description: string;
-//   fundingGoal: string;
-//   startTime: string;
-//   endTime: string;
-//   creatorAddress: string;
-//   status: string;
-// }
 
 export async function POST(request: Request) {
   try {
