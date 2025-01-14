@@ -9,6 +9,7 @@ import { existsSync } from 'fs'
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 async function ensureDirectoryExists(dirPath: string) {
   if (!existsSync(dirPath)) {
@@ -16,6 +17,27 @@ async function ensureDirectoryExists(dirPath: string) {
   }
 }
 
+async function saveImageToFileSystem(file: File, fileName: string): Promise<string> {
+  if (IS_PRODUCTION) {
+    // In production, we should use a proper file storage service
+    // For now, just return a placeholder
+    return '/images/placeholder.svg';
+  }
+
+  try {
+    const imagePath = join(process.cwd(), 'public', 'campaign-images');
+    await ensureDirectoryExists(imagePath);
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+    await writeFile(join(imagePath, fileName), buffer);
+    
+    return `/campaign-images/${fileName}`;
+  } catch (error) {
+    console.error('Error saving image:', error);
+    return '/images/placeholder.svg';
+  }
+}
 
 async function getPublicClient() {
   if (!FACTORY_ADDRESS || !RPC_URL) {
@@ -108,7 +130,23 @@ export async function POST(request: Request) {
     const location = formData.get('location') as string
     const bannerImage = formData.get('bannerImage') as File | null
 
-    console.log(title, description, fundingGoal, startTime, endTime, creatorAddress, status, location, bannerImage)
+    console.log('Creating campaign with data:', {
+      title,
+      description,
+      fundingGoal,
+      startTime,
+      endTime,
+      creatorAddress,
+      status,
+      location
+    })
+
+    if (!title || !description || !fundingGoal || !startTime || !endTime || !creatorAddress) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
 
     // Generate a unique slug
     const baseSlug = title
@@ -127,31 +165,16 @@ export async function POST(request: Request) {
         const uniqueId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
         const fileName = `${uniqueId}-${bannerImage.name}`
         
-        // Ensure the campaign-images directory exists
-        const imagePath = join(process.cwd(), 'public', 'campaign-images')
-        await ensureDirectoryExists(imagePath)
-        
-        // Save the file to public/campaign-images
-        const arrayBuffer = await bannerImage.arrayBuffer()
-        const buffer = new Uint8Array(arrayBuffer)
-        await writeFile(join(imagePath, fileName), buffer)
-        
-        imageUrl = `/campaign-images/${fileName}`
+        imageUrl = await saveImageToFileSystem(bannerImage, fileName)
       } catch (imageError) {
         console.error('Error processing image:', imageError)
-        return NextResponse.json(
-          { 
-            error: 'Failed to process campaign image',
-            details: imageError instanceof Error ? imageError.message : 'Unknown error processing image'
-          },
-          { status: 500 }
-        )
+        // Don't fail the whole request if image processing fails
+        imageUrl = '/images/placeholder.svg'
       }
     }
 
     const campaign = await prisma.campaign.create({
       data: {
-        slug,
         title,
         description,
         fundingGoal,
@@ -160,6 +183,7 @@ export async function POST(request: Request) {
         creatorAddress,
         status,
         location: location || undefined,
+        slug,
         images: imageUrl ? {
           create: {
             imageUrl,
@@ -171,6 +195,8 @@ export async function POST(request: Request) {
         images: true
       }
     });
+
+    console.log('Campaign created successfully:', campaign)
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
   } catch (error) {
