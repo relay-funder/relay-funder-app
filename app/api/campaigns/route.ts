@@ -99,15 +99,15 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
   };
 }
 
-interface CampaignCreateBody {
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: string;
-  endTime: string;
-  creatorAddress: string;
-  status: string;
-}
+// interface CampaignCreateBody {
+//   title: string;
+//   description: string;
+//   fundingGoal: string;
+//   startTime: string;
+//   endTime: string;
+//   creatorAddress: string;
+//   status: string;
+// }
 
 export async function POST(request: Request) {
   try {
