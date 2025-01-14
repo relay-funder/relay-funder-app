@@ -185,7 +185,7 @@ export default function DashboardPage() {
                     <div className="text-3xl font-bold mb-8">Dashboard</div>
 
                     {!loading && !error && (
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                             <Card>
                                 <CardContent className="flex items-center p-6">
                                     <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
@@ -240,7 +240,7 @@ export default function DashboardPage() {
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {[...Array(3)].map((_, index) => (
                                 <Card key={index} className="animate-pulse">
-                                    <CardHeader className="h-[200px] bg-gray-200" />
+                                    <CardHeader className="p-0 h-[200px] bg-gray-200" />
                                     <CardContent className="p-6">
                                         <div className="h-6 bg-gray-200 rounded mb-4" />
                                         <div className="space-y-2">
@@ -270,18 +270,18 @@ export default function DashboardPage() {
                                 <Card key={campaign.id || campaign.address} className="overflow-hidden">
                                     <CardHeader className="p-0">
                                         <Image
-                                            src="/images/placeholder.svg"
-                                            alt="Campaign"
+                                            src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
+                                            alt={campaign.title || 'Campaign'}
                                             width={600}
                                             height={400}
                                             className="h-[200px] w-full object-cover"
                                         />
                                     </CardHeader>
                                     <CardContent className="p-6">
-                                        <div className="flex justify-between items-center">
-                                            <h2 className="text-xl font-bold mb-4">{campaign.title || 'Campaign'}</h2>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h2 className="text-xl font-bold">{campaign.title || 'Campaign'}</h2>
                                             <div className={cn(
-                                                "top-4 right-4 px-3 py-1 rounded-full text-sm inline-block",
+                                                "px-3 py-1 rounded-full text-sm",
                                                 {
                                                     'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
                                                     'bg-yellow-100 text-yellow-600': getCampaignStatus(campaign) === 'Upcoming',
