@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         // First, fetch all campaigns from the database
         const dbCampaigns = await prisma.campaign.findMany({
             where: {
-                creatorAddress: creatorAddress
+                creatorAddress
             },
             select: {
                 id: true,
