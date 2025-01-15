@@ -19,6 +19,7 @@ model Campaign {
   status          String    @default("draft")
   transactionHash String?
   campaignAddress String?   @unique
+  treasuryAddress String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   images          CampaignImage[]
