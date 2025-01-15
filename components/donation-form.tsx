@@ -78,8 +78,8 @@ export default function DonationForm({ campaign }: DonationFormProps) {
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: '0xaef3' }], // 44787 in hex
         })
-      } catch (switchError: any) {
-        if (switchError.code === 4902) {
+      } catch (switchError: unknown) {
+        if (switchError instanceof Error && 'code' in switchError && switchError.code === 4902) {
           try {
             await privyProvider.request({
               method: 'wallet_addEthereumChain',
