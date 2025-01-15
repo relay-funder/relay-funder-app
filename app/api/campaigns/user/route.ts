@@ -19,6 +19,12 @@ type DbCampaign = {
     campaignAddress: string | null;
     createdAt: Date;
     updatedAt: Date;
+    images: {
+        id: number;
+        imageUrl: string;
+        isMainImage: boolean;
+        campaignId: number;
+    }[];
 };
 
 export async function GET(request: Request) {
@@ -60,7 +66,8 @@ export async function GET(request: Request) {
                 transactionHash: true,
                 campaignAddress: true,
                 createdAt: true,
-                updatedAt: true
+                updatedAt: true,
+                images: true
             }
         });
 
