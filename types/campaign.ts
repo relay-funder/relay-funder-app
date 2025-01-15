@@ -9,6 +9,7 @@ export interface DbCampaign {
   status: string;
   transactionHash: string | null;
   campaignAddress: string | null;
+  treasuryAddress?: string | null;
   createdAt: Date;
   updatedAt: Date;
   images: {
@@ -45,4 +46,5 @@ export interface CombinedCampaignData {
   totalRaised: string;
   images: DbCampaign['images'];
   location: string | null;
+  treasuryAddress: string | null;
 }
