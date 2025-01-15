@@ -151,9 +151,14 @@ export default function AdminPage() {
                     method: 'wallet_switchEthereumChain',
                     params: [{ chainId: '0xaef3' }], // 44787 in hex
                 });
-            } catch (switchError: { code: number }) {
-                // If the chain hasn't been added to the wallet, add it
-                if (switchError.code === 4902) {
+            } catch (switchError: unknown) {
+                // Type guard to check if it's a ProviderRpcError
+                if (
+                    typeof switchError === 'object' && 
+                    switchError !== null &&
+                    'code' in switchError && 
+                    (switchError as { code: number }).code === 4902
+                ) {
                     try {
                         await privyProvider.request({
                             method: 'wallet_addEthereumChain',
