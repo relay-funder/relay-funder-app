@@ -17,6 +17,7 @@ import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory'
 import { ethers } from 'ethers'
 import { IoLocationSharp } from 'react-icons/io5'
 import { useToast } from "@/hooks/use-toast"
+import {useWallets} from '@privy-io/react-auth';
 
 // Add platform config
 const platformConfig = {
