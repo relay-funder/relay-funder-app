@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAccount } from 'wagmi'
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
@@ -18,6 +17,7 @@ import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory'
 import { ethers } from 'ethers'
 import { IoLocationSharp } from 'react-icons/io5'
 import { useToast } from "@/hooks/use-toast"
+import {useWallets} from '@privy-io/react-auth';
 
 // Add platform config
 const platformConfig = {
@@ -63,12 +63,46 @@ interface TreasuryDeployedEvent {
     };
 }
 
+function AccessDenied({address, isOpen}: {address: string | undefined, isOpen: boolean}) {
+    return (
+        <div className="flex min-h-screen bg-gray-50">
+            <SideBar />
+            <div className={cn(
+                "flex-1 p-8 transition-all duration-300 ease-in-out",
+                isOpen ? "ml-[240px]" : "ml-[70px]"
+            )}>
+                <div className="max-w-7xl mx-auto">
+                    <Card className="border-2 border-dashed border-gray-200 bg-white/50 backdrop-blur-sm">
+                        <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                                <AlertCircle className="h-8 w-8 text-red-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                                {!address ? 'Connect Wallet' : 'Unauthorized Access'}
+                            </h3>
+                            <p className="text-gray-500 mb-6 max-w-md">
+                                {!address
+                                    ? 'Please connect your wallet to access the admin dashboard.'
+                                    : 'This page is restricted to admin users only.'}
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 export default function AdminPage() {
-    const { address } = useAccount()
+    const {wallets} = useWallets();
+    const { isOpen } = useSidebar()
+    
+    const wallet = wallets.find(wallet => wallet?.address === adminAddress);
+    const address = wallet?.address;
+    
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { isOpen } = useSidebar()
     const [campaignStatuses, setCampaignStatuses] = useState<Record<string, string>>({})
     const [isClient, setIsClient] = useState(false)
     const { toast } = useToast()
@@ -91,14 +125,11 @@ export default function AdminPage() {
 
     const approveCampaign = async (campaignId: number, campaignAddress: string) => {
         try {
-
             if (!campaignId || !campaignAddress) {
                 throw new Error('Campaign ID and address are required')
             }
 
-            console.log('Campaign ID:', campaignId, 'Campaign Address:', campaignAddress)
-
-            if (!address || !window.ethereum) {
+            if (!wallet || !wallet.isConnected()) {
                 throw new Error('Wallet not connected')
             }
             if (!platformConfig.globalParamsAddress) {
@@ -110,58 +141,85 @@ export default function AdminPage() {
             if (!platformConfig.platformBytes) {
                 throw new Error('Platform bytes is not configured')
             }
+            
+            // First, ensure we're on the right network
+            const privyProvider = await wallet.getEthereumProvider()
+            
+            // Switch to Alfajores network
+            try {
+                await privyProvider.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0xaef3' }], // 44787 in hex
+                });
+            } catch (switchError: unknown) {
+                // Type guard to check if it's a ProviderRpcError
+                if (
+                    typeof switchError === 'object' && 
+                    switchError !== null &&
+                    'code' in switchError && 
+                    (switchError as { code: number }).code === 4902
+                ) {
+                    try {
+                        await privyProvider.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0xaef3', // 44787 in hex
+                                chainName: 'Celo Alfajores Testnet',
+                                nativeCurrency: {
+                                    name: 'CELO',
+                                    symbol: 'CELO',
+                                    decimals: 18
+                                },
+                                rpcUrls: [platformConfig.rpcUrl],
+                                blockExplorerUrls: ['https://alfajores.celoscan.io/']
+                            }],
+                        });
+                    } catch (addError) {
+                        console.error('Error adding Alfajores network:', addError);
+                        throw new Error('Failed to add Alfajores network to wallet');
+                    }
+                } else {
+                    console.error('Error switching to Alfajores network:', switchError);
+                    throw new Error('Failed to switch to Alfajores network');
+                }
+            }
 
-            const provider = new ethers.providers.Web3Provider(window.ethereum)
-            const signer = provider.getSigner()
-            const signerAddress = await signer.getAddress()
-            console.log('Signer address:', signerAddress)
-            console.log('Contract Addresses:', {
-                globalParams: platformConfig.globalParamsAddress,
-                treasuryFactory: platformConfig.treasuryFactoryAddress
+            // Now create providers after ensuring correct network
+            const walletProvider = new ethers.providers.Web3Provider(privyProvider, {
+                chainId: 44787,
+                name: 'Celo Alfajores',
             })
-            console.log('Platform Bytes:', platformConfig.platformBytes)
-
+            const signer = walletProvider.getSigner()
+            const signerAddress = await signer.getAddress()
+            
+            // Use the wallet provider for all operations since we've confirmed the network
             const globalParams = new ethers.Contract(
                 platformConfig.globalParamsAddress,
                 GlobalParamsABI,
-                provider
+                walletProvider
             )
-            console.log('GlobalParams contract instance created')
-
-            console.log('Getting platform admin address...')
             const platformAdmin = await globalParams.getPlatformAdminAddress(platformConfig.platformBytes)
-            console.log('admin address:', platformAdmin, "signer address:", signerAddress)
-
+            
             if (platformAdmin.toLowerCase() !== signerAddress.toLowerCase()) {
                 throw new Error('Not authorized as platform admin')
             }
-            console.log('Admin authorization confirmed')
-
+            
             // Initialize TreasuryFactory contract
             const treasuryFactory = new ethers.Contract(
                 platformConfig.treasuryFactoryAddress,
                 TreasuryFactoryABI,
                 signer
             )
-            console.log('TreasuryFactory contract instance created', treasuryFactory)
-
-            console.log('Deploying treasury with params:', {
-                platformBytes: platformConfig.platformBytes,
-                bytecodeIndex: 0,
-                campaignAddress: campaignAddress
-            })
+            
             const tx = await treasuryFactory.deploy(
                 platformConfig.platformBytes,
                 0,
                 campaignAddress
             )
-            console.log('Deploy transaction sent:', tx.hash)
-
+            
             const receipt = await tx.wait()
-            console.log('Transaction confirmed:', receipt)
-
+            
             // Find the treasury deployment event
-            console.log('Looking for TreasuryFactoryTreasuryDeployed event...')
             const deployEvent = receipt.events?.find(
                 (e: TreasuryDeployedEvent) => e.event === 'TreasuryFactoryTreasuryDeployed'
             )
@@ -169,13 +227,10 @@ export default function AdminPage() {
             if (!deployEvent) {
                 throw new Error('Treasury deployment event not found')
             }
-            console.log('Deploy event found:', deployEvent)
-
+            
             const treasuryAddress = deployEvent.args.treasuryAddress
-            console.log('Treasury deployed at:', treasuryAddress)
-
+            
             // Update campaign status in database
-            console.log('Updating campaign status in database...')
             if (campaignId && treasuryAddress) {
                 const updateResponse = await fetch(`/api/campaigns/${campaignId}/approve`, {
                     method: 'POST',
@@ -207,14 +262,13 @@ export default function AdminPage() {
                         : campaign
                 )
             )
-            console.log('Local state updated')
 
         } catch (err) {
             console.error('Error details:', err)
             setError(err instanceof Error ? err.message : 'Failed to approve campaign')
         }
     }
-
+    
     useEffect(() => {
         const fetchAllCampaigns = async () => {
             if (!address) {
@@ -249,7 +303,10 @@ export default function AdminPage() {
                 setLoading(false)
             }
         }
-        fetchAllCampaigns()
+        console.log('debug: address!!', address)
+        if(address) {
+            fetchAllCampaigns()
+        }
     }, [address, isAdmin])
 
     useEffect(() => {
@@ -319,33 +376,7 @@ export default function AdminPage() {
     }
 
     if (!address || !isAdmin) {
-        return (
-            <div className="flex min-h-screen bg-gray-50">
-                <SideBar />
-                <div className={cn(
-                    "flex-1 p-8 transition-all duration-300 ease-in-out",
-                    isOpen ? "ml-[240px]" : "ml-[70px]"
-                )}>
-                    <div className="max-w-7xl mx-auto">
-                        <Card className="border-2 border-dashed border-gray-200 bg-white/50 backdrop-blur-sm">
-                            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-6">
-                                    <AlertCircle className="h-8 w-8 text-red-600" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                                    {!address ? 'Connect Wallet' : 'Unauthorized Access'}
-                                </h3>
-                                <p className="text-gray-500 mb-6 max-w-md">
-                                    {!address
-                                        ? 'Please connect your wallet to access the admin dashboard.'
-                                        : 'This page is restricted to admin users only.'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </div>
-        )
+        return <AccessDenied address={address} isOpen={isOpen}/>
     }
 
     return (
