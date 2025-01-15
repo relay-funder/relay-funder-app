@@ -111,7 +111,8 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
     totalRaised: '0',
     images: dbCampaign.images,
     slug: dbCampaign.slug,
-    location: dbCampaign.location
+    location: dbCampaign.location,
+    treasuryAddress: dbCampaign.treasuryAddress
   };
 }
 
