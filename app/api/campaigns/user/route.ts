@@ -66,6 +66,7 @@ export async function GET(request: Request) {
                 status: true,
                 transactionHash: true,
                 campaignAddress: true,
+                treasuryAddress: true,
                 createdAt: true,
                 updatedAt: true,
                 images: true
