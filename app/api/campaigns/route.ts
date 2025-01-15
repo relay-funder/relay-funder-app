@@ -76,7 +76,7 @@ async function getActiveCampaigns() {
   return prisma.campaign.findMany({
     where: {
       status: {
-        in: ['active', 'pending_approval']
+        in: ['active']
       }
     },
     include: {
