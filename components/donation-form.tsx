@@ -23,10 +23,22 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip"
 import { Campaign } from "@/types/campaign"
+import { ethers } from 'ethers'
+import { useWallets } from '@privy-io/react-auth'
+import { useToast } from "@/hooks/use-toast"
+import { erc20Abi } from 'viem'
 
 interface DonationFormProps {
   campaign: Campaign;
 }
+
+// Add platform config (hardcoded for example)
+const platformConfig = {
+  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
+}
+
+// Add USDC contract address from env
+const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN as string
 
 export default function DonationForm({ campaign }: DonationFormProps) {
   const [selectedToken, setSelectedToken] = useState('USDC')
@@ -45,6 +57,152 @@ export default function DonationForm({ campaign }: DonationFormProps) {
 
   const formatCrypto = (value: number) => `${value.toFixed(6)} ${selectedToken}`
   const formatUSD = (value: number) => `$ ${(value * tokenPrice).toFixed(2)}`
+
+  const { wallets } = useWallets()
+  const { toast } = useToast()
+  const wallet = wallets[1] // Assuming first wallet
+
+  const handleDonate = async () => {
+    try {
+      if (!wallet || !wallet.isConnected()) {
+        throw new Error('Wallet not connected')
+      }
+
+      const privyProvider = await wallet.getEthereumProvider()
+      const walletProvider = new ethers.providers.Web3Provider(privyProvider)
+      const signer = walletProvider.getSigner()
+      
+      // Switch to Alfajores network first
+      try {
+        await privyProvider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xaef3' }], // 44787 in hex
+        })
+      } catch (switchError: any) {
+        if (switchError.code === 4902) {
+          try {
+            await privyProvider.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0xaef3',
+                chainName: 'Celo Alfajores Testnet',
+                nativeCurrency: {
+                  name: 'CELO',
+                  symbol: 'CELO',
+                  decimals: 18
+                },
+                rpcUrls: [platformConfig.rpcUrl],
+                blockExplorerUrls: ['https://alfajores.celoscan.io/']
+              }],
+            })
+          } catch (addError) {
+            console.error('Error adding network:', addError)
+            throw new Error('Failed to add network')
+          }
+        }
+        throw switchError
+      }
+
+      // Initialize USDC contract
+      const usdcContract = new ethers.Contract(
+        USDC_ADDRESS,
+        erc20Abi,
+        signer
+      )
+
+      // Convert amount to USDC decimals (6 decimals)
+      const amountInUSDC = ethers.utils.parseUnits(amount, 6)
+      
+      console.log('Debug amounts:', {
+        rawAmount: amount,
+        amountInUSDC: amountInUSDC.toString(),
+        amountInUSDCHex: amountInUSDC._hex,  // Add hex representation
+        treasuryAddress: campaign.treasuryAddress
+      })
+
+      // First approve the treasury to spend USDC
+      const approveTx = await usdcContract.approve(campaign.treasuryAddress, amountInUSDC)
+      console.log('Approval transaction submitted:', {
+        hash: approveTx.hash,
+        amount: amountInUSDC.toString()
+      })
+      
+      const approvalReceipt = await approveTx.wait()
+      console.log('Approval transaction confirmed:', {
+        blockNumber: approvalReceipt.blockNumber,
+        status: approvalReceipt.status === 1 ? 'success' : 'failed',
+        gasUsed: approvalReceipt.gasUsed.toString()
+      })
+
+      // Add a check for allowance after approval
+      const allowance = await usdcContract.allowance(
+        await signer.getAddress(),
+        campaign.treasuryAddress
+      )
+      console.log('Current allowance:', allowance.toString())
+
+      // Initialize treasury contract with more detailed ABI
+      const treasuryABI = [
+        "function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)"
+      ]
+      
+      const treasuryContract = new ethers.Contract(
+        campaign.treasuryAddress!,
+        treasuryABI,
+        signer
+      )
+
+      const userAddress = await signer.getAddress()
+      
+      // Add more detailed debugging
+      console.log('Pre-pledge checks:', {
+        userAddress,
+        treasuryAddress: campaign.treasuryAddress,
+        amountInUSDC: amountInUSDC.toString(),
+        amountInUSDCHex: amountInUSDC._hex,
+        allowance: allowance.toString(),
+        // Check USDC balance
+        balance: (await usdcContract.balanceOf(userAddress)).toString()
+      })
+
+      // Try estimating gas first
+      const estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(
+        userAddress,
+        amountInUSDC
+      )
+      console.log('Estimated gas:', estimatedGas.toString())
+
+      // Make the pledge with gas estimate
+      const tx = await treasuryContract.pledgeWithoutAReward(
+        userAddress,
+        amountInUSDC,
+        {
+          gasLimit: estimatedGas.mul(120).div(100) // Add 20% buffer
+        }
+      )
+      
+      await tx.wait()
+
+      toast({
+        title: "Success!",
+        description: "Your donation has been processed",
+      })
+
+    } catch (err) {
+      console.error('Donation error:', err)
+      const errorMessage = err instanceof Error 
+        ? err.message
+        : typeof err === 'object' && err && 'message' in err
+          ? String(err.message)
+          : "Failed to process donation"
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <Card className="border-0 shadow-none">
@@ -176,7 +334,12 @@ export default function DonationForm({ campaign }: DonationFormProps) {
             </div>
           </div>
 
-          <Button className="w-full" size="lg" disabled={!numericAmount}>
+          <Button 
+            className="w-full" 
+            size="lg" 
+            disabled={!numericAmount}
+            onClick={handleDonate}
+          >
             Donate
           </Button>
 
