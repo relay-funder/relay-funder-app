@@ -16,7 +16,7 @@ export async function POST(
             )
         }
 
-        const { adminAddress: requestAddress, treasuryAddress } = await req.json()
+        const { adminAddress: requestAddress /*, treasuryAddress */ } = await req.json()
 
         // Verify admin
         if (!requestAddress || requestAddress.toLowerCase() !== adminAddress?.toLowerCase()) {
@@ -30,7 +30,7 @@ export async function POST(
         const campaign = await prisma.campaign.findUnique({
             where: { id: campaignId }
         })
-        
+
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campaign not found' },
