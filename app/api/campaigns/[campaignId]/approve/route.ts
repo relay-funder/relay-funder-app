@@ -16,7 +16,7 @@ export async function POST(
             )
         }
 
-        const { adminAddress: requestAddress, treasuryAddress } = await req.json()
+        const { adminAddress: requestAddress /*, treasuryAddress */ } = await req.json()
 
         // Verify admin
         if (!requestAddress || requestAddress.toLowerCase() !== adminAddress?.toLowerCase()) {
@@ -30,8 +30,6 @@ export async function POST(
         const campaign = await prisma.campaign.findUnique({
             where: { id: campaignId }
         })
-
-        console.log('campaign', campaign)
 
         if (!campaign) {
             return NextResponse.json(
@@ -47,8 +45,6 @@ export async function POST(
             )
         }
 
-        console.log('campaign.campaignAddress', campaign.campaignAddress, 'treasuryAddress', treasuryAddress)
-
         // Update campaign status and treasury address in database
         const updatedCampaign = await prisma.campaign.update({
             where: { id: campaignId },
@@ -56,8 +52,6 @@ export async function POST(
                 status: 'active',
             }
         })
-
-        console.log('updatedCampaign', updatedCampaign)
 
         return NextResponse.json({
             campaign: updatedCampaign
