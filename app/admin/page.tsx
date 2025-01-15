@@ -11,11 +11,13 @@ import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
+import { Coins, Users, Calendar, TrendingUp, Copy } from "lucide-react"
 import { adminAddress } from '@/lib/constant'
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams'
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory'
 import { ethers } from 'ethers'
+import { IoLocationSharp } from 'react-icons/io5'
+import { useToast } from "@/hooks/use-toast"
 
 // Add platform config
 const platformConfig = {
@@ -44,6 +46,13 @@ interface Campaign {
     goalAmount?: string
     totalRaised?: string
     isApproved?: boolean
+    images?: {
+        id: number
+        imageUrl: string
+        isMainImage: boolean
+        campaignId: number
+    }[]
+    location?: string
 }
 
 interface TreasuryDeployedEvent {
@@ -62,6 +71,7 @@ export default function AdminPage() {
     const { isOpen } = useSidebar()
     const [campaignStatuses, setCampaignStatuses] = useState<Record<string, string>>({})
     const [isClient, setIsClient] = useState(false)
+    const { toast } = useToast()
 
     const isAdmin = address === adminAddress
 
@@ -431,8 +441,8 @@ export default function AdminPage() {
                                 <Card key={campaign.id || campaign.address} className="overflow-hidden">
                                     <CardHeader className="p-0">
                                         <Image
-                                            src="/images/placeholder.svg"
-                                            alt="Campaign"
+                                            src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
+                                            alt={campaign.title || 'Campaign'}
                                             width={600}
                                             height={400}
                                             className="h-[200px] w-full object-cover"
@@ -459,7 +469,30 @@ export default function AdminPage() {
 
                                         <div className="space-y-2">
                                             <p><strong>Description:</strong> {campaign.description}</p>
-                                            <p><strong>Creator:</strong> {campaign.owner}</p>
+                                            <div className="flex items-center gap-2">
+                                                <strong>Creator:</strong>
+                                                <span className="font-mono">
+                                                    {campaign.owner?.slice(0, 8)}...{campaign.owner?.slice(-8)}
+                                                </span>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(campaign.owner || '');
+                                                        toast({
+                                                            title: "Address copied",
+                                                            description: "The address has been copied to your clipboard",
+                                                        });
+                                                    }}
+                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                                >
+                                                    <Copy className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                            {campaign.location && (
+                                                <div className="flex items-center gap-1">
+                                                    <IoLocationSharp className="text-[#55DFAB]" />
+                                                    <p>{campaign.location}</p>
+                                                </div>
+                                            )}
                                             {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
                                             {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
                                             <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>

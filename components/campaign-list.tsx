@@ -119,7 +119,7 @@ export default function CampaignList() {
               </div>
               <div className="flex align self-start">
                 <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
-                <span className="text-gray-900 text-sm">{campaign.location || 'Earth'}</span>
+                <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
               </div>
             </div>
             <p className="text-gray-600 text-[12px]">{campaign.description}</p>

@@ -3,8 +3,41 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
+import { existsSync } from 'fs'
+
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+async function ensureDirectoryExists(dirPath: string) {
+  if (!existsSync(dirPath)) {
+    await mkdir(dirPath, { recursive: true });
+  }
+}
+
+async function saveImageToFileSystem(file: File, fileName: string): Promise<string> {
+  if (IS_PRODUCTION) {
+    // In production, we should use a proper file storage service
+    // For now, just return a placeholder
+    return '/images/placeholder.svg';
+  }
+
+  try {
+    const imagePath = join(process.cwd(), 'public', 'campaign-images');
+    await ensureDirectoryExists(imagePath);
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+    await writeFile(join(imagePath, fileName), buffer);
+    
+    return `/campaign-images/${fileName}`;
+  } catch (error) {
+    console.error('Error saving image:', error);
+    return '/images/placeholder.svg';
+  }
+}
 
 async function getPublicClient() {
   if (!FACTORY_ADDRESS || !RPC_URL) {
@@ -77,32 +110,43 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
     goalAmount: dbCampaign.fundingGoal,
     totalRaised: '0',
     images: dbCampaign.images,
-    slug: dbCampaign.slug
+    slug: dbCampaign.slug,
+    location: dbCampaign.location
   };
-}
-
-interface CampaignCreateBody {
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: string;
-  endTime: string;
-  creatorAddress: string;
-  status: string;
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as CampaignCreateBody;
-    const {
+    const formData = await request.formData()
+    
+    // Extract form fields
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string
+    const fundingGoal = formData.get('fundingGoal') as string
+    const startTime = formData.get('startTime') as string
+    const endTime = formData.get('endTime') as string
+    const creatorAddress = formData.get('creatorAddress') as string
+    const status = formData.get('status') as string
+    const location = formData.get('location') as string
+    const bannerImage = formData.get('bannerImage') as File | null
+
+    console.log('Creating campaign with data:', {
       title,
       description,
       fundingGoal,
       startTime,
       endTime,
       creatorAddress,
-      status
-    } = body;
+      status,
+      location
+    })
+
+    if (!title || !description || !fundingGoal || !startTime || !endTime || !creatorAddress) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
 
     // Generate a unique slug
     const baseSlug = title
@@ -111,6 +155,23 @@ export async function POST(request: Request) {
       .replace(/(^-|-$)/g, '');
     const uniqueSuffix = Date.now().toString(36);
     const slug = `${baseSlug}-${uniqueSuffix}`;
+
+    let imageUrl = null
+    if (bannerImage) {
+      try {
+        // Create a unique filename
+        const bytes = new Uint8Array(8)
+        crypto.getRandomValues(bytes)
+        const uniqueId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+        const fileName = `${uniqueId}-${bannerImage.name}`
+        
+        imageUrl = await saveImageToFileSystem(bannerImage, fileName)
+      } catch (imageError) {
+        console.error('Error processing image:', imageError)
+        // Don't fail the whole request if image processing fails
+        imageUrl = '/images/placeholder.svg'
+      }
+    }
 
     const campaign = await prisma.campaign.create({
       data: {
@@ -121,15 +182,35 @@ export async function POST(request: Request) {
         endTime: new Date(endTime),
         creatorAddress,
         status,
-        slug
+        location: location || undefined,
+        slug,
+        images: imageUrl ? {
+          create: {
+            imageUrl,
+            isMainImage: true
+          }
+        } : undefined
       },
+      include: {
+        images: true
+      }
     });
+
+    console.log('Campaign created successfully:', campaign)
 
     return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create campaign:', error)
+    console.error('Failed to create campaign. Details:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
+    
     return NextResponse.json(
-      { error: 'Failed to create campaign' },
+      { 
+        error: 'Failed to create campaign',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
