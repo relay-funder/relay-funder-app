@@ -17,6 +17,7 @@ type DbCampaign = {
     status: string;
     transactionHash: string | null;
     campaignAddress: string | null;
+    treasuryAddress: string | null;
     createdAt: Date;
     updatedAt: Date;
     images: {
