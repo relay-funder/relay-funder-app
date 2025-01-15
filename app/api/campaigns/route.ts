@@ -257,7 +257,6 @@ export async function GET() {
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
       .map((dbCampaign) => {
-        console.log('Raw campaign data:', dbCampaign);
         const event = events.find(onChainCampaign =>
           onChainCampaign.args?.campaignInfoAddress?.toLowerCase() === dbCampaign.campaignAddress?.toLowerCase()
         ) as CampaignCreatedEvent | undefined;
