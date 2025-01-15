@@ -298,6 +298,7 @@ export default function DashboardPage() {
 
                                         <div className="space-y-2">
                                             <p><strong>Description:</strong> {campaign.description}</p>
+                                            {campaign.treasuryAddress && <p><strong>Treasury:</strong> {campaign.treasuryAddress}</p>}
                                             {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
                                             {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
                                             <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>

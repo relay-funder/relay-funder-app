@@ -189,6 +189,12 @@ export default function CampaignList() {
                       <TableHead>Total Raised</TableHead>
                       <TableCell>{campaign.totalRaised} ETH</TableCell>
                     </TableRow>
+                    {campaign.treasuryAddress && (
+                      <TableRow>
+                        <TableHead>Treasury</TableHead>
+                        <TableCell>{campaign.treasuryAddress}</TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </DialogContent>
