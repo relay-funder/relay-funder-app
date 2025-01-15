@@ -8,21 +8,22 @@ datasource db {
 }
 
 model Campaign {
-  id              Int      @id @default(autoincrement())
-  slug            String    @unique
+  id              Int             @id @default(autoincrement())
   title           String
   description     String
   fundingGoal     String
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
-  status          String    @default("draft")
+  status          String          @default("draft")
   transactionHash String?
-  campaignAddress String?   @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  images          CampaignImage[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  campaignAddress String?         @unique
+  slug            String          @unique
   location        String?
+  treasuryAddress String?
+  images          CampaignImage[]
 
   @@index([creatorAddress])
 }
@@ -31,6 +32,6 @@ model CampaignImage {
   id          Int      @id @default(autoincrement())
   imageUrl    String
   isMainImage Boolean  @default(false)
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
   campaignId  Int
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
 }

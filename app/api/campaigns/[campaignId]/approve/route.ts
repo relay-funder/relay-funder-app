@@ -16,13 +16,20 @@ export async function POST(
             )
         }
 
-        const { adminAddress: requestAddress /*, treasuryAddress */ } = await req.json()
+        const { adminAddress: requestAddress, treasuryAddress } = await req.json()
 
         // Verify admin
         if (!requestAddress || requestAddress.toLowerCase() !== adminAddress?.toLowerCase()) {
             return NextResponse.json(
                 { error: 'Unauthorized: Admin access only' },
                 { status: 401 }
+            )
+        }
+
+        if (!treasuryAddress) {
+            return NextResponse.json(
+                { error: 'Treasury address is required' },
+                { status: 400 }
             )
         }
 
@@ -50,6 +57,7 @@ export async function POST(
             where: { id: campaignId },
             data: {
                 status: 'active',
+                treasuryAddress,
             }
         })
 

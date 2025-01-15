@@ -17,6 +17,7 @@ type DbCampaign = {
     status: string;
     transactionHash: string | null;
     campaignAddress: string | null;
+    treasuryAddress: string | null;
     createdAt: Date;
     updatedAt: Date;
     images: {
@@ -65,6 +66,7 @@ export async function GET(request: Request) {
                 status: true,
                 transactionHash: true,
                 campaignAddress: true,
+                treasuryAddress: true,
                 createdAt: true,
                 updatedAt: true,
                 images: true
