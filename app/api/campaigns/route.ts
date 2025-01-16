@@ -3,38 +3,57 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-async function ensureDirectoryExists(dirPath: string) {
-  if (!existsSync(dirPath)) {
-    await mkdir(dirPath, { recursive: true });
-  }
-}
-
-async function saveImageToFileSystem(file: File, fileName: string): Promise<string> {
-  if (IS_PRODUCTION) {
-    // In production, we should use a proper file storage service
-    // For now, just return a placeholder
-    return '/images/placeholder.svg';
-  }
-
+async function uploadToCloudinary(file: File): Promise<string> {
   try {
-    const imagePath = join(process.cwd(), 'public', 'campaign-images');
-    await ensureDirectoryExists(imagePath);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '');
     
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-    await writeFile(join(imagePath, fileName), buffer);
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    if (!cloudName) {
+      throw new Error('Cloudinary cloud name is not configured');
+    }
+
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    if (!uploadPreset) {
+      throw new Error('Cloudinary upload preset is not configured');
+    }
+
+    console.log('Uploading to Cloudinary with:', {
+      cloudName,
+      uploadPreset,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
     
-    return `/campaign-images/${fileName}`;
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Cloudinary upload failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(`Failed to upload image to Cloudinary: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Cloudinary upload successful:', data);
+    return data.secure_url;
   } catch (error) {
-    console.error('Error saving image:', error);
+    console.error('Error uploading to Cloudinary:', error);
     return '/images/placeholder.svg';
   }
 }
@@ -57,7 +76,7 @@ async function getActiveCampaigns() {
   return prisma.campaign.findMany({
     where: {
       status: {
-        in: ['active', 'pending_approval']
+        in: ['active']
       }
     },
     include: {
@@ -160,16 +179,9 @@ export async function POST(request: Request) {
     let imageUrl = null
     if (bannerImage) {
       try {
-        // Create a unique filename
-        const bytes = new Uint8Array(8)
-        crypto.getRandomValues(bytes)
-        const uniqueId = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
-        const fileName = `${uniqueId}-${bannerImage.name}`
-        
-        imageUrl = await saveImageToFileSystem(bannerImage, fileName)
+        imageUrl = await uploadToCloudinary(bannerImage);
       } catch (imageError) {
         console.error('Error processing image:', imageError)
-        // Don't fail the whole request if image processing fails
         imageUrl = '/images/placeholder.svg'
       }
     }
