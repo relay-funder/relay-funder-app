@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma'
 export async function POST(req: Request) {
   try {
     const data = await req.json()
-    console.log('Received payment data:', JSON.stringify(data, null, 2))
     
     // Get or create user
     const user = await prisma.user.upsert({
@@ -12,8 +11,6 @@ export async function POST(req: Request) {
       update: {},
       create: { address: data.userAddress },
     })
-
-    console.log('Created/found user:', JSON.stringify(user, null, 2))
 
     const payment = await prisma.payment.create({
       data: {
@@ -26,8 +23,6 @@ export async function POST(req: Request) {
         transactionHash: data.transactionHash,
       },
     })
-
-    console.log('Created payment:', JSON.stringify(payment, null, 2))
 
     return NextResponse.json({ paymentId: payment.id })
   } catch (error) {
