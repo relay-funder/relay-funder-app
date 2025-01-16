@@ -111,7 +111,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       )
 
       // Convert amount to USDC decimals (6 decimals)
-      const amountInUSDC = ethers.utils.parseUnits(amount, 6)
+      const amountInUSDC = ethers.utils.parseUnits(amount, process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
       
       console.log('Debug amounts:', {
         rawAmount: amount,
