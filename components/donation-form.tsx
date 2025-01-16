@@ -60,7 +60,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
 
   const { wallets } = useWallets()
   const { toast } = useToast()
-  const wallet = wallets[1] // Assuming first wallet
+  const wallet = wallets[0] // Assuming first wallet
 
   const handleDonate = async () => {
     try {
