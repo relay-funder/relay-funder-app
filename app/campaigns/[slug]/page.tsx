@@ -31,8 +31,12 @@ async function getCampaign(slug: string): Promise<Campaign> {
   }
 }
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const campaign: Campaign = await getCampaign(params.slug)
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const campaign: Campaign = await getCampaign((await params).slug)
   
   return (
     <div className="min-h-screen bg-gray-50/50">
