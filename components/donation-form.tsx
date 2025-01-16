@@ -71,7 +71,8 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       const privyProvider = await wallet.getEthereumProvider()
       const walletProvider = new ethers.providers.Web3Provider(privyProvider)
       const signer = walletProvider.getSigner()
-      
+      const userAddress = await signer.getAddress()
+
       // Switch to Alfajores network first
       try {
         await privyProvider.request({
@@ -103,85 +104,58 @@ export default function DonationForm({ campaign }: DonationFormProps) {
         throw switchError
       }
 
-      // Initialize USDC contract
-      const usdcContract = new ethers.Contract(
-        USDC_ADDRESS,
-        erc20Abi,
-        signer
-      )
-
-      // Convert amount to USDC decimals (6 decimals)
+      // Initialize contracts
+      const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer)
       const amountInUSDC = ethers.utils.parseUnits(amount, process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
-      
-      console.log('Debug amounts:', {
-        rawAmount: amount,
-        amountInUSDC: amountInUSDC.toString(),
-        amountInUSDCHex: amountInUSDC._hex,  // Add hex representation
-        treasuryAddress: campaign.treasuryAddress
-      })
 
       // First approve the treasury to spend USDC
       const approveTx = await usdcContract.approve(campaign.treasuryAddress, amountInUSDC)
-      console.log('Approval transaction submitted:', {
-        hash: approveTx.hash,
-        amount: amountInUSDC.toString()
-      })
+      await approveTx.wait()
+
+      // Make the pledge transaction
+      const treasuryABI = ["function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)"]
+      const treasuryContract = new ethers.Contract(campaign.treasuryAddress!, treasuryABI, signer)
       
-      const approvalReceipt = await approveTx.wait()
-      console.log('Approval transaction confirmed:', {
-        blockNumber: approvalReceipt.blockNumber,
-        status: approvalReceipt.status === 1 ? 'success' : 'failed',
-        gasUsed: approvalReceipt.gasUsed.toString()
-      })
-
-      // Add a check for allowance after approval
-      const allowance = await usdcContract.allowance(
-        await signer.getAddress(),
-        campaign.treasuryAddress
-      )
-      console.log('Current allowance:', allowance.toString())
-
-      // Initialize treasury contract with more detailed ABI
-      const treasuryABI = [
-        "function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)"
-      ]
-      
-      const treasuryContract = new ethers.Contract(
-        campaign.treasuryAddress!,
-        treasuryABI,
-        signer
-      )
-
-      const userAddress = await signer.getAddress()
-      
-      // Add more detailed debugging
-      console.log('Pre-pledge checks:', {
-        userAddress,
-        treasuryAddress: campaign.treasuryAddress,
-        amountInUSDC: amountInUSDC.toString(),
-        amountInUSDCHex: amountInUSDC._hex,
-        allowance: allowance.toString(),
-        // Check USDC balance
-        balance: (await usdcContract.balanceOf(userAddress)).toString()
-      })
-
-      // Try estimating gas first
-      const estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(
-        userAddress,
-        amountInUSDC
-      )
-      console.log('Estimated gas:', estimatedGas.toString())
-
-      // Make the pledge with gas estimate
       const tx = await treasuryContract.pledgeWithoutAReward(
         userAddress,
         amountInUSDC,
         {
-          gasLimit: estimatedGas.mul(120).div(100) // Add 20% buffer
+          gasLimit: (await treasuryContract.estimateGas.pledgeWithoutAReward(userAddress, amountInUSDC))
+            .mul(120).div(100)
         }
       )
-      
-      await tx.wait()
+
+      // Only create payment record after transaction is sent
+      const paymentResponse = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amount,
+          token: selectedToken,
+          campaignId: campaign.id,
+          isAnonymous: false,
+          status: 'confirming',
+          userAddress,
+          transactionHash: tx.hash,
+        }),
+      })
+
+      if (!paymentResponse.ok) {
+        throw new Error('Failed to create payment record')
+      }
+
+      const { paymentId } = await paymentResponse.json()
+      const receipt = await tx.wait()
+
+      // Update payment status based on receipt
+      await fetch('/api/payments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentId,
+          status: receipt.status === 1 ? 'confirmed' : 'failed',
+        }),
+      })
 
       toast({
         title: "Success!",
