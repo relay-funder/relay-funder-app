@@ -38,6 +38,7 @@ export default function Providers({ children }: { children: ReactNode }) {
             useSandbox: true,
           },
         },
+        defaultChain: celoAlfajores,
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
           requireUserPasswordOnCreate: false,
