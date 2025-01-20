@@ -14,13 +14,13 @@ export default function ProjectInfo({ campaign }: ProjectInfoProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden w-fit">
         <Image
           src={mainImage ? mainImage.imageUrl : "/placeholder.svg?height=300&width=600"}
           alt={`${campaign.title} illustration`}
           width={600}
           height={300}
-          className="bg-indigo-600 object-cover"
+          className="object-cover"
         />
       </Card>
 

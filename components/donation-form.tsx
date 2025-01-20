@@ -23,20 +23,32 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip"
 import { Campaign } from "@/types/campaign"
+import { ethers } from 'ethers'
+import { useWallets } from '@privy-io/react-auth'
+import { useToast } from "@/hooks/use-toast"
+import { erc20Abi } from 'viem'
 
 interface DonationFormProps {
   campaign: Campaign;
 }
 
+// Add platform config (hardcoded for example)
+const platformConfig = {
+  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
+}
+
+// Add USDC contract address from env
+const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN as string
+
 export default function DonationForm({ campaign }: DonationFormProps) {
-  const [selectedToken, setSelectedToken] = useState('CELO')
+  const [selectedToken, setSelectedToken] = useState('USDC')
   const [amount, setAmount] = useState('')
   const [percentage, setPercentage] = useState(10)
-  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false)
+  const [error, ] = useState<string | null>(null)
 
   // Simulated values - in a real app these would come from an API or wallet
-  const tokenPrice = 3337.67 // USD per ETH
+  const tokenPrice = 1 // USD per ETH
   const availableBalance = 0.067484 // ETH
   
   const numericAmount = parseFloat(amount) || 0
@@ -45,6 +57,126 @@ export default function DonationForm({ campaign }: DonationFormProps) {
 
   const formatCrypto = (value: number) => `${value.toFixed(6)} ${selectedToken}`
   const formatUSD = (value: number) => `$ ${(value * tokenPrice).toFixed(2)}`
+
+  const { wallets } = useWallets()
+  const { toast } = useToast()
+  const wallet = wallets[0] // Assuming first wallet
+
+  const handleDonate = async () => {
+    try {
+      if (!wallet || !wallet.isConnected()) {
+        throw new Error('Wallet not connected')
+      }
+
+      const privyProvider = await wallet.getEthereumProvider()
+      const walletProvider = new ethers.providers.Web3Provider(privyProvider)
+      const signer = walletProvider.getSigner()
+      const userAddress = await signer.getAddress()
+
+      // Switch to Alfajores network first
+      try {
+        await privyProvider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xaef3' }], // 44787 in hex
+        })
+      } catch (switchError: unknown) {
+        if (switchError instanceof Error && 'code' in switchError && switchError.code === 4902) {
+          try {
+            await privyProvider.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0xaef3',
+                chainName: 'Celo Alfajores Testnet',
+                nativeCurrency: {
+                  name: 'CELO',
+                  symbol: 'CELO',
+                  decimals: 18
+                },
+                rpcUrls: [platformConfig.rpcUrl],
+                blockExplorerUrls: ['https://alfajores.celoscan.io/']
+              }],
+            })
+          } catch (addError) {
+            console.error('Error adding network:', addError)
+            throw new Error('Failed to add network')
+          }
+        }
+        throw switchError
+      }
+
+      // Initialize contracts
+      const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer)
+      const amountInUSDC = ethers.utils.parseUnits(amount, process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
+
+      // First approve the treasury to spend USDC
+      const approveTx = await usdcContract.approve(campaign.treasuryAddress, amountInUSDC)
+      await approveTx.wait()
+
+      // Make the pledge transaction
+      const treasuryABI = ["function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)"]
+      const treasuryContract = new ethers.Contract(campaign.treasuryAddress!, treasuryABI, signer)
+      
+      const tx = await treasuryContract.pledgeWithoutAReward(
+        userAddress,
+        amountInUSDC,
+        {
+          gasLimit: (await treasuryContract.estimateGas.pledgeWithoutAReward(userAddress, amountInUSDC))
+            .mul(120).div(100)
+        }
+      )
+
+      // Only create payment record after transaction is sent
+      const paymentResponse = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amount,
+          token: selectedToken,
+          campaignId: campaign.id,
+          isAnonymous: false,
+          status: 'confirming',
+          userAddress,
+          transactionHash: tx.hash,
+        }),
+      })
+
+      if (!paymentResponse.ok) {
+        throw new Error('Failed to create payment record')
+      }
+
+      const { paymentId } = await paymentResponse.json()
+      const receipt = await tx.wait()
+
+      // Update payment status based on receipt
+      await fetch('/api/payments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentId,
+          status: receipt.status === 1 ? 'confirmed' : 'failed',
+        }),
+      })
+
+      toast({
+        title: "Success!",
+        description: "Your donation has been processed",
+      })
+
+    } catch (err) {
+      console.error('Donation error:', err)
+      const errorMessage = err instanceof Error 
+        ? err.message
+        : typeof err === 'object' && err && 'message' in err
+          ? String(err.message)
+          : "Failed to process donation"
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <Card className="border-0 shadow-none">
@@ -87,9 +219,9 @@ export default function DonationForm({ campaign }: DonationFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CELO">Celo</SelectItem>
-                    {/* <SelectItem value="USDC">USDC</SelectItem>
-                    <SelectItem value="DAI">DAI</SelectItem> */}
+                    {/* <SelectItem value="CELO">Celo</SelectItem> */}
+                    <SelectItem value="USDC">USDC</SelectItem>
+                    {/* <SelectItem value="DAI">DAI</SelectItem> */}
                   </SelectContent>
                 </Select>
                 <Input
@@ -123,12 +255,12 @@ export default function DonationForm({ campaign }: DonationFormProps) {
               <Switch
                 checked={isDonatingToAkashic}
                 onCheckedChange={(checked) => {
-                  if (!numericAmount) {
-                    setError('Please enter an amount first')
-                    return
-                  }
-                  setError(null)
                   setIsDonatingToAkashic(checked)
+                  // if (checked && !numericAmount) {
+                  //   setError('Please enter an amount first')
+                  // } else {
+                  //   setError(null)
+                  // }
                 }}
               />
               <span className="text-sm">Donate to Akashic</span>
@@ -176,7 +308,12 @@ export default function DonationForm({ campaign }: DonationFormProps) {
             </div>
           </div>
 
-          <Button className="w-full" size="lg" disabled={!numericAmount}>
+          <Button 
+            className="w-full" 
+            size="lg" 
+            disabled={!numericAmount}
+            onClick={handleDonate}
+          >
             Donate
           </Button>
 
