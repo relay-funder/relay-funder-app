@@ -24,6 +24,7 @@ model Campaign {
   location        String?
   treasuryAddress String?
   images          CampaignImage[]
+  payments        Payment[]
 
   @@index([creatorAddress])
 }
@@ -34,4 +35,32 @@ model CampaignImage {
   isMainImage Boolean  @default(false)
   campaignId  Int
   campaign    Campaign @relation(fields: [campaignId], references: [id])
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  address   String    @unique
+  payments  Payment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Payment {
+  id              Int       @id @default(autoincrement())
+  amount          String    // Store as string to preserve precision
+  token           String    // e.g., "USDC"
+  status          String    @default("pending") // pending, confirmed, failed
+  transactionHash String?
+  isAnonymous     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  campaignId      Int
+  campaign        Campaign  @relation(fields: [campaignId], references: [id])
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([campaignId])
+  @@index([userId])
 }
