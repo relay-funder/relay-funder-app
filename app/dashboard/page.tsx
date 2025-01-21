@@ -175,7 +175,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50 pt-10">
+        <div className="flex flex-col min-h-screen w-full bg-gray-50 pt-10">
             <div className="max-w-7xl mx-auto">
                 <div className="text-3xl font-bold mb-8">Dashboard</div>
 
