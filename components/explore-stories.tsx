@@ -14,8 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dailog"
 import { useCollection } from '@/contexts/CollectionContext'
-import { SideBar } from '@/components/SideBar'
-import { useSidebar } from '@/contexts/SidebarContext'
 import CampaignList from '@/components/campaign-list';
 
 interface Story {
@@ -43,8 +41,6 @@ export function ExploreStories() {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null)
   const [selectedCollection, setSelectedCollection] = useState<string>('')
   const { addToCollection } = useCollection()
-
-  const { isOpen } = useSidebar()
 
   const categories: Category[] = [
     { id: "visual-arts", name: "Visual Arts", icon: <span className="text-xl">🎨</span> },

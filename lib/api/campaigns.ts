@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { Campaign, CampaignImage, Payment } from "@prisma/client";
+import { Campaign, CampaignImage, Payment, User } from "@prisma/client";
+
+type PaymentWithUser = Payment & {
+    user: User;
+};
 
 type CampaignWithRelations = Campaign & {
     images: CampaignImage[];
-    payments: Payment[];
+    payments: PaymentWithUser[];
 };
 
 export async function getCampaignBySlug(slug: string): Promise<CampaignWithRelations | null> {
@@ -12,7 +16,11 @@ export async function getCampaignBySlug(slug: string): Promise<CampaignWithRelat
             where: { slug },
             include: {
                 images: true,
-                payments: true,
+                payments: {
+                    include: {
+                        user: true
+                    }
+                },
             },
         });
 
