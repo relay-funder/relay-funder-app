@@ -1,73 +1,104 @@
-import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar"
-import DonationForm from "@/components/donation-form"
-import ProjectInfo from "@/components/project-info";
-import { Campaign } from "../../../types/campaign"
-import BackButton from '@/app/components/back-button'
-import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import { formatDistanceToNow } from "date-fns";
+import { Share2, Mail, Code } from "lucide-react";
 
-// Make this a server component by removing 'use client'
-async function getCampaign(slug: string): Promise<Campaign> {
-  console.log('getCampaign', slug)
-  const dbCampaign = await prisma.campaign.findUnique({
-    where: { slug },
-    include: {
-      images: true,
-    },
-  })
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { getCampaignBySlug } from "@/lib/api/campaigns";
+import { CampaignImage, Payment } from "@prisma/client";
 
-  if (!dbCampaign) {
-    notFound()
-  }
-
-  return {
-    ...dbCampaign,
-    address: dbCampaign.campaignAddress || '',
-    owner: dbCampaign.creatorAddress,
-    launchTime: Math.floor(dbCampaign.startTime.getTime() / 1000).toString(),
-    deadline: Math.floor(dbCampaign.endTime.getTime() / 1000).toString(),
-    goalAmount: dbCampaign.fundingGoal,
-    totalRaised: '0'
-  }
+interface CampaignPageProps {
+  params: {
+    slug: string;
+  };
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const campaign: Campaign = await getCampaign((await params).slug)
-  
+export default async function CampaignPage({ params }: CampaignPageProps) {
+  const campaign = await getCampaignBySlug(params.slug);
+
+  if (!campaign) {
+    notFound();
+  }
+
+  const mainImage = campaign.images.find((img: CampaignImage) => img.isMainImage) || campaign.images[0];
+  const raisedAmount = campaign.payments.reduce((sum: number, payment: Payment) => sum + parseFloat(payment.amount), 0);
+  const goalAmount = parseFloat(campaign.fundingGoal);
+  const progress = Math.min((raisedAmount / goalAmount) * 100, 100);
+  const daysToGo = formatDistanceToNow(campaign.endTime, { addSuffix: true });
+
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <div className="sticky top-0 z-10 border-b bg-white">
-        <header className="container mx-auto flex items-center justify-between p-4">
-          <div className="flex items-center gap-4">
-            <BackButton />
-            <div>
-              <div className="text-sm text-muted-foreground">Donating to</div>
-              <h1 className="text-lg font-semibold">{campaign.title}</h1>
-            </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-8">
+          <h1 className="text-3xl font-bold mb-6">{campaign.title}</h1>
+          
+          <div className="relative aspect-video rounded-lg overflow-hidden mb-8">
+            {mainImage && (
+              <Image
+                src={mainImage.imageUrl}
+                alt={campaign.title}
+                fill
+                className="object-cover"
+                priority
+              />
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-sm font-medium">James Farrell</div>
-              <div className="text-sm text-muted-foreground">Connected to Ethereum</div>
-            </div>
-            <Avatar>
-              <AvatarImage src="/placeholder.svg" alt="James Farrell" />
-              <AvatarFallback>JF</AvatarFallback>
-            </Avatar>
+
+          <div className="prose max-w-none">
+            <h2 className="text-2xl font-semibold mb-4">About this project</h2>
+            <p className="whitespace-pre-wrap">{campaign.description}</p>
           </div>
-        </header>
-      </div>
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-2">
-        <DonationForm campaign={campaign} />
-        <ProjectInfo campaign={campaign} />
         </div>
-      </main>
+
+        {/* Sidebar */}
+        <div className="lg:col-span-4">
+          <div className="sticky top-8 space-y-6 bg-white rounded-lg p-6 shadow-sm">
+            <div>
+              <div className="text-3xl font-bold text-green-600">
+                ${raisedAmount.toLocaleString()}
+              </div>
+              <p className="text-gray-600">pledged of ${goalAmount.toLocaleString()} goal</p>
+            </div>
+
+            <Progress value={progress} className="h-2" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-2xl font-bold">{campaign.payments.length}</div>
+                <p className="text-gray-600">backers</p>
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{daysToGo}</div>
+                <p className="text-gray-600">days to go</p>
+              </div>
+            </div>
+
+            <Button className="w-full" size="lg">
+              Back this project
+            </Button>
+
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon">
+                <Share2 className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Mail className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Code className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              <p className="font-medium">Location</p>
+              <p>{campaign.location || "Not specified"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
 
