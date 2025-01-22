@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { Toaster } from "@/components/ui/toaster"
 import { NetworkCheck } from "@/components/network-check";
+import { MainLayout } from '@/components/main-layout'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <NetworkCheck>
-            {children}
+            <MainLayout>
+              {children}
+            </MainLayout>
           </NetworkCheck>
         </Providers>
         <Toaster />

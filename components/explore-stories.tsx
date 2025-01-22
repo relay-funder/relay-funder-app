@@ -14,8 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dailog"
 import { useCollection } from '@/contexts/CollectionContext'
-import { SideBar } from '@/components/SideBar'
-import { useSidebar } from '@/contexts/SidebarContext'
 import CampaignList from '@/components/campaign-list';
 
 interface Story {
@@ -44,8 +42,6 @@ export function ExploreStories() {
   const [selectedCollection, setSelectedCollection] = useState<string>('')
   const { addToCollection } = useCollection()
 
-  const { isOpen } = useSidebar()
-
   const categories: Category[] = [
     { id: "visual-arts", name: "Visual Arts", icon: <span className="text-xl">🎨</span> },
     { id: "music-audio", name: "Music & Audio", icon: <span className="text-xl">🎵</span> },
@@ -67,15 +63,8 @@ export function ExploreStories() {
   const { login, authenticated } = usePrivy();
 
   return (
-    <div className="flex min-h-screen w-screen bg-gray-50">
-      <SideBar />
-
-      <div
-        className={cn(
-          "flex-1 transition-all duration-300 ease-in-out",
-          isOpen ? "ml-[240px]" : "ml-[72px]"
-        )}
-      >
+    <div className="flex-col min-h-screen bg-gray-50">
+  
         <header className=" px-4 py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <div className="flex items-start gap-4">
@@ -142,7 +131,6 @@ export function ExploreStories() {
             </>
           )}
         </main>
-      </div>
 
       <Dialog
         open={showCollectionModal}
