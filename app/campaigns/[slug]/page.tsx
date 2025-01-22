@@ -25,8 +25,11 @@ export default async function CampaignPage({
   }
 
   const mainImage = campaign.images.find((img: CampaignImage) => img.isMainImage) || campaign.images[0];
-  const raisedAmount = campaign.payments?.reduce((sum: number, payment) => sum + parseFloat(payment.amount), 0) || 0;
-  const goalAmount = parseFloat(campaign.fundingGoal);
+  const raisedAmount = campaign.payments?.reduce((sum: number, payment) => {
+    const amount = Number(payment.amount) || 0;
+    return sum + amount;
+  }, 0) ?? 0;
+  const goalAmount = Number(campaign.fundingGoal) || 0;
   const progress = Math.min((raisedAmount / goalAmount) * 100, 100);
 
   // Calculate exact days left
@@ -205,6 +208,21 @@ export default async function CampaignPage({
 
           <TabsContent value="comments">
             <div className="max-w-3xl space-y-6">
+              {/* Stylish comment box */}
+              <div className="p-4 bg-white shadow rounded-lg">
+                <textarea
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  placeholder="Write a comment..."
+                  rows={4}
+                ></textarea>
+                <button
+                  className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  Post Comment
+                </button>
+              </div>
+
+              {/* Existing comments display */}
               {/* Add comments here */}
               <Card>
                 <CardContent className="p-6">
