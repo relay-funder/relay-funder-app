@@ -22,6 +22,59 @@ export interface DbCampaign {
   location: string | null;
 }
 
+
+export type CampaignDisplay = {
+  id: number;
+  title: string;
+  description: string;
+  fundingGoal: string;
+  startTime: Date;
+  endTime: Date;
+  creatorAddress: string;
+  status: string;
+  transactionHash?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  campaignAddress?: string | null;
+  slug: string;
+  location?: string | null;
+  treasuryAddress?: string | null;
+  images: CampaignImage[];
+  payments?: Payment[];
+};
+
+type CampaignImage = {
+  id: number;
+  imageUrl: string;
+  isMainImage: boolean;
+  campaignId: number;
+  campaign?: Campaign;
+};
+
+type Payment = {
+  id: number;
+  amount: string; // Stored as string to preserve precision
+  token: string; // e.g., "USDC"
+  status: 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
+  transactionHash?: string;
+  isAnonymous: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  campaignId: number;
+  campaign?: Campaign;
+  userId: number;
+  user: User; // Assuming you have a corresponding type for User
+};
+
+type User = {
+  id: number;
+  address: string;
+  payments?: Payment[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+
 export interface Campaign extends DbCampaign {
   address: string;
   owner: string;

@@ -4,59 +4,31 @@ import { Share2, Mail, Heart, Users, Clock, MapPin, Target, Link2 } from "lucide
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { getCampaignBySlug } from "@/lib/api/campaigns";
-import { CampaignImage, Payment, User } from "@prisma/client";
+// import { getCampaignBySlug, type PaymentWithUser } from "@/lib/api/campaigns";
+import { CampaignImage } from "@prisma/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { CampaignDisplay } from "@/types/campaign";
+import { getCampaign } from "@/lib/database";
 
-interface PaymentWithUser extends Payment {
-  user: User;
-}
-
-interface CampaignWithRelations {
-  id: number;
-  title: string;
-  description: string;
-  fundingGoal: string;
-  startTime: Date;
-  endTime: Date;
-  creatorAddress: string;
-  status: string;
-  transactionHash: string | null;
-  campaignAddress: string | null;
-  treasuryAddress: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  slug: string;
-  location: string | null;
-  images: CampaignImage[];
-  payments: PaymentWithUser[];
-  user?: {
-    name?: string;
-    image?: string;
-  };
-}
-
-interface CampaignPageProps {
-  params: {
-    slug: string;
-  };
-}
-
-export default async function CampaignPage({ params }: CampaignPageProps) {
-  const campaign = await getCampaignBySlug(params.slug) as CampaignWithRelations;
+export default async function CampaignPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const campaign:CampaignDisplay = await getCampaign((await params).slug)
 
   if (!campaign) {
     notFound();
   }
 
   const mainImage = campaign.images.find((img: CampaignImage) => img.isMainImage) || campaign.images[0];
-  const raisedAmount = campaign.payments.reduce((sum: number, payment: PaymentWithUser) => sum + parseFloat(payment.amount), 0);
+  const raisedAmount = campaign.payments?.reduce((sum: number, payment) => sum + parseFloat(payment.amount), 0) || 0;
   const goalAmount = parseFloat(campaign.fundingGoal);
   const progress = Math.min((raisedAmount / goalAmount) * 100, 100);
-  
+
   // Calculate exact days left
   const now = new Date();
   const endDate = new Date(campaign.endTime);
@@ -87,12 +59,12 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
 
                 <div className="flex items-center gap-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={campaign.user?.image || ''} />
+                    <AvatarImage src="" />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
 
                   <div>
-                    <p className="font-medium">{campaign.user?.name || 'Anonymous'}</p>
+                    <p className="font-medium">{campaign.creatorAddress.slice(0, 6)}...{campaign.creatorAddress.slice(-4)}</p>
                     <p className="text-sm text-gray-500">{campaign.location || 'Location not specified'}</p>
                   </div>
                 </div>
@@ -111,7 +83,6 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
               </div>
             </div>
 
-            {/* Sidebar */}
             <div className="lg:col-span-4">
               <Card className="sticky top-8">
                 <CardContent className="p-6 space-y-6">
@@ -127,7 +98,7 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Users className="h-5 w-5 text-gray-500" />
-                        <span className="text-2xl font-bold">{campaign.payments.length}</span>
+                        <span className="text-2xl font-bold">{campaign.payments?.length || 0}</span>
                       </div>
                       <p className="text-gray-600 text-sm">backers</p>
                     </div>
@@ -175,7 +146,6 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
         </div>
       </div>
 
-      {/* Tabs Section */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="campaign" className="space-y-8">
           <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent">
@@ -209,7 +179,6 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
 
           <TabsContent value="rewards">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Add reward cards here */}
               <Card>
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-2">Early Bird Backer NFT</h3>
@@ -261,7 +230,7 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
               <h2 className="text-2xl font-bold">Transaction History</h2>
               <p className="text-gray-600">All donations to this campaign are listed here.</p>
 
-              {campaign.payments.length > 0 ? (
+              {campaign.payments && campaign.payments.length > 0 ? (
                 <div className="space-y-4">
                   {campaign.payments.map((payment) => (
                     <div key={payment.id} className="flex items-center justify-between p-4 bg-white rounded-lg shadow">

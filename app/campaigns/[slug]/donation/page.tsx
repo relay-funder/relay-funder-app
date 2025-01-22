@@ -3,33 +3,7 @@ import DonationForm from "@/components/donation-form"
 import ProjectInfo from "@/components/project-info";
 import { Campaign } from "@/types/campaign"
 import BackButton from '@/app/components/back-button'
-import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
-
-// Make this a server component by removing 'use client'
-async function getCampaign(slug: string): Promise<Campaign> {
-    console.log('getCampaign', slug)
-    const dbCampaign = await prisma.campaign.findUnique({
-        where: { slug },
-        include: {
-            images: true,
-        },
-    })
-
-    if (!dbCampaign) {
-        notFound()
-    }
-
-    return {
-        ...dbCampaign,
-        address: dbCampaign.campaignAddress || '',
-        owner: dbCampaign.creatorAddress,
-        launchTime: Math.floor(dbCampaign.startTime.getTime() / 1000).toString(),
-        deadline: Math.floor(dbCampaign.endTime.getTime() / 1000).toString(),
-        goalAmount: dbCampaign.fundingGoal,
-        totalRaised: '0'
-    }
-}
+import { getCampaign } from "@/lib/database"
 
 export default async function Page({
     params,

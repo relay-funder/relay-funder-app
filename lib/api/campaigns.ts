@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { Campaign, CampaignImage, Payment, User } from "@prisma/client";
 
-type PaymentWithUser = Payment & {
+export type PaymentWithUser = Payment & {
     user: User;
 };
 
-type CampaignWithRelations = Campaign & {
+export type CampaignWithRelations = Campaign & {
     images: CampaignImage[];
     payments: PaymentWithUser[];
 };
