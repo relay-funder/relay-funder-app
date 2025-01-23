@@ -1,15 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
-    request: Request,
-    { params }: { params: { campaignId: string } }
+    request: NextRequest,
+    { params }: { params: Promise<{ campaignId: string }> }
 ) {
     try {
         const { content, userAddress } = await request.json();
-        const campaignId = parseInt(params.campaignId);
+        const campaignId = parseInt((await params).campaignId)
 
-        // Find the campaign
         const campaign = await prisma.campaign.findUnique({
             where: { id: campaignId },
         });
@@ -21,12 +20,11 @@ export async function POST(
             );
         }
 
-        // Create the comment
         const comment = await prisma.comment.create({
             data: {
                 content,
                 userAddress,
-                campaignId,
+                campaignId: campaign.id,
             },
         });
 
@@ -41,15 +39,27 @@ export async function POST(
 }
 
 export async function GET(
-    request: Request,
-    { params }: { params: { campaignId: string } }
+    req: NextRequest,
+    { params }: { params: Promise<{ campaignId: string }> }
 ) {
     try {
-        const campaignId = parseInt(params.campaignId);
+        const campaignId = parseInt((await params).campaignId);
+
+        const campaign = await prisma.campaign.findUnique({
+            where: { id: campaignId },
+            select: { id: true },
+        });
+
+        if (!campaign) {
+            return NextResponse.json(
+                { error: "Campaign not found" },
+                { status: 404 }
+            );
+        }
 
         // Get all comments for the campaign
         const comments = await prisma.comment.findMany({
-            where: { campaignId },
+            where: { campaignId: campaign.id },
             orderBy: { createdAt: "desc" },
         });
 
