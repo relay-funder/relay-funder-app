@@ -41,6 +41,17 @@ export type CampaignDisplay = {
   treasuryAddress?: string | null;
   images: CampaignImage[];
   payments?: Payment[];
+  comments?: Comment[];
+};
+
+export type Comment = {
+  id: number;
+  content: string;
+  userAddress: string;
+  createdAt: Date;
+  updatedAt: Date;
+  campaignId: number;
+  campaign?: Campaign;
 };
 
 type CampaignImage = {

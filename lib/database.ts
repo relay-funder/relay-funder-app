@@ -13,6 +13,7 @@ export async function getCampaign(slug: string): Promise<Campaign> {
                     user: true
                 }
             },
+            comments: true,
         },
     })
 
