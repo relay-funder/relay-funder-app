@@ -12,6 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CampaignDisplay } from "@/types/campaign";
 import { getCampaign } from "@/lib/database";
+import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import { CommentForm } from "@/components/comment-form";
 
 export default async function CampaignPage({
   params,
@@ -36,6 +39,8 @@ export default async function CampaignPage({
   const now = new Date();
   const endDate = new Date(campaign.endTime);
   const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+  console.log('campaign', campaign)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -208,38 +213,59 @@ export default async function CampaignPage({
 
           <TabsContent value="comments">
             <div className="max-w-3xl space-y-6">
-              {/* Stylish comment box */}
-              <div className="p-4 bg-white shadow rounded-lg">
-                <textarea
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  placeholder="Write a comment..."
-                  rows={4}
-                ></textarea>
-                <button
-                  className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  Post Comment
-                </button>
-              </div>
+              <CommentForm 
+                onSubmit={async (formData: FormData, userAddress: string) => {
+                  'use server'
+                  const content = formData.get('content') as string;
+                  
+                  // Double check wallet connection on server side
+                  if (!userAddress) {
+                    throw new Error('Please connect your wallet to comment');
+                  }
 
-              {/* Existing comments display */}
-              {/* Add comments here */}
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <Avatar>
-                      <AvatarFallback>JD</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">John Doe</h4>
-                        <span className="text-sm text-gray-500">2 days ago</span>
+                  try {
+                    const comment = await prisma.comment.create({
+                      data: {
+                        content,
+                        userAddress,
+                        campaignId: campaign.id,
+                      },
+                    });
+                    console.log('comment', comment)
+                    revalidatePath(`/campaigns/${campaign.slug}`);
+                  } catch (error) {
+                    console.error('Failed to create comment:', error);
+                    throw new Error('Failed to create comment');
+                  }
+                }}
+              />
+
+              {/* Comments list */}
+              <div className="space-y-4">
+                {campaign.comments?.map((comment) => (
+                  <Card key={comment.id}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <Avatar>
+                          <AvatarImage src={comment?.userAddress ? `https://avatar.vercel.sh/${comment.userAddress}` : 'default_avatar_url'} />
+                          <AvatarFallback>{comment?.userAddress ? comment.userAddress.slice(0, 2).toUpperCase() : 'NA'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold">
+                              {`${comment?.userAddress ? `${comment.userAddress.slice(0, 6)}...${comment.userAddress.slice(-6)}` : 'Anonymous'}`}
+                            </h4>
+                            <span className="text-sm text-gray-500">
+                              {new Date(comment.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 mt-2">{comment.content}</p>
+                        </div>
                       </div>
-                      <p className="text-gray-700 mt-2">This project looks amazing! Can&apos;t wait to see the final product.</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </TabsContent>
 
