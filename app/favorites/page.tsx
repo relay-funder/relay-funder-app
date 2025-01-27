@@ -6,9 +6,6 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { Progress } from "@/components/ui/progress"
 import { IoLocationSharp } from "react-icons/io5"
-import { SideBar } from '@/components/SideBar'
-import { cn } from '@/lib/utils'
-import { useSidebar } from '@/contexts/SidebarContext'
 
 interface SavedStory {
     id: string
@@ -41,20 +38,12 @@ export default function FavoritesPage() {
         },
     ])
 
-    const { isOpen } = useSidebar()
-
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            <SideBar />
-            <div
-                className={cn(
-                    "flex-1 p-8 transition-all duration-300 ease-in-out",
-                    isOpen ? "ml-[240px]" : "ml-[70px]"
-                )}
-            >
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-3xl font-bold mb-8">My Saved Stories</div>
+        <div className="flex-col min-h-screen bg-gray-50">
+            <div className="p-5 mx-auto">
+                <div className="pt-5 pl-5 text-3xl font-bold mb-8">My Saved Stories</div>
 
+                <main className="mx-auto max-w-7xl px-4 py-8">
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {savedStories.map((story) => (
                             <Card key={story.id} className="overflow-hidden flex flex-col h-full">
@@ -128,7 +117,7 @@ export default function FavoritesPage() {
                             </Card>
                         ))}
                     </div>
-                </div>
+                </main>
             </div>
         </div>
     )

@@ -1,5 +1,7 @@
 export const adminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 
+export const USDC_ADDRESS = "0x5E35c1464d4302D0941680AbEa17Dd4a3A620744";
+
 export const countries = [
 	"Afghanistan",
 	"Albania",

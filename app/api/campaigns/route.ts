@@ -72,18 +72,18 @@ async function getPublicClient() {
   });
 }
 
-async function getActiveCampaigns() {
-  return prisma.campaign.findMany({
-    where: {
-      status: {
-        in: ['active']
-      }
-    },
-    include: {
-      images: true
-    }
-  });
-}
+// async function getActiveCampaigns() {
+//   return prisma.campaign.findMany({
+//     where: {
+//       status: {
+//         in: ['active', "pending_approval"]
+//       }
+//     },
+//     include: {
+//       images: true
+//     }
+//   });
+// }
 
 async function getCampaignCreatedEvents(client: ReturnType<typeof createPublicClient>) {
   return client.getLogs({
@@ -257,15 +257,27 @@ export async function PATCH(
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || 'active'; // Default to 'active' if no status is provided
+
     const client = await getPublicClient();
     const [dbCampaigns, events] = await Promise.all([
-      getActiveCampaigns(),
+      prisma.campaign.findMany({
+        where: {
+          status: {
+            in: status === 'active' ? ['active'] : ['pending_approval', 'completed', 'active'],
+          },
+        },
+        include: {
+          images: true,
+        },
+      }),
       // @ts-expect-error - Ignoring viem type mismatch for chain compatibility
-      getCampaignCreatedEvents(client)
+      getCampaignCreatedEvents(client),
     ]);
-    
+
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
       .map((dbCampaign) => {
