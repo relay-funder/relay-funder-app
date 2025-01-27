@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Card, CardContent } from "./ui/card"
 import {
@@ -27,6 +27,7 @@ import { ethers } from 'ethers'
 import { useWallets } from '@privy-io/react-auth'
 import { useToast } from "@/hooks/use-toast"
 import { erc20Abi } from 'viem'
+import { USDC_ADDRESS } from "@/lib/constant"
 
 interface DonationFormProps {
   campaign: Campaign;
@@ -37,19 +38,17 @@ const platformConfig = {
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
 }
 
-// Add USDC contract address from env
-const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN as string
-
 export default function DonationForm({ campaign }: DonationFormProps) {
   const [selectedToken, setSelectedToken] = useState('USDC')
   const [amount, setAmount] = useState('')
   const [percentage, setPercentage] = useState(10)
   const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false)
   const [error, ] = useState<string | null>(null)
+  const [usdcBalance, setUsdcBalance] = useState(0)
 
   // Simulated values - in a real app these would come from an API or wallet
   const tokenPrice = 1 // USD per ETH
-  const availableBalance = 0.067484 // ETH
+  const availableBalance = usdcBalance // Update available balance to use fetched USDC balance
   
   const numericAmount = parseFloat(amount) || 0
   const akashicAmount = isDonatingToAkashic ? (numericAmount * percentage) / 100 : 0
@@ -61,6 +60,27 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   const { wallets } = useWallets()
   const { toast } = useToast()
   const wallet = wallets[0] // Assuming first wallet
+
+  // Fetch USDC balance when the wallet is connected
+  useEffect(() => {
+    const fetchUsdcBalance = async () => {
+      if (wallet && await wallet.isConnected()) {
+        const privyProvider = await wallet.getEthereumProvider()
+        const walletProvider = new ethers.providers.Web3Provider(privyProvider)
+        const signer = walletProvider.getSigner()
+        const userAddress = await signer.getAddress()
+
+        // Initialize USDC contract
+        const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer)
+        
+        // Fetch balance
+        const balance = await usdcContract.balanceOf(userAddress)
+        setUsdcBalance(parseFloat(ethers.utils.formatUnits(balance, process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)))
+      }
+    }
+
+    fetchUsdcBalance()
+  }, [wallet]) // Run effect when wallet changes
 
   const handleDonate = async () => {
     try {
@@ -180,7 +200,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
 
   return (
     <Card className="border-0 shadow-none">
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {error && (
           <Alert variant="default" className="border-indigo-100 bg-indigo-50">
             <Info className="h-4 w-4 text-indigo-600" />

@@ -175,9 +175,9 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen w-full bg-gray-50 pt-10">
-            <div className="max-w-7xl mx-auto">
-                <div className="text-3xl font-bold mb-8">Dashboard</div>
+        <div className="flex flex-col min-h-screen w-full bg-gray-50">
+            <div className="max-w-7xl mx-auto p-5">
+                <div className="text-3xl font-bold mb-8 pt-5">Dashboard</div>
 
                 {!loading && !error && (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
