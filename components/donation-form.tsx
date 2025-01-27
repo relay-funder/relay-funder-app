@@ -49,6 +49,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   // Simulated values - in a real app these would come from an API or wallet
   const tokenPrice = 1 // USD per ETH
   const availableBalance = usdcBalance // Update available balance to use fetched USDC balance
+
   
   const numericAmount = parseFloat(amount) || 0
   const akashicAmount = isDonatingToAkashic ? (numericAmount * percentage) / 100 : 0
@@ -71,7 +72,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
         const userAddress = await signer.getAddress()
 
         // Initialize USDC contract
-        const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer)
+        const usdcContract = new ethers.Contract(USDC_ADDRESS as string, erc20Abi, signer)
         
         // Fetch balance
         const balance = await usdcContract.balanceOf(userAddress)
@@ -125,8 +126,9 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       }
 
       // Initialize contracts
-      const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer)
-      const amountInUSDC = ethers.utils.parseUnits(amount, process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
+      
+      const usdcContract = new ethers.Contract(USDC_ADDRESS as string, erc20Abi, signer)
+      const amountInUSDC = ethers.utils.parseUnits(amount || '0', process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
 
       // First approve the treasury to spend USDC
       const approveTx = await usdcContract.approve(campaign.treasuryAddress, amountInUSDC)
