@@ -72,19 +72,6 @@ async function getPublicClient() {
   });
 }
 
-// async function getActiveCampaigns() {
-//   return prisma.campaign.findMany({
-//     where: {
-//       status: {
-//         in: ['active', "pending_approval"]
-//       }
-//     },
-//     include: {
-//       images: true
-//     }
-//   });
-// }
-
 async function getCampaignCreatedEvents(client: ReturnType<typeof createPublicClient>) {
   return client.getLogs({
     address: FACTORY_ADDRESS as `0x${string}`,
