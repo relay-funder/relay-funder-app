@@ -65,7 +65,7 @@ export function ExploreStories() {
   return (
     <div className="flex-col min-h-screen bg-gray-50">
   
-        <header className=" px-4 py-4">
+        <header className="px-4 py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
             <div className="flex items-start gap-4">
               <div className="relative">

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { Share2, Mail, Heart, Users, Clock, MapPin, Target, Link2 } from "lucide-react";
+import { Share2, Mail, Heart, Users, Clock, MapPin, Target, Link2} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -15,13 +15,15 @@ import { getCampaign } from "@/lib/database";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { CommentForm } from "@/components/comment-form";
+import BackButton from "@/app/components/back-button";
+
 
 export default async function CampaignPage({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const campaign:CampaignDisplay = await getCampaign((await params).slug)
+  const campaign: CampaignDisplay = await getCampaign((await params).slug)
 
   if (!campaign) {
     notFound();
@@ -39,44 +41,40 @@ export default async function CampaignPage({
   const now = new Date();
   const endDate = new Date(campaign.endTime);
   const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-
   console.log('campaign', campaign)
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-8">
-          <div className="space-y-6">
-            <div className="flex flex-col gap-4 py-4">
-              <div className="flex items-center gap-2">
+          <div className="space-y-4 pb-2">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 py-1">
+                <BackButton />
                 <Badge variant="secondary" className="px-3 py-1">
                   Featured
                 </Badge>
                 <span className="text-sm text-gray-500">Technology</span>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight">{campaign.title}</h1>
+              <h1 className="text-4xl font-bold tracking-tight pt-2">{campaign.title}</h1>
+
+              <div className="flex items-center py-2">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src="" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+                <div className="px-2">
+                  <p className="font-medium">{campaign.creatorAddress.slice(0, 6)}...{campaign.creatorAddress.slice(-4)}</p>
+                  <p className="text-sm text-gray-500">{campaign.location || 'Location not specified'}</p>
+                </div>
+              </div>
             </div>
-
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-            {/* Main Content */}
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8">
               <div className="space-y-6">
-
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="" />
-                    <AvatarFallback>CN</AvatarFallback>
-                  </Avatar>
-
-                  <div>
-                    <p className="font-medium">{campaign.creatorAddress.slice(0, 6)}...{campaign.creatorAddress.slice(-4)}</p>
-                    <p className="text-sm text-gray-500">{campaign.location || 'Location not specified'}</p>
-                  </div>
-                </div>
-
                 <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg">
                   {mainImage && (
                     <Image
@@ -213,11 +211,11 @@ export default async function CampaignPage({
 
           <TabsContent value="comments">
             <div className="max-w-3xl space-y-6">
-              <CommentForm 
+              <CommentForm
                 onSubmit={async (formData: FormData, userAddress: string) => {
                   'use server'
                   const content = formData.get('content') as string;
-                  
+
                   // Double check wallet connection on server side
                   if (!userAddress) {
                     throw new Error('Please connect your wallet to comment');

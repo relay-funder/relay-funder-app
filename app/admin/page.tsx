@@ -17,7 +17,7 @@ import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory'
 import { ethers } from 'ethers'
 import { IoLocationSharp } from 'react-icons/io5'
 import { useToast } from "@/hooks/use-toast"
-import {useWallets} from '@privy-io/react-auth';
+import { useWallets } from '@privy-io/react-auth';
 
 // Add platform config
 const platformConfig = {
@@ -63,7 +63,7 @@ interface TreasuryDeployedEvent {
     };
 }
 
-function AccessDenied({address, isOpen}: {address: string | undefined, isOpen: boolean}) {
+function AccessDenied({ address, isOpen }: { address: string | undefined, isOpen: boolean }) {
     return (
         <div className="flex min-h-screen bg-gray-50">
             <SideBar />
@@ -94,12 +94,12 @@ function AccessDenied({address, isOpen}: {address: string | undefined, isOpen: b
 }
 
 export default function AdminPage() {
-    const {wallets} = useWallets();
+    const { wallets } = useWallets();
     const { isOpen } = useSidebar()
-    
+
     const wallet = wallets.find(wallet => wallet?.address === adminAddress);
     const address = wallet?.address;
-    
+
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -141,10 +141,10 @@ export default function AdminPage() {
             if (!platformConfig.platformBytes) {
                 throw new Error('Platform bytes is not configured')
             }
-            
+
             // First, ensure we're on the right network
             const privyProvider = await wallet.getEthereumProvider()
-            
+
             // Switch to Alfajores network
             try {
                 await privyProvider.request({
@@ -154,9 +154,9 @@ export default function AdminPage() {
             } catch (switchError: unknown) {
                 // Type guard to check if it's a ProviderRpcError
                 if (
-                    typeof switchError === 'object' && 
+                    typeof switchError === 'object' &&
                     switchError !== null &&
-                    'code' in switchError && 
+                    'code' in switchError &&
                     (switchError as { code: number }).code === 4902
                 ) {
                     try {
@@ -191,7 +191,7 @@ export default function AdminPage() {
             })
             const signer = walletProvider.getSigner()
             const signerAddress = await signer.getAddress()
-            
+
             // Use the wallet provider for all operations since we've confirmed the network
             const globalParams = new ethers.Contract(
                 platformConfig.globalParamsAddress,
@@ -199,26 +199,26 @@ export default function AdminPage() {
                 walletProvider
             )
             const platformAdmin = await globalParams.getPlatformAdminAddress(platformConfig.platformBytes)
-            
+
             if (platformAdmin.toLowerCase() !== signerAddress.toLowerCase()) {
                 throw new Error('Not authorized as platform admin')
             }
-            
+
             // Initialize TreasuryFactory contract
             const treasuryFactory = new ethers.Contract(
                 platformConfig.treasuryFactoryAddress,
                 TreasuryFactoryABI,
                 signer
             )
-            
+
             const tx = await treasuryFactory.deploy(
                 platformConfig.platformBytes,
                 0,
                 campaignAddress
             )
-            
+
             const receipt = await tx.wait()
-            
+
             // Find the treasury deployment event
             const deployEvent = receipt.events?.find(
                 (e: TreasuryDeployedEvent) => e.event === 'TreasuryFactoryTreasuryDeployed'
@@ -227,9 +227,9 @@ export default function AdminPage() {
             if (!deployEvent) {
                 throw new Error('Treasury deployment event not found')
             }
-            
+
             const treasuryAddress = deployEvent.args.treasuryAddress
-            
+
             // Update campaign status in database
             if (campaignId && treasuryAddress) {
                 const updateResponse = await fetch(`/api/campaigns/${campaignId}/approve`, {
@@ -268,7 +268,7 @@ export default function AdminPage() {
             setError(err instanceof Error ? err.message : 'Failed to approve campaign')
         }
     }
-    
+
     useEffect(() => {
         const fetchAllCampaigns = async () => {
             if (!address) {
@@ -284,7 +284,9 @@ export default function AdminPage() {
             }
 
             try {
-                const response = await fetch('/api/campaigns')
+                const status = 'pending_approval';
+                const response = await fetch(`/api/campaigns?status=${status}`);
+                
                 const data = await response.json()
 
                 if (!response.ok) {
@@ -304,7 +306,7 @@ export default function AdminPage() {
             }
         }
         console.log('debug: address!!', address)
-        if(address) {
+        if (address) {
             fetchAllCampaigns()
         }
     }, [address, isAdmin])
@@ -376,187 +378,181 @@ export default function AdminPage() {
     }
 
     if (!address || !isAdmin) {
-        return <AccessDenied address={address} isOpen={isOpen}/>
+        return <AccessDenied address={address} isOpen={isOpen} />
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            <SideBar />
-            <div className={cn(
-                "flex-1 p-8 transition-all duration-300 ease-in-out",
-                isOpen ? "ml-[240px]" : "ml-[70px]"
-            )}>
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-3xl font-bold mb-8">Admin Dashboard</div>
+        <div className="flex flex-col min-h-screen w-full bg-gray-50">
+            <div className="max-w-7xl mx-auto p-5">
+                <div className="text-3xl font-bold pt-5 mb-8">Admin Dashboard</div>
 
-                    {!loading && !error && (
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                            <Card>
-                                <CardContent className="flex items-center p-6">
-                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                                        <Users className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
-                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalCampaigns}</h3>
+                {!loading && !error && (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                        <Card>
+                            <CardContent className="flex items-center p-6">
+                                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                                    <Users className="h-6 w-6 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
+                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalCampaigns}</h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardContent className="flex items-center p-6">
+                                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                                    <Coins className="h-6 w-6 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600">Total Raised</p>
+                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} ETH</h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardContent className="flex items-center p-6">
+                                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
+                                    <Calendar className="h-6 w-6 text-purple-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
+                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).activeCampaigns}</h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardContent className="flex items-center p-6">
+                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mr-4">
+                                    <TrendingUp className="h-6 w-6 text-yellow-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600">Average Progress</p>
+                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).averageProgress.toFixed(1)}%</h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                {loading ? (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {[...Array(3)].map((_, index) => (
+                            <Card key={index} className="animate-pulse">
+                                <CardHeader className="h-[200px] bg-gray-200" />
+                                <CardContent className="p-6">
+                                    <div className="h-6 bg-gray-200 rounded mb-4" />
+                                    <div className="space-y-2">
+                                        <div className="h-4 bg-gray-200 rounded" />
+                                        <div className="h-4 bg-gray-200 rounded" />
                                     </div>
                                 </CardContent>
                             </Card>
-
-                            <Card>
-                                <CardContent className="flex items-center p-6">
-                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
-                                        <Coins className="h-6 w-6 text-green-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Raised</p>
-                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} ETH</h3>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardContent className="flex items-center p-6">
-                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
-                                        <Calendar className="h-6 w-6 text-purple-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).activeCampaigns}</h3>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardContent className="flex items-center p-6">
-                                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mr-4">
-                                        <TrendingUp className="h-6 w-6 text-yellow-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Average Progress</p>
-                                        <h3 className="text-2xl font-bold">{calculateStats(campaigns).averageProgress.toFixed(1)}%</h3>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-
-                    {loading ? (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {[...Array(3)].map((_, index) => (
-                                <Card key={index} className="animate-pulse">
-                                    <CardHeader className="h-[200px] bg-gray-200" />
-                                    <CardContent className="p-6">
-                                        <div className="h-6 bg-gray-200 rounded mb-4" />
-                                        <div className="space-y-2">
-                                            <div className="h-4 bg-gray-200 rounded" />
-                                            <div className="h-4 bg-gray-200 rounded" />
+                        ))}
+                    </div>
+                ) : error ? (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                ) : campaigns.length === 0 ? (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">No campaigns found.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {[...campaigns].map((campaign) => (
+                            <Card key={campaign.id || campaign.address} className="overflow-hidden">
+                                <CardHeader className="p-0">
+                                    <Image
+                                        src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
+                                        alt={campaign.title || 'Campaign'}
+                                        width={600}
+                                        height={400}
+                                        className="h-[200px] w-full object-cover"
+                                    />
+                                </CardHeader>
+                                <CardContent className="p-6">
+                                    <div className="flex justify-between items-center">
+                                        <h2 className="text-xl font-bold mb-4">{campaign.title || 'Campaign'}</h2>
+                                        <div className={cn(
+                                            "px-3 py-1 rounded-full text-sm inline-block",
+                                            {
+                                                'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
+                                                'bg-yellow-100 text-yellow-600': getCampaignStatus(campaign) === 'Upcoming',
+                                                'bg-gray-100 text-gray-600': getCampaignStatus(campaign) === 'Ended',
+                                                'bg-orange-100 text-orange-600': getCampaignStatus(campaign) === 'Pending Approval',
+                                                'bg-purple-100 text-purple-600': getCampaignStatus(campaign) === 'Draft',
+                                                'bg-red-100 text-red-600': getCampaignStatus(campaign) === 'Failed',
+                                                'bg-green-100 text-green-600': getCampaignStatus(campaign) === 'Completed'
+                                            }
+                                        )}>
+                                            {getCampaignStatus(campaign)}
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : error ? (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    ) : campaigns.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-gray-500">No campaigns found.</p>
-                        </div>
-                    ) : (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {[...campaigns].map((campaign) => (
-                                <Card key={campaign.id || campaign.address} className="overflow-hidden">
-                                    <CardHeader className="p-0">
-                                        <Image
-                                            src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
-                                            alt={campaign.title || 'Campaign'}
-                                            width={600}
-                                            height={400}
-                                            className="h-[200px] w-full object-cover"
-                                        />
-                                    </CardHeader>
-                                    <CardContent className="p-6">
-                                        <div className="flex justify-between items-center">
-                                            <h2 className="text-xl font-bold mb-4">{campaign.title || 'Campaign'}</h2>
-                                            <div className={cn(
-                                                "px-3 py-1 rounded-full text-sm inline-block",
-                                                {
-                                                    'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
-                                                    'bg-yellow-100 text-yellow-600': getCampaignStatus(campaign) === 'Upcoming',
-                                                    'bg-gray-100 text-gray-600': getCampaignStatus(campaign) === 'Ended',
-                                                    'bg-orange-100 text-orange-600': getCampaignStatus(campaign) === 'Pending Approval',
-                                                    'bg-purple-100 text-purple-600': getCampaignStatus(campaign) === 'Draft',
-                                                    'bg-red-100 text-red-600': getCampaignStatus(campaign) === 'Failed',
-                                                    'bg-green-100 text-green-600': getCampaignStatus(campaign) === 'Completed'
-                                                }
-                                            )}>
-                                                {getCampaignStatus(campaign)}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <p><strong>Description:</strong> {campaign.description}</p>
+                                        <div className="flex items-center gap-2">
+                                            <strong>Creator:</strong>
+                                            <span className="font-mono">
+                                                {campaign.owner?.slice(0, 8)}...{campaign.owner?.slice(-8)}
+                                            </span>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(campaign.owner || '');
+                                                    toast({
+                                                        title: "Address copied",
+                                                        description: "The address has been copied to your clipboard",
+                                                    });
+                                                }}
+                                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                            >
+                                                <Copy className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                        {campaign.location && (
+                                            <div className="flex items-center gap-1">
+                                                <IoLocationSharp className="text-[#55DFAB]" />
+                                                <p>{campaign.location}</p>
                                             </div>
-                                        </div>
+                                        )}
+                                        {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
+                                        {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
+                                        <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
+                                        {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
 
-                                        <div className="space-y-2">
-                                            <p><strong>Description:</strong> {campaign.description}</p>
-                                            <div className="flex items-center gap-2">
-                                                <strong>Creator:</strong>
-                                                <span className="font-mono">
-                                                    {campaign.owner?.slice(0, 8)}...{campaign.owner?.slice(-8)}
-                                                </span>
-                                                <button
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(campaign.owner || '');
-                                                        toast({
-                                                            title: "Address copied",
-                                                            description: "The address has been copied to your clipboard",
-                                                        });
-                                                    }}
-                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                                                >
-                                                    <Copy className="h-4 w-4" />
-                                                </button>
+                                        {campaign.status === 'pending_approval' && (
+                                            <Button
+                                                onClick={() => approveCampaign(campaign.id, campaign.address || '')}
+                                                className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                                            >
+                                                Approve Campaign
+                                            </Button>
+                                        )}
+
+                                        {campaign.totalRaised && campaign.goalAmount && (
+                                            <div className="mt-4">
+                                                <div className="flex justify-between text-sm mb-2">
+                                                    <span>Progress</span>
+                                                    <span>{((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%</span>
+                                                </div>
+                                                <Progress
+                                                    value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100}
+                                                    className="h-2"
+                                                />
                                             </div>
-                                            {campaign.location && (
-                                                <div className="flex items-center gap-1">
-                                                    <IoLocationSharp className="text-[#55DFAB]" />
-                                                    <p>{campaign.location}</p>
-                                                </div>
-                                            )}
-                                            {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
-                                            {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
-                                            <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
-                                            {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
-
-                                            {campaign.status === 'pending_approval' && (
-                                                <Button
-                                                    onClick={() => approveCampaign(campaign.id, campaign.address || '')}
-                                                    className="w-full mt-4 bg-green-600 hover:bg-green-700"
-                                                >
-                                                    Approve Campaign
-                                                </Button>
-                                            )}
-
-                                            {campaign.totalRaised && campaign.goalAmount && (
-                                                <div className="mt-4">
-                                                    <div className="flex justify-between text-sm mb-2">
-                                                        <span>Progress</span>
-                                                        <span>{((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%</span>
-                                                    </div>
-                                                    <Progress
-                                                        value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100}
-                                                        className="h-2"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )
