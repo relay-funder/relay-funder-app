@@ -1,5 +1,7 @@
 export const adminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 
+export const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN;
+
 export const countries = [
 	"Afghanistan",
 	"Albania",
