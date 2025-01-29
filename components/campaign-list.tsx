@@ -95,108 +95,107 @@ export default function CampaignList() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
       {campaigns.map((campaign) => (
         <Card key={campaign.address} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
-          <Link href={`/campaigns/${campaign.slug}`} className="flex-1">
-
-            <CardHeader className="p-0">
-              <Image
-                src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
-                alt={campaign.title || campaign.address}
-                width={600}
-                height={400}
-                className="h-[200px] w-full object-cover"
-              />
-            </CardHeader>
-            <CardContent className="p-6">
-              <h2 className="mb-2 text-xl font-bold">{campaign.title || 'Campaign Title'}</h2>
-              <div className="flex justify-between items-center mb-4 gap-2">
-                <div className="flex align self-start">
-                  <Image
-                    src={`https://avatar.vercel.sh/${campaign.address}`}
-                    alt="user-pr"
-                    width={24}
-                    height={24}
-                    className="rounded-full"
-                  />
-                  <span className="font-medium">{`${campaign.owner.slice(0, 10)}...`}</span>
-                </div>
-                <div className="flex align self-start">
-                  <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
-                  <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
-                </div>
-              </div>
-              <p className="text-gray-600 text-[12px]">{campaign.description}</p>
-              <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
-                Read More
-              </div>
-            </CardContent>
-
-            <div className="mt-auto px-6 py-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className='flex '>
-                  <div className='text-[#55DFAB] px-1 font-bold'>
-                    {campaign.totalRaised}
+          <div className="flex-1">
+            <Link href={`/campaigns/${campaign.slug}`}>
+              <CardHeader className="p-0">
+                <Image
+                  src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
+                  alt={campaign.title || campaign.address}
+                  width={600}
+                  height={400}
+                  className="h-[200px] w-full object-cover"
+                />
+              </CardHeader>
+              <CardContent className="p-6">
+                <h2 className="mb-2 text-xl font-bold">{campaign.title || 'Campaign Title'}</h2>
+                <div className="flex justify-between items-center mb-4 gap-2">
+                  <div className="flex align self-start">
+                    <Image
+                      src={`https://avatar.vercel.sh/${campaign.address}`}
+                      alt="user-pr"
+                      width={24}
+                      height={24}
+                      className="rounded-full"
+                    />
+                    <span className="font-medium">{`${campaign.owner.slice(0, 10)}...`}</span>
                   </div>
-                  donations
-                </span>
-
-                <span className='flex'>
-                  <div className='text-[#55DFAB] px-1 font-bold'>
-                    {((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%
+                  <div className="flex align self-start">
+                    <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
+                    <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
                   </div>
-                  of funding goal
-                </span>
+                </div>
+                <p className="text-gray-600 text-[12px]">{campaign.description}</p>
+                <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
+                  Read More
+                </div>
+              </CardContent>
+              <div className="mt-auto px-6 py-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className='flex'>
+                    <div className='text-[#55DFAB] px-1 font-bold'>
+                      {campaign.totalRaised}
+                    </div>
+                    donations
+                  </span>
+                  <span className='flex'>
+                    <div className='text-[#55DFAB] px-1 font-bold'>
+                      {((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%
+                    </div>
+                    of funding goal
+                  </span>
+                </div>
+                <Progress value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100} className="h-2" />
               </div>
-              <Progress value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100} className="h-2" />
-            </div>
+            </Link>
+          </div>
 
-            <CardFooter className="mt-auto gap-4 p-6 pt-0">
-              <Link href={`/campaigns/${campaign.slug}/donation`} className="flex-1">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-                  Donate
-                </Button>
-              </Link>ß
-              <Button variant="outline" className="flex-1">
-                <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
-                Add to Collection
+          <CardFooter className="mt-auto gap-4 p-6 pt-0">
+            <Link href={`/campaigns/${campaign.slug}/donation`} className="flex-1">
+              <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                <Image src="/diamond.png" alt="wallet" width={24} height={24} />
+                Donate
               </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Info className="mr-2 h-4 w-4" />
-                </DialogTrigger>
-                <DialogContent>
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableHead>Address</TableHead>
-                        <TableCell>{campaign.address}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableHead>Owner</TableHead>
-                        <TableCell>{campaign.owner}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableHead>Launch Time</TableHead>
-                        <TableCell>{formatDate(campaign.launchTime)}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableHead>Deadline</TableHead>
-                        <TableCell>{formatDate(campaign.deadline)}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableHead>Goal Amount</TableHead>
-                        <TableCell>{campaign.goalAmount} ETH</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableHead>Total Raised</TableHead>
-                        <TableCell>{campaign.totalRaised} ETH</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-          </Link>
+            </Link>
+            <Button variant="outline" className="flex-1">
+              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+              Add to Collection
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Info className="mr-2 h-4 w-4" />
+              </DialogTrigger>
+              <DialogContent>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableHead>Address</TableHead>
+                      <TableCell>{campaign.address}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead>Owner</TableHead>
+                      <TableCell>{campaign.owner}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead>Launch Time</TableHead>
+                      <TableCell>{formatDate(campaign.launchTime)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead>Deadline</TableHead>
+                      <TableCell>{formatDate(campaign.deadline)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead>Goal Amount</TableHead>
+                      <TableCell>{campaign.goalAmount} ETH</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead>Total Raised</TableHead>
+                      <TableCell>{campaign.totalRaised} ETH</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </DialogContent>
+            </Dialog>
+          </CardFooter>
         </Card>
       ))}
     </div>
