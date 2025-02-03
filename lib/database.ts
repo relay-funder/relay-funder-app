@@ -14,6 +14,7 @@ export async function getCampaign(slug: string): Promise<Campaign> {
                 }
             },
             comments: true,
+            updates: true,
         },
     })
 
@@ -31,5 +32,5 @@ export async function getCampaign(slug: string): Promise<Campaign> {
         totalRaised: '0',
         location: dbCampaign.location,
         status: dbCampaign.status as 'draft' | 'active' | 'closed',
-    }
+    } as Campaign
 }

@@ -12,14 +12,23 @@ export interface DbCampaign {
   treasuryAddress?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  images: {
+  images?: {
     id: number;
     imageUrl: string;
     isMainImage: boolean;
     campaignId: number;
   }[];
   slug: string;
-  location: string | null;
+  location?: string | null;
+  updates?: {
+    id: number;
+    title: string;
+    content: string;
+    createdAt: Date;
+    updatedAt: Date;
+    campaignId: number;
+    creatorAddress: string;
+  }[];
 }
 
 
@@ -42,6 +51,15 @@ export type CampaignDisplay = {
   images: CampaignImage[];
   payments?: Payment[];
   comments?: Comment[];
+  updates?: {
+    id: number;
+    title: string;
+    content: string;
+    createdAt: Date;
+    updatedAt: Date;
+    campaignId: number;
+    creatorAddress: string;
+  }[];
 };
 
 export type Comment = {

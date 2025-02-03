@@ -26,6 +26,7 @@ model Campaign {
   images          CampaignImage[]
   payments        Payment[]
   comments        Comment[]
+  updates         CampaignUpdate[]
 
   @@index([creatorAddress])
 }
@@ -79,4 +80,17 @@ model Comment {
 
   @@index([campaignId])
   @@index([userAddress])
+}
+
+model CampaignUpdate {
+  id             Int      @id @default(autoincrement())
+  title          String
+  content        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  campaignId     Int
+  creatorAddress String
+  campaign       Campaign @relation(fields: [campaignId], references: [id])
+
+  @@index([campaignId])
 }

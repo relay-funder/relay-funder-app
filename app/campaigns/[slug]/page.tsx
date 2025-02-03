@@ -16,7 +16,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { CommentForm } from "@/components/comment-form";
 import BackButton from "@/app/components/back-button";
-
+import { CampaignUpdateForm } from "@/components/campaign-update-form";
 
 export default async function CampaignPage({
   params,
@@ -198,14 +198,34 @@ export default async function CampaignPage({
 
           <TabsContent value="updates">
             <div className="max-w-3xl space-y-8">
-              {/* Add updates here */}
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-sm text-gray-500 mb-2">Posted 3 days ago</p>
-                  <h3 className="text-xl font-semibold mb-4">Project Milestone Reached!</h3>
-                  <p className="text-gray-700">We&apos;re excited to announce our latest progress...</p>
-                </CardContent>
-              </Card>
+              <CampaignUpdateForm 
+                campaignId={campaign.id}
+                creatorAddress={campaign.creatorAddress}
+                userAddress={userAddress}
+                slug={campaign.slug}
+              />
+              
+              {campaign.updates?.map((update) => (
+                <Card key={update.id}>
+                  <CardContent className="p-6">
+                    <p className="text-sm text-gray-500 mb-2">
+                      {new Date(update.createdAt).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    <h3 className="text-xl font-semibold mb-4">{update.title}</h3>
+                    <p className="text-gray-700 whitespace-pre-wrap">{update.content}</p>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {campaign.updates?.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No updates yet
+                </div>
+              )}
             </div>
           </TabsContent>
 
