@@ -1,8 +1,8 @@
-import { CampaignDisplay } from "@/types/campaign"
+import { Campaign, CampaignDisplay } from "@/types/campaign"
 import { prisma } from "./prisma"
 import { notFound } from "next/navigation"
 
-export async function getCampaign(slug: string): Promise<CampaignDisplay> {
+export async function getCampaign(slug: string): Promise<Campaign & CampaignDisplay> {
     console.log('getCampaign', slug)
     const dbCampaign = await prisma.campaign.findUnique({
         where: { slug },
@@ -25,7 +25,15 @@ export async function getCampaign(slug: string): Promise<CampaignDisplay> {
     return {
         ...dbCampaign,
         images: dbCampaign.images || [],
-        campaignAddress: dbCampaign.campaignAddress,
-        transactionHash: dbCampaign.transactionHash,
-    } as CampaignDisplay
+        payments: dbCampaign.payments || [],
+        comments: dbCampaign.comments || [],
+        updates: dbCampaign.updates || [],
+        address: dbCampaign.campaignAddress || '',
+        owner: dbCampaign.creatorAddress,
+        launchTime: Math.floor(new Date(dbCampaign.startTime).getTime() / 1000).toString(),
+        deadline: Math.floor(new Date(dbCampaign.endTime).getTime() / 1000).toString(),
+        goalAmount: dbCampaign.fundingGoal,
+        totalRaised: '0',
+        amountRaised: '0'
+    } as Campaign & CampaignDisplay
 }
