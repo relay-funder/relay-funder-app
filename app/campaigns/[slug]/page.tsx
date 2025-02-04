@@ -243,7 +243,13 @@ export default async function CampaignPage({
               )}
               
               {campaign.updates && campaign.updates.length > 0 ? (
-                <Timeline items={campaign.updates} className="w-full" />
+                <Timeline 
+                  items={campaign.updates.map(update => ({
+                    ...update,
+                    id: update.id.toString()
+                  }))} 
+                  className="w-full" 
+                />
               ) : (
                 <div className="max-w-3xl mx-auto">
                   <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">

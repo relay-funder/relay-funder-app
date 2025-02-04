@@ -10,7 +10,7 @@ interface ProjectInfoProps {
 }
 
 export default function ProjectInfo({ campaign }: ProjectInfoProps) {
-  const mainImage = campaign.images.find(img => img.isMainImage) || campaign.images[0]
+  const mainImage = campaign.images?.find(img => img.isMainImage) || campaign.images?.[0]
 
   return (
     <div className="space-y-6">
