@@ -1,11 +1,18 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE "CampaignUpdate" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "campaignId" INTEGER NOT NULL,
+    "creatorAddress" TEXT NOT NULL,
 
-  - You are about to drop the `CampaignUpdate` table. If the table is not empty, all the data it contains will be lost.
+    CONSTRAINT "CampaignUpdate_pkey" PRIMARY KEY ("id")
+);
 
-*/
--- DropForeignKey
-ALTER TABLE "CampaignUpdate" DROP CONSTRAINT "CampaignUpdate_campaignId_fkey";
+-- AddForeignKey
+ALTER TABLE "CampaignUpdate" ADD CONSTRAINT "CampaignUpdate_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- DropTable
-DROP TABLE "CampaignUpdate";
+-- CreateIndex
+CREATE INDEX "CampaignUpdate_campaignId_idx" ON "CampaignUpdate"("campaignId");

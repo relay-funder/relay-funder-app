@@ -1,25 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useTransition } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { revalidatePath } from 'next/cache'
+import { useAccount } from 'wagmi'
 
 interface CampaignUpdateFormProps {
-    campaignId: number
     creatorAddress: string
-    userAddress?: string
-    slug: string
+    onSubmit: (formData: FormData, userAddress: string) => Promise<void>
 }
 
-export function CampaignUpdateForm({ campaignId, creatorAddress, userAddress, slug }: CampaignUpdateFormProps) {
+export function CampaignUpdateForm({ creatorAddress, onSubmit }: CampaignUpdateFormProps) {
     const { toast } = useToast()
-    const [formData, setFormData] = useState({
-        title: '',
-        content: ''
-    })
+    const [isPending, startTransition] = useTransition()
+    const formRef = useRef<HTMLFormElement>(null)
+    const { address: userAddress } = useAccount()
 
     const isOwner = userAddress?.toLowerCase() === creatorAddress?.toLowerCase()
 
@@ -27,69 +24,55 @@ export function CampaignUpdateForm({ campaignId, creatorAddress, userAddress, sl
         return null
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-
-        try {
-            const response = await fetch('/api/campaigns/updates', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    campaignId,
-                    title: formData.title,
-                    content: formData.content,
-                    creatorAddress
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error('Failed to create update')
-            }
-
-            toast({
-                title: "Success!",
-                description: "Campaign update posted successfully.",
-            })
-
-            // Reset form
-            setFormData({ title: '', content: '' })
-
-            // Revalidate the campaign page
-            revalidatePath(`/campaigns/${slug}`)
-
-        } catch (error) {
+        
+        if (!userAddress) {
             toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Failed to post update. Please try again.",
+                title: "Wallet not connected",
+                description: "Please connect your wallet to post an update",
             })
-            console.log('Failed to create campaign update:', error)
+            return
         }
+
+        startTransition(async () => {
+            try {
+                await onSubmit(new FormData(e.currentTarget), userAddress)
+                formRef.current?.reset()
+                toast({
+                    title: "Success!",
+                    description: "Campaign update posted successfully.",
+                })
+            } catch (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: error instanceof Error ? error.message : "Failed to post update",
+                })
+            }
+        })
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div>
                 <Input
+                    name="title"
                     placeholder="Update Title"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     required
                 />
             </div>
             <div>
                 <Textarea
+                    name="content"
                     placeholder="Share your campaign progress..."
-                    value={formData.content}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                     required
                     className="min-h-[150px]"
                 />
             </div>
-            <Button type="submit" className="w-full">
-                Post Update
+            <Button type="submit" disabled={isPending} className="w-full">
+                {isPending ? 'Posting...' : 'Post Update'}
             </Button>
         </form>
     )
