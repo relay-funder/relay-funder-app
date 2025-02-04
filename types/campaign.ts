@@ -31,7 +31,6 @@ export interface DbCampaign {
   }[];
 }
 
-
 export type CampaignDisplay = {
   id: number;
   title: string;

@@ -199,10 +199,42 @@ export default async function CampaignPage({
           <TabsContent value="updates">
             <div className="max-w-3xl space-y-8">
               <CampaignUpdateForm 
-                campaignId={campaign.id}
                 creatorAddress={campaign.creatorAddress}
-                userAddress={userAddress}
-                slug={campaign.slug}
+                onSubmit={async (formData: FormData, userAddress: string) => {
+                  'use server'
+                  
+                  try {
+                    const title = formData.get('title')
+                    const content = formData.get('content')
+
+                    if (!title || !content || typeof title !== 'string' || typeof content !== 'string') {
+                      throw new Error('Invalid form data')
+                    }
+
+                    if (!userAddress) {
+                      throw new Error('Please connect your wallet to post update')
+                    }
+
+                    if (userAddress.toLowerCase() !== campaign.creatorAddress.toLowerCase()) {
+                      throw new Error('Only the campaign creator can post updates')
+                    }
+
+                    const update = await prisma.campaignUpdate.create({
+                      data: {
+                        title: title,
+                        content: content,
+                        campaignId: campaign.id,
+                        creatorAddress: userAddress
+                      }
+                    });
+
+                    console.log('Created update:', update);
+                    revalidatePath(`/campaigns/${campaign.slug}`);
+                  } catch (error) {
+                    console.error('Failed to create update:', error);
+                    throw error instanceof Error ? error : new Error('Failed to create update');
+                  }
+                }}
               />
               
               {campaign.updates?.map((update) => (
