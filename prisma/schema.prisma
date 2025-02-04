@@ -79,13 +79,14 @@ model Comment {
 }
 
 model CampaignUpdate {
-  id         Int      @id @default(autoincrement())
-  title      String
-  content    String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  campaignId Int
-  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  id             Int      @id @default(autoincrement())
+  title          String
+  content        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  campaignId     Int
+  creatorAddress String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
 }
