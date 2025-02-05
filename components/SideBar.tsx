@@ -3,7 +3,7 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { usePrivy } from '@privy-io/react-auth'
-import { Grid, Home, LogOut, Settings, Star } from 'lucide-react'
+import { Grid, Home, LogOut, Settings, Star, BookCheck } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
@@ -26,7 +26,8 @@ export const SideBar = () => {
     const navItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
         { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
-        { icon: <Star className="h-6 w-6" />, label: "Favorites", href: "/favorites" },
+        { icon: <BookCheck className="h-6 w-6" />, label: "Favorites", href: "/favorites" },
+        { icon: <Star className="h-6 w-6" />, label: "Rounds", href: "/rounds" },
     ]
 
     return (
