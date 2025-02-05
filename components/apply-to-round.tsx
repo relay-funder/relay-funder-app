@@ -95,7 +95,7 @@ export default function ApplyToRound({ round, userCampaigns = [] }: ApplyToRound
         <DialogHeader>
           <DialogTitle>Apply to {round.title}</DialogTitle>
           <DialogDescription>
-            Submit your project to be considered for this funding round. Make sure to explain how your project aligns with the round's goals.
+            Submit your project to be considered for this funding round. Make sure to explain how your project aligns with the round&apos;s goals.
           </DialogDescription>
         </DialogHeader>
 
@@ -142,7 +142,7 @@ export default function ApplyToRound({ round, userCampaigns = [] }: ApplyToRound
                     />
                   </FormControl>
                   <FormDescription>
-                    Explain how your project aligns with the round's goals and why you should be considered.
+                    Explain how your project aligns with the round&apos;s goals and why you should be considered.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

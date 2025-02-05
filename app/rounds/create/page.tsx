@@ -130,7 +130,7 @@ export default function CreateRoundPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Explain what types of projects you're looking to fund and what impact you hope to achieve.
+                        Explain what types of projects you&apos;re looking to fund and what impact you hope to achieve.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

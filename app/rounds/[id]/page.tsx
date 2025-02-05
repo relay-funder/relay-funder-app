@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
-import { Calendar, Users, Info, ArrowRight } from "lucide-react";
+import { Calendar, Users, Info } from "lucide-react";
 import Link from "next/link";
 import { Round } from "@/types/round";
 import ApplyToRound from "@/components/apply-to-round";
 
-// Mock user campaigns - In production, this would come from your auth context/API
+// Mock user campaigns - In production, this would come from API
 const MOCK_USER_CAMPAIGNS = [
   {
     id: "campaign-1",
@@ -81,14 +81,12 @@ const getRound = (id: string): Round | null => {
   return round;
 };
 
-interface RoundPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function RoundPage({ params }: RoundPageProps) {
-  const round = getRound(params.id);
+export default async function RoundPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const round = getRound((await params).id);
 
   if (!round) {
     notFound();
@@ -110,7 +108,7 @@ export default function RoundPage({ params }: RoundPageProps) {
             <p className="text-gray-600">{round.organization.name}</p>
           </div>
         </div>
-        
+
         <div className="flex gap-4 mb-8">
           <ApplyToRound round={round} userCampaigns={MOCK_USER_CAMPAIGNS} />
           <Button variant="outline" size="lg">
@@ -127,7 +125,7 @@ export default function RoundPage({ params }: RoundPageProps) {
               <TabsTrigger value="projects">Projects</TabsTrigger>
               <TabsTrigger value="rules">Rules</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="overview" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -147,7 +145,7 @@ export default function RoundPage({ params }: RoundPageProps) {
                     <Info className="h-5 w-5 mt-0.5 text-gray-500" />
                     <div>
                       <h4 className="font-medium">Project Requirements</h4>
-                      <p className="text-gray-600">Your project must be open source and align with the round's goals.</p>
+                      <p className="text-gray-600">Your project must be open source and align with the round&apos;s goals.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
@@ -222,11 +220,10 @@ export default function RoundPage({ params }: RoundPageProps) {
 
               <div>
                 <p className="text-sm text-gray-500 mb-1">Status</p>
-                <span className={`text-sm px-2 py-1 rounded-full ${
-                  round.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                  round.status === 'UPCOMING' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`text-sm px-2 py-1 rounded-full ${round.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                    round.status === 'UPCOMING' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                  }`}>
                   {round.status}
                 </span>
               </div>
