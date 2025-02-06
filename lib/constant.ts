@@ -25,7 +25,7 @@ export const MOCK_ROUNDS: Round[] = [
 		type: "OSS_ROUND",
 		category: "Development",
 		matchingPool: 300000,
-		startDate: "2024-03-01",
+		startDate: "2024-02-01",
 		endDate: "2024-04-01",
 		status: "ACTIVE",
 		organization: {
@@ -40,7 +40,7 @@ export const MOCK_ROUNDS: Round[] = [
 		type: "OSS_ROUND",
 		category: "Infrastructure",
 		matchingPool: 300000,
-		startDate: "2024-03-01",
+		startDate: "2024-02-01",
 		endDate: "2024-04-01",
 		status: "ACTIVE",
 		organization: {
