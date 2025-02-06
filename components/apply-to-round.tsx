@@ -65,7 +65,7 @@ export default function ApplyToRound({ round, userCampaigns = [] }: ApplyToRound
     try {
       // In production, this would be an API call
       console.log("Submitting application:", data);
-      
+
       // Mock success
       setOpen(false);
       router.refresh();
@@ -85,12 +85,22 @@ export default function ApplyToRound({ round, userCampaigns = [] }: ApplyToRound
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="lg">
-          Apply to Round
+      {round.status !== 'ENDED' && (
+        <DialogTrigger asChild>
+          <Button size="lg">
+            {round.status === 'ACTIVE' ? ' Apply to Round' :
+              round.status === 'UPCOMING' ? ' Apply for Upcoming Round' :
+              'Round Ended'}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+      )}
+      {round.status === 'ENDED' && (
+        <Button size="lg" disabled>
+          Round Ended
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
-      </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Apply to {round.title}</DialogTitle>
