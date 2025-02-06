@@ -66,9 +66,11 @@ export default function RoundCard({ round }: RoundCardProps) {
       </Link>
 
       <CardFooter className="p-6 pt-0 gap-4">
-        <Button className="flex-1" variant={round.status === 'ACTIVE' ? 'default' : 'outline'}>
-          {round.status === 'ACTIVE' ? 'Apply Now' : 'View Details'}
-        </Button>
+        <Link href={`/rounds/${round.id}`}>
+          <Button className="flex-1" variant={round.status === 'ACTIVE' ? 'default' : 'outline'}>
+            {round.status === 'ACTIVE' ? 'View Details' : 'View Details'}
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );
