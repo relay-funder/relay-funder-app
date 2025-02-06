@@ -8,24 +8,25 @@ datasource db {
 }
 
 model Campaign {
-  id              Int             @id @default(autoincrement())
+  id              Int              @id @default(autoincrement())
   title           String
   description     String
   fundingGoal     String
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
-  status          String          @default("draft")
+  status          String           @default("draft")
   transactionHash String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  campaignAddress String?         @unique
-  slug            String          @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  campaignAddress String?          @unique
+  slug            String           @unique
   location        String?
   treasuryAddress String?
   images          CampaignImage[]
-  payments        Payment[]
+  updates         CampaignUpdate[]
   comments        Comment[]
+  payments        Payment[]
 
   @@index([creatorAddress])
 }
@@ -41,42 +42,51 @@ model CampaignImage {
 model User {
   id        Int       @id @default(autoincrement())
   address   String    @unique
-  payments  Payment[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  payments  Payment[]
 }
 
 model Payment {
-  id              Int       @id @default(autoincrement())
-  amount          String    // Store as string to preserve precision
-  token           String    // e.g., "USDC"
-  status          String    @default("pending") // pending, confirmed, failed
+  id              Int      @id @default(autoincrement())
+  amount          String
+  token           String
+  status          String   @default("pending")
   transactionHash String?
-  isAnonymous     Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  // Relations
+  isAnonymous     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   campaignId      Int
-  campaign        Campaign  @relation(fields: [campaignId], references: [id])
   userId          Int
-  user            User      @relation(fields: [userId], references: [id])
+  campaign        Campaign @relation(fields: [campaignId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
 
   @@index([campaignId])
   @@index([userId])
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
-  content   String
+  id          Int      @id @default(autoincrement())
+  content     String
   userAddress String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  campaignId Int
-  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  campaignId  Int
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
 
   @@index([campaignId])
   @@index([userAddress])
+}
+
+model CampaignUpdate {
+  id             Int      @id @default(autoincrement())
+  title          String
+  content        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  campaignId     Int
+  creatorAddress String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
 }

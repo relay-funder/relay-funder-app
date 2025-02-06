@@ -16,7 +16,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { CommentForm } from "@/components/comment-form";
 import BackButton from "@/app/components/back-button";
-
+import { CampaignUpdateForm } from "@/components/campaign-update-form";
+import { Timeline } from "@/components/timeline";
 
 export default async function CampaignPage({
   params,
@@ -197,15 +198,66 @@ export default async function CampaignPage({
           </TabsContent>
 
           <TabsContent value="updates">
-            <div className="max-w-3xl space-y-8">
-              {/* Add updates here */}
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-sm text-gray-500 mb-2">Posted 3 days ago</p>
-                  <h3 className="text-xl font-semibold mb-4">Project Milestone Reached!</h3>
-                  <p className="text-gray-700">We&apos;re excited to announce our latest progress...</p>
-                </CardContent>
-              </Card>
+            <div className="max-w-6xl mx-auto px-4 space-y-8">
+              {campaign.creatorAddress && (
+                <div className="max-w-3xl mx-auto">
+                  <CampaignUpdateForm 
+                    creatorAddress={campaign.creatorAddress}
+                    onSubmit={async (formData: FormData, userAddress: string) => {
+                      'use server'
+                      
+                      try {
+                        const title = formData.get('title')
+                        const content = formData.get('content')
+
+                        if (!title || !content || typeof title !== 'string' || typeof content !== 'string') {
+                          throw new Error('Invalid form data')
+                        }
+
+                        if (!userAddress) {
+                          throw new Error('Please connect your wallet to post update')
+                        }
+
+                        if (userAddress.toLowerCase() !== campaign.creatorAddress.toLowerCase()) {
+                          throw new Error('Only the campaign creator can post updates')
+                        }
+
+                        const update = await prisma.campaignUpdate.create({
+                          data: {
+                            title: title,
+                            content: content,
+                            campaignId: campaign.id,
+                            creatorAddress: userAddress
+                          }
+                        });
+
+                        console.log('Created update:', update);
+                        revalidatePath(`/campaigns/${campaign.slug}`);
+                      } catch (error) {
+                        console.error('Failed to create update:', error);
+                        throw error instanceof Error ? error : new Error('Failed to create update');
+                      }
+                    }}
+                  />
+                </div>
+              )}
+              
+              {campaign.updates && campaign.updates.length > 0 ? (
+                <Timeline 
+                  items={campaign.updates.map(update => ({
+                    ...update,
+                    id: update.id.toString()
+                  }))} 
+                  className="w-full" 
+                />
+              ) : (
+                <div className="max-w-3xl mx-auto">
+                  <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No Updates Yet</h3>
+                    <p className="text-gray-500">Check back later for updates on this campaign&apos;s progress.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
 
