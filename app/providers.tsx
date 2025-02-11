@@ -8,6 +8,8 @@ import { sepolia, celoAlfajores, mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionProvider } from '@/contexts/CollectionContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useState } from 'react';
 
 const config = createConfig({
   chains: [sepolia, celoAlfajores, mainnet],
@@ -18,9 +20,18 @@ const config = createConfig({
   },
 });
 
-const queryClient = new QueryClient();
-
 export default function Providers({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minute
+        gcTime: 5 * 60 * 1000, // 5 minutes
+        refetchOnWindowFocus: false,
+        retry: 1,
+      },
+    },
+  }));
+
   return (
     <PrivyProvider
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ''}
@@ -50,9 +61,12 @@ export default function Providers({ children }: { children: ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={config}>
-          <CollectionProvider>
-            <SidebarProvider>{children}</SidebarProvider>
-          </CollectionProvider>
+          <SidebarProvider>
+            <CollectionProvider>
+              {children}
+            </CollectionProvider>
+          </SidebarProvider>
+          <ReactQueryDevtools initialIsOpen={false} />
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProvider>

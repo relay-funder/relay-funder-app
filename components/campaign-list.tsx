@@ -1,24 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  //TableHeader, 
-  TableRow
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,34 +13,10 @@ import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
 import Link from "next/link";
 import { Campaign } from "../types/campaign";
+import { useCampaigns } from "@/lib/hooks/useCampaigns";
 
 export default function CampaignList() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchCampaigns = useCallback(async () => {
-    try {
-      const response = await fetch('/api/campaigns');
-      const data = await response.json();
-
-      console.log("dataapi", data.campaigns[0]);
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch campaigns');
-      }
-      console.log("Campaigns", data.campaigns.map((campaign: Campaign) => campaign.address));
-      setCampaigns(data.campaigns);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, [fetchCampaigns]);
+  const { data: campaigns, isLoading: loading, error } = useCampaigns();
 
   const formatDate = (timestamp: string) => {
     return new Date(parseInt(timestamp) * 1000).toLocaleDateString();
@@ -86,24 +46,25 @@ export default function CampaignList() {
       <Alert variant="destructive" className="m-4">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>{error instanceof Error ? error.message : 'An error occurred'}</AlertDescription>
       </Alert>
     );
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {campaigns.map((campaign) => (
+      {campaigns?.map((campaign: Campaign) => (
         <Card key={campaign.address} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
           <div className="flex-1">
             <Link href={`/campaigns/${campaign.slug}`}>
               <CardHeader className="p-0">
                 <Image
-                  src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
+                  src={campaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
                   alt={campaign.title || campaign.address}
                   width={600}
                   height={400}
                   className="h-[200px] w-full object-cover"
+                  loading="lazy"
                 />
               </CardHeader>
               <CardContent className="p-6">
@@ -116,6 +77,7 @@ export default function CampaignList() {
                       width={24}
                       height={24}
                       className="rounded-full"
+                      loading="lazy"
                     />
                     <span className="font-medium">{`${campaign.owner.slice(0, 10)}...`}</span>
                   </div>

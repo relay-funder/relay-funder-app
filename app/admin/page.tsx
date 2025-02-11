@@ -474,6 +474,7 @@ export default function AdminPage() {
                                         width={600}
                                         height={400}
                                         className="h-[200px] w-full object-cover"
+                                        loading="lazy"
                                     />
                                 </CardHeader>
                                 <CardContent className="p-6">
