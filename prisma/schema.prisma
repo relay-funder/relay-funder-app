@@ -103,6 +103,11 @@ model Round {
   description      String
   tags             String[]
   matchingPool     Int
+  id               Int              @id @default(autoincrement())
+  title            String
+  description      String
+  tags             String[]
+  matchingPool     Int
   applicationStart DateTime
   applicationClose DateTime
   startDate        DateTime         @default(now())
@@ -119,6 +124,12 @@ model RoundCampaigns {
   campaignId Int
   Campaign   Campaign @relation(fields: [campaignId], references: [id])
   Round      Round    @relation(fields: [roundId], references: [id])
+  startDate        DateTime         @default(now())
+  endDate          DateTime
+  status           Status           @default(ACTIVE)
+  blockchain       String
+  logoUrl          String
+  RoundCampaigns   RoundCampaigns[]
 }
 
 enum Status {
