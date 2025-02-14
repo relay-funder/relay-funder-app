@@ -24,7 +24,10 @@ export async function GET(
 
     return NextResponse.json({ rounds }, { status: 200 });
   } catch (error) {
-    console.error("Failed to fetch rounds for campaign:", error.stack);
+    console.error(
+      "Failed to fetch rounds for campaign:",
+      (error as unknown as Error).stack
+    );
     return NextResponse.json(
       { error: "Failed to fetch rounds" },
       { status: 500 }
