@@ -1,25 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as nit from "@numbersprotocol/nit";
 import { ethers } from "ethers";
-import crypto from "crypto";
+import crypto, { BinaryLike } from "crypto";
+import { IntegrityProof, SignatureData } from '@/types/numbersprotocol';
 
-interface IntegrityProof {
-    proof_hash: string;
-    asset_mime_type: string;
-    created_at: number;
-}
-
-interface SignatureData {
-    proofHash: string;
-    provider: string;
-    signature: string;
-    publicKey: string;
-    integritySha: string;
-}
 
 async function calculateSHA256(buffer: Buffer): Promise<string> {
     const hash = crypto.createHash('sha256');
-    hash.update(buffer);
+    hash.update(buffer as unknown as BinaryLike);
     return hash.digest('hex');
 }
 

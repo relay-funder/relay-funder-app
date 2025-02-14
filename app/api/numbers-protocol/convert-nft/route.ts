@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as nit from "@numbersprotocol/nit";
 
-interface NFTMetadata {
-    name: string;
-    description: string;
-    image: string;
-    attributes: {
-        trait_type: string;
-        value: string | number;
-    }[];
-}
+import * as nit from "@numbersprotocol/nit";
+import { NFTMetadata } from '@/types/numbersprotocol';
 
 export async function POST(request: NextRequest) {
     try {
