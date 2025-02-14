@@ -27,6 +27,7 @@ model Campaign {
   updates         CampaignUpdate[]
   comments        Comment[]
   payments        Payment[]
+  RoundCampaigns  RoundCampaigns[]
 
   @@index([creatorAddress])
 }
@@ -89,4 +90,34 @@ model CampaignUpdate {
   campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
+}
+
+model Round {
+  id               Int              @id @default(autoincrement())
+  title            String
+  description      String
+  tags             String[]
+  matchingPool     Int
+  applicationStart DateTime
+  applicationClose DateTime
+  startDate        DateTime         @default(now())
+  endDate          DateTime
+  status           Status           @default(ACTIVE)
+  blockchain       String
+  logoUrl          String
+  RoundCampaigns   RoundCampaigns[]
+}
+
+model RoundCampaigns {
+  id         Int      @id @default(autoincrement())
+  roundId    Int
+  campaignId Int
+  Campaign   Campaign @relation(fields: [campaignId], references: [id])
+  Round      Round    @relation(fields: [roundId], references: [id])
+}
+
+enum Status {
+  NOT_STARTED
+  ACTIVE
+  CLOSED
 }
