@@ -1,12 +1,11 @@
 import { Wallet } from 'ethers';
-
-interface NidParams {
+export interface NidParams {
     proofHash: string;
     signature: string;
     publicKey: string;
 }
 
-interface NFTMetadata {
+export interface NFTMetadata {
     name: string;
     description: string;
     image: string;
@@ -16,7 +15,21 @@ interface NFTMetadata {
     }[];
 }
 
-interface NFTCreateParams {
+export interface IntegrityProof {
+    proof_hash: string;
+    asset_mime_type: string;
+    created_at: number;
+}
+
+export interface SignatureData {
+    proofHash: string;
+    provider: string;
+    signature: string;
+    publicKey: string;
+    integritySha: string;
+}
+
+export interface NFTCreateParams { 
     nid: string;
     network: string;
     contractAddress: string;
@@ -27,7 +40,7 @@ interface NFTCreateParams {
     };
 }
 
-interface NFTCreateResult {
+export interface NFTCreateResult {
     network: string;
     contractAddress: string;
     tokenId: number;
