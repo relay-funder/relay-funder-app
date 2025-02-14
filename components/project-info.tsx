@@ -21,6 +21,7 @@ export default function ProjectInfo({ campaign }: ProjectInfoProps) {
           width={600}
           height={300}
           className="object-cover"
+          loading="lazy"
         />
       </Card>
 

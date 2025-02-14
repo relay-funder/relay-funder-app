@@ -13,16 +13,32 @@ import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
 import Link from "next/link";
 import { Campaign } from "../types/campaign";
-import { useCampaigns } from "@/lib/hooks/useCampaigns";
+import { useInfiniteCampaigns } from "@/lib/hooks/useCampaigns";
+import { useInView } from "react-intersection-observer";
+import { useEffect } from "react";
 
 export default function CampaignList() {
-  const { data: campaigns, isLoading: loading, error } = useCampaigns();
+  const { ref, inView } = useInView();
+  const {
+    data,
+    isLoading: loading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteCampaigns();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const formatDate = (timestamp: string) => {
     return new Date(parseInt(timestamp) * 1000).toLocaleDateString();
   };
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {[...Array(3)].map((_, index) => (
@@ -52,114 +68,139 @@ export default function CampaignList() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {campaigns?.map((campaign: Campaign) => (
-        <Card key={campaign.address} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
-          <div className="flex-1">
-            <Link href={`/campaigns/${campaign.slug}`}>
-              <CardHeader className="p-0">
-                <Image
-                  src={campaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
-                  alt={campaign.title || campaign.address}
-                  width={600}
-                  height={400}
-                  className="h-[200px] w-full object-cover"
-                  loading="lazy"
-                />
-              </CardHeader>
-              <CardContent className="p-6">
-                <h2 className="mb-2 text-xl font-bold">{campaign.title || 'Campaign Title'}</h2>
-                <div className="flex justify-between items-center mb-4 gap-2">
-                  <div className="flex align self-start">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {data?.pages.map((page) =>
+          page.campaigns.map((campaign: Campaign) => (
+            <Card key={campaign.address} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+              <div className="flex-1">
+                <Link href={`/campaigns/${campaign.slug}`}>
+                  <CardHeader className="p-0">
                     <Image
-                      src={`https://avatar.vercel.sh/${campaign.address}`}
-                      alt="user-pr"
-                      width={24}
-                      height={24}
-                      className="rounded-full"
+                      src={campaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
+                      alt={campaign.title || campaign.address}
+                      width={600}
+                      height={400}
+                      className="h-[200px] w-full object-cover"
                       loading="lazy"
                     />
-                    <span className="font-medium">{`${campaign.owner.slice(0, 10)}...`}</span>
-                  </div>
-                  <div className="flex align self-start">
-                    <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
-                    <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
-                  </div>
-                </div>
-                <p className="text-gray-600 text-[12px]">{campaign.description}</p>
-                <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
-                  Read More
-                </div>
-              </CardContent>
-              <div className="mt-auto px-6 py-4 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className='flex'>
-                    <div className='text-[#55DFAB] px-1 font-bold'>
-                      {campaign.totalRaised}
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <h2 className="mb-2 text-xl font-bold">{campaign.title || 'Campaign Title'}</h2>
+                    <div className="flex justify-between items-center mb-4 gap-2">
+                      <div className="flex align self-start">
+                        <Image
+                          src={`https://avatar.vercel.sh/${campaign.address}`}
+                          alt="user-pr"
+                          width={24}
+                          height={24}
+                          className="rounded-full"
+                          loading="lazy"
+                        />
+                        <span className="font-medium">{`${campaign.owner.slice(0, 10)}...`}</span>
+                      </div>
+                      <div className="flex align self-start">
+                        <IoLocationSharp className='text-[#55DFAB] mt-0.5' />
+                        <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
+                      </div>
                     </div>
-                    donations
-                  </span>
-                  <span className='flex'>
-                    <div className='text-[#55DFAB] px-1 font-bold'>
-                      {((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%
+                    <p className="text-gray-600 text-[12px]">{campaign.description}</p>
+                    <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
+                      Read More
                     </div>
-                    of funding goal
-                  </span>
-                </div>
-                <Progress value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100} className="h-2" />
+                  </CardContent>
+                  <div className="mt-auto px-6 py-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className='flex'>
+                        <div className='text-[#55DFAB] px-1 font-bold'>
+                          {campaign.totalRaised}
+                        </div>
+                        donations
+                      </span>
+                      <span className='flex'>
+                        <div className='text-[#55DFAB] px-1 font-bold'>
+                          {((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%
+                        </div>
+                        of funding goal
+                      </span>
+                    </div>
+                    <Progress value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100} className="h-2" />
+                  </div>
+                </Link>
               </div>
-            </Link>
-          </div>
 
-          <CardFooter className="mt-auto gap-4 p-6 pt-0">
-            <Link href={`/campaigns/${campaign.slug}/donation`} className="flex-1">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                <Image src="/diamond.png" alt="wallet" width={24} height={24} />
-                Donate
-              </Button>
-            </Link>
-            <Button variant="outline" className="flex-1">
-              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
-              Add to Collection
-            </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Info className="mr-2 h-4 w-4" />
-              </DialogTrigger>
-              <DialogContent>
-                <Table>
-                  <TableBody>
-                    <TableRow>
-                      <TableHead>Address</TableHead>
-                      <TableCell>{campaign.address}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead>Owner</TableHead>
-                      <TableCell>{campaign.owner}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead>Launch Time</TableHead>
-                      <TableCell>{formatDate(campaign.launchTime)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead>Deadline</TableHead>
-                      <TableCell>{formatDate(campaign.deadline)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead>Goal Amount</TableHead>
-                      <TableCell>{campaign.goalAmount} ETH</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead>Total Raised</TableHead>
-                      <TableCell>{campaign.totalRaised} ETH</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </DialogContent>
-            </Dialog>
-          </CardFooter>
-        </Card>
-      ))}
+              <CardFooter className="mt-auto gap-4 p-6 pt-0">
+                <Link href={`/campaigns/${campaign.slug}/donation`} className="flex-1">
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                    <Image src="/diamond.png" alt="wallet" width={24} height={24} />
+                    Donate
+                  </Button>
+                </Link>
+                <Button variant="outline" className="flex-1">
+                  <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+                  Add to Collection
+                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Info className="mr-2 h-4 w-4" />
+                  </DialogTrigger>
+                  <DialogContent>
+                    <Table>
+                      <TableBody>
+                        <TableRow>
+                          <TableHead>Address</TableHead>
+                          <TableCell>{campaign.address}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableHead>Owner</TableHead>
+                          <TableCell>{campaign.owner}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableHead>Launch Time</TableHead>
+                          <TableCell>{formatDate(campaign.launchTime)}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableHead>Deadline</TableHead>
+                          <TableCell>{formatDate(campaign.deadline)}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableHead>Goal Amount</TableHead>
+                          <TableCell>{campaign.goalAmount} ETH</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableHead>Total Raised</TableHead>
+                          <TableCell>{campaign.totalRaised} ETH</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </DialogContent>
+                </Dialog>
+              </CardFooter>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Loading indicator */}
+      {isFetchingNextPage && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+          {[...Array(3)].map((_, index) => (
+            <Card key={`loading-${index}`}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Intersection observer target */}
+      <div ref={ref} className="h-10" />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import Providers from "./providers";
 import { Toaster } from "@/components/ui/toaster"
 import { NetworkCheck } from "@/components/network-check";
 import MainLayout from '@/components/main-layout'
+import { prefetchCampaigns } from "@/lib/hooks/useCampaigns";
+import { QueryClient } from "@tanstack/react-query";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -21,6 +23,10 @@ export const metadata: Metadata = {
   title: "Akashic",
   description: "Fundraising platform for open source projects",
 };
+
+// Prefetch campaigns data
+const queryClient = new QueryClient();
+prefetchCampaigns(queryClient);
 
 export default function RootLayout({
   children,
