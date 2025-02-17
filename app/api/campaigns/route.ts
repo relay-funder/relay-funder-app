@@ -64,10 +64,21 @@ async function getPublicClient() {
   }
   
   return createPublicClient({
-    chain: celoAlfajores,
+    chain: {
+      ...celoAlfajores,
+      contracts: {
+        multicall3: {
+          address: '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
+          blockCreated: 14353601,
+        }
+      }
+    },
     transport: http(RPC_URL),
     batch: {
-      multicall: true
+      multicall: {
+        batchSize: 1024,
+        wait: 16,
+      }
     }
   });
 }
@@ -247,10 +258,12 @@ export async function PATCH(
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'active'; // Default to 'active' if no status is provided
+    const status = searchParams.get('status') || 'active';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const skip = (page - 1) * pageSize;
 
-    const client = await getPublicClient();
-    const [dbCampaigns, events] = await Promise.all([
+    const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
         where: {
           status: {
@@ -260,10 +273,24 @@ export async function GET(request: Request) {
         include: {
           images: true,
         },
+        skip,
+        take: pageSize,
+        orderBy: {
+          createdAt: 'desc'
+        }
       }),
-      // @ts-expect-error - Ignoring viem type mismatch for chain compatibility
-      getCampaignCreatedEvents(client),
+      prisma.campaign.count({
+        where: {
+          status: {
+            in: status === 'active' ? ['active'] : ['pending_approval', 'completed', 'active'],
+          },
+        }
+      })
     ]);
+
+    const client = await getPublicClient();
+    // @ts-expect-error - client issue
+    const events = await getCampaignCreatedEvents(client);
 
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
@@ -275,7 +302,16 @@ export async function GET(request: Request) {
       })
       .filter(Boolean);
 
-    return NextResponse.json({ campaigns: combinedCampaigns });
+    return NextResponse.json({
+      campaigns: combinedCampaigns,
+      pagination: {
+        currentPage: page,
+        pageSize,
+        totalPages: Math.ceil(totalCount / pageSize),
+        totalItems: totalCount,
+        hasMore: skip + pageSize < totalCount
+      }
+    });
   } catch (error) {
     console.error('Error fetching campaigns:', error);
     return NextResponse.json(

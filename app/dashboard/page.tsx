@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
-import { Progress } from "@/components/ui/progress"
 import { SideBar } from '@/components/SideBar'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -13,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
 import { Campaign } from '@/types/campaign'
+import CampaignCard from '@/components/campaign-card'
 
 export default function DashboardPage() {
     const { address } = useAccount()
@@ -50,28 +49,6 @@ export default function DashboardPage() {
         }
         fetchUserCampaigns()
     }, [address])
-
-    const formatDate = (timestamp: string | undefined) => {
-        if (!timestamp) return 'Not set'
-        return new Date(parseInt(timestamp) * 1000).toLocaleDateString()
-    }
-
-    const getCampaignStatus = (campaign: Campaign) => {
-        // If campaign is in draft or pending_approval state, show that first
-        if (campaign.status === 'draft') return 'Draft'
-        if (campaign.status === 'pending_approval') return 'Pending Approval'
-        if (campaign.status === 'failed') return 'Failed'
-        if (campaign.status === 'completed') return 'Completed'
-
-        // For active campaigns, show more detailed status
-        const now = Math.floor(Date.now() / 1000)
-        const launchTime = campaign.launchTime ? parseInt(campaign.launchTime) : now
-        const deadline = campaign.deadline ? parseInt(campaign.deadline) : now
-
-        if (now < launchTime) return 'Upcoming'
-        if (now > deadline) return 'Ended'
-        return 'Active'
-    }
 
     const calculateStats = (campaigns: Campaign[]) => {
         return {
@@ -260,59 +237,9 @@ export default function DashboardPage() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {[...campaigns].reverse().map((campaign) => (
-                            <Card key={campaign.id || campaign.address} className="overflow-hidden">
-                                <CardHeader className="p-0">
-                                    <Image
-                                        src={campaign.images?.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg'}
-                                        alt={campaign.title || 'Campaign'}
-                                        width={600}
-                                        height={400}
-                                        className="h-[200px] w-full object-cover"
-                                    />
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-xl font-bold">{campaign.title || 'Campaign'}</h2>
-                                        <div className={cn(
-                                            "px-3 py-1 rounded-full text-sm",
-                                            {
-                                                'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
-                                                'bg-yellow-100 text-yellow-600': getCampaignStatus(campaign) === 'Upcoming',
-                                                'bg-gray-100 text-gray-600': getCampaignStatus(campaign) === 'Ended',
-                                                'bg-orange-100 text-orange-600': getCampaignStatus(campaign) === 'Pending Approval',
-                                                'bg-purple-100 text-purple-600': getCampaignStatus(campaign) === 'Draft',
-                                                'bg-red-100 text-red-600': getCampaignStatus(campaign) === 'Failed',
-                                                'bg-green-100 text-green-600': getCampaignStatus(campaign) === 'Completed'
-                                            }
-                                        )}>
-                                            {getCampaignStatus(campaign)}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <p><strong>Description:</strong> {campaign.description}</p>
-                                        {campaign.treasuryAddress && <p><strong>Treasury:</strong> {campaign.treasuryAddress}</p>}
-                                        {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
-                                        {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
-                                        <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
-                                        {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
-                                        {campaign.totalRaised && campaign.goalAmount && (
-                                            <div className="mt-4">
-                                                <div className="flex justify-between text-sm mb-2">
-                                                    <span>Progress</span>
-                                                    <span>{((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(2)}%</span>
-                                                </div>
-                                                <Progress
-                                                    value={(Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100}
-                                                    className="h-2"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {campaigns?.map((campaign: Campaign) => (
+                            <CampaignCard key={campaign.address} campaign={campaign} />
                         ))}
                     </div>
                 )}
