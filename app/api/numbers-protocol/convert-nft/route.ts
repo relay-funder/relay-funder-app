@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import * as nit from "@numbersprotocol/nit";
-import { NFTMetadata } from '@/types/numbersprotocol';
+
+const NUMBERS_API_URL = 'https://api.numbersprotocol.io/api/v3/assets/';
+const CAPTURE_TOKEN = process.env.NUMBERS_PROTOCOL_TOKEN;
+const CAPTURE_API_KEY = process.env.NUMBERS_PROTOCOL_API_KEY;
 
 export async function POST(request: NextRequest) {
+    if (!CAPTURE_TOKEN || !CAPTURE_API_KEY) {
+        return NextResponse.json(
+            { error: 'Numbers Protocol credentials not configured' },
+            { status: 500 }
+        );
+    }
+
     try {
         const body = await request.json();
-        // const { assetSignature, file } = body;
-        const { assetSignature } = body;
+        const { assetSignature, file } = body;
 
         if (!assetSignature) {
             return NextResponse.json(
@@ -16,7 +24,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 1. Verify the signature first
+        // Verify the signature first
         const verificationResult = await nit.verifyIntegrityHash(
             assetSignature.integritySha,
             assetSignature.signature
@@ -29,56 +37,58 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Generate Numbers ID (NID) for the asset
-        const assetNid = await nit.generateNid({
-            proofHash: assetSignature.proofHash,
-            signature: assetSignature.signature,
-            publicKey: assetSignature.publicKey
+        // Prepare form data for Numbers Protocol API
+        const formData = new FormData();
+        formData.append('asset_file', new Blob([file]), file.name);
+        formData.append('auto_mint', 'true');
+        formData.append('auto_product', 'true');
+        formData.append('product_price', '10');
+        formData.append('product_price_base', 'num');
+        formData.append('product_quantity', '3');
+        formData.append('product_show_on_explorer', 'false');
+
+        // Call Numbers Protocol API to mint NFT
+        const response = await fetch(NUMBERS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `token ${CAPTURE_TOKEN}`,
+                'X-Api-Key': CAPTURE_API_KEY,
+            },
+            body: formData,
         });
 
-        // Prepare NFT Metadata
-        const nftMetadata: NFTMetadata = {
-            name: "Numbers Protocol Asset",
-            description: "Asset created and verified through Numbers Protocol",
-            image: "", // This would be the IPFS or other decentralized storage URL
-            attributes: [
-                {
-                    trait_type: "Creation Date",
-                    value: new Date().toISOString()
-                },
-                {
-                    trait_type: "Creator",
-                    value: assetSignature.publicKey
-                },
-                {
-                    trait_type: "Asset Hash",
-                    value: assetSignature.proofHash
-                },
-                {
-                    trait_type: "Numbers ID",
-                    value: assetNid
-                }
-            ]
-        };
+        const data = await response.json();
 
-        // Create NFT using Numbers Protocol SDK
-        const nftExport = await nit.nft.create({
-            nid: assetNid,
-            network: "ethereum", // or other supported networks
-            contractAddress: process.env.NFT_CONTRACT_ADDRESS || "",
-            metadata: nftMetadata,
-            options: {
-                gasLimit: 500000,
-                gasPrice: "auto"
-            }
-        });
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to mint NFT with Numbers Protocol');
+        }
 
-        // 5. Return NFT creation result with NID
         return NextResponse.json({
             success: true,
-            nid: assetNid,
+            nid: data.nid,
             nft: {
-                ...nftExport,
+                network: data.network,
+                contractAddress: data.contract_address,
+                tokenId: data.token_id,
+                metadata: {
+                    name: data.metadata?.name || "Numbers Protocol Asset",
+                    description: data.metadata?.description || "Asset created through Numbers Protocol",
+                    image: data.metadata?.image || "",
+                    attributes: [
+                        {
+                            trait_type: "Creation Date",
+                            value: new Date().toISOString()
+                        },
+                        {
+                            trait_type: "Creator",
+                            value: assetSignature.publicKey
+                        },
+                        {
+                            trait_type: "Asset Hash",
+                            value: assetSignature.proofHash
+                        }
+                    ]
+                },
                 verificationData: {
                     isValid: true,
                     recoveredAddress: verificationResult
@@ -89,7 +99,10 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Error converting to NFT:', error);
         return NextResponse.json(
-            { error: 'Error converting to NFT' },
+            { 
+                error: 'Failed to mint NFT',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            },
             { status: 500 }
         );
     }

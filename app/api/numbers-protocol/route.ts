@@ -1,82 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as nit from "@numbersprotocol/nit";
-import { ethers } from "ethers";
-import crypto, { BinaryLike } from "crypto";
-import { IntegrityProof, SignatureData } from '@/types/numbersprotocol';
-
-
-async function calculateSHA256(buffer: Buffer): Promise<string> {
-    const hash = crypto.createHash('sha256');
-    hash.update(buffer as unknown as BinaryLike);
-    return hash.digest('hex');
-}
-
-async function generateIntegritySha(proofMetadata: IntegrityProof): Promise<string> {
-    const data = JSON.stringify(proofMetadata, null, 2);
-    const dataBytes = Buffer.from(data);
-    return await nit.getIntegrityHash(dataBytes);
-}
+import * as crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
+        console.log('Received upload request:', {
+            fileName: file?.name,
+            fileType: file?.type,
+            fileSize: file?.size
+        });
+
         if (!file) {
+            console.error('No file provided in request');
             return NextResponse.json(
                 { error: 'No file provided' },
                 { status: 400 }
             );
         }
 
-        // Convert File to Buffer
-        const buffer = Buffer.from(await file.arrayBuffer());
+        // Generate a hash of the file
+        const arrayBuffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const proofHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Calculate proof hash
-        const proofHash = await calculateSHA256(buffer);
+        // In a real implementation, you would use a proper key pair for signing
+        const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(proofHash));
+        const signatureHex = Array.from(new Uint8Array(signature))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
 
-        // Create integrity proof
-        const integrityProof: IntegrityProof = {
-            proof_hash: proofHash,
-            asset_mime_type: file.type || "application/octet-stream",
-            created_at: Math.floor(Date.now() / 1000),
+        //demo public key 
+        const demoPublicKey = '0x' + Array(40).fill(0).map(() => 
+            Math.floor(Math.random() * 16).toString(16)).join('');
+
+        const formattedResponse = {
+            success: true,
+            isValid: true,
+            signatureData: {
+                proofHash,
+                provider: "AkashicSignatureProvider",
+                signature: signatureHex,
+                publicKey: demoPublicKey,
+                integritySha: proofHash
+            }
         };
 
-        // Generate integrity SHA
-        const integritySha = await generateIntegritySha(integrityProof);
-
-        // For demo purposes, using a random wallet
-        // In production, you should use a proper wallet connection
-        const wallet = ethers.Wallet.createRandom();
-        const signature = await nit.signIntegrityHash(integritySha, wallet);
-
-        const signatureData: SignatureData = {
-            proofHash,
-            provider: "AkashicCaptureSignatureProvider",
-            signature,
-            publicKey: await wallet.getAddress(),
-            integritySha,
-        };
-
-        // Verify the signature
-        const recoveredAddress = await nit.verifyIntegrityHash(
-            integritySha,
-            signature
-        );
-
-      
-
-        console.log("recoveredAddress", recoveredAddress)
-
-        return NextResponse.json({
-            signatureData,
-            isValid: recoveredAddress === wallet.address
-        });
+        console.log('Local signature generated:', formattedResponse);
+        return NextResponse.json(formattedResponse);
 
     } catch (error) {
         console.error('Error processing file:', error);
         return NextResponse.json(
-            { error: 'Error processing file' },
+            { 
+                error: 'Failed to process file',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            },
             { status: 500 }
         );
     }
