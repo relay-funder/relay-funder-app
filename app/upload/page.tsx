@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import Image from 'next/image';
 
 interface SignatureData {
     proofHash: string;
@@ -39,6 +40,11 @@ interface NFTResponse {
     nft: NFTData;
 }
 
+interface NFTMintingOptions {
+    caption: string;
+    headline: string;
+}
+
 const Upload = () => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -46,6 +52,10 @@ const Upload = () => {
     const [isConverting, setIsConverting] = useState(false);
     const [assetSignature, setAssetSignature] = useState<SignatureData | null>(null);
     const [nftData, setNftData] = useState<NFTResponse | null>(null);
+    const [nftOptions, setNftOptions] = useState<NFTMintingOptions>({
+        caption: '',
+        headline: ''
+    });
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
@@ -62,6 +72,7 @@ const Upload = () => {
 
         try {
             setIsProcessing(true);
+            console.log('Starting file upload...');
 
             const formData = new FormData();
             formData.append('file', selectedFile);
@@ -72,20 +83,31 @@ const Upload = () => {
             });
 
             const data = await response.json();
+            console.log('Upload response:', data);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to process image');
             }
 
+            if (!data.success || !data.signatureData) {
+                console.warn('Invalid response format:', data);
+                throw new Error('Invalid response format from server');
+            }
+
             setAssetSignature(data.signatureData);
 
             if (data.isValid) {
+                console.log('Upload and signature successful:', {
+                    signatureData: data.signatureData,
+                    rawResponse: data.data
+                });
                 toast({
                     title: "Success",
                     description: "Image uploaded and signature created successfully!",
                     variant: "default",
                 });
             } else {
+                console.warn('Upload succeeded but validation failed:', data);
                 toast({
                     title: "Warning",
                     description: "Image uploaded but signature validation failed.",
@@ -97,7 +119,7 @@ const Upload = () => {
             console.error("Error processing image:", error);
             toast({
                 title: "Error",
-                description: "Failed to process image",
+                description: error instanceof Error ? error.message : "Failed to process image",
                 variant: "destructive",
             });
         } finally {
@@ -110,6 +132,7 @@ const Upload = () => {
 
         try {
             setIsVerifying(true);
+            console.log('Starting signature verification...');
 
             const response = await fetch('/api/numbers-protocol/verify', {
                 method: 'POST',
@@ -124,18 +147,24 @@ const Upload = () => {
             });
 
             const data = await response.json();
+            console.log('Verification response:', data);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to verify signature');
             }
 
             if (data.isValid) {
+                console.log('Signature verified successfully');
                 toast({
                     title: "Verification Success",
                     description: "Signature is valid!",
                     variant: "default",
                 });
             } else {
+                console.warn('Signature verification failed:', {
+                    expected: data.expectedAddress,
+                    got: data.recoveredAddress
+                });
                 toast({
                     title: "Verification Failed",
                     description: `Signature is invalid. Expected ${data.expectedAddress}, got ${data.recoveredAddress}`,
@@ -147,7 +176,7 @@ const Upload = () => {
             console.error("Error verifying signature:", error);
             toast({
                 title: "Error",
-                description: "Failed to verify signature",
+                description: error instanceof Error ? error.message : "Failed to verify signature",
                 variant: "destructive",
             });
         } finally {
@@ -156,44 +185,61 @@ const Upload = () => {
     };
 
     const handleConvertToNFT = async () => {
-        if (!assetSignature || !selectedFile) return;
+        if (!selectedFile || !assetSignature) return;
 
         try {
             setIsConverting(true);
+            console.log('Starting NFT minting process...');
 
-            const response = await fetch('/api/numbers-protocol/convert-nft', {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('caption', nftOptions.caption);
+            formData.append('headline', nftOptions.headline);
+            formData.append('auto_mint', 'true');
+            formData.append('auto_product', 'true');
+            formData.append('product_price', '10');
+            formData.append('product_price_base', 'num');
+            formData.append('product_quantity', '3');
+            formData.append('product_show_on_explorer', 'false');
+            formData.append('signature_data', JSON.stringify(assetSignature));
+
+            console.log('Minting request data:', {
+                fileName: selectedFile.name,
+                fileType: selectedFile.type,
+                fileSize: selectedFile.size,
+                caption: nftOptions.caption,
+                headline: nftOptions.headline
+            });
+
+            const response = await fetch('/api/numbers-protocol/mint-nft', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    assetSignature,
-                    file: {
-                        name: selectedFile.name,
-                        type: selectedFile.type,
-                        size: selectedFile.size,
-                    },
-                }),
+                body: formData,
             });
 
             const data = await response.json();
+            console.log('Minting response:', data);
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to convert to NFT');
+                throw new Error(data.error || data.details || 'Failed to mint NFT');
+            }
+
+            if (!data.success || !data.nft) {
+                throw new Error('Invalid response format from NFT minting');
             }
 
             setNftData(data);
+            console.log('NFT minted successfully:', data.nft);
             toast({
                 title: "Success",
-                description: "Asset successfully converted to NFT!",
+                description: "Asset successfully minted as NFT!",
                 variant: "default",
             });
 
         } catch (error) {
-            console.error("Error converting to NFT:", error);
+            console.error("Error minting NFT:", error);
             toast({
                 title: "Error",
-                description: "Failed to convert asset to NFT",
+                description: error instanceof Error ? error.message : "Failed to mint NFT",
                 variant: "destructive",
             });
         } finally {
@@ -217,13 +263,28 @@ const Upload = () => {
                         />
                     </div>
 
+                    <div className="space-y-4">
+                        <Input
+                            type="text"
+                            placeholder="Caption"
+                            value={nftOptions.caption}
+                            onChange={(e) => setNftOptions(prev => ({ ...prev, caption: e.target.value }))}
+                        />
+                        <Input
+                            type="text"
+                            placeholder="Headline"
+                            value={nftOptions.headline}
+                            onChange={(e) => setNftOptions(prev => ({ ...prev, headline: e.target.value }))}
+                        />
+                    </div>
+
                     <div className="flex gap-4 flex-wrap">
                         <Button
                             onClick={handleUpload}
                             disabled={!selectedFile || isProcessing}
                             className="flex-1"
                         >
-                            {isProcessing ? "Processing..." : "Upload and Sign"}
+                            {isProcessing ? "Processing..." : "1. Upload and Sign"}
                         </Button>
 
                         {assetSignature && (
@@ -234,16 +295,16 @@ const Upload = () => {
                                     variant="outline"
                                     className="flex-1"
                                 >
-                                    {isVerifying ? "Verifying..." : "Verify Signature"}
+                                    {isVerifying ? "Verifying..." : "2. Verify Signature"}
                                 </Button>
 
                                 <Button
                                     onClick={handleConvertToNFT}
-                                    disabled={isConverting}
+                                    disabled={isConverting || !nftOptions.caption || !nftOptions.headline}
                                     variant="secondary"
                                     className="flex-1"
                                 >
-                                    {isConverting ? "Converting..." : "Convert to NFT"}
+                                    {isConverting ? "Minting..." : "3. Mint NFT"}
                                 </Button>
                             </>
                         )}
@@ -259,20 +320,30 @@ const Upload = () => {
                     )}
 
                     {nftData && (
-                        <>
-                            <div className="mt-4">
-                                <h2 className="text-lg font-semibold mb-2">Numbers ID (NID):</h2>
-                                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-                                    {nftData.nid}
-                                </pre>
+                        <div className="mt-4">
+                            <h2 className="text-lg font-semibold mb-2">NFT Details:</h2>
+                            <div className="bg-gray-100 p-4 rounded-lg space-y-2">
+                                <p><strong>Asset Link:</strong> <a href={`https://asset.captureapp.xyz/${nftData.nid}`} target="_blank" rel="noopener noreferrer">https://asset.captureapp.xyz/{nftData.nid}</a></p>
+                                <p><strong>NID:</strong> {nftData.nid}</p>
+                                <p><strong>Network:</strong> {nftData.nft.network}</p>
+                                <p><strong>Contract Address:</strong> {nftData.nft.contractAddress}</p>
+                                <p><strong>Token ID:</strong> {nftData.nft.tokenId}</p>
+                                <p><strong>Name:</strong> {nftData.nft.metadata.name}</p>
+                                <p><strong>Description:</strong> {nftData.nft.metadata.description}</p>
+                                {nftData.nft.metadata.image && (
+                                    <div>
+                                        <strong>Image:</strong>
+                                        <Image 
+                                            src={nftData.nft.metadata.image} 
+                                            alt="NFT" 
+                                            className="mt-2 max-w-full h-auto rounded"
+                                            width={500}
+                                            height={500}
+                                        />
+                                    </div>
+                                )}
                             </div>
-                            <div className="mt-4">
-                                <h2 className="text-lg font-semibold mb-2">NFT Data:</h2>
-                                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-                                    {JSON.stringify(nftData.nft, null, 2)}
-                                </pre>
-                            </div>
-                        </>
+                        </div>
                     )}
                 </div>
             </Card>
