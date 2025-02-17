@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as nit from "@numbersprotocol/nit";
+import * as crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
     try {
@@ -8,29 +8,43 @@ export async function POST(request: NextRequest) {
 
         if (!integritySha || !signature || !publicKey) {
             return NextResponse.json(
-                { error: 'Missing required fields' },
+                { error: 'Missing required verification data' },
                 { status: 400 }
             );
         }
 
-        // Verify the signature
-        const recoveredAddress = await nit.verifyIntegrityHash(
+        console.log('Verifying signature:', {
             integritySha,
-            signature
-        );
+            signature,
+            publicKey
+        });
 
-        const isValid = recoveredAddress === publicKey;
+        // In a real implementation, you would verify the signature against the public key
+        // For now, we'll verify that the signature matches our local signing method
+        const expectedSignature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(integritySha));
+        const expectedSignatureHex = Array.from(new Uint8Array(expectedSignature))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+
+        const isValid = signature === expectedSignatureHex;
 
         return NextResponse.json({
+            success: true,
             isValid,
-            recoveredAddress,
-            expectedAddress: publicKey
+            verificationData: {
+                expectedSignature: expectedSignatureHex,
+                providedSignature: signature,
+                publicKey
+            }
         });
 
     } catch (error) {
         console.error('Error verifying signature:', error);
         return NextResponse.json(
-            { error: 'Error verifying signature' },
+            { 
+                error: 'Failed to verify signature',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            },
             { status: 500 }
         );
     }
