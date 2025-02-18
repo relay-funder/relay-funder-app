@@ -177,7 +177,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Total Raised</p>
-                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} ETH</h3>
+                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} USDC</h3>
                                 </div>
                             </CardContent>
                         </Card>

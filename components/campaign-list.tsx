@@ -165,11 +165,11 @@ export default function CampaignList() {
                         </TableRow>
                         <TableRow>
                           <TableHead>Goal Amount</TableHead>
-                          <TableCell>{campaign.goalAmount} ETH</TableCell>
+                          <TableCell>{campaign.goalAmount} USDC</TableCell>
                         </TableRow>
                         <TableRow>
                           <TableHead>Total Raised</TableHead>
-                          <TableCell>{campaign.totalRaised} ETH</TableCell>
+                          <TableCell>{campaign.totalRaised} USDC</TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>

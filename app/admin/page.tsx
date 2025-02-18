@@ -407,7 +407,7 @@ export default function AdminPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Total Raised</p>
-                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} ETH</h3>
+                                    <h3 className="text-2xl font-bold">{calculateStats(campaigns).totalRaised.toFixed(2)} USDC</h3>
                                 </div>
                             </CardContent>
                         </Card>
@@ -524,8 +524,8 @@ export default function AdminPage() {
                                         )}
                                         {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
                                         {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
-                                        <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
-                                        {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
+                                        <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} USDC</p>
+                                        {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} USDC</p>}
 
                                         {campaign.status === 'pending_approval' && (
                                             <Button
