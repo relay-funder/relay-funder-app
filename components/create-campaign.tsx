@@ -346,7 +346,7 @@ export function CreateCampaign() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Funding Goal (ETH)</label>
+        <label className="text-sm font-medium">Funding Goal (USDC)</label>
         <Input
           type="number"
           step="0.01"

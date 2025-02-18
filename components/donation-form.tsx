@@ -47,7 +47,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   const [usdcBalance, setUsdcBalance] = useState(0)
 
   // Simulated values - in a real app these would come from an API or wallet
-  const tokenPrice = 1 // USD per ETH
+  const tokenPrice = 1 // USD per USDC
   const availableBalance = usdcBalance // Update available balance to use fetched USDC balance
 
   

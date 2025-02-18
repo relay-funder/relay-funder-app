@@ -64,8 +64,8 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                     {campaign.treasuryAddress && <p><strong>Treasury:</strong> {campaign.treasuryAddress}</p>}
                     {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
                     {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
-                    <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} ETH</p>
-                    {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} ETH</p>}
+                    <p><strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal} USDC</p>
+                    {campaign.totalRaised && <p><strong>Raised:</strong> {campaign.totalRaised} USDC</p>}
                     {campaign.totalRaised && campaign.goalAmount && (
                         <div className="mt-4">
                             <div className="flex justify-between text-sm mb-2">
