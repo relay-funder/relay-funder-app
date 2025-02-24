@@ -42,7 +42,7 @@ const platformConfig = {
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
 }
 
-function StripePaymentForm({ publicKey }: { publicKey: string }) {
+function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaign: Campaign }) {
   const stripe = useStripe()
   const elements = useElements()
   const [error, setError] = useState<string | null>(null)
@@ -78,7 +78,7 @@ function StripePaymentForm({ publicKey }: { publicKey: string }) {
         return
       }
 
-      const returnUrl = new URL(`${window.location.origin}/payment/success`)
+      const returnUrl = new URL(`${window.location.origin}/campaigns/${campaign.slug}/donation/success`)
       returnUrl.searchParams.append('stripe_key', publicKey)
 
       const { error } = await stripe.confirmPayment({
@@ -504,7 +504,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
                   appearance: { theme: 'stripe' }
                 }}
               >
-                <StripePaymentForm publicKey={stripeData.publicKey} />
+                <StripePaymentForm publicKey={stripeData.publicKey} campaign={campaign} />
               </Elements>
             )}
           </TabsContent>
