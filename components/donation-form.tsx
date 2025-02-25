@@ -121,8 +121,8 @@ function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaig
             layout: 'accordion',
             defaultValues: {
               billingDetails: {
-                name: 'John Doe',
-                email: 'user@example.com', // TODO: Get user email
+                name: 'John Doe', // test user name
+                email: 'user@example.com', // test user email
               }
             }
           } as StripePaymentElementOptions} 
