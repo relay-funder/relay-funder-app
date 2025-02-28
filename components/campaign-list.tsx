@@ -16,6 +16,7 @@ import { Campaign } from "../types/campaign";
 import { useInfiniteCampaigns } from "@/lib/hooks/useCampaigns";
 import { useInView } from "react-intersection-observer";
 import { useEffect } from "react";
+import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface CampaignListProps {
   searchTerm: string;
@@ -121,10 +122,22 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                         <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
                       </div>
                     </div>
-                    <p className="text-gray-600 text-[12px]">{campaign.description}</p>
-                    <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
-                      Read More
-                    </div>
+                    <p className="text-gray-600 text-[12px] line-clamp-3">{campaign.description}</p>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black cursor-pointer hover:text-gray-600">
+                          Read More
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{campaign.title || 'Campaign Description'}</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4 text-gray-600">
+                          {campaign.description}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </CardContent>
                   <div className="mt-auto px-6 py-4 space-y-2">
                     <div className="flex items-center justify-between text-sm">
