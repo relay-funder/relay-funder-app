@@ -104,8 +104,8 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                   </CardHeader>
                   <CardContent className="p-6">
                     <h2 className="mb-2 text-xl font-bold">{campaign.title || 'Campaign Title'}</h2>
-                    <div className="flex justify-between items-center mb-4 gap-2">
-                      <div className="flex align self-start">
+                    <div className="flex justify-between items-center mb-4 gap-1">
+                      <div className="flex align self-start gap-2">
                         <Image
                           src={`https://avatar.vercel.sh/${campaign.address}`}
                           alt="user-pr"
@@ -121,8 +121,8 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                         <span className="text-gray-900 text-sm">{campaign.location || "Earth"}</span>
                       </div>
                     </div>
-                    <p className="text-gray-600 text-[12px]">{campaign.description}</p>
-                    <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black">
+                    <p className="text-gray-600 text-[12px] line-clamp-3">{campaign.description}</p>
+                    <div className="mb-4 items-center text-[14px] gap-2 underline decoration-black text-black cursor-pointer hover:text-gray-600">
                       Read More
                     </div>
                   </CardContent>
