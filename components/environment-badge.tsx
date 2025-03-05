@@ -1,18 +1,17 @@
 'use client';
 
 import { Badge } from "@/components/ui/badge";
+import { useEnvironment } from "./environment-theme-provider";
 
 export function EnvironmentBadge() {
-    // VERCEL_ENV is automatically set by Vercel
-    const env = process.env.NEXT_PUBLIC_VERCEL_ENV || 'development';
-    const gitBranch = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF || 'local';
+    const { environment, gitBranch } = useEnvironment();
 
     const getColor = () => {
-        switch (env) {
+        switch (environment) {
             case 'production':
                 return 'bg-green-600 hover:bg-green-700';
             case 'preview':
-                return 'bg-yellow-600 hover:bg-yellow-700'; // for staging
+                return 'bg-yellow-600 hover:bg-yellow-700';
             case 'development':
             default:
                 return 'bg-blue-600 hover:bg-blue-700';
@@ -21,7 +20,7 @@ export function EnvironmentBadge() {
 
     return (
         <Badge className={`${getColor()} fixed bottom-4 right-4 z-50`}>
-            {env.toUpperCase()} ({gitBranch})
+            {environment.toUpperCase()} ({gitBranch})
         </Badge>
     );
-} 
+}
