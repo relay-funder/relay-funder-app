@@ -2,56 +2,48 @@
 
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 
-type Environment = 'production' | 'staging' | 'development';
+type Environment = 'production' | 'preview' | 'development';
 
 interface EnvironmentContextType {
     environment: Environment;
     isProduction: boolean;
-    isStaging: boolean;
+    isPreview: boolean;
     isDevelopment: boolean;
+    gitBranch: string;
 }
 
 const EnvironmentContext = createContext<EnvironmentContextType>({
     environment: 'development',
     isProduction: false,
-    isStaging: false,
+    isPreview: false,
     isDevelopment: true,
+    gitBranch: 'local',
 });
 
 export function EnvironmentProvider({ children }: { children: ReactNode }) {
     const [environment, setEnvironment] = useState<Environment>('development');
+    const [gitBranch, setGitBranch] = useState<string>('local');
 
     useEffect(() => {
-        // Get environment from .env or Vercel
-        const env = process.env.NEXT_PUBLIC_ENVIRONMENT ||
-            process.env.NEXT_PUBLIC_VERCEL_ENV ||
-            'development';
+        // Get environment from Vercel
+        const env = process.env.NEXT_PUBLIC_VERCEL_ENV as Environment || 'development';
+        const branch = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF || 'local';
 
-        if (env === 'production' || env === 'staging' || env === 'development') {
-            setEnvironment(env);
-        } else if (env === 'preview') {
-            setEnvironment('staging');
-        }
+        setEnvironment(env);
+        setGitBranch(branch);
     }, []);
 
     const value = {
         environment,
         isProduction: environment === 'production',
-        isStaging: environment === 'staging',
+        isPreview: environment === 'preview',
         isDevelopment: environment === 'development',
+        gitBranch,
     };
 
     return (
         <EnvironmentContext.Provider value={value}>
-            <div className={`env-${environment}`}>
-                {children}
-            </div>
-            {environment !== 'production' && (
-                <div className={`fixed bottom-4 right-4 z-50 px-3 py-1 rounded-md text-white font-medium ${environment === 'staging' ? 'bg-yellow-600' : 'bg-blue-600'
-                    }`}>
-                    {environment.toUpperCase()}
-                </div>
-            )}
+            {children}
         </EnvironmentContext.Provider>
     );
 }
