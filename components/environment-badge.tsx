@@ -1,13 +1,20 @@
 'use client';
 
 import { Badge } from "@/components/ui/badge";
-import { useEnvironment } from "./environment-theme-provider";
+import { useEffect, useState } from "react";
 
 export function EnvironmentBadge() {
-    const { environment, gitBranch } = useEnvironment();
+    const [env, setEnv] = useState<string>("development");
+    const [branch, setBranch] = useState<string>("");
+
+    useEffect(() => {
+        // Get environment variables on client side
+        setEnv(process.env.NEXT_PUBLIC_VERCEL_ENV || "development");
+        setBranch(process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF || "");
+    }, []);
 
     const getColor = () => {
-        switch (environment) {
+        switch (env) {
             case 'production':
                 return 'bg-green-600 hover:bg-green-700';
             case 'preview':
@@ -20,7 +27,7 @@ export function EnvironmentBadge() {
 
     return (
         <Badge className={`${getColor()} fixed bottom-4 right-4 z-50`}>
-            {environment.toUpperCase()} ({gitBranch})
+            {env.toUpperCase()} {branch && `(${branch})`}
         </Badge>
     );
-}
+} 
