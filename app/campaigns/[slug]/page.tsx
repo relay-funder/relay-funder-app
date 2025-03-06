@@ -15,7 +15,7 @@ import { getCampaign } from "@/lib/database";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { CommentForm } from "@/components/comment-form";
-import BackButton from "@/app/components/back-button";
+import BackButton from "@/components/back-button";
 import { CampaignUpdateForm } from "@/components/campaign-update-form";
 import { Timeline } from "@/components/timeline";
 
