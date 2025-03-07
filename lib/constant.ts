@@ -2,6 +2,10 @@ export const adminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN;
 
+export const NFT_METADATA = "0xF8A8B51Bd6D6FADa741C75DeaC9552d57ff0Edcf";
+export const CAMPAIGN_NFT_FACTORY = "0xB99002111C90c6d5A19F08B7AFFf42B3BdE6E1c1";
+export const AKASHIC_NFT_REGISTRY = "0xca9763Baa1393962Ef3b564a364f92248a8b8E25";
+
 export const countries = [
 	"Afghanistan",
 	"Albania",
