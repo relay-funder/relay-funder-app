@@ -1,7 +1,7 @@
 import DonationForm from "@/components/donation-form"
 import ProjectInfo from "@/components/project-info";
 import { Campaign } from "@/types/campaign"
-import BackButton from '@/app/components/back-button'
+import BackButton from '@/components/back-button' 
 import { getCampaign } from "@/lib/database"
 
 export default async function Page({

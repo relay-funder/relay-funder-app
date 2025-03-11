@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { Share2, Mail, Heart, Users, Clock, MapPin, Target, Link2} from "lucide-react";
+import { Share2, Mail, Heart, Users, Clock, MapPin, Target, Link2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -15,9 +15,11 @@ import { getCampaign } from "@/lib/database";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { CommentForm } from "@/components/comment-form";
-import BackButton from "@/app/components/back-button";
+import BackButton from "@/components/back-button";
 import { CampaignUpdateForm } from "@/components/campaign-update-form";
 import { Timeline } from "@/components/timeline";
+// import CampaignNFT from "@/components/CampaignNFT";
+import ClientRewardsTab from "@/components/client-rewards-tab";
 
 export default async function CampaignPage({
   params,
@@ -185,15 +187,20 @@ export default async function CampaignPage({
           </TabsContent>
 
           <TabsContent value="rewards">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">Early Bird Backer NFT</h3>
-                  <p className="text-2xl font-bold text-green-600 mb-4">$25</p>
-                  <p className="text-gray-600 mb-4">Get early access to our product with exclusive benefits.</p>
-                  <Button className="w-full">Select Reward</Button>
-                </CardContent>
-              </Card>
+            <div className="grid gap-6 md:grid-cols-[60%_40%] lg:grid-cols-[60%_40%]">
+                <div className="flex flex-col">
+                    <ClientRewardsTab campaignId={campaign.id.toString()} campaignSlug={campaign.slug} />
+                </div>
+                <div className="flex flex-col">
+                    <Card>
+                        <CardContent className="p-6">
+                            <h3 className="text-xl font-semibold mb-2">Early Bird Backer NFT</h3>
+                            <p className="text-2xl font-bold text-green-600 mb-4">$25</p>
+                            <p className="text-gray-600 mb-4">Get early access to our product with exclusive benefits.</p>
+                            <Button className="w-full">Select Reward</Button>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
           </TabsContent>
 
@@ -201,11 +208,11 @@ export default async function CampaignPage({
             <div className="max-w-6xl mx-auto px-4 space-y-8">
               {campaign.creatorAddress && (
                 <div className="max-w-3xl mx-auto">
-                  <CampaignUpdateForm 
+                  <CampaignUpdateForm
                     creatorAddress={campaign.creatorAddress}
                     onSubmit={async (formData: FormData, userAddress: string) => {
                       'use server'
-                      
+
                       try {
                         const title = formData.get('title')
                         const content = formData.get('content')
@@ -241,14 +248,14 @@ export default async function CampaignPage({
                   />
                 </div>
               )}
-              
+
               {campaign.updates && campaign.updates.length > 0 ? (
-                <Timeline 
+                <Timeline
                   items={campaign.updates.map(update => ({
                     ...update,
                     id: update.id.toString()
-                  }))} 
-                  className="w-full" 
+                  }))}
+                  className="w-full"
                 />
               ) : (
                 <div className="max-w-3xl mx-auto">
