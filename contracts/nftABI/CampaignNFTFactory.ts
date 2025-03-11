@@ -1,4 +1,4 @@
-[
+export const CampaignNFTFactory = [
   {
     "anonymous": false,
     "inputs": [
