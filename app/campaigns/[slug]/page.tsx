@@ -18,7 +18,6 @@ import { CommentForm } from "@/components/comment-form";
 import BackButton from "@/components/back-button";
 import { CampaignUpdateForm } from "@/components/campaign-update-form";
 import { Timeline } from "@/components/timeline";
-// import CampaignNFT from "@/components/CampaignNFT";
 import ClientRewardsTab from "@/components/client-rewards-tab";
 
 export default async function CampaignPage({
@@ -189,17 +188,7 @@ export default async function CampaignPage({
           <TabsContent value="rewards">
             <div className="grid gap-6 md:grid-cols-[60%_40%] lg:grid-cols-[60%_40%]">
                 <div className="flex flex-col">
-                    <ClientRewardsTab campaignId={campaign.id.toString()} campaignSlug={campaign.slug} />
-                </div>
-                <div className="flex flex-col">
-                    <Card>
-                        <CardContent className="p-6">
-                            <h3 className="text-xl font-semibold mb-2">Early Bird Backer NFT</h3>
-                            <p className="text-2xl font-bold text-green-600 mb-4">$25</p>
-                            <p className="text-gray-600 mb-4">Get early access to our product with exclusive benefits.</p>
-                            <Button className="w-full">Select Reward</Button>
-                        </CardContent>
-                    </Card>
+                    <ClientRewardsTab campaignId={campaign.id.toString()} campaignSlug={campaign.slug} campaignOwner={campaign.creatorAddress} />
                 </div>
             </div>
           </TabsContent>
