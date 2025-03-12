@@ -6,7 +6,6 @@ import { AKASHIC_NFT_REGISTRY } from '@/lib/constant';
 import {CampaignNFTFactory} from '@/contracts/nftABI/CampaignNFTFactory';
 // import { NFT_METADATA } from '@/lib/constant';
 
-// Get a provider
 export const getProvider = () => {
     // For browser environments
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -17,7 +16,6 @@ export const getProvider = () => {
     return new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
 };
 
-// Get a signer
 export const getSigner = async () => {
     const provider = getProvider();
 
@@ -45,31 +43,3 @@ export const getCampaignNFTContract = (address: string, signerOrProvider?: ether
     const provider = signerOrProvider || getProvider();
     return new ethers.Contract(address, CampaignNFTFactory, provider);
 };
-
-// Example function to mint NFT using ethers.js directly
-export const mintNFTWithEthers = async (
-    nftContractAddress: string,
-    supporterAddress: string
-) => {
-    try {
-        const signer = await getSigner();
-        const nftContract = getCampaignNFTContract(nftContractAddress, signer);
-
-        const tx = await nftContract.mintSupporterNFT(supporterAddress);
-        const receipt = await tx.wait();
-
-        // Find the SupporterNFTMinted event
-        // @ts-expect-error receipt.events is not typed
-        const event = receipt.events?.find((e) => e.event === 'SupporterNFTMinted');
-
-        if (event) {
-            const tokenId = event.args.tokenId.toString();
-            return { success: true, tokenId };
-        }
-
-        return { success: true };
-    } catch (error) {
-        console.error('Error minting NFT with ethers:', error);
-        return { success: false, error };
-    }
-}; 
