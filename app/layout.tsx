@@ -7,6 +7,7 @@ import { NetworkCheck } from "@/components/network-check";
 import MainLayout from '@/components/main-layout'
 import { prefetchCampaigns } from "@/lib/hooks/useCampaigns";
 import { QueryClient } from "@tanstack/react-query";
+import { EnvironmentBadge } from "@/components/environment-badge";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -43,6 +44,7 @@ export default function RootLayout({
             </MainLayout>
           </NetworkCheck>
           <Toaster />
+          <EnvironmentBadge />
         </Providers>
       </body>
     </html>

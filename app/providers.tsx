@@ -10,6 +10,7 @@ import { CollectionProvider } from '@/contexts/CollectionContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
+import { EnvironmentProvider } from '@/components/environment-theme-provider';
 
 const config = createConfig({
   chains: [sepolia, celoAlfajores, mainnet],
@@ -63,7 +64,9 @@ export default function Providers({ children }: { children: ReactNode }) {
         <WagmiProvider config={config}>
           <SidebarProvider>
             <CollectionProvider>
-              {children}
+              <EnvironmentProvider>
+                {children}
+              </EnvironmentProvider>
             </CollectionProvider>
           </SidebarProvider>
           <ReactQueryDevtools initialIsOpen={false} />
