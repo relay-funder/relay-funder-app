@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { Share2, Mail, Heart, Users, Clock, MapPin, Target, Link2 } from "lucide-react";
+import { Mail, Heart, Users, Clock, MapPin, Target, Link2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -19,6 +19,7 @@ import BackButton from "@/components/back-button";
 import { CampaignUpdateForm } from "@/components/campaign-update-form";
 import { Timeline } from "@/components/timeline";
 import ClientRewardsTab from "@/components/client-rewards-tab";
+import { ShareCampaignDialog } from "@/components/share-campaign-dialog";
 
 export default async function CampaignPage({
   params,
@@ -129,9 +130,10 @@ export default async function CampaignPage({
                     <Button variant="outline" size="icon" className="rounded-full">
                       <Heart className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                    <ShareCampaignDialog 
+                      campaignTitle={campaign.title} 
+                      campaignSlug={campaign.slug} 
+                    />
                     <Button variant="outline" size="icon" className="rounded-full">
                       <Mail className="h-4 w-4" />
                     </Button>
