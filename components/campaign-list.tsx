@@ -1,22 +1,41 @@
 'use client';
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardFooter,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Button,
+  Skeleton,
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Progress,
+  DialogTrigger,
+} from "@/components/ui";
 import { AlertCircle, Info } from "lucide-react";
 import Image from "next/image";
-import { Progress } from "@/components/ui/progress";
-import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
 import Link from "next/link";
 import { Campaign } from "../types/campaign";
 import { useInfiniteCampaigns } from "@/lib/hooks/useCampaigns";
 import { useInView } from "react-intersection-observer";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dailog"
+import { useCollection } from "@/contexts/CollectionContext";
+import { cn } from "@/lib/utils";
+import { Story } from "@/types";
+import { collections } from "@/lib/constant";
 interface CampaignListProps {
   searchTerm: string;
 }
@@ -54,6 +73,11 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
       );
     })
   }));
+
+  const [showCollectionModal, setShowCollectionModal] = useState(false)
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null)   
+  const [selectedCollection, setSelectedCollection] = useState<string>('')
+  const { addToCollection } = useCollection()
 
   if (loading && !data) {
     return (
@@ -153,7 +177,8 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                     Donate
                   </Button>
                 </Link>
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => setShowCollectionModal(true)}
+                >
                   <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
                   Add to Collection
                 </Button>
@@ -197,6 +222,81 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
           ))
         )}
       </div>
+
+      <Dialog
+        open={showCollectionModal}
+        onOpenChange={(open) => {
+          setShowCollectionModal(open)
+          if (!open) {
+            setSelectedCollection('')
+            setSelectedStory(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span className="text-2xl font-bold">Add to Collection</span>
+              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
+            <div className="space-y-2">
+              {collections.map((collection) => (        
+                <div
+                  key={collection.id}
+                  className={cn(
+                    "flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer",
+                    selectedCollection === collection.name && "border-emerald-400 bg-green-50"
+                  )}
+                  onClick={() => setSelectedCollection(collection.name)}
+                >
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                    {collection.initial}
+                  </div>
+                  <span className="flex-grow">{collection.name}</span>
+                  <div className={cn(
+                    "w-6 h-6 rounded-full border-2",
+                    selectedCollection === collection.name
+                      ? "border-emerald-400 bg-emerald-400"
+                      : "border-gray-200"
+                  )} />
+                </div>
+              ))}
+              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
+                <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
+                  +
+                </div>
+                <span className="text-purple-600">New Collection</span>
+              </div>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <Button
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={!selectedCollection || !selectedStory}
+                onClick={() => {
+                  if (selectedStory && selectedCollection) {
+                    addToCollection(selectedStory, selectedCollection)
+                    setShowCollectionModal(false)
+                    setSelectedCollection('')
+                    setSelectedStory(null)
+                  }
+                }}
+              >
+                Save
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCollectionModal(false)}
+              >
+                Cancel
+              </Button>
+
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Loading indicator */}
       {isFetchingNextPage && (
