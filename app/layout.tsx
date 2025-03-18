@@ -8,6 +8,7 @@ import MainLayout from '@/components/main-layout'
 import { prefetchCampaigns } from "@/lib/hooks/useCampaigns";
 import { QueryClient } from "@tanstack/react-query";
 import { EnvironmentBadge } from "@/components/environment-badge";
+import { CollectionProvider } from '@/contexts/CollectionContext';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -37,15 +38,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <NetworkCheck>
-            <MainLayout>
-              {children}
-            </MainLayout>
-          </NetworkCheck>
-          <Toaster />
-          <EnvironmentBadge />
-        </Providers>
+        <CollectionProvider>
+          <Providers>
+            <NetworkCheck>
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </NetworkCheck>
+            <Toaster />
+            <EnvironmentBadge />
+          </Providers>
+        </CollectionProvider>
       </body>
     </html>
   );
