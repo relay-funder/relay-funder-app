@@ -14,7 +14,6 @@ import { categories } from '@/lib/constant';
 export function ExploreStories() {
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
-
   const { login, authenticated } = usePrivy();
 
   return (

@@ -17,6 +17,10 @@ import {
   AlertTitle,
   Progress,
   DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui";
 import { AlertCircle, Info } from "lucide-react";
 import Image from "next/image";
@@ -26,16 +30,11 @@ import { Campaign } from "../types/campaign";
 import { useInfiniteCampaigns } from "@/lib/hooks/useCampaigns";
 import { useInView } from "react-intersection-observer";
 import { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dailog"
 import { useCollection } from "@/contexts/CollectionContext";
 import { cn } from "@/lib/utils";
 import { Story } from "@/types";
-import { collections } from "@/lib/constant";
+// import { collections } from "@/lib/constant";
+
 interface CampaignListProps {
   searchTerm: string;
 }
@@ -75,9 +74,11 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
   }));
 
   const [showCollectionModal, setShowCollectionModal] = useState(false)
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null)   
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [selectedCollection, setSelectedCollection] = useState<string>('')
-  const { addToCollection } = useCollection()
+  const [newCollectionName, setNewCollectionName] = useState('')
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false)
+  const { addToCollection, userCollections, isLoading } = useCollection()
 
   if (loading && !data) {
     return (
@@ -177,7 +178,13 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                     Donate
                   </Button>
                 </Link>
-                <Button variant="outline" className="flex-1" onClick={() => setShowCollectionModal(true)}
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => {
+                    setSelectedCampaign(campaign);
+                    setShowCollectionModal(true);
+                  }}
                 >
                   <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
                   Add to Collection
@@ -229,7 +236,9 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
           setShowCollectionModal(open)
           if (!open) {
             setSelectedCollection('')
-            setSelectedStory(null)
+            setSelectedCampaign(null)
+            setNewCollectionName('')
+            setIsCreatingCollection(false)
           }
         }}
       >
@@ -241,50 +250,105 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&#39;d like to add this story:</p>
-            <div className="space-y-2">
-              {collections.map((collection) => (        
-                <div
-                  key={collection.id}
-                  className={cn(
-                    "flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer",
-                    selectedCollection === collection.name && "border-emerald-400 bg-green-50"
-                  )}
-                  onClick={() => setSelectedCollection(collection.name)}
-                >
-                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
-                    {collection.initial}
-                  </div>
-                  <span className="flex-grow">{collection.name}</span>
-                  <div className={cn(
-                    "w-6 h-6 rounded-full border-2",
-                    selectedCollection === collection.name
-                      ? "border-emerald-400 bg-emerald-400"
-                      : "border-gray-200"
-                  )} />
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&apos;d like to add this campaign:</p>
+            
+            {isCreatingCollection ? (
+              <div className="mb-4">
+                <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Collection Name
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="collectionName"
+                    value={newCollectionName}
+                    onChange={(e) => setNewCollectionName(e.target.value)}
+                    className="flex-1 p-2 border rounded-md"
+                    placeholder="Enter collection name"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsCreatingCollection(false)}
+                  >
+                    Cancel
+                  </Button>
                 </div>
-              ))}
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
-                <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
-                  +
-                </div>
-                <span className="text-purple-600">New Collection</span>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                {userCollections.map((collection) => (
+                  <div
+                    key={collection.id}
+                    className={cn(
+                      "flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer",
+                      selectedCollection === collection.name && "border-emerald-400 bg-green-50"
+                    )}
+                    onClick={() => setSelectedCollection(collection.name)}
+                  >
+                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                      {collection.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="flex-grow">{collection.name}</span>
+                    <div className={cn(
+                      "w-6 h-6 rounded-full border-2",
+                      selectedCollection === collection.name
+                        ? "border-emerald-400 bg-emerald-400"
+                        : "border-gray-200"
+                    )} />
+                  </div>
+                ))}
+                <div 
+                  className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setIsCreatingCollection(true)}
+                >
+                  <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
+                    +
+                  </div>
+                  <span className="text-purple-600">New Collection</span>
+                </div>
+              </div>
+            )}
+            
             <div className="flex gap-4 mt-6">
               <Button
                 className="bg-purple-600 hover:bg-purple-700"
-                disabled={!selectedCollection || !selectedStory}
-                onClick={() => {
-                  if (selectedStory && selectedCollection) {
-                    addToCollection(selectedStory, selectedCollection)
-                    setShowCollectionModal(false)
-                    setSelectedCollection('')
-                    setSelectedStory(null)
+                disabled={(!selectedCollection && !newCollectionName) || !selectedCampaign || isLoading}
+                onClick={async () => {
+                  if (selectedCampaign) {
+                    try {
+                      if (isCreatingCollection && newCollectionName) {
+                        // Convert campaign to Story type expected by addToCollection
+                        const campaignAsStory: Story = {
+                          id: selectedCampaign.address,
+                          title: selectedCampaign.title || 'Untitled Campaign',
+                          description: selectedCampaign.description || '',
+                          image: selectedCampaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg',
+                          slug: selectedCampaign.slug,
+                          type: 'campaign'
+                        };
+                        
+                        await addToCollection(campaignAsStory, newCollectionName, true);
+                      } else if (selectedCollection) {
+                        // Convert campaign to Story type expected by addToCollection
+                        const campaignAsStory: Story = {
+                          id: selectedCampaign.address,
+                          title: selectedCampaign.title || 'Untitled Campaign',
+                          description: selectedCampaign.description || '',
+                          image: selectedCampaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg',
+                          slug: selectedCampaign.slug,
+                          type: 'campaign'
+                        };
+                        
+                        await addToCollection(campaignAsStory, selectedCollection);
+                      }
+                      setShowCollectionModal(false);
+                    } catch (error) {
+                      console.error('Error adding to collection:', error);
+                    }
                   }
                 }}
               >
-                Save
+                {isLoading ? 'Saving...' : 'Save'}
               </Button>
               <Button
                 variant="ghost"
@@ -292,7 +356,6 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
               >
                 Cancel
               </Button>
-
             </div>
           </div>
         </DialogContent>
