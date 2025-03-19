@@ -1,21 +1,40 @@
 'use client';
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardFooter,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Button,
+  Skeleton,
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Progress,
+  DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui";
 import { AlertCircle, Info } from "lucide-react";
 import Image from "next/image";
-import { Progress } from "@/components/ui/progress";
-import { CardFooter } from "@/components/ui/card";
 import { IoLocationSharp } from 'react-icons/io5';
 import Link from "next/link";
 import { Campaign } from "../types/campaign";
 import { useInfiniteCampaigns } from "@/lib/hooks/useCampaigns";
 import { useInView } from "react-intersection-observer";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useCollection } from "@/contexts/CollectionContext";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+// import { usePrivy } from "@privy-io/react-auth";
+// import { collections } from "@/lib/constant";
 
 interface CampaignListProps {
   searchTerm: string;
@@ -54,6 +73,53 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
       );
     })
   }));
+
+  const [showCollectionModal, setShowCollectionModal] = useState(false)
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('')
+  const [newCollectionName, setNewCollectionName] = useState('')
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false)
+  const { addToCollection, userCollections, isLoading } = useCollection()
+
+  const handleAddToCollection = async (campaign: Campaign | null, collectionId: string, isNewCollection = false) => {
+    if (!campaign) {
+        toast({
+            title: "Error",
+            description: "No campaign selected",
+            variant: "destructive",
+        });
+        return;
+    }
+    
+    try {
+        if (isNewCollection) {
+            console.log(`Creating new collection with name: ${newCollectionName}`);
+            await addToCollection(campaign, newCollectionName, true);
+        } else {
+            console.log(`Adding to existing collection with ID: ${collectionId}`);
+            await addToCollection(campaign, collectionId, false);
+        }
+        
+        setShowCollectionModal(false);
+        setSelectedCollectionId('');
+        setNewCollectionName('');
+        setIsCreatingCollection(false);
+        
+        toast({
+            title: "Success",
+            description: isNewCollection 
+                ? "Created new collection with your campaign" 
+                : "Added campaign to your collection",
+        });
+    } catch (error) {
+        console.error('Error adding to collection:', error);
+        toast({
+            title: "Error",
+            description: "Failed to add to collection",
+            variant: "destructive",
+        });
+    }
+  };
 
   if (loading && !data) {
     return (
@@ -153,7 +219,14 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                     Donate
                   </Button>
                 </Link>
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => {
+                    setSelectedCampaign(campaign);
+                    setShowCollectionModal(true);
+                  }}
+                >
                   <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
                   Add to Collection
                 </Button>
@@ -197,6 +270,135 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
           ))
         )}
       </div>
+
+      <Dialog
+        open={showCollectionModal}
+        onOpenChange={(open) => {
+          setShowCollectionModal(open)
+          if (!open) {
+            setSelectedCollectionId('')
+            setSelectedCampaign(null)
+            setNewCollectionName('')
+            setIsCreatingCollection(false)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span className="text-2xl font-bold">Add to Collection</span>
+              <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600 mb-4 text-sm">Choose the collection where you&apos;d like to add this campaign:</p>
+            
+            {isCreatingCollection ? (
+              <div className="mb-4">
+                <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Collection Name
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="collectionName"
+                    value={newCollectionName}
+                    onChange={(e) => setNewCollectionName(e.target.value)}
+                    className="flex-1 p-2 border rounded-md"
+                    placeholder="Enter collection name"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsCreatingCollection(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {userCollections.map((collection) => (
+                  <div
+                    key={collection.id}
+                    className={cn(
+                      "flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer",
+                      selectedCollectionId === collection.id && "border-emerald-400 bg-green-50"
+                    )}
+                    onClick={() => setSelectedCollectionId(collection.id)}
+                  >
+                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
+                      {collection.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="flex-grow">{collection.name}</span>
+                    <div className={cn(
+                      "w-6 h-6 rounded-full border-2",
+                      selectedCollectionId === collection.id
+                        ? "border-emerald-400 bg-emerald-400"
+                        : "border-gray-200"
+                    )} />
+                  </div>
+                ))}
+                <div 
+                  className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setIsCreatingCollection(true)}
+                >
+                  <div className="w-10 h-10 border-2 border-dashed border-purple-400 rounded-lg flex items-center justify-center text-purple-400">
+                    +
+                  </div>
+                  <span className="text-purple-600">New Collection</span>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex gap-4 mt-6">
+              <Button
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={(!selectedCollectionId && !newCollectionName) || !selectedCampaign || isLoading}
+                onClick={() => {
+                    if (!selectedCampaign) {
+                        toast({
+                            title: "No campaign selected",
+                            description: "Please try again",
+                            variant: "destructive"
+                        });
+                        return;
+                    }
+                    
+                    if (isCreatingCollection) {
+                        if (!newCollectionName.trim()) {
+                            toast({
+                                title: "Collection name required",
+                                description: "Please enter a name for your collection",
+                                variant: "destructive"
+                            });
+                            return;
+                        }
+                        handleAddToCollection(selectedCampaign, newCollectionName, true);
+                    } else {
+                        if (!selectedCollectionId) {
+                            toast({
+                                title: "Collection required",
+                                description: "Please select a collection or create a new one",
+                                variant: "destructive"
+                            });
+                            return;
+                        }
+                        handleAddToCollection(selectedCampaign, selectedCollectionId, false);
+                    }
+                }}
+              >
+                {isLoading ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCollectionModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Loading indicator */}
       {isFetchingNextPage && (

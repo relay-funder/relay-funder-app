@@ -26,7 +26,7 @@ export const SideBar = () => {
     const navItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
         { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
-        { icon: <Star className="h-6 w-6" />, label: "Favorites", href: "/favorites" },
+        { icon: <Star className="h-6 w-6" />, label: "Collections", href: "/collections" },
     ]
 
     return (
