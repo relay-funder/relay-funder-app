@@ -32,7 +32,8 @@ import { useInView } from "react-intersection-observer";
 import { useEffect, useState } from "react";
 import { useCollection } from "@/contexts/CollectionContext";
 import { cn } from "@/lib/utils";
-import { Story } from "@/types";
+import { toast } from "@/hooks/use-toast";
+// import { usePrivy } from "@privy-io/react-auth";
 // import { collections } from "@/lib/constant";
 
 interface CampaignListProps {
@@ -75,10 +76,50 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
 
   const [showCollectionModal, setShowCollectionModal] = useState(false)
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
-  const [selectedCollection, setSelectedCollection] = useState<string>('')
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('')
   const [newCollectionName, setNewCollectionName] = useState('')
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const { addToCollection, userCollections, isLoading } = useCollection()
+
+  const handleAddToCollection = async (campaign: Campaign | null, collectionId: string, isNewCollection = false) => {
+    if (!campaign) {
+        toast({
+            title: "Error",
+            description: "No campaign selected",
+            variant: "destructive",
+        });
+        return;
+    }
+    
+    try {
+        if (isNewCollection) {
+            console.log(`Creating new collection with name: ${newCollectionName}`);
+            await addToCollection(campaign, newCollectionName, true);
+        } else {
+            console.log(`Adding to existing collection with ID: ${collectionId}`);
+            await addToCollection(campaign, collectionId, false);
+        }
+        
+        setShowCollectionModal(false);
+        setSelectedCollectionId('');
+        setNewCollectionName('');
+        setIsCreatingCollection(false);
+        
+        toast({
+            title: "Success",
+            description: isNewCollection 
+                ? "Created new collection with your campaign" 
+                : "Added campaign to your collection",
+        });
+    } catch (error) {
+        console.error('Error adding to collection:', error);
+        toast({
+            title: "Error",
+            description: "Failed to add to collection",
+            variant: "destructive",
+        });
+    }
+  };
 
   if (loading && !data) {
     return (
@@ -235,7 +276,7 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
         onOpenChange={(open) => {
           setShowCollectionModal(open)
           if (!open) {
-            setSelectedCollection('')
+            setSelectedCollectionId('')
             setSelectedCampaign(null)
             setNewCollectionName('')
             setIsCreatingCollection(false)
@@ -281,9 +322,9 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                     key={collection.id}
                     className={cn(
                       "flex items-center space-x-3 p-3 rounded-lg border hover:bg-green-50 cursor-pointer",
-                      selectedCollection === collection.name && "border-emerald-400 bg-green-50"
+                      selectedCollectionId === collection.id && "border-emerald-400 bg-green-50"
                     )}
-                    onClick={() => setSelectedCollection(collection.name)}
+                    onClick={() => setSelectedCollectionId(collection.id)}
                   >
                     <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-lg">
                       {collection.name.charAt(0).toUpperCase()}
@@ -291,7 +332,7 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
                     <span className="flex-grow">{collection.name}</span>
                     <div className={cn(
                       "w-6 h-6 rounded-full border-2",
-                      selectedCollection === collection.name
+                      selectedCollectionId === collection.id
                         ? "border-emerald-400 bg-emerald-400"
                         : "border-gray-200"
                     )} />
@@ -312,40 +353,38 @@ export default function CampaignList({ searchTerm }: CampaignListProps) {
             <div className="flex gap-4 mt-6">
               <Button
                 className="bg-purple-600 hover:bg-purple-700"
-                disabled={(!selectedCollection && !newCollectionName) || !selectedCampaign || isLoading}
-                onClick={async () => {
-                  if (selectedCampaign) {
-                    try {
-                      if (isCreatingCollection && newCollectionName) {
-                        // Convert campaign to Story type expected by addToCollection
-                        const campaignAsStory: Story = {
-                          id: selectedCampaign.address,
-                          title: selectedCampaign.title || 'Untitled Campaign',
-                          description: selectedCampaign.description || '',
-                          image: selectedCampaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg',
-                          slug: selectedCampaign.slug,
-                          type: 'campaign'
-                        };
-                        
-                        await addToCollection(campaignAsStory, newCollectionName, true);
-                      } else if (selectedCollection) {
-                        // Convert campaign to Story type expected by addToCollection
-                        const campaignAsStory: Story = {
-                          id: selectedCampaign.address,
-                          title: selectedCampaign.title || 'Untitled Campaign',
-                          description: selectedCampaign.description || '',
-                          image: selectedCampaign.images?.find((img: { isMainImage: boolean }) => img.isMainImage)?.imageUrl || '/images/placeholder.svg',
-                          slug: selectedCampaign.slug,
-                          type: 'campaign'
-                        };
-                        
-                        await addToCollection(campaignAsStory, selectedCollection);
-                      }
-                      setShowCollectionModal(false);
-                    } catch (error) {
-                      console.error('Error adding to collection:', error);
+                disabled={(!selectedCollectionId && !newCollectionName) || !selectedCampaign || isLoading}
+                onClick={() => {
+                    if (!selectedCampaign) {
+                        toast({
+                            title: "No campaign selected",
+                            description: "Please try again",
+                            variant: "destructive"
+                        });
+                        return;
                     }
-                  }
+                    
+                    if (isCreatingCollection) {
+                        if (!newCollectionName.trim()) {
+                            toast({
+                                title: "Collection name required",
+                                description: "Please enter a name for your collection",
+                                variant: "destructive"
+                            });
+                            return;
+                        }
+                        handleAddToCollection(selectedCampaign, newCollectionName, true);
+                    } else {
+                        if (!selectedCollectionId) {
+                            toast({
+                                title: "Collection required",
+                                description: "Please select a collection or create a new one",
+                                variant: "destructive"
+                            });
+                            return;
+                        }
+                        handleAddToCollection(selectedCampaign, selectedCollectionId, false);
+                    }
                 }}
               >
                 {isLoading ? 'Saving...' : 'Save'}

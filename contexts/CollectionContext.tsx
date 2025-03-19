@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { Story, Collection, CollectionContextType } from '@/types'
+import { Collection, CollectionContextType, Campaign } from '@/types'
 import { usePrivy } from '@privy-io/react-auth'
 import { toast } from '@/hooks/use-toast'
 
@@ -9,10 +9,10 @@ const CollectionContext = createContext<CollectionContextType>({
     userCollections: [],
     isLoading: false,
     addToCollection: async () => {},
-    removeFromCollection: async () => {},
-    deleteCollection: async () => {},
+    removeFromCollection: async () => { },
+    deleteCollection: async () => { },
     getCollection: () => undefined,
-    refreshCollections: async () => {},
+    refreshCollections: async () => { },
 })
 
 export const useCollection = () => useContext(CollectionContext)
@@ -33,12 +33,28 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
             if (response.ok) {
                 // Transform the API response to match our Collection interface
-                const collections = data.collections.map((collection: any) => ({
+                const collections = data.collections.map((collection: {
+                    id: string;
+                    name: string;
+                    description?: string;
+                    createdAt: string;
+                    items: Array<{
+                        itemId: string;
+                        itemType: string;
+                        details?: {
+                            id: number;
+                            title?: string;
+                            description?: string;
+                            image?: string;
+                            slug?: string;
+                        }
+                    }>
+                }) => ({
                     id: collection.id,
                     name: collection.name,
                     description: collection.description,
                     createdAt: new Date(collection.createdAt),
-                    stories: collection.items.map((item: any) => ({
+                    stories: collection.items.map((item) => ({
                         id: item.itemId,
                         title: item.details?.title || 'Unknown',
                         description: item.details?.description || '',
@@ -69,121 +85,106 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await fetchCollections()
     }
 
-    const addToCollection = async (story: Story, collectionName: string, createNew = false) => {
-        if (!authenticated || !user?.wallet?.address) return
-
-        const userAddress = user.wallet.address
+    const addCampaignToCollection = async (campaign: Campaign, collectionId: string) => {
         try {
-            if (createNew) {
+            console.log("Adding campaign to collection:", { campaign, collectionId });
+
+            // Convert campaign.id to string if it's a number
+            const campaignId = typeof campaign.id === 'number' ? campaign.id.toString() : campaign.id;
+
+            if (!user || !user.wallet?.address) {
+                throw new Error('User not authenticated');
+            }
+
+            const response = await fetch(`/api/collections/${collectionId}/items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    itemId: campaignId, // Use the converted ID
+                    itemType: 'campaign',
+                    userAddress: user.wallet.address,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error adding item to collection:', errorData);
+                throw new Error('Failed to add item to collection');
+            }
+
+            toast({
+                title: "Added to collection",
+                description: "Campaign has been added to your collection",
+            });
+
+            return response.json();
+        } catch (error) {
+            console.error('Error adding item to collection:', error);
+            toast({
+                title: "Failed to add to collection",
+                description: error instanceof Error ? error.message : 'An error occurred',
+                variant: "destructive",
+            });
+            throw error;
+        }
+    };
+
+    const addToCollection = async (campaign: Campaign, collectionName: string, isNewCollection = false) => {
+        try {
+            if (!user?.wallet?.address) {
+                throw new Error('User not authenticated');
+            }
+
+            console.log(`Creating new collection: ${collectionName} for user: ${user.wallet.address}`);
+
+            if (isNewCollection) {
                 // Create a new collection
-                const createResponse = await fetch('/api/collections', {
+                const response = await fetch('/api/collections', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         name: collectionName,
-                        userAddress,
+                        userAddress: user.wallet.address,
                     }),
-                })
-
-                const createData = await createResponse.json()
-
-                if (!createResponse.ok) {
-                    throw new Error(createData.error || 'Failed to create collection')
-                }
-
-                const newCollection = createData.collection
-
-                // Add the story to the new collection
-                const addResponse = await fetch(`/api/collections/${newCollection.id}/items`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        itemId: story.id,
-                        itemType: story.type,
-                        userAddress,
-                    }),
-                })
-
-                const addData = await addResponse.json()
-
-                if (!addResponse.ok) {
-                    throw new Error(addData.error || 'Failed to add item to collection')
-                }
-
-                // Update local state
-                setUserCollections(prevCollections => [
-                    ...prevCollections,
-                    {
-                        id: newCollection.id,
-                        name: newCollection.name,
-                        description: newCollection.description,
-                        createdAt: new Date(newCollection.createdAt),
-                        stories: [story],
-                    },
-                ])
-
-                toast({
-                    title: "Added to new collection",
-                    description: `Item has been added to the new collection "${collectionName}"`,
-                })
-            } else {
-                // Find the collection
-                const collection = userCollections.find(c => c.name === collectionName)
-                
-                if (!collection) {
-                    throw new Error(`Collection "${collectionName}" not found`)
-                }
-
-                // Add the story to the existing collection
-                const response = await fetch(`/api/collections/${collection.id}/items`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        itemId: story.id,
-                        itemType: story.type,
-                        userAddress,
-                    }),
-                })
-
-                const data = await response.json()
+                });
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to add item to collection')
+                    const errorData = await response.json();
+                    console.error('Collection creation error:', errorData);
+                    throw new Error('Failed to create collection');
                 }
 
-                // Update local state
-                setUserCollections(prevCollections => 
-                    prevCollections.map(c => {
-                        if (c.id === collection.id) {
-                            return {
-                                ...c,
-                                stories: [...c.stories, story]
-                            }
-                        }
-                        return c
-                    })
-                )
+                const { collection } = await response.json();
 
+                // Now add the campaign to the newly created collection
+                await addCampaignToCollection(campaign, collection.id);
+
+                // Add toast notification for success
                 toast({
-                    title: "Added to collection",
-                    description: `Item has been added to "${collectionName}"`,
-                })
+                    title: "Collection created",
+                    description: `"${collectionName}" has been created with your campaign`,
+                });
+
+                // Refresh collections to show the new one
+                await refreshCollections();
+            } else {
+                // Add to existing collection - collectionName is actually the collection ID here
+                await addCampaignToCollection(campaign, collectionName);
             }
         } catch (error) {
-            console.error('Error adding to collection:', error)
+            console.error('Error adding to collection:', error);
             toast({
                 title: "Failed to add to collection",
                 description: error instanceof Error ? error.message : 'An error occurred',
                 variant: "destructive",
-            })
+            });
+            throw error;
         }
-    }
+    };
 
     const removeFromCollection = async (storyId: string, collectionId: string) => {
         if (!authenticated || !user?.wallet?.address) return
@@ -208,7 +209,7 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
 
             // Update local state
-            setUserCollections(prevCollections => 
+            setUserCollections(prevCollections =>
                 prevCollections.map(collection => {
                     if (collection.id === collectionId) {
                         return {
@@ -250,7 +251,7 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
 
             // Update local state
-            setUserCollections(prevCollections => 
+            setUserCollections(prevCollections =>
                 prevCollections.filter(collection => collection.id !== collectionId)
             )
 
