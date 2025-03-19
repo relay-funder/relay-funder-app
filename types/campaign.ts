@@ -71,7 +71,7 @@ export type Comment = {
   campaign?: Campaign;
 };
 
-type CampaignImage = {
+export type CampaignImage = {
   id: number;
   imageUrl: string;
   isMainImage: boolean;

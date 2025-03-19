@@ -1,3 +1,5 @@
+import { Category } from "@/types";
+
 export const adminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN;
@@ -5,6 +7,24 @@ export const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN;
 export const NFT_METADATA = "0x73258C5813AB9494473d34eD57869531B2dd6ac2";
 export const CAMPAIGN_NFT_FACTORY = "0x41ab8cf665f931B010d13D46b5178551594EE2DA";
 export const AKASHIC_NFT_REGISTRY = "0x41b40AB343E607e59de62930D726A324B3b7cf63";
+
+export const collections = [
+	{ id: 1, name: "Collection 1", initial: "1" },
+	{ id: 2, name: "Collection 2", initial: "2" },
+];
+
+export const categories: Category[] = [
+	{ id: "visual-arts", name: "Visual Arts", icon: "🎨" },
+	{ id: "music-audio", name: "Music & Audio", icon: "🎵" },
+	{ id: "film-photography", name: "Film & Photography", icon: "📷" },
+	{ id: "crafts-artifacts", name: "Crafts & Artifacts", icon: "🏺" },
+	{ id: "literature-writing", name: "Literature & Writing", icon: "📚" },
+	{ id: "food-culinary", name: "Food & Culinary Arts", icon: "🍳" },
+	{ id: "fashion-textiles", name: "Fashion & Textiles", icon: "👕" },
+	{ id: "education-workshops", name: "Education & Workshops", icon: "🎓" },
+	{ id: "digital-art-nfts", name: "Digital Art & NFTs", icon: "💻" },
+	{ id: "community-goods", name: "Community & Public Goods", icon: "🤝" },
+];
 
 export const countries = [
 	"Afghanistan",
