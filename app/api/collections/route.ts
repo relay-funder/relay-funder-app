@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureUserExists } from '@/lib/user-helpers';
+import { CampaignImage } from '@/types/campaign';
 
 // Get all collections for the current user
 export async function GET(req: NextRequest) {
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
               title: campaign.title,
               description: campaign.description,
               slug: campaign.slug,
-              image: campaign.images.find(img => img.isMainImage)?.imageUrl || '/images/placeholder.svg',
+              image: campaign.images.find((img: CampaignImage) => img.isMainImage)?.imageUrl || '/images/placeholder.svg',
             }
           };
         })
@@ -77,29 +79,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User address is required' }, { status: 400 });
     }
 
-    // Check if collection with this name already exists for the user
-    const existingCollection = await prisma.collection.findFirst({
-      where: {
-        userId: userAddress,
-        name,
-      },
-    });
+    console.log("Creating collection:", { name, description, userAddress });
 
-    if (existingCollection) {
-      return NextResponse.json({ error: 'Collection with this name already exists' }, { status: 400 });
+    try {
+      // Ensure the user exists
+      const userStatus = await ensureUserExists(userAddress);
+      console.log("User status:", userStatus);
+
+      // Check if collection with this name already exists for the user
+      const existingCollection = await prisma.collection.findFirst({
+        where: {
+          userId: userAddress,
+          name,
+        },
+      });
+
+      if (existingCollection) {
+        return NextResponse.json({ error: 'Collection with this name already exists' }, { status: 400 });
+      }
+
+      // Create the new collection
+      const collection = await prisma.collection.create({
+        data: {
+          name,
+          description: description || '',
+          userId: userAddress,
+        },
+      });
+
+      console.log("Collection created:", collection);
+      return NextResponse.json({ collection });
+    } catch (dbError) {
+      console.error('Database error creating collection:', dbError);
+      return NextResponse.json({ 
+        error: 'Failed to create collection', 
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error' 
+      }, { status: 500 });
     }
-
-    const collection = await prisma.collection.create({
-      data: {
-        name,
-        description: description || '',
-        userId: userAddress,
-      },
-    });
-
-    return NextResponse.json({ collection });
   } catch (error) {
     console.error('Error creating collection:', error);
-    return NextResponse.json({ error: 'Failed to create collection' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to create collection',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 

@@ -29,10 +29,19 @@ export interface Collection {
     createdAt: Date
 }
 
+export interface Campaign {
+    id: string | number;
+    title?: string;
+    description?: string;
+    image?: string;
+    slug?: string;
+    type?: string;
+}
+
 export interface CollectionContextType {
     userCollections: Collection[]
     isLoading: boolean
-    addToCollection: (story: Story, collectionName: string, createNew?: boolean) => Promise<void>
+    addToCollection: (campaign: Campaign, collectionName: string, createNew?: boolean) => Promise<void>
     removeFromCollection: (storyId: string, collectionId: string) => Promise<void>
     deleteCollection: (collectionId: string) => Promise<void>
     getCollection: (collectionId: string) => Collection | undefined
