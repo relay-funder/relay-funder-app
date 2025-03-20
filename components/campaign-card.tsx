@@ -3,12 +3,15 @@ import Image from "next/image"
 import { Progress } from "@/components/ui/progress"
 import { Campaign } from "@/types/campaign"
 import { cn } from "@/lib/utils"
+import { FavoriteButton } from '@/components/favorite-button'
 
 interface CampaignCardProps {
     campaign: Campaign
+    isFavorite?: boolean
+    onFavoriteToggle?: (isFavorite: boolean) => void
 }
 
-export default function CampaignCard({ campaign }: CampaignCardProps) {
+export default function CampaignCard({ campaign, isFavorite, onFavoriteToggle }: CampaignCardProps) {
     const formatDate = (timestamp: string) => {
         return new Date(parseInt(timestamp) * 1000).toLocaleDateString()
     }
@@ -39,6 +42,13 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                     className="h-[200px] w-full object-cover"
                     loading="lazy"
                 />
+                <div className="absolute top-4 right-4 z-10">
+                    <FavoriteButton 
+                        campaignId={campaign.id} 
+                        initialIsFavorite={isFavorite}
+                        onToggle={onFavoriteToggle}
+                    />
+                </div>
             </CardHeader>
             <CardContent className="p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -60,7 +70,7 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <p><strong>Description:</strong> {campaign.description}</p>
+                    <p className="line-clamp-3"><strong>Description:</strong> {campaign.description}</p>
                     {campaign.treasuryAddress && <p><strong>Treasury:</strong> {campaign.treasuryAddress}</p>}
                     {campaign.launchTime && <p><strong>Launch:</strong> {formatDate(campaign.launchTime)}</p>}
                     {campaign.deadline && <p><strong>Deadline:</strong> {formatDate(campaign.deadline)}</p>}
