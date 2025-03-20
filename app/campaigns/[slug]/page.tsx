@@ -1,15 +1,11 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { Mail, Heart, Users, Clock, MapPin, Target, Link2 } from "lucide-react";
+import { Mail,Users, Clock, MapPin, Target, Link2 } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+
+import { Button, Progress, Tabs, TabsContent, TabsList, TabsTrigger, Card, CardContent, Avatar, AvatarFallback, AvatarImage, Badge } from "@/components/ui"
 // import { getCampaignBySlug, type PaymentWithUser } from "@/lib/api/campaigns";
 import { CampaignImage } from "@prisma/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { CampaignDisplay } from "@/types/campaign";
 import { getCampaign } from "@/lib/database";
 import { revalidatePath } from "next/cache";
@@ -20,6 +16,7 @@ import { CampaignUpdateForm } from "@/components/campaign-update-form";
 import { Timeline } from "@/components/timeline";
 import ClientRewardsTab from "@/components/client-rewards-tab";
 import { ShareCampaignDialog } from "@/components/share-campaign-dialog";
+import { FavoriteButton } from '@/components/favorite-button'
 
 export default async function CampaignPage({
   params,
@@ -127,9 +124,7 @@ export default async function CampaignPage({
                   </Link>
 
                   <div className="flex gap-2 justify-center">
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <Heart className="h-4 w-4" />
-                    </Button>
+                    <FavoriteButton campaignId={campaign.id} />
                     <ShareCampaignDialog 
                       campaignTitle={campaign.title} 
                       campaignSlug={campaign.slug} 

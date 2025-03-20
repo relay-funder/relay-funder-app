@@ -14,3 +14,4 @@ export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 export { Progress } from './progress';
 export { Skeleton } from './skeleton';
 export { Table, TableBody, TableCell, TableHead, TableRow } from './table';
+export { Avatar, AvatarFallback, AvatarImage } from './avatar';
