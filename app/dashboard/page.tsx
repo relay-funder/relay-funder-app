@@ -2,22 +2,39 @@
 
 import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { 
+    Card, 
+    CardContent, 
+    CardHeader, 
+    Button, 
+    Alert, 
+    AlertDescription, 
+    AlertTitle, 
+    Tabs, 
+    TabsContent, 
+    TabsList, 
+    TabsTrigger 
+} from "@/components/ui"
 import { SideBar } from '@/components/SideBar'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import { Coins, Users, Calendar, TrendingUp } from "lucide-react"
+import { AlertCircle, Coins, Users, Calendar, TrendingUp, Heart } from "lucide-react"
 import { Campaign } from '@/types/campaign'
 import CampaignCard from '@/components/campaign-card'
+
+interface FavoriteCampaign {
+    id: string
+    campaign: Campaign
+}
 
 export default function DashboardPage() {
     const { address } = useAccount()
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
+    const [favoriteCampaigns, setFavoriteCampaigns] = useState<Campaign[]>([])
     const [loading, setLoading] = useState(true)
+    const [loadingFavorites, setLoadingFavorites] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [favoriteError, setFavoriteError] = useState<string | null>(null)
     const { isOpen } = useSidebar()
 
     useEffect(() => {
@@ -47,7 +64,38 @@ export default function DashboardPage() {
                 setLoading(false)
             }
         }
+        
+        const fetchFavoriteCampaigns = async () => {
+            if (!address) {
+                setLoadingFavorites(false)
+                return
+            }
+            
+            try {
+                const response = await fetch(`/api/favorites/user?userAddress=${address}`)
+                const data = await response.json()
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch favorite campaigns')
+                }
+                
+                // Transform the data to match Campaign type
+                const favorites = data.favorites.map((fav: FavoriteCampaign) => ({
+                    ...fav.campaign,
+                    favoriteId: fav.id
+                }))
+                
+                setFavoriteCampaigns(favorites)
+            } catch (err) {
+                console.error('Error fetching favorite campaigns:', err)
+                setFavoriteError(err instanceof Error ? err.message : 'An error occurred')
+            } finally {
+                setLoadingFavorites(false)
+            }
+        }
+        
         fetchUserCampaigns()
+        fetchFavoriteCampaigns()
     }, [address])
 
     const calculateStats = (campaigns: Campaign[]) => {
@@ -208,41 +256,104 @@ export default function DashboardPage() {
                     </div>
                 )}
 
-                {loading ? (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {[...Array(3)].map((_, index) => (
-                            <Card key={index} className="animate-pulse">
-                                <CardHeader className="p-0 h-[200px] bg-gray-200" />
-                                <CardContent className="p-6">
-                                    <div className="h-6 bg-gray-200 rounded mb-4" />
-                                    <div className="space-y-2">
-                                        <div className="h-4 bg-gray-200 rounded" />
-                                        <div className="h-4 bg-gray-200 rounded" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : error ? (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                ) : campaigns.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500">You haven&apos;t created any campaigns yet.</p>
-                        <Button className="mt-4" onClick={() => window.location.href = '/'}>
-                            Create Your First Campaign
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {campaigns?.map((campaign: Campaign) => (
-                            <CampaignCard key={campaign.address} campaign={campaign} />
-                        ))}
-                    </div>
-                )}
+                <Tabs defaultValue="my-campaigns" className="mt-8">
+                    <TabsList className="mb-6">
+                        <TabsTrigger value="my-campaigns" className="px-4 py-2">
+                            My Campaigns
+                        </TabsTrigger>
+                        <TabsTrigger value="favorites" className="px-4 py-2">
+                            <Heart className="h-4 w-4 mr-2" />
+                            My Favorites
+                        </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="my-campaigns">
+                        {loading ? (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {[...Array(3)].map((_, index) => (
+                                    <Card key={index} className="animate-pulse">
+                                        <CardHeader className="p-0 h-[200px] bg-gray-200" />
+                                        <CardContent className="p-6">
+                                            <div className="h-6 bg-gray-200 rounded mb-4" />
+                                            <div className="space-y-2">
+                                                <div className="h-4 bg-gray-200 rounded" />
+                                                <div className="h-4 bg-gray-200 rounded" />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : error ? (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        ) : campaigns.length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500">You haven&apos;t created any campaigns yet.</p>
+                                <Button className="mt-4" onClick={() => window.location.href = '/'}>
+                                    Create Your First Campaign
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {campaigns?.map((campaign: Campaign) => (
+                                    <CampaignCard key={campaign.address} campaign={campaign} />
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+                    
+                    <TabsContent value="favorites">
+                        {loadingFavorites ? (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {[...Array(3)].map((_, index) => (
+                                    <Card key={index} className="animate-pulse">
+                                        <CardHeader className="p-0 h-[200px] bg-gray-200" />
+                                        <CardContent className="p-6">
+                                            <div className="h-6 bg-gray-200 rounded mb-4" />
+                                            <div className="space-y-2">
+                                                <div className="h-4 bg-gray-200 rounded" />
+                                                <div className="h-4 bg-gray-200 rounded" />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : favoriteError ? (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{favoriteError}</AlertDescription>
+                            </Alert>
+                        ) : favoriteCampaigns.length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500">You haven&apos;t saved any campaigns as favorites yet.</p>
+                                <Button className="mt-4" onClick={() => window.location.href = '/'}>
+                                    Explore Campaigns
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {favoriteCampaigns?.map((campaign: Campaign) => (
+                                    <CampaignCard 
+                                        key={`favorite-${campaign.id}`} 
+                                        campaign={campaign} 
+                                        isFavorite={true}
+                                        onFavoriteToggle={(isFavorite) => {
+                                            if (!isFavorite) {
+                                                setFavoriteCampaigns(prev => 
+                                                    prev.filter(c => c.id !== campaign.id)
+                                                )
+                                            }
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     )

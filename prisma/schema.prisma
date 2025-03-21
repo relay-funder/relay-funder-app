@@ -28,8 +28,8 @@ model Campaign {
   comments        Comment[]
   payments        Payment[]
   RoundCampaigns  RoundCampaigns[]
-  collections CampaignCollection[]
-
+  collections     CampaignCollection[]
+  favorites       Favorite[]
 
   @@index([creatorAddress])
 }
@@ -149,5 +149,17 @@ model CampaignCollection {
   collection Collection @relation(fields: [collectionId], references: [id])
 
   @@id([campaignId, collectionId])
+}
+
+model Favorite {
+  id          Int      @id @default(autoincrement())
+  userAddress String
+  campaignId  Int
+  createdAt   DateTime @default(now())
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userAddress, campaignId])
+  @@index([userAddress])
+  @@index([campaignId])
 }
 
