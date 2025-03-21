@@ -29,16 +29,22 @@ const features = [
   },
   {
     icon: IconSearch,
-    title: "Discovery & Collections",
+    title: "Collections",
     description: "Powerful search functionality and ability to organize campaigns into collections.",
     color: "indigo"
   },
   {
     icon: IconStar,
-    title: "Personalization",
-    description: "Favorite campaigns, track donations, and customize your fundraising experience.",
+    title: "Quadratic Funding",
+    description: "Let your community vote on which campaigns should receive funding.",
     color: "red"
   }
+//   {
+//     icon: IconStar,
+//     title: "Personalization",
+//     description: "Favorite campaigns, track donations, and customize your fundraising experience.",
+//     color: "red"
+//   }
 ];
 
 export default function Features() {
