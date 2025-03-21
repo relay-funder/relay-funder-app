@@ -4,7 +4,6 @@ import { Timeline, Text, Paper, Group, RingProgress } from '@mantine/core';
 import {
   IconGitCommit,
   IconGitPullRequest,
-  IconMessageDots,
   IconStar,
   IconShare,
   IconSearch,
@@ -15,6 +14,8 @@ import {
   IconBuildingStore,
   IconRocket,
 } from '@tabler/icons-react';
+import Link from 'next/link';
+
 const launchDateString = '2025-04-15';
 export default function RoadmapPage() {
   // Calculate days until launch (March 21, 2025)
@@ -236,12 +237,12 @@ export default function RoadmapPage() {
         <Timeline.Item 
           bullet={<IconPhoto size={12} />} 
           title={
-            <a 
+            <Link 
               href="/collections" 
               className="text-blue-600 hover:text-blue-800 hover:underline"
             >
               Collections Feature
-            </a>
+            </Link>
           }
         >
           <Text c="dimmed" size="sm">March 18-19, 2025</Text>
