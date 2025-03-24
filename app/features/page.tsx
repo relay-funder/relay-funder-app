@@ -1,6 +1,6 @@
 "use client";
 import { Container, Title, Text, SimpleGrid, Card, ThemeIcon } from "@mantine/core";
-import { IconUserCircle, IconBuildingStore, IconMessage, IconCreditCard, IconSearch, IconStar } from "@tabler/icons-react";
+import { IconUserCircle, IconBuildingStore, IconMessage, IconCreditCard, IconSearch, IconStar, IconFile } from "@tabler/icons-react";
 
 const features = [
   {
@@ -38,13 +38,13 @@ const features = [
     title: "Quadratic Funding",
     description: "Let your community vote on which campaigns should receive funding.",
     color: "red"
+  },
+  {
+    icon: IconFile,
+    title: "Numbers Protocol",
+    description: "Integration with Numbers Protocol for storing NFTs & on-chain data archives using Filecoin.",
+    color: "red"
   }
-//   {
-//     icon: IconStar,
-//     title: "Personalization",
-//     description: "Favorite campaigns, track donations, and customize your fundraising experience.",
-//     color: "red"
-//   }
 ];
 
 export default function Features() {
