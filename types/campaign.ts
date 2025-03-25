@@ -10,6 +10,7 @@ export interface DbCampaign {
   transactionHash: string | null;
   campaignAddress: string | null;
   treasuryAddress?: string | null;
+  category?: string | null;
   createdAt: Date;
   updatedAt: Date;
   images?: {
