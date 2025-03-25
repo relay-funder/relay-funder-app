@@ -4,6 +4,8 @@ import { Progress } from "@/components/ui/progress"
 import { Campaign } from "@/types/campaign"
 import { cn } from "@/lib/utils"
 import { FavoriteButton } from '@/components/favorite-button'
+import { categories } from '@/lib/constant'
+import { Badge } from "@/components/ui/badge"
 
 interface CampaignCardProps {
     campaign: Campaign
@@ -31,6 +33,10 @@ export default function CampaignCard({ campaign, isFavorite, onFavoriteToggle }:
         return 'Active'
     }
 
+    // Find the category details
+    const categoryDetails = campaign.category ? 
+        categories.find(cat => cat.id === campaign.category) : null;
+
     return (
         <Card className="overflow-hidden">
             <CardHeader className="p-0">
@@ -52,7 +58,15 @@ export default function CampaignCard({ campaign, isFavorite, onFavoriteToggle }:
             </CardHeader>
             <CardContent className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">{campaign.title || 'Campaign'}</h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold"></h2>
+                        {categoryDetails && (
+                            <Badge variant="outline" className="flex items-center gap-1 ml-2">
+                                <span>{categoryDetails.icon}</span>
+                                <span className="text-xs">{categoryDetails.name}</span>
+                            </Badge>
+                        )}
+                    </div>
                     <div className={cn(
                         "px-3 py-1 rounded-full text-sm",
                         {
