@@ -129,6 +129,7 @@ function formatCampaignData(dbCampaign: DbCampaign, event: CampaignCreatedEvent 
     images: dbCampaign.images,
     slug: dbCampaign.slug,
     location: dbCampaign.location,
+    category: dbCampaign.category,
     treasuryAddress: dbCampaign.treasuryAddress
   };
 }
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
     const creatorAddress = formData.get('creatorAddress') as string
     const status = formData.get('status') as string
     const location = formData.get('location') as string
+    const category = formData.get('category') as string
     const bannerImage = formData.get('bannerImage') as File | null
 
     console.log('Creating campaign with data:', {
@@ -194,6 +196,7 @@ export async function POST(request: Request) {
         creatorAddress,
         status,
         location: location || undefined,
+        category: category || undefined,
         slug,
         images: imageUrl ? {
           create: {

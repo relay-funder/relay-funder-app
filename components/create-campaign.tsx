@@ -14,7 +14,7 @@ import { Log } from 'viem'
 import { Label } from "./ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
-import { countries } from '@/lib/constant'
+import { countries, categories } from '@/lib/constant'
 
 export function CreateCampaign() {
   const { address } = useAccount()
@@ -28,6 +28,7 @@ export function CreateCampaign() {
     startTime: new Date().toISOString().slice(0, 16),
     endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
     location: '',
+    category: '',
     bannerImage: null as File | null,
     bannerImagePreview: ''
   })
@@ -225,6 +226,7 @@ export function CreateCampaign() {
         formDataToSend.append('creatorAddress', address)
         formDataToSend.append('status', 'draft')
         formDataToSend.append('location', formData.location)
+        formDataToSend.append('category', formData.category)
         formDataToSend.append('slug', slug)
         if (formData.bannerImage) {
           formDataToSend.append('bannerImage', formData.bannerImage)
@@ -303,7 +305,6 @@ export function CreateCampaign() {
         />
       </div>
 
-
       <div className="space-y-2">
         <label className="text-sm font-medium">Location</label>
         <Select
@@ -374,6 +375,28 @@ export function CreateCampaign() {
           onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
           required
         />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Category</label>
+        <Select
+          value={formData.category}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{category.icon}</span>
+                  <span>{category.name}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

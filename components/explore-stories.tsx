@@ -14,6 +14,7 @@ import { categories } from '@/lib/constant';
 export function ExploreStories() {
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const { login, authenticated } = usePrivy();
 
   return (
@@ -75,11 +76,21 @@ export function ExploreStories() {
             </div>
 
             <div className="mb-8 flex flex-wrap justify-center gap-2">
+              <Button
+                key="all"
+                variant="outline"
+                className={`flex items-center gap-2 rounded-full ${!selectedCategory ? 'bg-purple-100 text-purple-600' : 'bg-white'}`}
+                onClick={() => setSelectedCategory(null)}
+              >
+                <div className="text-2xl">🌟</div>
+                All Categories
+              </Button>
               {categories.map((category) => (
                 <Button
                   key={category.id}
                   variant="outline"
-                  className="flex items-center gap-2 rounded-full bg-white"
+                  className={`flex items-center gap-2 rounded-full ${selectedCategory === category.id ? 'bg-purple-100 text-purple-600' : 'bg-white'}`}
+                  onClick={() => setSelectedCategory(category.id)}
                 >
                   <div className="text-2xl">{category.icon}</div>
                   {category.name}
@@ -87,7 +98,7 @@ export function ExploreStories() {
               ))}
             </div>
 
-            <CampaignList searchTerm={searchTerm} />
+            <CampaignList searchTerm={searchTerm} categoryFilter={selectedCategory} />
           </>
         )}
       </main>
