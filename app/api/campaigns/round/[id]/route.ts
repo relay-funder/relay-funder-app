@@ -10,7 +10,7 @@ export async function GET(
   try {
     const roundCampaigns = await prisma.roundCampaigns.findMany({
       where: { campaignId: parseInt(campaignId) },
-      include: { round: true }, // Include round details
+      include: { Round: true }, // Include round details
     });
 
     if (roundCampaigns.length == 0) {
@@ -19,7 +19,7 @@ export async function GET(
 
     const rounds = roundCampaigns.map((rc) => ({
       id: rc.roundId,
-      title: rc.round.title,
+      title: rc.Round.title,
     }));
 
     return NextResponse.json({ rounds }, { status: 200 });

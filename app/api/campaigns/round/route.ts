@@ -19,6 +19,11 @@ export async function POST(req: NextRequest) {
           data: {
             roundId,
             campaignId,
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            blockchain: "celo",
+            logoUrl: "",
+            Campaign: { connect: { id: campaignId } },
+            Round: { connect: { id: roundId } },
           },
         })
       )
