@@ -10,7 +10,6 @@ import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useFeatureFlag, toggleFeatureFlag } from '@/lib/flags'
 import { Switch } from '@/components/ui/switch'
-import { useEnvironment } from '@/components/environment-theme-provider'
 
 interface NavItem {
     icon: JSX.Element
@@ -23,7 +22,6 @@ export const SideBar = () => {
     const pathname = usePathname()
     const { user, logout } = usePrivy()
     const showRounds = useFeatureFlag('ENABLE_ROUNDS')
-    const { isDevelopment } = useEnvironment()
     
     console.log("user", user)
     const shortenAddress = (address: string) => {
@@ -119,7 +117,7 @@ export const SideBar = () => {
                         )}
                     </div>
                 </div>
-                {isDevelopment && isOpen && (
+                {isOpen && (
                     <div className="border-t p-2">
                         <div className="text-xs text-gray-500 mb-2 px-2">Developer Options</div>
                         <div className="flex items-center justify-between px-2 py-1">
