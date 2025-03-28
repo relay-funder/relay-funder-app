@@ -124,7 +124,6 @@ model RoundCampaigns {
   status           Status           @default(ACTIVE)
   blockchain       String
   logoUrl          String
-  RoundCampaigns   RoundCampaigns[]
 }
 
 enum Status {
