@@ -13,9 +13,9 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
     "@mantine/core": "^7.17.2",
     "@numbersprotocol/nit": "^1.6.1",
-    "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.1.0",
     "@privy-io/react-auth": "^2.0.0",
     "@privy-io/wagmi": "^1.0.1",
@@ -41,6 +41,7 @@
     "dns": "^0.2.2",
     "dotenv": "^16.4.7",
     "ethers": "5.7.2",
+    "flags": "^3.2.0",
     "husky": "^9.1.7",
     "lucide-react": "^0.460.0",
     "mime": "^4.0.6",
