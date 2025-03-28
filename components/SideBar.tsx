@@ -3,11 +3,13 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { usePrivy } from '@privy-io/react-auth'
-import { Grid, Home, LogOut, Settings, Star } from 'lucide-react'
+import { Grid, Home, LogOut, Settings, Star, BookCheck } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { useFeatureFlag, toggleFeatureFlag } from '@/lib/flags'
+import { Switch } from '@/components/ui/switch'
 
 interface NavItem {
     icon: JSX.Element
@@ -19,15 +21,24 @@ export const SideBar = () => {
     const { isOpen, setIsOpen } = useSidebar()
     const pathname = usePathname()
     const { user, logout } = usePrivy()
+    const showRounds = useFeatureFlag('ENABLE_ROUNDS')
+    
     console.log("user", user)
     const shortenAddress = (address: string) => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`
     }
-    const navItems: NavItem[] = [
+    
+    // Create base nav items
+    const baseNavItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
         { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
         { icon: <Star className="h-6 w-6" />, label: "Collections", href: "/collections" },
     ]
+    
+    // Conditionally add Rounds based on feature flag
+    const navItems = showRounds 
+        ? [...baseNavItems, { icon: <BookCheck className="h-6 w-6" />, label: "Rounds", href: "/rounds" }]
+        : baseNavItems
 
     return (
         <div>
@@ -106,6 +117,18 @@ export const SideBar = () => {
                         )}
                     </div>
                 </div>
+                {isOpen && (
+                    <div className="border-t p-2">
+                        <div className="text-xs text-gray-500 mb-2 px-2">Developer Options</div>
+                        <div className="flex items-center justify-between px-2 py-1">
+                            <span className="text-sm">Enable QF Rounds</span>
+                            <Switch 
+                                checked={showRounds}
+                                onCheckedChange={() => toggleFeatureFlag('ENABLE_ROUNDS')}
+                            />
+                        </div>
+                    </div>
+                )}
             </aside>
         </div>
     )
