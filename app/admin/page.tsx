@@ -225,6 +225,7 @@ export default function AdminPage() {
       );
 
       console.log(platformAdmin.toLowerCase(), signerAddress.toLowerCase());
+      console.log(rounds, dropdownStates, addCampaignToRounds);
 
       if (platformAdmin.toLowerCase() !== signerAddress.toLowerCase()) {
         throw new Error("Not authorized as platform admin");
