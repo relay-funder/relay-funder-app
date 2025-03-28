@@ -103,11 +103,6 @@ model Round {
   description      String
   tags             String[]
   matchingPool     Int
-  id               Int              @id @default(autoincrement())
-  title            String
-  description      String
-  tags             String[]
-  matchingPool     Int
   applicationStart DateTime
   applicationClose DateTime
   startDate        DateTime         @default(now())
