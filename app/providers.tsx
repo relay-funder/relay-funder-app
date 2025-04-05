@@ -2,37 +2,27 @@
 
 import { PrivyProvider } from '@privy-io/react-auth';
 import { ReactNode } from 'react';
-import { http } from 'wagmi';
-import { WagmiProvider, createConfig } from '@privy-io/wagmi';
-import { sepolia, celoAlfajores, mainnet } from 'wagmi/chains';
+import { WagmiProvider } from '@privy-io/wagmi';
+import {  celoAlfajores } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionProvider } from '@/contexts/CollectionContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
 import { EnvironmentProvider } from '@/components/environment-theme-provider';
+import { config } from '@/lib/wagmi';
 
-const config = createConfig({
-  chains: [sepolia, celoAlfajores, mainnet],
-  transports: {
-    [celoAlfajores.id]: http(),
-    [sepolia.id]: http(),
-    [mainnet.id]: http(),
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      gcTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
   },
 });
 
 export default function Providers({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000, // 1 minute
-        gcTime: 5 * 60 * 1000, // 5 minutes
-        refetchOnWindowFocus: false,
-        retry: 1,
-      },
-    },
-  }));
-
   return (
     <PrivyProvider
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ''}
@@ -44,7 +34,7 @@ export default function Providers({ children }: { children: ReactNode }) {
           logo: 'https://auth.privy.io/logos/privy-logo.png',
           walletChainType: 'ethereum-only',
         },
-        loginMethods: ['email', 'wallet', 'google'],
+        loginMethods: ['email', 'wallet', 'google', 'github'],
         fundingMethodConfig: {
           moonpay: {
             useSandbox: true,
