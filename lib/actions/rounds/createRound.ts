@@ -2,9 +2,14 @@
 
 import { z } from "zod"
 import { type Address, type Hash } from "viem"
+import { PrismaClient } from '@prisma/client'
+import { type ActionResponse } from '@/types/actions' // Assuming you have this type
+import { KICKSTARTER_QF_ADDRESS } from "@/lib/constant" // Import strategy address
 
-// Keep the Zod schema for validation
-const roundSchema = z.object({
+const prisma = new PrismaClient()
+
+// Schema for the data coming *from the form*
+const roundFormSchema = z.object({
     title: z.string().min(3),
     description: z.string().min(30),
     matchingPool: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
@@ -22,61 +27,105 @@ const roundSchema = z.object({
     profileId: z.string().refine((val): val is Hash => /^0x[a-fA-F0-9]{64}$/.test(val), {
         message: "Invalid Profile ID format (bytes32).",
     }),
+    // managerAddress is added below in the action schema
+})
+
+// Schema for the data required by the *server action*
+const saveRoundActionSchema = roundFormSchema.extend({
+    poolId: z.bigint(),
+    transactionHash: z.string().refine((val): val is Hash => /^0x[a-fA-F0-9]{64}$/.test(val), {
+        message: "Invalid Transaction Hash format.",
+    }),
     managerAddress: z.string().refine((val): val is Address => /^0x[a-fA-F0-9]{40}$/.test(val), {
         message: "Invalid manager address format.",
     }),
+    strategyAddress: z.string().refine((val): val is Address => /^0x[a-fA-F0-9]{40}$/.test(val), {
+        message: "Invalid strategy address format.",
+    }),
+    blockchain: z.string().min(1, { message: "Blockchain identifier is required." }),
 })
 
-// Keep the date validations
-const refinedRoundSchema = roundSchema.refine(data => new Date(data.applicationClose) > new Date(data.applicationStart), {
-    message: "Application close date must be after application start date.",
-    path: ["applicationClose"],
-}).refine(data => new Date(data.endDate) > new Date(data.startDate), {
-    message: "Round end date must be after round start date.",
-    path: ["endDate"],
-}).refine(data => new Date(data.startDate) >= new Date(data.applicationClose), {
-    message: "Round start date must be on or after application close date.",
-    path: ["startDate"],
-})
+type SaveRoundActionInput = z.infer<typeof saveRoundActionSchema>
 
-type RoundFormData = z.infer<typeof refinedRoundSchema>
+// Define a standard response type
+type SaveRoundActionResult = ActionResponse<{ roundId: number } | null>
 
-// Define a standard response type - might not be needed if action isn't called for submission
-type CreateRoundActionResult = {
-    success: boolean;
-    // data?: { transactionHash: Hash }; // Transaction hash is now handled client-side
-    error?: string;
-    fieldErrors?: Record<string, string[]>;
-}
 
-// This action *could* be used for pre-validation or storing metadata off-chain,
-// but it no longer initiates the blockchain transaction.
-export async function validateRoundDataAction(formData: RoundFormData): Promise<CreateRoundActionResult> {
+export async function saveRoundAction(input: SaveRoundActionInput): Promise<SaveRoundActionResult> {
     try {
-        // Validate with Zod
-        const result = refinedRoundSchema.safeParse(formData);
-        if (!result.success) {
-            console.log("Server Action: Validation failed", result.error.flatten().fieldErrors);
+        // Validate the combined input
+        const validationResult = saveRoundActionSchema.safeParse(input);
+        if (!validationResult.success) {
+            console.error("Server Action: Save Round Validation failed", validationResult.error.flatten().fieldErrors);
             return {
                 success: false,
-                fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+                error: "Invalid data received by server.",
+                fieldErrors: validationResult.error.flatten().fieldErrors as Record<string, string[]>,
+                data: null,
             };
         }
 
-        const data = result.data;
-        console.log("Server Action: validateRoundDataAction received valid data:", data);
+        const data = validationResult.data;
+        console.log("Server Action: Saving round data to DB:", data);
 
-        // --- NO BLOCKCHAIN INTERACTION HERE ---
-        // The `createPool` call is removed.
-        // If you needed to, e.g., upload metadata to IPFS here, you would do it
-        // and potentially return the CID.
+        // Prepare data for Prisma (convert string amount to Decimal, dates to DateTime)
+        const prismaData = {
+            poolId: data.poolId,
+            strategyAddress: data.strategyAddress,
+            profileId: data.profileId,
+            managerAddress: data.managerAddress,
+            transactionHash: data.transactionHash,
+            title: data.title,
+            description: data.description,
+            matchingPool: data.matchingPool, // Prisma Decimal handles string numbers
+            tokenAddress: data.tokenAddress,
+            tokenDecimals: data.tokenDecimals,
+            applicationStart: new Date(data.applicationStart),
+            applicationClose: new Date(data.applicationClose),
+            startDate: new Date(data.startDate),
+            endDate: new Date(data.endDate),
+            logoUrl: data.logoUrl || null,
+            blockchain: data.blockchain,
+            tags: [], // Add tag handling if needed later
+        };
 
-        // For now, just return success if validation passes
-        return { success: true };
+        // Use Prisma to create the round record
+        const newRound = await prisma.round.create({
+            data: prismaData,
+        });
+
+        console.log("Server Action: Round saved successfully with ID:", newRound.id);
+        return {
+            success: true,
+            message: "Round created and saved successfully.",
+            data: { roundId: newRound.id },
+        };
 
     } catch (error: unknown) {
-        console.error("Error in server action (validation):", error);
-        const errorMessage = error instanceof Error ? error.message : "An unexpected server error occurred during validation.";
-        return { success: false, error: errorMessage };
+        console.error("Error saving round to database:", error);
+
+        // Handle potential unique constraint violation (e.g., duplicate tx hash)
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            // Find the field(s) that caused the violation
+            const target = (error.meta as { target?: string[] })?.target?.join(', ');
+            const errorMessage = target
+                ? `A round with this ${target} already exists.`
+                : "This transaction or pool ID has already been recorded.";
+
+            return {
+                success: false,
+                error: errorMessage,
+                data: null,
+            };
+        }
+
+        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred while saving the round.";
+        return {
+            success: false,
+            error: errorMessage,
+            data: null,
+        };
+    } finally {
+        await prisma.$disconnect();
     }
 } 
