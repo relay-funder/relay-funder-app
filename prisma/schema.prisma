@@ -99,18 +99,26 @@ model CampaignUpdate {
 
 model Round {
   id               Int              @id @default(autoincrement())
+  poolId           BigInt?          @unique
+  strategyAddress  String
+  profileId        String
+  managerAddress   String
+  transactionHash  String?          @unique
   title            String
   description      String
-  tags             String[]
-  matchingPool     Int
+  tags             String[]         @default([])
+  matchingPool     Decimal
+  tokenAddress     String
+  tokenDecimals    Int
   applicationStart DateTime
   applicationClose DateTime
-  startDate        DateTime         @default(now())
+  startDate        DateTime
   endDate          DateTime
-  status           Status           @default(ACTIVE)
   blockchain       String
-  logoUrl          String
-  RoundCampaigns   RoundCampaigns[]
+  logoUrl          String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  roundCampaigns   RoundCampaigns[]
 }
 
 model RoundCampaigns {
@@ -119,11 +127,6 @@ model RoundCampaigns {
   campaignId Int
   Campaign   Campaign @relation(fields: [campaignId], references: [id])
   Round      Round    @relation(fields: [roundId], references: [id])
-  startDate        DateTime         @default(now())
-  endDate          DateTime
-  status           Status           @default(ACTIVE)
-  blockchain       String
-  logoUrl          String
 }
 
 enum Status {

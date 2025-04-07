@@ -10,7 +10,9 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:clear-rounds": "bun run scripts/clear-rounds.ts",
+    "db:check-state": "bun run scripts/check-migration-state.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
