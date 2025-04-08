@@ -341,10 +341,12 @@ export default function CreateRoundPage() {
 
       // 3. Send Transaction using writeContract
       setStatusMessage('Please confirm pool creation in your wallet...');
-      writeContract(createPoolArgs, { // Pass the prepared args directly
+      writeContract({
+        ...createPoolArgs,
+        address: createPoolArgs.address as `0x${string}`,
+      }, { 
         onSuccess: (hash) => {
           console.log("[Trigger Pool] Create pool tx sent:", hash);
-          // Don't set status here, let the useEffect handle it based on the hash
           setMonitoredTxHash(hash);
         },
         onError: (error) => {
@@ -500,13 +502,14 @@ export default function CreateRoundPage() {
       });
 
       setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
-      writeContract(approveArgs, {
+      writeContract({
+        ...approveArgs,
+        address: approveArgs.address as `0x${string}`,
+      }, {
         onSuccess: (hash) => {
-          setStatus('approving_token'); // Set status immediately
+          setStatus('approving_token');
           setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
-          setMonitoredTxHash(hash); // Set hash for confirmation watcher
-          console.log("Approval tx sent:", hash);
-          // Remove setTimeout check, rely on confirmation watcher
+          setMonitoredTxHash(hash);
         },
         onError: (error) => {
           // Error handled by the useEffect hook watching writeContractError
