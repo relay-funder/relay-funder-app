@@ -27,8 +27,8 @@ import { ArrowLeft, Loader2, CheckCircle, AlertTriangle, Database } from "lucide
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount } from "wagmi";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseUnits, formatUnits, type Address, type Hash, maxUint256, decodeEventLog } from "viem";
+import { useWriteContract, useWaitForTransactionReceipt, useDeployContract } from "wagmi";
+import { parseUnits, formatUnits, type Address, type Hash, maxUint256, decodeEventLog, BaseError } from "viem";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -36,9 +36,10 @@ import {
   prepareCreatePoolArgs,
   checkErc20Allowance
 } from "@/lib/qfInteractions";
-import { ALLO_ADDRESS, KICKSTARTER_QF_ADDRESS } from "@/lib/constant";
+import { ALLO_ADDRESS } from "@/lib/constant";
 import { AlloABI } from '@/contracts/abi/qf/Allo'
 import { saveRoundAction } from "@/lib/actions/rounds/createRound";
+import { KickStarterQFABI } from "@/contracts/abi/qf/KickStarterQF";
 
 // Define the schema
 const roundSchema = z.object({
@@ -83,12 +84,30 @@ const refinedRoundSchema = roundSchema.refine(data => {
 type RoundFormData = z.infer<typeof refinedRoundSchema>;
 
 // More granular state management
-type SubmissionStatus = 'idle' | 'validating' | 'approving' | 'sending' | 'confirming' | 'saving' | 'success' | 'error';
+type SubmissionStatus =
+  | 'idle'
+  | 'validating'
+  | 'deploying_strategy' // Preparing/sending deployment tx
+  | 'confirming_deployment' // Waiting for deployment tx receipt
+  | 'approving_token' // Preparing/sending approval tx
+  | 'confirming_approval' // Waiting for approval tx receipt
+  | 'creating_pool' // Preparing/sending createPool tx
+  | 'confirming_pool' // Waiting for createPool tx receipt
+  | 'saving'
+  | 'success'
+  | 'error';
 
 export default function CreateRoundPage() {
   const router = useRouter();
   const { address: connectedAddress, chain, chainId } = useAccount();
   const { writeContract, error: writeContractError, reset: resetWriteContract } = useWriteContract();
+  const {
+    deployContract: deployStrategy,
+    data: deployTxHash,
+    isPending: isDeployingStrategy,
+    error: deployError,
+    reset: resetDeployContract,
+  } = useDeployContract();
 
   // Form state and validation
   const form = useForm<RoundFormData>({
@@ -111,8 +130,9 @@ export default function CreateRoundPage() {
   // Component State
   const [status, setStatus] = useState<SubmissionStatus>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [submittedTxHash, setSubmittedTxHash] = useState<Hash | null>(null);
+  const [monitoredTxHash, setMonitoredTxHash] = useState<Hash | null>(null);
   const [finalRoundId, setFinalRoundId] = useState<number | null>(null);
+  const [deployedStrategyAddress, setDeployedStrategyAddress] = useState<Address | null>(null);
 
   const [isCheckingAllowance, setIsCheckingAllowance] = useState(false);
   const [currentAllowance, setCurrentAllowance] = useState<bigint>(0n);
@@ -122,121 +142,311 @@ export default function CreateRoundPage() {
   // Ref to store form data upon successful transaction submission
   const confirmedTxDataRef = useRef<RoundFormData | null>(null);
 
-  const { watch, handleSubmit, setError, formState: { errors } } = form;
+  const { watch, handleSubmit, setError, formState: { errors }, getValues } = form;
   const matchingPool = watch("matchingPool");
   const tokenAddress = watch("tokenAddress");
   const tokenDecimals = watch("tokenDecimals");
 
   // --- Transaction Confirmation Watcher ---
-  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, isError: isConfirmError } = useWaitForTransactionReceipt({
-    hash: submittedTxHash ?? undefined,
+  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, isError: isConfirmError, error: confirmError } = useWaitForTransactionReceipt({
+    hash: monitoredTxHash ?? undefined,
     query: {
-      enabled: !!submittedTxHash && (status === 'sending' || status === 'confirming'),
+      enabled: !!monitoredTxHash && (
+        status === 'confirming_deployment' ||
+        status === 'confirming_approval' ||
+        status === 'confirming_pool'
+      ),
     }
   });
 
-  // Effect to handle transaction confirmation and trigger DB save
+  // --- Effect to handle transaction confirmations and chain actions ---
   useEffect(() => {
-    if (isConfirming && status !== 'confirming') { // Only set confirming status once
-      setStatus('confirming');
-      setStatusMessage('Waiting for transaction confirmation (this may take a moment)...');
-    } else if (isConfirmed && receipt && status === 'confirming' && confirmedTxDataRef.current) {
-      // Transaction confirmed, now save to DB
-      setStatus('saving');
-      setStatusMessage('Transaction confirmed. Saving round details to database...');
-      console.log("Transaction confirmed, receipt:", receipt);
+    console.log(`[Effect Check] Status: ${status}, Monitored Hash: ${monitoredTxHash}, isConfirming: ${isConfirming}, isConfirmed: ${isConfirmed}`);
 
-      // --- Parse Pool ID from Logs ---
-      let parsedPoolId: bigint | null = null;
-      try {
-        for (const log of receipt.logs) {
-          // Ensure log address matches Allo contract address
-          if (log.address.toLowerCase() === ALLO_ADDRESS.toLowerCase()) {
-            try {
-              const event = decodeEventLog({
-                abi: AlloABI,
-                data: log.data,
-                topics: log.topics,
-              });
-              if (event.eventName === 'PoolCreated') {
-                parsedPoolId = (event.args as { poolId?: bigint }).poolId ?? null;
-                console.log("Parsed Pool ID:", parsedPoolId);
-                break;
-              }
-            } catch (decodeError) { /* Ignore logs that don't match */ }
-          }
-        }
-
-        if (parsedPoolId === null) {
-          throw new Error("Could not find PoolCreated event log or parse poolId.");
-        }
-
-      } catch (error) {
-        console.error("Error parsing poolId from logs:", error);
-        setStatus('error');
-        setStatusMessage(`Transaction confirmed, but failed to parse Pool ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setError("root", { type: "manual", message: "Failed to process transaction logs." });
-        return; // Stop processing
+    // 1. Handle Setting Confirmation Status (Only once per hash)
+    // If we have a hash, are not yet confirming, and are in a state expecting confirmation...
+    if (monitoredTxHash && !isConfirming && !isConfirmed && !isConfirmError) {
+      if (status === 'deploying_strategy') {
+        setStatus('confirming_deployment');
+        setStatusMessage('Waiting for strategy deployment confirmation...');
+        console.log("[Effect Update] Status set to confirming_deployment");
+      } else if (status === 'approving_token') {
+        setStatus('confirming_approval');
+        setStatusMessage('Waiting for approval confirmation...');
+        console.log("[Effect Update] Status set to confirming_approval");
+      } else if (status === 'creating_pool') {
+        setStatus('confirming_pool');
+        setStatusMessage('Waiting for pool creation confirmation...');
+        console.log("[Effect Update] Status set to confirming_pool");
       }
+    }
 
-      // --- Call Server Action to Save ---
-      const formData = confirmedTxDataRef.current;
-      if (!connectedAddress || !chainId) {
-        setStatus('error');
-        setStatusMessage('Wallet disconnected or chain ID missing before saving.');
-        return;
-      }
+    // 2. Handle Successful Confirmations
+    if (isConfirmed && receipt && monitoredTxHash) {
+      console.log(`[Effect Confirmed] Status: ${status}, Receipt:`, receipt);
 
-      saveRoundAction({
-        ...formData,
-        poolId: parsedPoolId,
-        blockchain: chainId.toString(),
-        transactionHash: receipt.transactionHash,
-        managerAddress: connectedAddress,
-        strategyAddress: KICKSTARTER_QF_ADDRESS,
-      }).then(result => {
-        if (result.success && result.data?.roundId) {
-          setStatus('success');
-          setStatusMessage(`Round created and saved successfully! (ID: ${result.data.roundId})`);
-          setFinalRoundId(result.data.roundId);
-          confirmedTxDataRef.current = null;
-          resetWriteContract();
+      // A. Strategy Deployment Confirmed
+      if (status === 'confirming_deployment') {
+        const contractAddress = receipt.contractAddress as Address;
+        console.log("[Effect Confirmed] Trying to extract contract address:", contractAddress);
+        if (contractAddress) {
+          console.log("[Effect Confirmed] Strategy deployed at:", contractAddress);
+          setDeployedStrategyAddress(contractAddress);
+          setStatusMessage(`Strategy deployed at ${contractAddress}. Preparing pool creation...`);
+          setMonitoredTxHash(null); // Reset monitored hash *after* processing
+          resetWriteContract(); // Reset regular write contract state
+
+          // --> Automatically trigger pool creation
+          triggerCreatePool(confirmedTxDataRef.current!, contractAddress); // Use stored form data
         } else {
+          console.error("[Effect Error] Strategy deployment confirmed but no contract address found in receipt:", receipt);
           setStatus('error');
-          setStatusMessage(`Transaction confirmed, but failed to save round data: ${result.error || 'Unknown database error'}`);
-          setError("root", { type: "manual", message: result.error || "Failed to save round to database." });
+          setStatusMessage('Strategy deployment failed: Could not determine contract address from receipt.');
+          setMonitoredTxHash(null); // Reset monitored hash
         }
-      }).catch(error => {
-        console.error("Error calling saveRoundAction:", error);
+      }
+      // B. Approval Confirmed
+      else if (status === 'confirming_approval') {
+        console.log("[Effect Confirmed] Approval confirmed:", receipt.transactionHash);
+        setStatusMessage('Approval confirmed. Ready to create round.');
+        setMonitoredTxHash(null); // Reset monitored hash
+        resetWriteContract();
+        handleCheckAllowance(); // Re-check allowance
+        // Set status back to idle, ready for the user to click Create Round again (which now proceeds to deploy)
+        setStatus('idle');
+        console.log("[Effect Update] Status set back to idle after approval.");
+      }
+      // C. Pool Creation Confirmed
+      else if (status === 'confirming_pool') {
+        console.log("[Effect Confirmed] Pool creation confirmed:", receipt.transactionHash);
+        setStatus('saving');
+        setStatusMessage('Pool creation confirmed. Saving round details...');
+        setMonitoredTxHash(null); // Reset monitored hash
+        resetWriteContract();
+
+        // Proceed to save data
+        saveRoundData(receipt, confirmedTxDataRef.current!);
+      } else {
+        console.warn(`[Effect Confirmed] Confirmation received in unexpected status: ${status}`);
+        // Optionally reset state if confirmation happened in an unknown state
+        // setStatus('idle');
+        // setMonitoredTxHash(null);
+      }
+    }
+
+    // 3. Handle Transaction Confirmation Errors (from useWaitForTransactionReceipt)
+    if (isConfirmError && monitoredTxHash) {
+      console.error(`[Effect Error] Transaction confirmation failed for hash ${monitoredTxHash}:`, confirmError);
+      let errorType = "Transaction Confirmation";
+      if (status === 'confirming_deployment') errorType = "Strategy Deployment Confirmation";
+      else if (status === 'confirming_approval') errorType = "Approval Confirmation";
+      else if (status === 'confirming_pool') errorType = "Pool Creation Confirmation";
+
+      const shortMessage = confirmError instanceof BaseError ? confirmError.shortMessage : confirmError?.message;
+      setStatus('error');
+      setStatusMessage(`${errorType} failed: ${shortMessage}`);
+      setError("root", { type: "manual", message: `${errorType} failed. Check transaction link for details.` });
+      setMonitoredTxHash(null); // Reset monitored hash
+    }
+
+    // Add relevant dependencies
+  }, [isConfirming, isConfirmed, isConfirmError, receipt, monitoredTxHash, status, confirmError, resetWriteContract]);
+
+  // --- Effect to handle hook errors (deployContract, writeContract) ---
+  useEffect(() => {
+    const hookError = deployError || writeContractError;
+    if (hookError) {
+      // Avoid overwriting specific confirmation errors if already set
+      if (status !== 'error') {
+        console.error("[Hook Error Effect] Error detected:", hookError);
+        let errorSource = deployError ? "Strategy Deployment" : "Contract Interaction";
+        const shortMessage = hookError instanceof BaseError ? hookError.shortMessage : hookError?.message;
+        const message = hookError?.message?.includes('User rejected')
+          ? 'Transaction rejected by user.'
+          : `${errorSource} failed: ${shortMessage}`;
+
         setStatus('error');
-        setStatusMessage(`Transaction confirmed, but encountered server error during save: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setError("root", { type: "manual", message: "Server error while saving round." });
+        setStatusMessage(message);
+        setError("root", { type: "manual", message });
+        // Reset relevant states if a hook fails early
+        setMonitoredTxHash(null);
+        confirmedTxDataRef.current = null;
+      }
+    }
+  }, [deployError, writeContractError, setError, status]);
+
+  // --- Helper: Trigger Pool Creation ---
+  const triggerCreatePool = useCallback(async (data: RoundFormData, strategyAddr: Address) => {
+    console.log("[Trigger Pool] Starting pool creation with strategy:", strategyAddr);
+    setStatus('creating_pool');
+    setStatusMessage('Preparing pool creation transaction...');
+
+    if (!connectedAddress || !chainId) {
+      setStatus('error');
+      setStatusMessage("Cannot create pool: Wallet disconnected.");
+      setError("root", { type: "manual", message: "Wallet disconnected." });
+      return;
+    }
+
+    try {
+      // 1. Prepare Data (Dates, Amounts, Metadata) needed for prepareCreatePoolArgs
+      const allocationStartTime = BigInt(Math.floor(new Date(data.startDate).getTime() / 1000));
+      const allocationEndTime = BigInt(Math.floor(new Date(data.endDate).getTime() / 1000));
+      const registrationStartTime = BigInt(Math.floor(new Date(data.applicationStart).getTime() / 1000));
+      const registrationEndTime = BigInt(Math.floor(new Date(data.applicationClose).getTime() / 1000));
+      const amount = parseUnits(data.matchingPool, data.tokenDecimals);
+
+      // Metadata structure
+      const metadataPointer = JSON.stringify({
+        title: data.title,
+        description: data.description,
+        logo: data.logoUrl || "", // Ensure logo is string or empty string
+      });
+      const metadata = {
+        protocol: 1n, // Allo protocol identifier (usually 1)
+        pointer: metadataPointer,
+      };
+
+      // Initialization data structure for KickstarterQF
+      const recipientInitializeData = {
+        metadataRequired: true, // Or false based on your needs
+        registrationStartTime,
+        registrationEndTime,
+      };
+      const initializationData = {
+        recipientInitializeData,
+        allocationStartTime,
+        allocationEndTime,
+        withdrawalCooldown: 0n, // Example: No cooldown
+        allowedTokens: [data.tokenAddress], // Only allow the pool's token
+        isUsingAllocationMetadata: false // KickstarterQF likely doesn't use this
+      };
+
+      // Managers (just the creator for now)
+      const managers = [connectedAddress];
+
+      // 2. Prepare Arguments using the imported helper function
+      console.log("[Trigger Pool] Calling prepareCreatePoolArgs...");
+      const createPoolArgs = prepareCreatePoolArgs({
+        profileId: data.profileId,
+        strategyImplementationAddress: strategyAddr, // Use the deployed strategy address
+        initializationData: initializationData,
+        token: data.tokenAddress,
+        amount: amount,
+        metadata: metadata,
+        managers: managers,
+      });
+      console.log("[Trigger Pool] Args prepared:", createPoolArgs);
+
+
+      // 3. Send Transaction using writeContract
+      setStatusMessage('Please confirm pool creation in your wallet...');
+      writeContract(createPoolArgs, { // Pass the prepared args directly
+        onSuccess: (hash) => {
+          console.log("[Trigger Pool] Create pool tx sent:", hash);
+          // Don't set status here, let the useEffect handle it based on the hash
+          setMonitoredTxHash(hash);
+        },
+        onError: (error) => {
+          // Error primarily handled by the useEffect hook watching writeContractError
+          console.error("[Trigger Pool] Create pool writeContract call failed:", error);
+          // Set status/message here as a fallback
+          setStatus('error');
+          const shortMessage = error instanceof BaseError ? error.shortMessage : error?.message;
+          setStatusMessage(`Pool creation failed: ${shortMessage}`);
+          setError("root", { type: "manual", message: `Pool creation failed: ${shortMessage}` });
+        }
       });
 
-    } else if (isConfirmError && status === 'confirming') {
+    } catch (error) {
+      console.error("Error preparing create pool transaction:", error);
       setStatus('error');
-      setStatusMessage('Transaction failed to confirm on-chain.');
-      setError("root", { type: "manual", message: "Transaction failed confirmation." });
-      confirmedTxDataRef.current = null;
-    } else if (writeContractError && (status === 'sending' || status === 'approving')) {
-      setStatus('error');
-      const shortMessage = writeContractError instanceof BaseError ? writeContractError.shortMessage : writeContractError?.message;
-
-      const message = writeContractError?.message?.includes('User rejected')
-        ? 'Transaction rejected by user.'
-        : `Transaction failed: ${shortMessage || 'Unknown error'}`;
+      const message = `Failed to prepare pool creation: ${error instanceof Error ? error.message : 'Unknown error'}`;
       setStatusMessage(message);
       setError("root", { type: "manual", message });
-      setSubmittedTxHash(null);
-      confirmedTxDataRef.current = null;
     }
-  }, [
-    isConfirming, isConfirmed, isConfirmError, receipt, status, writeContractError,
-    setError, chainId, connectedAddress, resetWriteContract
-  ]);
+  // Add dependencies used inside the callback
+  }, [connectedAddress, chainId, setError, writeContract, AlloABI]); // Added AlloABI dependency
 
+  // --- Helper: Save Round Data ---
+  const saveRoundData = useCallback(async (confirmedReceipt: any, data: RoundFormData) => {
+    console.log("[Save Data] Starting save process...");
+    if (!connectedAddress || !chainId || !deployedStrategyAddress) {
+      setStatus('error');
+      setStatusMessage("Required information missing for saving (address, chainId, or strategyAddress).");
+      setError("root", { type: "manual", message: "Internal error: Missing data for saving." });
+      console.error("[Save Data] Missing required info:", { connectedAddress, chainId, deployedStrategyAddress });
+      return;
+    }
 
-  // --- Allowance Check ---
+    // --- Parse Pool ID from Logs ---
+    let parsedPoolId: bigint | null = null;
+    try {
+      console.log("[Save Data] Parsing logs from receipt:", confirmedReceipt.logs);
+      for (const log of confirmedReceipt.logs) {
+        if (log.address.toLowerCase() === ALLO_ADDRESS.toLowerCase()) {
+          try {
+            const decodedEvent = decodeEventLog({
+              abi: AlloABI, // Use Allo ABI
+              data: log.data,
+              topics: log.topics,
+            });
+            console.log("[Save Data] Decoded log:", decodedEvent);
+            if (decodedEvent.eventName === 'PoolCreated') {
+              // Adjust according to the actual event structure in AlloABI
+              parsedPoolId = (decodedEvent.args as { poolId?: bigint }).poolId ?? null;
+              console.log("[Save Data] Parsed Pool ID:", parsedPoolId);
+              if (parsedPoolId !== null) break; // Exit loop once found
+            }
+          } catch (decodeError) {
+            console.warn("[Save Data] Ignoring log that doesn't match Allo PoolCreated event:", log, decodeError);
+          }
+        }
+      }
+      if (parsedPoolId === null) {
+        throw new Error("PoolCreated event log not found or poolId missing in logs.");
+      }
+    } catch (error) {
+      console.error("[Save Data] Error parsing Pool ID:", error);
+      setStatus('error');
+      setStatusMessage(`Transaction confirmed, but failed to parse Pool ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError("root", { type: "manual", message: "Failed to process transaction logs." });
+      return; // Stop processing
+    }
+
+    // --- Call Server Action to Save ---
+    console.log("[Save Data] Calling server action with Pool ID:", parsedPoolId);
+    try {
+      const result = await saveRoundAction({
+        ...data, // Spread form data
+        poolId: parsedPoolId,
+        transactionHash: confirmedReceipt.transactionHash,
+        managerAddress: connectedAddress,
+        strategyAddress: deployedStrategyAddress,
+        blockchain: chain?.name || String(chainId), // Use chain name or ID
+      });
+
+      console.log("[Save Data] Server action result:", result);
+      if (result.success && result.data?.roundId) {
+        setStatus('success');
+        setStatusMessage(`Round created and saved successfully! (ID: ${result.data.roundId})`);
+        setFinalRoundId(result.data.roundId);
+        confirmedTxDataRef.current = null; // Clear stored data on final success
+      } else {
+        setStatus('error');
+        setStatusMessage(`Failed to save round data: ${result.error || 'Unknown server error'}`);
+        setError("root", { type: "manual", message: `Failed to save round data: ${result.error}` });
+      }
+    } catch (serverError) {
+      console.error("[Save Data] Error calling server action:", serverError);
+      setStatus('error');
+      const message = serverError instanceof Error ? serverError.message : 'Unknown server error';
+      setStatusMessage(`Failed to save round data: ${message}`);
+      setError("root", { type: "manual", message: `Server error during save: ${message}` });
+    }
+  }, [connectedAddress, chainId, deployedStrategyAddress, setError, chain?.name, AlloABI]);
+
+  // --- Check Allowance Logic ---
   const handleCheckAllowance = useCallback(async () => {
     if (!connectedAddress || !tokenAddress || !matchingPool || Number(matchingPool) <= 0 || !z.string().startsWith("0x").safeParse(tokenAddress).success) {
       setNeedsApproval(false);
@@ -270,22 +480,16 @@ export default function CreateRoundPage() {
     }
   }, [connectedAddress, tokenAddress, matchingPool, tokenDecimals, chainId]);
 
-  // Effect to check allowance when relevant fields change
-  useEffect(() => {
-    handleCheckAllowance();
-  }, [handleCheckAllowance]);
-
-  // --- Handle Token Approval ---
-  const handleApprove = async () => {
+  // --- Approve Logic ---
+  const handleApprove = useCallback(async () => {
     if (!connectedAddress || !tokenAddress || !z.string().startsWith("0x").safeParse(tokenAddress).success) {
       setError("root", { type: "manual", message: "Valid Token Address is required for approval." });
       return;
     }
 
-    setStatus('approving');
-    setStatusMessage('Preparing approval transaction...');
-    setSubmittedTxHash(null);
-    setError("root", { message: "" });
+    setStatus('approving_token');
+    setStatusMessage('Requesting approval in wallet...');
+    setMonitoredTxHash(null);
     resetWriteContract();
 
     try {
@@ -295,16 +499,22 @@ export default function CreateRoundPage() {
         amount: maxUint256,
       });
 
-      setStatusMessage('Please confirm approval in your wallet...');
+      setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
       writeContract(approveArgs, {
         onSuccess: (hash) => {
-          setStatus('sending');
+          setStatus('approving_token'); // Set status immediately
           setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
+          setMonitoredTxHash(hash); // Set hash for confirmation watcher
           console.log("Approval tx sent:", hash);
-          setTimeout(handleCheckAllowance, 5000);
+          // Remove setTimeout check, rely on confirmation watcher
         },
         onError: (error) => {
+          // Error handled by the useEffect hook watching writeContractError
           console.error("Approval writeContract call failed:", error);
+          setStatus('error');
+          const shortMessage = error instanceof BaseError ? error.shortMessage : error?.message;
+          setStatusMessage(`Approval failed: ${shortMessage}`);
+          setError("root", { type: "manual", message: `Approval failed: ${shortMessage}` });
         }
       });
     } catch (error) {
@@ -314,112 +524,100 @@ export default function CreateRoundPage() {
       setStatusMessage(message);
       setError("root", { type: "manual", message });
     }
-  };
+  }, [writeContract, tokenAddress, requiredAmount, chainId, connectedAddress, setError]);
 
-  // --- Form Submission ---
+  // --- Initial Allowance Check ---
+  useEffect(() => {
+    handleCheckAllowance();
+  }, [handleCheckAllowance]);
+
+  // --- Main Form Submission Handler ---
   const onSubmit = async (data: RoundFormData) => {
+    // Reset status and errors
+    setStatus('validating');
     setStatusMessage(null);
     setError("root", { message: "" });
     setFinalRoundId(null);
+    setDeployedStrategyAddress(null); // Reset deployed address
+    setMonitoredTxHash(null); // Reset monitored hash
     resetWriteContract();
+    resetDeployContract(); // Reset deployment hook state
 
     if (!connectedAddress || !chainId) {
-      setError("root", { type: "manual", message: "Please connect your wallet and ensure network is selected." });
+      setError("root", { type: "manual", message: "Please connect your wallet." });
+      setStatus('idle'); // Go back to idle if wallet not connected
       return;
     }
 
+    // Check approval status *before* starting deployment
     if (needsApproval && Number(data.matchingPool) > 0) {
       setError("root", { type: "manual", message: "Token approval required before creating the round." });
+      setStatus('idle'); // Go back to idle if approval needed
       return;
     }
 
-    setStatus('sending');
-    setStatusMessage('Preparing transaction...');
-    setSubmittedTxHash(null);
-    confirmedTxDataRef.current = null;
+    setStatus('deploying_strategy');
+    setStatusMessage('Preparing strategy deployment...');
+    confirmedTxDataRef.current = data; // Store form data for later steps
 
     try {
-      // 1. Prepare data for createPool
-      const allocationStartTime = BigInt(Math.floor(new Date(data.startDate).getTime() / 1000));
-      const allocationEndTime = BigInt(Math.floor(new Date(data.endDate).getTime() / 1000));
-      const registrationStartTime = BigInt(Math.floor(new Date(data.applicationStart).getTime() / 1000));
-      const registrationEndTime = BigInt(Math.floor(new Date(data.applicationClose).getTime() / 1000));
-      const amount = parseUnits(data.matchingPool, data.tokenDecimals);
+      // Generate a unique name for this strategy
+      const strategyName = `KickstarterQF-${data.title.replace(/\s+/g, '-').substring(0, 20)}-${Date.now()}`;
 
-      // Simple metadata - replace with IPFS upload if needed
-      const metadataPointer = JSON.stringify({
-        title: data.title,
-        description: data.description,
-        logo: data.logoUrl,
-      });
-      const metadata = {
-        protocol: 1n,
-        pointer: metadataPointer,
-      };
+      // Ensure the bytecode being passed is the hex string from the 'object' property
+      if (!KickStarterQFABI.bytecode || typeof KickStarterQFABI.bytecode.object !== 'string' || !KickStarterQFABI.bytecode.object.startsWith('0x')) {
+        throw new Error("Invalid bytecode format in KickStarterQFABI import.");
+      }
 
-      const recipientInitializeData = {
-        metadataRequired: true,
-        registrationStartTime,
-        registrationEndTime,
-      };
-      const initializationData = {
-        recipientInitializeData,
-        allocationStartTime,
-        allocationEndTime,
-        withdrawalCooldown: 0n,
-        allowedTokens: [data.tokenAddress],
-        isUsingAllocationMetadata: false,
-      };
-      const managers = [connectedAddress];
-
-      // 2. Get transaction arguments
-      const createPoolArgs = prepareCreatePoolArgs({
-        profileId: data.profileId,
-        strategyImplementationAddress: KICKSTARTER_QF_ADDRESS,
-        initializationData,
-        token: data.tokenAddress,
-        amount,
-        metadata,
-        managers,
-      });
-
-      // 3. Send transaction using the hook
-      setStatusMessage('Please confirm transaction in your wallet...');
-      writeContract(createPoolArgs, {
+      console.log("[onSubmit] Deploying strategy with name:", strategyName);
+      // Use the deployContract hook's function
+      deployStrategy({
+        abi: KickStarterQFABI.abi,
+        // Access the 'object' property for the actual bytecode hex string
+        bytecode: KickStarterQFABI.bytecode.object as `0x${string}`,
+        args: [ALLO_ADDRESS, strategyName, false], // directTransfers = false
+      }, {
         onSuccess: (hash) => {
-          setStatus('sending');
-          setStatusMessage('Create round transaction sent. Waiting for confirmation...');
-          setSubmittedTxHash(hash);
-          confirmedTxDataRef.current = data;
-          console.log("Create pool tx sent:", hash);
+          // This hash is from the deploy hook, set it for monitoring
+          console.log("[onSubmit] Strategy deployment tx sent:", hash);
+          // Don't set status here, let the useEffect handle it based on the hash
+          setMonitoredTxHash(hash);
         },
         onError: (error) => {
-          console.error("Create pool writeContract call failed:", error);
+          // Error primarily handled by the useEffect hook watching deployError
+          console.error("[onSubmit] Strategy deployment deployContract call failed:", error);
+          // Set status/message here as a fallback if the hook's error watcher doesn't fire quickly
+          setStatus('error');
+          const shortMessage = error instanceof BaseError ? error.shortMessage : error?.message;
+          setStatusMessage(`Strategy deployment failed: ${shortMessage}`);
+          setError("root", { type: "manual", message: `Strategy deployment failed: ${shortMessage}` });
         }
       });
 
     } catch (error) {
-      console.error("Error preparing create round transaction:", error);
+      console.error("Error preparing strategy deployment:", error);
       setStatus('error');
-      const message = `Failed to prepare transaction: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      const message = `Failed to prepare deployment: ${error instanceof Error ? error.message : 'Unknown error'}`;
       setStatusMessage(message);
       setError("root", { type: "manual", message });
+      confirmedTxDataRef.current = null; // Clear stored data on prep error
     }
   };
 
-  // Calculate button disabled states
-  const isProcessing = ['approving', 'sending', 'confirming', 'saving'].includes(status);
-  const isApproveButtonDisabled = isProcessing || isCheckingAllowance || !needsApproval;
-  const isCreateButtonDisabled = isProcessing || isCheckingAllowance || (needsApproval && Number(matchingPool) > 0);
+  // --- UI Logic ---
+  const isProcessing = status !== 'idle' && status !== 'success' && status !== 'error';
+  const isApproveButtonDisabled = isProcessing || !needsApproval;
+  const isCreateButtonDisabled = isProcessing || (needsApproval && Number(matchingPool) > 0);
 
-  // Determine icon for alert
   const getAlertIcon = () => {
     if (status === 'error' || !!errors.root) return <AlertTriangle className="h-4 w-4" />;
     if (status === 'success') return <CheckCircle className="h-4 w-4" />;
     if (status === 'saving') return <Database className="h-4 w-4 animate-pulse" />;
-    if (isProcessing || status === 'approving') return <Loader2 className="h-4 w-4 animate-spin" />;
-    return null;
+    if (isProcessing) return <Loader2 className="h-4 w-4 animate-spin" />;
+    return null; // Or a default icon for idle/info
   };
+
+  // console.log("KickStarterQFABI.abi", KickStarterQFABI.abi)
 
   return (
     <div className="container py-10">
@@ -535,10 +733,8 @@ export default function CreateRoundPage() {
                           size="sm"
                           className="w-full"
                         >
-                          {/* {status === 'approving' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Approve Max Token Spend */}
-                          {(status === 'approving' || (status === 'sending' && submittedTxHash)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          {status === 'approving' ? 'Requesting Approval...' : (status === 'sending' && submittedTxHash) ? 'Waiting for Approval...' : 'Approve Max Token Spend'}
+                          {(status === 'approving_token' || status === 'confirming_approval') && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {status === 'approving_token' ? 'Requesting Approval...' : status === 'confirming_approval' ? 'Waiting for Approval...' : 'Approve Max Token Spend'}
                         </Button>
                         <p className="text-xs text-muted-foreground">You need to grant the Allo contract permission to transfer your tokens for the matching pool.</p>
                       </div>
@@ -621,16 +817,14 @@ export default function CreateRoundPage() {
                     </AlertTitle>
                     <AlertDescription>
                       {errors.root?.message || statusMessage}
-                      {(status === 'sending' || status === 'confirming' || status === 'saving') && submittedTxHash && chain?.blockExplorers?.default.url && (
+                      {monitoredTxHash && chain?.blockExplorers?.default.url && (
                         <>
                           <br />
-                          View transaction: <a href={`${chain.blockExplorers.default.url}/tx/${submittedTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{submittedTxHash.substring(0,10)}...{submittedTxHash.substring(submittedTxHash.length - 8)}</a>
-                          </>
+                          View transaction: <a href={`${chain.blockExplorers.default.url}/tx/${monitoredTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{monitoredTxHash.substring(0, 10)}...{monitoredTxHash.substring(monitoredTxHash.length - 8)}</a>
+                        </>
                       )}
-                            {status === 'success' && submittedTxHash && finalRoundId && chain?.blockExplorers?.default.url && (
+                      {status === 'success' && finalRoundId && (
                         <>
-                          <br />
-                          Transaction confirmed: <a href={`${chain.blockExplorers.default.url}/tx/${submittedTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{submittedTxHash.substring(0,10)}...{submittedTxHash.substring(submittedTxHash.length - 8)}</a>
                           <br />
                           <Button variant="link" className="p-0 h-auto mt-2 text-current" onClick={() => router.push(`/rounds/${finalRoundId}`)}>View Created Round</Button>
                         </>
@@ -650,7 +844,16 @@ export default function CreateRoundPage() {
                   </Button>
                   <Button type="submit" disabled={isCreateButtonDisabled}>
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {status === 'success' ? 'Round Created' : status === 'saving' ? 'Saving...' : status === 'confirming' ? 'Confirming...' : status === 'sending' ? 'Processing...' : 'Create Round'}
+                    {status === 'success' ? 'Round Created' :
+                      status === 'saving' ? 'Saving...' :
+                        status === 'confirming_pool' ? 'Confirming Pool...' :
+                          status === 'creating_pool' ? 'Creating Pool...' :
+                            status === 'confirming_approval' ? 'Confirming Approval...' :
+                              status === 'approving_token' ? 'Approving...' :
+                                status === 'confirming_deployment' ? 'Confirming Strategy...' :
+                                  status === 'deploying_strategy' ? 'Deploying Strategy...' :
+                                    status === 'validating' ? 'Validating...' :
+                                      'Create Round'}
                   </Button>
                 </div>
               </form>
