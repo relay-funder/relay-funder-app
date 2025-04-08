@@ -1,9 +1,10 @@
-import { type Abi, encodeAbiParameters, parseAbiParameters, type Address, type Hash, type WriteContractParameters, type ReadContractParameters } from 'viem'
+import { type Abi, encodeAbiParameters, parseAbiParameters, type Address, type Hash, type WriteContractParameters, type ReadContractParameters, encodeFunctionData, getContractAddress } from 'viem'
 // Import only necessary functions from @wagmi/core for reads if needed server-side,but primarily rely on client-side hooks for writes.
 import { readContract } from '@wagmi/core'
 import { config } from '@/lib/wagmi'
 import { ALLO_ADDRESS, KICKSTARTER_QF_ADDRESS } from './constant'
 import { type Chain } from 'wagmi/chains' // Import Chain type
+import { deployContract } from 'wagmi/actions'
 
 // --- Import ABIs ---
 import { AlloABI } from '../contracts/abi/qf/Allo'
@@ -90,7 +91,7 @@ export function prepareCreatePoolArgs({
     const requestArgs = {
         address: ALLO_ADDRESS, // Target Allo Proxy contract
         abi: alloAbi,
-        functionName: 'createPool', // Use createPool function
+        functionName: 'createPoolWithCustomStrategy',
         args: args,
         // Remove optional properties that might cause type conflicts
         // type: undefined, // Explicitly undefined or remove if not needed
@@ -99,13 +100,13 @@ export function prepareCreatePoolArgs({
     // Remove potentially problematic optional fields before returning
     // This helps avoid the transaction type mismatch error with useWriteContract
     const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
-        address: requestArgs.address,
+        address: requestArgs.address as `0x${string}`,
         abi: requestArgs.abi,
         functionName: requestArgs.functionName,
         args: requestArgs.args,
     };
     if (requestArgs.value) {
-        finalArgs.value = requestArgs.value;
+        finalArgs.value = requestArgs?.value; 
     }
 
     return finalArgs;
@@ -404,4 +405,39 @@ interface ApproveErc20Args {
 //     console.log(`Args prepared for approving spender ${spenderAddress} for amount ${amount}...`)
 //     return finalArgs;
 // }
+
+// ========================================
+// Strategy Deployment - Prior to Pool Creation
+// ========================================
+
+interface DeployKickstarterQFArgs {
+    allo: Address // Allo contract address
+    name: string  // Strategy name (best to make unique)
+    directTransfers: boolean // Whether direct transfers are enabled
+}
+
+/**
+ * Prepares arguments for deploying a new KickstarterQF contract
+ * Note: This function returns the transaction parameters, not a promise
+ * The actual deployment should be done with wagmi's deployContract hook
+ */
+export function prepareDeployKickstarterQFArgs({
+    allo = ALLO_ADDRESS,
+    name,
+    directTransfers = false
+}: DeployKickstarterQFArgs): {
+    abi: Abi,
+    bytecode: `0x${string}`,
+    args: [Address, string, boolean]
+} {
+    const uniqueName = name || `KickstarterQF-${Date.now()}`;
+
+    console.log(`Preparing to deploy KickstarterQF contract with name: ${uniqueName}`);
+
+    return {
+        abi: KickStarterQFABI.abi,
+        bytecode: KickStarterQFABI.bytecode, // You need to make this available from your contract imports
+        args: [allo, uniqueName, directTransfers]
+    };
+}
 
