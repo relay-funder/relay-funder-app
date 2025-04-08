@@ -1,4 +1,3 @@
-import { Round } from "@/types/round";
 
 import { Category } from "@/types";
 

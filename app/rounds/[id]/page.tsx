@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApplyToRound } from "@/components/apply-to-round"
-import { MOCK_USER_CAMPAIGNS } from "@/lib/constant"
+// import { MOCK_USER_CAMPAIGNS } from "@/lib/constant"
 import { prisma } from "@/lib/prisma"
 import type { Round as PrismaRound, Campaign } from "@prisma/client"
 import { ROUND_STATUS_MAP, getRoundStatus } from "@/types/round"
-import type { RoundStatusKey } from "@/types/round"
+// import type { RoundStatusKey } from "@/types/round"
 
 interface RoundWithCampaigns extends PrismaRound {
   roundCampaigns: {
@@ -55,7 +55,7 @@ async function getRoundData(id: string): Promise<RoundWithCampaigns | null> {
   }
 }
 
-const DEFAULT_ROUND_LOGO = "/images/default-round-logo.png"
+const DEFAULT_ROUND_LOGO = "/images/fund.png"
 
 export default async function RoundPage({ params }: { params: { id: string } }) {
   const round = await getRoundData(params.id)
@@ -76,7 +76,7 @@ export default async function RoundPage({ params }: { params: { id: string } }) 
             alt={`${round.title} logo`}
             width={64}
             height={64}
-            className="rounded-lg border"
+            className="rounded-xl border"
           />
           <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -95,7 +95,7 @@ export default async function RoundPage({ params }: { params: { id: string } }) 
             roundId={round.id}
             roundTitle={round.title}
             applicationEndDate={round.applicationClose}
-            userCampaigns={MOCK_USER_CAMPAIGNS}
+            // userCampaigns={MOCK_USER_CAMPAIGNS}  
             roundStatusKey={roundStatusKey}
           />
           <Button variant="outline" size="lg">

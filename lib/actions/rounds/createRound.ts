@@ -26,6 +26,7 @@ const roundFormSchema = z.object({
     profileId: z.string().refine((val): val is Hash => /^0x[a-fA-F0-9]{64}$/.test(val), {
         message: "Invalid Profile ID format (bytes32).",
     }),
+    tags: z.array(z.string()).optional(),
 })
 
 // Schema for the data required by the *server action*
@@ -81,9 +82,8 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
             startDate: new Date(data.startDate),
             endDate: new Date(data.endDate),
             logoUrl: data.logoUrl || null,
-            status: 'ACTIVE',
             blockchain: data.blockchain,
-            tags: data.tags || [],
+            tags: Array.isArray(data.tags) && data.tags.length > 0 ? data.tags : ["web3"],
         };
 
         // Use Prisma to create the round record
@@ -98,7 +98,7 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
         };
 
     } catch (error: unknown) {
-        console.error("Error saving round to database:", error);
+        console.error("Error saving round to database:", error instanceof Error ? error.message : String(error));
 
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {
@@ -123,7 +123,7 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
         };
     } finally {
         await prisma.$disconnect().catch(disconnectError => {
-            console.error("Error disconnecting Prisma client:", disconnectError);
+            console.error("Error disconnecting Prisma client:", disconnectError instanceof Error ? disconnectError.message : String(disconnectError));
         });
     }
 }
