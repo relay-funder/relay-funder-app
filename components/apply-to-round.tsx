@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,199 +9,146 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { ArrowRight } from "lucide-react";
-import { Round } from "@/types/round";
-
-const applicationSchema = z.object({
-  campaignId: z.string(),
-  motivation: z.string().min(100, {
-    message: "Motivation must be at least 100 characters.",
-  }),
-  impact: z.string().min(100, {
-    message: "Impact description must be at least 100 characters.",
-  }),
-});
-
-type ApplicationFormData = z.infer<typeof applicationSchema>;
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast"
+// import { applyCampaignToRound } from "@/actions/campaign-actions";
+import type { RoundStatusKey } from "@/types/round";
 
 interface ApplyToRoundProps {
-  round: Round;
-  userCampaigns?: Array<{
-    id: string;
-    title: string;
-  }>;
+  roundId: number;
+  roundTitle: string;
+  applicationEndDate: Date;
+  userCampaigns: { id: string; title: string }[];
+  roundStatusKey: RoundStatusKey;
 }
 
-export default function ApplyToRound({
-  round,
-  userCampaigns = [],
+const APPLY_ELIGIBLE_STATUSES: RoundStatusKey[] = ["APPLICATION_OPEN"];
+const VIEW_ONLY_STATUSES: RoundStatusKey[] = [
+  "NOT_STARTED",
+  "APPLICATION_CLOSED",
+  "ACTIVE",
+  "ENDED",
+  "UNKNOWN",
+];
+
+export function ApplyToRound({
+  roundId,
+  roundTitle,
+  applicationEndDate,
+  userCampaigns,
+  roundStatusKey,
 }: ApplyToRoundProps) {
+  const { toast } = useToast();
+
   const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const form = useForm<ApplicationFormData>({
-    resolver: zodResolver(applicationSchema),
-  });
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const canApply = APPLY_ELIGIBLE_STATUSES.includes(roundStatusKey);
+  const isApplicationPeriodOver = !canApply;
 
-  const onSubmit = async (data: ApplicationFormData) => {
-    try {
-      // In production, this would be an API call
-      console.log("Submitting application:", data);
-
-      // Mock success
-      setOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error("Failed to submit application:", error);
+  async function handleApply() {
+    if (!selectedCampaignId) {
+      toast({
+        title: "Please select a campaign to apply.",
+        variant: "destructive",
+      });
+      return;
     }
-  };
+    if (!canApply) {
+      toast({
+        title: "Applications for this round are not currently open.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  if (!userCampaigns.length) {
-    return (
-      <Button size="lg" onClick={() => router.push("/campaigns/new")}>
-        Create a Campaign First
-        <ArrowRight className="ml-2 h-4 w-4" />
-      </Button>
-    );
+    setIsSubmitting(true);
+    // const result = await applyCampaignToRound({
+    //   roundId,
+    //   campaignId: parseInt(selectedCampaignId, 10),
+    // });
+    setIsSubmitting(false);
+
+    // if (result.success) {
+    //   toast({
+    //     title: `Successfully applied campaign ${userCampaigns.find((c) => c.id === selectedCampaignId)?.title ?? ""
+    //       } to round ${roundTitle}.`,
+    //     variant: "default",
+    //   });
+    //   setOpen(false);
+    //   setSelectedCampaignId(null);
+    // } else {
+    //   toast({
+    //     title: result?.error ?? "Failed to apply campaign to round.",
+    //     variant: "destructive",
+    //   });
+    // }
   }
+
+  const buttonText = canApply
+    ? "Apply Your Project"
+    : "View Application Details";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {round.status !== "CLOSED" && (
-        <DialogTrigger asChild>
-          <Button size="lg">
-            {round.status === "ACTIVE"
-              ? " Apply to Round"
-              : round.status === "NOT_STARTED"
-              ? " Apply for Upcoming Round"
-              : "Round Ended"}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </DialogTrigger>
-      )}
-      {round.status === "CLOSED" && (
-        <Button size="lg" disabled>
-          Round Ended
-          <ArrowRight className="ml-2 h-4 w-4" />
+      <DialogTrigger asChild>
+        <Button size="lg" disabled={!canApply && isApplicationPeriodOver}>
+          {buttonText}
         </Button>
-      )}
-      <DialogContent className="sm:max-w-[600px]">
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Apply to {round.title}</DialogTitle>
+          <DialogTitle>Apply to {roundTitle}</DialogTitle>
           <DialogDescription>
-            Submit your project to be considered for this funding round. Make
-            sure to explain how your project aligns with the round&apos;s goals.
+            {canApply
+              ? `Select one of your eligible campaigns to apply to this round. Applications close on ${applicationEndDate.toLocaleDateString()}.`
+              : `Applications for this round closed on ${applicationEndDate.toLocaleDateString()}. You can no longer apply.`}
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="campaignId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Select Campaign</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a campaign" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {userCampaigns.map((campaign) => (
-                        <SelectItem key={campaign.id} value={campaign.id}>
-                          {campaign.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Choose which of your campaigns you want to submit to this
-                    round.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {canApply && userCampaigns.length > 0 && (
+          <div className="py-4">
+            <Label className="mb-2 block">Your Campaigns</Label>
+            <RadioGroup
+              value={selectedCampaignId ?? undefined}
+              onValueChange={setSelectedCampaignId}
+              className="space-y-2"
+            >
+              {userCampaigns.map((campaign) => (
+                <div key={campaign.id} className="flex items-center space-x-2">
+                  <RadioGroupItem value={campaign.id} id={`campaign-${campaign.id}`} />
+                  <Label htmlFor={`campaign-${campaign.id}`} className="font-normal">
+                    {campaign.title}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+        )}
 
-            <FormField
-              control={form.control}
-              name="motivation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Motivation</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Why do you want to participate in this round? How does your project align with the round's goals?"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Explain how your project aligns with the round&apos;s goals
-                    and why you should be considered.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {canApply && userCampaigns.length === 0 && (
+          <p className="text-sm text-muted-foreground py-4">You don&apos;t have any campaigns eligible to apply. Create a campaign first.</p>
+        )}
 
-            <FormField
-              control={form.control}
-              name="impact"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Expected Impact</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="What impact will your project create with the funding from this round?"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Describe the concrete outcomes and impact you expect to
-                    achieve with the funding.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Submit Application</Button>
-            </div>
-          </form>
-        </Form>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          {canApply && (
+            <Button
+              type="button"
+              onClick={handleApply}
+              disabled={!selectedCampaignId || isSubmitting || !canApply}
+            >
+              {isSubmitting ? "Applying..." : "Apply Selected Campaign"}
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -26,60 +26,60 @@ export const MOCK_USER_CAMPAIGNS = [
 ];
 
 // Import mock data from the main rounds page
-export const MOCK_ROUNDS: Round[] = [
-  {
-    id: "dapps-and-apps",
-    title: "dApps and Apps",
-    description:
-      "This initiative funds innovative dApps & Apps in two areas: 1) User-friendly applications enhancing Web3 accessibility and usability, and 2) Projects advancing financial inclusion, education, and social impact. The goal is to accelerate growth and adoption of the ecosystem.",
-    tags: ["OSS_ROUND"],
-    category: "Development",
-    matchingPool: 300000,
-    startDate: "2024-02-01",
-    endDate: "2024-04-01",
-    status: "ACTIVE",
-    logoUrl: "/akashic-logo.png",
-  },
-  {
-    id: "web3-infrastructure",
-    title: "Web3 Infrastructure",
-    description:
-      "This round aims to strengthen the Ethereum ecosystem's foundational infrastructure by supporting projects crucial for its development, scalability, and security.",
-    tags: ["OSS_ROUND"],
-    category: "Infrastructure",
-    matchingPool: 300000,
-    startDate: "2024-02-01",
-    endDate: "2024-04-01",
-    status: "ACTIVE",
-    logoUrl: "/akashic-logo.png",
-  },
-  {
-    id: "dev-tooling",
-    title: "Dev Tooling",
-    description:
-      "This round funds projects enhancing developer tools for OSS and Web3. We support creation of environments, frameworks, and libraries for efficient, secure smart contract development. Goals: reduce barriers, boost efficiency, and show strong community adoption.",
-    tags: ["OSS_ROUND"],
-    category: "Development",
-    matchingPool: 300000,
-    startDate: "2024-03-15",
-    endDate: "2024-04-15",
-    status: "NOT_STARTED",
-    logoUrl: "/akashic-logo.png",
-  },
-  {
-    id: "web3-social",
-    title: "Web3 Social",
-    description:
-      "This round funds projects that enhance social experiences and interactions within the Web3 ecosystem.",
-    tags: ["OSS_ROUND"],
-    category: "Social",
-    matchingPool: 300000,
-    startDate: "2024-01-01",
-    endDate: "2024-02-01",
-    status: "CLOSED",
-    logoUrl: "/akashic-logo.png",
-  },
-];
+// export const MOCK_ROUNDS: Round[] = [
+//   {
+//     id: "dapps-and-apps",
+//     title: "dApps and Apps",
+//     description:
+//       "This initiative funds innovative dApps & Apps in two areas: 1) User-friendly applications enhancing Web3 accessibility and usability, and 2) Projects advancing financial inclusion, education, and social impact. The goal is to accelerate growth and adoption of the ecosystem.",
+//     tags: ["OSS_ROUND"],
+//     category: "Development",
+//     matchingPool: 300000,
+//     startDate: "2024-02-01",
+//     endDate: "2024-04-01",
+//     status: "ACTIVE",
+//     logoUrl: "/akashic-logo.png",
+//   },
+//   {
+//     id: "web3-infrastructure",
+//     title: "Web3 Infrastructure",
+//     description:
+//       "This round aims to strengthen the Ethereum ecosystem's foundational infrastructure by supporting projects crucial for its development, scalability, and security.",
+//     tags: ["OSS_ROUND"],
+//     category: "Infrastructure",
+//     matchingPool: 300000,
+//     startDate: "2024-02-01",
+//     endDate: "2024-04-01",
+//     status: "ACTIVE",
+//     logoUrl: "/akashic-logo.png",
+//   },
+//   {
+//     id: "dev-tooling",
+//     title: "Dev Tooling",
+//     description:
+//       "This round funds projects enhancing developer tools for OSS and Web3. We support creation of environments, frameworks, and libraries for efficient, secure smart contract development. Goals: reduce barriers, boost efficiency, and show strong community adoption.",
+//     tags: ["OSS_ROUND"],
+//     category: "Development",
+//     matchingPool: 300000,
+//     startDate: "2024-03-15",
+//     endDate: "2024-04-15",
+//     status: "NOT_STARTED",
+//     logoUrl: "/akashic-logo.png",
+//   },
+//   {
+//     id: "web3-social",
+//     title: "Web3 Social",
+//     description:
+//       "This round funds projects that enhance social experiences and interactions within the Web3 ecosystem.",
+//     tags: ["OSS_ROUND"],
+//     category: "Social",
+//     matchingPool: 300000,
+//     startDate: "2024-01-01",
+//     endDate: "2024-02-01",
+//     status: "CLOSED",
+//     logoUrl: "/akashic-logo.png",
+//   },
+// ];
 
 export const collections = [
 	{ id: 1, name: "Collection 1", initial: "1" },

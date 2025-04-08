@@ -73,7 +73,7 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
             transactionHash: data.transactionHash,
             title: data.title,
             description: data.description,
-            matchingPool: new Prisma.Decimal(data.matchingPool),
+            matchingPool: Number(data.matchingPool),
             tokenAddress: data.tokenAddress,
             tokenDecimals: data.tokenDecimals,
             applicationStart: new Date(data.applicationStart),
@@ -81,8 +81,9 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
             startDate: new Date(data.startDate),
             endDate: new Date(data.endDate),
             logoUrl: data.logoUrl || null,
+            status: 'ACTIVE',
             blockchain: data.blockchain,
-            tags: [],
+            tags: data.tags || [],
         };
 
         // Use Prisma to create the round record
