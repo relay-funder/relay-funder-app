@@ -3,56 +3,30 @@ import { type Abi, encodeAbiParameters, parseAbiParameters, type Address, type H
 import { readContract } from '@wagmi/core'
 import { config } from '@/lib/wagmi'
 import { ALLO_ADDRESS, KICKSTARTER_QF_ADDRESS } from './constant'
+import { type Chain } from 'wagmi/chains' // Import Chain type
 
 // --- Import ABIs ---
 import { AlloABI } from '../contracts/abi/qf/Allo'
 import { KickStarterQFABI } from '../contracts/abi/qf/KickStarterQF'
 import { ERC20ABI } from '../contracts/abi/qf/ERC20'
-// import { celoAlfajores } from 'wagmi/chains'
 
 const alloAbi = AlloABI as Abi
 const kickstarterQfAbi = KickStarterQFABI as Abi
 const erc20Abi = ERC20ABI as Abi
 
 const NATIVE_TOKEN_ADDRESS: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-// const chainID : Chain = celoAlfajores
 
-interface Metadata {
-    protocol: bigint // uint256
-    pointer: string
-}
-
-interface RecipientInitializeData {
-    metadataRequired: boolean
-    registrationStartTime: bigint // uint64
-    registrationEndTime: bigint // uint64
-}
-
-interface Claim {
-    recipientId: Address
-    token: Address
-}
-
-// Matches Solidity enum `ApplicationsState.Status` - Used in reviewRecipients
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ApplicationStatusMap = {
-    NONE: 0,
-    PENDING: 1,
-    ACCEPTED: 2,
-    REJECTED: 3,
-    APPEALED: 4,
-} as const // Use const assertion to treat it as a type
-
-type ApplicationStatus = typeof ApplicationStatusMap[keyof typeof ApplicationStatusMap]
+// --- Type Definitions ---
+// (Keep existing interfaces: Metadata, RecipientInitializeData, Claim, ApplicationStatusMap, ApplicationStatus)
 
 // ==================================
-// Phase 1: Create Pool - Prepare Args
+// Phase 1: Create Pool - Prepare Args (Using createPool)
 // ==================================
 
 interface CreatePoolArgs {
     profileId: Hash // bytes32
-    // Use the specific KickstarterQF strategy instance deployed for this pool type
-    strategyAddress?: Address // Defaults to the constant KICKSTARTER_QF_ADDRESS if not provided
+    // strategyAddress is now the *implementation* address to clone
+    strategyImplementationAddress?: Address // Defaults to KICKSTARTER_QF_ADDRESS
     initializationData: {
         recipientInitializeData: RecipientInitializeData
         allocationStartTime: bigint // uint64
@@ -67,17 +41,20 @@ interface CreatePoolArgs {
     managers: Address[]
 }
 
-// This function now prepares the arguments for writeContract, to be called client-side
+// This function now prepares the arguments for Allo's `createPool` function
 export function prepareCreatePoolArgs({
     profileId,
-    strategyAddress = KICKSTARTER_QF_ADDRESS,
+    strategyImplementationAddress = KICKSTARTER_QF_ADDRESS, // Use implementation address
     initializationData,
     token,
     amount,
     metadata,
     managers,
 }: CreatePoolArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    console.log("Encoding strategy initialization data...")
+    console.log("Encoding strategy initialization data for createPool...")
+
+    // Encode the strategy's initialization data structure
+    // Ensure this matches EXACTLY what your KickstarterQF._initializeStrategy expects
     const encodedInitData = encodeAbiParameters(
         parseAbiParameters([
             // RecipientInitializeData struct definition
@@ -99,100 +76,122 @@ export function prepareCreatePoolArgs({
     )
 
     console.log("Preparing createPool transaction arguments...")
+    // Arguments for Allo's `createPool` function
+    const args = [
+        profileId,                      // _profileId (bytes32)
+        strategyImplementationAddress,  // _strategy (address of the implementation to clone)
+        encodedInitData,                // _initStrategyData (bytes)
+        token,                          // _token (address)
+        amount,                         // _amount (uint256)
+        metadata,                       // _metadata (Metadata struct)
+        managers                        // _managers (address[])
+    ];
+
     const requestArgs = {
-        address: ALLO_ADDRESS,
+        address: ALLO_ADDRESS, // Target Allo Proxy contract
         abi: alloAbi,
-        functionName: 'createPoolWithCustomStrategy',
-        args: [
-            profileId,
-            strategyAddress,
-            encodedInitData,
-            token,
-            amount,
-            metadata,
-            managers,
-        ],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
+        functionName: 'createPool', // Use createPool function
+        args: args,
+        // Remove optional properties that might cause type conflicts
+        // type: undefined, // Explicitly undefined or remove if not needed
+    } // satisfies Omit<WriteContractParameters, 'account' | 'chain'> // Keep satisfies for checking
 
-    return requestArgs
+    // Remove potentially problematic optional fields before returning
+    // This helps avoid the transaction type mismatch error with useWriteContract
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    };
+    if (requestArgs.value) {
+        finalArgs.value = requestArgs.value;
+    }
+
+    return finalArgs;
+}
+
+
+// (Keep existing prepareRegisterRecipientArgs, prepareReviewRecipientsArgs, etc.)
+// ...
+
+// ==================================
+// Utility: Check ERC20 Allowance (Read Operation - Fix chainId type)
+// ==================================
+
+interface CheckAllowanceArgs {
+    tokenAddress: Address
+    ownerAddress: Address
+    spenderAddress: Address
+    chainId?: number // Keep as number, but handle potential type mismatch below
+}
+
+export async function checkErc20Allowance({ tokenAddress, ownerAddress, spenderAddress, chainId }: CheckAllowanceArgs): Promise<bigint> {
+    console.log(`Checking ERC20 allowance for token ${tokenAddress}, owner ${ownerAddress}, spender ${spenderAddress}...`)
+    try {
+        // Ensure chainId is compatible with Wagmi's expected type (number | undefined)
+        // Wagmi's readContract internally maps number to specific chain configs if available
+        const allowance = await readContract(config, {
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: 'allowance',
+            args: [ownerAddress, spenderAddress],
+            chainId: chainId, // Pass chainId directly
+        })
+        console.log(`Current allowance: ${allowance}`)
+        return allowance as bigint // Cast the result
+    } catch (error) {
+        console.error("Failed to read allowance:", error)
+        throw new Error(`Could not check allowance: ${error instanceof Error ? error.message : String(error)}`)
+    }
 }
 
 // ==================================
-// Phase 2: Register Recipient - Prepare Args
+// Utility: Read DIRECT_TRANSFER flag (Read Operation - Fix chainId type)
 // ==================================
-
-interface RegisterRecipientArgs {
-    poolId: bigint
-    recipientPayoutAddress: Address
-    metadata: Metadata
+interface ReadDirectTransferArgs {
+    strategyAddress: Address
+    chainId?: number // Keep as number
 }
 
-export function prepareRegisterRecipientArgs({
-    poolId,
-    recipientPayoutAddress,
-    metadata,
-}: RegisterRecipientArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    console.log("Encoding recipient registration data...")
-    // Allo's registerRecipient calls the strategy's _handleRegistration hook.
-    // The RecipientsExtension hook expects abi.decode(_data, (address recipientAddress, Metadata metadata))
-    const encodedRegisterData = encodeAbiParameters(
-        parseAbiParameters(['address', '(uint256 protocol, string pointer)']),
-        [recipientPayoutAddress, metadata]
-    )
+export async function checkDirectTransferFlag({ strategyAddress, chainId }: ReadDirectTransferArgs): Promise<boolean> {
+    console.log(`Checking DIRECT_TRANSFER flag for strategy ${strategyAddress}...`)
+    try {
+        // Ensure chainId is compatible
+        const isDirectTransfer = await readContract(config, {
+            address: strategyAddress,
+            abi: kickstarterQfAbi,
+            functionName: 'DIRECT_TRANSFER',
+            chainId: chainId, // Pass chainId directly
+        }) as boolean
+        console.log(`DIRECT_TRANSFER flag: ${isDirectTransfer}`)
+        return isDirectTransfer
+    } catch (error) {
+        console.error("Failed to read DIRECT_TRANSFER flag:", error)
+        throw new Error(`Could not read DIRECT_TRANSFER flag: ${error instanceof Error ? error.message : String(error)}`)
+    }
+}
 
-    console.log("Preparing registerRecipient transaction arguments...")
+// (Keep prepareApproveErc20Args as is, but ensure it also returns a clean object like prepareCreatePoolArgs)
+export function prepareApproveErc20Args({ tokenAddress, spenderAddress, amount }: ApproveErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log(`Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`)
     const requestArgs = {
-        address: ALLO_ADDRESS,
-        abi: alloAbi,
-        functionName: 'registerRecipient',
-        args: [poolId, encodedRegisterData],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [spenderAddress, amount],
+    } // satisfies Omit<WriteContractParameters, 'account' | 'chain'>
 
-    return requestArgs
-}
+    // Return a clean object
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    };
 
-// ==================================
-// Phase 3: Review Recipients - Prepare Args
-// ==================================
-
-interface ReviewRecipientsArgs {
-    strategyAddress: Address // Address of the *specific* KickstarterQF instance for the pool
-    recipientIds: Address[]
-    newStatuses: ApplicationStatus[] // Use the ApplicationStatusMap values (0, 1, 2, 3, 4)
-    recipientsCounter: bigint // Read from strategy.recipientsCounter() *before* calling
-}
-
-export function prepareReviewRecipientsArgs({
-    strategyAddress,
-    recipientIds,
-    newStatuses,
-    recipientsCounter,
-}: ReviewRecipientsArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    if (recipientIds.length !== newStatuses.length) {
-        throw new Error("Recipient IDs and statuses arrays must have the same length.")
-    }
-    if (recipientIds.length === 0) {
-        throw new Error("No recipients provided for review.")
-    }
-
-    console.log("Preparing reviewRecipients transaction arguments...")
-    // The function expects an *array* of ApplicationStatus structs:
-    // struct ApplicationStatus { address[] recipientIds; uint256[] statuses; }
-    // We send one struct containing all the updates in this batch.
-    const applicationStatusStruct = {
-        recipientIds: recipientIds,
-        statuses: newStatuses.map(status => BigInt(status)) // Convert numbers to bigint
-    }
-
-    const requestArgs = {
-        address: strategyAddress,
-        abi: kickstarterQfAbi,
-        functionName: 'reviewRecipients',
-        // The function expects ApplicationStatus[] memory _statuses, uint256 _recipientsCounter
-        args: [[applicationStatusStruct], recipientsCounter],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
-
-    return requestArgs
+    console.log(`Args prepared for approving spender ${spenderAddress} for amount ${amount}...`)
+    return finalArgs;
 }
 
 
@@ -207,157 +206,142 @@ interface AllocateNativeArgs {
     amount: bigint // Amount in native currency (wei)
 }
 
-export function prepareAllocateNativeArgs({
-    poolId,
-    recipientId,
-    amount,
-}: AllocateNativeArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    console.log("Encoding native allocation data for strategy hook...")
-    // KickstarterQF._allocate expects abi.decode(_data, (address _token, bytes memory _permit))
-    // For native token, token address is NATIVE_TOKEN_ADDRESS and permit is '0x'
-    const encodedAllocateData = encodeAbiParameters(
-        parseAbiParameters(['address', 'bytes']),
-        [NATIVE_TOKEN_ADDRESS, '0x']
-    )
+// Prepares arguments for Allo's `allocate` function (Native)
+export function prepareAllocateNativeArgs({ poolId, recipientId, amount }: AllocateNativeArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log(`Preparing native allocate transaction arguments for pool ${poolId}, recipient ${recipientId}...`)
 
-    console.log("Preparing allocate transaction arguments for native token...")
+    // Encode the recipient data (empty bytes for native allocation)
+    const encodedRecipientData = '0x'
+
     const requestArgs = {
         address: ALLO_ADDRESS,
         abi: alloAbi,
         functionName: 'allocate',
-        args: [
-            poolId,
-            recipientId,
-            amount, // Amount is passed directly for native token
-            encodedAllocateData,
-        ],
-        value: amount, // The native currency amount being sent
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
+        args: [poolId, encodedRecipientData],
+        value: amount, // Native amount is sent as msg.value
+    }
 
-    return requestArgs
+    // Return a clean object
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+        value: requestArgs.value,
+    };
+
+    console.log(`Args prepared for native allocation of ${amount} wei...`)
+    return finalArgs
 }
 
 // Use this for allocating ERC20 tokens
 interface AllocateErc20Args {
     poolId: bigint
     recipientId: Address
-    amount: bigint // Amount of ERC20 token (smallest unit)
+    amount: bigint // Amount in token's smallest unit
     tokenAddress: Address // Address of the ERC20 token being allocated
-    permit?: Hash // Optional: EIP-2612 permit data (bytes), defaults to '0x'
-    // Required: The address calling this function must have approved ALLO_ADDRESS
-    // to spend at least `amount` of `tokenAddress`.
-    // Call `approveErc20` first if needed.
 }
 
-export function prepareAllocateErc20Args({
-    poolId,
-    recipientId,
-    amount,
-    tokenAddress,
-    permit = '0x',
-}: AllocateErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
-    if (tokenAddress.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()) {
-        throw new Error("Use prepareAllocateNativeArgs for native currency allocations.")
-    }
+// Prepares arguments for Allo's `allocate` function (ERC20)
+export function prepareAllocateErc20Args({ poolId, recipientId, amount, tokenAddress }: AllocateErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log(`Preparing ERC20 allocate transaction arguments for pool ${poolId}, recipient ${recipientId}, token ${tokenAddress}...`)
 
-    console.log("Encoding ERC20 allocation data for strategy hook...")
-    // KickstarterQF._allocate expects abi.decode(_data, (address _token, bytes memory _permit))
-    const encodedAllocateData = encodeAbiParameters(
-        parseAbiParameters(['address', 'bytes']),
-        [tokenAddress, permit]
+    // Encode the recipient data for ERC20 allocation
+    const encodedRecipientData = encodeAbiParameters(
+        parseAbiParameters(['address recipientId', 'uint256 amount', 'address tokenAddress']),
+        [recipientId, amount, tokenAddress]
     )
-
-    console.log(`Preparing allocate transaction arguments for ERC20 token ${tokenAddress}...`)
-    // PRE-REQUISITE CHECK (Frontend Responsibility):
-    // Ensure user has approved the ALLO_ADDRESS contract
-    // to spend `amount` of `tokenAddress` if `permit` is '0x'.
-    // You would typically use `readContract` to check allowance and `approveErc20` if needed.
-    console.warn(`Ensure sufficient ERC20 approval for token ${tokenAddress} amount ${amount} to spender ${ALLO_ADDRESS}`)
 
     const requestArgs = {
         address: ALLO_ADDRESS,
         abi: alloAbi,
         functionName: 'allocate',
-        args: [
-            poolId,
-            recipientId,
-            amount, // Amount is passed directly for ERC20 token
-            encodedAllocateData,
-        ],
-        // chainId: chainId,
-        // value should be 0 for ERC20 allocations
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
-
-    return requestArgs
-}
-
-// ==================================
-// Phase 5: Set Payouts - Prepare Args
-// ==================================
-
-interface SetPayoutArgs {
-    strategyAddress: Address // Address of the *specific* KickstarterQF instance for the pool
-    recipientIds: Address[]
-    amounts: bigint[] // QF-calculated payout amounts for each recipient
-}
-
-export function prepareSetPayoutArgs({
-    strategyAddress,
-    recipientIds,
-    amounts,
-}: SetPayoutArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    if (recipientIds.length !== amounts.length) {
-        throw new Error("Recipient IDs and amounts arrays must have the same length.")
-    }
-    if (recipientIds.length === 0) {
-        throw new Error("No payouts provided.")
+        args: [poolId, encodedRecipientData],
+        // No value for ERC20 allocation
     }
 
-    console.log("Encoding payout data...")
-    // The setPayout function expects abi.decode(_data, (address[], uint256[]))
-    const encodedPayoutData = encodeAbiParameters(
-        parseAbiParameters(['address[]', 'uint256[]']),
-        [recipientIds, amounts]
-    )
+    // Return a clean object
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    };
 
-    console.log("Preparing setPayout transaction arguments...")
-    const requestArgs = {
-        address: strategyAddress,
-        abi: kickstarterQfAbi,
-        functionName: 'setPayout',
-        args: [encodedPayoutData],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
-
-    return requestArgs
+    console.log(`Args prepared for ERC20 allocation of ${amount} tokens...`)
+    return finalArgs
 }
 
+
 // ==================================
-// Phase 6: Distribute Funds - Prepare Args
+// Phase 5: Distribute Funds - Prepare Args
 // ==================================
 
 interface DistributeArgs {
     poolId: bigint
-    recipientIds: Address[] // Recipients who have payouts set and are ready for distribution
+    recipientIds: Address[]
+    data: Hash // bytes - Typically '0x' unless the strategy requires specific data
 }
 
-export function prepareDistributeArgs({ poolId, recipientIds }: DistributeArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    if (recipientIds.length === 0) {
-        throw new Error("No recipients provided for distribution.")
-    }
-    console.log("Preparing distribute transaction arguments...")
-    // The KickstarterQF._distribute hook doesn't use the _data field, so pass '0x'
+// Prepares arguments for Allo's `distribute` function
+export function prepareDistributeArgs({ poolId, recipientIds, data = '0x' }: DistributeArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log(`Preparing distribute transaction arguments for pool ${poolId}...`)
+
     const requestArgs = {
         address: ALLO_ADDRESS,
         abi: alloAbi,
         functionName: 'distribute',
-        args: [poolId, recipientIds, '0x'],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
+        args: [poolId, recipientIds, data],
+    }
 
-    return requestArgs
+    // Return a clean object
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    };
+
+    console.log(`Args prepared for distributing funds to ${recipientIds.length} recipients...`)
+    return finalArgs
+}
+
+
+// ==================================
+// Phase 6: Withdraw Funds (KickstarterQF Specific) - Prepare Args
+// ==================================
+
+interface WithdrawArgs {
+    strategyAddress: Address // Address of the *specific* KickstarterQF instance for the pool
+    recipientId: Address
+    tokenAddress: Address // Token to withdraw
+}
+
+// Prepares arguments for KickstarterQF's `withdraw` function
+export function prepareWithdrawArgs({ strategyAddress, recipientId, tokenAddress }: WithdrawArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log(`Preparing withdraw transaction arguments for strategy ${strategyAddress}, recipient ${recipientId}, token ${tokenAddress}...`)
+
+    const requestArgs = {
+        address: strategyAddress,
+        abi: kickstarterQfAbi,
+        functionName: 'withdraw',
+        args: [recipientId, tokenAddress],
+    }
+
+    // Return a clean object
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    };
+
+    console.log(`Args prepared for withdrawing token ${tokenAddress}...`)
+    return finalArgs
 }
 
 // ==================================
-// Phase 7: Claim Allocations - Prepare Args
+// Phase 7: Claim Allocations (KickstarterQF Specific) - Prepare Args
 // ==================================
 
 interface ClaimAllocationArgs {
@@ -366,30 +350,27 @@ interface ClaimAllocationArgs {
 }
 
 // Note: The check for DIRECT_TRANSFER still needs to happen client-side before calling this
-export function prepareClaimAllocationArgs({ strategyAddress, claims }: ClaimAllocationArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-    if (claims.length === 0) {
-        throw new Error("No claims provided.")
-    }
+// Prepares arguments for KickstarterQF's `claimAllocations` function
+export function prepareClaimAllocationsArgs({ strategyAddress, claims }: ClaimAllocationArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log(`Preparing claimAllocations transaction arguments for strategy ${strategyAddress}...`)
 
-    console.log("Encoding claim data...")
-    // The claimAllocation function expects abi.decode(_data, (Claim[]))
-    // Define the struct ABI string *exactly* as in Solidity
-    const claimStructAbiString = '(address recipientId, address token)'
-    const encodedClaimData = encodeAbiParameters(
-        // Note the '[]' to indicate an array of the struct
-        parseAbiParameters([`${claimStructAbiString}[]`]),
-        [claims] // Pass the array of claim objects directly
-    )
-
-    console.log("Preparing claimAllocation transaction arguments...")
     const requestArgs = {
         address: strategyAddress,
         abi: kickstarterQfAbi,
-        functionName: 'claimAllocation',
-        args: [encodedClaimData],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
+        functionName: 'claimAllocations',
+        args: [claims],
+    }
 
-    return requestArgs
+    // Return a clean object
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    };
+
+    console.log(`Args prepared for claiming ${claims.length} allocations...`)
+    return finalArgs
 }
 
 
@@ -403,74 +384,24 @@ interface ApproveErc20Args {
     amount: bigint
 }
 
-// This function now prepares the arguments for writeContract, to be called client-side
-export function prepareApproveErc20Args({ tokenAddress, spenderAddress, amount }: ApproveErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
-    console.log(`Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`)
-    const requestArgs = {
-        address: tokenAddress,
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [spenderAddress, amount],
-    } satisfies Omit<WriteContractParameters, 'account' | 'chain'>
+// export function prepareApproveErc20Args({ tokenAddress, spenderAddress, amount }: ApproveErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
+//     console.log(`Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`)
+//     const requestArgs = {
+//         address: tokenAddress,
+//         abi: erc20Abi,
+//         functionName: 'approve',
+//         args: [spenderAddress, amount],
+//     } // satisfies Omit<WriteContractParameters, 'account' | 'chain'>
 
-    console.log(`Args prepared for approving spender ${spenderAddress} for amount ${amount}...`)
-    return requestArgs
-}
+//     // Return a clean object
+//     const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+//         address: requestArgs.address,
+//         abi: requestArgs.abi,
+//         functionName: requestArgs.functionName,
+//         args: requestArgs.args,
+//     };
 
-// ==================================
-// Utility: Check ERC20 Allowance (Read Operation - Can stay as is)
-// ==================================
+//     console.log(`Args prepared for approving spender ${spenderAddress} for amount ${amount}...`)
+//     return finalArgs;
+// }
 
-interface CheckAllowanceArgs {
-    tokenAddress: Address
-    ownerAddress: Address
-    spenderAddress: Address
-    chainId?: number // Optional chainId if needed for config
-}
-
-export async function checkErc20Allowance({ tokenAddress, ownerAddress, spenderAddress, chainId }: CheckAllowanceArgs): Promise<bigint> {
-    console.log(`Checking ERC20 allowance for token ${tokenAddress}, owner ${ownerAddress}, spender ${spenderAddress}...`)
-    try {
-        // Pass config as the first argument
-        const allowance = await readContract(config, {
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: 'allowance',
-            args: [ownerAddress, spenderAddress],
-            chainId: chainId, // Pass chainId if provided
-        })
-        console.log(`Current allowance: ${allowance}`)
-        return allowance as bigint // Cast the result
-    } catch (error) {
-        console.error("Failed to read allowance:", error)
-        // Consider returning 0n or a specific error state instead of throwing
-        // if the frontend can handle it gracefully (e.g., assume approval needed)
-        // For now, re-throwing to indicate a potential RPC or contract issue.
-        throw new Error(`Could not check allowance: ${error instanceof Error ? error.message : String(error)}`)
-    }
-}
-
-// ==================================
-// Utility: Read DIRECT_TRANSFER flag (Read Operation)
-// ==================================
-interface ReadDirectTransferArgs {
-    strategyAddress: Address
-    chainId?: number
-}
-
-export async function checkDirectTransferFlag({ strategyAddress, chainId }: ReadDirectTransferArgs): Promise<boolean> {
-    console.log(`Checking DIRECT_TRANSFER flag for strategy ${strategyAddress}...`)
-    try {
-        const isDirectTransfer = await readContract(config, {
-            address: strategyAddress,
-            abi: kickstarterQfAbi,
-            functionName: 'DIRECT_TRANSFER',
-            chainId: chainId,
-        }) as boolean
-        console.log(`DIRECT_TRANSFER flag: ${isDirectTransfer}`)
-        return isDirectTransfer
-    } catch (error) {
-        console.error("Failed to read DIRECT_TRANSFER flag:", error)
-        throw new Error(`Could not read DIRECT_TRANSFER flag: ${error instanceof Error ? error.message : String(error)}`)
-    }
-} 

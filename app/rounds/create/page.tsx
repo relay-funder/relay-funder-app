@@ -68,15 +68,15 @@ const refinedRoundSchema = roundSchema.refine(data => {
   message: "Application close date must be after application start date.",
   path: ["applicationClose"],
 }).refine(data => {
-    try { return new Date(data.endDate) > new Date(data.startDate) } catch { return false }
+  try { return new Date(data.endDate) > new Date(data.startDate) } catch { return false }
 }, {
-    message: "Round end date must be after round start date.",
-    path: ["endDate"],
+  message: "Round end date must be after round start date.",
+  path: ["endDate"],
 }).refine(data => {
-    try { return new Date(data.startDate) >= new Date(data.applicationClose) } catch { return false }
+  try { return new Date(data.startDate) >= new Date(data.applicationClose) } catch { return false }
 }, {
-    message: "Round start date must be on or after application close date.",
-    path: ["startDate"],
+  message: "Round start date must be on or after application close date.",
+  path: ["startDate"],
 });
 
 
@@ -88,7 +88,7 @@ type SubmissionStatus = 'idle' | 'validating' | 'approving' | 'sending' | 'confi
 export default function CreateRoundPage() {
   const router = useRouter();
   const { address: connectedAddress, chain, chainId } = useAccount();
-  const { data: writeContractHash, writeContract, isPending: isTxSending, error: writeContractError, reset: resetWriteContract } = useWriteContract();
+  const { writeContract, error: writeContractError, reset: resetWriteContract } = useWriteContract();
 
   // Form state and validation
   const form = useForm<RoundFormData>({
@@ -122,7 +122,7 @@ export default function CreateRoundPage() {
   // Ref to store form data upon successful transaction submission
   const confirmedTxDataRef = useRef<RoundFormData | null>(null);
 
-  const { watch, handleSubmit, setError, formState: { errors }, getValues, reset: resetForm } = form;
+  const { watch, handleSubmit, setError, formState: { errors } } = form;
   const matchingPool = watch("matchingPool");
   const tokenAddress = watch("tokenAddress");
   const tokenDecimals = watch("tokenDecimals");
@@ -131,7 +131,7 @@ export default function CreateRoundPage() {
   const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, isError: isConfirmError } = useWaitForTransactionReceipt({
     hash: submittedTxHash ?? undefined,
     query: {
-      enabled: !!submittedTxHash && (status === 'sending' || status === 'confirming'), // Enable when tx sent or confirming
+      enabled: !!submittedTxHash && (status === 'sending' || status === 'confirming'),
     }
   });
 
@@ -182,15 +182,15 @@ export default function CreateRoundPage() {
       // --- Call Server Action to Save ---
       const formData = confirmedTxDataRef.current;
       if (!connectedAddress || !chainId) {
-          setStatus('error');
-          setStatusMessage('Wallet disconnected or chain ID missing before saving.');
-          return;
+        setStatus('error');
+        setStatusMessage('Wallet disconnected or chain ID missing before saving.');
+        return;
       }
 
       saveRoundAction({
         ...formData,
         poolId: parsedPoolId,
-        blockchain: chainId.toString(), 
+        blockchain: chainId.toString(),
         transactionHash: receipt.transactionHash,
         managerAddress: connectedAddress,
         strategyAddress: KICKSTARTER_QF_ADDRESS,
@@ -207,31 +207,33 @@ export default function CreateRoundPage() {
           setError("root", { type: "manual", message: result.error || "Failed to save round to database." });
         }
       }).catch(error => {
-          console.error("Error calling saveRoundAction:", error);
-          setStatus('error');
-          setStatusMessage(`Transaction confirmed, but encountered server error during save: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          setError("root", { type: "manual", message: "Server error while saving round." });
+        console.error("Error calling saveRoundAction:", error);
+        setStatus('error');
+        setStatusMessage(`Transaction confirmed, but encountered server error during save: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setError("root", { type: "manual", message: "Server error while saving round." });
       });
 
     } else if (isConfirmError && status === 'confirming') {
-        setStatus('error');
-        setStatusMessage('Transaction failed to confirm on-chain.');
-        setError("root", { type: "manual", message: "Transaction failed confirmation." });
-        confirmedTxDataRef.current = null;
+      setStatus('error');
+      setStatusMessage('Transaction failed to confirm on-chain.');
+      setError("root", { type: "manual", message: "Transaction failed confirmation." });
+      confirmedTxDataRef.current = null;
     } else if (writeContractError && (status === 'sending' || status === 'approving')) {
-        setStatus('error');
-        const message = writeContractError?.message?.includes('User rejected')
-            ? 'Transaction rejected by user.'
-            : `Transaction failed: ${(writeContractError as any)?.shortMessage || writeContractError?.message}`;
-        setStatusMessage(message);
-        setError("root", { type: "manual", message });
-        setSubmittedTxHash(null);
-        confirmedTxDataRef.current = null;
+      setStatus('error');
+      const shortMessage = writeContractError instanceof BaseError ? writeContractError.shortMessage : writeContractError?.message;
+
+      const message = writeContractError?.message?.includes('User rejected')
+        ? 'Transaction rejected by user.'
+        : `Transaction failed: ${shortMessage || 'Unknown error'}`;
+      setStatusMessage(message);
+      setError("root", { type: "manual", message });
+      setSubmittedTxHash(null);
+      confirmedTxDataRef.current = null;
     }
   }, [
-      isConfirming, isConfirmed, isConfirmError, receipt, status, writeContractError,
-      setError, chainId, connectedAddress, resetWriteContract
-    ]);
+    isConfirming, isConfirmed, isConfirmError, receipt, status, writeContractError,
+    setError, chainId, connectedAddress, resetWriteContract
+  ]);
 
 
   // --- Allowance Check ---
@@ -276,8 +278,8 @@ export default function CreateRoundPage() {
   // --- Handle Token Approval ---
   const handleApprove = async () => {
     if (!connectedAddress || !tokenAddress || !z.string().startsWith("0x").safeParse(tokenAddress).success) {
-        setError("root", { type: "manual", message: "Valid Token Address is required for approval." });
-        return;
+      setError("root", { type: "manual", message: "Valid Token Address is required for approval." });
+      return;
     }
 
     setStatus('approving');
@@ -295,15 +297,15 @@ export default function CreateRoundPage() {
 
       setStatusMessage('Please confirm approval in your wallet...');
       writeContract(approveArgs, {
-          onSuccess: (hash) => {
-              setStatus('sending');
-              setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
-              console.log("Approval tx sent:", hash);
-              setTimeout(handleCheckAllowance, 5000);
-          },
-          onError: (error) => {
-              console.error("Approval writeContract call failed:", error);
-          }
+        onSuccess: (hash) => {
+          setStatus('sending');
+          setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
+          console.log("Approval tx sent:", hash);
+          setTimeout(handleCheckAllowance, 5000);
+        },
+        onError: (error) => {
+          console.error("Approval writeContract call failed:", error);
+        }
       });
     } catch (error) {
       console.error("Approval preparation failed:", error);
@@ -373,7 +375,7 @@ export default function CreateRoundPage() {
       // 2. Get transaction arguments
       const createPoolArgs = prepareCreatePoolArgs({
         profileId: data.profileId,
-        strategyAddress: KICKSTARTER_QF_ADDRESS,
+        strategyImplementationAddress: KICKSTARTER_QF_ADDRESS,
         initializationData,
         token: data.tokenAddress,
         amount,
@@ -384,16 +386,16 @@ export default function CreateRoundPage() {
       // 3. Send transaction using the hook
       setStatusMessage('Please confirm transaction in your wallet...');
       writeContract(createPoolArgs, {
-          onSuccess: (hash) => {
-              setStatus('sending');
-              setStatusMessage('Create round transaction sent. Waiting for confirmation...');
-              setSubmittedTxHash(hash);
-              confirmedTxDataRef.current = data;
-              console.log("Create pool tx sent:", hash);
-          },
-          onError: (error) => {
-              console.error("Create pool writeContract call failed:", error);
-          }
+        onSuccess: (hash) => {
+          setStatus('sending');
+          setStatusMessage('Create round transaction sent. Waiting for confirmation...');
+          setSubmittedTxHash(hash);
+          confirmedTxDataRef.current = data;
+          console.log("Create pool tx sent:", hash);
+        },
+        onError: (error) => {
+          console.error("Create pool writeContract call failed:", error);
+        }
       });
 
     } catch (error) {
@@ -485,7 +487,7 @@ export default function CreateRoundPage() {
                       </FormItem>
                     )}
                   />
-                   <FormField
+                  <FormField
                     control={form.control}
                     name="tokenDecimals"
                     render={({ field }) => (
@@ -497,7 +499,7 @@ export default function CreateRoundPage() {
                       </FormItem>
                     )}
                   />
-                   <FormField
+                  <FormField
                     control={form.control}
                     name="profileId"
                     render={({ field }) => (
@@ -533,8 +535,10 @@ export default function CreateRoundPage() {
                           size="sm"
                           className="w-full"
                         >
-                          {status === 'approving' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Approve Max Token Spend
+                          {/* {status === 'approving' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Approve Max Token Spend */}
+                          {(status === 'approving' || (status === 'sending' && submittedTxHash)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {status === 'approving' ? 'Requesting Approval...' : (status === 'sending' && submittedTxHash) ? 'Waiting for Approval...' : 'Approve Max Token Spend'}
                         </Button>
                         <p className="text-xs text-muted-foreground">You need to grant the Allo contract permission to transfer your tokens for the matching pool.</p>
                       </div>
@@ -603,36 +607,36 @@ export default function CreateRoundPage() {
                     <FormItem>
                       <FormLabel>Logo URL (Optional)</FormLabel>
                       <FormControl><Input placeholder="https://example.com/logo.png" {...field} /></FormControl>
-                      <FormDescription>Link to the round's logo image.</FormDescription>
+                      <FormDescription>Link to the round&apos;s logo image.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
                 {(statusMessage || errors.root?.message) && (
-                    <Alert variant={status === 'error' || !!errors.root ? "destructive" : status === 'success' ? "default" : "default"} className={status === 'success' ? "border-green-500 text-green-700 dark:border-green-700 dark:text-green-400" : ""}>
-                        {getAlertIcon()}
-                        <AlertTitle>
-                            {status === 'error' || !!errors.root ? "Error" : status === 'success' ? "Success" : "Status"}
-                        </AlertTitle>
-                        <AlertDescription>
-                            {errors.root?.message || statusMessage}
-                            {(status === 'confirming' || status === 'saving' || status === 'sending') && submittedTxHash && (
-                                <>
-                                    <br />
-                                    View transaction: <a href={`${chain?.blockExplorers?.default.url}/tx/${submittedTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{submittedTxHash.substring(0,10)}...{submittedTxHash.substring(submittedTxHash.length - 8)}</a>
-                                </>
-                            )}
-                            {status === 'success' && submittedTxHash && finalRoundId && (
-                                <>
-                                    <br />
-                                    Transaction confirmed: <a href={`${chain?.blockExplorers?.default.url}/tx/${submittedTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{submittedTxHash.substring(0,10)}...{submittedTxHash.substring(submittedTxHash.length - 8)}</a>
-                                    <br />
-                                    <Button variant="link" className="p-0 h-auto mt-2 text-current" onClick={() => router.push(`/rounds/${finalRoundId}`)}>View Created Round</Button>
-                                </>
-                            )}
-                        </AlertDescription>
-                    </Alert>
+                  <Alert variant={status === 'error' || !!errors.root ? "destructive" : status === 'success' ? "default" : "default"} className={status === 'success' ? "border-green-500 text-green-700 dark:border-green-700 dark:text-green-400" : ""}>
+                    {getAlertIcon()}
+                    <AlertTitle>
+                      {status === 'error' || !!errors.root ? "Error" : status === 'success' ? "Success" : "Status"}
+                    </AlertTitle>
+                    <AlertDescription>
+                      {errors.root?.message || statusMessage}
+                      {(status === 'sending' || status === 'confirming' || status === 'saving') && submittedTxHash && chain?.blockExplorers?.default.url && (
+                        <>
+                          <br />
+                          View transaction: <a href={`${chain.blockExplorers.default.url}/tx/${submittedTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{submittedTxHash.substring(0,10)}...{submittedTxHash.substring(submittedTxHash.length - 8)}</a>
+                          </>
+                      )}
+                            {status === 'success' && submittedTxHash && finalRoundId && chain?.blockExplorers?.default.url && (
+                        <>
+                          <br />
+                          Transaction confirmed: <a href={`${chain.blockExplorers.default.url}/tx/${submittedTxHash}`} target="_blank" rel="noopener noreferrer" className="underline">{submittedTxHash.substring(0,10)}...{submittedTxHash.substring(submittedTxHash.length - 8)}</a>
+                          <br />
+                          <Button variant="link" className="p-0 h-auto mt-2 text-current" onClick={() => router.push(`/rounds/${finalRoundId}`)}>View Created Round</Button>
+                        </>
+                      )}
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 <div className="flex justify-end gap-4 pt-4">
@@ -646,7 +650,7 @@ export default function CreateRoundPage() {
                   </Button>
                   <Button type="submit" disabled={isCreateButtonDisabled}>
                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {status === 'success' ? 'Round Created' : status === 'saving' ? 'Saving...' : status === 'confirming' ? 'Confirming...' : 'Create Round'}
+                    {status === 'success' ? 'Round Created' : status === 'saving' ? 'Saving...' : status === 'confirming' ? 'Confirming...' : status === 'sending' ? 'Processing...' : 'Create Round'}
                   </Button>
                 </div>
               </form>
