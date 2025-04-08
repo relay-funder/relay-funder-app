@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import type { Round } from "@/types/round";
 import { Clock, Calendar, Users, DollarSign } from "lucide-react";
-import { formatDistanceToNowStrict, isPast, isFuture } from "date-fns";
+import { formatDistanceToNowStrict, isPast, isFuture } from "date-fns"; 
 
 // Helper function to determine round status and badge variant
 function getRoundStatus(startDate: Date, endDate: Date): {
@@ -67,7 +67,11 @@ export default function RoundCard({ round }: RoundCardProps) {
   const formattedStartDate = formatDate(round.startDate);
   const formattedEndDate = formatDate(round.endDate);
 
-  const numberOfProjects = round._count?.roundCampaigns ?? 0;
+  const numberOfProjects = round._count && 'campaigns' in round._count 
+    ? round._count.campaigns 
+    : ('roundCampaigns' in (round._count || {}) 
+      ? (round._count as { roundCampaigns: number }).roundCampaigns 
+      : 0);
 
   if (!round || !round.id) {
     return (
@@ -131,7 +135,7 @@ export default function RoundCard({ round }: RoundCardProps) {
               <span>Projects</span>
             </div>
             <span className="font-medium text-foreground">
-              {numberOfProjects}
+              {numberOfProjects !== undefined ? numberOfProjects?.toString() : '0'}
             </span>
           </div>
 

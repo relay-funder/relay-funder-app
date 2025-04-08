@@ -7,7 +7,9 @@ export type RoundWithCount = Prisma.RoundGetPayload<Prisma.RoundDefaultArgs & {
 }>
 
 // Infer the payload type from the validator
-export type RoundPayload = Prisma.RoundGetPayload<typeof roundWithCount>
+  export type RoundPayload = Prisma.RoundGetPayload<Prisma.RoundDefaultArgs & {
+    include: { _count: { select: { roundCampaigns: true } } }
+  }>
 
 // Define the final Round type used in components
 // Omit the original Decimal matchingPool and replace it with number
