@@ -2,9 +2,8 @@
 
 import { z } from "zod"
 import { type Address, type Hash } from "viem"
-import { PrismaClient } from '@prisma/client'
-import { type ActionResponse } from '@/types/actions' // Assuming you have this type
-import { KICKSTARTER_QF_ADDRESS } from "@/lib/constant" // Import strategy address
+import { PrismaClient, Prisma } from '@prisma/client'
+import { type ActionResponse } from '@/types/actions'
 
 const prisma = new PrismaClient()
 
@@ -27,7 +26,6 @@ const roundFormSchema = z.object({
     profileId: z.string().refine((val): val is Hash => /^0x[a-fA-F0-9]{64}$/.test(val), {
         message: "Invalid Profile ID format (bytes32).",
     }),
-    // managerAddress is added below in the action schema
 })
 
 // Schema for the data required by the *server action*
@@ -48,12 +46,11 @@ const saveRoundActionSchema = roundFormSchema.extend({
 type SaveRoundActionInput = z.infer<typeof saveRoundActionSchema>
 
 // Define a standard response type
-type SaveRoundActionResult = ActionResponse<{ roundId: number } | null>
+type SaveRoundActionResult = ActionResponse<{ roundId: number } | null> & { message?: string };
 
 
 export async function saveRoundAction(input: SaveRoundActionInput): Promise<SaveRoundActionResult> {
     try {
-        // Validate the combined input
         const validationResult = saveRoundActionSchema.safeParse(input);
         if (!validationResult.success) {
             console.error("Server Action: Save Round Validation failed", validationResult.error.flatten().fieldErrors);
@@ -61,14 +58,13 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
                 success: false,
                 error: "Invalid data received by server.",
                 fieldErrors: validationResult.error.flatten().fieldErrors as Record<string, string[]>,
-                data: null,
             };
         }
 
         const data = validationResult.data;
         console.log("Server Action: Saving round data to DB:", data);
 
-        // Prepare data for Prisma (convert string amount to Decimal, dates to DateTime)
+        // Prepare data for Prisma
         const prismaData = {
             poolId: data.poolId,
             strategyAddress: data.strategyAddress,
@@ -77,7 +73,7 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
             transactionHash: data.transactionHash,
             title: data.title,
             description: data.description,
-            matchingPool: data.matchingPool, // Prisma Decimal handles string numbers
+            matchingPool: new Prisma.Decimal(data.matchingPool),
             tokenAddress: data.tokenAddress,
             tokenDecimals: data.tokenDecimals,
             applicationStart: new Date(data.applicationStart),
@@ -86,7 +82,7 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
             endDate: new Date(data.endDate),
             logoUrl: data.logoUrl || null,
             blockchain: data.blockchain,
-            tags: [], // Add tag handling if needed later
+            tags: [],
         };
 
         // Use Prisma to create the round record
@@ -97,35 +93,36 @@ export async function saveRoundAction(input: SaveRoundActionInput): Promise<Save
         console.log("Server Action: Round saved successfully with ID:", newRound.id);
         return {
             success: true,
-            message: "Round created and saved successfully.",
             data: { roundId: newRound.id },
         };
 
     } catch (error: unknown) {
         console.error("Error saving round to database:", error);
 
-        // Handle potential unique constraint violation (e.g., duplicate tx hash)
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            // Find the field(s) that caused the violation
-            const target = (error.meta as { target?: string[] })?.target?.join(', ');
-            const errorMessage = target
-                ? `A round with this ${target} already exists.`
-                : "This transaction or pool ID has already been recorded.";
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                const target = (error.meta as { target?: string[] | string })?.target;
+                const targetString = Array.isArray(target) ? target.join(', ') : target;
 
-            return {
-                success: false,
-                error: errorMessage,
-                data: null,
-            };
+                const errorMessage = targetString
+                    ? `A round with this ${targetString} already exists.`
+                    : "This transaction or pool ID has already been recorded.";
+
+                return {
+                    success: false,
+                    error: errorMessage,
+                };
+            }
         }
 
         const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred while saving the round.";
         return {
             success: false,
             error: errorMessage,
-            data: null,
         };
     } finally {
-        await prisma.$disconnect();
+        await prisma.$disconnect().catch(disconnectError => {
+            console.error("Error disconnecting Prisma client:", disconnectError);
+        });
     }
-} 
+}
