@@ -35,7 +35,7 @@ interface Claim {
     token: Address
 }
 
-//Create Pool - Prepare Args (Using createPoolWithCustomStrategy)
+//1. Create Pool - Prepare Args (Using createPoolWithCustomStrategy)
 interface CreatePoolArgs {
     profileId: Hash // bytes32
     // strategyAddress is now the *implementation* address to clone
@@ -115,19 +115,172 @@ export function prepareCreatePoolArgs({
         functionName: requestArgs.functionName,
         args: requestArgs.args,
     };
-    
+
     // Handle value correctly if present
     if ('value' in requestArgs && requestArgs.value !== undefined) {
-        finalArgs.value = requestArgs.value as bigint; 
+        finalArgs.value = requestArgs.value as bigint;
     }
 
     return finalArgs;
 }
 
 
-// (Keep existing prepareRegisterRecipientArgs, prepareReviewRecipientsArgs, etc.)
-// ...
+// ==================================
+// Phase 2: Register Recipient - Prepare Args
+// ==================================
 
+interface RegisterRecipientArgs {
+    poolId: bigint
+    recipientAddresses?: Address[] // Array of addresses to register (usually just one)
+    recipientAddress: Address // Primary address being registered
+    recipientPayoutAddress: Address // Address that will receive funds
+    metadata: Metadata
+    proposalBid?: bigint // Optional proposal bid amount
+}
+
+// Prepares arguments for Allo's `registerRecipient` function with proper encoding
+export function prepareRegisterRecipientArgs({
+    poolId,
+    recipientAddresses,
+    recipientAddress,
+    recipientPayoutAddress,
+    metadata,
+    proposalBid,
+}: RegisterRecipientArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
+    console.log("--- Inside prepareRegisterRecipientArgs ---");
+    console.log("Received Pool ID:", poolId?.toString());
+    console.log("Received Recipient Addresses Array:", recipientAddresses);
+    console.log("Received Recipient Address:", recipientAddress);
+    console.log("Received Payout Address:", recipientPayoutAddress);
+    console.log("Received Metadata:", metadata);
+    console.log("Received Proposal Bid:", proposalBid?.toString());
+
+    // Use provided addresses array or default to single address
+    const addresses = recipientAddresses?.length
+        ? recipientAddresses
+        : [recipientAddress]
+
+    console.log("Using Addresses Array:", addresses);
+
+
+    // Step 1: Encode the recipient-specific data (inner encoding)
+    const encodedProposalBid = proposalBid !== undefined && proposalBid !== null
+        ? encodeAbiParameters(parseAbiParameters(['uint256']), [proposalBid])
+        : '0x'; // Default to empty bytes if no bid
+
+    console.log("Encoded Proposal Bid:", encodedProposalBid);
+
+
+    const singleRecipientData = encodeAbiParameters(
+        parseAbiParameters(['address', '(uint256 protocol, string pointer)', 'bytes']),
+        [
+            recipientPayoutAddress,
+            metadata,
+            encodedProposalBid
+        ]
+    )
+    console.log("Step 1 Result (singleRecipientData):", singleRecipientData);
+
+
+    // Step 2: Create an array of encoded recipient data (even if just one)
+    const recipientDataArray = [singleRecipientData]
+    console.log("Step 2 Result (recipientDataArray):", recipientDataArray);
+
+    // Step 3: Encode the entire array as bytes[] (outer encoding)
+    const encodedData = encodeAbiParameters(
+        parseAbiParameters(['bytes[]']),
+        [recipientDataArray]
+    )
+    console.log("Step 3 Result (final encodedData for contract):", encodedData);
+
+    // Prepare the contract call arguments
+    const requestArgs = {
+        address: ALLO_ADDRESS,
+        abi: alloAbi,
+        functionName: 'registerRecipient',
+        args: [
+            poolId,
+            addresses,       // Array of addresses to register
+            encodedData      // The properly nested encoded data
+        ],
+    }
+    console.log("Final Request Args:", requestArgs.address, requestArgs.functionName, requestArgs.args)
+
+
+    // Return a clean object with proper typing
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address as `0x${string}`,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    }
+
+    console.log(`Args prepared for registering recipient(s): ${addresses.join(', ')}`)
+    console.log("--- Exiting prepareRegisterRecipientArgs ---");
+    return finalArgs
+}
+
+// ==================================
+// Phase 3: Review Recipients - Prepare Args
+// ==================================
+
+// Define ApplicationStatus enum matching Solidity contract
+export enum ApplicationStatus {
+    None = 0,
+    Pending = 1,
+    Accepted = 2,
+    Rejected = 3,
+    Appealed = 4
+}
+
+interface ReviewRecipientsArgs {
+    strategyAddress: Address // Address of the specific KickstarterQF instance for the pool
+    recipientIds: Address[]
+    newStatuses: ApplicationStatus[] // Use the enum
+    recipientsCounter: bigint // Read from strategy.recipientsCounter() before calling
+}
+
+// Prepares arguments for KickstarterQF's `reviewRecipients` function
+export function prepareReviewRecipientsArgs({
+    strategyAddress,
+    recipientIds,
+    newStatuses,
+    recipientsCounter,
+}: ReviewRecipientsArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
+    if (recipientIds.length !== newStatuses.length) {
+        throw new Error("Recipient IDs and statuses arrays must have the same length.")
+    }
+    if (recipientIds.length === 0) {
+        throw new Error("No recipients provided for review.")
+    }
+
+    console.log("Preparing reviewRecipients transaction arguments...")
+
+    // Format the data as expected by the contract
+    const applicationStatusStruct = {
+        recipientIds: recipientIds,
+        statuses: newStatuses.map(status => BigInt(status)) // Convert enum values to bigint
+    }
+
+    const requestArgs = {
+        address: strategyAddress,
+        abi: kickstarterQfAbi,
+        functionName: 'reviewRecipients',
+        // The function expects an array of ApplicationStatus structs
+        args: [[applicationStatusStruct], recipientsCounter],
+    }
+
+    // Return a clean object with proper typing
+    const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
+        address: requestArgs.address as `0x${string}`,
+        abi: requestArgs.abi,
+        functionName: requestArgs.functionName,
+        args: requestArgs.args,
+    }
+
+    console.log(`Args prepared for reviewing ${recipientIds.length} recipients...`)
+    return finalArgs
+}
 
 // Utility: Check ERC20 Allowance (Read Operation - Fix chainId type)
 interface CheckAllowanceArgs {
@@ -448,12 +601,12 @@ export function prepareDeployKickstarterQFArgs({
     console.log(`Preparing to deploy KickstarterQF contract with name: ${uniqueName}`);
 
     // Ensure we get the correct bytecode format and type
-    const bytecode = KickStarterQFABI.bytecode?.object as `0x${string}` || 
-                    (KickStarterQFABI.bytecode as unknown as `0x${string}`);
+    const bytecode = KickStarterQFABI.bytecode?.object as `0x${string}` ||
+        (KickStarterQFABI.bytecode as unknown as `0x${string}`);
 
     return {
         abi: KickStarterQFABI.abi as Abi,
-        bytecode, 
+        bytecode,
         args: [allo, uniqueName, directTransfers]
     };
 }
