@@ -103,8 +103,8 @@ export default function CreateRoundPage() {
   const { writeContract, error: writeContractError, reset: resetWriteContract } = useWriteContract();
   const {
     deployContract: deployStrategy,
-    data: deployTxHash,
-    isPending: isDeployingStrategy,
+    // data: deployTxHash,
+    // isPending: isDeployingStrategy,
     error: deployError,
     reset: resetDeployContract,
   } = useDeployContract();
@@ -161,7 +161,7 @@ export default function CreateRoundPage() {
 
   // --- Effect to handle transaction confirmations and chain actions ---
   useEffect(() => {
-    console.log(`[Effect Check] Status: ${status}, Monitored Hash: ${monitoredTxHash}, isConfirming: ${isConfirming}, isConfirmed: ${isConfirmed}`);
+    console.log(`[Effect Check] Status: ${status}, Monitored Hash: ${monitoredTxHash}, isConfirming: ${isConfirming}, isConfirmed: ${isConfirmed}, getValues: ${getValues()}`);
 
     // 1. Handle Setting Confirmation Status (Only once per hash)
     // If we have a hash, are not yet confirming, and are in a state expecting confirmation...
@@ -259,7 +259,7 @@ export default function CreateRoundPage() {
       // Avoid overwriting specific confirmation errors if already set
       if (status !== 'error') {
         console.error("[Hook Error Effect] Error detected:", hookError);
-        let errorSource = deployError ? "Strategy Deployment" : "Contract Interaction";
+        const errorSource = deployError ? "Strategy Deployment" : "Contract Interaction";
         const shortMessage = hookError instanceof BaseError ? hookError.shortMessage : hookError?.message;
         const message = hookError?.message?.includes('User rejected')
           ? 'Transaction rejected by user.'
@@ -342,8 +342,10 @@ export default function CreateRoundPage() {
       // 3. Send Transaction using writeContract
       setStatusMessage('Please confirm pool creation in your wallet...');
       writeContract({
-        ...createPoolArgs,
         address: createPoolArgs.address as `0x${string}`,
+        abi: createPoolArgs.abi,
+        functionName: createPoolArgs.functionName,
+        args: createPoolArgs.args,
       }, { 
         onSuccess: (hash) => {
           console.log("[Trigger Pool] Create pool tx sent:", hash);
@@ -370,8 +372,8 @@ export default function CreateRoundPage() {
   // Add dependencies used inside the callback
   }, [connectedAddress, chainId, setError, writeContract, AlloABI]); // Added AlloABI dependency
 
-  // --- Helper: Save Round Data ---
-  const saveRoundData = useCallback(async (confirmedReceipt: any, data: RoundFormData) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const saveRoundData = useCallback(async (confirmedReceipt: any , data: RoundFormData) => {
     console.log("[Save Data] Starting save process...");
     if (!connectedAddress || !chainId || !deployedStrategyAddress) {
       setStatus('error');
@@ -503,8 +505,10 @@ export default function CreateRoundPage() {
 
       setStatusMessage('Approving token... Tx sent. Waiting for confirmation...');
       writeContract({
-        ...approveArgs,
         address: approveArgs.address as `0x${string}`,
+        abi: approveArgs.abi,
+        functionName: approveArgs.functionName,
+        args: approveArgs.args,
       }, {
         onSuccess: (hash) => {
           setStatus('approving_token');
@@ -816,7 +820,7 @@ export default function CreateRoundPage() {
                   <Alert variant={status === 'error' || !!errors.root ? "destructive" : status === 'success' ? "default" : "default"} className={status === 'success' ? "border-green-500 text-green-700 dark:border-green-700 dark:text-green-400" : ""}>
                     {getAlertIcon()}
                     <AlertTitle>
-                      {status === 'error' || !!errors.root ? "Error" : status === 'success' ? "Success" : "Status"}
+                      {status === 'error' || !!errors.root ? "Info" : status === 'success' ? "Success" : "Status"}
                     </AlertTitle>
                     <AlertDescription>
                       {errors.root?.message || statusMessage}

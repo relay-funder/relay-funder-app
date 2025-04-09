@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Calendar, Users, Info } from "lucide-react"
+import { type Address } from "viem"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,11 +14,10 @@ import {
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApplyToRound } from "@/components/apply-to-round"
-// import { MOCK_USER_CAMPAIGNS } from "@/lib/constant"
 import { prisma } from "@/lib/prisma"
 import type { Round as PrismaRound, Campaign } from "@prisma/client"
 import { ROUND_STATUS_MAP, getRoundStatus } from "@/types/round"
-// import type { RoundStatusKey } from "@/types/round"
+import { CheckWalletServer } from "@/components/check-wallet-server"
 
 interface RoundWithCampaigns extends PrismaRound {
   roundCampaigns: {
@@ -57,8 +57,8 @@ async function getRoundData(id: string): Promise<RoundWithCampaigns | null> {
 
 const DEFAULT_ROUND_LOGO = "/images/fund.png"
 
-export default async function RoundPage({ params }: { params: { id: string } }) {
-  const round = await getRoundData(params.id)
+export default async function RoundPage({ params }: { params: Promise<{ id: string }> }) {
+  const round = await getRoundData((await params).id)
 
   if (!round) {
     notFound()
@@ -95,9 +95,20 @@ export default async function RoundPage({ params }: { params: { id: string } }) 
             roundId={round.id}
             roundTitle={round.title}
             applicationEndDate={round.applicationClose}
-            // userCampaigns={MOCK_USER_CAMPAIGNS}  
+            poolId={round.poolId?.toString()}
+            strategyAddress={round.strategyAddress as Address}
             roundStatusKey={roundStatusKey}
           />
+          
+          {/* Use client component for user-specific content */}
+          <CheckWalletServer 
+            poolId={BigInt(round.poolId || 0)}
+            roundId={round.id}
+            strategyAddress={round.strategyAddress as Address} 
+            roundAdminAddress={round.managerAddress as Address} 
+            roundStatusKey={roundStatusKey}
+          />
+          
           <Button variant="outline" size="lg">
             Share Round
           </Button>
