@@ -125,6 +125,8 @@ model RoundCampaigns {
   id         Int      @id @default(autoincrement())
   roundId    Int
   campaignId Int
+  status     Int?       @default(0)
+  reviewedAt DateTime?
   Campaign   Campaign @relation(fields: [campaignId], references: [id])
   Round      Round    @relation(fields: [roundId], references: [id])
 }

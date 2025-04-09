@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
+import { type Address } from "viem";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,26 +11,28 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { applyCampaignToRound } from "@/lib/actions/campaign-actions";
-import { usePrivy } from "@privy-io/react-auth";
 import type { RoundStatusKey } from "@/types/round";
+import { RegisterCampaignRecipient } from "@/components/register-campaign-recipient";
 
 interface Campaign {
   id: number;
   title: string;
+  slug: string;
+  walletAddress: string;
 }
 
 interface ApplyToRoundProps {
   roundId: number;
   roundTitle: string;
   applicationEndDate: Date;
+  poolId?: string;
+  strategyAddress?: Address;
   roundStatusKey: RoundStatusKey;
 }
 
@@ -45,70 +49,96 @@ export function ApplyToRound({
   roundId,
   roundTitle,
   applicationEndDate,
+  poolId,
+  // strategyAddress,
   roundStatusKey,
 }: ApplyToRoundProps) {
   const { toast } = useToast();
-  const { user } = usePrivy();
+  const router = useRouter();
+  const { address, isConnected } = useAccount();
 
-  const [open, setOpen] = useState(false);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userCampaigns, setUserCampaigns] = useState<Campaign[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [userCampaigns, setUserCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
+  const [showQfRegistration, setShowQfRegistration] = useState(false);
+
   const canApply = APPLY_ELIGIBLE_STATUSES.includes(roundStatusKey);
   const isApplicationPeriodOver = !canApply;
 
-  useEffect(() => {
-    async function fetchUserCampaigns() {
-      if (!user?.wallet?.address) return;
-      
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/campaigns/user?address=${user.wallet.address}`);
-        if (!response.ok) throw new Error("Failed to fetch campaigns");
-        
-        const data = await response.json();
-        setUserCampaigns(data.campaigns || []);
-      } catch (error) {
-        console.error("Error fetching user campaigns:", error);
-        toast({
-          title: "Failed to load your campaigns",
-          description: "Please try again later",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    if (open) {
-      fetchUserCampaigns();
-    }
-  }, [open, user?.wallet?.address, toast]);
-
-  async function handleApply() {
-    if (!selectedCampaignId) {
+  async function handleOpenDialog() {
+    if (!isConnected || !address) {
       toast({
-        title: "Please select a campaign to apply.",
+        title: "Connect wallet",
+        description: "Please connect your wallet to apply to this round",
         variant: "destructive",
       });
       return;
     }
     
-    if (!canApply) {
+    setIsOpen(true);
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(`/api/campaigns/user?address=${address}`);
+      const data = await response.json();
+      
+      if (data.campaigns && Array.isArray(data.campaigns)) {
+        const mappedCampaigns = data.campaigns.map((campaign: Campaign) => ({
+          id: campaign.id,
+          title: campaign.title,
+          slug: campaign.slug || '',
+          walletAddress: campaign.walletAddress || address || '',
+        }));
+        
+        setUserCampaigns(mappedCampaigns);
+      } else {
+        toast({
+          title: "Error loading campaigns",
+          description: data.error || "Failed to load your campaigns",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load campaigns:", error);
       toast({
-        title: "Applications for this round are not currently open.",
+        title: "Error loading campaigns",
+        description: "Failed to load your campaigns",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleCampaignSelect(campaignId: number) {
+    setSelectedCampaignId(campaignId);
+  }
+
+  function handleSubmit() {
+    if (!selectedCampaignId) {
+      toast({
+        title: "Select a campaign",
+        description: "Please select a campaign to continue",
         variant: "destructive",
       });
       return;
     }
-
-    setIsSubmitting(true);
+    
+    if (poolId && BigInt(poolId) > 0n) {
+      setShowQfRegistration(true);
+    } else {
+      submitRegularApplication();
+    }
+  }
+  
+  async function submitRegularApplication() {
+    setIsLoading(true);
+    
     try {
       const result = await applyCampaignToRound({
         roundId,
-        campaignId: parseInt(selectedCampaignId, 10),
+        campaignId: parseInt(selectedCampaignId?.toString() || '0', 10),
       });
       
       if (result.success) {
@@ -116,8 +146,9 @@ export function ApplyToRound({
           title: `Successfully applied campaign to round ${roundTitle}.`,
           variant: "default",
         });
-        setOpen(false);
+        setIsOpen(false);
         setSelectedCampaignId(null);
+        router.refresh();
       } else {
         toast({
           title: result?.error ?? "Failed to apply campaign to round.",
@@ -132,76 +163,101 @@ export function ApplyToRound({
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   }
+  
+  function handleQfRegistrationComplete() {
+    setShowQfRegistration(false);
+    setIsOpen(false);
+    router.refresh();
+  }
+
+  const selectedCampaign = userCampaigns.find(c => c.id === selectedCampaignId);
 
   const buttonText = canApply
     ? "Apply Your Project"
     : "View Application Details";
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="lg" disabled={!canApply && isApplicationPeriodOver}>
-          {buttonText}
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Apply to {roundTitle}</DialogTitle>
-          <DialogDescription>
-            {canApply
-              ? `Select one of your eligible campaigns to apply to this round. Applications close on ${applicationEndDate.toLocaleDateString()}.`
-              : `Applications for this round closed on ${applicationEndDate.toLocaleDateString()}. You can no longer apply.`}
-          </DialogDescription>
-        </DialogHeader>
-
-        {isLoading ? (
-          <div className="py-4 text-center">Loading your campaigns...</div>
-        ) : canApply && userCampaigns.length > 0 ? (
-          <div className="py-4">
-            <Label className="mb-2 block">Your Campaigns</Label>
-            <RadioGroup
-              value={selectedCampaignId ?? undefined}
-              onValueChange={setSelectedCampaignId}
-              className="space-y-2"
-            >
-              {userCampaigns.map((campaign) => (
-                <div key={campaign.id} className="flex items-center space-x-2">
-                  <RadioGroupItem value={String(campaign.id)} id={`campaign-${campaign.id}`} />
-                  <Label htmlFor={`campaign-${campaign.id}`} className="font-normal">
-                    {campaign.title}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-        ) : canApply && userCampaigns.length === 0 ? (
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">You don&apos;t have any campaigns eligible to apply. Create a campaign first.</p>
-            <Button className="mt-4 w-full" variant="outline" asChild>
-              <Link href="/campaigns/create">Create a Campaign</Link>
-            </Button>
-          </div>
-        ) : null}
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          {canApply && (
-            <Button
-              type="button"
-              onClick={handleApply}
-              disabled={!selectedCampaignId || isSubmitting || !canApply || isLoading}
-            >
-              {isSubmitting ? "Applying..." : "Apply Selected Campaign"}
-            </Button>
+    <>
+      <Button
+        variant="default"
+        size="lg"
+        onClick={handleOpenDialog}
+        disabled={!canApply && isApplicationPeriodOver}
+      >
+        {buttonText}
+      </Button>
+      
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Apply to {roundTitle}</DialogTitle>
+            <DialogDescription>
+              {canApply
+                ? `Select one of your eligible campaigns to apply to this round. Applications close on ${applicationEndDate.toLocaleDateString()}.`
+                : `Applications for this round closed on ${applicationEndDate.toLocaleDateString()}. You can no longer apply.`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {showQfRegistration && selectedCampaign && poolId ? (
+            <RegisterCampaignRecipient
+              campaignId={selectedCampaign.id}
+              campaignTitle={selectedCampaign.title}
+              campaignWalletAddress={selectedCampaign.walletAddress as Address}
+              poolId={BigInt(poolId)}
+              roundId={roundId}
+              onComplete={handleQfRegistrationComplete}
+              showDialog={false}
+            />
+          ) : (
+            <>
+              <div className="py-4">
+                {isLoading ? (
+                  <div className="text-center py-4">Loading your campaigns...</div>
+                ) : userCampaigns.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="mb-2">You don&apos;t have any campaigns yet.</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => router.push('/dashboard/campaigns/create')}
+                    >
+                      Create a Campaign
+                    </Button>
+                  </div>
+                ) : (
+                  <RadioGroup 
+                    value={selectedCampaignId?.toString()}
+                    onValueChange={(value) => handleCampaignSelect(parseInt(value, 10))}
+                  >
+                    {userCampaigns.map((campaign) => (
+                      <div key={campaign.id} className="flex items-center space-x-2 mb-3 p-2 border rounded hover:bg-accent">
+                        <RadioGroupItem value={campaign.id.toString()} id={`campaign-${campaign.id}`} />
+                        <Label htmlFor={`campaign-${campaign.id}`} className="flex-1 cursor-pointer">
+                          {campaign.title}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={isLoading || !selectedCampaignId}
+                >
+                  Apply Selected Campaign
+                </Button>
+              </DialogFooter>
+            </>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

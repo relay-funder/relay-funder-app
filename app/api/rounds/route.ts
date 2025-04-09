@@ -80,9 +80,13 @@ export async function POST(req: NextRequest) {
         applicationClose: new Date(applicationClose),
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        status: status,
         blockchain,
         logoUrl,
+        strategyAddress: body.strategyAddress || "0x0",
+        profileId: body.profileId || "default-profile",
+        managerAddress: body.managerAddress || "0x0",
+        tokenAddress: body.tokenAddress || "0x0",
+        tokenDecimals: body.tokenDecimals || 18,
       },
     });
     return NextResponse.json(newRound, { status: 201 });
