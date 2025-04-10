@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useWriteContract, useReadContract, usePublicClient, useAccount } from "wagmi"
+import { useAccount } from "wagmi"
 import { type Address } from "viem"
+import { RecipientStatus } from "@prisma/client"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,17 +24,17 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { prepareReviewRecipientsArgs, ApplicationStatus } from "@/lib/qfInteractions"
+// import { prepareReviewRecipientsArgs } from "@/lib/qfInteractions"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle } from "lucide-react"
+import { CheckCircle, XCircle, RefreshCw } from "lucide-react"
 
 interface Recipient {
     id: number
     address: Address
     campaignId: number
     campaignName: string
-    currentStatus: ApplicationStatus
+    currentStatus: RecipientStatus
 }
 
 interface ReviewRecipientsProps {
@@ -44,157 +45,121 @@ interface ReviewRecipientsProps {
     isAdmin: boolean
 }
 
+interface RecipientUpdate {
+    campaignId: number
+    status: RecipientStatus
+}
+
+const contractStatusMap: Record<RecipientStatus, number> = {
+    [RecipientStatus.PENDING]: 3,
+    [RecipientStatus.APPROVED]: 1,
+    [RecipientStatus.REJECTED]: 2,
+}
+
 export function ReviewRecipients({
     strategyAddress,
     poolId,
     roundId,
-    recipients,
+    recipients: initialRecipients,
     isAdmin,
 }: ReviewRecipientsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [isReviewing, setIsReviewing] = useState(false)
-    const [selectedRecipients, setSelectedRecipients] = useState<Record<string, ApplicationStatus>>({})
-    const { writeContractAsync } = useWriteContract()
-    const publicClient = usePublicClient()
+    const [selectedRecipients, setSelectedRecipients] = useState<Record<number, RecipientStatus>>({})
+    const [recipients, setRecipients] = useState<Recipient[]>(initialRecipients)
+    // const { writeContractAsync } = useWriteContract()
+    // const publicClient = usePublicClient()
     const router = useRouter()
     const { toast } = useToast()
-    const { address } = useAccount()
-    console.log("recipients", recipients, "poolId", poolId, "roundId", roundId, "strategyAddress", strategyAddress)
+    const { address: managerAddress } = useAccount()
+    const [updatesToSend, setUpdatesToSend] = useState<RecipientUpdate[]>([])
 
-    // Read the current recipients counter from the contract
-    const { data: recipientsCounter } = useReadContract({
-        address: strategyAddress,
-        abi: [
-            {
-                inputs: [],
-                name: "recipientsCounter",
-                outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-                stateMutability: "view",
-                type: "function",
-            },
-        ],
-        functionName: "recipientsCounter",
-    })
+    console.log("initialRecipients", initialRecipients, "strategyAddress", strategyAddress, "poolId", poolId, "roundId", roundId)
+    useEffect(() => {
+        setRecipients(initialRecipients)
+        const initialStatuses = initialRecipients.reduce((acc, recipient) => {
+            acc[recipient.campaignId] = recipient.currentStatus
+            return acc
+        }, {} as Record<number, RecipientStatus>)
+        setSelectedRecipients(initialStatuses)
+        setUpdatesToSend([])
+    }, [initialRecipients])
 
-    // Toggle recipient selection and status
-    function toggleRecipientStatus(recipientAddress: Address, status: ApplicationStatus) {
+    function toggleRecipientStatus(campaignId: number, status: RecipientStatus) {
         setSelectedRecipients(prev => {
-            const newSelected = { ...prev }
-
-            // If already selected with this status, remove selection
-            if (newSelected[recipientAddress] === status) {
-                delete newSelected[recipientAddress]
-            } else {
-                // Otherwise set to the new status
-                newSelected[recipientAddress] = status
-            }
-
-            return newSelected
+            const currentStatus = prev[campaignId]
+            const newStatus = currentStatus === status ? RecipientStatus.PENDING : status
+            return { ...prev, [campaignId]: newStatus }
         })
     }
 
     async function handleReviewRecipients() {
-        if (Object.keys(selectedRecipients).length === 0) {
-            toast({
-                title: "No recipients selected",
-                description: "Please select at least one recipient to review.",
-                variant: "destructive",
-            })
+        if (!managerAddress) {
+            toast({ title: "Error", description: "Wallet not connected.", variant: "destructive" })
             return
         }
 
-        if (!recipientsCounter) {
-            toast({
-                title: "Unable to fetch recipients counter",
-                description: "Please try again later.",
-                variant: "destructive",
-            })
+        const updatesToSend: RecipientUpdate[] = []
+        const recipientIdsForContract: Address[] = []
+        const newStatusesForContract: number[] = []
+
+        for (const recipient of recipients) {
+            const newStatus = selectedRecipients[recipient.campaignId]
+            if (newStatus !== recipient.currentStatus) {
+                updatesToSend.push({ campaignId: recipient.campaignId, status: newStatus })
+
+                recipientIdsForContract.push(recipient.address)
+                newStatusesForContract.push(contractStatusMap[newStatus])
+            }
+        }
+
+        if (updatesToSend.length === 0) {
+            toast({ title: "No Changes", description: "No recipient statuses were changed." })
             return
         }
 
         try {
             setIsReviewing(true)
 
-            // Convert the selection map to arrays for the contract
-            const recipientIds: Address[] = []
-            const newStatuses: ApplicationStatus[] = []
-
-            Object.entries(selectedRecipients).forEach(([address, status]) => {
-                recipientIds.push(address as Address)
-                newStatuses.push(status)
+            const response = await fetch('/api/rounds/recipients/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    roundId,
+                    updates: updatesToSend,
+                    managerAddress: managerAddress.toLowerCase(),
+                }),
             })
 
-            // Prepare transaction arguments
-            const args = prepareReviewRecipientsArgs({
-                strategyAddress,
-                recipientIds,
-                newStatuses,
-                recipientsCounter: recipientsCounter as bigint,
-            })
+            const data = await response.json()
 
-            // Execute the transaction
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const hash = await writeContractAsync({...args, type: undefined} as any)
-            
-            // Wait for transaction confirmation
-            if (hash) {
+            if (response.ok && data.success) {
                 toast({
-                    title: "Review submitted",
-                    description: "Your review is being processed on-chain.",
+                    title: "Review Successful",
+                    description: "Recipient statuses updated in the database.",
                 })
-                
-                const receipt = await publicClient.waitForTransactionReceipt({ hash })
-                
-                if (receipt.status === "success") {
-                    // Update database via API
-                    const response = await fetch('/api/rounds/recipients/review', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            roundId,
-                            updates: recipientIds.map((addr, i) => ({ 
-                                address: addr, 
-                                status: newStatuses[i] 
-                            })),
-                            managerAddress: address as Address, // From useAccount()  
-                        }),
-                    })
-                    
-                    const data = await response.json()
-                    
-                    if (data.success) {
-                        toast({
-                            title: "Review successful",
-                            description: "The recipient statuses have been updated.",
-                        })
-                        router.refresh()
-                    } else {
-                        toast({
-                            title: "Database update failed",
-                            description: data.error || "Failed to update application statuses in database.",
-                            variant: "destructive",
-                        })
-                    }
-                }
+                router.refresh()
+                setIsOpen(false)
+            } else {
+                throw new Error(data.error || "Failed to update statuses in database.")
             }
         } catch (error) {
-            console.error("Failed to review recipients:", error)
+            console.error("Database review update failed:", error)
             toast({
-                title: "Review failed",
-                description: error instanceof Error ? error.message : "Unknown error occurred",
+                title: "Database Update Failed",
                 variant: "destructive",
             })
         } finally {
             setIsReviewing(false)
-            setIsOpen(false)
-            setSelectedRecipients({})
         }
     }
 
-    if (!isAdmin || recipients.length === 0) {
+    if (!isAdmin) {
         return null
+    }
+
+    if (recipients.length === 0) {
+        return <p className="text-sm text-muted-foreground">No recipients registered for this round yet.</p>
     }
 
     return (
@@ -206,43 +171,45 @@ export function ReviewRecipients({
                 <DialogHeader>
                     <DialogTitle>Review Round Recipients</DialogTitle>
                     <DialogDescription>
-                        Approve or reject recipient applications for this funding round.
+                        Approve or reject recipient applications for Round ID: {roundId}.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="max-h-[400px] overflow-y-auto">
+                <div className="max-h-[400px] overflow-y-auto py-4">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Campaign</TableHead>
                                 <TableHead>Address</TableHead>
-                                <TableHead>Current Status</TableHead>
+                                <TableHead>Selected Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {recipients.map((recipient) => (
-                                <TableRow key={recipient.id}>
+                                <TableRow key={recipient.campaignId}>
                                     <TableCell className="font-medium">{recipient.campaignName}</TableCell>
-                                    <TableCell className="font-mono text-xs">
-                                        {recipient.address.slice(0, 6)}...{recipient.address.slice(-4)}
+                                    <TableCell className="font-mono text-xs truncate max-w-[100px]" title={recipient.address}>
+                                        {recipient.address}
                                     </TableCell>
                                     <TableCell>
-                                        <StatusBadge status={recipient.currentStatus} />
+                                        <StatusBadge status={selectedRecipients[recipient.campaignId] ?? recipient.currentStatus} />
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end space-x-2">
+                                        <div className="flex justify-end space-x-1">
                                             <Button
                                                 size="sm"
-                                                variant={selectedRecipients[recipient.address] === ApplicationStatus.Accepted ? "default" : "outline"}
-                                                onClick={() => toggleRecipientStatus(recipient.address, ApplicationStatus.Accepted)}
+                                                variant={selectedRecipients[recipient.campaignId] === RecipientStatus.APPROVED ? "default" : "outline"}
+                                                onClick={() => toggleRecipientStatus(recipient.campaignId, RecipientStatus.APPROVED)}
+                                                disabled={isReviewing}
                                             >
                                                 <CheckCircle className="h-4 w-4 mr-1" />
                                                 Approve
                                             </Button>
                                             <Button
                                                 size="sm"
-                                                variant={selectedRecipients[recipient.address] === ApplicationStatus.Rejected ? "destructive" : "outline"}
-                                                onClick={() => toggleRecipientStatus(recipient.address, ApplicationStatus.Rejected)}
+                                                variant={selectedRecipients[recipient.campaignId] === RecipientStatus.REJECTED ? "destructive" : "outline"}
+                                                onClick={() => toggleRecipientStatus(recipient.campaignId, RecipientStatus.REJECTED)}
+                                                disabled={isReviewing}
                                             >
                                                 <XCircle className="h-4 w-4 mr-1" />
                                                 Reject
@@ -255,14 +222,14 @@ export function ReviewRecipients({
                     </Table>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isReviewing}>
                         Cancel
                     </Button>
                     <Button
                         onClick={handleReviewRecipients}
-                        disabled={isReviewing || Object.keys(selectedRecipients).length === 0}
+                        disabled={isReviewing || updatesToSend.length === 0}
                     >
-                        {isReviewing ? "Submitting..." : "Submit Review"}
+                        {isReviewing ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : `Submit ${updatesToSend.length} Change(s)`}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -270,20 +237,16 @@ export function ReviewRecipients({
     )
 }
 
-// Helper component to display status badges
-function StatusBadge({ status }: { status: ApplicationStatus }) {
+function StatusBadge({ status }: { status: RecipientStatus }) {
     switch (status) {
-        case ApplicationStatus.None:
-            return <Badge variant="outline">None</Badge>
-        case ApplicationStatus.Pending:
+        case RecipientStatus.PENDING:
             return <Badge variant="secondary">Pending</Badge>
-        case ApplicationStatus.Accepted:
+        case RecipientStatus.APPROVED:
             return <Badge variant="success">Approved</Badge>
-        case ApplicationStatus.Rejected:
+        case RecipientStatus.REJECTED:
             return <Badge variant="destructive">Rejected</Badge>
-        case ApplicationStatus.Appealed:
-            return <Badge variant="warning">Appealed</Badge>
         default:
-            return <Badge variant="outline">Unknown</Badge>
+            const statusString = status as string
+            return <Badge variant="outline">{statusString || 'Unknown'}</Badge>
     }
 } 

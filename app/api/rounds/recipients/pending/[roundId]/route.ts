@@ -7,7 +7,8 @@ export async function GET(
     { params }: { params: Promise<{ roundId: string }> }
 ) {
     try {
-        const roundId = parseInt((await params).roundId, 10)
+        const resolvedParams = await params; // Await the Promise
+        const roundId = parseInt(resolvedParams.roundId, 10);
 
         if (isNaN(roundId)) {
             return NextResponse.json(
