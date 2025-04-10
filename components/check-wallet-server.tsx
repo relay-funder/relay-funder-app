@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import { type Address } from "viem"
-
-import { RegisterCampaignRecipient } from "@/components/register-campaign-recipient"
-import { ReviewRecipients } from "@/components/review-recipients"
+// import { ReviewRecipients } from "@/components/review-recipients"
 import { ApplicationStatus } from "@/lib/qfInteractions"
+// import { RecipientStatus } from "@prisma/client"
 
 interface Campaign {
     id: number
@@ -41,14 +40,16 @@ export function CheckWalletServer({
     roundId,
     strategyAddress,
     roundAdminAddress,
-    roundStatusKey
+    // roundStatusKey
 }: CheckWalletServerProps) {
     const { address, isConnected } = useAccount()
     const [userCampaigns, setUserCampaigns] = useState<Campaign[]>([])
     const [pendingRecipients, setPendingRecipients] = useState<Recipient[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    console.log("poolId", poolId, "roundId", roundId, "strategyAddress", strategyAddress, "pendingRecipients", pendingRecipients)
 
     const isAdmin = isConnected && address === roundAdminAddress
+    console.log("userCampaigns", userCampaigns)
 
     useEffect(() => {
         async function loadData() {
@@ -100,7 +101,7 @@ export function CheckWalletServer({
 
     return (
         <>
-            {isConnected && userCampaigns.length > 0 && (
+            {/* {isConnected && userCampaigns.length > 0 && (
                 <RegisterCampaignRecipient
                     campaignId={userCampaigns[0].id}
                     campaignTitle={userCampaigns[0].title}
@@ -111,9 +112,9 @@ export function CheckWalletServer({
                     buttonVariant="outline"
                     buttonText="Register for QF"
                 />
-            )}
+            )} */}
 
-            {isAdmin && pendingRecipients.length > 0 && (
+            {/* {isAdmin && pendingRecipients.length > 0 && (
                 <ReviewRecipients
                     strategyAddress={strategyAddress}
                     poolId={poolId}
@@ -127,7 +128,7 @@ export function CheckWalletServer({
                     }))}
                     isAdmin={isAdmin}
                 />
-            )}
+            )} */}
         </>
     )
 } 

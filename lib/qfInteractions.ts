@@ -125,10 +125,7 @@ export function prepareCreatePoolArgs({
 }
 
 
-// ==================================
-// Phase 2: Register Recipient - Prepare Args
-// ==================================
-
+//2: Register Recipient - Prepare Args
 interface RegisterRecipientArgs {
     poolId: bigint
     recipientAddresses?: Address[] // Array of addresses to register (usually just one)
@@ -220,15 +217,13 @@ export function prepareRegisterRecipientArgs({
     return finalArgs
 }
 
-// ==================================
-// Phase 3: Review Recipients - Prepare Args
-// ==================================
 
+//3: Review Recipients - Prepare Args
 // Define ApplicationStatus enum matching Solidity contract
 export enum ApplicationStatus {
     None = 0,
     Pending = 1,
-    Accepted = 2,
+    Approved = 2, 
     Rejected = 3,
     Appealed = 4
 }
@@ -545,11 +540,11 @@ export function prepareClaimAllocationsArgs({ strategyAddress, claims }: ClaimAl
 // Utility: ERC20 Approve - Prepare Args
 // ==================================
 
-interface ApproveErc20Args {
-    tokenAddress: Address
-    spenderAddress: Address // e.g., ALLO_ADDRESS for allocateErc20, or strategyAddress if needed elsewhere
-    amount: bigint
-}
+// interface ApproveErc20Args {
+//     tokenAddress: Address
+//     spenderAddress: Address // e.g., ALLO_ADDRESS for allocateErc20, or strategyAddress if needed elsewhere
+//     amount: bigint
+// }
 
 // export function prepareApproveErc20Args({ tokenAddress, spenderAddress, amount }: ApproveErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
 //     console.log(`Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { RecipientStatus } from "@prisma/client"
 // import { ApplicationStatus } from "@/lib/qfInteractions"
 
 export async function POST(request: NextRequest) {
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
                     },
                 },
                 data: {
+                    status: RecipientStatus.PENDING,
                     reviewedAt: new Date(), 
                 },
             })
