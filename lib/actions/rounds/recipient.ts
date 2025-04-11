@@ -200,7 +200,7 @@ export function prepareRegistrationData(params: RecipientRegistrationParams) {
         // Validate and encode the proposal bid
         const extraData = encodeProposalBid(params.proposalBid);
 
-        // Determine and validate the anchor address - contract manager 0x03609C49831F3D2a9036A85B39309212BEd104ba
+        // Determine and validate the anchor address ( for main round creator address) 0x03609C49831F3D2a9036A85B39309212BEd104ba
         // let anchorAddress = ethers.constants.AddressZero;
         let anchorAddress = "0x03609C49831F3D2a9036A85B39309212BEd104ba";
         if (params.useProfileAnchor) {
