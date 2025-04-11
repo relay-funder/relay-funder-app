@@ -3,13 +3,24 @@
 import { PrivyProvider } from '@privy-io/react-auth';
 import { ReactNode } from 'react';
 import { WagmiProvider } from '@privy-io/wagmi';
-import {  celoAlfajores } from 'wagmi/chains';
+import {  celoAlfajores, sepolia, mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionProvider } from '@/contexts/CollectionContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { EnvironmentProvider } from '@/components/environment-theme-provider';
-import { config } from '@/lib/wagmi';
+import { createConfig } from '@privy-io/wagmi';
+import { http } from 'wagmi';
+
+const config = createConfig({
+  chains: [celoAlfajores, sepolia, mainnet],
+  transports: {
+      [celoAlfajores.id]: http(process.env.NEXT_PUBLIC_RPC_URL || "https://alfajores-forno.celo-testnet.org"),
+      [sepolia.id]: http(),
+      [mainnet.id]: http(),
+  },
+  ssr: true,
+})
 
 const queryClient = new QueryClient({
   defaultOptions: {
