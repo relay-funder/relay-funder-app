@@ -4,7 +4,6 @@ import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAccount, useConnectorClient } from "wagmi"
 import { type Address, type Chain, type Client, type Transport } from "viem"
-// Import ethers v5 specific classes
 import { ethers, providers, Signer } from "ethers"
 import { AlloABI } from "@/contracts/abi/qf/Allo"
 import { prepareRegistrationData, RecipientRegistrationParams } from "@/lib/actions/rounds/recipient"
@@ -87,15 +86,15 @@ export function RegisterCampaignRecipient({
             // Create a read-only contract interface (doesn't need signer)
             const provider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_CELO_ALFAJORES_RPC_URL);
             const alloContract = new ethers.Contract(ALLO_ADDRESS, AlloABI, provider);
-            
+
             // Create encoded recipient ID - this varies by strategy, but often it's just the address
             // This is a common pattern in Allo's QF strategies
             const recipientId = recipientAddress;
-            
+
             // Check the recipient status using the Allo contract's view function
             const status = await alloContract.getRecipientStatus(poolId, recipientId);
             console.log("recipient status:", status, "poolId:", poolId, "recipientId:", recipientId)
-            
+
             // Status 1 = Accepted, 2 = Rejected, 3 = Pending, 0 = None
             // Any value other than 0 means they've been registered before
             return status > 0;
@@ -105,6 +104,7 @@ export function RegisterCampaignRecipient({
         }
     }
 
+    console.log("roundId:", roundId, "router:", router, "isRecipientRegistered:", isRecipientRegistered)
     // function logTransactionData(tx: ethers.providers.TransactionRequest) {
     //     console.log("=== TRANSACTION DATA DETAILS ===");
     //     console.log("To:", tx.to);
@@ -112,11 +112,11 @@ export function RegisterCampaignRecipient({
     //     console.log("Value:", tx.value?.toString());
     //     console.log("Gas Limit:", tx.gasLimit?.toString());
     //     console.log("Data:", tx.data);
-        
+
     //     // Try to decode the function signature
     //     const functionSig = tx?.data ? ethers.utils.hexlify(tx.data).substring(0, 10) : '0x00000000'; // Fallback value
     //     console.log("Function Signature:", functionSig);
-        
+
     //     // Log pool ID (first parameter)
     //     try {
     //         const poolIdHex = tx?.data ? ethers.utils.hexlify(tx.data).substring(10, 74) : '0x00000000'; // First parameter is 32 bytes after function sig
@@ -181,24 +181,24 @@ export function RegisterCampaignRecipient({
             if (!initialRegisterResponse.ok || !initialRegisterData.success) {
                 // Handle specific case where it might already be pending or approved
                 if (initialRegisterData.message?.includes("already exists")) {
-                     toast({
+                    toast({
                         title: "Registration Pending or Complete",
                         description: initialRegisterData.message || "This campaign is already registered or pending approval for this round.",
                         variant: "default"
                     })
-                     // Check on-chain status just in case DB is out of sync
-                     const alreadyRegisteredOnChain = await isRecipientRegistered(poolId, campaignWalletAddress);
-                     if (alreadyRegisteredOnChain) {
-                         console.log("Confirmed already registered on-chain.")
-                         // Optionally trigger a DB update here if needed, or just refresh
-                         if (onComplete) onComplete()
-                         else router.refresh()
-                         if (showDialog) setIsOpen(false)
-                     } else {
-                         // It exists in DB but not on-chain? Could be pending or failed previously.
-                         // For now, just stop the process. More sophisticated retry logic could be added.
-                         console.warn("Recipient exists in DB but not confirmed on-chain.")
-                     }
+                    // Check on-chain status just in case DB is out of sync
+                    const alreadyRegisteredOnChain = await isRecipientRegistered(poolId, campaignWalletAddress);
+                    if (alreadyRegisteredOnChain) {
+                        console.log("Confirmed already registered on-chain.")
+                        // Optionally trigger a DB update here if needed, or just refresh
+                        if (onComplete) onComplete()
+                        else router.refresh()
+                        if (showDialog) setIsOpen(false)
+                    } else {
+                        // It exists in DB but not on-chain? Could be pending or failed previously.
+                        // For now, just stop the process. More sophisticated retry logic could be added.
+                        console.warn("Recipient exists in DB but not confirmed on-chain.")
+                    }
                 } else {
                     toast({
                         title: "Database Registration Failed",
@@ -217,10 +217,17 @@ export function RegisterCampaignRecipient({
                 description: "Submitting transaction to the blockchain...",
             })
 
+            // remove it when making on chain transaction - close the dialog after 3 seconds if it's being shown
+            if (showDialog) {
+                setTimeout(() => {
+                    setIsOpen(false)
+                }, 3000) // 3000 milliseconds = 3 seconds
+            }
+
             // --- Step 2: Blockchain Transaction ---
             console.log("Preparing registration data for blockchain...")
 
-            // const alloContract = new Contract(ALLO_ADDRESS, AlloABI, signer)
+            const alloContract = new ethers.Contract(ALLO_ADDRESS, AlloABI, signer)
 
             const registrationParams = {
                 useProfileAnchor: false,
@@ -235,13 +242,14 @@ export function RegisterCampaignRecipient({
             }
 
             const { recipientAddresses, outerData } = prepareRegistrationData(registrationParams as RecipientRegistrationParams)
-            
+
             console.log("Registration data prepared:", {
                 poolId: poolId.toString(),
-                recipientAddresses, 
-                outerData
+                recipientAddresses,
+                outerData,
+                alloContract
             })
-            
+
             // Estimate gas to detect potential failures early
             // let gasEstimate
             // try {
@@ -257,21 +265,25 @@ export function RegisterCampaignRecipient({
             //     console.error("Gas estimation failed:", gasError)
             //     throw new Error("Gas estimation failed, transaction likely to fail. Check arguments and permissions.")
             // }
-            
+
             console.log("Preparing to send transaction...")
-            
-            // // Populate transaction
-            // const tx = await alloContract.populateTransaction.registerRecipient(
+
+            // make transaction
+            // const tx = await alloContract.registerRecipient(
             //     poolId,
             //     recipientAddresses,
             //     outerData,
             //     { gasLimit: 500000 }
             //     // { gasLimit: gasEstimate ? gasEstimate.mul(120).div(100) : 500000 }
             // )
-            // logTransactionData(tx)
+
+            // console.log("tx alloContract", tx)
             // const response = await signer.sendTransaction(tx)
-            txHash = "0x0000000000000000000000000000000000000000000000000000000000000000" // response.hash
-            console.log(`Transaction sent: ${txHash}. Waiting for confirmation...`)
+            // txHash = response.hash
+            // console.log(`Transaction sent for alloContract.registerRecipient: ${txHash}. Waiting for confirmation...`)
+
+            txHash = "0x0000 " //tx.hash 
+            console.log(`Transaction sent with hash: ${txHash}. Waiting for confirmation...`)
 
             toast({
                 title: "Registration submitted",
@@ -279,8 +291,8 @@ export function RegisterCampaignRecipient({
             })
 
             console.log("Waiting for transaction receipt...")
-            const receipt = "0x0000000000000000000000000000000000000000000000000000000000000000" // await response.wait()
-            console.log("Transaction Receipt:", receipt)
+            // const receipt = await tx.wait()
+            // console.log("Transaction Receipt:", receipt)
 
             // --- Step 3: Update Database with Confirmation ---
             // if (receipt && receipt.status === 1) {
@@ -340,12 +352,11 @@ export function RegisterCampaignRecipient({
             console.error("Registration process failed:", error)
             let errorMessage = "An unexpected error occurred during registration."
 
-            // Type-safe error handling
             if (error && typeof error === 'object') {
                 // Handle ethers specific errors
                 if ('code' in error) {
                     const typedError = error as { code: string | number, reason?: string, message?: string };
-                    
+
                     if (typedError.code === 'UNPREDICTABLE_GAS_LIMIT') {
                         errorMessage = "Cannot estimate gas; transaction likely to fail. Possible reasons: Insufficient permissions, pool inactive, recipient already registered, insufficient proposal bid, or incorrect arguments."
                         if (typedError.reason) console.error("Potential Revert Reason:", typedError.reason)
@@ -359,7 +370,7 @@ export function RegisterCampaignRecipient({
                 } else if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
                     errorMessage = (error as { message: string }).message
                 }
-                
+
                 // Log transaction details if available in the error object
                 if ('transaction' in error) {
                     console.error("Failed Transaction Object:", (error as { transaction: unknown }).transaction)
@@ -374,8 +385,8 @@ export function RegisterCampaignRecipient({
             // If the initial DB record was created but the blockchain part failed,
             // the record remains PENDING in the DB.
             if (pendingRecordCreated && !txHash) {
-                 console.log("Blockchain step failed after initial DB registration.")
-                 // Optionally inform the user their application is pending but needs transaction completion.
+                console.log("Blockchain step failed after initial DB registration.")
+                // Optionally inform the user their application is pending but needs transaction completion.
             }
         } finally {
             setIsRegistering(false)
