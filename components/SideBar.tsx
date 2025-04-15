@@ -6,10 +6,10 @@ import { usePrivy } from '@privy-io/react-auth'
 import { Grid, Home, LogOut, Settings, Star, BookCheck } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"
+import { Button, Switch } from '@/components/ui'
 import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useFeatureFlag, toggleFeatureFlag } from '@/lib/flags'
-import { Switch } from '@/components/ui/switch'
 
 interface NavItem {
     icon: JSX.Element
@@ -20,23 +20,23 @@ interface NavItem {
 export const SideBar = () => {
     const { isOpen, setIsOpen } = useSidebar()
     const pathname = usePathname()
-    const { user, logout } = usePrivy()
+    const { user, logout, login, authenticated } = usePrivy()
     const showRounds = useFeatureFlag('ENABLE_ROUNDS')
-    
+
     console.log("user", user)
     const shortenAddress = (address: string) => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`
     }
-    
+
     // Create base nav items
     const baseNavItems: NavItem[] = [
         { icon: <Home className="h-6 w-6" />, label: "Home", href: "/" },
         { icon: <Grid className="h-6 w-6" />, label: "Dashboard", href: "/dashboard" },
         { icon: <Star className="h-6 w-6" />, label: "Collections", href: "/collections" },
     ]
-    
+
     // Conditionally add Rounds based on feature flag
-    const navItems = showRounds 
+    const navItems = showRounds
         ? [...baseNavItems, { icon: <BookCheck className="h-6 w-6" />, label: "Rounds", href: "/rounds" }]
         : baseNavItems
 
@@ -88,41 +88,76 @@ export const SideBar = () => {
                     <Link
                         href="/settings"
                         className={cn(
-                            "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
-                            pathname === "/settings" && "bg-green-200 text-gray-900"
+                            "flex items-center justify-center rounded-lg px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900",
+                            pathname === "/settings" && "bg-green-200 text-gray-900",
+                            isOpen ? "gap-3" : "flex-col items-center"
                         )}
                     >
-                        <Settings className="h-6 w-6" />
-                        <span
+                        <Settings 
                             className={cn(
-                                "overflow-hidden transition-all duration-300 ease-in-out",
-                                isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
-                            )}
-                        >
-                            Settings
-                        </span>
-                    </Link>
-                    <div className="flex items-center justify-center gap-3 rounded-lg px-3 py-2">
-                        <Image src="https://avatar.vercel.sh/user" alt="User" width={24} height={24} className="rounded-full" />
-                        <span
-                            className={cn(
-                                "overflow-hidden text-sm font-medium transition-all duration-300 ease-in-out",
-                                isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
-                            )}
-                        >
-                            {user?.wallet?.address ? shortenAddress(user.wallet.address) : 'User'}
-                        </span>
-                        {user && (
-                            <LogOut className="h-6 w-6" onClick={() => logout()} />
+                                "h-6 w-6", 
+                                isOpen ? "" : "mx-auto"
+                            )} 
+                        />
+                        {isOpen && (
+                            <span
+                                className={cn(
+                                    "overflow-hidden transition-all duration-300 ease-in-out text-sm text-gray-700",
+                                )}
+                            >
+                                Settings
+                            </span>
                         )}
+                    </Link>
+
+
+                    <div className='flex items-center justify-center rounded-lg px-2 py-2 hover:bg-gray-100'>
+                        <Image
+                            src="https://avatar.vercel.sh/user"
+                            alt="User"
+                            width={24}
+                            height={24}
+                            className={cn(
+                                "rounded-full",
+                                isOpen ? "" : "mx-auto"
+                            )}
+                        />
+                        <div className="flex items-center justify-center rounded-lg ">
+                            <span
+                                className={cn(
+                                    "overflow-hidden text-sm font-medium transition-all duration-300 ease-in-out",
+                                    isOpen ? "w-auto opacity-100" : "w-0 opacity-0"
+                                )}
+                            >
+                                {!authenticated ? (
+                                    <Button
+                                        variant="ghost"
+                                        className="font-semibold text-black text-sm"
+                                        onClick={login}
+                                    >
+                                        Connect Wallet
+                                    </Button>
+                                ) : (
+                                    <div className='flex items-center justify-center gap-2 px-2'>
+                                        {user?.wallet?.address ? shortenAddress(user.wallet.address) : 'User'}
+                                        <LogOut
+                                            className="h-6 w-6 cursor-pointer"
+                                            onClick={() => logout()}
+                                        />
+                                    </div>
+                                )}
+                            </span>
+
+                        </div>
                     </div>
+
                 </div>
                 {isOpen && (
                     <div className="border-t p-2">
                         <div className="text-xs text-gray-500 mb-2 px-2">Developer Options</div>
                         <div className="flex items-center justify-between px-2 py-1">
                             <span className="text-sm">Enable QF Rounds</span>
-                            <Switch 
+                            <Switch
                                 checked={showRounds}
                                 onCheckedChange={() => toggleFeatureFlag('ENABLE_ROUNDS')}
                             />
