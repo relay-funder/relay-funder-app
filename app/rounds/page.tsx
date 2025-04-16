@@ -1,3 +1,6 @@
+// Force dynamic rendering to ensure fresh data on each request
+export const dynamic = 'force-dynamic';
+
 import RoundCard from "@/components/round-card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
