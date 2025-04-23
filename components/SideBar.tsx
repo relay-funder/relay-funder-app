@@ -23,7 +23,6 @@ export const SideBar = () => {
     const { user, logout, login, authenticated } = usePrivy()
     const showRounds = useFeatureFlag('ENABLE_ROUNDS')
 
-    console.log("user", user)
     const shortenAddress = (address: string) => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`
     }
