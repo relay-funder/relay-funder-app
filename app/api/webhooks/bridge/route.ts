@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         where: { id: payment.id },
         data: { 
           status: paymentStatus,
-          metadata: { ...(payment.metadata as any), webhookData: data }
+          metadata: { ...(payment.metadata as unknown as Record<string, unknown>), webhookData: data }
         },
       });
     }

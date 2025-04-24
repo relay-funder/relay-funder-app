@@ -16,32 +16,40 @@ export default function KycVerificationPage() {
 
     // Fetch customer data on component mount
     useEffect(() => {
-        const fetchCustomerData = async () => {
+        const fetchUserData = async () => {
             if (!ready || !authenticated || !user?.wallet?.address) return;
 
             try {
-                // Check if user has a Bridge customer account
-                const response = await fetch(`/api/bridge/customer?userAddress=${user.wallet.address}`)
-                const data = await response.json()
+                setIsLoading(true);
+                // Get all user data in a single request
+                const userResponse = await fetch(`/api/users/me?userAddress=${user.wallet.address}`);
+                const userData = await userResponse.json();
 
-                if (data.hasCustomer) {
-                    setCustomerId(data.customerId)
-
-                    // Check KYC status
-                    const kycResponse = await fetch(`/api/bridge/kyc/status?customerId=${data.customerId}`)
-                    const kycData = await kycResponse.json()
-
-                    setIsKycCompleted(kycData.status === 'completed')
+                if (userData.bridgeCustomerId) {
+                    setCustomerId(userData.bridgeCustomerId);
+                    setIsKycCompleted(userData.isKycCompleted === true);
+                    
+                    // Only check KYC status from Bridge if it's not already completed locally
+                    if (!userData.isKycCompleted) {
+                        try {
+                            const kycResponse = await fetch(`/api/bridge/kyc/status?customerId=${userData.bridgeCustomerId}`);
+                            const kycData = await kycResponse.json();
+                            
+                            setIsKycCompleted(kycData.status === 'completed');
+                        } catch (kycError) {
+                            console.error('Error checking KYC status:', kycError);
+                        }
+                    }
                 }
             } catch (error) {
-                console.error('Error fetching customer data:', error)
+                console.error('Error fetching user data:', error);
             } finally {
-                setIsLoading(false)
+                setIsLoading(false);
             }
-        }
+        };
 
-        fetchCustomerData()
-    }, [ready, authenticated, user])
+        fetchUserData();
+    }, [ready, authenticated, user]);
 
     if (!ready || isLoading) {
         return (

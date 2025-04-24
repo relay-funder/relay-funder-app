@@ -82,6 +82,12 @@ export function PersonalInfoForm({ hasCustomer, customerId, onSuccess }: Persona
             setIsSubmitting(true)
             const userAddress = address
 
+            console.log("Submitting customer data:", {
+                ...data,
+                userAddress,
+                customer_wallet: userAddress
+            })
+
             const response = await fetch('/api/bridge/customer', {
                 method: 'POST',
                 headers: {
@@ -97,9 +103,11 @@ export function PersonalInfoForm({ hasCustomer, customerId, onSuccess }: Persona
             const responseData = await response.json()
 
             if (!response.ok) {
-                throw new Error(responseData.error || 'Failed to create customer')
+                console.error("Bridge API error response:", responseData)
+                throw new Error(responseData.error || responseData.message || 'Failed to create customer')
             }
 
+            console.log("Customer created successfully:", responseData)
             onSuccess(responseData.customerId)
         } catch (error) {
             console.error("Error creating customer:", error)

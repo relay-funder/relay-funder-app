@@ -16,6 +16,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PaymentMethod } from "@prisma/client"
 
+// Define interface for the bank details structure
+interface BankDetails {
+    bankName: string;
+    accountNumber: string;
+    routingNumber: string;
+    accountType: "CHECKING" | "SAVINGS";
+    accountName: string;
+    provider: "BRIDGE";
+}
 
 const bankAccountSchema = z.object({
     type: z.literal("BANK"),
@@ -73,21 +82,32 @@ export function PaymentMethodsForm({ customerId, paymentMethods, onSuccess }: Pa
             setIsSubmitting(true)
             const userAddress = await wallet.address
 
+            console.log('Submitting payment method:', {
+                type: data.type,
+                customerId,
+                bank_details: {
+                    ...data.bank_details,
+                    accountNumber: '****' + data.bank_details.accountNumber.slice(-4) 
+                }
+            });
+
             const response = await fetch('/api/bridge/payment-methods', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    ...data,
-                    customerId,
                     userAddress,
+                    customerId,
+                    type: data.type,
+                    bank_details: data.bank_details,
                 }),
             })
 
             const responseData = await response.json()
 
             if (!response.ok) {
+                console.error('Payment method API error:', responseData);
                 throw new Error(responseData.error || 'Failed to add payment method')
             }
 
@@ -98,6 +118,11 @@ export function PaymentMethodsForm({ customerId, paymentMethods, onSuccess }: Pa
             onSuccess(methodsData.paymentMethods || [])
             setShowAddDialog(false)
             form.reset()
+            
+            toast({
+                title: "Success",
+                description: "Payment method added successfully",
+            })
         } catch (error) {
             console.error("Error adding payment method:", error)
             toast({
@@ -304,46 +329,51 @@ export function PaymentMethodsForm({ customerId, paymentMethods, onSuccess }: Pa
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paymentMethods.map((method: PaymentMethod) => (
-                                    <TableRow key={method.id}>
-                                        <TableCell>
-                                            <div className="flex items-center">
-                                                {method.type === 'BANK' ? (
-                                                    <Landmark className="h-4 w-4 mr-2" />
-                                                ) : (
-                                                    <CreditCard className="h-4 w-4 mr-2" />
-                                                )}
-                                                {method.type === 'BANK' ? 'Bank Account' : 'Card'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {method.type === 'BANK' && (
-                                                <div className="text-sm">
-                                                    <p>{method.details?.bankName as string}</p>
-                                                    <p className="text-muted-foreground">
-                                                        {method.details?.accountType.charAt(0) + method.details?.accountType.slice(1).toLowerCase()} ••••
-                                                        {method.details?.accountNumber.slice(-4)}
-                                                    </p>
+                                {paymentMethods.map((method: PaymentMethod) => {
+                                    // Safe casting of details to expected type
+                                    const details = method.details as unknown as BankDetails | null;
+                                    
+                                    return (
+                                        <TableRow key={method.id}>
+                                            <TableCell>
+                                                <div className="flex items-center">
+                                                    {method.type === 'BANK' ? (
+                                                        <Landmark className="h-4 w-4 mr-2" />
+                                                    ) : (
+                                                        <CreditCard className="h-4 w-4 mr-2" />
+                                                    )}
+                                                    {method.type === 'BANK' ? 'Bank Account' : 'Card'}
                                                 </div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeletePaymentMethod(method.externalId)}
-                                                disabled={isDeleting === method.externalId}
-                                            >
-                                                {isDeleting === method.externalId ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                            </TableCell>
+                                            <TableCell>
+                                                {method.type === 'BANK' && details && (
+                                                    <div className="text-sm">
+                                                        <p>{details.bankName}</p>
+                                                        <p className="text-muted-foreground">
+                                                            {details.accountType.charAt(0) + details.accountType.slice(1).toLowerCase()} ••••
+                                                            {details.accountNumber.slice(-4)}
+                                                        </p>
+                                                    </div>
                                                 )}
-                                                <span className="sr-only">Delete</span>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDeletePaymentMethod(method.externalId)}
+                                                    disabled={isDeleting === method.externalId}
+                                                >
+                                                    {isDeleting === method.externalId ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    )}
+                                                    <span className="sr-only">Delete</span>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                         <Button
