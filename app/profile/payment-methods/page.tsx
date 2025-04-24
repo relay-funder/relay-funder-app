@@ -7,12 +7,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { Card } from "@/components/ui/card"
-
+import { PaymentMethod } from "@prisma/client"
 
 export default function PaymentMethodsPage() {
     const { user, ready, authenticated } = usePrivy()
     const [customerId, setCustomerId] = useState<string | null>(null)
-    const [paymentMethods, setPaymentMethods] = useState([])
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     // Fetch customer data on component mount
@@ -21,14 +21,15 @@ export default function PaymentMethodsPage() {
             if (!ready || !authenticated || !user?.wallet?.address) return;
 
             try {
-                // Check if user has a Bridge customer account
-                const response = await fetch(`/api/bridge/customer?userAddress=${user.wallet.address}`)
-                const data = await response.json()
+                setIsLoading(true);
+                // Get all user data in a single request
+                const userResponse = await fetch(`/api/users/me?userAddress=${user.wallet.address}`);
+                const userData = await userResponse.json();
 
-                if (data.hasCustomer) {
-                    setCustomerId(data.customerId)
+                if (userData.bridgeCustomerId) {
+                    setCustomerId(userData.bridgeCustomerId)
 
-                    // Fetch payment methods
+                    // Fetch payment methods from our own API (which will use Prisma)
                     const methodsResponse = await fetch(`/api/bridge/payment-methods?userAddress=${user.wallet.address}`)
                     const methodsData = await methodsResponse.json()
 

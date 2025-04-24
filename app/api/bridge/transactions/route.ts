@@ -1,62 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { bridgeService } from '@/lib/bridge-service';
+import { bridgeService, BridgeTransactionResponse } from '@/lib/bridge-service';
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const { 
-      amount, 
-      customerId, 
-      campaignId, 
-      paymentMethod, 
-      userAddress,
-      isAnonymous = false,
-    } = data;
+    const body = await request.json();
+    const { type, customerId, currency, amount, paymentMethodId, walletAddress } = body;
 
-    // Create a buy transaction in Bridge
-    const transaction = await bridgeService.buyTransaction({
-      amount: Number(amount),
-      customer_id: customerId,
-      payment_method: paymentMethod,
-      currency: "USD", 
-      provider: "BRIDGE"
+    let transaction: BridgeTransactionResponse;
+
+    if (type === 'buy') {
+      transaction = await bridgeService.buyTransaction({ 
+        customerId,
+        fiatCurrency: currency,
+        cryptoCurrency: 'USDC', // Default or from request
+        fiatAmount: amount,
+        paymentMethodId,
+        walletAddress
+      });
+    } else if (type === 'sell') {
+      transaction = await bridgeService.sellTransaction({
+        customerId,
+        fiatCurrency: currency,
+        cryptoCurrency: 'USDC', // Default or from request
+        cryptoAmount: amount,
+        walletAddress
+      });
+    } else {
+      return NextResponse.json({ error: 'Invalid transaction type' }, { status: 400 });
+    }
+
+    // Create a payment record in the database
+    // const payment = await prisma.payment.create({
+    //   data: {
+    //     userId: customerId,
+    //     amount,
+    //     token: currency, // Assuming 'token' is the correct field in your schema
+    //     provider: 'BRIDGE',
+    //     status: 'pending',
+    //     type: type.toUpperCase(), 
+    //     externalId: transaction.id?.toString() || '',
+    //     // Properly serialize the transaction object for Prisma
+    //     metadata: JSON.parse(JSON.stringify({ transaction })),
+    //   },
+    // });
+
+    return NextResponse.json({
+      success: true,
+      // paymentId: payment.id, 
+      transactionId: transaction.id,
     });
 
-    // Get or create user
-    const user = await prisma.user.upsert({
-      where: { address: userAddress },
-      update: {},
-      create: { address: userAddress },
-    });
-
-    // Create payment record in your database
-    const payment = await prisma.payment.create({
-      data: {
-        amount: amount.toString(),
-        token: "USDC",
-        campaignId: parseInt(campaignId),
-        userId: user.id,
-        isAnonymous,
-        status: "pending",
-        provider: "BRIDGE",
-        externalId: transaction.id,
-        metadata: { transaction }
-      },
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      paymentId: payment.id,
-      transactionId: transaction.id
-    });
   } catch (error) {
-    console.error('Bridge transaction error:', error);
+    console.error('Error creating transaction:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to create transaction',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: error instanceof Error ? error.message : 'Failed to create transaction' },
       { status: 500 }
     );
   }

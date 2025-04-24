@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useWallets } from '@privy-io/react-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
@@ -18,9 +17,6 @@ export function KycVerificationForm({ customerId, isCompleted, onSuccess }: KycV
     const [isLoading, setIsLoading] = useState(false)
     const [kycUrl, setKycUrl] = useState<string | null>(null)
     const [kycStatus, setKycStatus] = useState<string>(isCompleted ? "completed" : "not_started")
-    const { wallets } = useWallets()
-    const wallet = wallets[0]
-    console.log("wallet", wallet)
 
     // Check KYC status when component mounts
     useEffect(() => {
@@ -66,6 +62,8 @@ export function KycVerificationForm({ customerId, isCompleted, onSuccess }: KycV
 
         try {
             setIsLoading(true)
+            console.log("Initiating KYC for customer:", customerId)
+
             const response = await fetch('/api/bridge/kyc/initiate', {
                 method: 'POST',
                 headers: {
@@ -76,23 +74,92 @@ export function KycVerificationForm({ customerId, isCompleted, onSuccess }: KycV
                 }),
             })
 
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to initiate KYC')
+            // Check if the response is actually JSON before parsing
+            const contentType = response.headers.get("content-type");
+            if (!response.ok || !contentType || !contentType.includes("application/json")) {
+                const errorText = await response.text(); // Read response as text
+                console.error("KYC initiation failed. Server responded with non-JSON:", response.status, errorText);
+                throw new Error(`Server error: ${response.status}. Check console for details.`);
             }
 
+            const data = await response.json() // Now safe to parse as JSON
+
+            // The original !response.ok check is now handled above,
+            // but we keep this specific check for application-level errors returned in JSON
+            if (!response.ok) {
+                 console.error("KYC initiation error response (JSON):", data)
+                 throw new Error(data.error || data.details || 'Failed to initiate KYC')
+            }
+
+
+            console.log("KYC initiation response:", data)
             if (data.redirectUrl) {
                 setKycUrl(data.redirectUrl)
                 setKycStatus("pending")
+
+                // Open the KYC verification URL in a new tab
+                window.open(data.redirectUrl, "_blank")
+
+                // Start periodic status checking to detect when KYC is completed
+                const statusCheckInterval = setInterval(async () => {
+                    try {
+                        const statusUrl = `/api/bridge/kyc/status?customerId=${customerId}`;
+                        console.log("Checking KYC status:", statusUrl);
+
+                        const statusResponse = await fetch(statusUrl);
+
+                        // Check if response is OK and content type is application/json
+                        const statusContentType = statusResponse.headers.get('content-type');
+                        if (!statusResponse.ok || !statusContentType || !statusContentType.includes('application/json')) {
+                            const statusErrorText = await statusResponse.text().catch(() => "Could not read response text");
+                            console.error(
+                                "Invalid KYC status response:",
+                                statusResponse.status,
+                                statusContentType,
+                                statusErrorText
+                            );
+                            // Potentially stop polling if the error is persistent or critical
+                            // clearInterval(statusCheckInterval);
+                            return; // Skip this interval
+                        }
+
+                        const statusData = await statusResponse.json();
+                        console.log("KYC status check response:", statusData);
+
+                        if (statusData.status === 'completed') {
+                            clearInterval(statusCheckInterval);
+                            setKycStatus('completed');
+                            onSuccess();
+                        } else if (statusData.status === 'failed') {
+                             clearInterval(statusCheckInterval);
+                             setKycStatus('failed');
+                        }
+                        // Add handling for other potential statuses if needed
+                    } catch (statusError) {
+                        console.error("Error checking KYC status:", statusError);
+                        // Consider stopping polling on repeated errors
+                        // clearInterval(statusCheckInterval);
+                    }
+                }, 30000); // Check every 30 seconds
+
+                // Clear interval after 20 minutes to avoid indefinite polling
+                setTimeout(() => {
+                    console.log("Stopping KYC status polling after 20 minutes.");
+                    clearInterval(statusCheckInterval);
+                }, 20 * 60 * 1000)
+            } else {
+                 // Handle case where redirectUrl is missing but response was ok
+                 console.error("KYC initiation response missing redirectUrl:", data);
+                 throw new Error("KYC initiation succeeded but no redirect URL was provided.");
             }
         } catch (error) {
             console.error("Error initiating KYC:", error)
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to initiate KYC verification",
+                title: "Error Initiating KYC",
+                description: error instanceof Error ? error.message : "An unexpected error occurred during KYC initiation.",
                 variant: "destructive",
             })
+            // Optionally reset state if needed, e.g., setKycStatus('not_started')
         } finally {
             setIsLoading(false)
         }

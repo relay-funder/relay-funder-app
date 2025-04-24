@@ -2,68 +2,96 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { bridgeService } from '@/lib/bridge-service';
 
+interface BridgeCustomer {
+  id: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const { userAddress, ...customerData } = data;
 
-    // Create customer in Bridge
-    const bridgeCustomer = await bridgeService.createCustomer(customerData);
+    if (!userAddress) {
+      return NextResponse.json({ error: 'Missing user address' }, { status: 400 });
+    }
 
-    // Store the Bridge customer ID in your database with the user
-    const user = await prisma.user.upsert({
-      where: { address: userAddress },
-      update: { bridgeCustomerId: bridgeCustomer.id },
-      create: { 
-        address: userAddress,
-        bridgeCustomerId: bridgeCustomer.id
-      },
+    // Find user by address
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress }
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      customerId: bridgeCustomer.id,
-      userId: user.id 
-    });
-  } catch (error) {
-    console.error('Bridge customer creation error:', error);
-    return NextResponse.json(
-      { 
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    console.log('Creating Bridge customer with data:', customerData);
+
+    try {
+      // Call Bridge API to create customer
+      const bridgeCustomer: BridgeCustomer = await bridgeService.createCustomer(customerData) as BridgeCustomer;
+      
+      // Update user with Bridge customer ID
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          bridgeCustomerId: bridgeCustomer.id,
+          firstName: customerData.first_name,
+          lastName: customerData.last_name,
+          email: customerData.email
+        }
+      });
+      
+      return NextResponse.json({
+        success: true,
+        customerId: bridgeCustomer.id
+      });
+    } catch (bridgeError) {
+      console.error('Bridge API error:', bridgeError);
+      return NextResponse.json({
         error: 'Failed to create Bridge customer',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+        details: bridgeError instanceof Error ? bridgeError.message : String(bridgeError)
+      }, { status: 500 });
+    }
+  } catch (error) {
+    console.error('Error creating Bridge customer:', error);
+    return NextResponse.json({ 
+      error: 'Failed to process request',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const userAddress = request.nextUrl.searchParams.get('userAddress');
+// export async function GET(request: NextRequest) {
+//   try {
+//     const userAddress = request.nextUrl.searchParams.get('userAddress');
     
-    if (!userAddress) {
-      return NextResponse.json({ error: 'User address is required' }, { status: 400 });
-    }
+//     if (!userAddress) {
+//       return NextResponse.json({ error: 'Missing user address' }, { status: 400 });
+//     }
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { address: userAddress },
-      select: { bridgeCustomerId: true }
-    });
+//     // Find user by address
+//     const user = await prisma.user.findUnique({
+//       where: { address: userAddress }
+//     });
 
-    if (!user?.bridgeCustomerId) {
-      return NextResponse.json({ hasCustomer: false });
-    }
+//     if (!user) {
+//       return NextResponse.json({ 
+//         hasCustomer: false,
+//         message: 'User not found' 
+//       });
+//     }
 
-    return NextResponse.json({ 
-      hasCustomer: true,
-      customerId: user.bridgeCustomerId 
-    });
-  } catch (error) {
-    console.error('Bridge customer fetch error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch Bridge customer' },
-      { status: 500 }
-    );
-  }
-} 
+//     // No need to fetch from Bridge API - use local data
+//     return NextResponse.json({
+//       hasCustomer: !!user.bridgeCustomerId,
+//       customerId: user.bridgeCustomerId,
+//       isKycCompleted: user.isKycCompleted
+//     });
+//   } catch (error) {
+//     console.error('Error fetching Bridge customer:', error);
+//     return NextResponse.json({ 
+//       error: 'Failed to fetch customer information',
+//       details: error instanceof Error ? error.message : String(error)
+//     }, { status: 500 });
+//   }
+// } 
