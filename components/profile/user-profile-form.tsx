@@ -10,7 +10,12 @@ import { Loader2 } from "lucide-react"
 import { User } from "@prisma/client"
 
 const profileFormSchema = z.object({
-    username: z.string().min(2, {
+    name: z.string().min(2, {
+        message: "Username must be at least 2 characters.",
+    }).max(30, {
+        message: "Username cannot be longer than 30 characters."
+    }),
+    uniqueUsername: z.string().min(2, {
         message: "Username must be at least 2 characters.",
     }).max(30, {
         message: "Username cannot be longer than 30 characters."
@@ -39,13 +44,19 @@ interface UserProfileFormProps {
 export function UserProfileForm({ userData, walletAddress }: UserProfileFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
+    console.log("userData received:", userData);
+
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: {
-            username: userData?.firstName + (userData?.lastName ? " " + userData.lastName : "") || "",
+            name: userData?.firstName + (userData?.lastName ? " " + userData.lastName : "") || "",
+            uniqueUsername: userData?.username || "",
             recipientWallet: userData?.recipientWallet || ""
         },
     })
+
+    // You can also log after setting up the form
+    console.log("Form values:", form.getValues());
 
     async function onSubmit(data: ProfileFormValues) {
         setIsSubmitting(true)
@@ -57,7 +68,8 @@ export function UserProfileForm({ userData, walletAddress }: UserProfileFormProp
                 },
                 body: JSON.stringify({
                     userAddress: walletAddress,
-                    firstName: data.username,
+                    firstName: data.name,
+                    username: data.uniqueUsername,
                     avatarUrl: data.avatarUrl,
                     bio: data.bio,
                     recipientWallet: data.recipientWallet || undefined
@@ -65,7 +77,8 @@ export function UserProfileForm({ userData, walletAddress }: UserProfileFormProp
             })
 
             if (!response.ok) {
-                throw new Error("Failed to update profile")
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to update profile");
             }
 
             toast({
@@ -76,7 +89,7 @@ export function UserProfileForm({ userData, walletAddress }: UserProfileFormProp
             console.error(error)
             toast({
                 title: "Error",
-                description: "Failed to update profile. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
                 variant: "destructive",
             })
         } finally {
@@ -97,15 +110,32 @@ export function UserProfileForm({ userData, walletAddress }: UserProfileFormProp
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <FormField
                             control={form.control}
-                            name="username"
+                            name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Username</FormLabel>
+                                    <FormLabel>Name</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Your name" {...field} />
                                     </FormControl>
                                     <FormDescription>
                                         This will be your display name on the platform.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="uniqueUsername"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Username</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="your_unique_username" {...field} />
+                                    </FormControl>
+                                    <FormDescription>
+                                        This will be your unique identifier on the platform.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
