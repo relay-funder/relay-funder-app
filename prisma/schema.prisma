@@ -51,6 +51,7 @@ model User {
   updatedAt        DateTime        @updatedAt
   bridgeCustomerId String?
   email            String?
+  username         String?         @unique
   firstName        String?
   lastName         String?
   recipientWallet  String?

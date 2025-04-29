@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
                 createdAt: true,
                 updatedAt: true,
                 isKycCompleted: true,
+                username: true,
             }
         });
 
