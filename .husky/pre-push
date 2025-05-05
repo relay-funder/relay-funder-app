@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
 # Check if running in CI environment
 if [ -n "$CI" ]; then
@@ -17,12 +16,12 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Check if the container is running
-if ! docker ps --format '{{.Names}}' | grep -q '^app$'; then
-  echo "Docker container 'app' is not running. Please start your development container first."
+if ! docker ps --format '{{.Names}}' | grep -q '^akashic-app-1$'; then
+  echo "Docker container 'akashic-app-1' is not running. Please start your development container first."
   exit 1
 fi
 
 echo "Running checks in Docker environment..."
 
 # Run checks in existing container
-docker exec app sh -c "cd /app && pnpm lint && pnpm build" || exit 1 
+docker exec akashic-app-1 sh -c "cd /app && pnpm lint && pnpm build" || exit 1 
