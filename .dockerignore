@@ -1,0 +1,51 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Next.js
+.next
+
+# Environment
+.env*
+.env.local
+.env.*.local
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Build outputs
+out
+dist
+build
+
+# Development tools and IDEs
+*.swp
+*.swo
+
+# Test coverage
+coverage
+.nyc_output
+
+# Documentation
+README.md
+docs
+*.md
+
+# Temporary files
+*.tmp
+.cache 

@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: akashic
+      POSTGRES_PASSWORD: akashic
+      POSTGRES_DB: akashic_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U akashic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '127.0.0.1:5432:5432'  # Only allow local connections
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.local
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - DATABASE_URL=postgres://akashic:akashic@db:5432/akashic_dev
+      - NODE_ENV=development
+
+volumes:
+  pgdata: 

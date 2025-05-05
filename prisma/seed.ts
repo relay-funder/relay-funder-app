@@ -73,7 +73,9 @@ async function main() {
     endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     creatorAddress: "0x1234567890123456789012345678901234567890",
     status: "active",
-    slug: `camp${(i + 1).toString().padStart(2, '0')}` // e.g., camp01, camp02, etc.
+    slug: `camp${(i + 1).toString().padStart(2, '0')}`,
+    transactionHash: `0xdeadbeef${(i + 1).toString().padStart(2, '0')}`,
+    campaignAddress: campaignAddresses[i] || null
   }));
 
   for (const campaign of campaigns) {
