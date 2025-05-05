@@ -1,8 +1,28 @@
-echo "Running lint..."
-pnpm lint || exit 1
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
 
-echo "Running Next.js build..."
-pnpm build || exit 1
+# Check if running in CI environment
+if [ -n "$CI" ]; then
+  echo "Running in CI environment, executing checks directly..."
+  pnpm lint || exit 1
+  pnpm build || exit 1
+  vercel build || exit 1
+  exit 0
+fi
 
-echo "Running Vercel build..."
-vercel build || exit 1 
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+  echo "Docker is not running. Please start Docker to run pre-push checks."
+  exit 1
+fi
+
+# Check if the container is running
+if ! docker ps --format '{{.Names}}' | grep -q '^app$'; then
+  echo "Docker container 'app' is not running. Please start your development container first."
+  exit 1
+fi
+
+echo "Running checks in Docker environment..."
+
+# Run checks in existing container
+docker exec app sh -c "cd /app && pnpm lint && pnpm build" || exit 1 
