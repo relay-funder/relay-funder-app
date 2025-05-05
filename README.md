@@ -67,6 +67,18 @@ Common issues and their solutions:
 - **Missing Query Engine:** Update `binaryTargets` in `prisma/schema.prisma` and regenerate the client
 - **Missing Tables:** Ensure migrations are applied before seeding
 - **Seeding Failures:** Verify database is running and migrations are complete
+- **Cross-Platform Development:** When developing across different platforms (e.g., Mac M1/M2 and Linux), ensure your `schema.prisma` includes all necessary binary targets:
+  ```prisma
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+  ```
+- **Database Reset:** If you need to completely reset the database:
+  ```bash
+  docker-compose down -v  # This removes all volumes
+  docker-compose up -d    # Start fresh
+  docker-compose exec app pnpm prisma generate  # Generate Prisma client
+  docker-compose exec app pnpm prisma migrate dev  # Reapply migrations
+  docker-compose exec app pnpm prisma db seed     # Reseed the database
+  ```
 
 ## Available Scripts
 
