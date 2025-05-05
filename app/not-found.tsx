@@ -9,7 +9,7 @@ export default function NotFound() {
       <div className="mx-auto max-w-md text-center">
         <h1 className="mb-4 text-4xl font-bold">404 - Page Not Found</h1>
         <p className="mb-8 text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Button asChild>
           <Link href="/">
