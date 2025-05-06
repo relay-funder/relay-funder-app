@@ -282,22 +282,28 @@ interface CheckAllowanceArgs {
     tokenAddress: Address
     ownerAddress: Address
     spenderAddress: Address
-    chainId?: number // Keep as number, but handle potential type mismatch below
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    chainId?: number // Kept for backward compatibility but not used in readContract
 }
 
-export async function checkErc20Allowance({ tokenAddress, ownerAddress, spenderAddress, chainId }: CheckAllowanceArgs): Promise<bigint> {
+export async function checkErc20Allowance({ 
+    tokenAddress, 
+    ownerAddress, 
+    spenderAddress, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    chainId 
+}: CheckAllowanceArgs): Promise<bigint> {
     console.log(`Checking ERC20 allowance for token ${tokenAddress}, owner ${ownerAddress}, spender ${spenderAddress}...`)
     try {
-        // Type assertion to make chainId compatible with wagmi's expected type
+        // chainId is not needed in readContract as wagmi handles chain management
         const allowance = await readContract(config, {
             address: tokenAddress,
             abi: erc20Abi,
             functionName: 'allowance',
             args: [ownerAddress, spenderAddress],
-            chainId: chainId as 1 | 44787 | 11155111 | undefined, // Cast to expected values
-        })
+        }) as unknown as bigint
         console.log(`Current allowance: ${allowance}`)
-        return allowance as bigint // Cast the result
+        return allowance
     } catch (error) {
         console.error("Failed to read allowance:", error)
         throw new Error(`Could not check allowance: ${error instanceof Error ? error.message : String(error)}`)
@@ -307,19 +313,22 @@ export async function checkErc20Allowance({ tokenAddress, ownerAddress, spenderA
 // Utility: Read DIRECT_TRANSFER flag (Read Operation - Fix chainId type)
 interface ReadDirectTransferArgs {
     strategyAddress: Address
-    chainId?: number // Keep as number
+    chainId?: number // Kept for backward compatibility but not used in readContract
 }
 
-export async function checkDirectTransferFlag({ strategyAddress, chainId }: ReadDirectTransferArgs): Promise<boolean> {
+export async function checkDirectTransferFlag({ 
+    strategyAddress, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    chainId 
+}: ReadDirectTransferArgs): Promise<boolean> {
     console.log(`Checking DIRECT_TRANSFER flag for strategy ${strategyAddress}...`)
     try {
-        // Type assertion to make chainId compatible
+        // chainId is not needed in readContract as wagmi handles chain management
         const isDirectTransfer = await readContract(config, {
             address: strategyAddress,
             abi: kickstarterQfAbi,
-            functionName: 'DIRECT_TRANSFER',
-            chainId: chainId as 1 | 44787 | 11155111 | undefined, // Cast to expected values
-        }) as boolean
+            functionName: 'directTransfers',
+        }) as unknown as boolean
         console.log(`DIRECT_TRANSFER flag: ${isDirectTransfer}`)
         return isDirectTransfer
     } catch (error) {
