@@ -17,7 +17,7 @@ import {
 } from "@/components/ui"
 import { SideBar } from '@/components/SideBar'
 import { cn } from '@/lib/utils'
-import { usePrivy } from '@privy-io/react-auth'
+import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { AlertCircle, Coins, Users, Calendar, TrendingUp, Heart } from "lucide-react"
 import { Campaign } from '@/types/campaign'
@@ -30,8 +30,7 @@ interface FavoriteCampaign {
 
 export default function DashboardPage() {
     const { address: wagmiAddress } = useAccount()
-    const { user, authenticated } = usePrivy()
-    const address = wagmiAddress || user?.wallet?.address || null
+    const { address, authenticated } = useAuth()
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [favoriteCampaigns, setFavoriteCampaigns] = useState<Campaign[]>([])
     const [loading, setLoading] = useState(true)
