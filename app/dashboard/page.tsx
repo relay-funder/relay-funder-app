@@ -29,7 +29,6 @@ interface FavoriteCampaign {
 }
 
 export default function DashboardPage() {
-    const { address: wagmiAddress } = useAccount()
     const { address, authenticated } = useAuth()
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [favoriteCampaigns, setFavoriteCampaigns] = useState<Campaign[]>([])
