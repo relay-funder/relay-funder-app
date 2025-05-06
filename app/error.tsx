@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function Error({
+export default function ErrorPage({
   error,
   reset,
 }: {
