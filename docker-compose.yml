@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: akashic
       POSTGRES_DB: akashic_dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U akashic_dev"]
+      test: ["CMD-SHELL", "pg_isready -U akashic -d akashic_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
