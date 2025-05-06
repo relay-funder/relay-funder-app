@@ -23,5 +23,8 @@ fi
 
 echo "Running checks in Docker environment..."
 
-# Run checks in existing container
-docker exec akashic-app-1 sh -c "cd /app && pnpm lint && pnpm build" || exit 1 
+# Run checks in existing container with proper environment isolation
+docker exec akashic-app-1 sh -c "cd /app && \
+  pnpm lint && \
+  (NODE_ENV=production pnpm build || exit 1) && \
+  NODE_ENV=development" || exit 1
