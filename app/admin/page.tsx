@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Coins, Users, Calendar, TrendingUp, Copy } from "lucide-react";
-import { adminAddress } from "@/lib/constant";
 import { GlobalParamsABI } from "@/contracts/abi/GlobalParams";
 import { TreasuryFactoryABI } from "@/contracts/abi/TreasuryFactory";
 import { ethers } from "ethers";
@@ -132,9 +131,15 @@ export default function AdminPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [campaignStatuses, setCampaignStatuses] = useState<Record<string, string>>({});
-  const [rounds, setRounds] = useState<{ id: number; title: string }[]>([]);
-  const [selectedRounds, setSelectedRounds] = useState<number[]>([]);
-  const [dropdownStates, setDropdownStates] = useState<{ [key: number]: boolean }>({});
+  
+  /* TODO: Implement rounds functionality
+   * - Add state management for rounds
+   * - Add state for selected rounds
+   * - Add state for dropdown visibility
+   */
+  // const [rounds, setRounds] = useState<{ id: number; title: string }[]>([]);
+  // const [selectedRounds, setSelectedRounds] = useState<number[]>([]);
+  // const [dropdownStates, setDropdownStates] = useState<{ [key: number]: boolean }>({});
 
   // Update campaign statuses function (move this above useEffect)
   const updateCampaignStatuses = (campaignsToUpdate = campaigns) => {
@@ -170,33 +175,22 @@ export default function AdminPage() {
 
   // Fetch data when admin is authenticated
   useEffect(() => {
-    // Don't fetch unless we're client-side, authenticated, and have admin access
     if (!isClient || !address || !isAdmin) return;
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch campaigns with pending_approval status
         const campaignsResponse = await fetch(`/api/campaigns?status=pending_approval`);
         const campaignsData = await campaignsResponse.json();
         if (!campaignsResponse.ok) {
           throw new Error(campaignsData.error || "Failed to fetch campaigns");
         }
-        // Filter campaigns with address
-        const filteredCampaigns = campaignsData.campaigns.filter(
-          (campaign: Campaign) => campaign.address
-        );
-        // Fetch rounds for each campaign
+        const filteredCampaigns = campaignsData.campaigns.filter((campaign: Campaign) => campaign.address);
         const campaignsWithRounds = await Promise.all(
           filteredCampaigns.map(async (campaign: { id: number }) => {
-            const roundsResponse = await fetch(
-              `/api/campaigns/round/${campaign.id}`,
-              {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              }
-            );
+            const roundsResponse = await fetch(`/api/campaigns/round/${campaign.id}`, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            });
             if (!roundsResponse.ok) {
               throw new Error("Failed to fetch rounds");
             }
@@ -205,13 +199,16 @@ export default function AdminPage() {
           })
         );
         setCampaigns(campaignsWithRounds);
-        // Fetch rounds
-        const roundsResponse = await fetch("/api/rounds");
-        const roundsData = await roundsResponse.json();
-        if (!roundsResponse.ok) {
-          throw new Error(roundsData.error || "Failed to fetch rounds");
-        }
-        setRounds(roundsData);
+        
+        // TODO: Implement rounds fetching functionality
+        // // Fetch rounds
+        // const roundsResponse = await fetch("/api/rounds");
+        // const roundsData = await roundsResponse.json();
+        // if (!roundsResponse.ok) {
+        //   throw new Error(roundsData.error || "Failed to fetch rounds");
+        // }
+        // setRounds(roundsData);
+
         // Update statuses
         updateCampaignStatuses(campaignsWithRounds);
       } catch (err) {
@@ -222,15 +219,15 @@ export default function AdminPage() {
       }
     };
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isClient, address, isAdmin]);
 
   // Set up status update timer
   useEffect(() => {
-    // Initial update
     updateCampaignStatuses();
-    // Update every minute
     const interval = setInterval(() => updateCampaignStatuses(), 60000);
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaigns]);
 
   // Wait for client-side rendering and AuthContext resolution
@@ -459,39 +456,51 @@ export default function AdminPage() {
     };
   };
 
-  const addCampaignToRounds = async (campaignId: number) => {
-    try {
-      const response = await fetch(`/api/campaigns/round`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          campaignId,
-          roundIds: selectedRounds,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to add campaign to rounds");
-      }
-      toast({
-        title: "Success",
-        description: "Campaign added to selected rounds successfully.",
-      });
-      setSelectedRounds([]); // Clear selection after successful submission
-      toggleDropdown(campaignId); // Close dropdown
-    } catch (err) {
-      console.error("Error adding campaign to rounds:", err);
-      setError(err instanceof Error ? err.message : "An error occurred");
-    }
-  };
+  /* TODO: Implement campaign round association functionality
+   * - Add API endpoint for campaign-round association
+   * - Implement error handling and validation
+   * - Add success/error notifications
+   * - Handle state updates after successful association
+   */
+  // const addCampaignToRounds = async (campaignId: number) => {
+  //   try {
+  //     const response = await fetch(`/api/campaigns/round`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         campaignId,
+  //         roundIds: selectedRounds,
+  //       }),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add campaign to rounds");
+  //     }
+  //     toast({
+  //       title: "Success",
+  //       description: "Campaign added to selected rounds successfully.",
+  //     });
+  //     setSelectedRounds([]); // Clear selection after successful submission
+  //     toggleDropdown(campaignId); // Close dropdown
+  //   } catch (err) {
+  //     console.error("Error adding campaign to rounds:", err);
+  //     setError(err instanceof Error ? err.message : "An error occurred");
+  //   }
+  // };
 
-  const toggleDropdown = (campaignId: number) => {
-    setDropdownStates((prev) => ({
-      ...prev,
-      [campaignId]: !prev[campaignId],
-    }));
-  };
+  /* TODO: Implement dropdown toggle functionality
+   * - Add state management for dropdown visibility
+   * - Implement toggle logic for each campaign
+   * - Add keyboard accessibility
+   * - Consider adding animation for smooth transitions
+   */
+  // const toggleDropdown = (campaignId: number) => {
+  //   setDropdownStates((prev) => ({
+  //     ...prev,
+  //     [campaignId]: !prev[campaignId],
+  //   }));
+  // };
 
   // Main content
   return (
