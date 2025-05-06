@@ -11,6 +11,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { EnvironmentProvider } from '@/components/environment-theme-provider';
 import { createConfig } from '@privy-io/wagmi';
 import { http } from 'wagmi';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 const config = createConfig({
   chains: [celoAlfajores, sepolia, mainnet],
@@ -66,7 +67,9 @@ export default function Providers({ children }: { children: ReactNode }) {
           <SidebarProvider>
             <CollectionProvider>
               <EnvironmentProvider>
-                {children}
+                <AuthProvider>
+                  {children}
+                </AuthProvider>
               </EnvironmentProvider>
             </CollectionProvider>
           </SidebarProvider>
