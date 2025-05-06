@@ -42,7 +42,7 @@ interface CollectionDetails {
 export default function CollectionDetailsPage() {
     const params = useParams()
     const router = useRouter()
-    const { id } = params
+    const { id } = params as { id: string }
     const { user, authenticated } = usePrivy()
     const { removeFromCollection, deleteCollection } = useCollection()
 
