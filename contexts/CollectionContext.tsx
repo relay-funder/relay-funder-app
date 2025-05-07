@@ -78,6 +78,8 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     useEffect(() => {
         if (authenticated && address) {
             fetchCollections()
+        } else {
+            setUserCollections([])
         }
     }, [authenticated, address])
 
