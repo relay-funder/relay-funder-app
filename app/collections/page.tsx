@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Plus, Search } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from "@/contexts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from '@/hooks/use-toast'
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useCollection } from '@/contexts/CollectionContext'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from "@/contexts";
 import { Card, CardContent, CardHeader, Button, Skeleton } from '@/components/ui'
 import { ArrowLeft, Edit, Share, Trash2 } from 'lucide-react'
 import Image from 'next/image'
