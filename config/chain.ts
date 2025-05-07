@@ -3,7 +3,7 @@
  * This centralizes all chain-related constants used across components.
  */
 
-import { celoAlfajores } from 'wagmi/chains';
+import { celoAlfajores } from '@/config/wagmi';
 
 export const chainConfig = {
   // Chain identifiers
@@ -20,6 +20,8 @@ export const chainConfig = {
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || celoAlfajores.rpcUrls.default.http[0],
   blockExplorerUrl: celoAlfajores.blockExplorers?.default?.url || 'https://alfajores.celoscan.io/',
   
+  defaultChain: celoAlfajores,
+
   // Helper methods
   getAddChainParams() {
     return {

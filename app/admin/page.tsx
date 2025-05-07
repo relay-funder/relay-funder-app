@@ -24,7 +24,7 @@ const platformConfig = {
   treasuryFactoryAddress: process.env.NEXT_PUBLIC_TREASURY_FACTORY as string,
   globalParamsAddress: process.env.NEXT_PUBLIC_GLOBAL_PARAMS as string,
   platformBytes: process.env.NEXT_PUBLIC_PLATFORM_HASH as string,
-  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
+  rpcUrl: chainConfig.rpcUrl as string,
 };
 
 interface Campaign {

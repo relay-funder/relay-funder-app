@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import { useToast } from './use-toast';
-import { celoAlfajores } from 'wagmi/chains';
 import { chainConfig } from '@/config/chain';
 
 interface ProviderRpcError extends Error {
