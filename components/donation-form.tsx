@@ -148,7 +148,8 @@ function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaig
   )
 }
 
-const debug = true;
+- const debug = true;
++ const debug = process.env.NODE_ENV !== 'production';
 
 export default function DonationForm({ campaign }: DonationFormProps) {
   const [selectedToken, setSelectedToken] = useState('USDC')
