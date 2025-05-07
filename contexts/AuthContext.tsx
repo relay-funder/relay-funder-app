@@ -4,14 +4,29 @@ import React, { createContext, useContext, useMemo, useState, useEffect, useCall
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { adminAddress } from '@/lib/constant';
-
 const debug = process.env.NODE_ENV !== 'production';
+
+interface PrivyUser {
+  wallet?: {
+    address?: string;
+  };
+}
+
+interface PrivyWallet {
+  address?: string;
+  isConnected?: () => Promise<boolean>;
+  getEthereumProvider: () => Promise<EthereumProvider>;
+}
+
+type EthereumProvider = {
+  request: (args: { method: string }) => Promise<string[]>;
+};
 
 interface AuthContextType {
   address: string | null;
   authenticated: boolean;
-  user: any;
-  wallet: any;
+  user: PrivyUser | null;
+  wallet: PrivyWallet | null;
   isAdmin: boolean;
   isClient: boolean;
   login: () => void;
