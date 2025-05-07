@@ -38,11 +38,6 @@ interface DonationFormProps {
   campaign: Campaign;
 }
 
-// Add platform config (hardcoded for example)
-const platformConfig = {
-  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL as string,
-}
-
 function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaign: Campaign }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -171,7 +166,6 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   // Simulated values - in a real app these would come from an API or wallet
   const tokenPrice = 1 // USD per USDC
   const availableBalance = usdcBalance // Update available balance to use fetched USDC balance
-
   
   const numericAmount = parseFloat(amount) || 0
   const akashicAmount = isDonatingToAkashic ? (numericAmount * percentage) / 100 : 0

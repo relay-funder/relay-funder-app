@@ -3,9 +3,10 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign'
+import { chainConfig } from '@/config/chain';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
+const RPC_URL = chainConfig.rpcUrl;
 
 async function uploadToCloudinary(file: File): Promise<string> {
   const formData = new FormData();

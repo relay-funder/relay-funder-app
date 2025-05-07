@@ -15,6 +15,7 @@ import { CampaignNFTabi } from '@/contracts/nftABI/CampaignNFT';
 import { parseEther } from 'viem';
 import { ethers } from 'ethers';
 import { Badge } from "@/components/ui/badge";
+import { chainConfig } from '@/config/chain';
 
 
 interface ClientRewardsTabProps {
@@ -423,7 +424,7 @@ export default function ClientRewardsTab({ campaignId, campaignSlug, campaignOwn
 
     const getNFTAddress = async (campaignId: string) => {
         try {
-            const provider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+            const provider = new ethers.providers.JsonRpcProvider(chainConfig.rpcUrl);
             const factoryContract = new ethers.Contract(
                 CAMPAIGN_NFT_FACTORY,
                 CampaignNFTFactory,
@@ -482,7 +483,7 @@ export default function ClientRewardsTab({ campaignId, campaignSlug, campaignOwn
         if (!contractAddress) return null;
 
         try {
-            const provider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+            const provider = new ethers.providers.JsonRpcProvider(chainConfig.rpcUrl);
             const nftContract = new ethers.Contract(
                 contractAddress,
                 CampaignNFTabi,
