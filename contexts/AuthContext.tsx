@@ -5,6 +5,8 @@ import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { adminAddress } from '@/lib/constant';
 
+const debug = process.env.NODE_ENV !== 'production';
+
 interface AuthContextType {
   address: string | null;
   authenticated: boolean;
@@ -47,23 +49,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Set client-side flag on mount
   useEffect(() => {
     setIsClient(true);
-    console.log('[AUTH] Client-side rendering active');
+    debug && console.log('[AUTH] Client-side rendering active');
   }, []);
 
   // Force a wallet connection attempt and return true if connected
   const forceWalletConnection = async (): Promise<boolean> => {
-    console.log('[AUTH] Forcing wallet connection');
+    debug && console.log('[AUTH] Forcing wallet connection');
     // Don't attempt more than once every 3 seconds
     const now = Date.now();
     if (now - lastConnectionAttempt < 3000) {
-      console.log('[AUTH] Connection attempt too recent, skipping');
+      debug && console.log('[AUTH] Connection attempt too recent, skipping');
       return !!address;
     }
     
     setLastConnectionAttempt(now);
     
     if (!authenticated) {
-      console.log('[AUTH] Not authenticated, trying to login');
+      debug && console.log('[AUTH] Not authenticated, trying to login');
       login();
       return false;
     }
@@ -71,21 +73,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // If wallet exists, try to connect it
     if (wallet) {
       try {
-        console.log('[AUTH] Attempting to connect wallet');
+        debug && console.log('[AUTH] Attempting to connect wallet');
         const isConnected = await wallet.isConnected?.();
         if (!isConnected) {
           // Try to reestablish connection or redirect
-          console.log('[AUTH] Wallet not connected, forcing login');
+          debug && console.log('[AUTH] Wallet not connected, forcing login');
           login();
           return false;
         }
         return true;
       } catch (err) {
-        console.error('[AUTH] Error connecting wallet:', err);
+        debug && console.error('[AUTH] Error connecting wallet:', err);
         return false;
       }
     } else {
-      console.log('[AUTH] No wallet available, forcing login');
+      debug && console.log('[AUTH] No wallet available, forcing login');
       login();
       return false;
     }
@@ -127,12 +129,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Normalize address to lowercase for consistent comparisons
       const normalizedAddress = resolvedAddress ? resolvedAddress.toLowerCase() : null;
-      console.log('[AUTH] Final resolved address:', normalizedAddress);
+      debug && console.log('[AUTH] Final resolved address:', normalizedAddress);
       setAddress(normalizedAddress);
       
       // Update admin status with more detailed logging
       const normalizedAdminAddress = adminAddress ? adminAddress.toLowerCase() : null;
-      console.log('[AUTH] Admin check:', {
+      debug && console.log('[AUTH] Admin check:', {
         userAddress: normalizedAddress,
         adminAddress: normalizedAdminAddress,
         configuredAdminAddress: adminAddress,
@@ -141,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const adminStatus = !!normalizedAddress && normalizedAddress === normalizedAdminAddress;
       setIsAdmin(adminStatus);
-      console.log('[AUTH] Admin status set to:', adminStatus);
+      debug && console.log('[AUTH] Admin status set to:', adminStatus);
     };
     
     getWalletAddress();
@@ -150,15 +152,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Debugging logs
   useEffect(() => {
     if (isClient) {
-      console.log('[AUTH DEBUG] wagmiAddress:', wagmiAddress);
-      console.log('[AUTH DEBUG] user:', user);
-      console.log('[AUTH DEBUG] user.wallet?.address:', user?.wallet?.address);
-      console.log('[AUTH DEBUG] wallets:', wallets);
-      console.log('[AUTH DEBUG] primary wallet:', wallet);
-      console.log('[AUTH DEBUG] authenticated:', authenticated);
-      console.log('[AUTH DEBUG] final address:', address);
-      console.log('[AUTH DEBUG] isAdmin:', isAdmin);
-      console.log('[AUTH DEBUG] adminAddress:', adminAddress);
+      debug && console.log('[AUTH DEBUG] wagmiAddress:', wagmiAddress);
+      debug && console.log('[AUTH DEBUG] user:', user);
+      debug && console.log('[AUTH DEBUG] user.wallet?.address:', user?.wallet?.address);
+      debug && console.log('[AUTH DEBUG] wallets:', wallets);
+      debug && console.log('[AUTH DEBUG] primary wallet:', wallet);
+      debug && console.log('[AUTH DEBUG] authenticated:', authenticated);
+      debug && console.log('[AUTH DEBUG] final address:', address);
+      debug && console.log('[AUTH DEBUG] isAdmin:', isAdmin);
+      debug && console.log('[AUTH DEBUG] adminAddress:', adminAddress);
     }
   }, [wagmiAddress, user, wallets, wallet, authenticated, address, isAdmin, isClient, adminAddress]);
 
