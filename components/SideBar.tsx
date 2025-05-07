@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from "@/contexts";
 import { Grid, Home, LogOut, Settings, Star, BookCheck } from 'lucide-react'
 import Image from "next/image"
 import Link from "next/link"

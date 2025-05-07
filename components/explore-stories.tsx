@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
 import Image from "next/image"
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from "@/contexts";
 import { CreateCampaign } from '@/components/create-campaign'
 import {
   Button,

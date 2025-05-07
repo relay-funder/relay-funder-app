@@ -16,7 +16,7 @@ import {
 } from "@/components/ui"
 import { SideBar } from '@/components/SideBar'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from "@/contexts"
 import { useSidebar } from '@/contexts/SidebarContext'
 import { AlertCircle, Coins, Users, Calendar, TrendingUp, Heart } from "lucide-react"
 import { Campaign } from '@/types/campaign'

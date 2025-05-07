@@ -15,7 +15,7 @@ import { TreasuryFactoryABI } from "@/contracts/abi/TreasuryFactory";
 import { ethers } from "ethers";
 import { IoLocationSharp } from "react-icons/io5";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from "@/contexts";
 import Loading from '@/components/loading';
 import { chainConfig } from '@/config/chain';
 
