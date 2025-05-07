@@ -1,10 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
-import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { adminAddress } from '@/lib/constant';
 const debug = process.env.NODE_ENV !== 'production';
+import { useAccount } from "./AccountContext";
 
 interface PrivyUser {
   wallet?: {
