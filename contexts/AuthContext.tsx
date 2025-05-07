@@ -19,7 +19,7 @@ interface PrivyWallet {
 }
 
 type EthereumProvider = {
-  request: (args: { method: string }) => Promise<string[]>;
+  request: (args: { method: string; params?: any[] | undefined }) => Promise<unknown>;
 };
 
 interface AuthContextType {
