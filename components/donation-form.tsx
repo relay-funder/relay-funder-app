@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import type { Stripe, StripePaymentElementOptions, StripePaymentElementChangeEvent } from '@stripe/stripe-js'
+import { chainConfig } from '@/config/chain'
 
 interface DonationFormProps {
   campaign: Campaign;
@@ -219,24 +220,14 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       try {
         await privyProvider.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0xaef3' }], // 44787 in hex
+          params: [{ chainId: chainConfig.chainId.hex }], 
         })
       } catch (switchError: unknown) {
         if (switchError instanceof Error && 'code' in switchError && switchError.code === 4902) {
           try {
             await privyProvider.request({
               method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: '0xaef3',
-                chainName: 'Celo Alfajores Testnet',
-                nativeCurrency: {
-                  name: 'CELO',
-                  symbol: 'CELO',
-                  decimals: 18
-                },
-                rpcUrls: [platformConfig.rpcUrl],
-                blockExplorerUrls: ['https://alfajores.celoscan.io/']
-              }],
+              params: [chainConfig.getAddChainParams()],
             })
           } catch (addError) {
             console.error('Error adding network:', addError)

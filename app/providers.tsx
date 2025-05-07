@@ -3,7 +3,7 @@
 import { PrivyProvider } from '@privy-io/react-auth';
 import { ReactNode } from 'react';
 import { WagmiProvider } from '@privy-io/wagmi';
-import {  celoAlfajores, sepolia, mainnet } from 'wagmi/chains';
+import { celoAlfajores, sepolia, mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionProvider } from '@/contexts/CollectionContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
@@ -12,6 +12,7 @@ import { EnvironmentProvider } from '@/components/environment-theme-provider';
 import { createConfig } from '@privy-io/wagmi';
 import { http } from 'wagmi';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { chainConfig } from '@/config/chain';
 
 const config = createConfig({
   chains: [celoAlfajores, sepolia, mainnet],
