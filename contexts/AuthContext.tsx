@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Some need to get the signer first
           else {
             const provider = await wallet.getEthereumProvider();
-            if (provider && provider.request) {
+            if (provider && provider?.request) {
               const accounts = await provider.request({ method: 'eth_accounts' });
               if (accounts && accounts.length > 0) {
                 resolvedAddress = accounts[0];

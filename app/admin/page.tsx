@@ -266,7 +266,7 @@ export default function AdminPage() {
       if (!campaignId || !campaignAddress) {
         throw new Error("Campaign ID and address are required");
       }
-      if (!wallet || !(await wallet.isConnected())) {
+      if (!wallet || !(typeof wallet.isConnected === "function" && await wallet.isConnected())) {
         throw new Error("Wallet not connected");
       }
       
