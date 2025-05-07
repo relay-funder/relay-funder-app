@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { adminAddress } from '@/lib/constant';
@@ -52,8 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     debug && console.log('[AUTH] Client-side rendering active');
   }, []);
 
-  // Force a wallet connection attempt and return true if connected
-  const forceWalletConnection = async (): Promise<boolean> => {
+  const forceWalletConnection = useCallback(async (): Promise<boolean> => {
     debug && console.log('[AUTH] Forcing wallet connection');
     // Don't attempt more than once every 3 seconds
     const now = Date.now();
@@ -91,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login();
       return false;
     }
-  };
+  }, [address, authenticated, lastConnectionAttempt, login, wallet]);
 
   // Update address and admin status when dependencies change
   useEffect(() => {
