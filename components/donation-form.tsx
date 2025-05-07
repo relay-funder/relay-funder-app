@@ -34,6 +34,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import type { Stripe, StripePaymentElementOptions, StripePaymentElementChangeEvent } from '@stripe/stripe-js'
 import { chainConfig } from '@/config/chain'
 
+const debug = process.env.NODE_ENV !== 'production';
 interface DonationFormProps {
   campaign: Campaign;
 }
@@ -147,8 +148,6 @@ function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaig
     </form>
   )
 }
-
-const debug = true;
 
 export default function DonationForm({ campaign }: DonationFormProps) {
   const [selectedToken, setSelectedToken] = useState('USDC')
