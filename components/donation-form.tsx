@@ -148,6 +148,8 @@ function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaig
   )
 }
 
+const debug = true;
+
 export default function DonationForm({ campaign }: DonationFormProps) {
   const [selectedToken, setSelectedToken] = useState('USDC')
   const [amount, setAmount] = useState('')
@@ -201,30 +203,50 @@ export default function DonationForm({ campaign }: DonationFormProps) {
 
   const handleDonate = async () => {
     try {
+      debug && console.log('Starting donation process...')
       if (!wallet || !wallet.isConnected()) {
         throw new Error('Wallet not connected')
       }
+      if (!USDC_ADDRESS || !ethers.utils.isAddress(USDC_ADDRESS as string)) {
+        throw new Error('USDC_ADDRESS is missing or invalid')
+      }
+      if (!campaign.treasuryAddress || !ethers.utils.isAddress(campaign.treasuryAddress)) {
+        throw new Error('Treasury address is missing or invalid')
+      }
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        throw new Error('Donation amount is missing or invalid')
+      }
 
+      debug && console.log('Getting wallet provider and signer...')
       const privyProvider = await wallet.getEthereumProvider()
       const walletProvider = new ethers.providers.Web3Provider(privyProvider)
       const signer = walletProvider.getSigner()
       const userAddress = await signer.getAddress()
+      if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+        throw new Error('User address is missing or invalid')
+      }
+      debug && console.log('User address:', userAddress)
 
       // Switch to Alfajores network first
       try {
+        debug && console.log('Switching to Alfajores network...')
         await privyProvider.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainConfig.chainId.hex }], 
         })
+        debug && console.log('Successfully switched to Alfajores network')
       } catch (switchError: unknown) {
+        debug && console.error('Network switch error:', switchError)
         if (switchError instanceof Error && 'code' in switchError && switchError.code === 4902) {
           try {
+            debug && console.log('Attempting to add Alfajores network...')
             await privyProvider.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
             })
+            debug && console.log('Successfully added Alfajores network')
           } catch (addError) {
-            console.error('Error adding network:', addError)
+            debug && console.error('Error adding network:', addError)
             throw new Error('Failed to add network')
           }
         }
@@ -232,28 +254,40 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       }
 
       // Initialize contracts
-      
+      debug && console.log('Initializing USDC contract...')
       const usdcContract = new ethers.Contract(USDC_ADDRESS as string, erc20Abi, signer)
       const amountInUSDC = ethers.utils.parseUnits(amount || '0', process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
+      debug && console.log('Amount in USDC:', amountInUSDC.toString())
 
       // First approve the treasury to spend USDC
+      debug && console.log('Treasury address:', campaign.treasuryAddress)
+      debug && console.log('Approving USDC spend...')
       const approveTx = await usdcContract.approve(campaign.treasuryAddress, amountInUSDC)
+      debug && console.log('Approval transaction hash:', approveTx.hash)
       await approveTx.wait()
+      debug && console.log('USDC approval confirmed')
 
       // Make the pledge transaction
+      debug && console.log('Initializing treasury contract...')
       const treasuryABI = ["function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)"]
       const treasuryContract = new ethers.Contract(campaign.treasuryAddress!, treasuryABI, signer)
       
+      debug && console.log('Estimating gas for pledge transaction...')
+      const estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(userAddress, amountInUSDC)
+      debug && console.log('Estimated gas:', estimatedGas.toString())
+      
+      debug && console.log('Sending pledge transaction...')
       const tx = await treasuryContract.pledgeWithoutAReward(
         userAddress,
         amountInUSDC,
         {
-          gasLimit: (await treasuryContract.estimateGas.pledgeWithoutAReward(userAddress, amountInUSDC))
-            .mul(120).div(100)
+          gasLimit: estimatedGas.mul(120).div(100)
         }
       )
+      debug && console.log('Pledge transaction hash:', tx.hash)
 
       // Only create payment record after transaction is sent
+      debug && console.log('Creating payment record...')
       const paymentResponse = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -269,13 +303,19 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       })
 
       if (!paymentResponse.ok) {
+        debug && console.error('Failed to create payment record:', await paymentResponse.text())
         throw new Error('Failed to create payment record')
       }
 
       const { paymentId } = await paymentResponse.json()
+      debug && console.log('Payment record created with ID:', paymentId)
+      
+      debug && console.log('Waiting for transaction confirmation...')
       const receipt = await tx.wait()
+      debug && console.log('Transaction confirmed:', receipt)
 
       // Update payment status based on receipt
+      debug && console.log('Updating payment status...')
       await fetch('/api/payments', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -284,6 +324,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
           status: receipt.status === 1 ? 'confirmed' : 'failed',
         }),
       })
+      debug && console.log('Payment status updated')
 
       toast({
         title: "Success!",
@@ -291,7 +332,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       })
 
     } catch (err) {
-      console.error('Donation error:', err)
+      debug && console.error('Donation error:', err)
       const errorMessage = err instanceof Error 
         ? err.message
         : typeof err === 'object' && err && 'message' in err
