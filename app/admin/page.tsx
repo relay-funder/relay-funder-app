@@ -17,6 +17,7 @@ import { IoLocationSharp } from "react-icons/io5";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/loading';
+import { chainConfig } from '@/config/chain';
 
 // Add platform config
 const platformConfig = {
@@ -265,7 +266,6 @@ export default function AdminPage() {
       if (!campaignId || !campaignAddress) {
         throw new Error("Campaign ID and address are required");
       }
-
       if (!wallet || !(await wallet.isConnected())) {
         throw new Error("Wallet not connected");
       }
@@ -288,7 +288,7 @@ export default function AdminPage() {
       try {
         await privyProvider.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0xaef3" }], // 44787 in hex
+          params: [{ chainId: chainConfig.chainId.hex }],
         });
       } catch (switchError: unknown) {
         // Type guard to check if it's a ProviderRpcError
@@ -301,19 +301,7 @@ export default function AdminPage() {
           try {
             await privyProvider.request({
               method: "wallet_addEthereumChain",
-              params: [
-                {
-                  chainId: "0xaef3", // 44787 in hex
-                  chainName: "Celo Alfajores Testnet",
-                  nativeCurrency: {
-                    name: "CELO",
-                    symbol: "CELO",
-                    decimals: 18,
-                  },
-                  rpcUrls: [platformConfig.rpcUrl],
-                  blockExplorerUrls: ["https://alfajores.celoscan.io/"],
-                },
-              ],
+              params: [chainConfig.getAddChainParams()],
             });
           } catch (addError) {
             console.error("Error adding Alfajores network:", addError);
@@ -327,8 +315,8 @@ export default function AdminPage() {
 
       // Create providers
       const walletProvider = new ethers.providers.Web3Provider(privyProvider, {
-        chainId: 44787,
-        name: "Celo Alfajores",
+        chainId: chainConfig.chainId.decimal,
+        name: chainConfig.name,
       });
       const signer = walletProvider.getSigner();
       const signerAddress = await signer.getAddress();
