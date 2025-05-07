@@ -9,27 +9,31 @@ import React, {
   useCallback,
 } from "react";
 import { useAccount as useWagmiAccount } from "wagmi";
+import { type Address, type Chain } from "viem";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { adminAddress } from "@/lib/constant";
 const debug = process.env.NODE_ENV !== "production";
 
-enum AccountStatusEnum {
-  connected = "connected",
-  connecting = "connecting",
-  reconnecting = "reconnecting",
-  disconnected = "disconnected",
-}
+type AccountStatusType =
+  | "connected"
+  | "connecting"
+  | "reconnecting"
+  | "disconnected";
 interface AccountContextType {
-  address: string | null;
-  chain: string | null;
-  chainId: string | null;
+  address?: Address;
+  chain?: Chain;
+  chainId?: number;
   isConnected: boolean;
   isConnecting: boolean;
   isReconnecting: boolean;
-  status: AccountStatusEnum;
+  status?: AccountStatusType;
 }
 
-const AccountContext = createContext<AccountContextType>();
+const AccountContext = createContext<AccountContextType>({
+  isConnected: false,
+  isConnecting: false,
+  isReconnecting: false,
+});
 
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -43,10 +47,19 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({
     isReconnecting,
     status,
   } = useWagmiAccount();
+  const normalizedAddress: Address|undefined = useMemo(() => {
+    if (
+      typeof address !== "string" ||
+      !address.toLowerCase().startsWith("0x")
+    ) {
+      return undefined;
+    }
+    return address.toLowerCase() as Address;
+  }, [address]);
 
   const value = useMemo(
     () => ({
-      address: address?.toLowerCase(),
+      address: normalizedAddress,
       chain,
       chainId,
       isConnected,
@@ -55,7 +68,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({
       status,
     }),
     [
-      address,
+      normalizedAddress,
       chain,
       chainId,
       isConnected,
@@ -70,4 +83,4 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export const useAccount = () => useContext(AccountContext);
+export const useAccount = (): AccountContextType => useContext(AccountContext);
