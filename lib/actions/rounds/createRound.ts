@@ -22,24 +22,18 @@ const roundFormSchema = z.object({
       message: 'Invalid token address format.',
     }),
   tokenDecimals: z.coerce.number().int().min(0).max(18),
-  startDate: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), {
-      message: 'Invalid start date.',
-    }),
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Invalid start date.',
+  }),
   endDate: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid end date.' }),
-  applicationStart: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), {
-      message: 'Invalid application start date.',
-    }),
-  applicationClose: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), {
-      message: 'Invalid application close date.',
-    }),
+  applicationStart: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Invalid application start date.',
+  }),
+  applicationClose: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Invalid application close date.',
+  }),
   logoUrl: z.string().url().optional().or(z.literal('')),
   profileId: z
     .string()
