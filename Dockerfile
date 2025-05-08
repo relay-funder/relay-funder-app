@@ -16,7 +16,6 @@ RUN touch /root/.bashrc \
     >> /root/.bashrc
 
 VOLUME /app
-VOLUME /app/node_modules
 VOLUME /app/.next
 VOLUME /app/.pnpm-store
 
