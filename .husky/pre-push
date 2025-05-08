@@ -20,7 +20,6 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
-[
 echo "Running checks in Docker environment..."
 
 # Run checks in existing container with proper environment isolation
