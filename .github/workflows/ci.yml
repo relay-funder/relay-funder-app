@@ -41,6 +41,11 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - name: Debug PATH and pnpm
+        run: |
+          echo $PATH
+          which pnpm || true
+          pnpm --version || true
 
       - name: Run install
         run: pnpm install --frozen-lockfile
@@ -66,6 +71,11 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - name: Debug PATH and pnpm
+        run: |
+          echo $PATH
+          which pnpm || true
+          pnpm --version || true
 
       - name: Run install
         run: pnpm install --immutable
