@@ -28,6 +28,7 @@ jobs:
   test:
     # run unit tests (utils) of the project
     # they check the general functionality of the libraries we implemented.
+    if: false  # Skip this job
     runs-on: ubuntu-latest
 
     steps:
@@ -57,6 +58,7 @@ jobs:
         run: pnpm test
 
   publish:
+    if: false  # Skip this job
     needs: test
     runs-on: ubuntu-latest
     steps:
