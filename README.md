@@ -109,7 +109,7 @@ prefixed with `aka-app` so you immediately see that you are not in your host.
 
 ### Development Database Management
 
-Sometimes it is required to inqurie the postgres database directly. If you
+Sometimes it is required to inquire the postgres database directly. If you
 prefer a desktop-tool, just expose the port of the database-container to your
 host, but ideally all you need is a browser. To start the pgadmin database tool,
 run `docker compose --profile develop up -d`. after a few seconds navigate to
