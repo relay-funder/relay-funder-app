@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "pnpm install && prisma generate && next dev",
+    "dev": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=8192 next dev --disable-source-maps --turbo",
     "build": "prisma generate && NODE_ENV=production next build",
     "build:vercel": "vercel build",
     "dev:db": "prisma format && prisma migrate dev",
@@ -71,6 +71,7 @@
     "react-intersection-observer": "^9.15.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "use-debounce": "^10.0.4",
     "viem": "^2.22.3",
     "wagmi": "^2.13.3",
     "zod": "^3.24.1",

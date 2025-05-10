@@ -6,13 +6,17 @@ import { WagmiProvider } from '@privy-io/wagmi';
 import { celoAlfajores, sepolia, mainnet } from '@/config/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionProvider } from '@/contexts/CollectionContext';
-import { SidebarProvider } from '@/contexts/SidebarContext';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { EnvironmentProvider } from '@/components/environment-theme-provider';
 import { createConfig } from '@privy-io/wagmi';
 import { http } from 'wagmi';
 import { chainConfig } from '@/config/chain';
-import { AccountProvider, AuthProvider } from "@/contexts";
+import {
+  AccountProvider,
+  AuthProvider,
+  SidebarProvider,
+  FeatureFlagsProvider,
+  EnvironmentProvider,
+} from '@/contexts';
 
 // Create Privy-specific wagmi config
 const privyWagmiConfig = createConfig({
@@ -66,17 +70,19 @@ export default function Providers({ children }: { children: ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={privyWagmiConfig}>
-          <SidebarProvider>
-            <CollectionProvider>
-              <EnvironmentProvider>
-                <AccountProvider>
-                  <AuthProvider>{children}</AuthProvider>
-                </AccountProvider>
-              </EnvironmentProvider>
-            </CollectionProvider>
-          </SidebarProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          <FeatureFlagsProvider>
+            <SidebarProvider>
+              <CollectionProvider>
+                <EnvironmentProvider>
+                  <AccountProvider>
+                    <AuthProvider>{children}</AuthProvider>
+                  </AccountProvider>
+                </EnvironmentProvider>
+              </CollectionProvider>
+            </SidebarProvider>
+          </FeatureFlagsProvider>
         </WagmiProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </PrivyProvider>
   );
