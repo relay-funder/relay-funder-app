@@ -45,6 +45,7 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
    - Next.js development server (accessible at [http://localhost:3000](http://localhost:3000))
 
 4. **Initialize Database (in a new terminal):**
+
    ```bash
    docker-compose exec app pnpm prisma migrate dev
    docker-compose exec app pnpm prisma db seed
@@ -79,6 +80,7 @@ hot-reloading enabled).
 For the docker environment it is possible to configure various details. This is
 strictly not required as the docker-compose file contains defaults. All of the
 variables displayed here are optional
+
 ```bash
 touch .env
 # postgres configuration, the defaults are fine, the postgres is only reachable by the app
@@ -156,7 +158,6 @@ Common issues and their solutions:
   docker compose exec app pnpm prisma migrate dev  # Reapply migrations
   docker compose exec app pnpm prisma db seed     # Reseed the database
   ```
-
 
 ## Available Scripts
 

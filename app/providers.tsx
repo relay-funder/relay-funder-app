@@ -12,7 +12,7 @@ import { EnvironmentProvider } from '@/components/environment-theme-provider';
 import { createConfig } from '@privy-io/wagmi';
 import { http } from 'wagmi';
 import { chainConfig } from '@/config/chain';
-import { AccountProvider, AuthProvider } from "@/contexts";
+import { AccountProvider, AuthProvider } from '@/contexts';
 
 // Create Privy-specific wagmi config
 const privyWagmiConfig = createConfig({
