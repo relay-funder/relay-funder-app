@@ -23,12 +23,12 @@ export function PageHeaderSearch({
   );
   return (
     <header className="px-4 py-4">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-start gap-4">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between">
+        <div className="flex flex-nowrap items-start gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
             <Input
-              className="w-[300px] rounded-xl pl-10"
+              className="max-w-sm rounded-xl pl-10"
               placeholder="Search Stories"
               type="search"
               value={searchTerm}
@@ -36,7 +36,7 @@ export function PageHeaderSearch({
             />
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Button
             variant="outline"
             className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
