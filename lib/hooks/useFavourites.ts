@@ -40,7 +40,7 @@ export function useCheckUserFavourite(
   campaignId?: number | null,
 ) {
   return useQuery({
-    queryKey: [FAVOURITE_CHECK_QUERY_KEY, 'user', address],
+    queryKey: [FAVOURITE_CHECK_QUERY_KEY, 'user', `${address}${campaignId}`],
     queryFn: () => checkUserFavourite(address!, campaignId!),
     enabled: !!address,
   });
@@ -71,9 +71,8 @@ export function useUpdateFavourite(userAddress?: string) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [FAVOURITE_QUERY_KEY, FAVOURITE_CHECK_QUERY_KEY],
-      });
+      queryClient.invalidateQueries({ queryKey: [FAVOURITE_CHECK_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [FAVOURITE_QUERY_KEY] });
     },
   });
 }

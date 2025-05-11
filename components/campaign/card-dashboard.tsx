@@ -7,17 +7,17 @@ import { FavoriteButton } from '@/components/favorite-button';
 import { categories } from '@/lib/constant';
 import { Badge } from '@/components/ui/badge';
 
-interface CampaignCardProps {
+interface CampaignCardDashboardProps {
   campaign: Campaign;
   isFavorite?: boolean;
   onFavoriteToggle?: (isFavorite: boolean) => void;
 }
 
-export function CampaignCard({
+export function CampaignCardDashboard({
   campaign,
   isFavorite,
   onFavoriteToggle,
-}: CampaignCardProps) {
+}: CampaignCardDashboardProps) {
   const formatDate = (timestamp: string) => {
     return new Date(parseInt(timestamp) * 1000).toLocaleDateString();
   };
@@ -46,7 +46,7 @@ export function CampaignCard({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="p-0">
+      <CardHeader className="relative p-0">
         <Image
           src={
             campaign.images?.find((img) => img.isMainImage)?.imageUrl ||

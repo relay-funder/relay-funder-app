@@ -1,5 +1,5 @@
 'use client';
-
+import { cn } from '@/lib/utils';
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from '@/contexts';
 import { Heart } from 'lucide-react';
@@ -64,7 +64,7 @@ export function FavoriteButton({
     <Button
       variant="outline"
       size="icon"
-      className="rounded-full"
+      className={cn('rounded-full', isLoading && 'opacity-50')}
       onClick={toggleFavourite}
       disabled={isLoading}
     >
