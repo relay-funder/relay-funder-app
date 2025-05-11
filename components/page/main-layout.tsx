@@ -12,15 +12,25 @@ export function PageMainLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
+    <div className="flex overflow-x-hidden bg-gray-50">
       <PageSidebar />
       <div
         className={cn(
-          'flex-1 transition-all duration-300 ease-in-out',
-          isOpen ? 'ml-[240px]' : 'ml-[72px]',
+          'min-h-screen flex-1 transition-all duration-300 ease-in-out',
+          isOpen ? 'md:ml-[240px]' : 'md:ml-[72px]',
         )}
       >
-        {children}
+        <div>
+          <div
+            className={cn(
+              'float-left h-[100px] w-[72px] md:float-none md:hidden',
+              'bg-white',
+            )}
+          >
+            {/* placeholder to avoid that sidebar covers content */}
+          </div>
+          {children}
+        </div>
       </div>
     </div>
   );

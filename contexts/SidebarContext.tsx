@@ -1,6 +1,15 @@
 'use client';
+import { useDebouncedCallback } from 'use-debounce';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from 'react';
 
 interface SidebarContextType {
   isOpen: boolean;
@@ -11,11 +20,22 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-
+  const lastOpen = useRef(0);
+  const setOpen = useCallback(
+    (newState: boolean) => {
+      setIsOpen(newState);
+    },
+    [setIsOpen],
+  );
+  const setOpenDebounced = useDebouncedCallback(setOpen, 100);
+  const value = useMemo(() => {
+    return {
+      isOpen,
+      setIsOpen: setOpenDebounced,
+    };
+  }, [isOpen, setOpenDebounced]);
   return (
-    <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
-      {children}
-    </SidebarContext.Provider>
+    <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
   );
 }
 
