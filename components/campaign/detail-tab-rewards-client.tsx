@@ -18,7 +18,7 @@ import { ethers } from 'ethers';
 import { Badge } from '@/components/ui/badge';
 import { chainConfig } from '@/config/chain';
 
-interface ClientRewardsTabProps {
+interface CampaignDetailTabRewardsClientProps {
   campaignId: string;
   campaignSlug: string;
   campaignOwner: string;
@@ -42,11 +42,11 @@ interface NFTData {
   };
 }
 
-export default function ClientRewardsTab({
+export function CampaignDetailTabRewardsClient({
   campaignId,
   campaignSlug,
   campaignOwner,
-}: ClientRewardsTabProps) {
+}: CampaignDetailTabRewardsClientProps) {
   const { address, isConnected } = useAccount();
   const [numbersProtocolUri, setNumbersProtocolUri] = useState<string | null>(
     null,
