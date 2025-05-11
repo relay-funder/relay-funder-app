@@ -41,7 +41,7 @@ export function PageHeader({
           {typeof message === 'string' && (
             <div className="text-sm text-muted-foreground">{message}</div>
           )}
-          <h1 className="text-xl font-semibold sm:text-4xl">{title}</h1>
+          <h1 className="text-lg font-semibold sm:text-4xl">{title}</h1>
           {children ? (
             <div className="flex items-center py-2">{children}</div>
           ) : null}
