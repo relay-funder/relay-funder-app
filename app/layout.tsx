@@ -4,11 +4,10 @@ import './globals.css';
 import Providers from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { NetworkCheck } from '@/components/network-check';
-import MainLayout from '@/components/main-layout';
+import { PageMainLayout } from '@/components/page/main-layout';
 import { prefetchCampaigns } from '@/lib/hooks/useCampaigns';
 import { QueryClient } from '@tanstack/react-query';
 import { EnvironmentBadge } from '@/components/environment-badge';
-import { CollectionProvider } from '@/contexts/CollectionContext';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -40,15 +39,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CollectionProvider>
-          <Providers>
-            <NetworkCheck>
-              <MainLayout>{children}</MainLayout>
-            </NetworkCheck>
-            <Toaster />
-            <EnvironmentBadge />
-          </Providers>
-        </CollectionProvider>
+        <Providers>
+          <NetworkCheck>
+            <PageMainLayout>{children}</PageMainLayout>
+          </NetworkCheck>
+          <Toaster />
+          <EnvironmentBadge />
+        </Providers>
       </body>
     </html>
   );

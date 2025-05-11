@@ -4,9 +4,8 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
-import { Campaign } from '@/types/campaign';
+import type { Campaign } from '@/types/campaign';
 import { QueryClient } from '@tanstack/react-query';
-// import { Campaign } from '@/types/campaign'
 
 const CAMPAIGNS_QUERY_KEY = 'campaigns';
 
@@ -46,7 +45,7 @@ async function fetchCampaignPage({
   return (await response.json()) as PaginatedResponse;
 }
 
-async function fetchUserCampaigns(address: string) {
+async function fetchUserCampaigns(address: string): Promise<Campaign[]> {
   const response = await fetch(`/api/campaigns/user?address=${address}`);
   if (!response.ok) {
     const error = await response.json();
@@ -82,14 +81,13 @@ export function useInfiniteCampaigns(status = 'active', pageSize = 10) {
   });
 }
 
-export function useUserCampaigns(address?: string) {
+export function useUserCampaigns(address?: string | null) {
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'user', address],
     queryFn: () => fetchUserCampaigns(address!),
     enabled: !!address,
   });
 }
-
 export function useUpdateCampaign() {
   const queryClient = useQueryClient();
 
