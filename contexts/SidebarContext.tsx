@@ -27,7 +27,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     },
     [setIsOpen],
   );
-  const setOpenDebounced = useDebouncedCallback(setOpen, 100);
+  const setOpenDebounced = useDebouncedCallback(setOpen, 200);
   const value = useMemo(() => {
     return {
       isOpen,

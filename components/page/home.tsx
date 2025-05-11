@@ -11,7 +11,9 @@ export function PageHome({
     <>
       {header}
       <div className="flex min-h-screen w-full flex-col bg-gray-50">
-        <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+        <main className="container mx-auto max-w-7xl px-2 py-8 md:px-4">
+          {children}
+        </main>
       </div>
     </>
   );

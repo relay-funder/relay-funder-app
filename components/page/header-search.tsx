@@ -1,6 +1,6 @@
 import { useState, useCallback, type ChangeEvent } from 'react';
 import { useAuth } from '@/contexts';
-
+import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import Image from 'next/image';
 import { Button, Input } from '@/components/ui';
@@ -22,13 +22,17 @@ export function PageHeaderSearch({
     [setSearchTerm, onSearchChanged],
   );
   return (
-    <header className="px-4 py-4">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between">
-        <div className="flex flex-nowrap items-start gap-4">
+    <header className="inline justify-between p-0 md:p-4">
+      <div className="flex min-h-[100px] flex-wrap items-center pl-1 pt-[2px] md:min-h-0">
+        <div className="flex flex-row items-center py-1 md:ml-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+            <Search
+              className={cn(
+                'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400',
+              )}
+            />
             <Input
-              className="max-w-sm rounded-xl pl-10"
+              className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
               placeholder="Search Stories"
               type="search"
               value={searchTerm}
@@ -36,7 +40,7 @@ export function PageHeaderSearch({
             />
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-row items-center gap-4">
           <Button
             variant="outline"
             className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
