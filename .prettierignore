@@ -1,2 +1,4 @@
 dev_modules
 node_modules
+docker-compose.yml
+pnpm-lock.yaml
