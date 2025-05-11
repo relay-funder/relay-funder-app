@@ -28,15 +28,7 @@ export interface Collection {
   stories: Story[];
   createdAt: Date;
 }
-
-export interface Campaign {
-  id: string | number;
-  title?: string;
-  description?: string;
-  image?: string;
-  slug?: string;
-  type?: string;
-}
+import { type Campaign } from './campaign';
 
 export interface CollectionContextType {
   userCollections: Collection[];
@@ -53,4 +45,9 @@ export interface CollectionContextType {
   deleteCollection: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Collection | undefined;
   refreshCollections: () => Promise<void>;
+}
+
+export interface Favourite {
+  id: string | number;
+  campaign: Campaign;
 }

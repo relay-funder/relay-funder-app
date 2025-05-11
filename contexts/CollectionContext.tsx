@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Collection, CollectionContextType, Campaign } from '@/types';
+import type { Collection, CollectionContextType } from '@/types';
+import type { Campaign } from '@/types/campaign';
 import { useAuth } from './AuthContext';
 import { toast } from '@/hooks/use-toast';
 
