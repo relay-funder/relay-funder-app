@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import * as Sentry from "@sentry/nextjs";
-import { useEffect } from "react";
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
 
 export default function GlobalError({
   error,
