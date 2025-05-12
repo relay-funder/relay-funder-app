@@ -1,139 +1,160 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from "react"
-import { Button } from "./ui/button"
-import { Card, CardContent } from "./ui/card"
+import { useState, useEffect } from 'react';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select"
-import { Badge } from "./ui/badge"
-import { Switch } from "./ui/switch"
-import { Input } from "./ui/input"
-import { Checkbox } from "./ui/checkbox"
-import { Alert, AlertDescription } from "./ui/alert"
-import { Info, Wallet, HelpCircle, CreditCard } from 'lucide-react'
-import { 
+} from './ui/select';
+import { Badge } from './ui/badge';
+import { Switch } from './ui/switch';
+import { Input } from './ui/input';
+import { Checkbox } from './ui/checkbox';
+import { Alert, AlertDescription } from './ui/alert';
+import { Info, Wallet, HelpCircle, CreditCard } from 'lucide-react';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "./ui/tooltip"
-import { Campaign } from "@/types/campaign"
-import { ethers } from 'ethers'
-import { useWallets } from '@privy-io/react-auth'
-import { useToast } from "@/hooks/use-toast"
-import { erc20Abi } from 'viem'
-import { USDC_ADDRESS } from "@/lib/constant"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { loadStripe } from "@stripe/stripe-js"
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import type { Stripe, StripePaymentElementOptions, StripePaymentElementChangeEvent } from '@stripe/stripe-js'
-import { chainConfig } from '@/config/chain'
+} from './ui/tooltip';
+import { Campaign } from '@/types/campaign';
+import { ethers } from 'ethers';
+import { useWallets } from '@privy-io/react-auth';
+import { useToast } from '@/hooks/use-toast';
+import { erc20Abi } from 'viem';
+import { USDC_ADDRESS } from '@/lib/constant';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
+import type {
+  Stripe,
+  StripePaymentElementOptions,
+  StripePaymentElementChangeEvent,
+} from '@stripe/stripe-js';
+import { chainConfig } from '@/config/chain';
 
 const debug = process.env.NODE_ENV !== 'production';
 interface DonationFormProps {
   campaign: Campaign;
 }
 
-function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaign: Campaign }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const [error, setError] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const { toast } = useToast()
-  const [isReady, setIsReady] = useState(false)
+function StripePaymentForm({
+  publicKey,
+  campaign,
+}: {
+  publicKey: string;
+  campaign: Campaign;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (stripe && elements) {
-      setIsReady(true)
+      setIsReady(true);
     }
-  }, [stripe, elements])
+  }, [stripe, elements]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!stripe || !elements || !isReady) {
-      return
+      return;
     }
 
     // Prevent multiple form submissions
     if (isProcessing) {
-      return
+      return;
     }
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     try {
       // Trigger form validation and wallet collection
-      const { error: submitError } = await elements.submit()
+      const { error: submitError } = await elements.submit();
       if (submitError) {
-        setError(submitError.message || 'An error occurred')
-        return
+        setError(submitError.message || 'An error occurred');
+        return;
       }
 
-      const returnUrl = new URL(`${window.location.origin}/campaigns/${campaign.slug}/donation/success`)
-      returnUrl.searchParams.append('stripe_key', publicKey)
+      const returnUrl = new URL(
+        `${window.location.origin}/campaigns/${campaign.slug}/donation/success`,
+      );
+      returnUrl.searchParams.append('stripe_key', publicKey);
 
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: returnUrl.toString(),
         },
-      })
+      });
 
       if (error) {
-        setError(error.message || 'An error occurred')
+        setError(error.message || 'An error occurred');
         toast({
-          title: "Error",
-          description: error.message || "Payment failed",
-          variant: "destructive",
-        })
+          title: 'Error',
+          description: error.message || 'Payment failed',
+          variant: 'destructive',
+        });
       }
     } catch (err) {
-      console.error('Payment confirmation error:', err)
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      console.error('Payment confirmation error:', err);
+      setError(
+        err instanceof Error ? err.message : 'An unexpected error occurred',
+      );
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   if (!isReady) {
     return (
-      <div className="text-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      <div className="py-4 text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
         <p className="mt-2 text-sm text-gray-600">Loading payment form...</p>
       </div>
-    )
+    );
   }
 
   return (
     <form onSubmit={handleSubmit} id="payment-form">
       <div id="payment-element">
-        <PaymentElement 
-          options={{ 
-            layout: 'accordion',
-            defaultValues: {
-              billingDetails: {
-                name: 'John Doe', // test user name
-                email: 'user@example.com', // test user email
-              }
-            }
-          } as StripePaymentElementOptions} 
+        <PaymentElement
+          options={
+            {
+              layout: 'accordion',
+              defaultValues: {
+                billingDetails: {
+                  name: 'John Doe', // test user name
+                  email: 'user@example.com', // test user email
+                },
+              },
+            } as StripePaymentElementOptions
+          }
           onChange={(event: StripePaymentElementChangeEvent) => {
             if (event.complete) {
-              setError(null)
+              setError(null);
             } else if (event.empty) {
-              setError('Please enter payment details')
+              setError('Please enter payment details');
             }
           }}
         />
       </div>
       {error && (
-        <div id="error-message" className="text-red-500 text-sm mt-2">
+        <div id="error-message" className="mt-2 text-sm text-red-500">
           {error}
         </div>
       )}
@@ -141,152 +162,196 @@ function StripePaymentForm({ publicKey, campaign }: { publicKey: string; campaig
         id="submit"
         type="submit"
         disabled={!stripe || isProcessing || !isReady}
-        className="w-full mt-4"
+        className="mt-4 w-full"
       >
-        {isProcessing ? "Processing..." : "Pay now"}
+        {isProcessing ? 'Processing...' : 'Pay now'}
       </Button>
     </form>
-  )
+  );
 }
 
 export default function DonationForm({ campaign }: DonationFormProps) {
-  const [selectedToken, setSelectedToken] = useState('USDC')
-  const [amount, setAmount] = useState('')
-  const [percentage, setPercentage] = useState(10)
-  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [usdcBalance, setUsdcBalance] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card'>('wallet')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null)
+  const [selectedToken, setSelectedToken] = useState('USDC');
+  const [amount, setAmount] = useState('');
+  const [percentage, setPercentage] = useState(10);
+  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [usdcBalance, setUsdcBalance] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card'>(
+    'wallet',
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [stripePromise, setStripePromise] =
+    useState<Promise<Stripe | null> | null>(null);
   const [stripeData, setStripeData] = useState<{
     clientSecret: string;
     publicKey: string;
-  } | null>(null)
+  } | null>(null);
 
   // Simulated values - in a real app these would come from an API or wallet
-  const tokenPrice = 1 // USD per USDC
-  const availableBalance = usdcBalance // Update available balance to use fetched USDC balance
-  
-  const numericAmount = parseFloat(amount) || 0
-  const akashicAmount = isDonatingToAkashic ? (numericAmount * percentage) / 100 : 0
-  const poolAmount = numericAmount - akashicAmount
+  const tokenPrice = 1; // USD per USDC
+  const availableBalance = usdcBalance; // Update available balance to use fetched USDC balance
 
-  const formatCrypto = (value: number) => `${value.toFixed(6)} ${selectedToken}`
-  const formatUSD = (value: number) => `$ ${(value * tokenPrice).toFixed(2)}`
+  const numericAmount = parseFloat(amount) || 0;
+  const akashicAmount = isDonatingToAkashic
+    ? (numericAmount * percentage) / 100
+    : 0;
+  const poolAmount = numericAmount - akashicAmount;
 
-  const { wallets } = useWallets()
-  const { toast } = useToast()
-  const wallet = wallets[0] // Assuming first wallet
+  const formatCrypto = (value: number) =>
+    `${value.toFixed(6)} ${selectedToken}`;
+  const formatUSD = (value: number) => `$ ${(value * tokenPrice).toFixed(2)}`;
+
+  const { wallets } = useWallets();
+  const { toast } = useToast();
+  const wallet = wallets[0]; // Assuming first wallet
 
   // Fetch USDC balance when the wallet is connected
   useEffect(() => {
     const fetchUsdcBalance = async () => {
-      if (wallet && await wallet.isConnected()) {
-        const privyProvider = await wallet.getEthereumProvider()
-        const walletProvider = new ethers.providers.Web3Provider(privyProvider)
-        const signer = walletProvider.getSigner()
-        const userAddress = await signer.getAddress()
+      if (wallet && (await wallet.isConnected())) {
+        const privyProvider = await wallet.getEthereumProvider();
+        const walletProvider = new ethers.providers.Web3Provider(privyProvider);
+        const signer = walletProvider.getSigner();
+        const userAddress = await signer.getAddress();
 
         // Initialize USDC contract
-        const usdcContract = new ethers.Contract(USDC_ADDRESS as string, erc20Abi, signer)
-        
-        // Fetch balance
-        const balance = await usdcContract.balanceOf(userAddress)
-        setUsdcBalance(parseFloat(ethers.utils.formatUnits(balance, process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)))
-      }
-    }
+        const usdcContract = new ethers.Contract(
+          USDC_ADDRESS as string,
+          erc20Abi,
+          signer,
+        );
 
-    fetchUsdcBalance()
-  }, [wallet]) // Run effect when wallet changes
+        // Fetch balance
+        const balance = await usdcContract.balanceOf(userAddress);
+        setUsdcBalance(
+          parseFloat(
+            ethers.utils.formatUnits(
+              balance,
+              process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS,
+            ),
+          ),
+        );
+      }
+    };
+
+    fetchUsdcBalance();
+  }, [wallet]); // Run effect when wallet changes
 
   const handleDonate = async () => {
     try {
-      debug && console.log('Starting donation process...')
+      debug && console.log('Starting donation process...');
       if (!wallet || !wallet.isConnected()) {
-        throw new Error('Wallet not connected')
+        throw new Error('Wallet not connected');
       }
       if (!USDC_ADDRESS || !ethers.utils.isAddress(USDC_ADDRESS as string)) {
-        throw new Error('USDC_ADDRESS is missing or invalid')
+        throw new Error('USDC_ADDRESS is missing or invalid');
       }
-      if (!campaign.treasuryAddress || !ethers.utils.isAddress(campaign.treasuryAddress)) {
-        throw new Error('Treasury address is missing or invalid')
+      if (
+        !campaign.treasuryAddress ||
+        !ethers.utils.isAddress(campaign.treasuryAddress)
+      ) {
+        throw new Error('Treasury address is missing or invalid');
       }
       if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-        throw new Error('Donation amount is missing or invalid')
+        throw new Error('Donation amount is missing or invalid');
       }
 
-      debug && console.log('Getting wallet provider and signer...')
-      const privyProvider = await wallet.getEthereumProvider()
-      const walletProvider = new ethers.providers.Web3Provider(privyProvider)
-      const signer = walletProvider.getSigner()
-      const userAddress = await signer.getAddress()
+      debug && console.log('Getting wallet provider and signer...');
+      const privyProvider = await wallet.getEthereumProvider();
+      const walletProvider = new ethers.providers.Web3Provider(privyProvider);
+      const signer = walletProvider.getSigner();
+      const userAddress = await signer.getAddress();
       if (!userAddress || !ethers.utils.isAddress(userAddress)) {
-        throw new Error('User address is missing or invalid')
+        throw new Error('User address is missing or invalid');
       }
-      debug && console.log('User address:', userAddress)
+      debug && console.log('User address:', userAddress);
 
       // Switch to Alfajores network first
       try {
-        debug && console.log('Switching to Alfajores network...')
+        debug && console.log('Switching to Alfajores network...');
         await privyProvider.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainConfig.chainId.hex }], 
-        })
-        debug && console.log('Successfully switched to Alfajores network')
+          params: [{ chainId: chainConfig.chainId.hex }],
+        });
+        debug && console.log('Successfully switched to Alfajores network');
       } catch (switchError: unknown) {
-        debug && console.error('Network switch error:', switchError)
-        if (switchError instanceof Error && 'code' in switchError && switchError.code === 4902) {
+        debug && console.error('Network switch error:', switchError);
+        if (
+          switchError instanceof Error &&
+          'code' in switchError &&
+          switchError.code === 4902
+        ) {
           try {
-            debug && console.log('Attempting to add Alfajores network...')
+            debug && console.log('Attempting to add Alfajores network...');
             await privyProvider.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
-            })
-            debug && console.log('Successfully added Alfajores network')
+            });
+            debug && console.log('Successfully added Alfajores network');
           } catch (addError) {
-            debug && console.error('Error adding network:', addError)
-            throw new Error('Failed to add network')
+            debug && console.error('Error adding network:', addError);
+            throw new Error('Failed to add network');
           }
         }
-        throw switchError
+        throw switchError;
       }
 
       // Initialize contracts
-      debug && console.log('Initializing USDC contract...')
-      const usdcContract = new ethers.Contract(USDC_ADDRESS as string, erc20Abi, signer)
-      const amountInUSDC = ethers.utils.parseUnits(amount || '0', process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS)
-      debug && console.log('Amount in USDC:', amountInUSDC.toString())
+      debug && console.log('Initializing USDC contract...');
+      const usdcContract = new ethers.Contract(
+        USDC_ADDRESS as string,
+        erc20Abi,
+        signer,
+      );
+      const amountInUSDC = ethers.utils.parseUnits(
+        amount || '0',
+        process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS,
+      );
+      debug && console.log('Amount in USDC:', amountInUSDC.toString());
 
       // First approve the treasury to spend USDC
-      debug && console.log('Treasury address:', campaign.treasuryAddress)
-      debug && console.log('Approving USDC spend...')
-      const approveTx = await usdcContract.approve(campaign.treasuryAddress, amountInUSDC)
-      debug && console.log('Approval transaction hash:', approveTx.hash)
-      await approveTx.wait()
-      debug && console.log('USDC approval confirmed')
+      debug && console.log('Treasury address:', campaign.treasuryAddress);
+      debug && console.log('Approving USDC spend...');
+      const approveTx = await usdcContract.approve(
+        campaign.treasuryAddress,
+        amountInUSDC,
+      );
+      debug && console.log('Approval transaction hash:', approveTx.hash);
+      await approveTx.wait();
+      debug && console.log('USDC approval confirmed');
 
       // Make the pledge transaction
-      debug && console.log('Initializing treasury contract...')
-      const treasuryABI = ["function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)"]
-      const treasuryContract = new ethers.Contract(campaign.treasuryAddress!, treasuryABI, signer)
-      
-      debug && console.log('Estimating gas for pledge transaction...')
-      const estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(userAddress, amountInUSDC)
-      debug && console.log('Estimated gas:', estimatedGas.toString())
-      
-      debug && console.log('Sending pledge transaction...')
+      debug && console.log('Initializing treasury contract...');
+      const treasuryABI = [
+        'function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)',
+      ];
+      const treasuryContract = new ethers.Contract(
+        campaign.treasuryAddress!,
+        treasuryABI,
+        signer,
+      );
+
+      debug && console.log('Estimating gas for pledge transaction...');
+      const estimatedGas =
+        await treasuryContract.estimateGas.pledgeWithoutAReward(
+          userAddress,
+          amountInUSDC,
+        );
+      debug && console.log('Estimated gas:', estimatedGas.toString());
+
+      debug && console.log('Sending pledge transaction...');
       const tx = await treasuryContract.pledgeWithoutAReward(
         userAddress,
         amountInUSDC,
         {
-          gasLimit: estimatedGas.mul(120).div(100)
-        }
-      )
-      debug && console.log('Pledge transaction hash:', tx.hash)
+          gasLimit: estimatedGas.mul(120).div(100),
+        },
+      );
+      debug && console.log('Pledge transaction hash:', tx.hash);
 
       // Only create payment record after transaction is sent
-      debug && console.log('Creating payment record...')
+      debug && console.log('Creating payment record...');
       const paymentResponse = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -299,22 +364,26 @@ export default function DonationForm({ campaign }: DonationFormProps) {
           userAddress,
           transactionHash: tx.hash,
         }),
-      })
+      });
 
       if (!paymentResponse.ok) {
-        debug && console.error('Failed to create payment record:', await paymentResponse.text())
-        throw new Error('Failed to create payment record')
+        debug &&
+          console.error(
+            'Failed to create payment record:',
+            await paymentResponse.text(),
+          );
+        throw new Error('Failed to create payment record');
       }
 
-      const { paymentId } = await paymentResponse.json()
-      debug && console.log('Payment record created with ID:', paymentId)
-      
-      debug && console.log('Waiting for transaction confirmation...')
-      const receipt = await tx.wait()
-      debug && console.log('Transaction confirmed:', receipt)
+      const { paymentId } = await paymentResponse.json();
+      debug && console.log('Payment record created with ID:', paymentId);
+
+      debug && console.log('Waiting for transaction confirmation...');
+      const receipt = await tx.wait();
+      debug && console.log('Transaction confirmed:', receipt);
 
       // Update payment status based on receipt
-      debug && console.log('Updating payment status...')
+      debug && console.log('Updating payment status...');
       await fetch('/api/payments', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -322,35 +391,35 @@ export default function DonationForm({ campaign }: DonationFormProps) {
           paymentId,
           status: receipt.status === 1 ? 'confirmed' : 'failed',
         }),
-      })
-      debug && console.log('Payment status updated')
+      });
+      debug && console.log('Payment status updated');
 
       toast({
-        title: "Success!",
-        description: "Your donation has been processed",
-      })
-
+        title: 'Success!',
+        description: 'Your donation has been processed',
+      });
     } catch (err) {
-      debug && console.error('Donation error:', err)
-      const errorMessage = err instanceof Error 
-        ? err.message
-        : typeof err === 'object' && err && 'message' in err
-          ? String(err.message)
-          : "Failed to process donation"
-      
+      debug && console.error('Donation error:', err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err && 'message' in err
+            ? String(err.message)
+            : 'Failed to process donation';
+
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
-      })
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleStripePayment = async () => {
     try {
-      setIsProcessing(true)
-      setError(null)
-      
+      setIsProcessing(true);
+      setError(null);
+
       // Get access token
       const tokenResponse = await fetch('/api/auth/token', {
         method: 'POST',
@@ -358,10 +427,10 @@ export default function DonationForm({ campaign }: DonationFormProps) {
         body: JSON.stringify({
           client_id: process.env.NEXT_PUBLIC_CROWDSPLIT_CLIENT_ID,
           client_secret: process.env.NEXT_PUBLIC_CROWDSPLIT_CLIENT_SECRET,
-          grant_type: "client_credentials"
-        })
+          grant_type: 'client_credentials',
+        }),
       });
-      
+
       if (!tokenResponse.ok) {
         const error = await tokenResponse.json();
         throw new Error(error.message || 'Failed to get access token');
@@ -369,68 +438,84 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       const { access_token } = await tokenResponse.json();
 
       // Create customer
-      const customerResponse = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${access_token}`
+      const customerResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/customers`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+          body: JSON.stringify({ email: 'user@example.com' }), // TODO: Get user email
         },
-        body: JSON.stringify({ email: 'user@example.com' }) // TODO: Get user email
-      });
+      );
 
       if (!customerResponse.ok) {
         const error = await customerResponse.json();
         throw new Error(error.message || 'Failed to create customer');
       }
-      const { data: { id: customerId } } = await customerResponse.json();
+      const {
+        data: { id: customerId },
+      } = await customerResponse.json();
 
       // Initialize payment
-      const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/payments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${access_token}`
+      const paymentResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/payments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+          body: JSON.stringify({
+            amount: parseFloat(amount) * 100, // Convert to cents
+            customer_id: customerId,
+            currency: 'USD',
+            payment_method: 'CARD',
+            provider: 'STRIPE',
+          }),
         },
-        body: JSON.stringify({
-          amount: parseFloat(amount) * 100, // Convert to cents
-          customer_id: customerId,
-          currency: "USD",
-          payment_method: "CARD",
-          provider: "STRIPE"
-        })
-      });
+      );
 
       if (!paymentResponse.ok) {
         const error = await paymentResponse.json();
         throw new Error(error.message || 'Failed to initialize payment');
       }
-      const { data: { id: transactionId } } = await paymentResponse.json();
+      const {
+        data: { id: transactionId },
+      } = await paymentResponse.json();
 
       // Confirm payment
-      const confirmResponse = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/payments/${transactionId}/confirm`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${access_token}`
-        }
-      });
+      const confirmResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/payments/${transactionId}/confirm`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+        },
+      );
 
       if (!confirmResponse.ok) {
         const error = await confirmResponse.json();
         throw new Error(error.message || 'Failed to confirm payment');
       }
-      const { data: { metadata } } = await confirmResponse.json();
-      
+      const {
+        data: { metadata },
+      } = await confirmResponse.json();
+
       // Initialize Stripe with the public key from Crowdsplit
-      setStripePromise(loadStripe(metadata.public_key))
+      setStripePromise(loadStripe(metadata.public_key));
       setStripeData({
         clientSecret: metadata.client_secret,
-        publicKey: metadata.public_key
+        publicKey: metadata.public_key,
       });
-
     } catch (err) {
       console.error('Card payment error:', err);
-      setError(err instanceof Error ? err.message : "Failed to process card payment");
+      setError(
+        err instanceof Error ? err.message : 'Failed to process card payment',
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -468,13 +553,13 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   //   }
   // };
 
-    // useEffect(() => {
-    //   if (stripeData) {
-    //     handleStripeConfirmation();
-    //   }
-    // }, [stripeData]);
+  // useEffect(() => {
+  //   if (stripeData) {
+  //     handleStripeConfirmation();
+  //   }
+  // }, [stripeData]);
 
-  const showDonationDetails = paymentMethod === 'wallet' || !stripeData
+  const showDonationDetails = paymentMethod === 'wallet' || !stripeData;
 
   return (
     <Card className="border-0 shadow-none">
@@ -492,7 +577,12 @@ export default function DonationForm({ campaign }: DonationFormProps) {
           <h2 className="text-lg font-medium">How do you want to donate?</h2>
         </div>
 
-        <Tabs defaultValue="wallet" onValueChange={(value) => setPaymentMethod(value as 'wallet' | 'card')}>
+        <Tabs
+          defaultValue="wallet"
+          onValueChange={(value) =>
+            setPaymentMethod(value as 'wallet' | 'card')
+          }
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="wallet" className="flex items-center gap-2">
               <Wallet className="h-4 w-4" />
@@ -508,7 +598,9 @@ export default function DonationForm({ campaign }: DonationFormProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
-                <span className="text-sm">Save on gas fees, switch network.</span>
+                <span className="text-sm">
+                  Save on gas fees, switch network.
+                </span>
               </div>
               <Button variant="link" className="text-pink-500">
                 Switch Network
@@ -526,17 +618,23 @@ export default function DonationForm({ campaign }: DonationFormProps) {
                 stripe={stripePromise}
                 options={{
                   clientSecret: stripeData.clientSecret,
-                  appearance: { theme: 'stripe' }
+                  appearance: { theme: 'stripe' },
                 }}
               >
-                <StripePaymentForm publicKey={stripeData.publicKey} campaign={campaign} />
+                <StripePaymentForm
+                  publicKey={stripeData.publicKey}
+                  campaign={campaign}
+                />
               </Elements>
             )}
           </TabsContent>
         </Tabs>
 
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-teal-50 text-teal-600 hover:bg-teal-50">
+          <Badge
+            variant="secondary"
+            className="bg-teal-50 text-teal-600 hover:bg-teal-50"
+          >
             <span className="mr-1">👋</span> Eligible for matching
           </Badge>
         </div>
@@ -546,8 +644,8 @@ export default function DonationForm({ campaign }: DonationFormProps) {
             <div className="relative">
               <div className="flex rounded-md border shadow-sm">
                 <div className="relative flex flex-1">
-                  <Select 
-                    value={paymentMethod === 'wallet' ? selectedToken : 'USD'} 
+                  <Select
+                    value={paymentMethod === 'wallet' ? selectedToken : 'USD'}
                     onValueChange={setSelectedToken}
                     disabled={paymentMethod === 'card'}
                   >
@@ -632,12 +730,16 @@ export default function DonationForm({ campaign }: DonationFormProps) {
               <div className="space-y-4 rounded-lg bg-muted/50 p-4">
                 <div className="flex justify-between text-sm">
                   <span>Donating to {campaign.title}</span>
-                  <span className="font-medium">{formatCrypto(poolAmount)}</span>
+                  <span className="font-medium">
+                    {formatCrypto(poolAmount)}
+                  </span>
                 </div>
                 {isDonatingToAkashic && (
                   <div className="flex justify-between text-sm">
                     <span>Donating {percentage}% to Akashic</span>
-                    <span className="font-medium">{formatCrypto(akashicAmount)}</span>
+                    <span className="font-medium">
+                      {formatCrypto(akashicAmount)}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-semibold">
@@ -649,13 +751,17 @@ export default function DonationForm({ campaign }: DonationFormProps) {
           )}
 
           {!stripeData && (
-            <Button 
-              className="w-full" 
-              size="lg" 
+            <Button
+              className="w-full"
+              size="lg"
               disabled={!numericAmount || isProcessing}
-              onClick={paymentMethod === 'wallet' ? handleDonate : handleStripePayment}
+              onClick={
+                paymentMethod === 'wallet' ? handleDonate : handleStripePayment
+              }
             >
-              {isProcessing ? 'Processing...' : `Donate with ${paymentMethod === 'wallet' ? 'Wallet' : 'Card'}`}
+              {isProcessing
+                ? 'Processing...'
+                : `Donate with ${paymentMethod === 'wallet' ? 'Wallet' : 'Card'}`}
             </Button>
           )}
 
@@ -667,12 +773,13 @@ export default function DonationForm({ campaign }: DonationFormProps) {
               </label>
             </div>
             <p className="text-xs text-muted-foreground">
-              By checking this, we won&apos;t consider your profile information as a donor for this donation and won&apos;t show it on public pages.
+              By checking this, we won&apos;t consider your profile information
+              as a donor for this donation and won&apos;t show it on public
+              pages.
             </p>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-
