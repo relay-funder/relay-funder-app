@@ -326,15 +326,10 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       setIsProcessing(true)
       setError(null)
       
-      // Get access token
+     // Get access token
       const tokenResponse = await fetch('/api/auth/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: process.env.NEXT_PUBLIC_CROWDSPLIT_CLIENT_ID,
-          client_secret: process.env.NEXT_PUBLIC_CROWDSPLIT_CLIENT_SECRET,
-          grant_type: "client_credentials"
-        })
       });
       
       if (!tokenResponse.ok) {
@@ -344,7 +339,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       const { access_token } = await tokenResponse.json();
 
       // Create customer
-      const customerResponse = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/customers`, {
+      const customerResponse = await fetch(`${process.env.CROWDSPLIT_API_URL}/api/v1/customers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -360,7 +355,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       const { data: { id: customerId } } = await customerResponse.json();
 
       // Initialize payment
-      const paymentResponse = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/payments`, {
+      const paymentResponse = await fetch(`${process.env.CROWDSPLIT_API_URL}/api/v1/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -382,7 +377,7 @@ export default function DonationForm({ campaign }: DonationFormProps) {
       const { data: { id: transactionId } } = await paymentResponse.json();
 
       // Confirm payment
-      const confirmResponse = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/payments/${transactionId}/confirm`, {
+      const confirmResponse = await fetch(`${process.env.CROWDSPLIT_API_URL}/api/v1/payments/${transactionId}/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

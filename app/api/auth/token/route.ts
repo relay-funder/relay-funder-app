@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { client_id, client_secret } = body
-
+    // const body = await request.json()
+    // const { client_id, client_secret } = body
+    const client_id = process.env.CROWDSPLIT_CLIENT_ID
+    const client_secret = process.env.CROWDSPLIT_CLIENT_SECRET
+    
     if (!client_id || !client_secret) {
       return NextResponse.json(
         { error: 'Missing required credentials' },
@@ -12,7 +14,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_CROWDSPLIT_API_URL}/api/v1/merchant/token/grant`, {
+    const response = await fetch(`${process.env.CROWDSPLIT_API_URL}/api/v1/merchant/token/grant`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
