@@ -23,7 +23,7 @@ export function PageHeaderSearch({
   );
   return (
     <header className="inline justify-between p-0 md:p-4">
-      <div className="flex min-h-[100px] flex-wrap items-center pl-1 pt-[2px] md:min-h-0">
+      <div className="flex min-h-[100px] flex-wrap items-center pl-1 pt-[2px] md:ml-3 md:mr-8 md:min-h-0">
         <div className="flex flex-row items-center py-1 md:ml-4">
           <div className="relative">
             <Search
@@ -40,6 +40,7 @@ export function PageHeaderSearch({
             />
           </div>
         </div>
+        <div className="grow" />
         <div className="flex flex-row items-center gap-4">
           <Button
             variant="outline"
