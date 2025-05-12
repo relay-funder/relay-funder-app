@@ -1,4 +1,4 @@
-import { useState, useCallback, type ChangeEvent } from 'react';
+import { useState, useCallback, type ChangeEvent, ReactNode } from 'react';
 import { useAuth } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
@@ -6,11 +6,17 @@ import Image from 'next/image';
 import { Button, Input } from '@/components/ui';
 
 export function PageHeaderSearch({
-  onShowCampaignCreate,
+  placeholder,
   onSearchChanged,
+  onCreate,
+  createTitle,
+  buttons,
 }: {
-  onShowCampaignCreate: () => void;
+  placeholder: string;
   onSearchChanged: (search: string) => void;
+  onCreate?: () => void;
+  createTitle?: string;
+  buttons?: ReactNode;
 }) {
   const { login, authenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -33,7 +39,7 @@ export function PageHeaderSearch({
             />
             <Input
               className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
-              placeholder="Search Stories"
+              placeholder={placeholder}
               type="search"
               value={searchTerm}
               onChange={onSearchInputChanged}
@@ -50,12 +56,16 @@ export function PageHeaderSearch({
             {authenticated ? 'Connected' : 'Connect Wallet'}
             <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />
           </Button>
-          <Button
-            className="bg-emerald-400 font-semibold hover:bg-emerald-500"
-            onClick={onShowCampaignCreate}
-          >
-            Create Story
-          </Button>
+          {typeof onCreate === 'function' &&
+            typeof createTitle === 'string' && (
+              <Button
+                className="bg-emerald-400 font-semibold hover:bg-emerald-500"
+                onClick={onCreate}
+              >
+                {createTitle}
+              </Button>
+            )}
+          {buttons}
         </div>
       </div>
     </header>

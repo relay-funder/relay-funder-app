@@ -72,13 +72,13 @@ export default function Providers({ children }: { children: ReactNode }) {
         <WagmiProvider config={privyWagmiConfig}>
           <FeatureFlagsProvider>
             <SidebarProvider>
-              <CollectionProvider>
-                <EnvironmentProvider>
-                  <AccountProvider>
-                    <AuthProvider>{children}</AuthProvider>
-                  </AccountProvider>
-                </EnvironmentProvider>
-              </CollectionProvider>
+              <EnvironmentProvider>
+                <AccountProvider>
+                  <AuthProvider>
+                    <CollectionProvider>{children}</CollectionProvider>
+                  </AuthProvider>
+                </AccountProvider>
+              </EnvironmentProvider>
             </SidebarProvider>
           </FeatureFlagsProvider>
         </WagmiProvider>
