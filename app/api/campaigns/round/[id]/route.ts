@@ -17,7 +17,15 @@ export async function GET(
       return NextResponse.json({ rounds: [] }, { status: 200 });
     }
 
-    const rounds = roundCampaigns.map((rc) => ({
+    type RoundCampaignWithRound = {
+      roundId: number;
+      Round: {
+        id: number;
+        title: string;
+      };
+    };
+
+    const rounds = roundCampaigns.map((rc: RoundCampaignWithRound) => ({
       id: rc.roundId,
       title: rc.Round.title,
     }));
