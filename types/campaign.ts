@@ -103,7 +103,6 @@ type User = {
   updatedAt: Date;
 };
 
-
 export interface Campaign extends DbCampaign {
   address: string;
   owner: string;

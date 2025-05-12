@@ -1,18 +1,14 @@
-"use client";
+'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useMemo
-} from "react";
-import { useAccount as useWagmiAccount } from "wagmi";
-import { type Address, type Chain } from "viem";
+import React, { createContext, useContext, useMemo } from 'react';
+import { useAccount as useWagmiAccount } from 'wagmi';
+import { type Address, type Chain } from 'viem';
 
 type AccountStatusType =
-  | "connected"
-  | "connecting"
-  | "reconnecting"
-  | "disconnected";
+  | 'connected'
+  | 'connecting'
+  | 'reconnecting'
+  | 'disconnected';
 interface AccountContextType {
   address?: Address;
   chain?: Chain;
@@ -41,10 +37,10 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({
     isReconnecting,
     status,
   } = useWagmiAccount();
-  const normalizedAddress: Address|undefined = useMemo(() => {
+  const normalizedAddress: Address | undefined = useMemo(() => {
     if (
-      typeof address !== "string" ||
-      !address.toLowerCase().startsWith("0x")
+      typeof address !== 'string' ||
+      !address.toLowerCase().startsWith('0x')
     ) {
       return undefined;
     }
