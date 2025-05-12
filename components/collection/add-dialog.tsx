@@ -9,7 +9,7 @@ import {
 } from '@/components/ui';
 import Image from 'next/image';
 import { useCallback, useState, type ChangeEvent } from 'react';
-import { useCollection } from '@/contexts/CollectionContext';
+import { useCollection } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { type Campaign } from '@/types/campaign';
@@ -25,15 +25,15 @@ export function CollectionAddDialog({
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
   const [newCollectionName, setNewCollectionName] = useState('');
-  const { addToCollection, userCollections, isLoading } = useCollection();
+  const {
+    createCollection,
+    createItemInCollection,
+    userCollections,
+    isLoading,
+  } = useCollection();
   const canAdd =
     (selectedCollectionId || newCollectionName) && campaign && !isLoading;
-  console.log('canAdd', {
-    selectedCollectionId,
-    newCollectionName,
-    campaign,
-    isLoading,
-  });
+
   const onClose = useCallback(() => {
     setSelectedCollectionId('');
     setNewCollectionName('');
@@ -49,10 +49,22 @@ export function CollectionAddDialog({
           console.log(
             `Creating new collection with name: ${newCollectionName}`,
           );
-          await addToCollection(campaign, newCollectionName, true);
+          const newCollection = await createCollection({
+            name: newCollectionName,
+          });
+          console.log({ newCollection });
+          await createItemInCollection({
+            collectionId: newCollection.id,
+            itemId: `${campaign.id}`,
+            itemType: 'campaign',
+          });
         } else {
           console.log(`Adding to existing collection with ID: ${collectionId}`);
-          await addToCollection(campaign, collectionId, false);
+          await createItemInCollection({
+            collectionId,
+            itemId: `${campaign.id}`,
+            itemType: 'campaign',
+          });
         }
 
         setOpen(false);
@@ -73,7 +85,13 @@ export function CollectionAddDialog({
         });
       }
     },
-    [addToCollection, campaign, newCollectionName, onClose],
+    [
+      createCollection,
+      createItemInCollection,
+      campaign,
+      newCollectionName,
+      onClose,
+    ],
   );
   const onAdd = useCallback(() => {
     console.log('onAdd');
@@ -172,7 +190,7 @@ export function CollectionAddDialog({
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="max-h-[40vh] space-y-2 overflow-y-auto">
               {userCollections.map((collection) => (
                 <div
                   key={collection.id}

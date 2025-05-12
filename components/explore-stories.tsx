@@ -7,6 +7,7 @@ import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
+
 export function ExploreStories() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -16,7 +17,9 @@ export function ExploreStories() {
     <PageHome
       header={
         <PageHeaderSearch
-          onShowCampaignCreate={() => setShowCampaignCreate(true)}
+          onCreate={() => setShowCampaignCreate(true)}
+          createTitle="Create Story"
+          placeholder="Search Stories"
           onSearchChanged={(search: string) => setSearchTerm(search)}
         />
       }
