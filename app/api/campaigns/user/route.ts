@@ -3,7 +3,7 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { chainConfig } from '@/config/chain';
-import { CampaignStatus } from '@prisma/client';
+import { CampaignStatus } from '@/types/campaign-status';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;

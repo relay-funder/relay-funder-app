@@ -1,4 +1,5 @@
-import { PrismaClient, CampaignStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { CampaignStatus } from '../types/campaign-status';
 const prisma = new PrismaClient();
 
 const campaignAddresses = [
