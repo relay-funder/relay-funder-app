@@ -3,7 +3,7 @@ import { CollectionCreateDialog } from './create-dialog';
 
 export function CollectionListEmpty({
   title = 'No collections yet',
-  description = 'Create your first collection to organize campaigns you&apos;reinterested in.',
+  description = 'Create your first collection to organize campaigns you&apos;re interested in.',
   withCreate = true,
 }: {
   title?: string;
