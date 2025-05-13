@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export function CollectionCard({ collection }: { collection: Collection }) {
-  console.log({ collection });
   return (
     <Link href={`/collections/${collection.id}`} key={collection.id}>
       <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">

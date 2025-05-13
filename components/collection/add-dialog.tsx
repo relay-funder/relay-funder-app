@@ -43,7 +43,6 @@ export function CollectionAddDialog({
 
   const onAddToCollection = useCallback(
     async (collectionId: string, isNewCollection = false) => {
-      console.log('onAddToCollection');
       try {
         if (isNewCollection) {
           console.log(
@@ -94,7 +93,6 @@ export function CollectionAddDialog({
     ],
   );
   const onAdd = useCallback(() => {
-    console.log('onAdd');
     if (!campaign) {
       toast({
         title: 'No campaign selected',
