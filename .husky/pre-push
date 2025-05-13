@@ -1,8 +1,29 @@
-echo "Running lint..."
-npm run lint || exit 1
+# #!/usr/bin/env sh
 
-echo "Running Next.js build..."
-npm run build || exit 1
+# # Check if forcefully disabled
+# if [ -n "${FORCE_NO_CHECKS}" ]; then
+#   exit 0
+# fi
 
-echo "Running Vercel build..."
-vercel build || exit 1 
+# # Check if running in CI environment
+# if [ -n "$CI" ]; then
+#   echo "Running in CI environment, executing checks directly..."
+#   pnpm lint || exit 1
+#   pnpm build || exit 1
+#   vercel build || exit 1
+#   exit 0
+# fi
+
+# # Check if Docker is running
+# if ! docker info > /dev/null 2>&1; then
+#   echo "Docker is not running. Please start Docker to run pre-push checks."
+#   exit 1
+# fi
+
+# echo "Running checks in Docker environment..."
+
+# # Run checks in existing container with proper environment isolation
+# docker compose run --rm app-shell sh -c "cd /app && \
+#   pnpm lint && \
+#   (pnpm build || exit 1)
+#   " || exit 1

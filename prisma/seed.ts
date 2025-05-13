@@ -53,32 +53,97 @@ const campaignTitles = [
   'Emergency Response Unit',
 ];
 
+const campaignCategories = [
+  { id: 'visual-arts', name: 'Visual Arts', icon: '🎨' },
+  { id: 'music-audio', name: 'Music & Audio', icon: '🎵' },
+  { id: 'film-photography', name: 'Film & Photography', icon: '📷' },
+  { id: 'crafts-artifacts', name: 'Crafts & Artifacts', icon: '🏺' },
+  { id: 'literature-writing', name: 'Literature & Writing', icon: '📚' },
+  { id: 'food-culinary', name: 'Food & Culinary Arts', icon: '🍳' },
+  { id: 'fashion-textiles', name: 'Fashion & Textiles', icon: '👕' },
+  { id: 'education-workshops', name: 'Education & Workshops', icon: '🎓' },
+  { id: 'digital-art-nfts', name: 'Digital Art & NFTs', icon: '💻' },
+  { id: 'community-goods', name: 'Community & Public Goods', icon: '🤝' },
+];
+
+const locations = [
+  'Kakuma, Kenya',
+  'Zaatari, Jordan',
+  "Cox's Bazar, Bangladesh",
+  'Berlin, Germany',
+  'London, United Kingdom',
+  'Minneapolis, United States',
+  'Toronto, Canada',
+  'Bidi Bidi, Uganda',
+  'Dadaab, Kenya',
+  'Paris, France',
+];
+
 // Helper function to generate slug from title
-function generateSlug(title: string): string {
-  return title
+function generateSlug(
+  title: string,
+  index: number,
+  usedSlugs: Set<string>,
+): string {
+  let baseSlug = title
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric chars with hyphens
-    .replace(/^-+|-+$/g, '')     // Remove leading/trailing hyphens
-    .slice(0, 6);                // Take first 6 characters
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 16); // Use more characters for better uniqueness
+  let slug = baseSlug;
+  let counter = 1;
+  while (usedSlugs.has(slug)) {
+    slug = `${baseSlug}-${index}`;
+    counter++;
+  }
+  usedSlugs.add(slug);
+  return slug;
 }
 
 async function main() {
-  const imageUrls = ['/images/c1.png', '/images/c2.png', '/images/c3.png'];
+  const imageFiles = [
+    'c318ab6059374812-ethereum-main.jpg',
+    'ffeeccde2afa88f6-UN0345662.jpg.jpeg',
+    '63b6dfc5b215fa92-whole-child-education-920x513.jpg',
+    'a41bb1ae87c99ce0-celo-camp.webp',
+    '345351662ea35292-ethereum-main.jpg',
+    '47e747dce8507cc6-celo-camp.webp',
+    '53b6b5c0a25e3f55-clown-girls.jpg',
+    '5f9a0d7156c725ef-water.jpg',
+    'c1.png',
+    'c2.png',
+    'c3.png',
+  ];
 
+  const usedSlugs = new Set<string>();
   const campaigns = Array.from({ length: 10 }, (_, i) => ({
-    title: `Campaign ${i + 1}`,
+    title: campaignTitles[i],
     description: `Description for campaign ${i + 1}`,
-    fundingGoal: "1.0",
+    fundingGoal: '1.0',
     startTime: new Date(),
     endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    creatorAddress: "0x1234567890123456789012345678901234567890",
-    status: "active",
-    slug: `camp${(i + 1).toString().padStart(2, '0')}` // e.g., camp01, camp02, etc.
+    creatorAddress: '0x1234567890123456789012345678901234567890',
+    status: 'active',
+    slug: generateSlug(campaignTitles[i], i, usedSlugs),
+    transactionHash: `0xdeadbeef${(i + 1).toString().padStart(2, '0')}`,
+    campaignAddress: campaignAddresses[i] || null,
+    treasuryAddress: campaignAddresses[i] || null,
+    category: campaignCategories[i % campaignCategories.length].id,
+    location: locations[i % locations.length],
   }));
 
-  for (const campaign of campaigns) {
-    await prisma.campaign.create({
-      data: campaign,
+  for (let i = 0; i < campaigns.length; i++) {
+    const campaign = await prisma.campaign.create({
+      data: campaigns[i],
+    });
+    // Assign an image from the local file system
+    const imageFile = imageFiles[i % imageFiles.length];
+    await prisma.campaignImage.create({
+      data: {
+        imageUrl: `/campaign-images/${imageFile}`,
+        isMainImage: true,
+        campaignId: campaign.id,
+      },
     });
   }
 
