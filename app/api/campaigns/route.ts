@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign';
 import { chainConfig } from '@/config/chain';
-import { CampaignStatus } from '@/types/campaign-status';
+import { CampaignStatus } from '@/types/campaign';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;
@@ -305,8 +305,12 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? ['ACTIVE']
-                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
+                ? [CampaignStatus.ACTIVE]
+                : [
+                    CampaignStatus.PENDING_APPROVAL,
+                    CampaignStatus.COMPLETED,
+                    CampaignStatus.ACTIVE,
+                  ],
           },
         },
         include: {
@@ -323,8 +327,12 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? ['ACTIVE']
-                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
+                ? [CampaignStatus.ACTIVE]
+                : [
+                    CampaignStatus.PENDING_APPROVAL,
+                    CampaignStatus.COMPLETED,
+                    CampaignStatus.ACTIVE,
+                  ],
           },
         },
       }),
