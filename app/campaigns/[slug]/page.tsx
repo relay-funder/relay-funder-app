@@ -21,7 +21,6 @@ export default async function CampaignPage({
     notFound();
   }
 
-  console.log('campaign', campaign);
   const header = (
     <PageHeader featured={true} tags={['Technology']} title={campaign.title}>
       <Avatar className="h-10 w-10">
