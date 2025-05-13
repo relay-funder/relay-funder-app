@@ -21,7 +21,7 @@ import {
 import Image from 'next/image';
 import { countries, categories } from '@/lib/constant';
 import { useAccount } from '@/contexts';
-import { CampaignStatus } from '@/types/campaign-status';
+import { CampaignStatus } from '@/types/campaign';
 
 export function CampaignCreate() {
   const { address } = useAccount();

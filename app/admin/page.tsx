@@ -17,6 +17,7 @@ import { IoLocationSharp } from 'react-icons/io5';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/loading';
+import { CampaignStatus } from '@/types/campaign';
 import { chainConfig } from '@/config/chain';
 
 // Add platform config
@@ -391,7 +392,7 @@ export default function AdminPage() {
           body: JSON.stringify({
             treasuryAddress,
             adminAddress: address,
-            status: 'ACTIVE',
+            status: CampaignStatus.ACTIVE,
           }),
         },
       );
@@ -405,7 +406,7 @@ export default function AdminPage() {
           campaign.id === campaignId
             ? {
                 ...campaign,
-                status: 'ACTIVE',
+                status: CampaignStatus.ACTIVE,
                 isApproved: true,
                 treasuryAddress: treasuryAddress,
                 campaignAddress: campaignAddress,
@@ -448,7 +449,7 @@ export default function AdminPage() {
       activeCampaigns: campaigns.filter(
         (campaign) =>
           campaignStatuses[campaign.id] === 'Active' &&
-          campaign.status === 'ACTIVE',
+          campaign.status === CampaignStatus.ACTIVE,
       ).length,
       averageProgress:
         campaigns.length > 0
