@@ -290,14 +290,24 @@ export async function GET(request: Request) {
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const skip = (page - 1) * pageSize;
 
+    // Map incoming status to enum values
+    const statusMap: Record<string, string> = {
+      active: 'ACTIVE',
+      pending_approval: 'PENDING_APPROVAL',
+      completed: 'COMPLETED',
+      draft: 'DRAFT',
+      failed: 'FAILED',
+    };
+    const statusEnum = statusMap[status] || 'ACTIVE';
+
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
         where: {
           status: {
             in:
               status === 'active'
-                ? ['active']
-                : ['pending_approval', 'completed', 'active'],
+                ? ['ACTIVE']
+                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
           },
         },
         include: {
@@ -314,8 +324,8 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? ['active']
-                : ['pending_approval', 'completed', 'active'],
+                ? ['ACTIVE']
+                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
           },
         },
       }),

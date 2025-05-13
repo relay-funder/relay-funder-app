@@ -1,6 +1,7 @@
 import { Campaign as CampaignType, CampaignDisplay } from '@/types/campaign';
 import { prisma } from './prisma';
 import { notFound } from 'next/navigation';
+import { PrismaClient, CampaignStatus } from '@prisma/client';
 
 type CampaignWithRelations = {
   id: number;
@@ -10,7 +11,7 @@ type CampaignWithRelations = {
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: string;
+  status: CampaignStatus;
   transactionHash: string | null;
   campaignAddress: string | null;
   createdAt: Date;
@@ -28,7 +29,7 @@ type CampaignWithRelations = {
     id: number;
     amount: string;
     token: string;
-    status: string;
+    status: CampaignStatus;
     transactionHash: string | null;
     isAnonymous: boolean;
     createdAt: Date;
