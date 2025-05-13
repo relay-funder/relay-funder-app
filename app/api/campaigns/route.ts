@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign';
 import { chainConfig } from '@/config/chain';
+import { CampaignStatus } from '@prisma/client';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;
@@ -153,7 +154,15 @@ export async function POST(request: Request) {
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
     const creatorAddress = formData.get('creatorAddress') as string;
-    const status = formData.get('status') as string;
+    const statusRaw = formData.get('status') as string;
+    const statusMap: Record<string, CampaignStatus> = {
+      draft: CampaignStatus.DRAFT,
+      pending_approval: CampaignStatus.PENDING_APPROVAL,
+      active: CampaignStatus.ACTIVE,
+      completed: CampaignStatus.COMPLETED,
+      failed: CampaignStatus.FAILED,
+    };
+    const status = statusMap[statusRaw] || CampaignStatus.DRAFT;
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
@@ -289,15 +298,6 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const skip = (page - 1) * pageSize;
-
-    // Map incoming status to enum values
-    const statusMap: Record<string, string> = {
-      active: 'ACTIVE',
-      pending_approval: 'PENDING_APPROVAL',
-      completed: 'COMPLETED',
-      draft: 'DRAFT',
-      failed: 'FAILED',
-    };
 
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
