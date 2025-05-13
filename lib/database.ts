@@ -1,7 +1,7 @@
 import { Campaign as CampaignType, CampaignDisplay } from '@/types/campaign';
 import { prisma } from './prisma';
 import { notFound } from 'next/navigation';
-import { CampaignStatus } from '@prisma/client';
+import { CampaignStatus } from '@/types/campaign-status';
 
 type CampaignWithRelations = {
   id: number;
@@ -29,7 +29,7 @@ type CampaignWithRelations = {
     id: number;
     amount: string;
     token: string;
-    status: CampaignStatus;
+    status: 'pending' | 'confirmed' | 'failed';
     transactionHash: string | null;
     isAnonymous: boolean;
     createdAt: Date;
