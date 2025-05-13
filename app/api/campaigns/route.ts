@@ -298,7 +298,6 @@ export async function GET(request: Request) {
       draft: 'DRAFT',
       failed: 'FAILED',
     };
-    const statusEnum = statusMap[status] || 'ACTIVE';
 
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
