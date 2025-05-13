@@ -1,7 +1,7 @@
 import { Campaign as CampaignType, CampaignDisplay } from '@/types/campaign';
 import { prisma } from './prisma';
 import { notFound } from 'next/navigation';
-import { PrismaClient, CampaignStatus } from '@prisma/client';
+import { CampaignStatus } from '@prisma/client';
 
 type CampaignWithRelations = {
   id: number;
