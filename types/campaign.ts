@@ -80,7 +80,7 @@ export type CampaignImage = {
   campaign?: Campaign;
 };
 
-type Payment = {
+export type Payment = {
   id: number;
   amount: string; // Stored as string to preserve precision
   token: string; // e.g., "USDC"

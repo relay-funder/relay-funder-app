@@ -2,27 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { parseEther } from 'viem';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { keccak256, stringToHex } from 'viem';
-import { useToast } from '@/hooks/use-toast';
 import { Log } from 'viem';
-import { Label } from './ui/label';
+import { useToast } from '@/hooks/use-toast';
 import {
+  Button,
+  Input,
+  Textarea,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui';
 import Image from 'next/image';
 import { countries, categories } from '@/lib/constant';
 import { useAccount } from '@/contexts';
 
-export function CreateCampaign() {
+export function CampaignCreate() {
   const { address } = useAccount();
   const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 

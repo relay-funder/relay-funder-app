@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
-import { SideBar } from '@/components/SideBar';
+import { PageSidebar } from '@/components/page/sidebar';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -15,7 +15,7 @@ import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { ethers } from 'ethers';
 import { IoLocationSharp } from 'react-icons/io5';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts';
+import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/loading';
 import { chainConfig } from '@/config/chain';
 
@@ -70,7 +70,7 @@ function AccessDenied() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SideBar />
+      <PageSidebar />
       <div
         className={cn(
           'ml-[70px] flex-1 p-8 transition-all duration-300 ease-in-out',
@@ -243,7 +243,7 @@ export default function AdminPage() {
   if (!authResolved) {
     return (
       <div className="flex min-h-screen">
-        <SideBar />
+        <PageSidebar />
         <div className="flex-1">
           <Loading />
         </div>

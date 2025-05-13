@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
-export default function PaymentStatus() {
+export function PaymentStatus() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading',
   );
