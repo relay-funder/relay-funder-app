@@ -59,7 +59,7 @@ export async function POST(
     const updatedCampaign = await prisma.campaign.update({
       where: { id: campaignId },
       data: {
-        status: 'active',
+        status: 'ACTIVE',
         treasuryAddress,
       },
     });

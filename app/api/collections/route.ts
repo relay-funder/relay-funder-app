@@ -23,6 +23,11 @@ export async function GET(req: NextRequest) {
       },
       include: {
         campaigns: {
+          where: {
+            campaign: {
+              status: 'ACTIVE',
+            },
+          },
           include: {
             campaign: {
               include: {

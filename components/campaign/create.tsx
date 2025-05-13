@@ -21,6 +21,7 @@ import {
 import Image from 'next/image';
 import { countries, categories } from '@/lib/constant';
 import { useAccount } from '@/contexts';
+import { CampaignStatus } from '@prisma/client';
 
 export function CampaignCreate() {
   const { address } = useAccount();
@@ -83,7 +84,7 @@ export function CampaignCreate() {
                 campaignId,
                 transactionHash: hash,
                 campaignAddress: campaignAddress,
-                status: 'pending_approval',
+                status: CampaignStatus.PENDING_APPROVAL,
               }),
             });
 
@@ -155,7 +156,7 @@ export function CampaignCreate() {
             },
             body: JSON.stringify({
               campaignId,
-              status: 'failed',
+              status: CampaignStatus.FAILED,
               transactionHash: hash,
             }),
           });
