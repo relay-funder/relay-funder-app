@@ -1,10 +1,14 @@
 'use client';
-
-import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from '@/contexts';
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import {
+  useCheckUserFavourite,
+  useUpdateFavourite,
+} from '@/lib/hooks/useFavourites';
 
 interface FavoriteButtonProps {
   campaignId: number;
@@ -19,28 +23,14 @@ export function FavoriteButton({
 }: FavoriteButtonProps) {
   const { toast } = useToast();
   const { address } = useAccount();
-  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (address && campaignId) {
-      checkFavoriteStatus();
-    }
-  }, [address, campaignId]);
-
-  async function checkFavoriteStatus() {
-    try {
-      const response = await fetch(
-        `/api/favorites?userAddress=${address}&campaignId=${campaignId}`,
-      );
-      const data = await response.json();
-      setIsFavorite(data.isFavorite);
-    } catch (error) {
-      console.error('Error checking favorite status:', error);
-    }
-  }
-
-  async function toggleFavorite() {
+  const [favourite, setFavourite] = useState<boolean>(initialIsFavorite);
+  const { data: isFavourite, isLoading } = useCheckUserFavourite(
+    address,
+    campaignId,
+  );
+  const { mutateAsync: updateFavourite } = useUpdateFavourite(address);
+  useEffect(() => setFavourite(isFavourite ?? false), [isFavourite]);
+  const toggleFavourite = useCallback(async () => {
     if (!address) {
       toast({
         title: 'Please connect your wallet to save favorites',
@@ -48,29 +38,16 @@ export function FavoriteButton({
       });
       return;
     }
-
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/favorites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userAddress: address,
-          campaignId,
-        }),
-      });
-
-      const data = await response.json();
-      setIsFavorite(data.isFavorite);
+      await updateFavourite({ campaignId });
+      setFavourite(!favourite);
 
       if (onToggle) {
-        onToggle(data.isFavorite);
+        onToggle(!favourite);
       }
 
       toast({
-        title: data.isFavorite
+        title: !favourite // reverse because state is not yet updated
           ? 'Campaign added to favorites'
           : 'Campaign removed from favorites',
       });
@@ -80,21 +57,19 @@ export function FavoriteButton({
         title: 'Failed to update favorites',
         description: 'Please try again later',
       });
-    } finally {
-      setIsLoading(false);
     }
-  }
+  }, [address, updateFavourite, campaignId, favourite, onToggle, toast]);
 
   return (
     <Button
       variant="outline"
       size="icon"
-      className="rounded-full"
-      onClick={toggleFavorite}
+      className={cn('rounded-full', isLoading && 'opacity-50')}
+      onClick={toggleFavourite}
       disabled={isLoading}
     >
       <Heart
-        className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
+        className={`h-4 w-4 ${favourite ? 'fill-red-500 text-red-500' : ''}`}
       />
     </Button>
   );

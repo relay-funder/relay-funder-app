@@ -21,36 +21,29 @@ export interface Category {
   icon: string;
 }
 
-export interface Collection {
-  id: string;
-  name: string;
-  description?: string;
-  stories: Story[];
-  createdAt: Date;
-}
-
-export interface Campaign {
-  id: string | number;
+export interface CollectionItemDetail {
+  id: number;
   title?: string;
   description?: string;
   image?: string;
   slug?: string;
-  type?: string;
 }
+export interface CollectionItem {
+  itemId: string;
+  itemType: string;
+  details?: CollectionItemDetail;
+}
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  isOwner: boolean;
+  items: CollectionItem[];
+}
+import { type Campaign } from './campaign';
 
-export interface CollectionContextType {
-  userCollections: Collection[];
-  isLoading: boolean;
-  addToCollection: (
-    campaign: Campaign,
-    collectionName: string,
-    createNew?: boolean,
-  ) => Promise<void>;
-  removeFromCollection: (
-    storyId: string,
-    collectionId: string,
-  ) => Promise<void>;
-  deleteCollection: (collectionId: string) => Promise<void>;
-  getCollection: (collectionId: string) => Collection | undefined;
-  refreshCollections: () => Promise<void>;
+export interface Favourite {
+  id: string | number;
+  campaign: Campaign;
 }
