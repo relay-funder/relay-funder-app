@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { enableApiMock } from '@/lib/fetch';
+import { mockStripeInstance } from '@/lib/test/mock-stripe';
 
 export function PaymentStatus() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
@@ -16,13 +18,20 @@ export function PaymentStatus() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!searchParams) return;
+    if (!searchParams) {
+      return;
+    }
 
     const clientSecret = searchParams.get('payment_intent_client_secret');
     const paymentIntentId = searchParams.get('payment_intent');
     const stripeKey = searchParams.get('stripe_key');
 
     if (!clientSecret || !paymentIntentId || !stripeKey) {
+      console.error('bad search params', searchParams, {
+        clientSecret,
+        paymentIntentId,
+        stripeKey,
+      });
       setStatus('error');
       setMessage('Invalid payment session');
       return;
@@ -30,7 +39,12 @@ export function PaymentStatus() {
 
     const checkPaymentStatus = async () => {
       try {
-        const stripe = await loadStripe(stripeKey);
+        let stripe = undefined;
+        if (enableApiMock) {
+          stripe = mockStripeInstance;
+        } else {
+          await loadStripe(stripeKey);
+        }
         if (!stripe) throw new Error('Failed to load Stripe');
 
         const { paymentIntent } =
@@ -54,7 +68,7 @@ export function PaymentStatus() {
   }, [searchParams]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4">
+    <div className="flex items-start justify-center bg-gray-50/50 p-4">
       <Card className="w-full max-w-md space-y-4 p-6">
         {status === 'loading' ? (
           <div className="text-center">
