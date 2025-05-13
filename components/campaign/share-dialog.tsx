@@ -40,7 +40,7 @@ export function CampaignShareDialog({
 
   const shareLinks = [
     {
-      name: 'Twitter',
+      name: 'X',
       icon: <Twitter className="h-5 w-5" />,
       color: 'bg-[#1DA1F2] hover:bg-[#1a94df]',
       url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(campaignUrl)}`,
