@@ -23,11 +23,7 @@ export default async function CampaignPage({
 
   console.log('campaign', campaign);
   const header = (
-    <PageHeader
-      featured={true}
-      tags={['Technology', 'Media', 'Refugee', 'Test', 'Another Test']}
-      title={campaign.title}
-    >
+    <PageHeader featured={true} tags={['Technology']} title={campaign.title}>
       <Avatar className="h-10 w-10">
         <AvatarImage src="" />
         <AvatarFallback>CN</AvatarFallback>
