@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { crowdsplitRequest } from '@/app/api/crowdsplit/utils';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const paymentData = await request.json();
     
