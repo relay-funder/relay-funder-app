@@ -62,10 +62,16 @@ export function PaymentStripeForm({
       });
 
       if (error) {
-        setError(error.message || 'An error occurred');
+        // Prefer the most specific error message from Stripe
+        let displayMessage = error.message || 'An error occurred';
+        if (error.payment_intent && error.payment_intent.last_payment_error && error.payment_intent.last_payment_error.message) {
+          displayMessage = error.payment_intent.last_payment_error.message;
+        }
+        setError(displayMessage);
+        console.error('Stripe confirmPayment error:', error);
         toast({
           title: 'Error',
-          description: error.message || 'Payment failed',
+          description: displayMessage,
           variant: 'destructive',
         });
       }
