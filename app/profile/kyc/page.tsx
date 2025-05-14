@@ -1,61 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
+import { useMemo } from 'react';
+import { useAuth } from '@/contexts';
 import { KycVerificationForm } from '@/components/profile/kyc-verification-form';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
+import { useUserProfile } from '@/lib/hooks/useProfile';
 
 export default function KycVerificationPage() {
-  const { user, ready, authenticated } = usePrivy();
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [isKycCompleted, setIsKycCompleted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch customer data on component mount
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!ready || !authenticated || !user?.wallet?.address) return;
-
-      try {
-        setIsLoading(true);
-        // Get all user data in a single request
-        const userResponse = await fetch(
-          `/api/users/me?userAddress=${user.wallet.address}`,
-        );
-        const userData = await userResponse.json();
-
-        if (userData.bridgeCustomerId) {
-          setCustomerId(userData.bridgeCustomerId);
-          setIsKycCompleted(userData.isKycCompleted === true);
-
-          // Only check KYC status from Bridge if it's not already completed locally
-          if (!userData.isKycCompleted) {
-            try {
-              const kycResponse = await fetch(
-                `/api/bridge/kyc/status?customerId=${userData.bridgeCustomerId}`,
-              );
-              const kycData = await kycResponse.json();
-
-              setIsKycCompleted(kycData.status === 'completed');
-            } catch (kycError) {
-              console.error('Error checking KYC status:', kycError);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [ready, authenticated, user]);
-
-  if (!ready || isLoading) {
+  const { address, authenticated, isReady } = useAuth();
+  const { data: profile, isPending: isProfilePending } =
+    useUserProfile(address);
+  const customerId = useMemo(
+    () => profile?.bridgeCustomerId ?? null,
+    [profile],
+  );
+  const isKycCompletedDB = useMemo(
+    () => profile?.isKycCompleted ?? false,
+    [profile],
+  );
+  if (!isReady || isProfilePending) {
     return (
       <div className="container flex h-screen items-center justify-center">
         <div className="text-center">
@@ -105,13 +71,7 @@ export default function KycVerificationPage() {
         {customerId ? (
           <KycVerificationForm
             customerId={customerId}
-            isCompleted={isKycCompleted}
-            onSuccess={() => {
-              // Refresh the customer data
-              // fetchCustomerData()
-              setIsKycCompleted(true);
-              setIsLoading(false);
-            }}
+            isCompleted={isKycCompletedDB}
           />
         ) : (
           <Card className="p-6">

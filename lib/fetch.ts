@@ -30,6 +30,17 @@ async function mockFetch(
         }),
       );
     }
+    if (url.startsWith('/api/bridge')) {
+      if (url.startsWith('/api/bridge/kyc/status')) {
+        return new Response(JSON.stringify({ status: 'completed' }));
+        return new Response(JSON.stringify({ status: 'pending' }));
+        return new Response(JSON.stringify({ status: 'failed' }));
+        return new Response(JSON.stringify({ status: '--default--' }));
+      }
+      if (url.startsWith('/api/bridge/kyc/initiate')) {
+        return new Response(JSON.stringify({ redirectUrl: '/' }));
+      }
+    }
 
     // Legacy mock endpoints (for backward compatibility)
     if (url.includes('/api/v1/customers')) {
