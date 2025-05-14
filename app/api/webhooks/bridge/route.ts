@@ -8,13 +8,16 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature if Bridge provides one
     const signature = request.headers.get('x-bridge-signature');
     const payload = await request.text();
-    
+
     if (BRIDGE_CLIENT_SECRET && signature) {
       const hmac = crypto.createHmac('sha256', BRIDGE_CLIENT_SECRET);
       const digest = hmac.update(payload).digest('hex');
-      
+
       if (digest !== signature) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 },
+        );
       }
     }
 
@@ -27,16 +30,16 @@ export async function POST(request: NextRequest) {
     if (event === 'transaction.update' && transaction_id) {
       // Find the corresponding payment in your database
       const payment = await prisma.payment.findFirst({
-        where: { 
+        where: {
           provider: 'BRIDGE',
-          externalId: transaction_id
-        }
+          externalId: transaction_id,
+        },
       });
 
       if (!payment) {
         return NextResponse.json(
           { error: 'Payment not found for transaction' },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -56,9 +59,12 @@ export async function POST(request: NextRequest) {
       // Update payment status
       await prisma.payment.update({
         where: { id: payment.id },
-        data: { 
+        data: {
           status: paymentStatus,
-          metadata: { ...(payment.metadata as unknown as Record<string, unknown>), webhookData: data }
+          metadata: {
+            ...(payment.metadata as unknown as Record<string, unknown>),
+            webhookData: data,
+          },
         },
       });
     }
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
     console.error('Bridge webhook error:', error);
     return NextResponse.json(
       { error: 'Webhook processing failed' },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

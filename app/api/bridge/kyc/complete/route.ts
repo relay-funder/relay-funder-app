@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
     const { customerId } = data;
 
     if (!customerId) {
-      return NextResponse.json({ error: 'Missing customer ID' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing customer ID' },
+        { status: 400 },
+      );
     }
 
     console.log('Manually completing KYC for customer:', customerId);
@@ -15,22 +18,28 @@ export async function POST(request: NextRequest) {
     // Update the user's KYC status
     const updatedUser = await prisma.user.updateMany({
       where: { bridgeCustomerId: customerId },
-      data: { isKycCompleted: true }
+      data: { isKycCompleted: true },
     });
 
     if (!updatedUser) {
-      return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'User not found or update failed' },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'KYC status set to completed'
+      message: 'KYC status set to completed',
     });
   } catch (error) {
     console.error('Error completing KYC:', error);
-    return NextResponse.json({ 
-      error: 'Failed to complete KYC',
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Failed to complete KYC',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
-} 
+}
