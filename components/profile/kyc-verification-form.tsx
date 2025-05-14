@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -20,13 +20,15 @@ import { ProfileKYCVerificationStateDefault } from './kyc-verification-state-def
 interface KycVerificationFormProps {
   customerId: string;
   isCompleted: boolean;
+  onSuccess?: () => void;
 }
 
 export function KycVerificationForm({
   customerId,
   isCompleted,
+  onSuccess,
 }: KycVerificationFormProps) {
-  const [kycUrl, setKycUrl] = useState<string | null>(null);
+  const [kycUrl, setKycUrl] = useState<string | undefined>(undefined);
   const { data: kycStatus, isPending: isKycStatusPending } = useBridgeKYCStatus(
     { customerId },
   );
@@ -53,7 +55,7 @@ export function KycVerificationForm({
         window.open(redirectUrl, '_blank');
       } else {
         // Handle case where redirectUrl is missing but response was ok
-        console.error('KYC initiation response missing redirectUrl:', data);
+        console.error('KYC initiation response missing redirectUrl:');
         throw new Error(
           'KYC initiation succeeded but no redirect URL was provided.',
         );
@@ -71,6 +73,14 @@ export function KycVerificationForm({
       // Optionally reset state if needed, e.g., setKycStatus('not_started')
     }
   }, [customerId, kycInitiate]);
+  useEffect(() => {
+    if (isCompleted) {
+      return;
+    }
+    if (kycStatus?.status === 'complete' && typeof onSuccess === 'function') {
+      onSuccess();
+    }
+  }, [isCompleted, kycStatus?.status, onSuccess]);
 
   const state = useMemo(() => {
     if (isCompleted) {

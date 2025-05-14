@@ -126,9 +126,7 @@ export default function ProfileForm() {
         <PersonalInfoForm
           hasCustomer={hasCustomer}
           customerId={customerId}
-          onSuccess={(id) => {
-            setHasCustomer(true);
-            setCustomerId(id);
+          onSuccess={() => {
             setActiveTab('kyc-verification');
             toast({
               title: 'Success',
