@@ -14,19 +14,6 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { address: userAddress },
-      select: {
-        id: true,
-        address: true,
-        recipientWallet: true,
-        bridgeCustomerId: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-        isKycCompleted: true,
-        username: true,
-      },
     });
 
     if (!user) {

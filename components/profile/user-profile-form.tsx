@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useAuth } from '@/contexts';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,19 +21,24 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { User } from '@prisma/client';
+import { useUpdateUserProfile } from '@/lib/hooks/useProfile';
+import { type Profile } from '@/types/profile';
 
 const profileFormSchema = z.object({
-  name: z
+  firstName: z
     .string()
     .min(2, {
-      message: 'Username must be at least 2 characters.',
+      message: 'First Name must be at least 2 characters.',
     })
-    .max(30, {
-      message: 'Username cannot be longer than 30 characters.',
-    }),
+    .optional(),
+  lastName: z
+    .string()
+    .min(2, {
+      message: 'Last Name must be at least 2 characters.',
+    })
+    .optional(),
   uniqueUsername: z
     .string()
     .min(2, {
@@ -66,73 +72,59 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface UserProfileFormProps {
-  userData: User;
-  walletAddress: string;
+  profile: Profile;
 }
 
-export function UserProfileForm({
-  userData,
-  walletAddress,
-}: UserProfileFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  console.log('userData received:', userData);
+export function UserProfileForm({ profile }: UserProfileFormProps) {
+  const { address } = useAuth();
+  const { toast } = useToast();
+  const { mutateAsync: updateUserProfile, isPending } = useUpdateUserProfile();
+  console.log('profile received:', profile);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name:
-        userData?.firstName +
-          (userData?.lastName ? ' ' + userData.lastName : '') || '',
-      uniqueUsername: userData?.username || '',
-      recipientWallet: userData?.recipientWallet || '',
+      firstName: profile?.firstName ?? '',
+      lastName: profile?.lastName ?? '',
+      uniqueUsername: profile?.username ?? '',
+      recipientWallet: profile?.recipientWallet ?? '',
+      bio: profile?.bio ?? '',
     },
   });
 
   // You can also log after setting up the form
   console.log('Form values:', form.getValues());
 
-  async function onSubmit(data: ProfileFormValues) {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/users/profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userAddress: walletAddress,
-          firstName: data.name,
+  const onSubmit = useCallback(
+    async (data: ProfileFormValues) => {
+      try {
+        await updateUserProfile({
+          userAddress: address ?? '',
+          firstName: data.firstName ?? '',
+          lastName: data.lastName ?? '',
           username: data.uniqueUsername,
           avatarUrl: data.avatarUrl,
           bio: data.bio,
           recipientWallet: data.recipientWallet || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
+        });
+        toast({
+          title: 'Profile updated',
+          description: 'Your profile has been successfully updated.',
+        });
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: 'Error',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Failed to update profile. Please try again.',
+          variant: 'destructive',
+        });
       }
-
-      toast({
-        title: 'Profile updated',
-        description: 'Your profile has been successfully updated.',
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update profile. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    },
+    [updateUserProfile, address, toast],
+  );
 
   return (
     <Card>
@@ -147,12 +139,28 @@ export function UserProfileForm({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your name" {...field} />
+                    <Input placeholder="Your First Name" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    This will be your display name on the platform.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your Last Name" {...field} />
                   </FormControl>
                   <FormDescription>
                     This will be your display name on the platform.
@@ -196,9 +204,24 @@ export function UserProfileForm({
                 </FormItem>
               )}
             />
-
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bio</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Short Biography" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    This is a short Biography to be shared on the platform.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Updating...

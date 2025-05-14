@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { bridgeService } from '@/lib/bridge-service';
+import { enableApiMock } from '@/lib/fetch';
 
 interface BridgeCustomer {
   id: string;
@@ -31,8 +32,14 @@ export async function POST(request: NextRequest) {
 
     try {
       // Call Bridge API to create customer
-      const bridgeCustomer: BridgeCustomer =
-        (await bridgeService.createCustomer(customerData)) as BridgeCustomer;
+      let bridgeCustomer: BridgeCustomer = undefined;
+      if (enableApiMock) {
+        bridgeCustomer = { id: 'mock-bridge-customer-id' };
+      } else {
+        bridgeCustomer = (await bridgeService.createCustomer(
+          customerData,
+        )) as BridgeCustomer;
+      }
 
       // Update user with Bridge customer ID
       await prisma.user.update({
@@ -74,37 +81,43 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// export async function GET(request: NextRequest) {
-//   try {
-//     const userAddress = request.nextUrl.searchParams.get('userAddress');
+export async function GET(request: NextRequest) {
+  try {
+    const userAddress = request.nextUrl.searchParams.get('userAddress');
 
-//     if (!userAddress) {
-//       return NextResponse.json({ error: 'Missing user address' }, { status: 400 });
-//     }
+    if (!userAddress) {
+      return NextResponse.json(
+        { error: 'Missing user address' },
+        { status: 400 },
+      );
+    }
 
-//     // Find user by address
-//     const user = await prisma.user.findUnique({
-//       where: { address: userAddress }
-//     });
+    // Find user by address
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress },
+    });
 
-//     if (!user) {
-//       return NextResponse.json({
-//         hasCustomer: false,
-//         message: 'User not found'
-//       });
-//     }
+    if (!user) {
+      return NextResponse.json({
+        hasCustomer: false,
+        message: 'User not found',
+      });
+    }
 
-//     // No need to fetch from Bridge API - use local data
-//     return NextResponse.json({
-//       hasCustomer: !!user.bridgeCustomerId,
-//       customerId: user.bridgeCustomerId,
-//       isKycCompleted: user.isKycCompleted
-//     });
-//   } catch (error) {
-//     console.error('Error fetching Bridge customer:', error);
-//     return NextResponse.json({
-//       error: 'Failed to fetch customer information',
-//       details: error instanceof Error ? error.message : String(error)
-//     }, { status: 500 });
-//   }
-// }
+    // No need to fetch from Bridge API - use local data
+    return NextResponse.json({
+      hasCustomer: !!user.bridgeCustomerId,
+      customerId: user.bridgeCustomerId,
+      isKycCompleted: user.isKycCompleted,
+    });
+  } catch (error) {
+    console.error('Error fetching Bridge customer:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch customer information',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
+  }
+}

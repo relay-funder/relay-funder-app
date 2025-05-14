@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userAddress, firstName, username, recipientWallet } =
+    const { userAddress, lastName, firstName, username, bio, recipientWallet } =
       await request.json();
 
     if (!userAddress) {
@@ -32,29 +32,24 @@ export async function POST(request: NextRequest) {
       where: { address: userAddress },
       update: {
         firstName,
+        lastName,
         username,
         ...(recipientWallet && { recipientWallet }),
-        updatedAt: new Date(),
+        bio,
       },
       create: {
         address: userAddress,
         firstName,
+        lastName,
         username,
         recipientWallet,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        bio,
       },
     });
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        address: user.address,
-        firstName: user.firstName,
-        username: user.username,
-        recipientWallet: user.recipientWallet,
-      },
+      user,
     });
   } catch (error) {
     console.error('Error updating profile:', error);

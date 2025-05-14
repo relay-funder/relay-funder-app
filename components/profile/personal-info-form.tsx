@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import {
   Card,
@@ -34,6 +34,10 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useUserProfile } from '@/lib/hooks/useProfile';
+import { enableApiMock } from '@/lib/fetch';
+import { useBridgeUpdateCustomer } from '@/lib/hooks/useBridge';
+import { useAuth } from '@/contexts';
 
 const personalInfoSchema = z.object({
   first_name: z.string().min(2, 'First name must be at least 2 characters'),
@@ -66,23 +70,23 @@ type PersonalInfoFormValues = z.infer<typeof personalInfoSchema>;
 interface PersonalInfoFormProps {
   hasCustomer: boolean;
   customerId: string | null;
-  onSuccess: (customerId: string) => void;
 }
 
 export function PersonalInfoForm({
   hasCustomer,
   customerId,
-  onSuccess,
 }: PersonalInfoFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { address, isConnected } = useAccount();
-
+  const { address, isReady } = useAuth();
+  const { data: profile } = useUserProfile();
+  const { mutateAsync: updateCustomer, isPending } = useBridgeUpdateCustomer({
+    address,
+  });
   const form = useForm<PersonalInfoFormValues>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
-      first_name: '',
-      last_name: '',
-      email: '',
+      first_name: profile?.firstName ?? '',
+      last_name: profile?.lastName ?? '',
+      email: profile?.email ?? '',
       document_type: 'ITIN',
       document_number: '',
       dob: '',
@@ -98,67 +102,57 @@ export function PersonalInfoForm({
       phone_number: '',
     },
   });
-
-  const onSubmit = async (data: PersonalInfoFormValues) => {
-    if (!address || !isConnected) {
-      toast({
-        title: 'Error',
-        description: 'Please connect your wallet first',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const userAddress = address;
-
-      console.log('Submitting customer data:', {
-        ...data,
-        userAddress,
-        customer_wallet: userAddress,
-      });
-
-      const response = await fetch('/api/bridge/customer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          userAddress,
-          customer_wallet: userAddress,
-        }),
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        console.error('Bridge API error response:', responseData);
-        throw new Error(
-          responseData.error ||
-            responseData.message ||
-            'Failed to create customer',
-        );
+  const onSubmit = useCallback(
+    async (data: PersonalInfoFormValues) => {
+      if (!address || !isReady) {
+        toast({
+          title: 'Error',
+          description: 'Please connect your wallet first',
+          variant: 'destructive',
+        });
+        return;
       }
 
-      console.log('Customer created successfully:', responseData);
-      onSuccess(responseData.customerId);
-    } catch (error) {
-      console.error('Error creating customer:', error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to save personal information',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      try {
+        updateCustomer(data);
+      } catch (error) {
+        console.error('Error creating customer:', error);
+        toast({
+          title: 'Error',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Failed to save personal information',
+          variant: 'destructive',
+        });
+      }
+    },
+    [isReady, address, updateCustomer],
+  );
 
+  const onDeveloperSubmit = useCallback(async () => {
+    if (!enableApiMock) {
+      return;
+    }
+    await onSubmit({
+      first_name: 'John',
+      last_name: 'Doh',
+      email: 'email@exapmle.com',
+      document_type: 'ITIN',
+      document_number: '999999999',
+      dob: '999999999',
+      street_number: '1',
+      street_name: 'street',
+      neighborhood: 'neighborhood',
+      city: 'city',
+      state: 'state',
+      address_country_id: 2, // Default to US
+      postal_code: '12345',
+      phone_country_code: '1', // Default to US
+      phone_area_code: '2',
+      phone_number: '7777777',
+    });
+  }, [onSubmit]);
   return (
     <Card>
       <CardHeader>
@@ -192,7 +186,11 @@ export function PersonalInfoForm({
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} />
+                        <Input
+                          placeholder="John"
+                          {...field}
+                          onDoubleClick={onDeveloperSubmit}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -457,8 +455,8 @@ export function PersonalInfoForm({
                 />
               </div>
 
-              <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting ? (
+              <Button type="submit" disabled={isPending} className="w-full">
+                {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
