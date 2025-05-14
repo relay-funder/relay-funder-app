@@ -31,7 +31,7 @@ import { useNetworkCheck } from '@/hooks/use-network';
 import { useDonationCallback } from '@/hooks/use-donation';
 import { useUsdcBalance } from '@/hooks/use-usdc-balance';
 import { PaymentSwitchWalletNetwork } from './payment/switch-wallet-network';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts';
 
 interface DonationFormProps {
   campaign: Campaign;
