@@ -164,8 +164,12 @@ export default function AdminPage() {
           newStatuses[campaign.id] = 'Completed';
           break;
         case CampaignStatus.ACTIVE: {
-          const launchTime = campaign.launchTime ? parseInt(campaign.launchTime) : now;
-          const deadline = campaign.deadline ? parseInt(campaign.deadline) : now;
+          const launchTime = campaign.launchTime
+            ? parseInt(campaign.launchTime)
+            : now;
+          const deadline = campaign.deadline
+            ? parseInt(campaign.deadline)
+            : now;
           if (now < launchTime) {
             newStatuses[campaign.id] = 'Upcoming';
           } else if (now > deadline) {
