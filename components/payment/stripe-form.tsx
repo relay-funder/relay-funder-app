@@ -32,12 +32,13 @@ export function PaymentStripeForm({
   const { toast } = useToast();
   const isReady = useStripeIsReady();
 
-  debug && console.log('Stripe form props:', {
-    publicKey,
-    campaign,
-    userAddress,
-    amount,
-  });
+  debug &&
+    console.log('Stripe form props:', {
+      publicKey,
+      campaign,
+      userAddress,
+      amount,
+    });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +81,11 @@ export function PaymentStripeForm({
       if (error) {
         // Prefer the most specific error message from Stripe
         let displayMessage = error.message || 'An error occurred';
-        if (error.payment_intent && error.payment_intent.last_payment_error && error.payment_intent.last_payment_error.message) {
+        if (
+          error.payment_intent &&
+          error.payment_intent.last_payment_error &&
+          error.payment_intent.last_payment_error.message
+        ) {
           displayMessage = error.payment_intent.last_payment_error.message;
         }
         setError(displayMessage);
