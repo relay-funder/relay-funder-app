@@ -4,18 +4,25 @@ import { bridgeService, BridgeTransactionResponse } from '@/lib/bridge-service';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, customerId, currency, amount, paymentMethodId, walletAddress } = body;
+    const {
+      type,
+      customerId,
+      currency,
+      amount,
+      paymentMethodId,
+      walletAddress,
+    } = body;
 
     let transaction: BridgeTransactionResponse;
 
     if (type === 'buy') {
-      transaction = await bridgeService.buyTransaction({ 
+      transaction = await bridgeService.buyTransaction({
         customerId,
         fiatCurrency: currency,
         cryptoCurrency: 'USDC', // Default or from request
         fiatAmount: amount,
         paymentMethodId,
-        walletAddress
+        walletAddress,
       });
     } else if (type === 'sell') {
       transaction = await bridgeService.sellTransaction({
@@ -23,10 +30,13 @@ export async function POST(request: NextRequest) {
         fiatCurrency: currency,
         cryptoCurrency: 'USDC', // Default or from request
         cryptoAmount: amount,
-        walletAddress
+        walletAddress,
       });
     } else {
-      return NextResponse.json({ error: 'Invalid transaction type' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid transaction type' },
+        { status: 400 },
+      );
     }
 
     // Create a payment record in the database
@@ -37,7 +47,7 @@ export async function POST(request: NextRequest) {
     //     token: currency, // Assuming 'token' is the correct field in your schema
     //     provider: 'BRIDGE',
     //     status: 'pending',
-    //     type: type.toUpperCase(), 
+    //     type: type.toUpperCase(),
     //     externalId: transaction.id?.toString() || '',
     //     // Properly serialize the transaction object for Prisma
     //     metadata: JSON.parse(JSON.stringify({ transaction })),
@@ -46,15 +56,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      // paymentId: payment.id, 
+      // paymentId: payment.id,
       transactionId: transaction.id,
     });
-
   } catch (error) {
     console.error('Error creating transaction:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create transaction' },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create transaction',
+      },
+      { status: 500 },
     );
   }
-} 
+}

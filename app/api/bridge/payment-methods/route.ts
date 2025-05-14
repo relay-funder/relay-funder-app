@@ -9,12 +9,15 @@ export async function GET(req: NextRequest) {
     const userAddress = searchParams.get('userAddress');
 
     if (!userAddress) {
-      return NextResponse.json({ error: 'User address is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'User address is required' },
+        { status: 400 },
+      );
     }
 
     // Get user ID from the database
     const user = await prisma.user.findUnique({
-      where: { address: userAddress }
+      where: { address: userAddress },
     });
 
     if (!user) {
@@ -23,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch payment methods from Prisma
     const paymentMethods = await prisma.paymentMethod.findMany({
-      where: { userId: user.id }
+      where: { userId: user.id },
     });
 
     return NextResponse.json({ paymentMethods });
@@ -31,7 +34,7 @@ export async function GET(req: NextRequest) {
     console.error('Error fetching payment methods:', error);
     return NextResponse.json(
       { error: 'Failed to fetch payment methods' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -45,22 +48,24 @@ export async function POST(req: NextRequest) {
       userAddress,
       customerId,
       type,
-      bank_details: bank_details ? {
-        ...bank_details,
-        accountNumber: '****' + bank_details.accountNumber.slice(-4) // Log safely
-      } : null
+      bank_details: bank_details
+        ? {
+            ...bank_details,
+            accountNumber: '****' + bank_details.accountNumber.slice(-4), // Log safely
+          }
+        : null,
     });
 
     if (!userAddress || !customerId || !type || !bank_details) {
       return NextResponse.json(
         { error: 'Missing required fields' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get user from database
     const user = await prisma.user.findUnique({
-      where: { address: userAddress }
+      where: { address: userAddress },
     });
 
     if (!user) {
@@ -71,19 +76,21 @@ export async function POST(req: NextRequest) {
     console.log('User record from database:', {
       id: user.id,
       address: user.address,
-      bridgeCustomerId: user.bridgeCustomerId
+      bridgeCustomerId: user.bridgeCustomerId,
     });
 
     // Double-check the customerId format before sending to Bridge
     if (!user.bridgeCustomerId) {
       return NextResponse.json(
         { error: 'User does not have a Bridge customer ID' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (user.bridgeCustomerId !== customerId) {
-      console.log(`Customer ID mismatch: From request ${customerId}, from DB ${user.bridgeCustomerId}`);
+      console.log(
+        `Customer ID mismatch: From request ${customerId}, from DB ${user.bridgeCustomerId}`,
+      );
       // Consider whether to fail or proceed with the DB value
     }
 
@@ -96,15 +103,16 @@ export async function POST(req: NextRequest) {
       const bridgePayload = {
         customerId,
         type,
-        bank_details
+        bank_details,
       };
 
       console.log('Sending to Bridge service:', {
         ...bridgePayload,
         bank_details: {
           ...bridgePayload.bank_details,
-          accountNumber: '****' + bridgePayload.bank_details.accountNumber.slice(-4)
-        }
+          accountNumber:
+            '****' + bridgePayload.bank_details.accountNumber.slice(-4),
+        },
       });
 
       // Create payment method in Bridge
@@ -121,23 +129,30 @@ export async function POST(req: NextRequest) {
           externalId: response.id,
           type: type,
           userId: user.id,
-          details: bank_details
-        }
+          details: bank_details,
+        },
       });
 
       return NextResponse.json({ success: true, paymentMethod });
     } catch (bridgeError) {
       console.error('Bridge API error:', bridgeError);
       return NextResponse.json(
-        { error: `Bridge API error: ${bridgeError instanceof Error ? bridgeError.message : 'Unknown error'}` },
-        { status: 500 }
+        {
+          error: `Bridge API error: ${bridgeError instanceof Error ? bridgeError.message : 'Unknown error'}`,
+        },
+        { status: 500 },
       );
     }
   } catch (error) {
     console.error('Error creating payment method:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create payment method' },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create payment method',
+      },
+      { status: 500 },
     );
   }
 }

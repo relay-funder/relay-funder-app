@@ -1,14 +1,15 @@
-import { Metadata } from "next"
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: "Profile | Akashic",
-    description: "Manage your Akashic profile, payment methods, and KYC information",
-}
+  title: 'Profile | Akashic',
+  description:
+    'Manage your Akashic profile, payment methods, and KYC information',
+};
 
 export default function ProfileLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode;
 }) {
-    return <>{children}</>
-} 
+  return <>{children}</>;
+}
