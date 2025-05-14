@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import crypto from 'crypto';
+import { bridgeService } from '@/lib/bridge-service';
 
 // This webhook should be registered with Bridge to receive KYC status updates
 
@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
     // In production, verify the webhook signature from Bridge
     // This is a security best practice to ensure the webhook is actually from Bridge
     const signature = request.headers.get('bridge-signature');
-    if (
-      process.env.NODE_ENV === 'production' &&
-      !verifyBridgeSignature(signature, rawBody)
-    ) {
+    if (bridgeService.verifySignature(signature, rawBody)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -61,23 +58,4 @@ export async function POST(request: NextRequest) {
       details: error instanceof Error ? error.message : String(error),
     });
   }
-}
-
-// Verify the Bridge webhook signature
-function verifyBridgeSignature(
-  signature: string | null,
-  payload: string,
-): boolean {
-  if (!signature || !process.env.BRIDGE_WEBHOOK_SECRET) {
-    return false;
-  }
-
-  const hmac = crypto.createHmac('sha256', process.env.BRIDGE_WEBHOOK_SECRET);
-  const expectedSignature = hmac.update(payload).digest('hex');
-
-  // Convert Buffers to Uint8Array objects for timingSafeEqual
-  return crypto.timingSafeEqual(
-    new Uint8Array(Buffer.from(signature)),
-    new Uint8Array(Buffer.from(expectedSignature)),
-  );
 }
