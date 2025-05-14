@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Call Bridge API to create customer
-      let bridgeCustomer: BridgeCustomer = undefined;
+      let bridgeCustomer: BridgeCustomer | undefined = undefined;
       if (enableApiMock) {
         bridgeCustomer = { id: 'mock-bridge-customer-id' };
       } else {

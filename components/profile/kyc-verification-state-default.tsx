@@ -1,5 +1,5 @@
-import { Alert, AlertTitle, AlertDescription, Button } from '@/components/ui';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { Loader2 } from 'lucide-react';
 
 export function ProfileKYCVerificationStateDefault({
   onInitiateKYC,

@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -70,11 +69,13 @@ type PersonalInfoFormValues = z.infer<typeof personalInfoSchema>;
 interface PersonalInfoFormProps {
   hasCustomer: boolean;
   customerId: string | null;
+  onSuccess?: () => void;
 }
 
 export function PersonalInfoForm({
   hasCustomer,
   customerId,
+  onSuccess,
 }: PersonalInfoFormProps) {
   const { address, isReady } = useAuth();
   const { data: profile } = useUserProfile();
@@ -115,6 +116,9 @@ export function PersonalInfoForm({
 
       try {
         updateCustomer(data);
+        if (typeof onSuccess === 'function') {
+          onSuccess();
+        }
       } catch (error) {
         console.error('Error creating customer:', error);
         toast({
@@ -127,7 +131,7 @@ export function PersonalInfoForm({
         });
       }
     },
-    [isReady, address, updateCustomer],
+    [isReady, address, updateCustomer, onSuccess],
   );
 
   const onDeveloperSubmit = useCallback(async () => {
