@@ -13,12 +13,12 @@ export default async function Page({
   const campaign: Campaign = await getCampaign((await params).slug);
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <>
       <PageHeaderSticky message="Donating to" title={campaign.title} />
       <PageMainTwoColums>
         <DonationForm campaign={campaign} />
         <ProjectInfo campaign={campaign} />
       </PageMainTwoColums>
-    </div>
+    </>
   );
 }
