@@ -43,12 +43,17 @@ export function PaymentStatus() {
         if (enableApiMock) {
           stripe = mockStripeInstance;
         } else {
-          await loadStripe(stripeKey);
+          stripe = await loadStripe(stripeKey);
         }
         if (!stripe) throw new Error('Failed to load Stripe');
 
-        const { paymentIntent } =
-          await stripe.retrievePaymentIntent(clientSecret);
+        const result = await stripe.retrievePaymentIntent(clientSecret);
+        if (result.error) {
+          setStatus('error');
+          setMessage(result.error.message || 'Failed to verify payment status');
+          return;
+        }
+        const { paymentIntent } = result;
 
         if (paymentIntent?.status === 'succeeded') {
           setStatus('success');
@@ -60,7 +65,7 @@ export function PaymentStatus() {
       } catch (err) {
         console.error('Error checking payment status:', err);
         setStatus('error');
-        setMessage('Failed to verify payment status');
+        setMessage(err instanceof Error ? err.message : 'Failed to verify payment status');
       }
     };
 
