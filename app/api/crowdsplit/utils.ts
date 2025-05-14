@@ -21,7 +21,7 @@ export async function getCrowdsplitToken(): Promise<string> {
           client_secret: process.env.CROWDSPLIT_CLIENT_SECRET,
           grant_type: 'client_credentials',
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -36,7 +36,7 @@ export async function getCrowdsplitToken(): Promise<string> {
     throw new Error(
       `Failed to get Crowdsplit token: ${
         error instanceof Error ? error.message : 'Unknown error'
-      }`
+      }`,
     );
   }
 }
@@ -49,11 +49,11 @@ export async function getCrowdsplitToken(): Promise<string> {
  */
 export async function crowdsplitRequest(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> {
   // Get a fresh token for each request
   const token = await getCrowdsplitToken();
-  
+
   // Ensure headers object exists
   const headers = {
     'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export async function crowdsplitRequest(
 
   // Construct full URL
   const url = `${process.env.CROWDSPLIT_API_URL}${endpoint}`;
-  
+
   // Make the authenticated request
   return fetch(url, {
     ...options,

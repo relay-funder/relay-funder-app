@@ -13,11 +13,14 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
-    
+
     const data = await csRes.json();
     return NextResponse.json(data, { status: csRes.status });
   } catch (error) {
     console.error('Crowdsplit customer error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 },
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { RoundCampaigns, Round } from '@prisma/client';
 
 export async function GET(
   req: NextRequest,
@@ -17,10 +18,12 @@ export async function GET(
       return NextResponse.json({ rounds: [] }, { status: 200 });
     }
 
-    const rounds = roundCampaigns.map((rc) => ({
-      id: rc.roundId,
-      title: rc.Round.title,
-    }));
+    const rounds = roundCampaigns.map(
+      (rc: RoundCampaigns & { Round: Round }) => ({
+        id: rc.roundId,
+        title: rc.Round.title,
+      }),
+    );
 
     return NextResponse.json({ rounds }, { status: 200 });
   } catch (error) {
