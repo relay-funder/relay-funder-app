@@ -3,7 +3,7 @@ import { crowdsplitRequest } from '@/app/api/crowdsplit/utils';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -14,6 +14,9 @@ export async function POST(
     return NextResponse.json(data, { status: csRes.status });
   } catch (error) {
     console.error('Crowdsplit payment confirm error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 },
+    );
   }
 }
