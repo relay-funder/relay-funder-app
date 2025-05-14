@@ -9,9 +9,29 @@ async function mockFetch(
   }
   console.log('developer mock fetch', { url });
   if (typeof url === 'string') {
-    if (url === '/api/auth/token') {
-      return new Response(JSON.stringify({ access_token: 'mock-token' }));
+    // Handle Crowdsplit API endpoints
+    if (url === '/api/crowdsplit/customers') {
+      return new Response(JSON.stringify({ data: { id: 'mock-customer-id' } }));
     }
+    if (url === '/api/crowdsplit/payments') {
+      return new Response(
+        JSON.stringify({ data: { id: 'mock-transaction-id' } }),
+      );
+    }
+    if (url.includes('/api/crowdsplit/payments') && url.includes('/confirm')) {
+      return new Response(
+        JSON.stringify({
+          data: {
+            metadata: {
+              public_key: 'mock-public-key',
+              client_secret: 'mock_secret_mocksecret',
+            },
+          },
+        }),
+      );
+    }
+    
+    // Legacy mock endpoints (for backward compatibility)
     if (url.includes('/api/v1/customers')) {
       return new Response(JSON.stringify({ data: { id: 'mock-id' } }));
     }

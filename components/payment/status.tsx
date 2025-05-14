@@ -25,6 +25,7 @@ export function PaymentStatus() {
     const clientSecret = searchParams.get('payment_intent_client_secret');
     const paymentIntentId = searchParams.get('payment_intent');
     const stripeKey = searchParams.get('stripe_key');
+    const redirectStatus = searchParams.get('redirect_status');
 
     if (!clientSecret || !paymentIntentId || !stripeKey) {
       console.error('bad search params', searchParams, {

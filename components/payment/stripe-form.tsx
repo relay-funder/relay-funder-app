@@ -13,12 +13,17 @@ import type {
 } from '@stripe/stripe-js';
 import { useStripeIsReady } from '@/hooks/use-stripe';
 
+const debug = process.env.NODE_ENV !== 'production';
 export function PaymentStripeForm({
   publicKey,
   campaign,
+  userAddress,
+  amount,
 }: {
   publicKey: string;
   campaign: Campaign;
+  userAddress: string | null;
+  amount: string;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -26,6 +31,13 @@ export function PaymentStripeForm({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const isReady = useStripeIsReady();
+
+  debug && console.log('Stripe form props:', {
+    publicKey,
+    campaign,
+    userAddress,
+    amount,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,12 +66,16 @@ export function PaymentStripeForm({
       );
       returnUrl.searchParams.append('stripe_key', publicKey);
 
-      const { error } = await stripe.confirmPayment({
+      const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: returnUrl.toString(),
         },
       });
+      const { error } = result;
+
+      // Debug: log the full Stripe result
+      debug && console.log('Stripe confirmPayment result:', result);
 
       if (error) {
         // Prefer the most specific error message from Stripe
@@ -74,6 +90,8 @@ export function PaymentStripeForm({
           description: displayMessage,
           variant: 'destructive',
         });
+        setIsProcessing(false);
+        return;
       }
     } catch (err) {
       console.error('Payment confirmation error:', err);
