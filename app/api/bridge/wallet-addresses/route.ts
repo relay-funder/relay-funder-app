@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { BRIDGE_API_URL, BRIDGE_API_KEY } from '@/lib/constant';
+import { bridgeService } from '@/lib/bridge-service';
 
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const { customerId, userAddress, walletAddress } = data;
 
-    if (!customerId || !walletAddress) {
+    if (!customerId || !walletAddress || !userAddress) {
       return NextResponse.json(
         { error: 'Customer ID and wallet address are required' },
         { status: 400 },
@@ -15,27 +15,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the Bridge API to associate the wallet address with the customer
-    const response = await fetch(
-      `${BRIDGE_API_URL}/api/v1/customers/${customerId}/wallets`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${BRIDGE_API_KEY}`,
-        },
-        body: JSON.stringify({
-          wallet_address: walletAddress,
-          wallet_type: 'ETH',
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to add wallet address');
-    }
-
-    const responseData = await response.json();
+    const response = await bridgeService.associatWallet({
+      customerId,
+      walletAddress,
+      walletType: 'ETH',
+    });
 
     // Update the user with the recipient wallet address
     await prisma.user.update({
@@ -46,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Wallet address added successfully',
-      data: responseData,
+      data: response,
     });
   } catch (error) {
     console.error('Wallet address addition error:', error);

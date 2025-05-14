@@ -20,6 +20,7 @@ export const BRIDGE_API_URL = 'https://api.usecrowdpay.xyz';
 export const BRIDGE_API_KEY = process.env.NEXT_PUBLIC_BRIDGE_CLIENT_ID || '';
 export const BRIDGE_CLIENT_SECRET =
   process.env.NEXT_PUBLIC_BRIDGE_CLIENT_SECRET || '';
+export const BRIDGE_WEBHOOK_SECRET = process.env.BRIDGE_WEBHOOK_SECRET || '';
 
 export const collections = [
   { id: 1, name: 'Collection 1', initial: '1' },

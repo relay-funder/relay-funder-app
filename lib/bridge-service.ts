@@ -1,6 +1,11 @@
 // Create a service to interact with Bridge API endpoints
 // import { headers } from 'next/headers';
-import { BRIDGE_API_URL, BRIDGE_API_KEY } from '@/lib/constant';
+import {
+  BRIDGE_API_URL,
+  BRIDGE_API_KEY,
+  BRIDGE_WEBHOOK_SECRET,
+} from '@/lib/constant';
+import crypto from 'crypto';
 
 if (!BRIDGE_API_URL) {
   throw new Error('BRIDGE_API_URL is not defined in environment variables');
@@ -33,6 +38,12 @@ interface PaymentMethodResponse {
 }
 
 export interface BridgeTransactionResponse {
+  id: string;
+  status: string;
+  [key: string]: unknown;
+}
+// undocumented api
+export interface BridgeAssociateWalletResponse {
   id: string;
   status: string;
   [key: string]: unknown;
@@ -78,6 +89,80 @@ export class BridgeService {
       'Content-Type': 'application/json',
       // Try without Bearer prefix
       Authorization: cleanApiKey,
+    };
+
+    console.log(`Making ${method} request to ${url}`);
+
+    const options: RequestInit = {
+      method,
+      headers,
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    try {
+      const response = await fetch(url, options);
+
+      // For debugging purposes
+      const responseText = await response.text();
+      console.log(
+        `Bridge API response [${response.status}]:`,
+        responseText || '(empty response)',
+      );
+
+      // Try to parse the response as JSON
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Error parsing response:', e);
+        responseData = { rawResponse: responseText };
+      }
+
+      // Log specific error for 401 unauthorized
+      if (response.status === 401) {
+        console.error('Bridge API authorization failed:', responseData);
+        throw new Error(
+          `Bridge API authorization failed: ${responseText || 'No error details provided'}`,
+        );
+      }
+
+      if (!response.ok) {
+        console.error(`Bridge API error (${response.status}):`, responseData);
+        throw new Error(
+          responseData.message ||
+            responseData.error ||
+            `Bridge API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      return responseData;
+    } catch (error) {
+      console.error(`Error in Bridge API call to ${url}:`, error);
+      throw error;
+    }
+  }
+  private async requestWithBearer<T>(
+    endpoint: string,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+    body?: unknown,
+  ): Promise<T> {
+    const url = `${this.apiUrl}${endpoint}`;
+
+    // Check if API key exists
+    if (!this.apiKey) {
+      console.error('Bridge API key is missing');
+      throw new Error('API key is required for Bridge API calls');
+    }
+
+    // Clean the API key
+    const cleanApiKey = this.apiKey.trim();
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${cleanApiKey}`,
     };
 
     console.log(`Making ${method} request to ${url}`);
@@ -236,6 +321,49 @@ export class BridgeService {
       '/api/v1/wallets/trades/sell',
       'POST',
       payload,
+    );
+  }
+
+  async associatWallet(data: {
+    walletAddress: string;
+    walletType: string;
+    customerId: string;
+  }): Promise<BridgeAssociateWalletResponse> {
+    // Map our params to Bridge API expected format
+    const payload = {
+      wallet_address: data.walletAddress,
+      wallet_type: data.walletType,
+    };
+
+    return this.requestWithBearer<BridgeAssociateWalletResponse>(
+      `/api/v1/customers/${data.customerId}/wallets`,
+      'POST',
+      payload,
+    );
+  }
+  // Verify the Bridge webhook signature
+  verifySignature(signature: string | null, payload: string): boolean {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('development: skipping signature verification');
+      return true;
+    }
+    if (!BRIDGE_WEBHOOK_SECRET) {
+      console.warn(
+        'Missing BRIDGE_WEBHOOK_SECRET environment, unable to verify signatures',
+      );
+      return false;
+    }
+    if (!signature) {
+      return false;
+    }
+
+    const hmac = crypto.createHmac('sha256', BRIDGE_WEBHOOK_SECRET);
+    const expectedSignature = hmac.update(payload).digest('hex');
+
+    // Convert Buffers to Uint8Array objects for timingSafeEqual
+    return crypto.timingSafeEqual(
+      new Uint8Array(Buffer.from(signature)),
+      new Uint8Array(Buffer.from(expectedSignature)),
     );
   }
 }
