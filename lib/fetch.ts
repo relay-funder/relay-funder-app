@@ -30,7 +30,7 @@ async function mockFetch(
         }),
       );
     }
-    
+
     // Legacy mock endpoints (for backward compatibility)
     if (url.includes('/api/v1/customers')) {
       return new Response(JSON.stringify({ data: { id: 'mock-id' } }));

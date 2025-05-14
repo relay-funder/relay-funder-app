@@ -10,11 +10,11 @@ const debug = process.env.NODE_ENV !== 'production';
 
 /**
  * KNOWN ISSUE: Credit card payments via Stripe are currently not being saved to the database.
- * 
+ *
  * Problem: The current Stripe Elements payment flow with auto-redirects doesn't allow us to save payment records
  * to our database, as the redirect happens before any code can execute and we don't know if the payment succeeded.
- * 
- *  RECOMMENDED: Implement Stripe webhooks 
+ *
+ *  RECOMMENDED: Implement Stripe webhooks
  *    - Docs: https://docs.stripe.com/elements/express-checkout-element/migration#post-payment
  *    - Create a webhook endpoint at /api/webhooks/stripe
  *    - Configure it in the Stripe dashboard
@@ -58,16 +58,13 @@ export function useStripePaymentCallback({ amount }: { amount: string }) {
 
       // Create customer
       debug && console.log('[Stripe] Creating customer');
-      const customerResponse = await fetch(
-        `/api/crowdsplit/customers`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email: 'user@example.com' }), // TODO: Get user email
+      const customerResponse = await fetch(`/api/crowdsplit/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({ email: 'user@example.com' }), // TODO: Get user email
+      });
 
       if (!customerResponse.ok) {
         const error = await customerResponse.json();
@@ -81,38 +78,44 @@ export function useStripePaymentCallback({ amount }: { amount: string }) {
 
       // Initialize payment
       debug && console.log('[Stripe] Initializing payment for amount:', amount);
-      const paymentResponse = await fetch(
-        `/api/crowdsplit/payments`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount: parseFloat(amount) * 100, // Convert to cents
-            customer_id: customerId,
-            currency: 'USD',
-            payment_method: 'CARD',
-            provider: 'STRIPE',
-          }),
+      const paymentResponse = await fetch(`/api/crowdsplit/payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          amount: parseFloat(amount) * 100, // Convert to cents
+          customer_id: customerId,
+          currency: 'USD',
+          payment_method: 'CARD',
+          provider: 'STRIPE',
+        }),
+      });
 
       if (!paymentResponse.ok) {
         let errorMsg = 'Failed to initialize payment';
         try {
           const error = await paymentResponse.json();
-          debug && console.error('[Stripe] Payment initialization failed:', error);
+          debug &&
+            console.error('[Stripe] Payment initialization failed:', error);
           errorMsg = error.msg || error.message || errorMsg;
         } catch (e) {
-          debug && console.error('[Stripe] Payment initialization failed, could not parse error:', e);
+          debug &&
+            console.error(
+              '[Stripe] Payment initialization failed, could not parse error:',
+              e,
+            );
         }
         throw new Error(errorMsg);
       }
       const {
         data: { id: transactionId },
       } = await paymentResponse.json();
-      debug && console.log('[Stripe] Payment initialized with transaction ID:', transactionId);
+      debug &&
+        console.log(
+          '[Stripe] Payment initialized with transaction ID:',
+          transactionId,
+        );
 
       // Confirm payment
       debug && console.log('[Stripe] Confirming payment');
@@ -130,10 +133,15 @@ export function useStripePaymentCallback({ amount }: { amount: string }) {
         let errorMsg = 'Failed to confirm payment';
         try {
           const error = await confirmResponse.json();
-          debug && console.error('[Stripe] Payment confirmation failed:', error);
+          debug &&
+            console.error('[Stripe] Payment confirmation failed:', error);
           errorMsg = error.msg || error.message || errorMsg;
         } catch (e) {
-          debug && console.error('[Stripe] Payment confirmation failed, could not parse error:', e);
+          debug &&
+            console.error(
+              '[Stripe] Payment confirmation failed, could not parse error:',
+              e,
+            );
         }
         throw new Error(errorMsg);
       }
