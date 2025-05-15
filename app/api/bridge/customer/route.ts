@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { bridgeService } from '@/lib/bridge-service';
-import { enableApiMock } from '@/lib/fetch';
-
-interface BridgeCustomer {
-  id: string;
-}
+import { bridgeService } from '@/lib/bridge/service';
+import { BridgeCustomerPostRequest } from '@/lib/bridge/api/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
+    const data: BridgeCustomerPostRequest = await request.json();
     const { userAddress, ...customerData } = data;
 
     if (!userAddress) {
@@ -28,26 +24,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.log('Creating Bridge customer with data:', customerData);
-
     try {
       // Call Bridge API to create customer
-      let bridgeCustomer: BridgeCustomer | undefined = undefined;
-      if (enableApiMock) {
-        bridgeCustomer = { id: 'mock-bridge-customer-id' };
-      } else {
-        bridgeCustomer = (await bridgeService.createCustomer(
-          customerData,
-        )) as BridgeCustomer;
-      }
+      const bridgeCustomer = await bridgeService.createCustomer(customerData);
 
       // Update user with Bridge customer ID
       await prisma.user.update({
         where: { id: user.id },
         data: {
           bridgeCustomerId: bridgeCustomer.id,
-          firstName: customerData.first_name,
-          lastName: customerData.last_name,
+          firstName: customerData.firstName,
+          lastName: customerData.lastName,
           email: customerData.email,
         },
       });

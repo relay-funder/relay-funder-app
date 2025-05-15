@@ -11,42 +11,44 @@ import { toast } from '@/hooks/use-toast';
 import {
   useBridgeKYCInitiate,
   useBridgeKYCStatus,
-} from '@/lib/hooks/useBridge';
+} from '@/lib/bridge/hooks/useBridge';
 import { ProfileKYCVerificationStateComplete } from './kyc-verification-state-complete';
 import { ProfileKYCVerificationStatePending } from './kyc-verification-state-pending';
 import { ProfileKYCVerificationStateFailed } from './kyc-verification-state-failed';
 import { ProfileKYCVerificationStateDefault } from './kyc-verification-state-default';
+import { useAuth } from '@/contexts';
+import { useUserProfile } from '@/lib/hooks/useProfile';
 
 interface KycVerificationFormProps {
-  customerId: string;
   isCompleted: boolean;
   onSuccess?: () => void;
 }
 
 export function KycVerificationForm({
-  customerId,
   isCompleted,
   onSuccess,
 }: KycVerificationFormProps) {
   const [kycUrl, setKycUrl] = useState<string | undefined>(undefined);
+  const { address } = useAuth();
+  const { isPending: isPendingProfile } = useUserProfile(address);
   const { data: kycStatus, isPending: isKycStatusPending } = useBridgeKYCStatus(
-    { customerId },
+    { userAddress: address ?? '' },
   );
   const { mutateAsync: kycInitiate, isPending: isKycInitiatePending } =
-    useBridgeKYCInitiate({ customerId });
+    useBridgeKYCInitiate({ userAddress: address ?? '' });
 
   const onInitiateKYC = useCallback(async () => {
-    if (!customerId) {
+    if (!address) {
       toast({
         title: 'Error',
-        description: 'Customer ID is required to initiate KYC',
+        description: 'Wallet address is required to initiate KYC',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      console.log('Initiating KYC for customer:', customerId);
+      console.log('Initiating KYC for customer:');
       const { redirectUrl } = await kycInitiate();
 
       if (redirectUrl) {
@@ -72,17 +74,20 @@ export function KycVerificationForm({
       });
       // Optionally reset state if needed, e.g., setKycStatus('not_started')
     }
-  }, [customerId, kycInitiate]);
+  }, [address, kycInitiate]);
   useEffect(() => {
     if (isCompleted) {
       return;
     }
-    if (kycStatus?.status === 'complete' && typeof onSuccess === 'function') {
+    if (kycStatus?.status === 'completed' && typeof onSuccess === 'function') {
       onSuccess();
     }
   }, [isCompleted, kycStatus?.status, onSuccess]);
 
   const state = useMemo(() => {
+    if (isPendingProfile) {
+      return <ProfileKYCVerificationStateDefault isPending={true} />;
+    }
     if (isCompleted) {
       return <ProfileKYCVerificationStateComplete />;
     }
@@ -102,19 +107,18 @@ export function KycVerificationForm({
         return (
           <ProfileKYCVerificationStateDefault
             isPending={isKycStatusPending || isKycInitiatePending}
-            customerId={customerId}
             onInitiateKYC={onInitiateKYC}
           />
         );
     }
   }, [
     onInitiateKYC,
-    customerId,
     isKycStatusPending,
     isKycInitiatePending,
     kycUrl,
     kycStatus,
     isCompleted,
+    isPendingProfile,
   ]);
 
   return (

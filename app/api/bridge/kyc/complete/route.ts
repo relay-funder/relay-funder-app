@@ -1,23 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { BridgeKycCompletePostRequest } from '@/lib/bridge/api/types';
 
+// manual/administrative change of a user's kyc
+// TODO: should only be available for admins
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const { customerId } = data;
+    const data: BridgeKycCompletePostRequest = await request.json();
+    const { userAddress } = data;
 
-    if (!customerId) {
+    if (!userAddress) {
       return NextResponse.json(
-        { error: 'Missing customer ID' },
-        { status: 400 },
+        {
+          error: 'Missing user address',
+        },
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
-    console.log('Manually completing KYC for customer:', customerId);
+    // Find user by bridgeCustomerId
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress },
+    });
 
-    // Update the user's KYC status
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: 'User not found',
+        },
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (!user.bridgeCustomerId) {
+      return NextResponse.json(
+        {
+          error: 'User profile not found',
+        },
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
     const updatedUser = await prisma.user.updateMany({
-      where: { bridgeCustomerId: customerId },
+      where: { id: user.id },
       data: { isKycCompleted: true },
     });
 

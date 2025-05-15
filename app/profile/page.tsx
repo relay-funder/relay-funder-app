@@ -8,11 +8,18 @@ import { ProfileAdditionalSettings } from '@/components/profile/additional-setti
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { PageLoading } from '@/components/page/loading';
 import { PageProfile } from '@/components/page/profile';
+import { useCallback, useState } from 'react';
 export default function ProfilePage() {
+  const [editProfile, setEditProfile] = useState(false);
   const { address, authenticated, isReady } = useAuth();
   const { data: profile, isPending: isProfilePending } =
     useUserProfile(address);
-
+  const onEditProfile = useCallback(() => {
+    setEditProfile(true);
+  }, [setEditProfile]);
+  const onEditSuccess = useCallback(() => {
+    setEditProfile(false);
+  }, [setEditProfile]);
   if (!isReady || isProfilePending) {
     return (
       <PageLoading>Please wait while we initialize your profile.</PageLoading>
@@ -20,7 +27,11 @@ export default function ProfilePage() {
   }
 
   if (!authenticated) {
-    return <PageConnectWallet />;
+    return (
+      <PageConnectWallet>
+        Please connect your wallet to access your profile
+      </PageConnectWallet>
+    );
   }
 
   return (
@@ -30,13 +41,16 @@ export default function ProfilePage() {
     >
       <div className="grid gap-6">
         {/* User Profile Card */}
-        <ProfileCard profile={profile} />
+        <ProfileCard profile={profile} onEdit={onEditProfile} />
 
         {/* User Profile Form */}
-        {profile && <UserProfileForm profile={profile} />}
+        {editProfile ||
+          (!profile && (
+            <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
+          ))}
 
         {/* Additional Settings Card */}
-        <ProfileAdditionalSettings />
+        {profile && <ProfileAdditionalSettings />}
       </div>
     </PageProfile>
   );

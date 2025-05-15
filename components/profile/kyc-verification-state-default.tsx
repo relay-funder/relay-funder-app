@@ -2,13 +2,11 @@ import { Button } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
 
 export function ProfileKYCVerificationStateDefault({
-  onInitiateKYC,
   isPending,
-  customerId,
+  onInitiateKYC,
 }: {
-  onInitiateKYC: () => Promise<void>;
   isPending: boolean;
-  customerId: string;
+  onInitiateKYC?: () => Promise<void>;
 }) {
   return (
     <div className="space-y-4">
@@ -21,20 +19,18 @@ export function ProfileKYCVerificationStateDefault({
         You will need to provide identification documents such as a passport,
         driver&apos;s license, or national ID card.
       </p>
-      <Button
-        onClick={onInitiateKYC}
-        disabled={isPending || !customerId}
-        className="w-full"
-      >
-        {isPending ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Initiating KYC...
-          </>
-        ) : (
-          'Start KYC Verification'
-        )}
-      </Button>
+      {typeof onInitiateKYC === 'function' && (
+        <Button onClick={onInitiateKYC} disabled={isPending} className="w-full">
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Initiating KYC...
+            </>
+          ) : (
+            'Start KYC Verification'
+          )}
+        </Button>
+      )}
     </div>
   );
 }

@@ -42,7 +42,14 @@ export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 export { Progress } from './progress';
 export { Skeleton } from './skeleton';
 export { Separator } from './separator';
-export { Table, TableBody, TableCell, TableHead, TableRow } from './table';
+export {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './table';
 export { Avatar, AvatarFallback, AvatarImage } from './avatar';
 export {
   useFormField,

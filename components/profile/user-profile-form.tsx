@@ -72,14 +72,14 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface UserProfileFormProps {
-  profile: Profile;
+  profile?: Profile;
+  onSuccess?: () => void;
 }
 
-export function UserProfileForm({ profile }: UserProfileFormProps) {
+export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   const { address } = useAuth();
   const { toast } = useToast();
   const { mutateAsync: updateUserProfile, isPending } = useUpdateUserProfile();
-  console.log('profile received:', profile);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -111,6 +111,9 @@ export function UserProfileForm({ profile }: UserProfileFormProps) {
           title: 'Profile updated',
           description: 'Your profile has been successfully updated.',
         });
+        if (typeof onSuccess === 'function') {
+          onSuccess();
+        }
       } catch (error) {
         console.error(error);
         toast({
@@ -123,7 +126,7 @@ export function UserProfileForm({ profile }: UserProfileFormProps) {
         });
       }
     },
-    [updateUserProfile, address, toast],
+    [updateUserProfile, address, toast, onSuccess],
   );
 
   return (

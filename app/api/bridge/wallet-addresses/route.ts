@@ -1,25 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { bridgeService } from '@/lib/bridge-service';
+import { bridgeService } from '@/lib/bridge/service';
 
 export async function POST(request: NextRequest) {
+  const data = await request.json();
+  const { userAddress, walletAddress } = data;
+  if (!userAddress) {
+    return NextResponse.json(
+      { error: 'User address is required' },
+      { status: 400 },
+    );
+  }
   try {
-    const data = await request.json();
-    const { customerId, userAddress, walletAddress } = data;
-
-    if (!customerId || !walletAddress || !userAddress) {
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress },
+    });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    if (!user.bridgeCustomerId) {
       return NextResponse.json(
-        { error: 'Customer ID and wallet address are required' },
-        { status: 400 },
+        {
+          error: 'User profile not found',
+        },
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
     // Call the Bridge API to associate the wallet address with the customer
-    const response = await bridgeService.associatWallet({
-      customerId,
-      walletAddress,
-      walletType: 'ETH',
-    });
+    if (walletAddress) {
+      await bridgeService.associatWallet({
+        customerId: user.bridgeCustomerId,
+        walletAddress,
+        walletType: 'ETH',
+      });
+    }
 
     // Update the user with the recipient wallet address
     await prisma.user.update({
@@ -30,7 +45,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Wallet address added successfully',
-      data: response,
     });
   } catch (error) {
     console.error('Wallet address addition error:', error);

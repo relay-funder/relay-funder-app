@@ -64,22 +64,28 @@ model User {
   paymentMethods   PaymentMethod[]
 }
 
+enum PaymentType {
+  BUY
+  SELL
+}
+
 model Payment {
-  id              Int      @id @default(autoincrement())
+  id              Int         @id @default(autoincrement())
   amount          String
   token           String
-  status          String   @default("pending")
+  status          String      @default("pending")
+  type            PaymentType
   transactionHash String?
-  isAnonymous     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isAnonymous     Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   campaignId      Int
   userId          Int
   externalId      String?
   metadata        Json?
   provider        String?
-  campaign        Campaign @relation(fields: [campaignId], references: [id])
-  user            User     @relation(fields: [userId], references: [id])
+  campaign        Campaign    @relation(fields: [campaignId], references: [id])
+  user            User        @relation(fields: [userId], references: [id])
 
   @@index([campaignId])
   @@index([userId])
@@ -92,7 +98,6 @@ model PaymentMethod {
   externalId String
   type       String
   userId     Int
-  details    Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   user       User     @relation(fields: [userId], references: [id])

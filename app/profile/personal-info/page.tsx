@@ -5,10 +5,12 @@ import { useAuth } from '@/contexts';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { PageProfile } from '@/components/page/profile';
-import { useBridgeCustomer } from '@/lib/hooks/useBridge';
+import { useBridgeCustomer } from '@/lib/bridge/hooks/useBridge';
 export default function PersonalInfoPage() {
   const { isReady, address, authenticated } = useAuth();
-  const { data: customer, isPending } = useBridgeCustomer({ address });
+  const { data: customer, isPending } = useBridgeCustomer({
+    userAddress: address ?? '',
+  });
 
   if (!isReady || isPending) {
     return (
@@ -19,7 +21,11 @@ export default function PersonalInfoPage() {
   }
 
   if (!authenticated) {
-    return <PageConnectWallet />;
+    return (
+      <PageConnectWallet>
+        Please connect your wallet to access your profile
+      </PageConnectWallet>
+    );
   }
 
   return (

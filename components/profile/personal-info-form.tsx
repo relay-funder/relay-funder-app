@@ -35,15 +35,15 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { enableApiMock } from '@/lib/fetch';
-import { useBridgeUpdateCustomer } from '@/lib/hooks/useBridge';
+import { useBridgeUpdateCustomer } from '@/lib/bridge/hooks/useBridge';
 import { useAuth } from '@/contexts';
 
 const personalInfoSchema = z.object({
-  first_name: z.string().min(2, 'First name must be at least 2 characters'),
-  last_name: z.string().min(2, 'Last name must be at least 2 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
-  document_type: z.enum(['ITIN', 'SSN']),
-  document_number: z
+  documentType: z.enum(['ITIN', 'SSN']),
+  documentNumber: z
     .string()
     .regex(
       /^9\d{8}$/,
@@ -52,16 +52,16 @@ const personalInfoSchema = z.object({
   dob: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-  street_number: z.string().min(1, 'Street number is required'),
-  street_name: z.string().min(1, 'Street name is required'),
+  streetNumber: z.string().min(1, 'Street number is required'),
+  streetName: z.string().min(1, 'Street name is required'),
   neighborhood: z.string().optional(),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
-  address_country_id: z.number().min(1, 'Country is required'),
-  postal_code: z.string().min(5, 'Postal code must be at least 5 characters'),
-  phone_country_code: z.string().min(1, 'Country code is required'),
-  phone_area_code: z.string().min(1, 'Area code is required'),
-  phone_number: z.string().min(7, 'Phone number must be at least 7 characters'),
+  addressCountryId: z.number().min(1, 'Country is required'),
+  postalCode: z.string().min(5, 'Postal code must be at least 5 characters'),
+  phoneCountryCode: z.string().min(1, 'Country code is required'),
+  phoneAreaCode: z.string().min(1, 'Area code is required'),
+  phoneNumber: z.string().min(7, 'Phone number must be at least 7 characters'),
 });
 
 type PersonalInfoFormValues = z.infer<typeof personalInfoSchema>;
@@ -80,27 +80,27 @@ export function PersonalInfoForm({
   const { address, isReady } = useAuth();
   const { data: profile } = useUserProfile();
   const { mutateAsync: updateCustomer, isPending } = useBridgeUpdateCustomer({
-    address,
+    userAddress: address ?? '',
   });
   const form = useForm<PersonalInfoFormValues>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
-      first_name: profile?.firstName ?? '',
-      last_name: profile?.lastName ?? '',
+      firstName: profile?.firstName ?? '',
+      lastName: profile?.lastName ?? '',
       email: profile?.email ?? '',
-      document_type: 'ITIN',
-      document_number: '',
+      documentType: 'ITIN',
+      documentNumber: '',
       dob: '',
-      street_number: '',
-      street_name: '',
+      streetNumber: '',
+      streetName: '',
       neighborhood: '',
       city: '',
       state: '',
-      address_country_id: 2, // Default to US
-      postal_code: '',
-      phone_country_code: '1', // Default to US
-      phone_area_code: '',
-      phone_number: '',
+      addressCountryId: 2, // Default to US
+      postalCode: '',
+      phoneCountryCode: '1', // Default to US
+      phoneAreaCode: '',
+      phoneNumber: '',
     },
   });
   const onSubmit = useCallback(
@@ -139,22 +139,22 @@ export function PersonalInfoForm({
       return;
     }
     await onSubmit({
-      first_name: 'John',
-      last_name: 'Doh',
+      firstName: 'John',
+      lastName: 'Doh',
       email: 'email@exapmle.com',
-      document_type: 'ITIN',
-      document_number: '999999999',
+      documentType: 'ITIN',
+      documentNumber: '999999999',
       dob: '999999999',
-      street_number: '1',
-      street_name: 'street',
+      streetNumber: '1',
+      streetName: 'street',
       neighborhood: 'neighborhood',
       city: 'city',
       state: 'state',
-      address_country_id: 2, // Default to US
-      postal_code: '12345',
-      phone_country_code: '1', // Default to US
-      phone_area_code: '2',
-      phone_number: '7777777',
+      addressCountryId: 2, // Default to US
+      postalCode: '12345',
+      phoneCountryCode: '1', // Default to US
+      phoneAreaCode: '2',
+      phoneNumber: '7777777',
     });
   }, [onSubmit]);
   return (
@@ -185,7 +185,7 @@ export function PersonalInfoForm({
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name="first_name"
+                  name="firstName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
@@ -203,7 +203,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="last_name"
+                  name="lastName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
@@ -250,7 +250,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="document_type"
+                  name="documentType"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Document Type</FormLabel>
@@ -275,7 +275,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="document_number"
+                  name="documentNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Document Number</FormLabel>
@@ -298,7 +298,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="street_number"
+                  name="streetNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Street Number</FormLabel>
@@ -312,7 +312,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="street_name"
+                  name="streetName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Street Name</FormLabel>
@@ -371,7 +371,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="postal_code"
+                  name="postalCode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Postal Code</FormLabel>
@@ -385,7 +385,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="address_country_id"
+                  name="addressCountryId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country</FormLabel>
@@ -418,7 +418,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="phone_country_code"
+                  name="phoneCountryCode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country Code</FormLabel>
@@ -432,7 +432,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="phone_area_code"
+                  name="phoneAreaCode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Area Code</FormLabel>
@@ -446,7 +446,7 @@ export function PersonalInfoForm({
 
                 <FormField
                   control={form.control}
-                  name="phone_number"
+                  name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>

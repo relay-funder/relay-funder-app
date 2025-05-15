@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { bridgeService } from '@/lib/bridge-service';
+import { bridgeService } from '@/lib/bridge/service';
 import { prisma } from '@/lib/prisma';
+import { BridgePaymentMethodsPostRequest } from '@/lib/bridge/api/types';
 
-// GET endpoint to fetch payment methods from Prisma
+// GET endpoint to fetch payment methods from Prisma and enrich from bridge service
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -23,13 +24,46 @@ export async function GET(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+    if (!user.bridgeCustomerId) {
+      return NextResponse.json(
+        { error: 'User profile incomplete' },
+        { status: 400 },
+      );
+    }
 
     // Fetch payment methods from Prisma
     const paymentMethods = await prisma.paymentMethod.findMany({
       where: { userId: user.id },
     });
-
-    return NextResponse.json({ paymentMethods });
+    // Fetch payment details from bridge
+    const bridgePaymentMethodDetailsPromises = [];
+    for (const paymentMethod of paymentMethods) {
+      if (!paymentMethod.externalId) {
+        continue;
+      }
+      bridgePaymentMethodDetailsPromises.push(
+        bridgeService.getPaymentMethod({
+          id: paymentMethod.externalId,
+          customerId: user.bridgeCustomerId,
+        }),
+      );
+    }
+    const bridgePaymentMethodDetails = await Promise.all(
+      bridgePaymentMethodDetailsPromises,
+    );
+    return NextResponse.json({
+      paymentMethods: paymentMethods.map((paymentMethod) => {
+        const bridgeDetails =
+          bridgePaymentMethodDetails.find(
+            ({ id }) => id === paymentMethod.externalId,
+          ) ?? null;
+        const details = bridgeDetails?.bankDetails ?? null;
+        return {
+          ...paymentMethod,
+          details,
+        };
+      }),
+    });
   } catch (error) {
     console.error('Error fetching payment methods:', error);
     return NextResponse.json(
@@ -42,21 +76,20 @@ export async function GET(req: NextRequest) {
 // POST endpoint to add a new payment method
 export async function POST(req: NextRequest) {
   try {
-    const { userAddress, customerId, type, bank_details } = await req.json();
+    const {
+      userAddress,
+      type,
+      provider,
+      bankDetails,
+    }: BridgePaymentMethodsPostRequest = await req.json();
 
     console.log('Received payment method request:', {
       userAddress,
-      customerId,
       type,
-      bank_details: bank_details
-        ? {
-            ...bank_details,
-            accountNumber: '****' + bank_details.accountNumber.slice(-4), // Log safely
-          }
-        : null,
+      provider,
     });
 
-    if (!userAddress || !customerId || !type || !bank_details) {
+    if (!userAddress || !type || !provider || !bankDetails) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 },
@@ -71,52 +104,24 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    // Log the user record from the database for debugging
-    console.log('User record from database:', {
-      id: user.id,
-      address: user.address,
-      bridgeCustomerId: user.bridgeCustomerId,
-    });
-
-    // Double-check the customerId format before sending to Bridge
     if (!user.bridgeCustomerId) {
       return NextResponse.json(
-        { error: 'User does not have a Bridge customer ID' },
+        {
+          error: 'User not yet a bridge customer, profile information missing',
+        },
         { status: 400 },
       );
     }
 
-    if (user.bridgeCustomerId !== customerId) {
-      console.log(
-        `Customer ID mismatch: From request ${customerId}, from DB ${user.bridgeCustomerId}`,
-      );
-      // Consider whether to fail or proceed with the DB value
-    }
-
-    // Use the customer ID from the database to ensure it's correct
-    const correctCustomerId = user.bridgeCustomerId;
-    console.log('Correct customer ID:', correctCustomerId);
-
     try {
       // Ensure we're sending exactly the format Bridge expects
-      const bridgePayload = {
-        customerId,
-        type,
-        bank_details,
-      };
-
-      console.log('Sending to Bridge service:', {
-        ...bridgePayload,
-        bank_details: {
-          ...bridgePayload.bank_details,
-          accountNumber:
-            '****' + bridgePayload.bank_details.accountNumber.slice(-4),
-        },
-      });
 
       // Create payment method in Bridge
-      const response = await bridgeService.createPaymentMethod(bridgePayload);
+      const response = await bridgeService.createPaymentMethod({
+        customerId: user.bridgeCustomerId,
+        type,
+        bankDetails,
+      });
 
       if (!response.id) {
         throw new Error('Failed to create payment method in Bridge');
@@ -125,11 +130,10 @@ export async function POST(req: NextRequest) {
       // Save payment method to Prisma
       const paymentMethod = await prisma.paymentMethod.create({
         data: {
-          provider: 'BRIDGE',
+          provider,
           externalId: response.id,
-          type: type,
-          userId: user.id,
-          details: bank_details,
+          type,
+          user: { connect: { id: user.id } },
         },
       });
 
