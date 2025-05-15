@@ -5,6 +5,24 @@ import {
   BRIDGE_API_KEY,
   BRIDGE_WEBHOOK_SECRET,
 } from '@/lib/constant';
+import { enableApiMock, mockFetch } from '@/lib/fetch';
+import {
+  BridgeAssociateWalletInterface,
+  BridgeAssociateWalletResponse,
+  BridgeCreateCustomerInterface,
+  BridgeCreateCustomerRequest,
+  BridgeCreateCustomerResponse,
+  BridgeInitiateKycResponse,
+  BridgeKycStatusResponse,
+  BridgePaymentMethodCreateInterface,
+  BridgePaymentMethodCreateResponse,
+  BridgePaymentMethodCreateResponseInterface,
+  BridgePaymentMethodGetInterface,
+  BridgePaymentMethodGetResponse,
+  BridgeTransactionBuyInterface,
+  BridgeTransactionResponse,
+  BridgeTransactionSellInterface,
+} from './types';
 import crypto from 'crypto';
 
 if (!BRIDGE_API_URL) {
@@ -15,39 +33,7 @@ if (!BRIDGE_API_KEY) {
   throw new Error('BRIDGE_API_KEY is not defined in environment variables');
 }
 
-// Define types for payment method operations
-interface BankDetails {
-  provider: 'BRIDGE';
-  bankName: string;
-  accountNumber: string;
-  routingNumber: string;
-  accountType: string;
-  accountName: string;
-}
-
-interface PaymentMethodRequest {
-  customerId: string;
-  type: string;
-  bank_details: BankDetails;
-}
-
-interface PaymentMethodResponse {
-  id: string;
-  type: string;
-  // Other response fields
-}
-
-export interface BridgeTransactionResponse {
-  id: string;
-  status: string;
-  [key: string]: unknown;
-}
-// undocumented api
-export interface BridgeAssociateWalletResponse {
-  id: string;
-  status: string;
-  [key: string]: unknown;
-}
+// types for payment method operations
 
 export class BridgeService {
   private readonly apiUrl: string;
@@ -59,14 +45,6 @@ export class BridgeService {
     this.apiKey = apiKey.trim().replace(/['"]/g, '');
 
     console.log('Initialized Bridge service with API URL:', apiUrl);
-    console.log('API key length:', this.apiKey.length);
-    // Log a masked version of the key for debugging
-    if (this.apiKey.length > 8) {
-      console.log(
-        'API key format check:',
-        `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}`,
-      );
-    }
   }
 
   private async request<T>(
@@ -90,9 +68,6 @@ export class BridgeService {
       // Try without Bearer prefix
       Authorization: cleanApiKey,
     };
-
-    console.log(`Making ${method} request to ${url}`);
-
     const options: RequestInit = {
       method,
       headers,
@@ -103,14 +78,12 @@ export class BridgeService {
     }
 
     try {
-      const response = await fetch(url, options);
+      const response = enableApiMock
+        ? await mockFetch(url, options)
+        : await fetch(url, options);
 
       // For debugging purposes
       const responseText = await response.text();
-      console.log(
-        `Bridge API response [${response.status}]:`,
-        responseText || '(empty response)',
-      );
 
       // Try to parse the response as JSON
       let responseData;
@@ -165,8 +138,6 @@ export class BridgeService {
       Authorization: `Bearer ${cleanApiKey}`,
     };
 
-    console.log(`Making ${method} request to ${url}`);
-
     const options: RequestInit = {
       method,
       headers,
@@ -177,14 +148,12 @@ export class BridgeService {
     }
 
     try {
-      const response = await fetch(url, options);
+      const response = enableApiMock
+        ? await mockFetch(url, options)
+        : await fetch(url, options);
 
       // For debugging purposes
       const responseText = await response.text();
-      console.log(
-        `Bridge API response [${response.status}]:`,
-        responseText || '(empty response)',
-      );
 
       // Try to parse the response as JSON
       let responseData;
@@ -219,14 +188,30 @@ export class BridgeService {
     }
   }
 
-  async createCustomer(customerData: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    [key: string]: unknown;
-  }) {
-    console.log('Creating customer with data:', customerData);
-    return this.request('/api/v1/customers', 'POST', customerData);
+  async createCustomer(customerData: BridgeCreateCustomerInterface) {
+    const payload = {
+      first_name: customerData.firstName,
+      last_name: customerData.lastName,
+      email: customerData.email,
+      document_type: customerData.documentType,
+      document_number: customerData.documentNumber,
+      dob: customerData.dob,
+      street_number: customerData.streetNumber,
+      street_name: customerData.streetName,
+      neighborhood: customerData.neighborhood,
+      city: customerData.city,
+      state: customerData.state,
+      address_country_id: customerData.addressCountryId,
+      postal_code: customerData.postalCode,
+      phone_country_code: customerData.phoneCountryCode,
+      phone_area_code: customerData.phoneAreaCode,
+      phone_number: customerData.phoneNumber,
+    } as BridgeCreateCustomerRequest;
+    return this.request<BridgeCreateCustomerResponse>(
+      '/api/v1/customers',
+      'POST',
+      payload,
+    );
   }
 
   async getKycSchema() {
@@ -234,53 +219,65 @@ export class BridgeService {
   }
 
   async initiateKyc(customerId: string) {
-    return this.request(`/api/v1/kyc/${customerId}/initiate?provider=BRIDGE`);
+    return this.request<BridgeInitiateKycResponse>(
+      `/api/v1/kyc/${customerId}/initiate?provider=BRIDGE`,
+    );
   }
 
   async getKycStatus(customerId: string) {
-    return this.request(`/api/v1/kyc/${customerId}/status?provider=BRIDGE`);
+    return this.request<BridgeKycStatusResponse>(
+      `/api/v1/kyc/${customerId}/status?provider=BRIDGE`,
+    );
   }
 
-  async createPaymentMethod(
-    data: PaymentMethodRequest,
-  ): Promise<PaymentMethodResponse> {
-    console.log('Creating payment method with data:', {
-      customerId: data.customerId,
-      type: data.type,
-      bank_details: {
-        ...data.bank_details,
-        accountNumber: '****' + data.bank_details.accountNumber.slice(-4), // Log safely
-      },
-    });
-
+  async createPaymentMethod(data: BridgePaymentMethodCreateInterface) {
     // The payload should match exactly the expected format
     const payload = {
       type: data.type,
-      bank_details: data.bank_details,
+      bank_details: {
+        bank_name: data.bankDetails.bankName,
+        account_number: data.bankDetails.accountNumber,
+        routing_number: data.bankDetails.routingNumber,
+        account_type: data.bankDetails.accountType,
+        account_name: data.bankDetails.accountName,
+      },
     };
 
-    console.log('Bridge API payload:', JSON.stringify(payload));
-
     // The correct endpoint format according to Bridge API docs
-    return this.request<PaymentMethodResponse>(
+    return this.request<BridgePaymentMethodCreateResponse>(
       `/api/v1/customers/${data.customerId}/payment_methods`,
       'POST',
       payload,
     );
   }
+  async getPaymentMethod(data: BridgePaymentMethodGetInterface) {
+    const result = await this.request<BridgePaymentMethodGetResponse>(
+      `/api/v1/customers/${data.customerId}/payment_methods/${data.id}`,
+    );
+    return {
+      id: result.id,
+      type: result.type,
+      bankDetails: {
+        bankName: result.bank_details.bank_name ?? '',
+        accountNumber: result.bank_details.account_number ?? '',
+        routingNumber: result.bank_details.routing_number ?? '',
+        accountType: result.bank_details.account_type ?? '',
+        accountName: result.bank_details.account_name ?? '',
+      },
+    } as BridgePaymentMethodCreateResponseInterface;
+  }
 
-  // async deletePaymentMethod(paymentMethodId: string, customerId: string): Promise<void> {
-  //   return this.request<void>(`/api/v1/customers/${customerId}/payment_methods/${paymentMethodId}`, 'DELETE');
-  // }
+  async deletePaymentMethod(
+    paymentMethodId: string,
+    customerId: string,
+  ): Promise<void> {
+    return this.request<void>(
+      `/api/v1/customers/${customerId}/payment_methods/${paymentMethodId}`,
+      'DELETE',
+    );
+  }
 
-  async buyTransaction(data: {
-    customerId: string;
-    fiatCurrency: string;
-    cryptoCurrency: string;
-    fiatAmount: number;
-    paymentMethodId: string;
-    walletAddress: string;
-  }): Promise<BridgeTransactionResponse> {
+  async buyTransaction(data: BridgeTransactionBuyInterface) {
     // Map our params to Bridge API expected format
     const payload = {
       customer_id: data.customerId,
@@ -299,14 +296,9 @@ export class BridgeService {
     );
   }
 
-  async sellTransaction(data: {
-    customerId: string;
-    fiatCurrency: string;
-    cryptoCurrency: string;
-    cryptoAmount: number;
-    walletAddress: string;
-    [key: string]: unknown;
-  }): Promise<BridgeTransactionResponse> {
+  async sellTransaction(
+    data: BridgeTransactionSellInterface,
+  ): Promise<BridgeTransactionResponse> {
     // Create a properly formatted payload for the Bridge API
     const payload = {
       customer_id: data.customerId,
@@ -324,11 +316,7 @@ export class BridgeService {
     );
   }
 
-  async associatWallet(data: {
-    walletAddress: string;
-    walletType: string;
-    customerId: string;
-  }): Promise<BridgeAssociateWalletResponse> {
+  async associatWallet(data: BridgeAssociateWalletInterface) {
     // Map our params to Bridge API expected format
     const payload = {
       wallet_address: data.walletAddress,

@@ -1,42 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { bridgeService } from '@/lib/bridge-service';
+import { bridgeService } from '@/lib/bridge/service';
+import { BridgeKycInitiatePostRequest } from '@/lib/bridge/api/types';
 
-interface KycData {
-  redirect_url?: string;
-  redirectUrl?: string;
-}
-
+// request a initiate-url for the KYC process, returns a url that the client needs to redirect to
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const { customerId } = data;
+    const data: BridgeKycInitiatePostRequest = await request.json();
+    const { userAddress } = data;
 
-    if (!customerId) {
+    if (!userAddress) {
       return NextResponse.json(
-        { error: 'Missing customer ID' },
-        { status: 400 },
+        {
+          error: 'Missing user address',
+        },
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
     // Find user by bridgeCustomerId
-    const user = await prisma.user.findFirst({
-      where: { bridgeCustomerId: customerId },
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found for this customer ID' },
-        { status: 404 },
+        {
+          error: 'User not found',
+        },
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (!user.bridgeCustomerId) {
+      return NextResponse.json(
+        {
+          error: 'User profile not found',
+        },
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
-    console.log('Initiating KYC for customer:', customerId);
-
     // Call the Bridge API to initiate KYC
-    const kycData: KycData = (await bridgeService.initiateKyc(
-      customerId,
-    )) as KycData;
+    const kycData = await bridgeService.initiateKyc(user.bridgeCustomerId);
 
     // Bridge API should return a redirect URL in the response
     // The key name may vary based on actual Bridge API response format

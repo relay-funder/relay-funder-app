@@ -1,9 +1,21 @@
 import { Profile } from '@/types/profile';
-import { Card, Avatar, AvatarFallback, CardContent } from '@/components/ui';
-import { UserRound } from 'lucide-react';
+import {
+  Card,
+  Avatar,
+  AvatarFallback,
+  CardContent,
+  Button,
+} from '@/components/ui';
+import { UserRound, Pencil } from 'lucide-react';
 import { FormattedDate } from '@/components/formatted-date';
 import { useAuth } from '@/contexts';
-export function ProfileCard({ profile }: { profile?: Profile }) {
+export function ProfileCard({
+  profile,
+  onEdit,
+}: {
+  profile?: Profile;
+  onEdit?: () => void;
+}) {
   const { address } = useAuth();
   return (
     <Card>
@@ -19,6 +31,9 @@ export function ProfileCard({ profile }: { profile?: Profile }) {
             <h2 className="text-2xl font-bold">
               {profile?.firstName || 'Anonymous User'}
               {profile?.lastName && ` ${profile?.lastName}`}
+              <Button title="Edit" onClick={onEdit}>
+                <Pencil />
+              </Button>
             </h2>
             <p className="break-all text-sm text-muted-foreground">
               Wallet: {address}

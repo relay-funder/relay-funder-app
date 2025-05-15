@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { bridgeService } from '@/lib/bridge-service';
+import { bridgeService } from '@/lib/bridge/service';
+import { BridgeWebhookKycPostRequest } from '@/lib/bridge/api/types';
 
 // This webhook should be registered with Bridge to receive KYC status updates
 
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get the raw request body for signature verification
     const rawBody = await request.text();
-    const body = JSON.parse(rawBody);
+    const body: BridgeWebhookKycPostRequest = JSON.parse(rawBody);
 
     // In production, verify the webhook signature from Bridge
     // This is a security best practice to ensure the webhook is actually from Bridge

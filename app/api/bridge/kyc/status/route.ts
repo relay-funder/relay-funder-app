@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { bridgeService } from '@/lib/bridge-service';
+import { bridgeService } from '@/lib/bridge/service';
 
 interface KycStatusData {
   status: string;
@@ -8,37 +8,43 @@ interface KycStatusData {
 
 export async function GET(request: NextRequest) {
   try {
-    const customerId = request.nextUrl.searchParams.get('customerId');
+    const userAddress = request.nextUrl.searchParams.get('userAddress');
 
-    if (!customerId) {
+    if (!userAddress) {
       return NextResponse.json(
         {
-          error: 'Missing customer ID',
+          error: 'Missing user address',
         },
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
     // Find user by bridgeCustomerId
-    const user = await prisma.user.findFirst({
-      where: { bridgeCustomerId: customerId },
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress },
     });
 
     if (!user) {
       return NextResponse.json(
         {
-          error: 'User not found for this customer ID',
+          error: 'User not found',
+        },
+        { status: 404, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (!user.bridgeCustomerId) {
+      return NextResponse.json(
+        {
+          error: 'User profile not found',
         },
         { status: 404, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
-    console.log('Checking KYC status for customer:', customerId);
-
     try {
       // Get the KYC status from Bridge API
       const statusData: KycStatusData = (await bridgeService.getKycStatus(
-        customerId,
+        user.bridgeCustomerId,
       )) as KycStatusData;
       const status = statusData.status || 'pending';
 
@@ -53,7 +59,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           status,
-          customerId,
+          customerId: user.bridgeCustomerId,
         },
         { headers: { 'Content-Type': 'application/json' } },
       );
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           status: user.isKycCompleted ? 'completed' : 'pending',
-          customerId,
+          customerId: user.bridgeCustomerId,
           bridgeError:
             bridgeError instanceof Error
               ? bridgeError.message
