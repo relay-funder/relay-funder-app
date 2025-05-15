@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const { data: profile, isPending: isProfilePending } =
     useUserProfile(address);
   const onEditProfile = useCallback(() => {
-    setEditProfile(true);
+    setEditProfile((prevState) => !prevState);
   }, [setEditProfile]);
   const onEditSuccess = useCallback(() => {
     setEditProfile(false);
@@ -44,10 +44,9 @@ export default function ProfilePage() {
         <ProfileCard profile={profile} onEdit={onEditProfile} />
 
         {/* User Profile Form */}
-        {editProfile ||
-          (!profile && (
-            <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
-          ))}
+        {(editProfile || !profile) && (
+          <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
+        )}
 
         {/* Additional Settings Card */}
         {profile && <ProfileAdditionalSettings />}
