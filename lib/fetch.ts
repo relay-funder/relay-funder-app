@@ -56,9 +56,7 @@ export async function mockFetch(
       // bridge requests
       if (url.includes('/api/v1/customers')) {
         if (url.endsWith('/api/v1/customers') && options.method === 'POST') {
-          return new Response(
-            JSON.stringify({ data: { id: 'mock-customer-id' } }),
-          );
+          return new Response(JSON.stringify({ id: 'mock-customer-id' }));
         }
         if (url.endsWith('payment_methods') && options.method === 'POST') {
           return new Response(
@@ -86,6 +84,13 @@ export async function mockFetch(
                 account_type: 'MOCK-ACCOUNT-TYPE',
                 account_name: 'MOCK-ACCOUNT-NAME',
               },
+            }),
+          );
+        }
+        if (url.endsWith('wallets') && options.method === 'POST') {
+          return new Response(
+            JSON.stringify({
+              success: true,
             }),
           );
         }

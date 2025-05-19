@@ -15,6 +15,8 @@ import {
   BridgePaymentMethodsGetResponse,
   BridgePaymentMethodsPostRequest,
   BridgePaymentMethodsPostResponse,
+  BridgeWalletAddressesPostRequest,
+  BridgeWalletAddressesPostResponse,
 } from '../api/types';
 
 const BRIDGE_QUERY_KEY = 'bridge';
@@ -55,6 +57,12 @@ interface IBridgeDeletePaymentMethodHook {
 }
 interface IBridgeDeletePaymentMethodRequestMutationApi {
   paymentMethodId: number;
+}
+interface IBridgeUpdateWalletAddressHook {
+  userAddress: string;
+}
+interface IBridgeUpdateWalletAddressMutationApi {
+  walletAddress: string;
 }
 
 async function fetchKYCStatus(variables: BridgeKycStatusGetRequest) {
@@ -152,9 +160,26 @@ async function deletePaymentMethod(
   );
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to initiate kyc');
+    throw new Error(error.error || 'Failed to delete payment method');
   }
   const data: BridgePaymentMethodDeleteResponse = await response.json();
+  return data;
+}
+async function updateWalletAddress(
+  variables: BridgeWalletAddressesPostRequest,
+) {
+  const response = await fetch('/api/bridge/wallet-addresses', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(variables),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update wallet address');
+  }
+  const data: BridgeWalletAddressesPostResponse = await response.json();
   return data;
 }
 
@@ -271,6 +296,24 @@ export function useBridgeDeletePaymentMethod({
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [BRIDGE_QUERY_KEY, 'payment-methods'],
+      });
+    },
+  });
+}
+export function useBridgeUpdateWalletAddress({
+  userAddress,
+}: IBridgeUpdateWalletAddressHook) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (variables: IBridgeUpdateWalletAddressMutationApi) =>
+      updateWalletAddress({
+        ...variables,
+        userAddress,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['profile'],
       });
     },
   });

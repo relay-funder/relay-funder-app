@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import {
   Card,
@@ -26,33 +26,40 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
+import { useAuth } from '@/contexts';
+import { useUpdateUserProfile, useUserProfile } from '@/lib/hooks/useProfile';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { useBridgeUpdateWalletAddress } from '@/lib/bridge/hooks/useBridge';
 const walletAddressSchema = z.object({
   walletAddress: z
     .string()
     .min(42, 'Ethereum address must be 42 characters')
     .max(42, 'Ethereum address must be 42 characters')
-    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
+    .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format')
+    .optional()
+    .or(z.literal('')),
 });
 
 type WalletAddressFormValues = z.infer<typeof walletAddressSchema>;
 
 interface WalletAddressesFormProps {
   customerId: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export function WalletAddressesForm({
   customerId,
   onSuccess,
 }: WalletAddressesFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentWalletAddress, setCurrentWalletAddress] = useState<
-    string | null
-  >(null);
-  const [recipientWallet, setRecipientWallet] = useState<string | null>(null);
-  const { wallets } = useWallets();
-  const wallet = wallets[0];
+  const router = useRouter();
+  const { address } = useAuth();
+  const { data: profile, isPending: isUserProfilePending } =
+    useUserProfile(address);
+  const {
+    mutateAsync: updateWalletAddress,
+    isPending: isUpdateUserProfilePending,
+  } = useBridgeUpdateWalletAddress({ userAddress: address ?? '' });
 
   const form = useForm<WalletAddressFormValues>({
     resolver: zodResolver(walletAddressSchema),
@@ -60,95 +67,55 @@ export function WalletAddressesForm({
       walletAddress: '',
     },
   });
-
-  // Set current wallet address and fetch recipient wallet if any
   useEffect(() => {
-    const initWalletInfo = async () => {
-      if (wallet) {
-        const address = await wallet.address;
-        setCurrentWalletAddress(address);
+    if (profile?.recipientWallet) {
+      form.setValue('walletAddress', profile.recipientWallet);
+    }
+  }, [profile?.recipientWallet]);
 
-        // Fetch user data to get recipient wallet
-        try {
-          const response = await fetch(`/api/users/me?userAddress=${address}`);
-          if (response.ok) {
-            const userData = await response.json();
-            if (userData.recipientWallet) {
-              setRecipientWallet(userData.recipientWallet);
-              form.setValue('walletAddress', userData.recipientWallet);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+  const onSubmit = useCallback(
+    async (data: WalletAddressFormValues) => {
+      if (!address) {
+        toast({
+          title: 'Error',
+          description:
+            'Customer ID is required. Please complete your personal information first.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      try {
+        await updateWalletAddress({
+          walletAddress: data.walletAddress ?? '',
+        });
+
+        toast({
+          title: 'Success',
+          description: 'Your recipient wallet address has been saved.',
+        });
+
+        if (typeof onSuccess === 'function') {
+          onSuccess();
         }
+        router.push('/profile');
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'An error occurred while saving your wallet address',
+          variant: 'destructive',
+        });
       }
-    };
-
-    initWalletInfo();
-  }, [wallet, form]);
-
-  const onSubmit = async (data: WalletAddressFormValues) => {
-    if (!customerId) {
-      toast({
-        title: 'Error',
-        description:
-          'Customer ID is required. Please complete your personal information first.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const userAddress = wallet ? await wallet.address : null;
-
-      if (!userAddress) {
-        throw new Error('No wallet connected');
-      }
-
-      const response = await fetch('/api/bridge/wallet-addresses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          userAddress,
-          walletAddress: data.walletAddress,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to add wallet address');
-      }
-
-      setRecipientWallet(data.walletAddress);
-
-      toast({
-        title: 'Success',
-        description: 'Your recipient wallet address has been saved.',
-      });
-
-      onSuccess();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'An error occurred while saving your wallet address',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+    [profile, address, onSuccess, updateWalletAddress, router],
+  );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Payment Recipient Address</CardTitle>
         <CardDescription>
           Set the wallet address where you want to receive payments.
         </CardDescription>
@@ -159,17 +126,28 @@ export function WalletAddressesForm({
           <AlertTitle>Connected Wallet</AlertTitle>
           <AlertDescription>
             Your currently connected wallet address is:
-            <code className="relative mt-2 block break-all rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">
-              {currentWalletAddress || 'Not connected'}
+            <code
+              className={cn(
+                'relative mt-2 block break-all rounded bg-muted px-[0.3rem] py-[0.2rem]',
+                'font-mono text-sm',
+              )}
+            >
+              {!address || isUserProfilePending ? 'Not connected' : address}
             </code>
-            {recipientWallet && (
-              <>
-                <div className="mt-2">Your current recipient wallet is:</div>
-                <code className="relative mt-1 block break-all rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">
-                  {recipientWallet}
-                </code>
-              </>
-            )}
+            {typeof profile?.recipientWallet === 'string' &&
+              profile.recipientWallet.length > 0 && (
+                <>
+                  <div className="mt-2">Your current recipient wallet is:</div>
+                  <code
+                    className={cn(
+                      'relative mt-2 block break-all rounded bg-muted px-[0.3rem] py-[0.2rem]',
+                      'font-mono text-sm',
+                    )}
+                  >
+                    {profile.recipientWallet ?? address}
+                  </code>
+                </>
+              )}
           </AlertDescription>
         </Alert>
 
@@ -197,8 +175,8 @@ export function WalletAddressesForm({
                 )}
               />
 
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
+              <Button type="submit" disabled={isUpdateUserProfilePending}>
+                {isUpdateUserProfilePending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
