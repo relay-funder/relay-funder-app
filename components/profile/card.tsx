@@ -31,9 +31,6 @@ export function ProfileCard({
             <h2 className="text-2xl font-bold">
               {profile?.firstName || 'Anonymous User'}
               {profile?.lastName && ` ${profile?.lastName}`}
-              <Button title="Edit" onClick={onEdit}>
-                <Pencil />
-              </Button>
             </h2>
             <p className="break-all text-sm text-muted-foreground">
               Wallet: {address}
@@ -46,6 +43,11 @@ export function ProfileCard({
                 'Never logged in'
               )}
             </p>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="ghost" title="Edit" onClick={onEdit}>
+              <Pencil />
+            </Button>
           </div>
         </div>
       </CardContent>

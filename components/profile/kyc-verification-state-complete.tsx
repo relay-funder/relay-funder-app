@@ -1,5 +1,6 @@
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui';
+import { Alert, AlertTitle, AlertDescription, Button } from '@/components/ui';
 import { CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 
 export function ProfileKYCVerificationStateComplete() {
   return (
@@ -9,8 +10,13 @@ export function ProfileKYCVerificationStateComplete() {
         KYC Verification Complete
       </AlertTitle>
       <AlertDescription className="text-green-600">
-        Your identity has been verified successfully. You can now add payment
-        methods.
+        <p>
+          Your identity has been verified successfully. You can now add payment
+          methods.
+        </p>
+        <Link href="/profile/payment-methods">
+          <Button>Payment Methods</Button>
+        </Link>
       </AlertDescription>
     </Alert>
   );

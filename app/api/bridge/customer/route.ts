@@ -28,6 +28,12 @@ export async function POST(request: NextRequest) {
       // Call Bridge API to create customer
       const bridgeCustomer = await bridgeService.createCustomer(customerData);
 
+      if (typeof bridgeCustomer.id !== 'string') {
+        return NextResponse.json(
+          { error: 'Bridge API Error' },
+          { status: 400 },
+        );
+      }
       // Update user with Bridge customer ID
       await prisma.user.update({
         where: { id: user.id },

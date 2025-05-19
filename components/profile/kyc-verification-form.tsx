@@ -124,7 +124,6 @@ export function KycVerificationForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>KYC Verification</CardTitle>
         <CardDescription>
           Verify your identity to enable bank transfers and other payment
           methods.

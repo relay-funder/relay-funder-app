@@ -2,7 +2,9 @@
 
 import { useMemo } from 'react';
 import { PaymentMethodsForm } from '@/components/profile/payment-methods-form';
-import { PageProfile } from '@/components/page/profile';
+import { PageHome } from '@/components/page/home';
+import { PageHeader } from '@/components/page/header';
+import { PageDefaultContent } from '@/components/page/default-content';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { ProfileNotComplete } from '@/components/profile/not-complete';
@@ -39,19 +41,21 @@ export default function PaymentMethodsPage() {
   }
 
   return (
-    <PageProfile
-      withBackButton={true}
-      title="Payment Methods"
-      message="Manage your payment methods for donations and purchases."
+    <PageHome
+      header={
+        <PageHeader message="Manage your payment methods for donations and purchases."></PageHeader>
+      }
     >
-      {customerId ? (
-        <PaymentMethodsForm paymentMethods={paymentMethods ?? []} />
-      ) : (
-        <ProfileNotComplete>
-          You need to complete your personal information and create a customer
-          account before adding payment methods.
-        </ProfileNotComplete>
-      )}
-    </PageProfile>
+      <PageDefaultContent title="Payment Methods">
+        {customerId ? (
+          <PaymentMethodsForm paymentMethods={paymentMethods ?? []} />
+        ) : (
+          <ProfileNotComplete>
+            You need to complete your personal information and create a customer
+            account before adding payment methods.
+          </ProfileNotComplete>
+        )}
+      </PageDefaultContent>
+    </PageHome>
   );
 }

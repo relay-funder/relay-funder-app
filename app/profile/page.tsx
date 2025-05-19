@@ -7,8 +7,10 @@ import { ProfileCard } from '@/components/profile/card';
 import { ProfileAdditionalSettings } from '@/components/profile/additional-settings';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { PageLoading } from '@/components/page/loading';
-import { PageProfile } from '@/components/page/profile';
 import { useCallback, useState } from 'react';
+import { PageHeader } from '@/components/page/header';
+import { PageHome } from '@/components/page/home';
+import { PageDefaultContent } from '@/components/page/default-content';
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
   const { address, authenticated, isReady } = useAuth();
@@ -35,11 +37,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <PageProfile
-      title="Profile"
-      message="Manage your account settings, KYC verification, and payment methods."
+    <PageHome
+      header={
+        <PageHeader message="Manage your account settings, KYC verification, and payment methods."></PageHeader>
+      }
     >
-      <div className="grid gap-6">
+      <PageDefaultContent title="Profile">
         {/* User Profile Card */}
         <ProfileCard profile={profile} onEdit={onEditProfile} />
 
@@ -50,7 +53,7 @@ export default function ProfilePage() {
 
         {/* Additional Settings Card */}
         {profile && <ProfileAdditionalSettings />}
-      </div>
-    </PageProfile>
+      </PageDefaultContent>
+    </PageHome>
   );
 }

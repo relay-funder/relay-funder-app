@@ -37,7 +37,7 @@ import { useUserProfile } from '@/lib/hooks/useProfile';
 import { enableApiMock } from '@/lib/fetch';
 import { useBridgeUpdateCustomer } from '@/lib/bridge/hooks/useBridge';
 import { useAuth } from '@/contexts';
-
+import { useRouter } from 'next/navigation';
 const personalInfoSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
@@ -79,6 +79,7 @@ export function PersonalInfoForm({
 }: PersonalInfoFormProps) {
   const { address, isReady } = useAuth();
   const { data: profile } = useUserProfile();
+  const router = useRouter();
   const { mutateAsync: updateCustomer, isPending } = useBridgeUpdateCustomer({
     userAddress: address ?? '',
   });
@@ -119,6 +120,7 @@ export function PersonalInfoForm({
         if (typeof onSuccess === 'function') {
           onSuccess();
         }
+        router.push('/profile');
       } catch (error) {
         console.error('Error creating customer:', error);
         toast({
@@ -160,7 +162,6 @@ export function PersonalInfoForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Personal Information</CardTitle>
         <CardDescription>
           {hasCustomer
             ? 'Your information is verified. You can proceed to KYC verification.'

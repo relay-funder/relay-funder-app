@@ -4,7 +4,9 @@ import { PersonalInfoForm } from '@/components/profile/personal-info-form';
 import { useAuth } from '@/contexts';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
-import { PageProfile } from '@/components/page/profile';
+import { PageHome } from '@/components/page/home';
+import { PageHeader } from '@/components/page/header';
+import { PageDefaultContent } from '@/components/page/default-content';
 import { useBridgeCustomer } from '@/lib/bridge/hooks/useBridge';
 export default function PersonalInfoPage() {
   const { isReady, address, authenticated } = useAuth();
@@ -29,15 +31,17 @@ export default function PersonalInfoPage() {
   }
 
   return (
-    <PageProfile
-      withBackButton={true}
-      title="Personal Information"
-      message="Complete your personal information to enable payments and KYC verification."
+    <PageHome
+      header={
+        <PageHeader message="Complete your personal information to enable payments and KYC verification."></PageHeader>
+      }
     >
-      <PersonalInfoForm
-        hasCustomer={customer?.hasCustomer ?? false}
-        customerId={customer?.customerId ?? null}
-      />
-    </PageProfile>
+      <PageDefaultContent title="Personal Information">
+        <PersonalInfoForm
+          hasCustomer={customer?.hasCustomer ?? false}
+          customerId={customer?.customerId ?? null}
+        />
+      </PageDefaultContent>
+    </PageHome>
   );
 }

@@ -76,7 +76,6 @@ export function PaymentMethodsForm({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Payment Methods</CardTitle>
           <CardDescription>
             Add or manage your payment methods for donations.
           </CardDescription>
