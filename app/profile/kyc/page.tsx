@@ -16,7 +16,7 @@ export default function KycVerificationPage() {
   const { data: profile, isPending: isProfilePending } =
     useUserProfile(address);
   const customerId = useMemo(
-    () => profile?.bridgeCustomerId ?? null,
+    () => profile?.crowdsplitCustomerId ?? null,
     [profile],
   );
   const isKycCompletedDB = useMemo(

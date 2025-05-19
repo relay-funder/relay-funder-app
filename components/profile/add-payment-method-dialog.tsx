@@ -21,20 +21,20 @@ import {
   SelectValue,
 } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
-import { useBridgeCreatePaymentMethod } from '@/lib/bridge/hooks/useBridge';
+import { useCrowdsplitCreatePaymentMethod } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts';
 import { useCallback, useState, useEffect } from 'react';
 import { z } from 'zod';
-import { enableApiMock } from '@/lib/fetch';
+import { enableFormDefault } from '@/lib/develop';
 
 const bankAccountSchema = z.object({
   type: z.literal('BANK'),
-  provider: z.literal('BRIDGE'),
+  provider: z.literal('CROWDSPLIT'),
   bankDetails: z.object({
-    provider: z.literal('BRIDGE'),
+    provider: z.literal('CROWDSPLIT'),
     bankName: z.string().min(2, 'Bank name is required'),
     accountNumber: z.string().min(4, 'Account number is required'),
     routingNumber: z
@@ -47,9 +47,9 @@ const bankAccountSchema = z.object({
 });
 const defaultValues: BankAccountFormValues = {
   type: 'BANK',
-  provider: 'BRIDGE',
+  provider: 'CROWDSPLIT',
   bankDetails: {
-    provider: 'BRIDGE',
+    provider: 'CROWDSPLIT',
     bankName: '',
     accountNumber: '',
     routingNumber: '',
@@ -75,7 +75,7 @@ export function ProfileAddPaymentMethodDialog({
   const {
     mutateAsync: createPaymentMethod,
     isPending: isPendingCreatePaymentMethod,
-  } = useBridgeCreatePaymentMethod({ userAddress: address ?? '' });
+  } = useCrowdsplitCreatePaymentMethod({ userAddress: address ?? '' });
   const form = useForm<BankAccountFormValues>({
     resolver: zodResolver(bankAccountSchema),
     defaultValues,
@@ -150,14 +150,14 @@ export function ProfileAddPaymentMethodDialog({
     }
   }, [open]);
   const onDeveloperSubmit = useCallback(async () => {
-    if (!enableApiMock) {
+    if (!enableFormDefault) {
       return;
     }
     await onSubmit({
       type: 'BANK',
-      provider: 'BRIDGE',
+      provider: 'CROWDSPLIT',
       bankDetails: {
-        provider: 'BRIDGE',
+        provider: 'CROWDSPLIT',
         bankName: 'MOCK-BANK-NAME',
         accountNumber: 'MOCK-ACCOUNT-NUMBER',
         routingNumber: 'MOCK-ROUTING-NUMBER',

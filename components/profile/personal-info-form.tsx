@@ -6,7 +6,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,8 +33,8 @@ import { toast } from '@/hooks/use-toast';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/lib/hooks/useProfile';
-import { enableApiMock } from '@/lib/fetch';
-import { useBridgeUpdateCustomer } from '@/lib/bridge/hooks/useBridge';
+import { enableFormDefault } from '@/lib/develop';
+import { useCrowdsplitUpdateCustomer } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 import { useAuth } from '@/contexts';
 import { useRouter } from 'next/navigation';
 const personalInfoSchema = z.object({
@@ -80,9 +79,10 @@ export function PersonalInfoForm({
   const { address, isReady } = useAuth();
   const { data: profile } = useUserProfile();
   const router = useRouter();
-  const { mutateAsync: updateCustomer, isPending } = useBridgeUpdateCustomer({
-    userAddress: address ?? '',
-  });
+  const { mutateAsync: updateCustomer, isPending } =
+    useCrowdsplitUpdateCustomer({
+      userAddress: address ?? '',
+    });
   const form = useForm<PersonalInfoFormValues>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
@@ -133,11 +133,11 @@ export function PersonalInfoForm({
         });
       }
     },
-    [isReady, address, updateCustomer, onSuccess],
+    [isReady, address, updateCustomer, onSuccess, router],
   );
 
   const onDeveloperSubmit = useCallback(async () => {
-    if (!enableApiMock) {
+    if (!enableFormDefault) {
       return;
     }
     await onSubmit({
@@ -165,7 +165,7 @@ export function PersonalInfoForm({
         <CardDescription>
           {hasCustomer
             ? 'Your information is verified. You can proceed to KYC verification.'
-            : 'Fill in your personal details to create your Bridge customer account.'}
+            : 'Fill in your personal details to create your Crowdsplit customer account.'}
         </CardDescription>
       </CardHeader>
       <CardContent>

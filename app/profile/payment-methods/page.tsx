@@ -11,18 +11,18 @@ import { ProfileNotComplete } from '@/components/profile/not-complete';
 
 import { useAuth } from '@/contexts';
 import { useUserProfile } from '@/lib/hooks/useProfile';
-import { useBridgePaymentMethods } from '@/lib/bridge/hooks/useBridge';
+import { useCrowdsplitPaymentMethods } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 
 export default function PaymentMethodsPage() {
   const { isReady, address, authenticated } = useAuth();
   const { data: profile, isPending: isProfilePending } =
     useUserProfile(address);
   const customerId = useMemo(
-    () => profile?.bridgeCustomerId ?? null,
+    () => profile?.crowdsplitCustomerId ?? null,
     [profile],
   );
   const { data: paymentMethods, isPending: isPaymentMethodsPending } =
-    useBridgePaymentMethods({ userAddress: address ?? '' });
+    useCrowdsplitPaymentMethods({ userAddress: address ?? '' });
 
   if (!isReady || isProfilePending || isPaymentMethodsPending) {
     return (

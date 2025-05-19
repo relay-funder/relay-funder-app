@@ -1,12 +1,9 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/contexts';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { WalletAddressesForm } from '@/components/profile/wallet-addresses-form';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Card } from '@/components/ui/card';
 import { PageHome } from '@/components/page/home';
 import { PageHeader } from '@/components/page/header';
 import { PageDefaultContent } from '@/components/page/default-content';
@@ -19,7 +16,7 @@ export default function WalletSettingsPage() {
   const { data: profile, isPending: isProfilePending } =
     useUserProfile(address);
   const customerId = useMemo(
-    () => profile?.bridgeCustomerId ?? null,
+    () => profile?.crowdsplitCustomerId ?? null,
     [profile],
   );
   if (!isReady || isProfilePending) {
@@ -45,7 +42,7 @@ export default function WalletSettingsPage() {
     >
       <PageDefaultContent title="Wallet Settings">
         {customerId ? (
-          <WalletAddressesForm customerId={customerId} />
+          <WalletAddressesForm />
         ) : (
           <ProfileNotComplete>
             You need to complete your personal information and create a customer

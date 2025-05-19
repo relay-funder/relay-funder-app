@@ -47,21 +47,21 @@ model CampaignImage {
 }
 
 model User {
-  id               Int             @id @default(autoincrement())
-  address          String          @unique
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  bridgeCustomerId String?
-  email            String?
-  username         String?         @unique
-  firstName        String?
-  lastName         String?
-  bio              String?
-  recipientWallet  String?
-  isKycCompleted   Boolean?        @default(false)
-  collections      Collection[]
-  payments         Payment[]
-  paymentMethods   PaymentMethod[]
+  id                   Int             @id @default(autoincrement())
+  address              String          @unique
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  crowdsplitCustomerId String?
+  email                String?
+  username             String?         @unique
+  firstName            String?
+  lastName             String?
+  bio                  String?
+  recipientWallet      String?
+  isKycCompleted       Boolean?        @default(false)
+  collections          Collection[]
+  payments             Payment[]
+  paymentMethods       PaymentMethod[]
 }
 
 enum PaymentType {
