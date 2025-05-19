@@ -15,7 +15,7 @@ interface IUserProfileApi {
   id: number;
   address: string;
   recipientWallet: string;
-  bridgeCustomerId: string;
+  crowdsplitCustomerId: string;
   firstName: string;
   lastName: string;
   email: string;

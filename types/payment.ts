@@ -4,7 +4,7 @@ export interface PaymentMethodBankDetails {
   routingNumber: string;
   accountType: 'CHECKING' | 'SAVINGS';
   accountName: string;
-  provider: 'BRIDGE';
+  provider: 'CROWDSPLIT';
 }
 export interface PaymentMethod {
   id: number;

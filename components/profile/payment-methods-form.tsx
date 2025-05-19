@@ -6,13 +6,12 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 
 import { useToast } from '@/hooks/use-toast';
 
 import { PaymentMethod } from '@/types/payment';
-import { useBridgeDeletePaymentMethod } from '@/lib/bridge/hooks/useBridge';
+import { useCrowdsplitDeletePaymentMethod } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 import { useAuth } from '@/contexts';
 import { ProfileAddPaymentMethodDialog } from './add-payment-method-dialog';
 import { ProfilePaymentMethodsTable } from './payment-methods-table';
@@ -30,9 +29,11 @@ export function PaymentMethodsForm({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const { address } = useAuth();
 
-  const { mutateAsync: deletePaymentMethod } = useBridgeDeletePaymentMethod({
-    userAddress: address ?? '',
-  });
+  const { mutateAsync: deletePaymentMethod } = useCrowdsplitDeletePaymentMethod(
+    {
+      userAddress: address ?? '',
+    },
+  );
   const onCreateNewPaymentMethod = useCallback(() => {
     setShowAddDialog(true);
   }, [setShowAddDialog]);

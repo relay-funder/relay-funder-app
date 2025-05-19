@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useWallets } from '@privy-io/react-auth';
+import { useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,10 +25,10 @@ import { toast } from '@/hooks/use-toast';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts';
-import { useUpdateUserProfile, useUserProfile } from '@/lib/hooks/useProfile';
+import { useUserProfile } from '@/lib/hooks/useProfile';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useBridgeUpdateWalletAddress } from '@/lib/bridge/hooks/useBridge';
+import { useCrowdsplitUpdateWalletAddress } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 const walletAddressSchema = z.object({
   walletAddress: z
     .string()
@@ -44,14 +42,10 @@ const walletAddressSchema = z.object({
 type WalletAddressFormValues = z.infer<typeof walletAddressSchema>;
 
 interface WalletAddressesFormProps {
-  customerId: string;
   onSuccess?: () => void;
 }
 
-export function WalletAddressesForm({
-  customerId,
-  onSuccess,
-}: WalletAddressesFormProps) {
+export function WalletAddressesForm({ onSuccess }: WalletAddressesFormProps) {
   const router = useRouter();
   const { address } = useAuth();
   const { data: profile, isPending: isUserProfilePending } =
@@ -59,7 +53,7 @@ export function WalletAddressesForm({
   const {
     mutateAsync: updateWalletAddress,
     isPending: isUpdateUserProfilePending,
-  } = useBridgeUpdateWalletAddress({ userAddress: address ?? '' });
+  } = useCrowdsplitUpdateWalletAddress({ userAddress: address ?? '' });
 
   const form = useForm<WalletAddressFormValues>({
     resolver: zodResolver(walletAddressSchema),
@@ -71,7 +65,7 @@ export function WalletAddressesForm({
     if (profile?.recipientWallet) {
       form.setValue('walletAddress', profile.recipientWallet);
     }
-  }, [profile?.recipientWallet]);
+  }, [form, profile?.recipientWallet]);
 
   const onSubmit = useCallback(
     async (data: WalletAddressFormValues) => {
@@ -110,7 +104,7 @@ export function WalletAddressesForm({
         });
       }
     },
-    [profile, address, onSuccess, updateWalletAddress, router],
+    [address, onSuccess, updateWalletAddress, router],
   );
 
   return (

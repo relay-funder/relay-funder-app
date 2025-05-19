@@ -1,7 +1,7 @@
 export interface Profile {
   address: string;
   recipientWallet: string;
-  bridgeCustomerId: string;
+  crowdsplitCustomerId: string;
   firstName: string;
   lastName: string;
   email: string;

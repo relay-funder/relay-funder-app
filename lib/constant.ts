@@ -15,11 +15,11 @@ export const ALLO_ADDRESS = '0x1133eA7Af70876e64665ecD07C0A0476d09465a1';
 export const KICKSTARTER_QF_ADDRESS =
   '0x331e239848571d98B917982c16562b6E29DD91C5';
 
-// Bridge API configuration
-export const BRIDGE_API_URL = 'https://api.usecrowdpay.xyz';
-export const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY || '';
-export const BRIDGE_CLIENT_SECRET = process.env.BRIDGE_CLIENT_SECRET || '';
-export const BRIDGE_WEBHOOK_SECRET = process.env.BRIDGE_WEBHOOK_SECRET || '';
+// Crowdsplit API configuration
+export const CROWDSPLIT_API_URL = 'https://api.usecrowdpay.xyz';
+export const CROWDSPLIT_CLIENT_ID = process.env.CROWDSPLIT_CLIENT_ID;
+export const CROWDSPLIT_CLIENT_SECRET = process.env.CROWDSPLIT_CLIENT_SECRET;
+export const CROWDSPLIT_WEBHOOK_SECRET = process.env.CROWDSPLIT_WEBHOOK_SECRET;
 
 export const collections = [
   { id: 1, name: 'Collection 1', initial: '1' },

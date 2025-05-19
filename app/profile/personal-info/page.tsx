@@ -7,10 +7,10 @@ import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { PageHome } from '@/components/page/home';
 import { PageHeader } from '@/components/page/header';
 import { PageDefaultContent } from '@/components/page/default-content';
-import { useBridgeCustomer } from '@/lib/bridge/hooks/useBridge';
+import { useCrowdsplitCustomer } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 export default function PersonalInfoPage() {
   const { isReady, address, authenticated } = useAuth();
-  const { data: customer, isPending } = useBridgeCustomer({
+  const { data: customer, isPending } = useCrowdsplitCustomer({
     userAddress: address ?? '',
   });
 

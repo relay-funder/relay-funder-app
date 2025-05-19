@@ -5,13 +5,12 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import {
-  useBridgeKYCInitiate,
-  useBridgeKYCStatus,
-} from '@/lib/bridge/hooks/useBridge';
+  useCrowdsplitKYCInitiate,
+  useCrowdsplitKYCStatus,
+} from '@/lib/crowdsplit/hooks/useCrowdsplit';
 import { ProfileKYCVerificationStateComplete } from './kyc-verification-state-complete';
 import { ProfileKYCVerificationStatePending } from './kyc-verification-state-pending';
 import { ProfileKYCVerificationStateFailed } from './kyc-verification-state-failed';
@@ -31,11 +30,10 @@ export function KycVerificationForm({
   const [kycUrl, setKycUrl] = useState<string | undefined>(undefined);
   const { address } = useAuth();
   const { isPending: isPendingProfile } = useUserProfile(address);
-  const { data: kycStatus, isPending: isKycStatusPending } = useBridgeKYCStatus(
-    { userAddress: address ?? '' },
-  );
+  const { data: kycStatus, isPending: isKycStatusPending } =
+    useCrowdsplitKYCStatus({ userAddress: address ?? '' });
   const { mutateAsync: kycInitiate, isPending: isKycInitiatePending } =
-    useBridgeKYCInitiate({ userAddress: address ?? '' });
+    useCrowdsplitKYCInitiate({ userAddress: address ?? '' });
 
   const onInitiateKYC = useCallback(async () => {
     if (!address) {
