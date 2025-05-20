@@ -10,22 +10,26 @@ export function FormattedDate({
   date,
 }: {
   timestamp?: string;
-  date?: Date;
+  date?: Date | string;
 }) {
   const [formatted, setFormatted] = useState('Loading...');
 
   useEffect(() => {
     // use a effect to avoid ssr/hydration issues
-    if (typeof date === 'string') {
-      setFormatted(format(new Date(date), 'dd/MM/yyyy, HH:mm:ss'));
-      return;
-    }
-    if (date instanceof Date) {
-      setFormatted(format(date, 'dd/MM/yyyy, HH:mm:ss'));
-      return;
-    }
-    if (typeof timestamp === 'string' && parseInt(timestamp) > 0) {
-      setFormatted(formatTimestamp(timestamp));
+    try {
+      if (typeof date === 'string') {
+        setFormatted(format(new Date(date), 'dd/MM/yyyy, HH:mm:ss'));
+        return;
+      }
+      if (date instanceof Date) {
+        setFormatted(format(date, 'dd/MM/yyyy, HH:mm:ss'));
+        return;
+      }
+      if (typeof timestamp === 'string' && parseInt(timestamp) > 0) {
+        setFormatted(formatTimestamp(timestamp));
+      }
+    } catch (error) {
+      console.error(error, { date, timestamp });
     }
   }, [timestamp, date]);
   return <span>{formatted}</span>;
