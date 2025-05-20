@@ -260,6 +260,12 @@ export async function PATCH(request: Request) {
   try {
     const body = await request.json();
     const { status, transactionHash, campaignAddress, campaignId } = body;
+    if (!campaignId) {
+      return NextResponse.json(
+        { error: 'Campaign ID is required' },
+        { status: 400 },
+      );
+    }
 
     const campaign = await prisma.campaign.update({
       where: {
