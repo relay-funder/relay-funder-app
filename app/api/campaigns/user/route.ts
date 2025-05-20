@@ -72,6 +72,7 @@ export async function GET(request: Request) {
         updatedAt: true,
         images: true,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     // Get campaign created events
