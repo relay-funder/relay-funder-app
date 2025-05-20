@@ -294,20 +294,31 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || 'active';
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const rounds = searchParams.get('rounds') || 'false';
     const skip = (page - 1) * pageSize;
+
+    // status active should be enforced if access-token is not admin
+    const statusList =
+      status === 'active'
+        ? ['active']
+        : status === 'all'
+          ? ['draft', 'pending_approval', 'completed', 'active']
+          : ['pending_approval', 'completed', 'active'];
 
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
         where: {
           status: {
-            in:
-              status === 'active'
-                ? ['active']
-                : ['pending_approval', 'completed', 'active'],
+            in: statusList,
           },
         },
         include: {
           images: true,
+          RoundCampaigns: {
+            include: {
+              Round: true,
+            },
+          },
         },
         skip,
         take: pageSize,
@@ -318,10 +329,7 @@ export async function GET(request: Request) {
       prisma.campaign.count({
         where: {
           status: {
-            in:
-              status === 'active'
-                ? ['active']
-                : ['pending_approval', 'completed', 'active'],
+            in: statusList,
           },
         },
       }),
@@ -339,6 +347,16 @@ export async function GET(request: Request) {
             onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
             dbCampaign.campaignAddress?.toLowerCase(),
         ) as CampaignCreatedEvent | undefined;
+        if (rounds === 'true') {
+          return formatCampaignData(
+            {
+              ...dbCampaign,
+              rounds:
+                dbCampaign.RoundCampaigns?.map(({ Round }) => Round) ?? [],
+            },
+            event,
+          );
+        }
         return formatCampaignData(dbCampaign, event);
       })
       .filter(Boolean);
