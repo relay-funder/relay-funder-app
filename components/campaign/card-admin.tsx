@@ -10,7 +10,7 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
 interface CampaignCardDashboardProps {
   campaign: Campaign;
-  onApprove: (campaignId: number, campaignAddress: string) => void;
+  onApprove: (campaignId: number, campaignAddress: string) => Promise<void>;
 }
 const getCampaignStatus = (campaign: Campaign) => {
   const now = Math.floor(Date.now() / 1000);
@@ -39,11 +39,8 @@ export function CampaignCardAdmin({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const onApproveIntern = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      await onApprove(campaign.id, campaign.address || '');
-    } catch {}
-    setIsLoading(false);
+    setIsLoading(true);
+    await onApprove(campaign.id, campaign.address || '');
   }, [onApprove, campaign.id, campaign.address]);
   return (
     <Card className="overflow-hidden">
