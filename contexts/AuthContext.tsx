@@ -13,7 +13,7 @@ import { adminAddress } from '@/lib/constant';
 const debug = process.env.NODE_ENV !== 'production';
 import { useAccount } from './AccountContext';
 import { useWallet } from '@/hooks/use-wallet';
-
+import { enableAdmin } from '@/lib/develop';
 interface PrivyUser {
   wallet?: {
     address?: string;
@@ -177,7 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         });
 
       const adminStatus =
-        !!normalizedAddress && normalizedAddress === normalizedAdminAddress;
+        enableAdmin ||
+        (!!normalizedAddress && normalizedAddress === normalizedAdminAddress);
       setIsAdmin(adminStatus);
       debug && console.log('[AUTH] Admin status set to:', adminStatus);
     };
