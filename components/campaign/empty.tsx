@@ -4,15 +4,16 @@ export function CampaignEmpty({
   onCreate,
 }: {
   message?: string;
-  onCreate: () => void;
+  onCreate?: () => void;
 }) {
   return (
     <div className="py-12 text-center">
       <p className="text-gray-500">{message}</p>
-
-      <Button className="mt-4" onClick={onCreate}>
-        Create Your First Campaign
-      </Button>
+      {typeof onCreate === 'function' && (
+        <Button className="mt-4" onClick={onCreate}>
+          Create Your First Campaign
+        </Button>
+      )}
     </div>
   );
 }
