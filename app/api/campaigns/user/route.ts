@@ -165,8 +165,8 @@ export async function GET(request: Request) {
     );
   }
 }
-
 export async function PATCH(request: Request) {
+  console.warn('[deprecated] use PATCH /api/campaigns instead');
   try {
     const body = await request.json();
     const { campaignId, status, transactionHash, campaignAddress } = body;
