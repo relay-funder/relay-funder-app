@@ -29,7 +29,15 @@ interface PrivyWallet {
 type EthereumProvider = {
   request: (args: {
     method: string;
-    params?: any[] | undefined;
+    params?:
+      | {
+          chainId: string;
+          chainName?: string;
+          nativeCurrency?: { decimals: number; name: string; symbol: string };
+          rpcUrls?: string[];
+          blockExplorerUrls?: string[];
+        }[]
+      | undefined;
   }) => Promise<unknown>;
 };
 

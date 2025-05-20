@@ -34,9 +34,10 @@ async function fetchCampaigns(status?: string) {
 async function fetchCampaignPage({
   pageParam = 1,
   status = 'active',
+  rounds = false,
   pageSize = 10,
 }) {
-  const url = `/api/campaigns?status=${status}&page=${pageParam}&pageSize=${pageSize}`;
+  const url = `/api/campaigns?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
@@ -150,6 +151,41 @@ async function createCampaign({
   }
   return response.json();
 }
+interface IApproveCampaignHook {
+  adminAddress?: string | null;
+}
+interface IApproveCampaign {
+  campaignId: number;
+  treasuryAddress: string;
+}
+interface IApproveCampaignApi extends IApproveCampaign {
+  adminAddress: string;
+}
+async function approveCampaign({
+  campaignId,
+  treasuryAddress,
+  adminAddress,
+}: IApproveCampaignApi) {
+  const response = await fetch(`/api/campaigns/${campaignId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({
+      treasuryAddress,
+      adminAddress,
+      status: 'active',
+    }),
+  });
+  if (!response.ok) {
+    let errorMsg = 'Failed to approve campaign';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData?.error
+        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
+        : errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+}
 
 export function useCampaigns(status?: string) {
   return useQuery({
@@ -159,11 +195,20 @@ export function useCampaigns(status?: string) {
   });
 }
 
-export function useInfiniteCampaigns(status = 'active', pageSize = 10) {
+export function useInfiniteCampaigns(
+  status = 'active',
+  pageSize = 10,
+  rounds = false,
+) {
   return useInfiniteQuery<PaginatedResponse, Error>({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize],
     queryFn: ({ pageParam = 1 }) =>
-      fetchCampaignPage({ pageParam: pageParam as number, status, pageSize }),
+      fetchCampaignPage({
+        pageParam: pageParam as number,
+        status,
+        pageSize,
+        rounds,
+      }),
     getNextPageParam: (lastPage: PaginatedResponse) => {
       return lastPage.pagination.hasMore
         ? lastPage.pagination.currentPage + 1
@@ -208,6 +253,23 @@ export function useCreateCampaign({ userAddress }: ICreateCampaignHook) {
         throw new Error('Cannot create Campaign without a wallet address');
       }
       return createCampaign({ ...variables, address: userAddress });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+    },
+  });
+}
+export function useAdminApproveCampaign({
+  adminAddress,
+}: IApproveCampaignHook) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: IApproveCampaign) => {
+      if (!adminAddress) {
+        throw new Error('Cannot approve Campaign without a wallet address');
+      }
+      return approveCampaign({ ...variables, adminAddress });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
