@@ -340,7 +340,13 @@ export async function GET(request: Request) {
     const events = await getCampaignCreatedEvents(client);
 
     const combinedCampaigns = dbCampaigns
-      .filter((campaign) => campaign.transactionHash)
+      .filter(
+        (
+          campaign: DbCampaign & {
+            RoundCampaigns?: Array<{ Round: { id: number; title: string } }>;
+          },
+        ) => campaign.transactionHash,
+      )
       .map((dbCampaign) => {
         const event = events.find(
           (onChainCampaign) =>
