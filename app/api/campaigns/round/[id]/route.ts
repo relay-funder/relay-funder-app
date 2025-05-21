@@ -17,10 +17,12 @@ export async function GET(
       return NextResponse.json({ rounds: [] }, { status: 200 });
     }
 
-    const rounds = roundCampaigns.map((rc) => ({
-      id: rc.roundId,
-      title: rc.Round.title,
-    }));
+    const rounds = roundCampaigns.map(
+      (rc: { roundId: number; Round: { title: string } }) => ({
+        id: rc.roundId,
+        title: rc.Round.title,
+      }),
+    );
 
     return NextResponse.json({ rounds }, { status: 200 });
   } catch (error) {
