@@ -115,7 +115,15 @@ export async function GET(request: Request) {
 
       // For campaigns with transaction hash, try to get blockchain data
       const event = events.find(
-        (e) =>
+        (e: {
+          transactionHash?: `0x${string}`;
+          args?: {
+            owner?: `0x${string}`;
+            launchTime?: bigint;
+            deadline?: bigint;
+            goalAmount?: bigint;
+          };
+        }) =>
           e.transactionHash?.toLowerCase() ===
           dbCampaign.transactionHash?.toLowerCase(),
       );
