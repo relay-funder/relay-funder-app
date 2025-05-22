@@ -52,17 +52,27 @@ export async function GET(req: NextRequest) {
       crowdsplitPaymentMethodDetailsPromises,
     );
     return NextResponse.json({
-      paymentMethods: paymentMethods.map((paymentMethod) => {
-        const crowdsplitDetails =
-          crowdsplitPaymentMethodDetails.find(
-            ({ id }) => id === paymentMethod.externalId,
-          ) ?? null;
-        const details = crowdsplitDetails?.bankDetails ?? null;
-        return {
-          ...paymentMethod,
-          details,
-        };
-      }),
+      paymentMethods: paymentMethods.map(
+        (paymentMethod: {
+          id: number;
+          externalId: string;
+          provider: string;
+          type: string;
+          userId: number;
+          createdAt: Date;
+          updatedAt: Date;
+        }) => {
+          const crowdsplitDetails =
+            crowdsplitPaymentMethodDetails.find(
+              ({ id }) => id === paymentMethod.externalId,
+            ) ?? null;
+          const details = crowdsplitDetails?.bankDetails ?? null;
+          return {
+            ...paymentMethod,
+            details,
+          };
+        },
+      ),
     });
   } catch (error) {
     console.error('Error fetching payment methods:', error);

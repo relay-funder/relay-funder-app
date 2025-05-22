@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update each recipient status
-    const updatePromises = updates.map(({ address }) =>
+    const updatePromises = updates.map(({ address }: { address: string }) =>
       prisma.roundCampaigns.updateMany({
         where: {
           roundId,
