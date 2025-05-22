@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { RecipientStatus } from '@prisma/client';
+import { RecipientStatus } from '@/types/round';
 // import { ApplicationStatus } from "@/lib/qfInteractions"
 
 export async function POST(request: NextRequest) {
