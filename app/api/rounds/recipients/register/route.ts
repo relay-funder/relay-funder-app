@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { RecipientStatus } from '@/types/round';
 // import { ApplicationStatus } from "@/lib/qfInteractions"
 
@@ -172,7 +172,7 @@ export async function POST(req: Request) {
 
     // Check specifically for Prisma unique constraint violation
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error instanceof PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
       errorMessage =
