@@ -15,15 +15,25 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApplyToRound } from '@/components/apply-to-round';
 import { prisma } from '@/lib/prisma';
-import type { Round as PrismaRound, Campaign } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { ROUND_STATUS_MAP, getRoundStatus } from '@/types/round';
 import { CheckWalletServer } from '@/components/check-wallet-server';
 
-interface RoundWithCampaigns extends PrismaRound {
-  roundCampaigns: {
-    Campaign: Pick<Campaign, 'id' | 'slug' | 'title'>;
-  }[];
-}
+type RoundWithCampaigns = Prisma.RoundGetPayload<{
+  include: {
+    roundCampaigns: {
+      include: {
+        Campaign: {
+          select: {
+            id: true;
+            slug: true;
+            title: true;
+          };
+        };
+      };
+    };
+  };
+}>;
 
 async function getRoundData(id: string): Promise<RoundWithCampaigns | null> {
   const roundId = parseInt(id, 10);
