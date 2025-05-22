@@ -102,8 +102,8 @@ async function getCampaignCreatedEvents(
 
 type CampaignCreatedEvent = {
   args: {
-    identifierHash: `0x${string}`;
-    campaignInfoAddress: `0x${string}`;
+    identifierHash?: `0x${string}`;
+    campaignInfoAddress?: `0x${string}`;
   };
 };
 
@@ -347,24 +347,30 @@ export async function GET(request: Request) {
           },
         ) => campaign.transactionHash,
       )
-      .map((dbCampaign) => {
-        const event = events.find(
-          (onChainCampaign) =>
-            onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
-            dbCampaign.campaignAddress?.toLowerCase(),
-        ) as CampaignCreatedEvent | undefined;
-        if (rounds === 'true') {
-          return formatCampaignData(
-            {
-              ...dbCampaign,
-              rounds:
-                dbCampaign.RoundCampaigns?.map(({ Round }) => Round) ?? [],
-            },
-            event,
-          );
-        }
-        return formatCampaignData(dbCampaign, event);
-      })
+      .map(
+        (
+          dbCampaign: DbCampaign & {
+            RoundCampaigns?: Array<{ Round: { id: number; title: string } }>;
+          },
+        ) => {
+          const event = events.find(
+            (onChainCampaign) =>
+              onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
+              dbCampaign.campaignAddress?.toLowerCase(),
+          ) as CampaignCreatedEvent | undefined;
+          if (rounds === 'true') {
+            return formatCampaignData(
+              {
+                ...dbCampaign,
+                rounds:
+                  dbCampaign.RoundCampaigns?.map(({ Round }) => Round) ?? [],
+              },
+              event,
+            );
+          }
+          return formatCampaignData(dbCampaign, event);
+        },
+      )
       .filter(Boolean);
 
     return NextResponse.json({
