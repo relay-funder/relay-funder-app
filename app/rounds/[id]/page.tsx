@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApplyToRound } from '@/components/apply-to-round';
 import { prisma } from '@/lib/prisma';
+import { Decimal } from '@prisma/client/runtime/library';
 import { ROUND_STATUS_MAP, getRoundStatus } from '@/types/round';
 import { CheckWalletServer } from '@/components/check-wallet-server';
 
@@ -23,7 +24,7 @@ interface RoundWithCampaigns {
   title: string;
   description: string;
   tags: string[];
-  matchingPool: any; // Will be Decimal from Prisma
+  matchingPool: Decimal;
   applicationStart: Date;
   applicationClose: Date;
   startDate: Date;
