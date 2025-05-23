@@ -8,8 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm install && prisma generate && next dev",
-    "build": "prisma generate && NODE_ENV=production next build",
-    "build:vercel": "vercel build",
+    "build": "echo 'Running custom build script with Prisma regeneration' && rm -rf node_modules/.prisma && prisma generate && NODE_ENV=production next build",
     "dev:db": "prisma format && prisma migrate dev",
     "dev:db:seed": "prisma db seed",
     "start": "next start",
@@ -18,7 +17,8 @@
     "prepare": "husky",
     "publish": "vercel publish",
     "format:write": "prettier --write \"./**/*.{ts,tsx,js,jsx,mdx}\" --cache",
-    "chown": "stat -c '%u %g' /app/package.json | awk '{printf \"chown -R %i:%i /app/\", $1,$2}' | bash"
+    "chown": "stat -c '%u %g' /app/package.json | awk '{printf \"chown -R %i:%i /app/\", $1,$2}' | bash",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
