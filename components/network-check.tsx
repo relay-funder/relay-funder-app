@@ -3,8 +3,8 @@
 import { ReactNode, useEffect, useRef } from 'react';
 import { useNetworkCheck } from '@/hooks/use-network';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { PaymentSwitchWalletNetwork } from './payment/switch-wallet-network';
 
 interface NetworkCheckProps {
   children: ReactNode;
@@ -14,28 +14,6 @@ export function NetworkCheck({ children }: NetworkCheckProps) {
   const { isCorrectNetwork, switchToAlfajores } = useNetworkCheck();
   const { toast } = useToast();
   const wasWrongNetwork = useRef(false);
-
-  const handleNetworkSwitch = async () => {
-    try {
-      await switchToAlfajores();
-    } catch (error) {
-      console.error('Error switching network:', error);
-      toast({
-        title: 'Network Switch Failed',
-        description: (
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-destructive" />
-            <p className="text-sm font-medium">
-              Unable to switch network automatically. Please switch to Celo
-              Alfajores manually in your wallet.
-            </p>
-          </div>
-        ),
-        variant: 'destructive',
-        duration: 5000,
-      });
-    }
-  };
 
   useEffect(() => {
     if (!isCorrectNetwork) {
@@ -50,14 +28,7 @@ export function NetworkCheck({ children }: NetworkCheckProps) {
                 Please switch to Celo Alfajores Testnet to use this app
               </p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleNetworkSwitch}
-              className="w-full text-black"
-            >
-              Switch Network
-            </Button>
+            <PaymentSwitchWalletNetwork />
           </div>
         ),
         variant: 'destructive',
