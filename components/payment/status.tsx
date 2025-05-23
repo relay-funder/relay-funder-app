@@ -65,7 +65,11 @@ export function PaymentStatus() {
       } catch (err) {
         console.error('Error checking payment status:', err);
         setStatus('error');
-        setMessage(err instanceof Error ? err.message : 'Failed to verify payment status');
+        setMessage(
+          err instanceof Error
+            ? err.message
+            : 'Failed to verify payment status',
+        );
       }
     };
 
