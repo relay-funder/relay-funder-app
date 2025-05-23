@@ -17,7 +17,7 @@ model Campaign {
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
-  status          String           @default("draft")
+  status          CampaignStatus   @default(DRAFT)
   transactionHash String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -36,6 +36,14 @@ model Campaign {
 
   @@index([creatorAddress])
   @@index([category])
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  COMPLETED
+  FAILED
 }
 
 model CampaignImage {
@@ -146,12 +154,6 @@ model RoundCampaigns {
   @@unique([roundId, campaignId])
 }
 
-enum Status {
-  NOT_STARTED
-  ACTIVE
-  CLOSED
-}
-
 model Collection {
   id          String   @id @default(cuid())
   name        String
@@ -189,4 +191,3 @@ model Favorite {
   @@index([userAddress])
   @@index([campaignId])
 }
-
