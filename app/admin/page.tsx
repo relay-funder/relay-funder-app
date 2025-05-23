@@ -17,6 +17,7 @@ import { IoLocationSharp } from 'react-icons/io5';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/loading';
+import { CampaignStatus } from '@/types/campaign';
 import { chainConfig } from '@/config/chain';
 
 // Add platform config
@@ -149,25 +150,39 @@ export default function AdminPage() {
     const now = Math.floor(Date.now() / 1000);
     const newStatuses: Record<string, string> = {};
     campaignsToUpdate.forEach((campaign) => {
-      if (campaign.status === 'draft') {
-        newStatuses[campaign.id] = 'Draft';
-      } else if (campaign.status === 'pending_approval') {
-        newStatuses[campaign.id] = 'Pending Approval';
-      } else if (campaign.status === 'failed') {
-        newStatuses[campaign.id] = 'Failed';
-      } else if (campaign.status === 'completed') {
-        newStatuses[campaign.id] = 'Completed';
-      } else {
-        const launchTime = campaign.launchTime
-          ? parseInt(campaign.launchTime)
-          : now;
-        const deadline = campaign.deadline ? parseInt(campaign.deadline) : now;
-        if (now < launchTime) {
-          newStatuses[campaign.id] = 'Upcoming';
-        } else if (now > deadline) {
-          newStatuses[campaign.id] = 'Ended';
-        } else {
-          newStatuses[campaign.id] = 'Active';
+      switch (campaign.status) {
+        case CampaignStatus.DRAFT:
+          newStatuses[campaign.id] = 'Draft';
+          break;
+        case CampaignStatus.PENDING_APPROVAL:
+          newStatuses[campaign.id] = 'Pending Approval';
+          break;
+        case CampaignStatus.FAILED:
+          newStatuses[campaign.id] = 'Failed';
+          break;
+        case CampaignStatus.COMPLETED:
+          newStatuses[campaign.id] = 'Completed';
+          break;
+        case CampaignStatus.ACTIVE: {
+          const launchTime = campaign.launchTime
+            ? parseInt(campaign.launchTime)
+            : now;
+          const deadline = campaign.deadline
+            ? parseInt(campaign.deadline)
+            : now;
+          if (now < launchTime) {
+            newStatuses[campaign.id] = 'Upcoming';
+          } else if (now > deadline) {
+            newStatuses[campaign.id] = 'Ended';
+          } else {
+            newStatuses[campaign.id] = 'Active';
+          }
+          break;
+        }
+        default: {
+          // Assertion for invalid status
+          console.error(`Unknown campaign status: ${campaign.status}`);
+          newStatuses[campaign.id] = 'Unknown';
         }
       }
     });
@@ -391,7 +406,7 @@ export default function AdminPage() {
           body: JSON.stringify({
             treasuryAddress,
             adminAddress: address,
-            status: 'active',
+            status: CampaignStatus.ACTIVE,
           }),
         },
       );
@@ -405,7 +420,7 @@ export default function AdminPage() {
           campaign.id === campaignId
             ? {
                 ...campaign,
-                status: 'active',
+                status: CampaignStatus.ACTIVE,
                 isApproved: true,
                 treasuryAddress: treasuryAddress,
                 campaignAddress: campaignAddress,
@@ -448,7 +463,7 @@ export default function AdminPage() {
       activeCampaigns: campaigns.filter(
         (campaign) =>
           campaignStatuses[campaign.id] === 'Active' &&
-          campaign.status === 'active',
+          campaign.status === CampaignStatus.ACTIVE,
       ).length,
       averageProgress:
         campaigns.length > 0
@@ -701,7 +716,7 @@ export default function AdminPage() {
                         </p>
                       )}
 
-                      {campaign.status === 'pending_approval' && (
+                      {campaign.status === CampaignStatus.PENDING_APPROVAL && (
                         <Button
                           onClick={() =>
                             approveCampaign(campaign.id, campaign.address || '')

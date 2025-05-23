@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureUserExists } from '@/lib/user-helpers';
-import { CampaignImage } from '@/types/campaign';
+import { CampaignImage, CampaignStatus } from '@/types/campaign';
 
 // Get all collections for the current user
 export async function GET(req: NextRequest) {
@@ -23,6 +23,11 @@ export async function GET(req: NextRequest) {
       },
       include: {
         campaigns: {
+          where: {
+            campaign: {
+              status: CampaignStatus.ACTIVE,
+            },
+          },
           include: {
             campaign: {
               include: {
