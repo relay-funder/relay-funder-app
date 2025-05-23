@@ -36,7 +36,7 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 3. **Start Development Environment:**
 
    ```bash
-   docker-compose up
+   docker compose up
    ```
 
    This will start:
@@ -47,8 +47,8 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 4. **Initialize Database (in a new terminal):**
 
    ```bash
-   docker-compose exec app pnpm prisma migrate dev
-   docker-compose exec app pnpm prisma db seed
+   docker compose exec app pnpm prisma migrate dev
+   docker compose exec app pnpm prisma db seed
    ```
 
 5. **Setup Development Wallet**
@@ -69,7 +69,7 @@ matches the later production environment as closely as possible while still in
 full control without installing all the required tools for the project in the
 host (which often results in conflicts with other projects).
 
-To enable the developer to do so, the docker-compose file is providing both a
+To enable the developer to do so, the docker compose file is providing both a
 `app`-service and a `app-shell`-service. The developer will enter the cloned
 directory and execute `docker compose up` as the documentation mentions before
 and the result is that only the app is started in develop-mode (with
@@ -78,7 +78,7 @@ hot-reloading enabled).
 ### Environment Setup
 
 For the docker environment it is possible to configure various details. This is
-strictly not required as the docker-compose file contains defaults. All of the
+strictly not required as the docker compose file contains defaults. All of the
 variables displayed here are optional
 
 ```bash
@@ -127,18 +127,18 @@ If you encounter database-related issues, follow these steps:
 1. **Generate Prisma Client:**
 
    ```bash
-   docker-compose exec app pnpm prisma generate
+   docker compose exec app pnpm prisma generate
    ```
 
 2. **Apply Migrations:**
 
    ```bash
-   docker-compose exec app pnpm prisma migrate deploy
+   docker compose exec app pnpm prisma migrate deploy
    ```
 
 3. **Seed Database:**
    ```bash
-   docker-compose exec app pnpm prisma db seed
+   docker compose exec app pnpm prisma db seed
    ```
 
 Common issues and their solutions:
@@ -168,8 +168,8 @@ Common issues and their solutions:
 
 ## Docker Commands (Development Only)
 
-- `docker-compose up` - Start development environment
-- `docker-compose down` - Stop and cleanup containers
+- `docker compose up` - Start development environment
+- `docker compose down` - Stop and cleanup containers
 
 > **Note:** Docker is used for development only. Production deployment uses Vercel.
 
