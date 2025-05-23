@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm install && prisma generate && next dev",
-    "build": "echo 'Running custom build script with Prisma regeneration' && rm -rf node_modules/.prisma && prisma generate && NODE_ENV=production next build",
+    "build": "echo 'Running custom build script with Prisma regeneration' && rm -rf node_modules/.prisma && rm -rf .next && prisma generate --force-recompile && NODE_ENV=production next build",
     "dev:db": "prisma format && prisma migrate dev",
     "dev:db:seed": "prisma db seed",
     "start": "next start",
