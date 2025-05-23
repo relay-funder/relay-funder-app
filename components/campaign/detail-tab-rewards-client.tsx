@@ -47,7 +47,7 @@ export function CampaignDetailTabRewardsClient({
   campaignSlug,
   campaignOwner,
 }: CampaignDetailTabRewardsClientProps) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const [numbersProtocolUri, setNumbersProtocolUri] = useState<string | null>(
     null,
   );
@@ -345,6 +345,8 @@ export function CampaignDetailTabRewardsClient({
           address || '0x0000000000000000000000000000000000000000',
           address || '0x0000000000000000000000000000000000000000', // Using deployer as treasury
         ],
+        chain,
+        account: address,
       });
 
       console.log('campaignNFT deployed', result);
@@ -389,6 +391,8 @@ export function CampaignDetailTabRewardsClient({
         abi: CampaignNFTabi, // Import this at the top
         functionName: 'mintSupporterNFT',
         args: [address],
+        chain,
+        account: address,
       });
 
       toast({

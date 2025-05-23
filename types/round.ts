@@ -4,9 +4,21 @@ import type { Prisma } from '@prisma/client';
 // This defines a type for a Round record including the count of roundCampaigns
 export type RoundWithCount = Prisma.RoundGetPayload<
   Prisma.RoundDefaultArgs & {
-    include: { _count: { select: { roundCampaigns: true } } };
+    include: { 
+      roundCampaigns: true;
+      _count: { select: { roundCampaigns: true } };
+    };
   }
 >;
+
+// Type for rounds query that only includes count, not the relation itself
+export type RoundWithCountOnly = Prisma.RoundGetPayload<{
+  include: {
+    _count: {
+      select: { roundCampaigns: true };
+    };
+  };
+}>;
 
 // Infer the payload type from the validator
 export type RoundPayload = Prisma.RoundGetPayload<

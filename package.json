@@ -14,6 +14,7 @@
     "dev:db:seed": "prisma db seed",
     "start": "next start",
     "lint": "next lint && tsc --noEmit && rm -rf .next/cache/eslint/ ; prettier -c \"./**/*.{ts,tsx,js,jsx,mdx}\" .",
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
     "prepare": "husky",
     "postinstall": "prisma generate",

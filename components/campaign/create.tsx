@@ -25,20 +25,20 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useCreateCampaign, useUpdateCampaign } from '@/lib/hooks/useCampaigns';
+import { useCreateCampaign, useUpdateCampaign, type ICreateCampaign } from '@/lib/hooks/useCampaigns';
 import {
   useCreateCampaignContract,
   IOnCreateCampaignConfirmed,
 } from '@/lib/web3/hooks/useCreateCampaignContract';
 
 const campaignSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  fundingGoal: z.string(),
-  startTime: z.string(),
-  endTime: z.string(),
-  location: z.string(),
-  category: z.string(),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  fundingGoal: z.string().min(1, 'Funding goal is required'),
+  startTime: z.string().min(1, 'Start time is required'),
+  endTime: z.string().min(1, 'End time is required'),
+  location: z.string().min(1, 'Location is required'),
+  category: z.string().min(1, 'Category is required'),
   bannerImage: z.instanceof(File).optional(),
 });
 type CampaignFormValues = z.infer<typeof campaignSchema>;
@@ -205,7 +205,7 @@ export function CampaignCreate() {
         });
         setIsSubmitting(true);
         try {
-          const newCampaign = await createCampaign(data);
+          const newCampaign = await createCampaign(data as ICreateCampaign);
           toast({
             title: 'Campaign Saved',
             description: 'Initiating blockchain transaction...',

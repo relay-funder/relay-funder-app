@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
-import { useCrowdsplitCreatePaymentMethod } from '@/lib/crowdsplit/hooks/useCrowdsplit';
+import { useCrowdsplitCreatePaymentMethod, type ICrowdsplitCreatePaymentMethodRequestMutationApi } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -119,7 +119,7 @@ export function ProfileAddPaymentMethodDialog({
             accountNumber: '****' + data.bankDetails.accountNumber.slice(-4),
           },
         });
-        await createPaymentMethod(data);
+        await createPaymentMethod(data as ICrowdsplitCreatePaymentMethodRequestMutationApi);
 
         if (typeof onSuccess === 'function') {
           onSuccess();

@@ -24,7 +24,7 @@ const CROWDSPLIT_QUERY_KEY = 'crowdsplit';
 interface ICrowdsplitUpdateCustomerHook {
   userAddress: string;
 }
-interface ICrowdsplitUpdateCustomerRequestMutationApi {
+export interface ICrowdsplitUpdateCustomerRequestMutationApi {
   firstName: string;
   lastName: string;
   email: string;
@@ -46,7 +46,7 @@ interface ICrowdsplitUpdateCustomerRequestMutationApi {
 interface ICrowdsplitCreatePaymentMethodHook {
   userAddress: string;
 }
-interface ICrowdsplitCreatePaymentMethodRequestMutationApi {
+export interface ICrowdsplitCreatePaymentMethodRequestMutationApi {
   type: string;
   provider: string;
   bankDetails: CrowdsplitPaymentMethodDetails;

@@ -528,6 +528,8 @@ export default function CreateRoundPage() {
             abi: createPoolArgs.abi,
             functionName: createPoolArgs.functionName,
             args: createPoolArgs.args,
+            chain,
+            account: connectedAddress,
           },
           {
             onSuccess: (hash) => {
@@ -771,6 +773,8 @@ export default function CreateRoundPage() {
           abi: approveArgs.abi,
           functionName: approveArgs.functionName,
           args: approveArgs.args,
+          chain,
+          account: connectedAddress,
         },
         {
           onSuccess: (hash) => {

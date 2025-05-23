@@ -34,7 +34,7 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { enableFormDefault } from '@/lib/develop';
-import { useCrowdsplitUpdateCustomer } from '@/lib/crowdsplit/hooks/useCrowdsplit';
+import { useCrowdsplitUpdateCustomer, type ICrowdsplitUpdateCustomerRequestMutationApi } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 import { useAuth } from '@/contexts';
 import { useRouter } from 'next/navigation';
 const personalInfoSchema = z.object({
@@ -116,7 +116,7 @@ export function PersonalInfoForm({
       }
 
       try {
-        updateCustomer(data);
+        updateCustomer(data as ICrowdsplitUpdateCustomerRequestMutationApi);
         if (typeof onSuccess === 'function') {
           onSuccess();
         }

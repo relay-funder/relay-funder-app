@@ -17,7 +17,7 @@ export function useCreateCampaignContract({
 }: {
   onConfirmed: (arg0: IOnCreateCampaignConfirmed) => void;
 }) {
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
   const { data: hash, isPending, writeContract } = useWriteContract();
   const {
     isLoading: isConfirming,
@@ -56,9 +56,11 @@ export function useCreateCampaignContract({
           [], // Platform data values
           campaignData,
         ],
+        chain,
+        account: address,
       });
     },
-    [address, writeContract],
+    [address, writeContract, chain],
   );
 
   useEffect(() => {

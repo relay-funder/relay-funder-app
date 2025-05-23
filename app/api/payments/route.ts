@@ -1,9 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+interface CreatePaymentRequest {
+  amount: string;
+  token: string;
+  campaignId: number;
+  isAnonymous: boolean;
+  status: 'pending' | 'confirmed' | 'failed';
+  transactionHash?: string;
+  type: 'BUY' | 'SELL';
+  userAddress: string;
+}
+
+interface UpdatePaymentRequest {
+  paymentId: number;
+  status: 'pending' | 'confirmed' | 'failed';
+  transactionHash?: string;
+}
+
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
+    const data: CreatePaymentRequest = await req.json();
 
     // Get or create user
     const user = await prisma.user.upsert({
@@ -17,12 +34,11 @@ export async function POST(req: Request) {
         amount: data.amount,
         token: data.token,
         campaignId: data.campaignId,
+        userId: user.id,
         isAnonymous: data.isAnonymous,
         status: data.status,
         transactionHash: data.transactionHash,
         type: data.type,
-        user: { connect: { id: user.id } },
-        campaign: { connect: { id: data.campaignId } },
       },
     });
 
@@ -41,7 +57,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const data = await req.json();
+    const data: UpdatePaymentRequest = await req.json();
 
     const payment = await prisma.payment.update({
       where: { id: data.paymentId },

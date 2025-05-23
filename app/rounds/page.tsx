@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { Round } from '@/types/round';
+import { Round, RoundWithCountOnly } from '@/types/round';
 
 async function getRounds(): Promise<Round[]> {
   try {
@@ -21,7 +21,7 @@ async function getRounds(): Promise<Round[]> {
       },
     });
 
-    return roundsData.map((round) => ({
+    return roundsData.map((round: RoundWithCountOnly) => ({
       ...round,
       matchingPool: round.matchingPool.toNumber(),
       roundCampaigns: [],

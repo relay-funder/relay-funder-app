@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
+interface AddCampaignToRoundsRequest {
+  campaignId: number;
+  roundIds: number[];
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { campaignId, roundIds } = await req.json();
+    const { campaignId, roundIds }: AddCampaignToRoundsRequest = await req.json();
 
     if (!campaignId || !roundIds || !Array.isArray(roundIds)) {
       return new NextResponse(
@@ -14,13 +19,11 @@ export async function POST(req: NextRequest) {
 
     // Create entries in the RoundCampaigns table
     const roundCampaigns = await Promise.all(
-      roundIds.map((roundId) =>
+      roundIds.map((roundId: number) =>
         prisma.roundCampaigns.create({
           data: {
             roundId,
             campaignId,
-            Campaign: { connect: { id: campaignId } },
-            Round: { connect: { id: roundId } },
           },
         }),
       ),

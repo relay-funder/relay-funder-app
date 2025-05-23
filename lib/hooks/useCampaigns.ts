@@ -96,7 +96,7 @@ async function updateCampaign({
 interface ICreateCampaignHook {
   userAddress?: string;
 }
-interface ICreateCampaign {
+export interface ICreateCampaign {
   title: string;
   description: string;
   fundingGoal: string;

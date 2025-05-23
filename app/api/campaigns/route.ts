@@ -83,7 +83,7 @@ async function getPublicClient() {
 }
 
 async function getCampaignCreatedEvents(
-  client: ReturnType<typeof createPublicClient>,
+  client: any,
 ) {
   return client.getLogs({
     address: FACTORY_ADDRESS as `0x${string}`,
@@ -336,7 +336,6 @@ export async function GET(request: Request) {
     ]);
 
     const client = await getPublicClient();
-    // @ts-expect-error - client issue
     const events = await getCampaignCreatedEvents(client);
 
     const combinedCampaigns = dbCampaigns

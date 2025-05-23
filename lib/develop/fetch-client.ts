@@ -61,6 +61,5 @@ export async function mockFetch(
 if (typeof window !== 'undefined' && enableApiMock) {
   // @ts-expect-error: local developer hack to mock fetches
   window.original_fetch = fetch;
-  // @ts-expect-error: local developer hack to mock fetches
   window.fetch = mockFetch;
 }

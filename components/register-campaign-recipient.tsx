@@ -33,14 +33,14 @@ function clientToSigner(client: Client<Transport, Chain>): Signer | undefined {
     return undefined;
   }
   const network = {
-    chainId: chain.id,
-    name: chain.name,
-    ensAddress: chain.contracts?.ensRegistry?.address,
+    chainId: (chain as any).id,
+    name: (chain as any).name,
+    ensAddress: (chain as any).contracts?.ensRegistry?.address,
   };
   // Use Web3Provider for ethers v5
   const provider = new providers.Web3Provider(transport, network);
-  console.log('account address:', account?.address);
-  const signer = provider.getSigner(account?.address); // Get signer by address
+  console.log('account address:', (account as any)?.address);
+  const signer = provider.getSigner((account as any)?.address); // Get signer by address
   return signer;
 }
 
@@ -78,7 +78,7 @@ export function RegisterCampaignRecipient({
 
   // Memoize the signer
   const signer = useMemo(() => {
-    if (!client || !client.chain) return undefined;
+    if (!client || !(client as any).chain) return undefined;
     return clientToSigner(client);
   }, [client]);
 
