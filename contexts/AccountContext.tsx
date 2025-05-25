@@ -1,18 +1,9 @@
 'use client';
 
-import React, {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
+
 import { useAccount as useWagmiAccount } from 'wagmi';
 import { type Address, type Chain } from 'viem';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { adminAddress } from '@/lib/constant';
-const debug = process.env.NODE_ENV !== 'production';
 
 type AccountStatusType =
   | 'connected'

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { adminAddress } from '@/lib/constant';
+import { ADMIN_ADDRESS } from '@/lib/constant';
 import { enableBypassContractAdmin } from '@/lib/develop';
 
 export async function POST(
@@ -23,7 +23,7 @@ export async function POST(
     if (!enableBypassContractAdmin) {
       if (
         !requestAddress ||
-        requestAddress.toLowerCase() !== adminAddress?.toLowerCase()
+        requestAddress.toLowerCase() !== ADMIN_ADDRESS?.toLowerCase()
       ) {
         return NextResponse.json(
           { error: 'Unauthorized: Admin access only' },

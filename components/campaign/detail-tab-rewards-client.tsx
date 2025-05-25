@@ -16,7 +16,7 @@ import { CampaignNFTabi } from '@/contracts/nftABI/CampaignNFT';
 import { parseEther } from 'viem';
 import { ethers } from 'ethers';
 import { Badge } from '@/components/ui/badge';
-import { chainConfig } from '@/config/chain';
+import { chainConfig } from '@/lib/web3/config/chain';
 
 interface CampaignDetailTabRewardsClientProps {
   campaignId: string;

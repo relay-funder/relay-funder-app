@@ -51,6 +51,10 @@ model User {
   address              String          @unique
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
+  prevSigninAt         DateTime?
+  lastSigninAt         DateTime?
+  lastSignoutAt        DateTime?
+  roles                String[]
   crowdsplitCustomerId String?
   email                String?
   username             String?         @unique

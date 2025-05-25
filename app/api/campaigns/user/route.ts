@@ -2,7 +2,7 @@ import { createPublicClient, http } from 'viem';
 import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { chainConfig } from '@/config/chain';
+import { chainConfig } from '@/lib/web3/config/chain';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;
