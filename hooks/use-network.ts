@@ -1,28 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useWallets } from '@privy-io/react-auth';
-import { useToast } from './use-toast';
-import { chainConfig } from '@/config/chain';
-
-interface ProviderRpcError extends Error {
-  code: number;
-  data?: unknown;
-}
-
-interface RequestArguments {
-  method: string;
-  params?: unknown[];
-}
-
-type EthereumProvider = {
-  request: (args: RequestArguments) => Promise<unknown>;
-  on: (event: string, handler: (payload: unknown) => void) => void;
-  removeListener: (event: string, handler: (payload: unknown) => void) => void;
-};
+import { useToast } from '@/hooks/use-toast';
+import { chainConfig } from '@/lib/web3/config/chain';
+import { useWallet } from '@/lib/web3/hooks/use-wallet';
+import { EthereumProvider, ProviderRpcError } from '@/lib/web3/types';
 
 export function useNetworkCheck() {
-  const { wallets } = useWallets();
+  const wallet = useWallet();
   const { toast } = useToast();
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
@@ -40,11 +25,12 @@ export function useNetworkCheck() {
   }, []);
 
   const switchToAlfajores = useCallback(async () => {
-    const wallet = wallets[0];
-    if (!wallet?.isConnected()) return;
+    if (!(await wallet?.isConnected())) {
+      return;
+    }
 
     try {
-      const provider = (await wallet.getEthereumProvider()) as EthereumProvider;
+      const provider = await wallet.getEthereumProvider();
       const chainIdHex = chainConfig.chainId.hex;
 
       try {
@@ -82,14 +68,16 @@ export function useNetworkCheck() {
       toast({
         title: 'Network Switch Failed',
         description:
-          'Failed to switch to Celo Alfajores network. Please try switching manually in your wallet.',
+          'Failed to switch to Celo Alfajores network.' +
+          ' Please try switching manually in your wallet.',
         variant: 'destructive',
       });
     }
-  }, [wallets, toast, checkNetwork]);
+  }, [wallet, toast, checkNetwork]);
 
   useEffect(() => {
-    const wallet = wallets[0];
+    // TODO: this is wrong, isConnected is async, once we have a wallet object
+    // this is always true
     if (!wallet?.isConnected()) {
       setIsCorrectNetwork(false);
       return;
@@ -99,8 +87,7 @@ export function useNetworkCheck() {
 
     const initializeNetwork = async () => {
       try {
-        const provider =
-          (await wallet.getEthereumProvider()) as EthereumProvider;
+        const provider = await wallet.getEthereumProvider();
 
         // Initial network check
         await checkNetwork(provider);
@@ -122,7 +109,7 @@ export function useNetworkCheck() {
 
     initializeNetwork();
     return () => cleanup?.();
-  }, [wallets, checkNetwork]);
+  }, [wallet, checkNetwork]);
 
   return { isCorrectNetwork, switchToAlfajores };
 }
