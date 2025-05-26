@@ -298,7 +298,69 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const skip = (page - 1) * pageSize;
+    try {
+      console.log('1');
+      console.log(
+        await prisma.campaign.findMany({
+          where: {
+            status: 'ACTIVE',
+          },
+          include: {
+            images: true,
+          },
+          skip,
+          take: pageSize,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    try {
+      console.log('2');
+      console.log(
+        await prisma.campaign.findMany({
+          include: {
+            images: true,
+          },
+          skip,
+          take: pageSize,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      );
+    } catch (e) {
+      console.error(e);
+    }
 
+    try {
+      console.log('3');
+      console.log(
+        await prisma.campaign.findMany({
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    try {
+      console.log('4');
+      console.log(
+        await prisma.campaign.findMany({
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    console.log('.....');
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
         where: {
@@ -306,11 +368,7 @@ export async function GET(request: Request) {
             in:
               status === 'active'
                 ? ['ACTIVE']
-                : [
-                    'PENDING_APPROVAL',
-                    'COMPLETED',
-                    'ACTIVE',
-                  ],
+                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
           },
         },
         include: {
@@ -328,11 +386,7 @@ export async function GET(request: Request) {
             in:
               status === 'active'
                 ? ['ACTIVE']
-                : [
-                    'PENDING_APPROVAL',
-                    'COMPLETED',
-                    'ACTIVE',
-                  ],
+                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
           },
         },
       }),
