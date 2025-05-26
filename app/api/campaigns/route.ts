@@ -305,11 +305,11 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? [CampaignStatus.ACTIVE]
+                ? ['ACTIVE']
                 : [
-                    CampaignStatus.PENDING_APPROVAL,
-                    CampaignStatus.COMPLETED,
-                    CampaignStatus.ACTIVE,
+                    'PENDING_APPROVAL',
+                    'COMPLETED',
+                    'ACTIVE',
                   ],
           },
         },
@@ -327,11 +327,11 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? [CampaignStatus.ACTIVE]
+                ? ['ACTIVE']
                 : [
-                    CampaignStatus.PENDING_APPROVAL,
-                    CampaignStatus.COMPLETED,
-                    CampaignStatus.ACTIVE,
+                    'PENDING_APPROVAL',
+                    'COMPLETED',
+                    'ACTIVE',
                   ],
           },
         },
