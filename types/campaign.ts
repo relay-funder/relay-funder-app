@@ -6,7 +6,7 @@ export interface DbCampaign {
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: CampaignStatus;
+  status: string;
   transactionHash: string | null;
   campaignAddress: string | null;
   treasuryAddress?: string | null;
@@ -40,7 +40,7 @@ export type CampaignDisplay = {
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: CampaignStatus;
+  status: string;
   transactionHash?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -118,7 +118,7 @@ export interface CombinedCampaignData {
   id: number;
   title: string;
   description: string;
-  status: CampaignStatus;
+  status: string;
   address: string;
   owner: string;
   launchTime: string;
