@@ -15,7 +15,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApplyToRound } from '@/components/apply-to-round';
 import { prisma } from '@/lib/prisma';
-import type { Round as PrismaRound, Campaign } from '@prisma/client';
+import type {
+  Round as PrismaRound,
+  Campaign,
+} from '@/server/generated/prisma/client';
 import { ROUND_STATUS_MAP, getRoundStatus } from '@/types/round';
 import { CheckWalletServer } from '@/components/check-wallet-server';
 

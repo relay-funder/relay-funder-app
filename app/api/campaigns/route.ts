@@ -298,13 +298,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const skip = (page - 1) * pageSize;
-    try {
-      console.log('debug:');
-      // @ts-expect-error Property '_dmmf' does not exist on type
-      console.log(prisma._dmmf.modelMap.campaigns.fields);
-    } catch (error) {
-      console.error(error);
-    }
+
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
         where: {
