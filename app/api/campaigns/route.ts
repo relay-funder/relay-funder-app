@@ -300,6 +300,7 @@ export async function GET(request: Request) {
     const skip = (page - 1) * pageSize;
     try {
       console.log('debug:');
+      // @ts-expect-error Property '_dmmf' does not exist on type
       console.log(prisma._dmmf.modelMap.campaigns.fields);
     } catch (error) {
       console.error(error);
