@@ -1,5 +1,3 @@
-import { CampaignStatus } from '@prisma/client';
-
 export interface DbCampaign {
   id: number;
   title: string;
