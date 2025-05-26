@@ -5,7 +5,7 @@ import { useAccount } from '@/contexts';
 import { type Address } from 'viem';
 // import { ReviewRecipients } from "@/components/review-recipients"
 import { ApplicationStatus } from '@/lib/qfInteractions';
-// import { RecipientStatus } from "@prisma/client"
+// import { RecipientStatus } from '@/server/generated/prisma/client'
 
 interface Campaign {
   id: number;

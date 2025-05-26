@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { RecipientStatus } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { RecipientStatus, Prisma } from '@/server/generated/prisma/client';
 // import { ApplicationStatus } from "@/lib/qfInteractions"
 
 // Define Zod schema for input validation
