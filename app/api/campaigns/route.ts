@@ -367,8 +367,12 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? ['ACTIVE']
-                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
+                ? [CampaignStatus.ACTIVE]
+                : [
+                    CampaignStatus.PENDING_APPROVAL,
+                    CampaignStatus.COMPLETED,
+                    CampaignStatus.ACTIVE,
+                  ],
           },
         },
         include: {
@@ -385,8 +389,12 @@ export async function GET(request: Request) {
           status: {
             in:
               status === 'active'
-                ? ['ACTIVE']
-                : ['PENDING_APPROVAL', 'COMPLETED', 'ACTIVE'],
+                ? [CampaignStatus.ACTIVE]
+                : [
+                    CampaignStatus.PENDING_APPROVAL,
+                    CampaignStatus.COMPLETED,
+                    CampaignStatus.ACTIVE,
+                  ],
           },
         },
       }),
