@@ -49,3 +49,7 @@ dev_modules
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Prisma (and possibly other) build-generated files
+
+.generated
