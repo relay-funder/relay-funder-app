@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '@/.generated/prisma/client';
 
 // Use Prisma's generated types to build upon
 // This defines a type for a Round record including the count of roundCampaigns
@@ -40,7 +40,7 @@ export interface Round extends Omit<RoundPayload, 'matchingPool'> {
   // etc...
 }
 
-import type { Round as PrismaRound } from '@prisma/client';
+import type { Round as PrismaRound } from '@/.generated/prisma/client';
 
 // Define and export the status map
 export const ROUND_STATUS_MAP = {
@@ -75,3 +75,8 @@ export function getRoundStatus(round: PrismaRound): RoundStatusKey {
 }
 
 // You might want other round-related types here too
+export enum RecipientStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}

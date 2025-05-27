@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { type Address, type Hash } from 'viem';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@/.generated/prisma/client';
 import { type ActionResponse } from '@/types/actions';
 
 const prisma = new PrismaClient();

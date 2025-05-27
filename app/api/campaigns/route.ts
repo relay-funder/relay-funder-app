@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { DbCampaign } from '@/types/campaign';
 import { chainConfig } from '@/lib/web3/config/chain';
+import { CampaignStatus } from '@/types/campaign';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;
@@ -102,8 +103,8 @@ async function getCampaignCreatedEvents(
 
 type CampaignCreatedEvent = {
   args: {
-    identifierHash: `0x${string}`;
-    campaignInfoAddress: `0x${string}`;
+    identifierHash?: `0x${string}`;
+    campaignInfoAddress?: `0x${string}`;
   };
 };
 
@@ -153,7 +154,15 @@ export async function POST(request: Request) {
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
     const creatorAddress = formData.get('creatorAddress') as string;
-    const status = formData.get('status') as string;
+    const statusRaw = formData.get('status') as string;
+    const statusMap: Record<string, CampaignStatus> = {
+      draft: CampaignStatus.DRAFT,
+      pending_approval: CampaignStatus.PENDING_APPROVAL,
+      active: CampaignStatus.ACTIVE,
+      completed: CampaignStatus.COMPLETED,
+      failed: CampaignStatus.FAILED,
+    };
+    const status = statusMap[statusRaw] || CampaignStatus.DRAFT;
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
@@ -300,10 +309,19 @@ export async function GET(request: Request) {
     // status active should be enforced if access-token is not admin
     const statusList =
       status === 'active'
-        ? ['active']
+        ? [CampaignStatus.ACTIVE]
         : status === 'all'
-          ? ['draft', 'pending_approval', 'completed', 'active']
-          : ['pending_approval', 'completed', 'active'];
+          ? [
+              CampaignStatus.DRAFT,
+              CampaignStatus.PENDING_APPROVAL,
+              CampaignStatus.COMPLETED,
+              CampaignStatus.ACTIVE,
+            ]
+          : [
+              CampaignStatus.PENDING_APPROVAL,
+              CampaignStatus.COMPLETED,
+              CampaignStatus.ACTIVE,
+            ];
 
     const [dbCampaigns, totalCount] = await Promise.all([
       prisma.campaign.findMany({
@@ -340,25 +358,37 @@ export async function GET(request: Request) {
     const events = await getCampaignCreatedEvents(client);
 
     const combinedCampaigns = dbCampaigns
-      .filter((campaign) => campaign.transactionHash)
-      .map((dbCampaign) => {
-        const event = events.find(
-          (onChainCampaign) =>
-            onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
-            dbCampaign.campaignAddress?.toLowerCase(),
-        ) as CampaignCreatedEvent | undefined;
-        if (rounds === 'true') {
-          return formatCampaignData(
-            {
-              ...dbCampaign,
-              rounds:
-                dbCampaign.RoundCampaigns?.map(({ Round }) => Round) ?? [],
-            },
-            event,
-          );
-        }
-        return formatCampaignData(dbCampaign, event);
-      })
+      .filter(
+        (
+          campaign: DbCampaign & {
+            RoundCampaigns?: Array<{ Round: { id: number; title: string } }>;
+          },
+        ) => campaign.transactionHash,
+      )
+      .map(
+        (
+          dbCampaign: DbCampaign & {
+            RoundCampaigns?: Array<{ Round: { id: number; title: string } }>;
+          },
+        ) => {
+          const event = events.find(
+            (onChainCampaign) =>
+              onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
+              dbCampaign.campaignAddress?.toLowerCase(),
+          ) as CampaignCreatedEvent | undefined;
+          if (rounds === 'true') {
+            return formatCampaignData(
+              {
+                ...dbCampaign,
+                rounds:
+                  dbCampaign.RoundCampaigns?.map(({ Round }) => Round) ?? [],
+              },
+              event,
+            );
+          }
+          return formatCampaignData(dbCampaign, event);
+        },
+      )
       .filter(Boolean);
 
     return NextResponse.json({
