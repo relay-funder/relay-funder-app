@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { RoundCampaigns, Round } from '@/server/generated/prisma/client';
+import type { RoundCampaigns, Round } from '@/.generated/prisma/client';
 
 export async function GET(
   req: NextRequest,

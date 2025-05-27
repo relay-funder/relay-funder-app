@@ -4,7 +4,7 @@ import {
   CampaignImage,
   Payment,
   User,
-} from '@/server/generated/prisma/client';
+} from '@/.generated/prisma/client';
 
 export type PaymentWithUser = Payment & {
   user: User;

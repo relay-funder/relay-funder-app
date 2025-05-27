@@ -18,7 +18,7 @@ import { prisma } from '@/lib/prisma';
 import type {
   Round as PrismaRound,
   Campaign,
-} from '@/server/generated/prisma/client';
+} from '@/.generated/prisma/client';
 import { ROUND_STATUS_MAP, getRoundStatus } from '@/types/round';
 import { CheckWalletServer } from '@/components/check-wallet-server';
 
