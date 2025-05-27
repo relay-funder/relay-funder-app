@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/.generated/prisma/client';
+import { CampaignStatus } from '../types/campaign';
 const prisma = new PrismaClient();
 
 const campaignAddresses = [
@@ -79,6 +80,8 @@ const locations = [
   'Paris, France',
 ];
 
+const campaignStatuses = Object.values(CampaignStatus);
+
 // Helper function to generate slug from title
 function generateSlug(
   title: string,
@@ -123,7 +126,7 @@ async function main() {
     startTime: new Date(),
     endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     creatorAddress: '0x1234567890123456789012345678901234567890',
-    status: 'active',
+    status: campaignStatuses[i % campaignStatuses.length],
     slug: generateSlug(campaignTitles[i], i, usedSlugs),
     transactionHash: `0xdeadbeef${(i + 1).toString().padStart(2, '0')}`,
     campaignAddress: campaignAddresses[i] || null,

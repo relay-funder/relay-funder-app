@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const onEditSuccess = useCallback(() => {
     setEditProfile(false);
   }, [setEditProfile]);
-  if (!isReady || isProfilePending) {
+  if (!isReady || (address && isProfilePending)) {
     return (
       <PageLoading>Please wait while we initialize your profile.</PageLoading>
     );

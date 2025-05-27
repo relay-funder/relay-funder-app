@@ -1,12 +1,37 @@
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-arm64-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
-  output        = "../node_modules/.prisma/client"
+  output        = "../.generated/prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+enum PaymentType {
+  BUY
+  SELL
+}
+
+enum RecipientStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Status {
+  NOT_STARTED
+  ACTIVE
+  CLOSED
 }
 
 model Campaign {
@@ -17,7 +42,7 @@ model Campaign {
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
-  status          String               @default("draft")
+  status          CampaignStatus       @default(DRAFT)
   transactionHash String?
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
@@ -66,11 +91,6 @@ model User {
   collections          Collection[]
   payments             Payment[]
   paymentMethods       PaymentMethod[]
-}
-
-enum PaymentType {
-  BUY
-  SELL
 }
 
 model Payment {
@@ -210,16 +230,4 @@ model Favorite {
   @@unique([userAddress, campaignId])
   @@index([userAddress])
   @@index([campaignId])
-}
-
-enum RecipientStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum Status {
-  NOT_STARTED
-  ACTIVE
-  CLOSED
 }
