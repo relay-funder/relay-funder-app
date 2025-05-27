@@ -3,6 +3,7 @@ import { celoAlfajores } from 'viem/chains';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { chainConfig } from '@/config/chain';
+import { CampaignStatus } from '@/types/campaign';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;
@@ -187,13 +188,22 @@ export async function PATCH(request: Request) {
     }
 
     type UpdateData = {
-      status?: string;
+      status?: CampaignStatus;
       transactionHash?: string;
       campaignAddress?: string;
     };
 
     const updateData: UpdateData = {};
-    if (status) updateData.status = status;
+    if (status) {
+      const statusMap: Record<string, CampaignStatus> = {
+        draft: CampaignStatus.DRAFT,
+        pending_approval: CampaignStatus.PENDING_APPROVAL,
+        active: CampaignStatus.ACTIVE,
+        completed: CampaignStatus.COMPLETED,
+        failed: CampaignStatus.FAILED,
+      };
+      updateData.status = statusMap[status] || CampaignStatus.DRAFT;
+    }
     if (transactionHash) updateData.transactionHash = transactionHash;
     if (campaignAddress) updateData.campaignAddress = campaignAddress;
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { adminAddress } from '@/lib/constant';
 import { enableBypassContractAdmin } from '@/lib/develop';
+import { CampaignStatus } from '@/types/campaign';
 
 export async function POST(
   req: NextRequest,
@@ -62,7 +63,7 @@ export async function POST(
     const updatedCampaign = await prisma.campaign.update({
       where: { id: campaignId },
       data: {
-        status: 'active',
+        status: CampaignStatus.ACTIVE,
         treasuryAddress,
       },
     });

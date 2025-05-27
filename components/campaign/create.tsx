@@ -30,6 +30,7 @@ import {
   useCreateCampaignContract,
   IOnCreateCampaignConfirmed,
 } from '@/lib/web3/hooks/useCreateCampaignContract';
+import { CampaignStatus } from '@/types/campaign';
 
 const campaignSchema = z.object({
   title: z.string(),
