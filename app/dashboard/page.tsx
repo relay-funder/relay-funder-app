@@ -95,7 +95,11 @@ export default function DashboardPage() {
           ) : favouriteError ? (
             <CampaignError error={favouriteError.message} />
           ) : favourites?.length === 0 ? (
-            <CampaignEmpty message="You haven't saved any campaigns as favorites yet." />
+            <CampaignEmpty 
+              message="You haven't saved any campaigns as favorites yet."
+              buttonText="Explore Campaigns"
+              buttonHref="/"
+            />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {favourites?.map((favourite: Favourite) => (
