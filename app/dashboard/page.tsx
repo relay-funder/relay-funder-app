@@ -27,7 +27,7 @@ export default function DashboardPage() {
     error: favouriteError,
   } = useUserFavourites(address);
 
-  if (!authenticated && !address) {
+  if (!authenticated || !address) {
     return (
       <PageDashboard>
         <DashboardOverview />
@@ -71,9 +71,7 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="my-campaigns">
-          {loading ? (
-            <CampaignLoading />
-          ) : error ? (
+          {error ? (
             <CampaignError error={error.message} />
           ) : campaigns?.length === 0 ? (
             <CampaignEmpty />
@@ -90,9 +88,7 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="favorites">
-          {loadingFavourites ? (
-            <CampaignLoading />
-          ) : favouriteError ? (
+          {favouriteError ? (
             <CampaignError error={favouriteError.message} />
           ) : favourites?.length === 0 ? (
             <CampaignEmpty 
