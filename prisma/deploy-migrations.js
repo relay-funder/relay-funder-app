@@ -53,52 +53,50 @@ async function runCommand(command, description) {
   }
 }
 
-async function checkDatabaseConnection() {
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set');
-  }
-  
-  console.log('🔌 Checking database and migrations...');
-  
-  // Simpler connectivity test using Prisma's built-in validation
-  const result = await runCommand(
-    'pnpm exec prisma migrate status --schema=./prisma/schema.prisma',
-    'Database connection'
-  );
-  
-  if (!result.success) {
-    throw new Error('Cannot connect to database. Please check DATABASE_URL and database availability.');
-  }
-  
-  return result;
-}
-
 async function checkMigrationStatus() {
   console.log('🔍 Checking migration status...');
   
-  // We already did this check in checkDatabaseConnection, so we can reuse that result
-  // But let's be explicit about what we're checking for
   const result = await runCommand(
     'pnpm exec prisma migrate status --schema=./prisma/schema.prisma',
     'Checking migration status'
   );
   
+  // Check if output indicates migration mismatch
+  const stderr = result.stderr?.toLowerCase() || '';
+  const stdout = result.stdout?.toLowerCase() || '';
+  
+  const hasMismatch = 
+    stderr.includes('migration history') ||
+    stderr.includes('different') ||
+    stderr.includes('not found locally') ||
+    stdout.includes('migration history') ||
+    stdout.includes('different');
+  
+  if (hasMismatch) {
+    return { 
+      needsMigration: true, 
+      hasMismatch: true,
+      reason: 'migration mismatch detected',
+      output: result.stdout || result.stderr 
+    };
+  }
+  
   if (!result.success) {
-    // If migrate status fails, assume we need to deploy migrations
-    return { needsMigration: true, reason: 'migrate status command failed' };
+    // If migrate status fails for other reasons, assume we need to deploy migrations
+    return { needsMigration: true, hasMismatch: false, reason: 'migrate status command failed' };
   }
   
   // Check if output indicates pending migrations
-  const output = result.stdout.toLowerCase();
   const hasPendingMigrations = 
-    output.includes('pending') || 
-    output.includes('not yet applied') ||
-    output.includes('database is not up to date') ||
-    output.includes('following migration') ||
-    output.includes('drift');
+    stdout.includes('pending') || 
+    stdout.includes('not yet applied') ||
+    stdout.includes('database is not up to date') ||
+    stdout.includes('following migration') ||
+    stdout.includes('drift');
   
   return { 
-    needsMigration: hasPendingMigrations, 
+    needsMigration: hasPendingMigrations,
+    hasMismatch: false,
     reason: hasPendingMigrations ? 'pending migrations detected' : 'database up to date',
     output: result.stdout 
   };
@@ -125,19 +123,21 @@ async function main() {
       return;
     }
     
-    // Combined database connection and initial migration status check
-    const connectionResult = await checkDatabaseConnection();
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
     
-    // Parse the connection result to see if we already have migration info
-    const output = connectionResult.stdout.toLowerCase();
-    const hasPendingMigrations = 
-      output.includes('pending') || 
-      output.includes('not yet applied') ||
-      output.includes('database is not up to date') ||
-      output.includes('following migration') ||
-      output.includes('drift');
+    // Check migration status (this also validates database connectivity)
+    const migrationStatus = await checkMigrationStatus();
     
-    if (hasPendingMigrations) {
+    if (migrationStatus.hasMismatch) {
+      console.log('⚠️  Migration mismatch detected - forcing migration deployment');
+      await runMigrations(true);
+      console.log('✅ Migrations applied successfully');
+      return;
+    }
+    
+    if (migrationStatus.needsMigration) {
       console.log('🔄 Running pending migrations...');
       await runMigrations();
       console.log('✅ Migrations completed');
