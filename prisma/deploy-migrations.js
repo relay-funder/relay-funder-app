@@ -104,9 +104,10 @@ async function checkMigrationStatus() {
   };
 }
 
-async function runMigrations() {
+async function runMigrations(force = false) {
+  const forceFlag = force ? ' --force' : '';
   const result = await runCommand(
-    'pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma',
+    `pnpm exec prisma migrate deploy${forceFlag} --schema=./prisma/schema.prisma`,
     'Migration deployment'
   );
   
@@ -142,15 +143,7 @@ async function main() {
     
     if (hasMismatch) {
       console.log('⚠️  Migration mismatch detected - forcing migration deployment');
-      const result = await runCommand(
-        'pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma',
-        'Forced migration deployment'
-      );
-      
-      if (!result.success) {
-        throw new Error('Forced migration deployment failed - manual resolution required');
-      }
-      
+      await runMigrations(true);
       console.log('✅ Migrations applied successfully');
       return;
     }
