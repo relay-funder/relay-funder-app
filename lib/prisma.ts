@@ -1,11 +1,31 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@/.generated/prisma/client';
 
 if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is not set');
+  throw new Error('DATABASE_URL environment variable is not set');
 }
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
+function getPrismaLogLevels(): Prisma.LogLevel[] {
+  const logLevels = process.env.PRISMA_LOG_LEVELS;
+  if (!logLevels) {
+    return ['error'];
+  }
+  
+  const levels = logLevels.split(',').map(level => level.trim());
+  
+  const validLevels: Prisma.LogLevel[] = ['query', 'info', 'warn', 'error'];
+  const filteredLevels = levels.filter((level): level is Prisma.LogLevel => 
+    validLevels.includes(level as Prisma.LogLevel)
+  );
+  
+  return filteredLevels.length > 0 ? filteredLevels : ['error'];
+}
 
-export const prisma = globalForPrisma.prisma || new PrismaClient()
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma 
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: getPrismaLogLevels(),
+  });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
