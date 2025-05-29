@@ -45,9 +45,17 @@ export default function DashboardPage() {
             <TabsTrigger value="my-campaigns" className="px-4 py-2">
               My Campaigns
             </TabsTrigger>
+            <TabsTrigger value="favorites" className="px-4 py-2">
+              <Heart className="mr-2 h-4 w-4" />
+              My Favorites
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="my-campaigns">
+            <CampaignLoading />
+          </TabsContent>
+
+          <TabsContent value="favorites">
             <CampaignLoading />
           </TabsContent>
         </Tabs>
