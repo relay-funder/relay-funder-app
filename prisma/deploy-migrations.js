@@ -27,13 +27,10 @@ const isVercelBuild = process.env.VERCEL === '1';
 const vercelEnv = process.env.VERCEL_ENV;
 const databaseUrl = process.env.DATABASE_URL;
 
-console.log('🚀 Starting migration deployment process...');
-console.log(`Environment: ${process.env.NODE_ENV || 'unknown'}`);
-console.log(`Vercel Environment: ${vercelEnv || 'unknown'}`);
-console.log(`Vercel Build: ${isVercelBuild ? 'Yes' : 'No'}`);
+console.log('🚀 Migration script starting...');
+console.log(`Environment: ${process.env.NODE_ENV || 'unknown'} | Vercel: ${vercelEnv || 'local'}`);
 
 async function runCommand(command, description) {
-  console.log(`\n📋 ${description}...`);
   try {
     const { stdout, stderr } = await execAsync(command, { 
       cwd: projectRoot,
@@ -48,7 +45,7 @@ async function runCommand(command, description) {
     
     return { success: true, stdout, stderr };
   } catch (error) {
-    console.error(`❌ Error in ${description}:`);
+    console.error(`❌ ${description} failed:`);
     console.error(error.message);
     if (error.stdout) console.error('STDOUT:', error.stdout);
     if (error.stderr) console.error('STDERR:', error.stderr);
@@ -61,19 +58,18 @@ async function checkDatabaseConnection() {
     throw new Error('DATABASE_URL environment variable is not set');
   }
   
-  console.log('🔌 Checking database connection...');
+  console.log('🔌 Checking database and migrations...');
   
   // Simpler connectivity test using Prisma's built-in validation
   const result = await runCommand(
     'pnpm exec prisma migrate status --schema=./prisma/schema.prisma',
-    'Testing database connectivity'
+    'Database connection'
   );
   
   if (!result.success) {
     throw new Error('Cannot connect to database. Please check DATABASE_URL and database availability.');
   }
   
-  console.log('✅ Database connection successful');
   return result;
 }
 
@@ -109,36 +105,24 @@ async function checkMigrationStatus() {
 }
 
 async function runMigrations() {
-  console.log('🔄 Running database migrations...');
-  
   const result = await runCommand(
     'pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma',
-    'Deploying migrations'
+    'Migration deployment'
   );
   
   if (!result.success) {
     throw new Error('Migration deployment failed');
   }
   
-  console.log('✅ Migrations completed successfully');
   return result;
 }
 
 async function main() {
   try {
-    console.log('🏁 Starting migration process...');
-    
     // Skip in local development unless explicitly requested
     if (isDevelopment && !process.env.FORCE_PRODUCTION_MIGRATIONS) {
-      console.log('⏭️  Skipping production migrations in local development environment');
-      console.log('   Set FORCE_PRODUCTION_MIGRATIONS=true to override');
-      console.log('   Use "pnpm dev:db" for local database migrations');
+      console.log('⏭️  Skipping migrations in development (use "pnpm dev:db" for local migrations)');
       return;
-    }
-    
-    // Log environment for deployed builds
-    if (isVercelBuild) {
-      console.log(`🚀 Running migrations in Vercel ${vercelEnv} environment`);
     }
     
     // Combined database connection and initial migration status check
@@ -154,24 +138,20 @@ async function main() {
       output.includes('drift');
     
     if (hasPendingMigrations) {
-      console.log('🚨 Pending migrations detected, running migrations...');
+      console.log('🔄 Running pending migrations...');
       await runMigrations();
+      console.log('✅ Migrations completed');
     } else {
-      console.log('✅ Database is up to date, no migrations needed');
+      console.log('✅ Database up to date');
     }
     
-    console.log('\n🎉 Migration process completed successfully!');
-    
   } catch (error) {
-    console.error('\n💥 Migration process failed:');
-    console.error(error.message);
+    console.error('💥 Migration failed:', error.message);
     
     // In Vercel builds, we want to fail the deployment if migrations fail
     if (isVercelBuild) {
-      console.error('🚫 Failing Vercel deployment due to migration errors');
       process.exit(1);
     } else {
-      console.error('⚠️  Migration failed, but continuing...');
       process.exit(0);
     }
   }
