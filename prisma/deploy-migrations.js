@@ -130,6 +130,31 @@ async function main() {
     
     // Parse the connection result to see if we already have migration info
     const output = connectionResult.stdout.toLowerCase();
+    const stderr = connectionResult.stderr?.toLowerCase() || '';
+    
+    // Check for migration mismatches
+    const hasMismatch = 
+      stderr.includes('migration history') ||
+      stderr.includes('different') ||
+      stderr.includes('not found locally') ||
+      output.includes('migration history') ||
+      output.includes('different');
+    
+    if (hasMismatch) {
+      console.log('⚠️  Migration mismatch detected - forcing migration deployment');
+      const result = await runCommand(
+        'pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma',
+        'Forced migration deployment'
+      );
+      
+      if (!result.success) {
+        throw new Error('Forced migration deployment failed - manual resolution required');
+      }
+      
+      console.log('✅ Migrations applied successfully');
+      return;
+    }
+    
     const hasPendingMigrations = 
       output.includes('pending') || 
       output.includes('not yet applied') ||
