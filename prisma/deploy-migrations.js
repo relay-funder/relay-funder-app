@@ -102,9 +102,10 @@ async function checkMigrationStatus() {
   };
 }
 
-async function runMigrations() {
+async function runMigrations(force = false) {
+  const forceFlag = force ? ' --force' : '';
   const result = await runCommand(
-    'pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma',
+    `pnpm exec prisma migrate deploy${forceFlag} --schema=./prisma/schema.prisma`,
     'Migration deployment'
   );
   
