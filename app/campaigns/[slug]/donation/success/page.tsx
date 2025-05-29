@@ -1,19 +1,27 @@
-import { Suspense } from 'react'
-import PaymentStatus from '@/components/payment-status'
+import { Suspense } from 'react';
+import { PaymentStatus } from '@/components/payment/status';
+import { PaymentStatusLoading } from '@/components/payment/status-loading';
+import ProjectInfo from '@/components/project-info';
+import { Campaign } from '@/types/campaign';
+import { getCampaign } from '@/lib/database';
+import { PageHeaderSticky } from '@/components/page/header-sticky';
+import { PageMainTwoColums } from '@/components/page/two-cols';
 
-export default function PaymentSuccessPage() {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const campaign: Campaign = await getCampaign((await params).slug);
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gray-50/50 flex items-center justify-center p-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4">Loading payment status...</p>
-          </div>
-        </div>
-      }
-    >
-      <PaymentStatus />
-    </Suspense>
-  )
-} 
+    <>
+      <PageHeaderSticky message="Donating to" title={campaign.title} />
+      <PageMainTwoColums>
+        <Suspense fallback={<PaymentStatusLoading />}>
+          <PaymentStatus />
+        </Suspense>
+        <ProjectInfo campaign={campaign} />
+      </PageMainTwoColums>
+    </>
+  );
+}
