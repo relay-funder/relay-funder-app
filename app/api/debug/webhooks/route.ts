@@ -3,6 +3,24 @@ import crypto from 'crypto';
 import { CROWDSPLIT_WEBHOOK_SECRET } from '@/lib/constant';
 import { prisma } from '@/lib/prisma';
 
+// Define webhook body types
+interface WebhookBody {
+  event?: string;
+  transaction_id?: string;
+  status?: string;
+  type?: string;
+  object?: string;
+  id?: string;
+  amount?: number;
+  currency?: string;
+  created?: number;
+  metadata?: Record<string, unknown>;
+  data?: {
+    object?: Record<string, unknown>;
+  };
+  [key: string]: unknown;
+}
+
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
   const requestId = crypto.randomUUID();
@@ -38,7 +56,7 @@ export async function POST(request: NextRequest) {
     
     // Get raw body for signature verification
     let bodyText = '';
-    let body: any = null;
+    let body: WebhookBody | null = null;
     
     try {
       bodyText = await request.text();
@@ -47,7 +65,7 @@ export async function POST(request: NextRequest) {
         
         // Try to parse as JSON
         try {
-          body = JSON.parse(bodyText);
+          body = JSON.parse(bodyText) as WebhookBody;
           console.log('📦 Body (JSON):');
           console.log(JSON.stringify(body, null, 2));
         } catch {
@@ -212,32 +230,6 @@ export async function POST(request: NextRequest) {
     } else {
       console.log(`  ⚠️  Invalid or missing webhook payload`);
     }
-    
-    // Create comprehensive debug response
-    const debugData = {
-      requestId,
-      timestamp,
-      url: request.url,
-      method: request.method,
-      headers,
-      queryParams: searchParams,
-      body,
-      bodyRaw: bodyText,
-      contentLength: bodyText.length,
-      userAgent: request.headers.get('user-agent'),
-      signature: {
-        hasSecret: !!CROWDSPLIT_WEBHOOK_SECRET,
-        hasSignature: !!signatureHeader,
-        isValid: isSignatureValid,
-        details: signatureValidationDetails
-      },
-      eventProcessing: {
-        hasBody: !!body,
-        eventType: body?.event || body?.type || 'unknown',
-        transactionId: body?.transaction_id || body?.id || null,
-        status: body?.status || 'unknown'
-      }
-    };
     
     console.log('\n✅ Debug webhook processing completed');
     console.log('===============================================\n');
