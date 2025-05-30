@@ -21,7 +21,7 @@ interface WebhookBody {
   [key: string]: unknown;
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
   const requestId = crypto.randomUUID();
   
@@ -54,29 +54,38 @@ export async function POST(request: NextRequest) {
       console.log(JSON.stringify(searchParams, null, 2));
     }
     
-    // Get raw body for signature verification
-    let bodyText = '';
+    // For GET requests, webhook data might be in query parameters
     let body: WebhookBody | null = null;
+    let bodyText = '';
     
-    try {
-      bodyText = await request.text();
-      if (bodyText) {
-        console.log(`\n📦 Raw Body Length: ${bodyText.length} bytes`);
-        
-        // Try to parse as JSON
-        try {
-          body = JSON.parse(bodyText) as WebhookBody;
-          console.log('📦 Body (JSON):');
-          console.log(JSON.stringify(body, null, 2));
-        } catch {
-          console.log('📦 Body (Raw Text):');
-          console.log(bodyText);
+    // Check if webhook data is in query parameters
+    if (Object.keys(searchParams).length > 0) {
+      body = searchParams as WebhookBody;
+      bodyText = JSON.stringify(searchParams);
+      console.log('\n📦 Webhook data from query parameters:');
+      console.log(JSON.stringify(body, null, 2));
+    } else {
+      // Try to read body (though GET requests typically don't have bodies)
+      try {
+        bodyText = await request.text();
+        if (bodyText) {
+          console.log(`\n📦 Raw Body Length: ${bodyText.length} bytes`);
+          
+          // Try to parse as JSON
+          try {
+            body = JSON.parse(bodyText) as WebhookBody;
+            console.log('📦 Body (JSON):');
+            console.log(JSON.stringify(body, null, 2));
+          } catch {
+            console.log('📦 Body (Raw Text):');
+            console.log(bodyText);
+          }
+        } else {
+          console.log('\n📦 Body: Empty');
         }
-      } else {
-        console.log('\n📦 Body: Empty');
+      } catch (error) {
+        console.log('\n❌ Error reading body:', error);
       }
-    } catch (error) {
-      console.log('\n❌ Error reading body:', error);
     }
     
     // Webhook Signature Validation (Stripe-style)
@@ -85,11 +94,12 @@ export async function POST(request: NextRequest) {
     
     const signatureHeader = request.headers.get('x-crowdsplit-signature') || 
                            request.headers.get('stripe-signature') ||
-                           request.headers.get('x-signature');
+                           request.headers.get('x-signature') ||
+                           searchParams.signature; // Check query params too
     
-    console.log(`  Signature header found: ${!!signatureHeader}`);
+    console.log(`  Signature header/param found: ${!!signatureHeader}`);
     if (signatureHeader) {
-      console.log(`  Signature header name: ${['x-crowdsplit-signature', 'stripe-signature', 'x-signature'].find(h => request.headers.get(h))}`);
+      console.log(`  Signature source: ${['x-crowdsplit-signature', 'stripe-signature', 'x-signature'].find(h => request.headers.get(h)) || 'query parameter'}`);
     }
     
     let isSignatureValid = false;
@@ -237,11 +247,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       debug: {
-        message: 'Debug webhook received and processed successfully',
+        message: 'Debug webhook received and processed successfully via GET',
         requestId,
         timestamp,
         receivedData: {
           headersCount: Object.keys(headers).length,
+          queryParamsCount: Object.keys(searchParams).length,
           bodySize: bodyText.length,
           hasSignature: !!signatureHeader,
           signatureValid: isSignatureValid,
@@ -272,42 +283,4 @@ export async function POST(request: NextRequest) {
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
-
-// Handle other HTTP methods for debugging
-export async function GET(request: NextRequest) {
-  const timestamp = new Date().toISOString();
-  console.log(`\n🔍 [DEBUG WEBHOOK GET] ${timestamp}`);
-  console.log(`📍 URL: ${request.url}`);
-  
-  return NextResponse.json({
-    success: true,
-    message: 'Debug webhook endpoint is active',
-    timestamp,
-    endpoint: '/api/debug/webhooks',
-    methods: ['GET', 'POST'],
-    configuration: {
-      webhook_secret_configured: !!CROWDSPLIT_WEBHOOK_SECRET,
-      signature_validation: 'Stripe-style webhook validation',
-      supported_events: [
-        'transaction.update',
-        'transaction.updated',
-        'payment_intent.succeeded',
-        'payment_intent.payment_failed'
-      ]
-    },
-    note: 'This endpoint validates webhook signatures and simulates payment processing for debugging purposes'
-  });
-}
-
-export async function PUT(request: NextRequest) {
-  return POST(request);
-}
-
-export async function PATCH(request: NextRequest) {
-  return POST(request);
-}
-
-export async function DELETE(request: NextRequest) {
-  return POST(request);
 } 
