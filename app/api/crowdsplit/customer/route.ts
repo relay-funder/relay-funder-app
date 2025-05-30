@@ -29,9 +29,17 @@ export async function POST(request: NextRequest) {
       const crowdsplitCustomer =
         await crowdsplitService.createCustomer(customerData);
 
-      if (typeof crowdsplitCustomer.id !== 'string') {
+      // Access the customer ID from the nested data structure
+      const customerId = crowdsplitCustomer.data?.id;
+
+      if (typeof customerId !== 'string') {
+        console.error('Expected string id, got:', {
+          id: customerId,
+          type: typeof customerId,
+          fullResponse: crowdsplitCustomer,
+        });
         return NextResponse.json(
-          { error: 'Crowdsplit API Error' },
+          { error: 'Crowdsplit API Error', details: 'Invalid customer ID format' },
           { status: 400 },
         );
       }
@@ -39,7 +47,7 @@ export async function POST(request: NextRequest) {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          crowdsplitCustomerId: crowdsplitCustomer.id,
+          crowdsplitCustomerId: customerId,
           firstName: customerData.firstName,
           lastName: customerData.lastName,
           email: customerData.email,
@@ -48,7 +56,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        customerId: crowdsplitCustomer.id,
+        customerId,
       });
     } catch (crowdsplitError) {
       console.error('Crowdsplit API error:', crowdsplitError);
