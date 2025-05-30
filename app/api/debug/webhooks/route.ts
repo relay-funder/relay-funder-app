@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       console.log(`  Object Type: ${object || body.object || 'unknown'}`);
       
       // Simulate payment confirmation processing
-      if (event === 'transaction.update' || type === 'payment_intent.succeeded' || status === 'completed') {
+      if (event === 'transaction.updated' || event === 'transaction.update' || type === 'payment_intent.succeeded' || status === 'completed') {
         const transactionId = transaction_id || body.id;
         
         if (transactionId) {
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
           signature_header_present: !!signatureHeader
         },
         simulation: {
-          payment_processing: body?.event === 'transaction.update' || body?.type === 'payment_intent.succeeded',
+          payment_processing: body?.event === 'transaction.update' || body?.event === 'transaction.updated' || body?.type === 'payment_intent.succeeded',
           would_trigger_db_update: (body?.status === 'completed' || body?.type === 'payment_intent.succeeded') && !!body?.transaction_id
         }
       }
@@ -291,6 +291,7 @@ export async function GET(request: NextRequest) {
       signature_validation: 'Stripe-style webhook validation',
       supported_events: [
         'transaction.update',
+        'transaction.updated',
         'payment_intent.succeeded',
         'payment_intent.payment_failed'
       ]
