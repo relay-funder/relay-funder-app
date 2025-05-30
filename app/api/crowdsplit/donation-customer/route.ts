@@ -14,15 +14,23 @@ export async function POST(request: NextRequest) {
       email,
     });
 
-    if (typeof crowdsplitCustomer.id !== 'string') {
+    // Access the customer ID from the nested data structure
+    const customerId = crowdsplitCustomer.data?.id;
+
+    if (typeof customerId !== 'string') {
+      console.error('Expected string id, got:', {
+        id: customerId,
+        type: typeof customerId,
+        fullResponse: crowdsplitCustomer,
+      });
       return NextResponse.json(
-        { error: 'Crowdsplit API Error' },
+        { error: 'Crowdsplit API Error', details: 'Invalid customer ID format' },
         { status: 400 },
       );
     }
 
     return NextResponse.json(
-      { success: true, customerId: crowdsplitCustomer.id },
+      { success: true, customerId },
       { status: 200 },
     );
   } catch (error) {

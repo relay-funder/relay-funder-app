@@ -24,7 +24,38 @@ export async function apiFetch(
         if (url.includes('/api/v1/customers')) {
           if (url.endsWith('/api/v1/customers') && options.method === 'POST') {
             return new Response(
-              JSON.stringify({ id: 'mock-customer-id' + uuidv4() }),
+              JSON.stringify({
+                execStatus: true,
+                httpStatus: 200,
+                msg: "Subject's Data are Stored Successfully",
+                data: {
+                  id: 'mock-customer-id-' + uuidv4(),
+                  email: 'mock@example.com',
+                  document_number: null,
+                  tax_id: null,
+                  document_type: null,
+                  social_name: null,
+                  dob: null,
+                  house_number: null,
+                  street_number: null,
+                  street_name: null,
+                  neighborhood: null,
+                  postal_code: null,
+                  city: null,
+                  state: null,
+                  address_country: null,
+                  phone_country_code: null,
+                  phone_area_code: null,
+                  phone_number: null,
+                  monthly_net_income: null,
+                  gender: null,
+                  owner_legal_name: null,
+                  owner_document_number: null,
+                  owner_document_type: null,
+                  customer_wallet: null,
+                  trading_wallet: null
+                }
+              }),
             );
           }
           if (url.endsWith('payment_methods') && options.method === 'POST') {
