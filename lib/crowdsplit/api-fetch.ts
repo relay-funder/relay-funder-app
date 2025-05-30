@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { CROWDSPLIT_API_URL } from '@/lib/constant';
+import { enableApiMock } from '@/lib/develop';
 /**
  * Api Mock for development
  * this is used in server to prevent 3rd party requests
@@ -12,7 +13,7 @@ export async function apiFetch(
   options: RequestInit,
 ): Promise<Response> {
   // Only use mock in development environment
-  if (process.env.NODE_ENV === 'development') {
+  if (enableApiMock) {
     console.log('developer mock fetch', { url, options });
     if (typeof url === 'string') {
       if (CROWDSPLIT_API_URL && url.includes(CROWDSPLIT_API_URL)) {
