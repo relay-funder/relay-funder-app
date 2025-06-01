@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ethers } from 'ethers';
 import { useToast } from '@/hooks/use-toast';
-import { useWallet } from '@/lib/web3/hooks/use-wallet';
+import { useWallet } from '@/lib/web3/hooks/use-web3';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
 import {
@@ -66,7 +66,6 @@ export function useDonationCallback({
         campaignId: campaign.id,
         isAnonymous: false,
         status: 'confirming',
-        userAddress,
         transactionHash: tx.hash,
       });
 
@@ -81,7 +80,6 @@ export function useDonationCallback({
       await updatePaymentStatus({
         paymentId,
         status: receipt.status === 1 ? 'confirmed' : 'failed',
-        userAddress,
       });
 
       debug && console.log('Payment status updated');

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { chainConfig } from '@/lib/web3/config/chain';
-import { useWallet } from '@/lib/web3/hooks/use-wallet';
+import { useWallet } from '@/lib/web3/hooks/use-web3';
 import { EthereumProvider, ProviderRpcError } from '@/lib/web3/types';
 
 export function useNetworkCheck() {
@@ -25,7 +25,10 @@ export function useNetworkCheck() {
   }, []);
 
   const switchToAlfajores = useCallback(async () => {
-    if (!(await wallet?.isConnected())) {
+    if (!wallet) {
+      return;
+    }
+    if (!(await wallet.isConnected())) {
       return;
     }
 
@@ -68,7 +71,9 @@ export function useNetworkCheck() {
       toast({
         title: 'Network Switch Failed',
         description:
-          'Failed to switch to Celo Alfajores network.' +
+          'Failed to switch to ' +
+          chainConfig.name +
+          ' network.' +
           ' Please try switching manually in your wallet.',
         variant: 'destructive',
       });
@@ -76,10 +81,8 @@ export function useNetworkCheck() {
   }, [wallet, toast, checkNetwork]);
 
   useEffect(() => {
-    // TODO: this is wrong, isConnected is async, once we have a wallet object
-    // this is always true
-    if (!wallet?.isConnected()) {
-      setIsCorrectNetwork(false);
+    if (!wallet) {
+      console.log('use-network:effect: no wallet');
       return;
     }
 
@@ -87,6 +90,11 @@ export function useNetworkCheck() {
 
     const initializeNetwork = async () => {
       try {
+        if (!(await wallet.isConnected())) {
+          console.log('use-network:effect: wallet not connected');
+          setIsCorrectNetwork(false);
+          return;
+        }
         const provider = await wallet.getEthereumProvider();
 
         // Initial network check
@@ -94,6 +102,7 @@ export function useNetworkCheck() {
 
         // Listen for network changes
         const handleChainChanged = async (newChainId: unknown) => {
+          console.log('use-network:effect: handleChainChanged', newChainId);
           const isCorrect = newChainId === chainConfig.chainId.hex;
           setIsCorrectNetwork(isCorrect);
         };

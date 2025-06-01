@@ -6,7 +6,7 @@ export const options: InitSilkOptions = {
   useStaging: true,
   config: {
     styles: { darkMode: true },
-    allowedSocials: [],
+    allowedSocials: ['google'],
     authenticationMethods: ['wallet'],
   },
   walletConnectProjectId: REOWN_CLOUD_PROJECT_ID,
@@ -15,8 +15,8 @@ export const options: InitSilkOptions = {
     // logo: '',
     // origin: getOrigin(),
     //    projectId:
-    // termsOfServiceUrl: `${baseUrl}/terms-of-service`,
-    // privacyPolicyUrl: `${baseUrl}/privacy-policy`,
+    // termsOfServiceUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/terms-of-service`,
+    // privacyPolicyUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/privacy-policy`,
   },
 };
 console.log(options);

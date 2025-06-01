@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { checkAuth } from '@/lib/api/auth';
+import { ApiUpstreamError, ApiParameterError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
 import { crowdsplitService } from '@/lib/crowdsplit/service';
 import { CrowdsplitDonationCustomerPostRequest } from '@/lib/crowdsplit/api/types';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email }: CrowdsplitDonationCustomerPostRequest =
-      await request.json();
+    await checkAuth(['user']);
+    const { email }: CrowdsplitDonationCustomerPostRequest = await req.json();
     if (!email) {
-      return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+      throw new ApiParameterError('email is required');
     }
 
     const crowdsplitCustomer = await crowdsplitService.createDonationCustomer({
@@ -15,21 +17,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (typeof crowdsplitCustomer.id !== 'string') {
-      return NextResponse.json(
-        { error: 'Crowdsplit API Error' },
-        { status: 400 },
-      );
+      throw new ApiUpstreamError('Crowdsplit API Error');
     }
 
-    return NextResponse.json(
-      { success: true, customerId: crowdsplitCustomer.id },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error('Crowdsplit customer error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 },
-    );
+    return response({ success: true, customerId: crowdsplitCustomer.id });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

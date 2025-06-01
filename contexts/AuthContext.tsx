@@ -8,13 +8,15 @@ import React, {
   useEffect,
 } from 'react';
 // import { usePrivy } from '@privy-io/react-auth';
-import { ADMIN_ADDRESS } from '@/lib/constant';
 const debug = process.env.NODE_ENV !== 'production';
-import { useAccount } from './AccountContext';
-import { enableAdmin } from '@/lib/develop';
 import { ConnectedWallet } from '@/lib/web3/types';
-import { useWallet } from '@/lib/web3/hooks/use-wallet';
-import { useWeb3 } from '@/lib/web3/hooks/use-web3';
+import {
+  useAuth as useWeb3Auth,
+  useWallet,
+  useChain,
+} from '@/lib/web3/hooks/use-web3';
+import { useSession } from 'next-auth/react';
+
 interface AuthContextType {
   address: string | null;
   authenticated: boolean;
@@ -36,98 +38,74 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: async () => {},
 });
-const normalizedAdminAddress =
-  typeof ADMIN_ADDRESS === 'string' ? ADMIN_ADDRESS.toLowerCase() : null;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { address: wagmiAddress } = useAccount();
+  const { address: web3ChainAddress } = useChain();
   const {
     address: web3Address,
-    authenticated,
     login,
     logout,
-    ready: isReady,
-  } = useWeb3();
+    ready: web3Ready,
+  } = useWeb3Auth();
+  const session = useSession();
 
   const [isClient, setIsClient] = useState(false);
 
   // Get the primary wallet if available
   const wallet = useWallet();
 
-  // Try to get address from all possible sources
-  // Priority: 1. Active wallet from wallets array, 2. User data, 3. Wagmi
-  const [address, setAddress] = useState<string | null>(null);
+  const authenticated = useMemo(() => {
+    console.log('rememo authenticated');
+    if (session?.status === 'authenticated') {
+      return true;
+    }
+    return false;
+  }, [session]);
 
+  const isReady = useMemo(() => {
+    console.log('rememo isReady');
+    if (session.status === 'loading') {
+      return false;
+    }
+    return web3Ready;
+  }, [web3Ready, session]);
+
+  const address = useMemo(() => {
+    console.log('rememo address');
+    if (!session?.data?.user?.address) {
+      return null;
+    }
+    return session.data.user.address;
+  }, [session]);
   // Set client-side flag on mount
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    const getWalletAddress = async () => {
-      if (!isClient) {
-        return;
-      }
-
-      let resolvedAddress = null;
-
-      if (wallet && (await wallet.isConnected?.())) {
-        try {
-          // Some wallet providers expose address directly
-          if (wallet.address) {
-            resolvedAddress = wallet.address;
-          }
-          // Some need to get the provider first
-          else {
-            const provider = await wallet.getEthereumProvider();
-            if (provider && provider?.request) {
-              const accounts = await provider.request({
-                method: 'eth_accounts',
-              });
-              if (Array.isArray(accounts) && accounts.length > 0) {
-                resolvedAddress = accounts[0];
-              }
-            }
-          }
-        } catch (err) {
-          console.error('[AUTH] Error getting wallet address:', err);
-        }
-      }
-
-      // Fall back to other sources if not resolved
-      if (!resolvedAddress) {
-        resolvedAddress = web3Address || wagmiAddress || null;
-      }
-
-      // Normalize address to lowercase for consistent comparisons
-      const normalizedAddress = resolvedAddress
-        ? resolvedAddress.toLowerCase()
-        : null;
-      debug && console.log('[AUTH] Final resolved address:', normalizedAddress);
-      setAddress(normalizedAddress);
-    };
-
-    getWalletAddress();
-  }, [wallet, web3Address, wagmiAddress, isClient]);
   const isAdmin = useMemo(() => {
-    return enableAdmin || (!!address && address === normalizedAdminAddress);
-  }, [address]);
+    console.log('rememo isAdmin');
+    return session?.data?.user?.roles?.includes('admin') ?? false;
+  }, [session]);
   // Debugging logs
   useEffect(() => {
     if (!isClient || !debug) {
       return;
     }
-    console.log('[AUTH DEBUG]', {
-      wagmiAddress,
-      web3Address,
-      wallet,
-      authenticated,
-      address,
-      isAdmin,
-    });
+    console.log(
+      '[AUTH DEBUG]',
+      JSON.stringify({
+        web3ChainAddress,
+        web3Address,
+        wallet,
+        authenticated,
+        address,
+        isAdmin,
+      }),
+    );
   }, [
-    wagmiAddress,
+    web3ChainAddress,
     web3Address,
     wallet,
     authenticated,
@@ -136,8 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isClient,
   ]);
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    console.log('rememo value');
+    return {
       address,
       authenticated,
       isReady,
@@ -146,9 +125,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isClient,
       login,
       logout,
-    }),
-    [address, authenticated, isReady, wallet, isAdmin, isClient, login, logout],
-  );
+    };
+  }, [
+    address,
+    authenticated,
+    isReady,
+    wallet,
+    isAdmin,
+    isClient,
+    login,
+    logout,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
