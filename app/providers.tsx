@@ -7,7 +7,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider } from 'next-auth/react';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import {
-  AccountProvider,
   AuthProvider,
   SidebarProvider,
   FeatureFlagsProvider,
@@ -34,11 +33,9 @@ export default function Providers({ children }: { children: ReactNode }) {
           <FeatureFlagsProvider>
             <SidebarProvider>
               <EnvironmentProvider>
-                <AccountProvider>
-                  <AuthProvider>
-                    <CollectionProvider>{children}</CollectionProvider>
-                  </AuthProvider>
-                </AccountProvider>
+                <AuthProvider>
+                  <CollectionProvider>{children}</CollectionProvider>
+                </AuthProvider>
               </EnvironmentProvider>
             </SidebarProvider>
           </FeatureFlagsProvider>

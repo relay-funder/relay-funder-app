@@ -1,4 +1,4 @@
-import { useWallet } from './use-wallet';
+import { useWallet } from './use-web3';
 import { useState, useEffect } from 'react';
 import { erc20Abi } from 'viem';
 import { USDC_ADDRESS } from '@/lib/constant';

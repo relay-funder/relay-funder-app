@@ -19,19 +19,15 @@ import { useState } from 'react';
 
 export default function DashboardPage() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
-  const { address, authenticated } = useAuth();
-  const {
-    data: campaigns,
-    isLoading: loading,
-    error,
-  } = useUserCampaigns(address);
+  const { authenticated } = useAuth();
+  const { data: campaigns, isLoading: loading, error } = useUserCampaigns();
   const {
     data: favourites,
     isLoading: loadingFavourites,
     error: favouriteError,
-  } = useUserFavourites(address);
+  } = useUserFavourites();
 
-  if (!authenticated && !address) {
+  if (!authenticated) {
     return (
       <PageDashboard>
         <DashboardOverview />

@@ -31,6 +31,12 @@ export interface IWeb3UseAuthHook {
   address?: string;
   authenticated: boolean;
   login: () => Promise<void>;
+  connect?: () => Promise<void>;
   logout: () => Promise<void>;
   ready: boolean;
+}
+export interface IWeb3UseChainHook {
+  chain?: { name?: string; blockExplorers?: { default: { url: string } } };
+  chainId?: number;
+  address?: `0x${string}`;
 }

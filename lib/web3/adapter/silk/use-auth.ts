@@ -5,14 +5,14 @@ import {
   signOut as nextAuthSignOut,
 } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
 import { SiweMessage } from 'siwe';
 import { UserRejectedRequestError } from 'viem';
 import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi';
 
 import { chainConfig } from '@/lib/web3/config/chain';
-import { connector as silkConnector } from '@/lib/web3/auth/silk';
+import { connector as silkConnector } from '@/lib/web3/adapter/silk';
 
 import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +28,7 @@ export function useAuth(): IWeb3UseAuthHook {
     error?: Error;
   }>({});
   const { toast } = useToast();
-  const { address, chainId } = useAccount();
+  const { address: wagmiAddress, chainId } = useAccount();
   const { connect: wagmiConnect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
@@ -48,11 +48,16 @@ export function useAuth(): IWeb3UseAuthHook {
   useEffect(() => {
     fetchNonce();
   }, [fetchNonce]);
-
+  const address = useMemo(() => {
+    console.log('rememo address');
+    return wagmiAddress;
+  }, [wagmiAddress]);
   const signIn = useCallback(async () => {
     try {
       console.log('useAuth.signIn', { address, chainId });
-      if (!address || !chainId) return;
+      if (!address || !chainId) {
+        return;
+      }
 
       setState((prevState) => ({
         ...prevState,
@@ -169,15 +174,24 @@ export function useAuth(): IWeb3UseAuthHook {
         }));
     }
   }, [toast, connectors, wagmiConnect]);
-  const authenticated =
-    state.loading === false &&
-    typeof address === 'string' &&
-    address.length > 0;
-  const ready = state.loading === false && !state.error;
-
+  const authenticated = useMemo(() => {
+    console.log('rememo authenticated');
+    return (
+      state.loading === false &&
+      typeof address === 'string' &&
+      address.length > 0
+    );
+  }, [state.loading, address]);
+  const ready = useMemo(() => {
+    console.log('rememo ready');
+    return state.loading === false && !state.error;
+  }, [state.loading, state.error]);
+  const login = useCallback(async () => {
+    await connect();
+    await signIn();
+  }, [signIn, connect]);
   return {
-    login: signIn,
-    //login: connect,
+    login,
     logout,
     authenticated,
     ready,

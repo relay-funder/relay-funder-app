@@ -1,6 +1,10 @@
 import { type DefaultSession, type NextAuthConfig } from 'next-auth';
 
-import { SiweProvider } from '@/server/auth/providers';
+import {
+  SiweProvider,
+  PrivyTokenProvider,
+  PrivyFakeProvider,
+} from '@/server/auth/providers';
 import { db } from '@/server/db';
 import { jwt } from '@/server/auth/jwt';
 import { session } from '@/server/auth/session';
@@ -14,7 +18,7 @@ import { session } from '@/server/auth/session';
  */
 declare module 'next-auth' {
   interface User {
-    id: string;
+    dbId: number;
     address: string;
     roles: string[];
   }
@@ -34,14 +38,14 @@ declare module 'next-auth/jwt' {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
-  providers: [SiweProvider()],
+  providers: [SiweProvider(), PrivyTokenProvider(), PrivyFakeProvider()],
   events: {
     signIn: async ({ user }) => {
       /**
        * record when the user decided to sign in
        */
       const instance = await db.user.findUnique({
-        where: { id: parseInt(user.id) },
+        where: { id: user.dbId },
       });
       if (!instance) {
         throw new Error('bad user instance');

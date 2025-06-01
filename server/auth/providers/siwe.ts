@@ -2,7 +2,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { cookies } from 'next/headers';
 
 import { SiweMessage } from 'siwe';
-import { db } from '@/server/db';
+import { setupUser, handleError } from './common';
 import { type User } from 'next-auth';
 
 const nextAuthUrl =
@@ -35,11 +35,9 @@ export function SiweProvider() {
           throw new Error('SiweMessage is undefined');
         }
         if (!nextAuthUrl) {
-          console.log(
+          throw new Error(
             'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL) - environment not configured correctly',
-            nextAuthUrl,
           );
-          return null;
         }
 
         const nextAuthHost = new URL(nextAuthUrl).host;
@@ -51,12 +49,10 @@ export function SiweProvider() {
         const { message, signature } = credentials;
         const siwe = new SiweMessage(JSON.parse(message));
         if (siwe.domain !== nextAuthHost) {
-          console.log('siwe.verify succeded but for a different domain');
-          return null;
+          throw new Error('siwe.verify succeded but for a different domain');
         }
         if (siwe.nonce !== nonce) {
-          console.log('siwe.verify succeded but for a different nonce');
-          return null;
+          throw new Error('siwe.verify succeded but for a different nonce');
         }
         const verificationParams = {
           signature,
@@ -65,44 +61,12 @@ export function SiweProvider() {
         const result = await siwe.verify(verificationParams);
         console.log('result', result);
         if (!result.success) {
-          console.log('siwe.verify failed');
-          return null;
+          throw new Error('siwe.verify failed');
         }
         const address = siwe.address;
-        let dbUser = await db.user.findUnique({
-          where: { address },
-        });
-        if (!dbUser) {
-          dbUser = await db.user.create({
-            data: {
-              address,
-              createdAt: new Date(),
-              roles: ['user'],
-            },
-          });
-        }
-        if (dbUser) {
-          return { ...dbUser, id: `${dbUser.id}` };
-        }
+        return await setupUser(address);
       } catch (error: unknown) {
-        if (typeof error === 'string') {
-          console.error(
-            JSON.stringify({
-              type: 'error',
-              message: 'SiweProvider::authorize:' + error,
-            }),
-          );
-        }
-        if (error instanceof Error) {
-          console.error({ error });
-          console.error(
-            JSON.stringify({
-              type: 'error',
-              message: 'SiweProvider::authorize:' + error.message,
-              origin: error,
-            }),
-          );
-        }
+        handleError(error);
       }
       return null;
     },
