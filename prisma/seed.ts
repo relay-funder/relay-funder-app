@@ -167,6 +167,7 @@ async function main() {
   }));
   await db.campaignImage.deleteMany();
   await db.campaignCollection.deleteMany();
+  await db.payment.deleteMany();
   await db.campaign.deleteMany();
   const donorUsers = await createUsers(100, ['user']);
   for (let i = 0; i < campaigns.length; i++) {
