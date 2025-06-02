@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -33,9 +33,11 @@ export default function Providers({ children }: { children: ReactNode }) {
           <FeatureFlagsProvider>
             <SidebarProvider>
               <EnvironmentProvider>
-                <AuthProvider>
-                  <CollectionProvider>{children}</CollectionProvider>
-                </AuthProvider>
+                <Suspense>
+                  <AuthProvider>
+                    <CollectionProvider>{children}</CollectionProvider>
+                  </AuthProvider>
+                </Suspense>
               </EnvironmentProvider>
             </SidebarProvider>
           </FeatureFlagsProvider>
