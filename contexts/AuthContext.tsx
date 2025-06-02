@@ -7,7 +7,7 @@ import React, {
   useState,
   useEffect,
 } from 'react';
-// import { usePrivy } from '@privy-io/react-auth';
+
 const debug = process.env.NODE_ENV !== 'production';
 import { ConnectedWallet } from '@/lib/web3/types';
 import {
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const wallet = useWallet();
 
   const authenticated = useMemo(() => {
-    console.log('rememo authenticated');
+    debug && console.log('rememo authenticated');
     if (session?.status === 'authenticated') {
       return true;
     }
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [session]);
 
   const isReady = useMemo(() => {
-    console.log('rememo isReady');
+    debug && console.log('rememo isReady');
     if (session.status === 'loading') {
       return false;
     }
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [web3Ready, session]);
 
   const address = useMemo(() => {
-    console.log('rememo address');
+    debug && console.log('rememo address');
     if (!session?.data?.user?.address) {
       return null;
     }
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const isAdmin = useMemo(() => {
-    console.log('rememo isAdmin');
+    debug && console.log('rememo isAdmin');
     return session?.data?.user?.roles?.includes('admin') ?? false;
   }, [session]);
   // Debugging logs
@@ -93,17 +93,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!isClient || !debug) {
       return;
     }
-    console.log(
-      '[AUTH DEBUG]',
-      JSON.stringify({
-        web3ChainAddress,
-        web3Address,
-        wallet,
-        authenticated,
-        address,
-        isAdmin,
-      }),
-    );
+    debug &&
+      console.log(
+        '[AUTH DEBUG]',
+        JSON.stringify({
+          web3ChainAddress,
+          web3Address,
+          wallet,
+          authenticated,
+          address,
+          isAdmin,
+        }),
+      );
   }, [
     web3ChainAddress,
     web3Address,
@@ -115,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ]);
 
   const value = useMemo(() => {
-    console.log('rememo value');
+    debug && console.log('rememo value');
     return {
       address,
       authenticated,

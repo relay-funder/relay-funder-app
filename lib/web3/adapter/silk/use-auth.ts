@@ -17,6 +17,7 @@ import { connector as silkConnector } from '@/lib/web3/adapter/silk';
 import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
+const debug = false;
 /**
  * Handles wagmi connect, signMessage, and logout using the Silk wallet.
  * @returns
@@ -49,12 +50,12 @@ export function useAuth(): IWeb3UseAuthHook {
     fetchNonce();
   }, [fetchNonce]);
   const address = useMemo(() => {
-    console.log('rememo address');
+    debug && console.log('web3/adapter/silk/use-auth:rememo address');
     return wagmiAddress;
   }, [wagmiAddress]);
   const signIn = useCallback(async () => {
     try {
-      console.log('useAuth.signIn', { address, chainId });
+      debug && console.log('useAuth.signIn', { address, chainId });
       if (!address || !chainId) {
         return;
       }
@@ -134,7 +135,7 @@ export function useAuth(): IWeb3UseAuthHook {
       loading: true,
       error: undefined,
     }));
-    console.log('useAuth.connect');
+    debug && console.log('useAuth.connect');
     const loadedSilkConnector = connectors.find(
       (connector) => connector.id === 'silk',
     );
@@ -144,14 +145,14 @@ export function useAuth(): IWeb3UseAuthHook {
       // enables automatic reconnect on page refresh, but just in case, we can also create
       // the connector here.
       if (!loadedSilkConnector) {
-        console.log('useAuth.connect: with new silk connector');
+        debug && console.log('useAuth.connect: with new silk connector');
         wagmiConnect({
           // TODO referral code ENV var
           chainId: defaultChain.id,
           connector: silkConnector,
         });
       } else {
-        console.log('useAuth.connect with loadedSilkConnector');
+        debug && console.log('useAuth.connect with loadedSilkConnector');
         wagmiConnect({
           chainId: defaultChain.id,
           connector: loadedSilkConnector,
@@ -175,7 +176,7 @@ export function useAuth(): IWeb3UseAuthHook {
     }
   }, [toast, connectors, wagmiConnect]);
   const authenticated = useMemo(() => {
-    console.log('rememo authenticated');
+    debug && console.log('web3/adapter/silk/use-auth:rememo authenticated');
     return (
       state.loading === false &&
       typeof address === 'string' &&
@@ -183,13 +184,24 @@ export function useAuth(): IWeb3UseAuthHook {
     );
   }, [state.loading, address]);
   const ready = useMemo(() => {
-    console.log('rememo ready');
+    debug &&
+      console.log(
+        'web3/adapter/silk/use-auth:rememo ready',
+        state.loading,
+        state.error,
+      );
     return state.loading === false && !state.error;
   }, [state.loading, state.error]);
   const login = useCallback(async () => {
     await connect();
     await signIn();
   }, [signIn, connect]);
+  debug &&
+    console.log('web3/adapter/silk/use-auth:render', {
+      authenticated,
+      ready,
+      address,
+    });
   return {
     login,
     logout,

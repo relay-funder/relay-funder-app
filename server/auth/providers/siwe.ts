@@ -57,9 +57,7 @@ export function SiweProvider() {
         const verificationParams = {
           signature,
         };
-        console.log('verify');
         const result = await siwe.verify(verificationParams);
-        console.log('result', result);
         if (!result.success) {
           throw new Error('siwe.verify failed');
         }
