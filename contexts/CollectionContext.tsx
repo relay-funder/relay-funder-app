@@ -1,10 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { Collection } from '@/types';
-import type { Campaign } from '@/types/campaign';
-import { useAuth } from './AuthContext';
-import { toast } from '@/hooks/use-toast';
 import {
   useCreateCollection,
   useCreateItemInCollection,
