@@ -8,8 +8,10 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm install && prisma generate && next dev",
-    "build": "NODE_ENV=production next build && cat prisma/schema.prisma && cat .generated/prisma/client/index.js",
-    "build:vercel": "prisma generate && NODE_ENV=production next build",
+    "build": "NODE_ENV=production next build",
+    "build:production": "node prisma/deploy-migrations.js && NODE_ENV=production next build",
+    "migrate:deploy": "node prisma/deploy-migrations.js",
+    "migrate:check": "prisma migrate status",
     "dev:db": "prisma format && prisma migrate dev",
     "dev:db:seed": "prisma db seed",
     "start": "next start",

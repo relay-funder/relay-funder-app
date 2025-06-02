@@ -37,7 +37,14 @@ export interface CrowdsplitCreateCustomerRequest {
   phone_number: string;
 }
 export interface CrowdsplitCreateCustomerResponse {
-  id: string;
+  execStatus: boolean;
+  httpStatus: number;
+  msg: string;
+  data: {
+    id: string;
+    email: string;
+    // ... other customer fields exist but we only need id and email for now
+  };
 }
 export interface CrowdsplitCreateDonationCustomerInterface {
   email: string;
@@ -46,7 +53,14 @@ export interface CrowdsplitCreateDonationCustomerRequest {
   email: string;
 }
 export interface CrowdsplitCreateDonationCustomerResponse {
-  id: string;
+  execStatus: boolean;
+  httpStatus: number;
+  msg: string;
+  data: {
+    id: string;
+    email: string;
+    // ... other fields exist but we only need id and email for now
+  };
 }
 export interface CrowdsplitInitiateKycResponse {
   redirect_url?: string;

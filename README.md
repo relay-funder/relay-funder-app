@@ -159,6 +159,19 @@ Common issues and their solutions:
   docker compose exec app pnpm prisma db seed     # Reseed the database
   ```
 
+## Database Logging Configuration
+
+Control Prisma database logging verbosity with the `PRISMA_LOG_LEVELS` environment variable in `.env.local`.
+
+**Available levels:** `error` (default), `warn`, `info`, `query`
+
+**Example for development debugging:**
+```bash
+PRISMA_LOG_LEVELS=error,warn,query
+```
+
+> **Note:** The `query` level shows all SQL statements, useful for debugging but very verbose.
+
 ## Available Scripts
 
 - `pnpm dev` - Start Next.js in development mode
