@@ -18,21 +18,23 @@ export async function setupUser(address: string) {
   }
   return null;
 }
+/**
+ * output a single line with the error to allow ingestion by eg cloudwatch
+ */
 export function handleError(error: unknown) {
   if (typeof error === 'string') {
     console.error(
       JSON.stringify({
         type: 'error',
-        message: 'PrivyTokenProvider::authorize:' + error,
+        message: 'authorize:' + error,
       }),
     );
   }
   if (error instanceof Error) {
-    console.error({ error });
     console.error(
       JSON.stringify({
         type: 'error',
-        message: 'PrivyTokenProvider::authorize:' + error.message,
+        message: 'authorize:' + error.message,
         origin: error,
       }),
     );
