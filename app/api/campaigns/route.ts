@@ -385,9 +385,6 @@ export async function GET(req: Request) {
     }
     const combinedCampaigns = dbCampaigns
       .filter((campaign) => campaign.transactionHash)
-      .filter((campaign) =>
-        ['pending', 'confirmed', 'failed'].includes(campaign.status),
-      )
       .map((dbCampaign) => {
         const event = events.find(
           (onChainCampaign) =>
