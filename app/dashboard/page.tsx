@@ -27,7 +27,7 @@ export default function DashboardPage() {
     error: favouriteError,
   } = useUserFavourites();
 
-  if (!authenticated || !address) {
+  if (!authenticated) {
     return (
       <PageDashboard>
         <DashboardOverview />
@@ -109,7 +109,7 @@ export default function DashboardPage() {
           {favouriteError ? (
             <CampaignError error={favouriteError.message} />
           ) : favourites?.length === 0 ? (
-            <CampaignEmpty 
+            <CampaignEmpty
               message="You haven't saved any campaigns as favorites yet."
               buttonText="Explore Campaigns"
               buttonHref="/"
