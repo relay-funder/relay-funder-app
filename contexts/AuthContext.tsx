@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const wallet = useWallet();
 
   const authenticated = useMemo(() => {
-    debug && console.log('rememo authenticated');
+    debug && console.log('contexts/AuthContext: rememo authenticated');
     if (session?.status === 'authenticated') {
       return true;
     }
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [session]);
 
   const isReady = useMemo(() => {
-    debug && console.log('rememo isReady');
+    debug && console.log('contexts/AuthContext: rememo isReady');
     if (session.status === 'loading') {
       return false;
     }
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [web3Ready, session]);
 
   const address = useMemo(() => {
-    debug && console.log('rememo address');
+    debug && console.log('contexts/AuthContext: rememo address');
     if (!session?.data?.user?.address) {
       return null;
     }
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const isAdmin = useMemo(() => {
-    debug && console.log('rememo isAdmin');
+    debug && console.log('contexts/AuthContext: rememo isAdmin');
     return session?.data?.user?.roles?.includes('admin') ?? false;
   }, [session]);
   // Debugging logs
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     debug &&
       console.log(
-        '[AUTH DEBUG]',
+        'contexts/AuthContext: [AUTH DEBUG]',
         JSON.stringify({
           web3ChainAddress,
           web3Address,
@@ -116,7 +116,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ]);
 
   const value = useMemo(() => {
-    debug && console.log('rememo value');
     return {
       address,
       authenticated,
