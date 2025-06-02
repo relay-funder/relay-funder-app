@@ -12,11 +12,15 @@ import { UserRejectedRequestError } from 'viem';
 import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi';
 
 import { chainConfig } from '@/lib/web3/config/chain';
-import { connector as silkConnector } from '@/lib/web3/adapter/silk';
+import {
+  connector as silkConnector,
+  connectorOptions as silkConnectorOptions,
+} from '@/lib/web3/adapter/silk/connector';
 
 import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
+import { useWeb3Context } from './context-provider';
 const debug = false;
 /**
  * Handles wagmi connect, signMessage, and logout using the Silk wallet.
@@ -30,7 +34,8 @@ export function useAuth(): IWeb3UseAuthHook {
   }>({});
   const { toast } = useToast();
   const { address: wagmiAddress, chainId } = useAccount();
-  const { connect: wagmiConnect, connectors } = useConnect();
+  const { connectAsync: wagmiConnect, connectors } = useConnect();
+  const { addConnector } = useWeb3Context();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
   const params = useSearchParams();
@@ -49,6 +54,18 @@ export function useAuth(): IWeb3UseAuthHook {
   useEffect(() => {
     fetchNonce();
   }, [fetchNonce]);
+  useEffect(() => {
+    setState((prevState) => ({ ...prevState, loading: true }));
+    const loadedSilkConnector = connectors.find(
+      (connector) => connector.id === 'silk',
+    );
+    if (!loadedSilkConnector) {
+      addConnector(silkConnector(silkConnectorOptions));
+      setState((prevState) => ({ ...prevState, loading: false }));
+    } else {
+      setState((prevState) => ({ ...prevState, loading: false }));
+    }
+  }, [connectors, addConnector]);
   const address = useMemo(() => {
     debug && console.log('web3/adapter/silk/use-auth:rememo address');
     return wagmiAddress;
@@ -146,14 +163,14 @@ export function useAuth(): IWeb3UseAuthHook {
       // the connector here.
       if (!loadedSilkConnector) {
         debug && console.log('useAuth.connect: with new silk connector');
-        wagmiConnect({
+        await wagmiConnect({
           // TODO referral code ENV var
           chainId: defaultChain.id,
-          connector: silkConnector,
+          connector: silkConnector(silkConnectorOptions),
         });
       } else {
         debug && console.log('useAuth.connect with loadedSilkConnector');
-        wagmiConnect({
+        await wagmiConnect({
           chainId: defaultChain.id,
           connector: loadedSilkConnector,
         });

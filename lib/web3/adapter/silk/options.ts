@@ -7,7 +7,7 @@ export const options: InitSilkOptions = {
   config: {
     styles: { darkMode: true },
     allowedSocials: ['google'],
-    authenticationMethods: ['wallet'],
+    authenticationMethods: ['email', 'wallet'],
   },
   walletConnectProjectId: REOWN_CLOUD_PROJECT_ID,
   project: {
