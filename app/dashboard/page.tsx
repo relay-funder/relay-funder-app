@@ -27,7 +27,7 @@ export default function DashboardPage() {
     error: favouriteError,
   } = useUserFavourites();
 
-  if (!authenticated) {
+  if (!authenticated || !address) {
     return (
       <PageDashboard>
         <DashboardOverview />
@@ -45,9 +45,17 @@ export default function DashboardPage() {
             <TabsTrigger value="my-campaigns" className="px-4 py-2">
               My Campaigns
             </TabsTrigger>
+            <TabsTrigger value="favorites" className="px-4 py-2">
+              <Heart className="mr-2 h-4 w-4" />
+              My Favorites
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="my-campaigns">
+            <CampaignLoading />
+          </TabsContent>
+
+          <TabsContent value="favorites">
             <CampaignLoading />
           </TabsContent>
         </Tabs>
@@ -84,9 +92,7 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="my-campaigns">
-          {loading ? (
-            <CampaignLoading />
-          ) : error ? (
+          {error ? (
             <CampaignError error={error.message} />
           ) : campaigns?.length === 0 ? (
             <CampaignEmpty onCreate={() => setShowCampaignCreate(true)} />
@@ -100,12 +106,14 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="favorites">
-          {loadingFavourites ? (
-            <CampaignLoading />
-          ) : favouriteError ? (
+          {favouriteError ? (
             <CampaignError error={favouriteError.message} />
           ) : favourites?.length === 0 ? (
-            <CampaignEmpty message="You haven't saved any campaigns as favorites yet." />
+            <CampaignEmpty 
+              message="You haven't saved any campaigns as favorites yet."
+              buttonText="Explore Campaigns"
+              buttonHref="/"
+            />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {favourites?.map((favourite: Favourite) => (
