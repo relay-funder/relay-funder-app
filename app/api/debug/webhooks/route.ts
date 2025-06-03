@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       'signature'
     ];
     
-    let foundSignatureHeaders: string[] = [];
+    const foundSignatureHeaders: string[] = [];
     
     request.headers.forEach((value, key) => {
       headers[key] = value;
