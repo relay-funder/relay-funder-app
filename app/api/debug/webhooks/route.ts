@@ -5,6 +5,16 @@ import { prisma } from '@/lib/prisma';
 
 // Define webhook body types
 interface WebhookBody {
+  secret?: string;
+  data?: {
+    type?: string;
+    id?: string;
+    status?: string;
+    subStatus?: string;
+    metadata?: Record<string, unknown> | null;
+    [key: string]: unknown;
+  };
+  // Legacy fields for backwards compatibility
   event?: string;
   transaction_id?: string;
   status?: string;
@@ -15,9 +25,6 @@ interface WebhookBody {
   currency?: string;
   created?: number;
   metadata?: Record<string, unknown>;
-  data?: {
-    object?: Record<string, unknown>;
-  };
   [key: string]: unknown;
 }
 
@@ -33,18 +40,52 @@ export async function POST(request: NextRequest) {
     console.log(`📍 URL: ${request.url}`);
     console.log(`🔧 Method: ${request.method}`);
     
-    // Log all headers
-    console.log('\n📋 Headers:');
+    // Log ALL headers comprehensively
+    console.log('\n📋 All Headers:');
     const headers: Record<string, string> = {};
+    const sensitiveHeaders = ['authorization', 'signature', 'secret', 'token', 'key', 'auth'];
+    const possibleSignatureHeaders = [
+      'x-crowdsplit-signature',
+      'x-signature', 
+      'stripe-signature',
+      'x-webhook-signature',
+      'webhook-signature',
+      'x-hub-signature',
+      'x-hub-signature-256',
+      'x-paypal-transmission-sig',
+      'x-square-signature',
+      'authorization',
+      'x-auth-token',
+      'x-api-key',
+      'crowdsplit-signature',
+      'signature'
+    ];
+    
+    let foundSignatureHeaders: string[] = [];
+    
     request.headers.forEach((value, key) => {
       headers[key] = value;
-      // Don't log full signature for security, but show it exists
-      if (key.toLowerCase().includes('signature')) {
+      const keyLower = key.toLowerCase();
+      
+      // Check if this could be a signature header
+      if (possibleSignatureHeaders.some(h => keyLower.includes(h.toLowerCase()) || h.toLowerCase().includes(keyLower))) {
+        foundSignatureHeaders.push(key);
+      }
+      
+      // Log with security considerations
+      if (sensitiveHeaders.some(sensitive => keyLower.includes(sensitive))) {
         console.log(`  ${key}: ${value.substring(0, 20)}... (truncated for security)`);
       } else {
         console.log(`  ${key}: ${value}`);
       }
     });
+    
+    // Highlight potential signature headers
+    if (foundSignatureHeaders.length > 0) {
+      console.log(`\n🔐 Potential signature/auth headers found: ${foundSignatureHeaders.join(', ')}`);
+    } else {
+      console.log(`\n🔐 No obvious signature/auth headers detected`);
+    }
     
     // Log query parameters
     const url = new URL(request.url);
@@ -79,104 +120,154 @@ export async function POST(request: NextRequest) {
       console.log('\n❌ Error reading body:', error);
     }
     
-    // Webhook Signature Validation (Stripe-style)
-    console.log('\n🔐 Webhook Signature Validation:');
+    // Enhanced Webhook Authentication Analysis
+    console.log('\n🔐 Webhook Authentication Analysis:');
     console.log(`  Has CROWDSPLIT_WEBHOOK_SECRET: ${!!CROWDSPLIT_WEBHOOK_SECRET}`);
+    console.log(`  CROWDSPLIT_WEBHOOK_SECRET value: ${CROWDSPLIT_WEBHOOK_SECRET ? CROWDSPLIT_WEBHOOK_SECRET.substring(0, 10) + '...' : 'Not set'}`);
     
-    const signatureHeader = request.headers.get('x-crowdsplit-signature') || 
-                           request.headers.get('stripe-signature') ||
-                           request.headers.get('x-signature');
+    // Check for secret in payload
+    const payloadSecret = body?.secret;
+    console.log(`  Secret in payload: ${payloadSecret ? payloadSecret : 'None'}`);
     
-    console.log(`  Signature header found: ${!!signatureHeader}`);
-    if (signatureHeader) {
-      console.log(`  Signature header name: ${['x-crowdsplit-signature', 'stripe-signature', 'x-signature'].find(h => request.headers.get(h))}`);
-    }
+    // Try all possible signature headers
+    const allPossibleSignatures = possibleSignatureHeaders.map(headerName => ({
+      name: headerName,
+      value: request.headers.get(headerName)
+    })).filter(h => h.value);
+    
+    console.log(`  All signature-like headers found: ${allPossibleSignatures.length}`);
+    allPossibleSignatures.forEach(({ name, value }) => {
+      console.log(`    ${name}: ${value?.substring(0, 30)}...`);
+    });
     
     let isSignatureValid = false;
-    let signatureValidationDetails = '';
+    let authenticationMethod = 'none';
+    let authenticationDetails = '';
     
-    if (CROWDSPLIT_WEBHOOK_SECRET && signatureHeader && bodyText) {
-      try {
-        // Stripe-style signature validation
-        // Format: t=timestamp,v1=signature
-        const elements = signatureHeader.split(',');
-        let timestampElement = '';
-        let signatureElement = '';
+    // Method 1: Check payload secret against environment variable
+    if (CROWDSPLIT_WEBHOOK_SECRET && payloadSecret) {
+      if (CROWDSPLIT_WEBHOOK_SECRET === payloadSecret) {
+        isSignatureValid = true;
+        authenticationMethod = 'payload_secret_match';
+        authenticationDetails = 'Payload secret matches environment variable';
+        console.log(`  ✅ Payload secret validation: VALID`);
+      } else {
+        authenticationDetails = 'Payload secret does not match environment variable';
+        console.log(`  ❌ Payload secret validation: INVALID`);
+        console.log(`    Expected: ${CROWDSPLIT_WEBHOOK_SECRET}`);
+        console.log(`    Received: ${payloadSecret}`);
+      }
+    }
+    
+    // Method 2: Try signature header validation if we haven't found valid auth yet
+    if (!isSignatureValid && allPossibleSignatures.length > 0 && CROWDSPLIT_WEBHOOK_SECRET && bodyText) {
+      for (const { name, value: signatureHeader } of allPossibleSignatures) {
+        if (!signatureHeader) continue;
         
-        elements.forEach(element => {
-          const [key, value] = element.split('=');
-          if (key === 't') {
-            timestampElement = value;
-          } else if (key === 'v1') {
-            signatureElement = value;
+        console.log(`\n  Testing signature header: ${name}`);
+        
+        try {
+          // Stripe-style signature validation
+          if (signatureHeader.includes('t=') && signatureHeader.includes('v1=')) {
+            const elements = signatureHeader.split(',');
+            let timestampElement = '';
+            let signatureElement = '';
+            
+            elements.forEach(element => {
+              const [key, value] = element.split('=');
+              if (key === 't') timestampElement = value;
+              else if (key === 'v1') signatureElement = value;
+            });
+            
+            if (timestampElement && signatureElement) {
+              const payload = timestampElement + '.' + bodyText;
+              const expectedSignature = crypto
+                .createHmac('sha256', CROWDSPLIT_WEBHOOK_SECRET)
+                .update(payload, 'utf8')
+                .digest('hex');
+              
+              if (expectedSignature === signatureElement) {
+                isSignatureValid = true;
+                authenticationMethod = 'stripe_style_signature';
+                authenticationDetails = `Valid Stripe-style signature via ${name}`;
+                console.log(`    ✅ Stripe-style validation: VALID`);
+                break;
+              } else {
+                console.log(`    ❌ Stripe-style validation: INVALID`);
+              }
+            }
           }
-        });
-        
-        if (timestampElement && signatureElement) {
-          // Create expected signature
-          const payload = timestampElement + '.' + bodyText;
-          const expectedSignature = crypto
-            .createHmac('sha256', CROWDSPLIT_WEBHOOK_SECRET)
-            .update(payload, 'utf8')
-            .digest('hex');
           
-          isSignatureValid = expectedSignature === signatureElement;
-          signatureValidationDetails = `Expected: ${expectedSignature.substring(0, 20)}..., Received: ${signatureElement.substring(0, 20)}...`;
-          
-          console.log(`  Timestamp: ${timestampElement}`);
-          console.log(`  Signature validation: ${isSignatureValid ? '✅ VALID' : '❌ INVALID'}`);
-          console.log(`  ${signatureValidationDetails}`);
-          
-          // Check timestamp (optional - within 5 minutes)
-          const webhookTimestamp = parseInt(timestampElement);
-          const currentTimestamp = Math.floor(Date.now() / 1000);
-          const timeDiff = Math.abs(currentTimestamp - webhookTimestamp);
-          console.log(`  Timestamp difference: ${timeDiff} seconds (${timeDiff > 300 ? 'STALE' : 'FRESH'})`);
-          
-        } else {
-          // Try simple HMAC validation (alternative format)
+          // Simple HMAC validation
           const expectedSignature = crypto
             .createHmac('sha256', CROWDSPLIT_WEBHOOK_SECRET)
             .update(bodyText, 'utf8')
             .digest('hex');
           
-          isSignatureValid = expectedSignature === signatureHeader;
-          signatureValidationDetails = `Simple HMAC - Expected: ${expectedSignature.substring(0, 20)}..., Received: ${signatureHeader.substring(0, 20)}...`;
+          if (expectedSignature === signatureHeader) {
+            isSignatureValid = true;
+            authenticationMethod = 'hmac_signature';
+            authenticationDetails = `Valid HMAC signature via ${name}`;
+            console.log(`    ✅ Simple HMAC validation: VALID`);
+            break;
+          } else {
+            console.log(`    ❌ Simple HMAC validation: INVALID`);
+          }
           
-          console.log(`  Simple HMAC validation: ${isSignatureValid ? '✅ VALID' : '❌ INVALID'}`);
-          console.log(`  ${signatureValidationDetails}`);
+          // Try with sha1 (GitHub style)
+          const expectedSignatureSha1 = crypto
+            .createHmac('sha1', CROWDSPLIT_WEBHOOK_SECRET)
+            .update(bodyText, 'utf8')
+            .digest('hex');
+          
+          if (signatureHeader === expectedSignatureSha1 || signatureHeader === `sha1=${expectedSignatureSha1}`) {
+            isSignatureValid = true;
+            authenticationMethod = 'github_style_signature';
+            authenticationDetails = `Valid GitHub-style signature via ${name}`;
+            console.log(`    ✅ GitHub-style validation: VALID`);
+            break;
+          }
+          
+        } catch (signatureError) {
+          console.log(`    ❌ Signature validation error: ${signatureError}`);
         }
-        
-      } catch (signatureError) {
-        console.log(`  ❌ Signature validation error: ${signatureError}`);
-        signatureValidationDetails = `Error: ${signatureError instanceof Error ? signatureError.message : 'Unknown error'}`;
       }
-    } else {
-      const missing = [];
-      if (!CROWDSPLIT_WEBHOOK_SECRET) missing.push('webhook secret');
-      if (!signatureHeader) missing.push('signature header');
-      if (!bodyText) missing.push('request body');
-      
-      console.log(`  ⚠️  Skipping validation - Missing: ${missing.join(', ')}`);
-      signatureValidationDetails = `Skipped - Missing: ${missing.join(', ')}`;
     }
     
-    // Payment Event Processing Logic
+    console.log(`\n  Final Authentication Result: ${isSignatureValid ? '✅ VALID' : '❌ INVALID'}`);
+    console.log(`  Authentication Method: ${authenticationMethod}`);
+    console.log(`  Details: ${authenticationDetails}`);
+    
+    // Enhanced Payment Event Processing Logic
     console.log('\n💳 Payment Event Processing:');
     if (body && typeof body === 'object') {
-      const { event, transaction_id, status, type, object } = body;
+      // Handle CrowdSplit's nested structure
+      const eventData = body.data || body;
+      const eventType = eventData.type || body.event || body.type;
+      const transactionId = eventData.id || body.transaction_id || body.id;
+      const status = eventData.status || body.status;
+      const subStatus = eventData.subStatus;
       
-      console.log(`  Event Type: ${event || type || 'unknown'}`);
-      console.log(`  Transaction ID: ${transaction_id || body.id || 'none'}`);
-      console.log(`  Status: ${status || body.status || 'unknown'}`);
-      console.log(`  Object Type: ${object || body.object || 'unknown'}`);
+      console.log(`  Event Type: ${eventType || 'unknown'}`);
+      console.log(`  Transaction ID: ${transactionId || 'none'}`);
+      console.log(`  Status: ${status || 'unknown'}`);
+      if (subStatus) console.log(`  Sub Status: ${subStatus}`);
       
-      // Simulate payment confirmation processing
-      if (event === 'transaction.updated' || event === 'transaction.update' || type === 'payment_intent.succeeded' || status === 'completed') {
-        const transactionId = transaction_id || body.id;
-        
+      // Enhanced event detection for CrowdSplit
+      const isPaymentEvent = (
+        eventType === 'transaction.updated' || 
+        eventType === 'transaction.update' || 
+        eventType === 'payment_intent.succeeded' || 
+        status === 'COMPLETED' ||
+        status === 'completed' ||
+        subStatus === 'CAPTURED'
+      );
+      
+      console.log(`  Is Payment Event: ${isPaymentEvent ? '✅ YES' : '❌ NO'}`);
+      
+      if (isPaymentEvent) {
         if (transactionId) {
-          console.log(`\n🔍 Simulating payment lookup for: ${transactionId}`);
+          console.log(`\n🔍 Payment lookup for transaction: ${transactionId}`);
           
           try {
             // Look for existing payment
@@ -195,11 +286,15 @@ export async function POST(request: NextRequest) {
               console.log(`  ✅ Found payment: ID ${existingPayment.id}, Status: ${existingPayment.status}`);
               console.log(`  📋 Payment details: External ID: ${existingPayment.externalId}, Amount: ${existingPayment.amount}`);
               
-              // Simulate status update
-              const newStatus = status === 'completed' || type === 'payment_intent.succeeded' ? 'confirmed' : 'pending';
-              console.log(`  🔄 Would update status from '${existingPayment.status}' to '${newStatus}'`);
+              // Determine new status based on CrowdSplit status
+              let newStatus = 'pending';
+              if (status === 'COMPLETED' && subStatus === 'CAPTURED') {
+                newStatus = 'confirmed';
+              } else if (status === 'COMPLETED' || status === 'completed') {
+                newStatus = 'confirmed';
+              }
               
-              // In debug mode, we don't actually update, just log what would happen
+              console.log(`  🔄 Would update status from '${existingPayment.status}' to '${newStatus}'`);
               console.log(`  🧪 [DEBUG MODE] Payment update simulation completed`);
               
             } else {
@@ -209,13 +304,13 @@ export async function POST(request: NextRequest) {
               const recentPayments = await prisma.payment.findMany({
                 where: { provider: 'CROWDSPLIT' },
                 select: { id: true, externalId: true, status: true, createdAt: true },
-                take: 3,
+                take: 5,
                 orderBy: { createdAt: 'desc' }
               });
               
               console.log(`  📊 Recent CROWDSPLIT payments (${recentPayments.length}):`);
               recentPayments.forEach(p => {
-                console.log(`    - ID: ${p.id}, External: ${p.externalId}, Status: ${p.status}`);
+                console.log(`    - ID: ${p.id}, External: ${p.externalId}, Status: ${p.status}, Created: ${p.createdAt.toISOString()}`);
               });
             }
           } catch (dbError) {
@@ -243,19 +338,26 @@ export async function POST(request: NextRequest) {
         receivedData: {
           headersCount: Object.keys(headers).length,
           bodySize: bodyText.length,
-          hasSignature: !!signatureHeader,
-          signatureValid: isSignatureValid,
+          hasSignatureHeaders: foundSignatureHeaders.length > 0,
+          signatureHeadersFound: foundSignatureHeaders,
+          hasPayloadSecret: !!body?.secret,
           contentType: request.headers.get('content-type'),
-          eventType: body?.event || body?.type || 'unknown'
+          eventType: body?.data?.type || body?.event || body?.type || 'unknown'
         },
-        validation: {
-          signature: isSignatureValid ? 'VALID' : 'INVALID',
+        authentication: {
+          method: authenticationMethod,
+          valid: isSignatureValid,
+          details: authenticationDetails,
           webhook_secret_configured: !!CROWDSPLIT_WEBHOOK_SECRET,
-          signature_header_present: !!signatureHeader
+          payload_secret_present: !!payloadSecret,
+          payload_secret_matches: !!(CROWDSPLIT_WEBHOOK_SECRET && payloadSecret && CROWDSPLIT_WEBHOOK_SECRET === payloadSecret)
         },
         simulation: {
-          payment_processing: body?.event === 'transaction.update' || body?.event === 'transaction.updated' || body?.type === 'payment_intent.succeeded',
-          would_trigger_db_update: (body?.status === 'completed' || body?.type === 'payment_intent.succeeded') && !!body?.transaction_id
+          payment_processing: !!(body?.data?.type === 'transaction.updated' || body?.event === 'transaction.updated' || body?.data?.status === 'COMPLETED'),
+          would_trigger_db_update: !!(
+            (body?.data?.status === 'COMPLETED' || body?.status === 'completed') && 
+            (body?.data?.id || body?.transaction_id)
+          )
         }
       }
     }, { status: 200 });
