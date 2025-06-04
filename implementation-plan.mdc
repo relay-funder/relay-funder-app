@@ -1,0 +1,104 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Implementation Plan
+
+This file tracks the sequential implementation of features and tasks in the Akashic project using markdown-plan syntax.
+
+## Current Sprint
+
+### Setup and Infrastructure Tasks
+
+1. [x] Create implementation tracking system
+   - [x] Set up implementation-plan.mdc file
+   - [x] Create agent work tracking rules
+   - [x] Establish workflow for progress updates
+
+2. [ ] Agent-Generated Work Tracking
+   - [x] Define rules for AI assistant contributions
+   - [ ] Set up tracking for automated changes
+   - [ ] Create documentation standards for agent work
+
+### Donation Form Optimization
+
+3. [ ] Improve Donation Form Performance and UX
+   - [ ] Implement code splitting for Stripe Elements to reduce initial bundle size
+   - [ ] Add loading states and skeleton components during Stripe initialization
+   - [ ] Optimize form validation with debounced input handling
+   - [ ] Implement proper error boundaries for payment failures
+   - [ ] Improve mobile responsiveness and touch targets
+
+4. [ ] Enhance Donation Form UI/UX
+   - [ ] Improve accessibility with ARIA labels and keyboard navigation
+   - [ ] Implement donation amount validation with helpful messaging
+   - [ ] Add currency formatting and localization support
+
+### Payment System Integration
+
+5. [ ] Implement Stripe Webhook Handler
+   - [ ] Analyze `/api/crowdsplit/webhook/` and `/api/webhooks/crowdsplit` and consolidate between both keeping only `/api/crowdsplit/webhook/`. Make sure existing functionality does not break
+   - [ ] Create `/api/crowdsplit/webhook/stripe` endpoint for payment confirmations
+   - [ ] Implement webhook signature verification for security. Create a temporary direct secret comparison method, and an additional header signature hmac sha256 method (which is not enforced if no signatures are in the header)
+   - [ ] Handle `transaction.updated` events to update payment status
+   - [ ] Add webhook event logging and monitoring
+   - [ ] Test webhook reliability with ngrok during development
+
+6. [ ] Fix Payment Database Persistence
+   - [ ] Ensure payment records are created when Crowdsplit payment is initiated
+   - [ ] Store `payment_intent_id` as `externalId` in Payment table
+   - [ ] Implement proper user-payment association during payment creation
+   - [ ] Add campaign-payment relationship during payment initialization
+   - [ ] Handle payment status updates from webhook events
+   - [ ] Add proper error handling for failed payment saves
+
+### Payment Visibility and UI
+
+7. [ ] Enhance Payment Display in UI
+   - [ ] Fix payment list loading to show recent confirmed donations
+   - [ ] Add real-time payment status updates in campaign transaction tabs
+   - [ ] Implement donation success page with proper payment confirmation
+   - [ ] Add payment status badges (pending, confirmed, failed)
+   - [ ] Show payment method information (card vs wallet) in transaction history
+
+8. [ ] Implement Payment Dashboard
+   - [ ] Create donor dashboard showing personal donation history
+   - [ ] Add payment filtering and search functionality
+   - [ ] Implement donation analytics and reporting
+   - [ ] Add campaign-specific donation tracking
+   - [ ] Show payment method usage statistics
+   - [ ] Add export functionality for donation records
+
+### Testing and Quality Assurance
+
+9. [ ] Testing and Validation
+   - [ ] Create comprehensive test suite for payment flows
+   - [ ] Add integration tests for webhook processing
+   - [ ] Test payment failure scenarios and recovery
+   - [ ] Validate payment data integrity across systems
+   - [ ] Performance testing for donation form load times
+   - [ ] Cross-browser compatibility testing for payment forms
+
+## Completed Tasks
+
+### Infrastructure Setup
+1. [x] Create implementation tracking system - Done 2025-01-21
+   - Set up implementation-plan.mdc file using markdown-plan syntax
+   - Created agent-tracking-rules.mdc with comprehensive guidelines for AI assistant work
+
+## Task Dependencies
+
+Tasks should be completed in the order listed above. Critical dependencies:
+- Task 5 (Stripe Webhook Handler) must be completed before Task 6 (Payment Database Persistence)
+- Task 6 must be completed before Task 7 (Payment Display UI)
+- Tasks 3-4 (Donation Form Optimization) can be worked on in parallel with payment system tasks
+
+## Progress Notes
+
+### Implementation Tracking System Setup - 2025-01-21
+**Status**: Done
+**Summary**: Created implementation-plan.mdc file using markdown-plan syntax and established agent-tracking-rules.mdc with comprehensive guidelines for AI assistant work tracking and documentation standards.
+
+---
+*This file follows the markdown-plan syntax for project tracking*
