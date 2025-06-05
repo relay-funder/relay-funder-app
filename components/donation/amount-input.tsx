@@ -121,7 +121,7 @@ export function AmountInput({
                 className="rounded-l-none border-0 border-l"
                 placeholder="0.00"
                 min="1"
-                max="100000"
+                max="10000"
                 step="0.01"
                 aria-label="Donation amount"
               />

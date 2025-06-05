@@ -111,15 +111,54 @@ This file tracks the sequential implementation of features and tasks in the Akas
    - [x] Update webhook documentation to reflect unified approach
    - [x] Test unified endpoint with proper event routing functionality
 
+6.3. [x] Improve Database Seed Script for Realistic Testing
+   - [x] Reduce number of generated payments from 1000 to ~100 (2-15 per campaign, randomized)
+   - [x] Create realistic funding goals ($1,000-$50,000 instead of $1.0)
+   - [x] Generate proper campaign descriptions instead of generic placeholders
+   - [x] Reduce user count from 100 to 25 (more manageable for debugging)
+   - [x] Create realistic payment amounts ($5-$500 instead of random decimals)
+   - [x] Improve payment status distribution (more confirmed, fewer failed)
+   - [x] Add total payment count logging for better feedback
+
 ### Payment Visibility and UI
 
-7. [ ] Enhance Payment Display in UI
-   - [ ] Fix payment list loading to show recent confirmed donations
+7. [x] Enhance Payment Display in UI
+   - [x] Fix campaign status distribution to show mostly ACTIVE campaigns (7/10)
+   - [x] Fix payment calculation logic to only count confirmed payments
+   - [x] Correct campaign item display to show donation count vs amount raised
+   - [x] Add proper currency formatting for raised amounts and goals
+   - [x] Fix payment list loading to show recent confirmed donations
+   - [x] Fix currency formatting consistency (USDC/USD display issues)
+   - [x] Update seed script to use native USDC on Celo blockchain
+   - [x] Improve CrowdSplit API error handling and bubbling
    - [ ] Add real-time payment status updates in campaign transaction tabs
    - [ ] Implement donation success page with proper payment confirmation
    - [ ] Add payment status badges (pending, confirmed, failed)
    - [ ] Show payment method information (card vs wallet) in transaction history
    - [ ] Add donation receipt generation and email notifications
+
+7.1. [x] Fix Campaign Display Issues
+   - [x] Update seed script to generate 7/10 ACTIVE campaigns instead of 2/10
+   - [x] Fix campaign card to display actual donation count (not amount)
+   - [x] Add proper currency formatting with thousands separators
+   - [x] Ensure only confirmed payments count toward totals and progress
+   - [x] Fix campaign item to show raised amount vs goal clearly
+
+7.2. [x] Fix Currency and Payment Method Consistency
+   - [x] Identify and fix USDC display showing 6 decimals (100.000000 USDC)
+   - [x] Update formatCrypto function to display USDC/USD with 2 decimals
+   - [x] Make donation summary show consistent USD formatting
+   - [x] Update seed script to use USDC (native on Celo) instead of mixed tokens
+   - [x] Ensure payment method tracking works with credit card vs crypto
+   - [x] Fix transaction links to only show for crypto payments (not credit card)
+   - [x] Update payment display to show "via USDC" or "Credit Card" appropriately
+
+7.3. [x] Improve CrowdSplit API Error Handling
+   - [x] Remove hardcoded payment amount limits pending clarification with CrowdSplit
+   - [x] Enhance error bubbling to pass actual API error messages to frontend
+   - [x] Improve CrowdSplit service error extraction and preservation
+   - [x] Update payment route to handle API validation errors properly
+   - [x] Ensure users see actual API limit messages instead of generic errors
 
 8. [ ] Implement Payment Dashboard
    - [ ] Create donor dashboard showing personal donation history
@@ -166,7 +205,7 @@ Cleaned up codebase by deleting donation-form.tsx and donation-form-optimized.ts
 
 ### Implement Payment Database Persistence - 2025-01-21
 **Status**: Done  
-**Summary**: Successfully implemented payment database persistence with unified CrowdSplit webhook handler. CrowdSplit wraps both Stripe (credit cards) and Bridge.xyz (crypto/stablecoins), so all webhooks come through the single CrowdSplit endpoint. Updated payment creation to save records with proper provider ('CROWDSPLIT'), token types (USD for cards, USDC/CELO for crypto), and metadata to distinguish underlying payment methods.
+**Summary**: Successfully implemented payment database persistence with unified CrowdSplit webhook handler. CrowdSplit wraps both Stripe (credit cards) and Bridge.xyz (crypto/stablecoins), so all webhooks come through the single CrowdSplit endpoint. Updated payment creation to save records with proper provider ('CROWDSPLIT'), token types (USD for cards, native USDC for crypto on Celo), and metadata to distinguish underlying payment methods.
 
 ### Enhance CrowdSplit Webhook and Payment Authentication - [Current Date]
 **Status**: Done
@@ -175,6 +214,14 @@ Cleaned up codebase by deleting donation-form.tsx and donation-form-optimized.ts
 ### Implement Unified CrowdSplit Webhook Handler - [Current Date]
 **Status**: Done
 **Summary**: Created single webhook endpoint that handles all CrowdSplit event types. Implemented internal event routing based on event type (transaction.updated, kyc.status_updated). Consolidated payment and KYC webhook logic into unified handler. Removed separate /payments and /kyc webhook endpoints (early development - no deprecation needed). Added comprehensive event type detection and validation. Maintained all existing authentication and security features. Updated webhook documentation to reflect unified approach. Tested unified endpoint with proper event routing functionality.
+
+### Improve Database Seed Script for Realistic Testing - [Current Date]
+**Status**: Done
+**Summary**: Completely overhauled seed script to generate realistic test data. Reduced payments from 1000 to ~100 total (2-15 per campaign). Created realistic funding goals ($1K-$50K) and proper descriptions. Reduced users to 25 for better debugging. Generated realistic payment amounts ($5-$500) with better status distribution. Now produces manageable, realistic data perfect for development and QA testing.
+
+### Fix Campaign Display Issues - [Current Date]
+**Status**: Done
+**Summary**: Fixed major UI display issues affecting campaign visibility and metrics. Updated seed script to generate 7/10 ACTIVE campaigns (was 2/10), making most campaigns visible to users. Fixed campaigns list API to include all confirmed payment tokens (not just USDC), resolving inconsistency between campaign list ($200) and detail view ($315). Fixed campaign item component to show actual donation count instead of raised amount. Added payments array to campaigns API response so frontend can calculate donation counts. Now campaign lists show accurate, meaningful data with consistent totals across all views.
 
 ## Task Dependencies
 
@@ -210,6 +257,18 @@ Cleaned up codebase by deleting donation-form.tsx and donation-form-optimized.ts
 ### Implement Unified CrowdSplit Webhook Handler - [Current Date]
 **Status**: Done
 **Summary**: Created single webhook endpoint that handles all CrowdSplit event types. Implemented internal event routing based on event type (transaction.updated, kyc.status_updated). Consolidated payment and KYC webhook logic into unified handler. Removed separate /payments and /kyc webhook endpoints (early development - no deprecation needed). Added comprehensive event type detection and validation. Maintained all existing authentication and security features. Updated webhook documentation to reflect unified approach. Tested unified endpoint with proper event routing functionality.
+
+### Improve Database Seed Script for Realistic Testing - [Current Date]
+**Status**: Done
+**Summary**: Completely overhauled seed script to generate realistic test data. Reduced payments from 1000 to ~100 total (2-15 per campaign). Created realistic funding goals ($1K-$50K) and proper descriptions. Reduced users to 25 for better debugging. Generated realistic payment amounts ($5-$500) with better status distribution. Now produces manageable, realistic data perfect for development and QA testing.
+
+### Fix Campaign Display Issues - [Current Date]
+**Status**: Done
+**Summary**: Fixed major UI display issues affecting campaign visibility and metrics. Updated seed script to generate 7/10 ACTIVE campaigns (was 2/10), making most campaigns visible to users. Fixed campaigns list API to include all confirmed payment tokens (not just USDC), resolving inconsistency between campaign list ($200) and detail view ($315). Fixed campaign item component to show actual donation count instead of raised amount. Added payments array to campaigns API response so frontend can calculate donation counts. Now campaign lists show accurate, meaningful data with consistent totals across all views.
+
+### Currency and Payment Display Consistency - 2025-01-16
+**Status**: Complete
+**Summary**: Fixed USDC display to show as clean USD format ($100.00) instead of crypto format (100.000000 USDC). Updated seed script to use native USDC on Celo blockchain and improved CrowdSplit API error handling to bubble actual API messages to users instead of generic errors.
 
 ---
 *This file follows the markdown-plan syntax for project tracking*

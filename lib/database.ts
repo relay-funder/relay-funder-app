@@ -137,6 +137,8 @@ export async function getCampaign(
     comments: dbCampaign.comments || [],
     updates: dbCampaign.updates || [],
     payments: dbCampaign.payments || [],
+    confirmedPayments: dbCampaign.payments?.filter(p => p.status === 'confirmed') || [],
+    donationCount: dbCampaign.payments?.filter(p => p.status === 'confirmed').length || 0,
     address: dbCampaign.campaignAddress || '',
     owner: dbCampaign.creatorAddress,
     launchTime: Math.floor(

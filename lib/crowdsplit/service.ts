@@ -101,11 +101,19 @@ export class CrowdsplitService {
 
       if (!response.ok) {
         console.error(`Crowdsplit API error (${response.status}):`, data);
-        throw new Error(
+        
+        const apiError = new Error(
+          data.msg || 
           data.message ||
-            data.error ||
-            `Crowdsplit API error: ${response.status} ${response.statusText}`,
+          data.error ||
+          `Crowdsplit API error: ${response.status} ${response.statusText}`,
         );
+        
+        // Attach the original API response for better error handling
+        (apiError as any).apiResponse = data;
+        (apiError as any).statusCode = response.status;
+        
+        throw apiError;
       }
 
       return data;

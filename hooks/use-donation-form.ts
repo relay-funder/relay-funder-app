@@ -32,8 +32,8 @@ const validateDonationAmount = (amount: string): string | null => {
     return 'Minimum donation is $1';
   }
 
-  if (numAmount > 100000) {
-    return 'Maximum donation is $100,000';
+  if (numAmount > 10000) {
+    return 'Maximum donation is $10,000';
   }
 
   return null;
@@ -109,9 +109,16 @@ export function useDonationForm(campaign: Campaign) {
   // Memoized formatting functions
   const formatters = useMemo(
     () => ({
-      formatCrypto: (value: number) => `${value.toFixed(6)} ${selectedToken}`,
+      formatCrypto: (value: number) => {
+        // USDC is dollar-pegged, so format like USD with 2 decimals
+        if (selectedToken === 'USDC' || selectedToken === 'USD') {
+          return `$${value.toFixed(2)}`;
+        }
+        // For other crypto tokens, use 6 decimals
+        return `${value.toFixed(6)} ${selectedToken}`;
+      },
       formatUSD: (value: number) =>
-        `$ ${(value * calculations.tokenPrice).toFixed(2)}`,
+        `$${(value * calculations.tokenPrice).toFixed(2)}`,
     }),
     [selectedToken, calculations.tokenPrice],
   );

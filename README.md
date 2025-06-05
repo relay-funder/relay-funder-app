@@ -97,8 +97,13 @@ echo "DEV_APP_PORT=1234" >> .env
 
 ### Development Container
 
-In order to run commands, use the shell service: `docker compose run --rm
-app-shell /bin/bash` This will start the required services (database,app) and
+In order to run commands, use the shell service: 
+
+```bash
+docker compose run --rm app-shell /bin/bash
+```
+
+This will start the required services (database,app) and
 drop you in a shell that has the correct node version, pnpm et al installed. Its
 a alpine-based minimal container with some development tools. You are root in
 that container, you may install more software (`apk add`) which is gone once you

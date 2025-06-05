@@ -57,6 +57,24 @@ export async function POST(req: Request) {
       crowdsplitPayment = await crowdsplitService.createPayment(paymentData);
     } catch (error) {
       debug && console.error('[PAYMENT] CrowdSplit API error:', error);
+      
+      const apiError = error as any;
+      
+      // If we have the original API response, use its message
+      if (apiError.apiResponse?.msg) {
+        throw new ApiParameterError(apiError.apiResponse.msg);
+      }
+      
+      // If it's a 422 error, it's likely a validation issue
+      if (apiError.statusCode === 422) {
+        throw new ApiParameterError(apiError.message || 'Invalid payment request. Please check your payment details and try again.');
+      }
+      
+      // For other errors, bubble up the actual message
+      if (apiError.message) {
+        throw new ApiUpstreamError(apiError.message);
+      }
+      
       throw new ApiUpstreamError('Failed to create payment with CrowdSplit');
     }
 
