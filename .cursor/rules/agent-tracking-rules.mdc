@@ -50,19 +50,44 @@ These rules govern how AI assistant contributions are tracked, documented, and m
 - **Performance**: Prioritize code performance where applicable
 - **Testing**: Include appropriate tests for new functionality
 
+### Component Maintainability Rules
+- **Maximum Component Size**: Keep components under 150 lines of code
+- **Single Responsibility**: Each component should have one clear purpose
+- **Composition Over Inheritance**: Break large components into smaller, composable pieces
+- **Extract Custom Hooks**: Move complex logic into reusable hooks
+- **Separate Concerns**: 
+  - UI components handle only presentation
+  - Business logic belongs in hooks or utils
+  - Data fetching separated from UI rendering
+- **File Organization**: Group related components in folders with clear naming
+- **Component Hierarchy**: 
+  - Container components (data fetching, state management)
+  - Presentation components (pure UI, props-driven)
+  - Compound components (related UI elements grouped together)
+
+### Component Extraction Guidelines
+When a component exceeds 150 lines:
+1. **Identify Distinct Sections**: Look for logical UI sections
+2. **Extract Sub-components**: Create focused components for each section
+3. **Move Logic to Hooks**: Extract state management and business logic
+4. **Create Compound Components**: Group related components together
+5. **Maintain Props Interface**: Keep the main component's API stable
+
 ### Documentation Requirements
 - **Change Rationale**: Document why changes were made
 - **Implementation Details**: Record key technical decisions
 - **Dependencies**: Note any new dependencies or requirements
 - **Breaking Changes**: Clearly identify any breaking changes
+- **Component Purpose**: Each component file should have a clear docstring explaining its purpose
 
 ## Quality Assurance
 
 ### Before Committing Agent Work
 1. **Code Review**: Ensure code follows project standards
-2. **Testing**: Verify functionality works as expected
-3. **Documentation**: Update relevant documentation
-4. **Plan Update**: Update implementation-plan.mdc properly
+2. **Component Size Check**: Verify no component exceeds 150 lines
+3. **Testing**: Verify functionality works as expected
+4. **Documentation**: Update relevant documentation
+5. **Plan Update**: Update implementation-plan.mdc properly
 
 ### Error Handling
 - **Linter Errors**: Fix automatically detected issues (max 3 iterations)

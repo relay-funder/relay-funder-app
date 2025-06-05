@@ -146,15 +146,27 @@ export interface CrowdsplitWalletAddressesPostResponse {
   message: string;
 }
 
-// /api/crowdsplit/webhook/kyc
-export interface CrowdsplitWebhookKycPostRequest {
-  'crowdsplit-signature': string;
-  event: string;
-  data: {
-    customer_id: string;
-    status: string;
+// /api/crowdsplit/webhook (unified webhook endpoint)
+export interface CrowdsplitWebhookPostRequest {
+  secret?: string;
+  event?: string;
+  type?: string;
+  data?: {
+    type?: string;
+    customer_id?: string;
+    status?: string;
+    id?: string;
+    [key: string]: any;
   };
+  [key: string]: any;
 }
-export interface CrowdsplitWebhookKycPostResponse {
+
+export interface CrowdsplitWebhookPostResponse {
   success: boolean;
+  received: boolean;
+  event_type: string;
+  authentication_method: string;
+  payment_found?: boolean;
+  kyc_updated?: boolean;
+  message?: string;
 }
