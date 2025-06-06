@@ -118,17 +118,18 @@ export async function getCampaign(
   }
 
   // Calculate total raised from confirmed payments
-  const totalRaised = dbCampaign.payments?.reduce((accumulator, payment) => {
-    // Only count confirmed payments
-    if (payment.status !== 'confirmed') {
-      return accumulator;
-    }
-    const value = Number(payment.amount);
-    if (isNaN(value)) {
-      return accumulator;
-    }
-    return accumulator + value;
-  }, 0) ?? 0;
+  const totalRaised =
+    dbCampaign.payments?.reduce((accumulator, payment) => {
+      // Only count confirmed payments
+      if (payment.status !== 'confirmed') {
+        return accumulator;
+      }
+      const value = Number(payment.amount);
+      if (isNaN(value)) {
+        return accumulator;
+      }
+      return accumulator + value;
+    }, 0) ?? 0;
 
   // Convert the data to match the expected types
   const result: CampaignType & CampaignDisplay = {
@@ -137,8 +138,10 @@ export async function getCampaign(
     comments: dbCampaign.comments || [],
     updates: dbCampaign.updates || [],
     payments: dbCampaign.payments || [],
-    confirmedPayments: dbCampaign.payments?.filter(p => p.status === 'confirmed') || [],
-    donationCount: dbCampaign.payments?.filter(p => p.status === 'confirmed').length || 0,
+    confirmedPayments:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed') || [],
+    donationCount:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed').length || 0,
     address: dbCampaign.campaignAddress || '',
     owner: dbCampaign.creatorAddress,
     launchTime: Math.floor(

@@ -159,8 +159,10 @@ function formatCampaignData(
       }, 0) ?? 0,
     images: dbCampaign.images,
     payments: dbCampaign.payments,
-    confirmedPayments: dbCampaign.payments?.filter(p => p.status === 'confirmed') || [],
-    donationCount: dbCampaign.payments?.filter(p => p.status === 'confirmed').length || 0,
+    confirmedPayments:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed') || [],
+    donationCount:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed').length || 0,
     slug: dbCampaign.slug,
     location: dbCampaign.location,
     category: dbCampaign.category,

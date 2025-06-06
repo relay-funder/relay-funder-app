@@ -137,7 +137,9 @@ async function createUsers(amount: number, roles: string[]) {
 
 // Generate realistic funding goals ($1,000 - $50,000)
 function generateFundingGoal(): string {
-  const goals = [1000, 2500, 5000, 7500, 10000, 15000, 20000, 25000, 35000, 50000];
+  const goals = [
+    1000, 2500, 5000, 7500, 10000, 15000, 20000, 25000, 35000, 50000,
+  ];
   return selectRandom(goals).toString();
 }
 
@@ -148,7 +150,7 @@ function generateDescription(title: string): string {
     `Join us in supporting ${title.toLowerCase()} through a community-driven initiative. We work directly with local organizations to ensure maximum impact and transparency in our humanitarian efforts.`,
     `${title} addresses critical needs in refugee communities through innovative solutions and grassroots partnerships. Every contribution directly funds essential services and empowerment programs.`,
     `Help us expand ${title.toLowerCase()} to reach more families in need. This campaign focuses on sustainable impact through education, healthcare, and economic empowerment initiatives.`,
-    `${title} is a collaborative effort to restore dignity and hope to displaced communities. We prioritize community-led solutions and long-term capacity building.`
+    `${title} is a collaborative effort to restore dignity and hope to displaced communities. We prioritize community-led solutions and long-term capacity building.`,
   ];
   return selectRandom(descriptions);
 }
@@ -186,7 +188,10 @@ async function main() {
     startTime: new Date(),
     endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     creatorAddress: '0x1234567890123456789012345678901234567890',
-    status: i < 7 ? CampaignStatus.ACTIVE : campaignStatuses[i % campaignStatuses.length],
+    status:
+      i < 7
+        ? CampaignStatus.ACTIVE
+        : campaignStatuses[i % campaignStatuses.length],
     slug: generateSlug(campaignTitles[i]),
     transactionHash: `0xdeadbeef${(i + 1).toString().padStart(2, '0')}`,
     campaignAddress: campaignAddresses[i] || null,
@@ -200,17 +205,17 @@ async function main() {
   await db.campaignCollection.deleteMany();
   await db.payment.deleteMany();
   await db.campaign.deleteMany();
-  
+
   // Create 25 users instead of 100 (more realistic for debugging)
   const donorUsers = await createUsers(25, ['user']);
-  
+
   let totalPayments = 0;
-  
+
   for (let i = 0; i < campaigns.length; i++) {
     const campaign = await db.campaign.create({
       data: campaigns[i],
     });
-    
+
     // Assign an image from the local file system
     const imageFile = imageFiles[i % imageFiles.length];
     await db.campaignImage.create({
@@ -220,24 +225,27 @@ async function main() {
         campaignId: campaign.id,
       },
     });
-    
+
     // Generate 2-15 payments per campaign (randomized)
     const paymentCount = generatePaymentCount();
     totalPayments += paymentCount;
-    
+
     for (let j = 0; j < paymentCount; j++) {
       // Generate realistic payment method distribution
       // 60% credit card, 40% crypto
       const isCreditCard = Math.random() < 0.6;
-      
+
       await db.payment.create({
         data: {
           amount: generatePaymentAmount(),
           token: 'USD', // All payments are processed as USD by CrowdSplit
           status: selectRandom([
-            'confirmed', 'confirmed', 'confirmed', // Higher chance of confirmed
-            'pending', 'pending', // Some pending
-            'failed' // Occasional failures
+            'confirmed',
+            'confirmed',
+            'confirmed', // Higher chance of confirmed
+            'pending',
+            'pending', // Some pending
+            'failed', // Occasional failures
           ]),
           type: 'BUY',
           // Credit card payments don't have blockchain transaction hashes
@@ -256,7 +264,9 @@ async function main() {
     }
   }
 
-  console.log(`Seeded ${campaigns.length} campaigns with images and ${totalPayments} total payments`);
+  console.log(
+    `Seeded ${campaigns.length} campaigns with images and ${totalPayments} total payments`,
+  );
 }
 
 main()

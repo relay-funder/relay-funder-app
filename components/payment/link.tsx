@@ -6,16 +6,18 @@ export function PaymentLink({ payment }: { payment: Payment }) {
   if (!payment.transactionHash) {
     return null;
   }
-  
+
   // Check if this is a crypto payment based on metadata or presence of transaction hash
   const metadata = payment.metadata as any;
-  const paymentMethod = metadata?.paymentMethod || (payment.transactionHash ? 'crypto' : 'credit_card');
-  
+  const paymentMethod =
+    metadata?.paymentMethod ||
+    (payment.transactionHash ? 'crypto' : 'credit_card');
+
   // Don't show blockchain link for credit card payments
   if (paymentMethod === 'credit_card') {
     return null;
   }
-  
+
   return (
     <a
       href={`https://alfajores.celoscan.io/tx/${payment.transactionHash}`}

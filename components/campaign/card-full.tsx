@@ -18,19 +18,19 @@ export function CampaignCardFull({ campaign }: { campaign: CampaignDisplay }) {
       }, 0) ?? 0
     );
   }, [campaign.confirmedPayments]);
-  
+
   const goalAmount = useMemo(
     () => Number(campaign.fundingGoal) || 0,
     [campaign.fundingGoal],
   );
-  
+
   const progress = useMemo(() => {
     if (goalAmount === 0) {
       return 0;
     }
     return Math.min((raisedAmount / goalAmount) * 100, 100);
   }, [raisedAmount, goalAmount]);
-  
+
   const donationCount = campaign.donationCount;
 
   return (

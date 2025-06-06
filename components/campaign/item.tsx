@@ -119,8 +119,10 @@ export function CampaignItem({
                 of funding goal
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-              <span>${Number(campaign.totalRaised).toLocaleString()} raised</span>
+            <div className="mb-2 flex items-center justify-between text-xs text-gray-600">
+              <span>
+                ${Number(campaign.totalRaised).toLocaleString()} raised
+              </span>
               <span>Goal: ${Number(campaign.goalAmount).toLocaleString()}</span>
             </div>
             <Progress
@@ -179,11 +181,15 @@ export function CampaignItem({
                 </TableRow>
                 <TableRow>
                   <TableHead>Goal Amount</TableHead>
-                  <TableCell>${Number(campaign.goalAmount).toLocaleString()} USD</TableCell>
+                  <TableCell>
+                    ${Number(campaign.goalAmount).toLocaleString()} USD
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableHead>Total Raised</TableHead>
-                  <TableCell>${Number(campaign.totalRaised).toLocaleString()} USD</TableCell>
+                  <TableCell>
+                    ${Number(campaign.totalRaised).toLocaleString()} USD
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
