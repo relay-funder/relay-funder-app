@@ -34,6 +34,7 @@ export interface CrowdsplitCustomerGetResponse {
 export interface CrowdsplitDonationCustomerPostResponse {
   success: boolean;
   customerId: string;
+  isExisting?: boolean;
 }
 export interface CrowdsplitDonationCustomerPostRequest {
   email: string;

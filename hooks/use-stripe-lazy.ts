@@ -49,8 +49,12 @@ export function useStripeLazy({
         throw new Error('Please enter a valid donation amount.');
       }
 
-      // Step 1: Create customer (optimized)
-      debug && console.log('[Stripe Lazy] Creating customer for:', userEmail);
+      // Step 1: Get or create customer (optimized to check for existing first)
+      debug &&
+        console.log(
+          '[Stripe Lazy] Getting or creating customer for:',
+          userEmail,
+        );
       const customerResponse = await fetch(
         '/api/crowdsplit/donation-customer',
         {
@@ -61,7 +65,7 @@ export function useStripeLazy({
       );
 
       if (!customerResponse.ok) {
-        let errorMessage = 'Failed to create customer';
+        let errorMessage = 'Failed to get or create customer';
         try {
           const errorData = await customerResponse.json();
           // Extract the most specific error message available
@@ -79,11 +83,11 @@ export function useStripeLazy({
           }
         } catch (parseError) {
           // If we can't parse the error response, use status text
-          errorMessage = `Failed to create customer (${customerResponse.status}: ${customerResponse.statusText})`;
+          errorMessage = `Failed to get or create customer (${customerResponse.status}: ${customerResponse.statusText})`;
         }
 
         debug &&
-          console.error('[Stripe Lazy] Customer creation failed:', {
+          console.error('[Stripe Lazy] Customer operation failed:', {
             status: customerResponse.status,
             statusText: customerResponse.statusText,
             error: errorMessage,
@@ -92,8 +96,16 @@ export function useStripeLazy({
         throw new Error(errorMessage);
       }
 
-      const { customerId } = await customerResponse.json();
-      debug && console.log('[Stripe Lazy] Customer created:', customerId);
+      const { customerId, isExisting } = await customerResponse.json();
+      debug &&
+        console.log('[Stripe Lazy] Customer operation result:', {
+          customerId,
+          isExisting,
+          operation: isExisting
+            ? 'Retrieved existing customer'
+            : 'Created new customer',
+          userEmail,
+        });
 
       // Step 2: Create payment intent
       debug &&

@@ -16,6 +16,8 @@ import {
   CrowdsplitCreateDonationCustomerInterface,
   CrowdsplitCreateDonationCustomerRequest,
   CrowdsplitCreateDonationCustomerResponse,
+  CrowdsplitGetCustomerApiResponse,
+  CrowdsplitCustomerData,
   CrowdsplitInitiateKycResponse,
   CrowdsplitKycStatusResponse,
   CrowdsplitPaymentMethodCreateInterface,
@@ -189,6 +191,12 @@ export class CrowdsplitService {
   async createDonationCustomer(
     customerData: CrowdsplitCreateDonationCustomerInterface,
   ) {
+    debug &&
+      console.log(
+        '[CrowdSplit Service] Creating new donation customer for email:',
+        customerData.email,
+      );
+
     const payload = {
       email: customerData.email,
     } as CrowdsplitCreateDonationCustomerRequest;
@@ -198,7 +206,46 @@ export class CrowdsplitService {
         'POST',
         payload,
       );
+
+    debug &&
+      console.log(
+        '[CrowdSplit Service] Successfully created donation customer:',
+        {
+          customerId: response.data.id,
+          email: response.data.email,
+        },
+      );
+
     return response.data;
+  }
+
+  async getCustomer(customerId: string): Promise<CrowdsplitCustomerData> {
+    debug &&
+      console.log('[CrowdSplit Service] Getting customer by ID:', customerId);
+
+    try {
+      const response = await this.request<CrowdsplitGetCustomerApiResponse>(
+        `/api/v1/customers/${customerId}`,
+        'GET',
+      );
+
+      debug &&
+        console.log('[CrowdSplit Service] Successfully retrieved customer:', {
+          customerId: response.data.id,
+          email: response.data.email,
+          hasFirstName: !!response.data.first_name,
+          hasLastName: !!response.data.last_name,
+        });
+
+      return response.data;
+    } catch (error) {
+      debug &&
+        console.error('[CrowdSplit Service] Failed to retrieve customer:', {
+          customerId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      throw error;
+    }
   }
 
   async initiateKyc(customerId: string) {
