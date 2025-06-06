@@ -11,6 +11,7 @@ import { useDonationCallback } from '@/hooks/use-donation';
 import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
 import { useAuth } from '@/contexts';
 import { useDebouncedValidation } from '@/hooks/use-debounced-value';
+import { DEFAULT_USER_EMAIL } from '@/lib/constant';
 
 // Validation function for donation amounts
 const validateDonationAmount = (amount: string): string | null => {
@@ -84,7 +85,7 @@ export function useDonationForm(campaign: Campaign) {
   } = useStripeLazy({
     amount,
     campaign,
-    userEmail: 'user@example.com', // TODO: Get actual user email from session or profile
+    userEmail: DEFAULT_USER_EMAIL, // TODO: Get actual user email from session or profile
     isAnonymous,
   });
 
@@ -125,9 +126,14 @@ export function useDonationForm(campaign: Campaign) {
 
   // Derived state
   const isProcessing = isStripeProcessing || isDonateProcessing;
-  const hasErrors = !!donateError || !!stripeError || !!amountValidation.error;
+  const hasErrors = !!donateError || !!amountValidation.error;
+
+  // For card payments, allow retry even if there's a stripe error (could be temporary)
+  // For wallet payments, block if any errors exist
   const canProceed =
-    calculations.numericAmount > 0 && !hasErrors && !isProcessing;
+    calculations.numericAmount > 0 &&
+    !isProcessing &&
+    (paymentMethod === 'card' ? !hasErrors : !hasErrors && !stripeError);
 
   // Show Stripe form when payment intent is ready
   const showStripeForm = paymentMethod === 'card' && isStripeReady;

@@ -10,6 +10,7 @@ import { type Stripe } from '@stripe/stripe-js';
 import { Campaign } from '@/types/campaign';
 import { enableApiMock } from '@/lib/develop';
 import { mockStripeInstance } from '@/lib/test/mock-stripe';
+import { DEFAULT_USER_EMAIL } from '@/lib/constant';
 
 const debug = process.env.NODE_ENV !== 'production';
 
@@ -23,7 +24,7 @@ interface UseStripeLazyProps {
 export function useStripeLazy({
   amount,
   campaign,
-  userEmail = 'user@example.com',
+  userEmail = DEFAULT_USER_EMAIL,
   isAnonymous = false,
 }: UseStripeLazyProps) {
   const [error, setError] = useState<string | null>(null);
