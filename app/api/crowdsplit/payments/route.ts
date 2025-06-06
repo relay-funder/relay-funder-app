@@ -7,16 +7,18 @@ import { ApiNotFoundError, ApiParameterError, ApiUpstreamError } from '@/lib/api
 
 const debug = process.env.NODE_ENV !== 'production';
 
+// Extended interface to include our additional fields
+interface ExtendedPaymentRequest extends CrowdsplitCreatePaymentPostRequest {
+  campaignId: string;
+  isAnonymous?: boolean;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await checkAuth(['user']);
     
-    let paymentData: CrowdsplitCreatePaymentPostRequest;
-    try {
-      paymentData = await req.json();
-    } catch (err) {
-      throw new ApiParameterError('Invalid JSON body');
-    }
+    let paymentData: ExtendedPaymentRequest;
+    paymentData = await req.json();
 
     // Validate required fields
     if (!paymentData.amount || paymentData.amount <= 0) {
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
       
       // If we have the original API response, use its message
       if (apiError.apiResponse?.msg) {
-        throw new ApiParameterError(apiError.apiResponse.msg);
+        throw new ApiUpstreamError(apiError.apiResponse.msg);
       }
       
       // If it's a 422 error, it's likely a validation issue
@@ -82,11 +84,11 @@ export async function POST(req: Request) {
       throw new ApiUpstreamError('Invalid response from CrowdSplit API: missing payment ID');
     }
     
-    // Extract additional fields from payment data
-    const { campaignId, isAnonymous, ...rest } = paymentData as any;
+    // Extract additional fields from payment data with proper typing
+    const { campaignId, isAnonymous, ...baseCrowdsplitData } = paymentData;
     
     if (!campaignId) {
-      debug && console.warn('[PAYMENT] No campaignId provided in payment request - payment tracking may be incomplete');
+      throw new ApiParameterError('Campaign ID is required');
     }
 
     // Determine the actual token based on payment method
@@ -96,13 +98,14 @@ export async function POST(req: Request) {
     debug && console.log('[PAYMENT] Creating payment record:', {
       crowdsplitPaymentId: crowdsplitPayment.id,
       actualToken,
-      campaignId: campaignId || 'none',
+      campaignId,
       isAnonymous: isAnonymous || false
     });
 
     const paymentRecord = await db.payment.create({
       data: {
-        user: { connect: { id: user.id } },
+        userId: user.id,
+        campaignId: parseInt(campaignId),
         amount: (paymentData.amount / 100).toString(), // Convert from cents to dollars
         token: actualToken, // USD for cards, USDC/CELO for crypto
         provider: 'CROWDSPLIT', // CrowdSplit wraps both Stripe and Bridge.xyz
@@ -111,15 +114,13 @@ export async function POST(req: Request) {
         externalId: crowdsplitPayment.id, // This is the transaction ID from CrowdSplit
         isAnonymous: isAnonymous || false,
         metadata: {
-          crowdsplitPaymentData: paymentData,
+          crowdsplitPaymentData: baseCrowdsplitData,
           createdVia: 'crowdsplit-api',
           paymentMethod: paymentData.paymentMethod, // CARD or CRYPTO
           underlyingProvider: paymentData.paymentMethod === 'CARD' ? 'stripe' : 'bridge',
           transactionId: crowdsplitPayment.id,
           createdAt: new Date().toISOString(),
         },
-        // Connect to campaign if provided
-        ...(campaignId && { campaign: { connect: { id: campaignId } } }),
       },
     });
 
