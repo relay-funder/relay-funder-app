@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { erc20Abi } from 'viem';
 import { USDC_ADDRESS } from '@/lib/constant';
 import { type ConnectedWallet } from '@/lib/web3/types';
@@ -18,19 +18,22 @@ export async function requestTransaction({
     throw new Error('Wallet not connected');
   }
   const walletProvider = await wallet.getEthereumProvider();
-  const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-  const signer = ethersProvider.getSigner();
-  const userAddress = await signer.getAddress();
-  if (!USDC_ADDRESS || !ethers.utils.isAddress(USDC_ADDRESS as string)) {
+  if (!walletProvider) {
+    throw new Error('Wallet not supported or connected');
+  }
+  const ethersProvider = new ethers.BrowserProvider(walletProvider);
+  const signer = await ethersProvider.getSigner();
+  const userAddress = signer.address;
+  if (!USDC_ADDRESS || !ethers.isAddress(USDC_ADDRESS as string)) {
     throw new Error('USDC_ADDRESS is missing or invalid');
   }
-  if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+  if (!userAddress || !ethers.isAddress(userAddress)) {
     throw new Error('User address is missing or invalid');
   }
   if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
     throw new Error('Donation amount is missing or invalid');
   }
-  if (!address || !ethers.utils.isAddress(address)) {
+  if (!address || !ethers.isAddress(address)) {
     throw new Error('Treasury address is missing or invalid');
   }
   // Initialize contracts
@@ -40,7 +43,7 @@ export async function requestTransaction({
     erc20Abi,
     signer,
   );
-  const amountInUSDC = ethers.utils.parseUnits(
+  const amountInUSDC = ethers.parseUnits(
     amount || '0',
     process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS,
   );
@@ -62,9 +65,9 @@ export async function requestTransaction({
   const treasuryContract = new ethers.Contract(address!, treasuryABI, signer);
 
   debug && console.log('Estimating gas for pledge transaction...');
-  let estimatedGas = BigNumber.from(220000);
+  let estimatedGas = 220000n;
   try {
-    estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(
+    estimatedGas = await treasuryContract.pledgeWithoutAReward.estimateGas(
       userAddress,
       amountInUSDC,
     );
@@ -76,7 +79,7 @@ export async function requestTransaction({
     userAddress,
     amountInUSDC,
     {
-      gasLimit: estimatedGas.mul(120).div(100),
+      gasLimit: (estimatedGas * 120n) / 100n,
     },
   );
   debug && console.log('Pledge transaction hash:', tx.hash);

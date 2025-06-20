@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts';
+import { useCurrentChain } from '@/lib/web3';
 import {
   useWriteContract,
   useWaitForTransactionReceipt,
@@ -58,7 +59,6 @@ import { ALLO_ADDRESS } from '@/lib/constant';
 import { AlloABI } from '@/contracts/abi/qf/Allo';
 import { saveRoundAction } from '@/lib/actions/rounds/createRound';
 import { KickStarterQFABI } from '@/contracts/abi/qf/KickStarterQF';
-import { useChain } from '@/lib/web3/hooks/use-web3';
 
 // Define the schema
 const roundSchema = z.object({
@@ -161,7 +161,7 @@ type SubmissionStatus =
 export default function CreateRoundPage() {
   const router = useRouter();
   const { address: connectedAddress, authenticated } = useAuth();
-  const { chain, chainId } = useChain();
+  const { chain, chainId } = useCurrentChain();
   const {
     writeContract,
     error: writeContractError,

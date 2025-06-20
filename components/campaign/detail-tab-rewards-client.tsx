@@ -416,9 +416,7 @@ export function CampaignDetailTabRewardsClient({
       if (!contractAddress) return null;
 
       try {
-        const provider = new ethers.providers.JsonRpcProvider(
-          chainConfig.rpcUrl,
-        );
+        const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
         const nftContract = new ethers.Contract(
           contractAddress,
           CampaignNFTabi,
@@ -475,9 +473,7 @@ export function CampaignDetailTabRewardsClient({
   const getNFTAddress = useCallback(
     async (campaignId: string) => {
       try {
-        const provider = new ethers.providers.JsonRpcProvider(
-          chainConfig.rpcUrl,
-        );
+        const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
         const factoryContract = new ethers.Contract(
           CAMPAIGN_NFT_FACTORY,
           CampaignNFTFactory,

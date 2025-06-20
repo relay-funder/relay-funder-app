@@ -6,11 +6,11 @@ import { AlertCircle } from 'lucide-react';
 import chainConfig from '@/lib/web3/config/chain';
 export function PaymentSwitchWalletNetwork() {
   const { toast } = useToast();
-  const { isCorrectNetwork, switchToAlfajores } = useNetworkCheck();
+  const { isCorrectNetwork, switchNetwork } = useNetworkCheck();
 
   const handleNetworkSwitch = useCallback(async () => {
     try {
-      await switchToAlfajores();
+      await switchNetwork();
     } catch (error) {
       console.error('Error switching network:', error);
       toast({
@@ -28,7 +28,7 @@ export function PaymentSwitchWalletNetwork() {
         duration: 5000,
       });
     }
-  }, [switchToAlfajores, toast]);
+  }, [switchNetwork, toast]);
   if (isCorrectNetwork) {
     return null;
   }

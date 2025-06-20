@@ -78,6 +78,6 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     return response({ campaign });
   } catch (error: unknown) {
-    handleError(error);
+    return handleError(error);
   }
 }

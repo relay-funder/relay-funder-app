@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts';
 import { useConnectorClient } from 'wagmi';
 import { type Address, type Chain, type Client, type Transport } from 'viem';
-import { ethers, providers, Signer } from 'ethers';
+import { ethers, Signer } from 'ethers';
 import { AlloABI } from '@/contracts/abi/qf/Allo';
 import {
   prepareRegistrationData,
@@ -26,7 +26,9 @@ import { useToast } from '@/hooks/use-toast';
 import { ALLO_ADDRESS } from '@/lib/constant';
 
 // Helper function to convert wagmi client to ethers v5 signer
-function clientToSigner(client: Client<Transport, Chain>): Signer | undefined {
+async function clientToSigner(
+  client: Client<Transport, Chain>,
+): Promise<Signer | undefined> {
   const { account, chain, transport } = client;
   if (!chain) {
     console.error('Chain information is missing from the client.');
@@ -38,9 +40,9 @@ function clientToSigner(client: Client<Transport, Chain>): Signer | undefined {
     ensAddress: chain.contracts?.ensRegistry?.address,
   };
   // Use Web3Provider for ethers v5
-  const provider = new providers.Web3Provider(transport, network);
+  const provider = new ethers.BrowserProvider(transport, network);
   console.log('account address:', account?.address);
-  const signer = provider.getSigner(account?.address); // Get signer by address
+  const signer = await provider.getSigner(account?.address); // Get signer by address
   return signer;
 }
 
@@ -76,19 +78,13 @@ export function RegisterCampaignRecipient({
   const { authenticated } = useAuth();
   const { data: client } = useConnectorClient();
 
-  // Memoize the signer
-  const signer = useMemo(() => {
-    if (!client || !client.chain) return undefined;
-    return clientToSigner(client);
-  }, [client]);
-
   async function isRecipientRegistered(
     poolId: bigint,
     recipientAddress: string,
   ): Promise<boolean> {
     try {
       // Create a read-only contract interface (doesn't need signer)
-      const provider = new ethers.providers.JsonRpcProvider(
+      const provider = new ethers.JsonRpcProvider(
         process.env.NEXT_PUBLIC_CELO_ALFAJORES_RPC_URL,
       );
       const alloContract = new ethers.Contract(ALLO_ADDRESS, AlloABI, provider);
@@ -125,7 +121,7 @@ export function RegisterCampaignRecipient({
     'isRecipientRegistered:',
     isRecipientRegistered,
   );
-  // function logTransactionData(tx: ethers.providers.TransactionRequest) {
+  // function logTransactionData(tx: ethers.TransactionRequest) {
   //     console.log("=== TRANSACTION DATA DETAILS ===");
   //     console.log("To:", tx.to);
   //     console.log("From:", tx.from);
@@ -158,7 +154,15 @@ export function RegisterCampaignRecipient({
       });
       return;
     }
-
+    if (!client || !client.chain) {
+      toast({
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to register.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const signer = await clientToSigner(client);
     if (!signer) {
       toast({
         title: 'Signer not available',
@@ -478,7 +482,7 @@ export function RegisterCampaignRecipient({
           </Button>
           <Button
             onClick={handleRegisterRecipient}
-            disabled={isRegistering || !signer || !campaignWalletAddress}
+            disabled={isRegistering || !client || !campaignWalletAddress}
           >
             {isRegistering ? 'Registering...' : 'Register Campaign'}
           </Button>
@@ -492,7 +496,7 @@ export function RegisterCampaignRecipient({
       <DialogTrigger asChild>
         <Button
           variant={buttonVariant}
-          disabled={disabled || !signer || !campaignWalletAddress}
+          disabled={disabled || !client || !campaignWalletAddress}
         >
           {buttonText}
         </Button>
@@ -531,7 +535,7 @@ export function RegisterCampaignRecipient({
           </Button>
           <Button
             onClick={handleRegisterRecipient}
-            disabled={isRegistering || !signer || !campaignWalletAddress}
+            disabled={isRegistering || !client || !campaignWalletAddress}
           >
             {isRegistering ? 'Registering...' : 'Register Campaign'}
           </Button>

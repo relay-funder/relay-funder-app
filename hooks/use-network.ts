@@ -3,18 +3,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { chainConfig } from '@/lib/web3/config/chain';
-import { useWallet } from '@/lib/web3/hooks/use-web3';
-import { EthereumProvider, ProviderRpcError } from '@/lib/web3/types';
+import { ProviderRpcError } from '@/lib/web3/types';
+import { useWeb3Context, useAuth, useCurrentChain } from '@/lib/web3';
 
 export function useNetworkCheck() {
-  const wallet = useWallet();
+  const { address, provider } = useWeb3Context();
+  const { chainId } = useCurrentChain();
+  const { ready } = useAuth();
   const { toast } = useToast();
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
-  const checkNetwork = useCallback(async (provider: EthereumProvider) => {
+  const checkNetwork = useCallback(async () => {
+    if (!provider) {
+      return;
+    }
     try {
-      const chainId = await provider.request({ method: 'eth_chainId' });
-      const correctNetwork = chainId === chainConfig.chainId.hex;
+      const correctNetwork = chainId === chainConfig.chainId.decimal;
       setIsCorrectNetwork(correctNetwork);
       return correctNetwork;
     } catch (error) {
@@ -22,18 +26,14 @@ export function useNetworkCheck() {
       setIsCorrectNetwork(false);
       return false;
     }
-  }, []);
+  }, [provider, chainId]);
 
-  const switchToAlfajores = useCallback(async () => {
-    if (!wallet) {
-      return;
-    }
-    if (!(await wallet.isConnected())) {
+  const switchNetwork = useCallback(async () => {
+    if (!ready || !provider) {
       return;
     }
 
     try {
-      const provider = await wallet.getEthereumProvider();
       const chainIdHex = chainConfig.chainId.hex;
 
       try {
@@ -41,14 +41,15 @@ export function useNetworkCheck() {
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainIdHex }],
         });
-        await checkNetwork(provider);
+        await checkNetwork();
       } catch (switchError) {
         // This error code indicates that the chain has not been added to MetaMask
         if (
-          typeof switchError === 'object' &&
-          switchError !== null &&
-          'code' in switchError &&
-          (switchError as ProviderRpcError).code === 4902
+          (typeof switchError === 'object' &&
+            switchError !== null &&
+            'code' in switchError &&
+            (switchError as ProviderRpcError).code === 4902) ||
+          switchError === 'wallet_switchEthereumChain failed. Invalid chain ID'
         ) {
           try {
             await provider.request({
@@ -56,7 +57,7 @@ export function useNetworkCheck() {
               params: [chainConfig.getAddChainParams()],
             });
             // Check network again after adding
-            await checkNetwork(provider);
+            await checkNetwork();
           } catch (addError) {
             console.error('Error adding network:', addError);
             throw new Error('Failed to add network');
@@ -78,10 +79,10 @@ export function useNetworkCheck() {
         variant: 'destructive',
       });
     }
-  }, [wallet, toast, checkNetwork]);
+  }, [provider, ready, toast, checkNetwork]);
 
   useEffect(() => {
-    if (!wallet) {
+    if (!address) {
       console.log('use-network:effect: no wallet');
       return;
     }
@@ -90,23 +91,29 @@ export function useNetworkCheck() {
 
     const initializeNetwork = async () => {
       try {
-        if (!(await wallet.isConnected())) {
+        if (!address) {
           console.log('use-network:effect: wallet not connected');
           setIsCorrectNetwork(false);
           return;
         }
-        const provider = await wallet.getEthereumProvider();
+        if (!provider) {
+          console.log('use-network:effect: provider not available');
+          setIsCorrectNetwork(false);
+          return;
+        }
 
         // Initial network check
-        await checkNetwork(provider);
+        await checkNetwork();
 
         // Listen for network changes
-        const handleChainChanged = async (newChainId: unknown) => {
-          console.log('use-network:effect: handleChainChanged', newChainId);
-          const isCorrect = newChainId === chainConfig.chainId.hex;
+        const handleChainChanged = async (newChainIdHex: string) => {
+          console.log('use-network:effect: handleChainChanged', newChainIdHex);
+          const isCorrect = newChainIdHex === chainConfig.chainId.hex;
           setIsCorrectNetwork(isCorrect);
         };
-
+        if (typeof provider?.on !== 'function') {
+          return;
+        }
         provider.on('chainChanged', handleChainChanged);
         cleanup = () =>
           provider.removeListener('chainChanged', handleChainChanged);
@@ -118,7 +125,7 @@ export function useNetworkCheck() {
 
     initializeNetwork();
     return () => cleanup?.();
-  }, [wallet, checkNetwork]);
+  }, [provider, address, checkNetwork]);
 
-  return { isCorrectNetwork, switchToAlfajores };
+  return { isCorrectNetwork, switchNetwork };
 }

@@ -7,10 +7,13 @@ export async function switchNetwork({ wallet }: { wallet: ConnectedWallet }) {
   if (!wallet || !(await wallet.isConnected())) {
     throw new Error('Wallet not connected');
   }
-  const provider = await wallet.getEthereumProvider();
+  const walletProvider = await wallet.getEthereumProvider();
+  if (!walletProvider) {
+    throw new Error('Wallet not supported or connected');
+  }
   try {
     debug && console.log('Switching to Alfajores network...');
-    await provider.request({
+    await walletProvider.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: chainConfig.chainId.hex }],
     });
@@ -24,7 +27,7 @@ export async function switchNetwork({ wallet }: { wallet: ConnectedWallet }) {
     ) {
       try {
         debug && console.log('Attempting to add Alfajores network...');
-        await provider.request({
+        await walletProvider.request({
           method: 'wallet_addEthereumChain',
           params: [chainConfig.getAddChainParams()],
         });

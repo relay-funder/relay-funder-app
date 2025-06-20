@@ -1,4 +1,2 @@
 export { useAuth } from './use-auth';
-export { useWallet } from './use-wallet';
-export { useChain } from '../common/use-chain';
-export { Web3ContextProvider } from './context-provider';
+export { Web3ContextProvider, useWeb3Context } from './context-provider';

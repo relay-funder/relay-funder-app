@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import Image from 'next/image';
 import { Button, Input } from '@/components/ui';
+import { useRouter } from 'next/navigation';
 
 export function PageHeaderSearch({
   placeholder,
@@ -19,7 +20,15 @@ export function PageHeaderSearch({
   buttons?: ReactNode;
 }) {
   const { login, authenticated } = useAuth();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const onConnect = useCallback(() => {
+    if (authenticated) {
+      router.push('/profile');
+      return;
+    }
+    login();
+  }, [login, authenticated, router]);
   const onSearchInputChanged = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setSearchTerm(event.target.value);
@@ -51,7 +60,7 @@ export function PageHeaderSearch({
           <Button
             variant="outline"
             className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
-            onClick={login}
+            onClick={onConnect}
           >
             {authenticated ? 'Connected' : 'Connect Wallet'}
             <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />

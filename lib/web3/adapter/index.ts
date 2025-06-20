@@ -9,8 +9,8 @@
  * or to completely swap out to a dummy interface for enhanced
  * frontend development
  */
-export { Web3ContextProvider, useAuth, useWallet, useChain } from './privy';
-// export { Web3ContextProvider, useAuth, useWallet, useChain } from './silk';
+// export { Web3ContextProvider, useWeb3Context, useAuth } from './privy';
+export { Web3ContextProvider, useWeb3Context, useAuth } from './silk';
 
 // never commit this line uncommented, this is for local development only
-// export { Web3ContextProvider, useAuth, useWallet, useChain } from './dummy';
+// export { Web3ContextProvider, useAuth, useWallet } from './dummy';
