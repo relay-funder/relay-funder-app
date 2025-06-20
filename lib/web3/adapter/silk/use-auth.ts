@@ -22,7 +22,7 @@ import { chainConfig } from '@/lib/web3/config/chain';
 import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
-import { useWeb3Context } from './context-provider';
+import { useWeb3Context, getProvider } from './context-provider';
 import { ConnectorAlreadyConnectedError } from 'wagmi';
 import { ethers } from 'ethers';
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
@@ -45,7 +45,11 @@ export function useAuth(): IWeb3UseAuthHook {
     error?: Error;
   }>({});
   const { toast } = useToast();
-  const { requestWallet, provider } = useWeb3Context();
+  const {
+    requestWallet,
+    address: web3ContextAddress,
+    initialized,
+  } = useWeb3Context();
 
   const { connectAsync: wagmiConnect, connectors } = useConnect();
   const { address, isConnected: isWagmiConnected } = useAccount();
@@ -61,11 +65,23 @@ export function useAuth(): IWeb3UseAuthHook {
   const reconnectingRef = useRef(false);
   const loginRef = useRef(false);
   const normalizedAddress = useMemo(() => {
-    if (typeof address !== 'string' || !address.startsWith('0x')) {
-      return undefined;
+    debug &&
+      console.log(
+        'web3/adapter/silk-wagmi/use-auth:rememo normalizedAddress',
+        address,
+        web3ContextAddress,
+      );
+    if (typeof address === 'string' && address.startsWith('0x')) {
+      return address.toLowerCase();
     }
-    return address.toLowerCase();
-  }, [address]);
+    if (
+      typeof web3ContextAddress === 'string' &&
+      web3ContextAddress.startsWith('0x')
+    ) {
+      return web3ContextAddress.toLowerCase();
+    }
+    return undefined;
+  }, [address, web3ContextAddress]);
   const authenticated = useMemo(() => {
     return typeof normalizedAddress === 'string';
   }, [normalizedAddress]);
@@ -73,11 +89,8 @@ export function useAuth(): IWeb3UseAuthHook {
     return isWagmiConnected;
   }, [isWagmiConnected]);
   const getEthereumProvider = useCallback(async () => {
-    if (provider === window.silk) {
-      return provider;
-    }
-    return window.silk;
-  }, [provider]);
+    return getProvider();
+  }, []);
   const wallet = useMemo(() => {
     return { address: normalizedAddress, isConnected, getEthereumProvider };
   }, [normalizedAddress, isConnected, getEthereumProvider]);
@@ -85,11 +98,13 @@ export function useAuth(): IWeb3UseAuthHook {
     debug && console.log('web3/adapter/silk/use-auth:logout');
     await nextAuthSignOut();
     await wagmiDisconnect();
+    const provider = getProvider();
+
     if (provider) {
       await provider.logout();
     }
     setState({});
-  }, [provider, wagmiDisconnect]);
+  }, [wagmiDisconnect]);
 
   const signInToBackend = useCallback(async () => {
     try {
@@ -140,9 +155,10 @@ export function useAuth(): IWeb3UseAuthHook {
       // const signature = await signMessageAsync({
       //   message: preparedMessage,
       // });
-      if (!window.silk) {
+      const provider = getProvider();
+      if (!provider) {
         throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: Silk Wallet is not loaded',
+          'web3/adapter/silk/use-auth:signInToBackend: Wallet is not loaded',
         );
       }
       debug &&
@@ -228,7 +244,7 @@ export function useAuth(): IWeb3UseAuthHook {
       });
       debug &&
         console.log(
-          'web3/adapter/silk/use-auth:login: to wallet complete continue with login to next-auth',
+          'web3/adapter/silk/use-auth:login: connect to wallet complete continue with login to next-auth',
           connectResult,
         );
 
@@ -265,6 +281,7 @@ export function useAuth(): IWeb3UseAuthHook {
   }, [toast, connectors, wagmiConnect, wagmiDisconnect, signInToBackend]);
 
   const ready = useMemo(() => {
+    const provider = getProvider();
     debug &&
       console.log(
         'web3/adapter/silk/use-auth:rememo ready',
@@ -273,7 +290,7 @@ export function useAuth(): IWeb3UseAuthHook {
         state.loading,
         typeof state.loading,
       );
-    if (!provider) {
+    if (!provider || !initialized) {
       debug &&
         console.log(
           'web3/adapter/silk/use-auth:rememo ready: silk not yet initialized',
@@ -305,12 +322,13 @@ export function useAuth(): IWeb3UseAuthHook {
         typeof state.loading === 'undefined',
       );
     return state.loading === false || typeof state.loading === 'undefined';
-  }, [address, state.loading, provider]);
+  }, [address, state.loading, initialized]);
 
   useEffect(() => {
     if (
       typeof normalizedAddress !== 'string' ||
-      !normalizedAddress.startsWith('0x')
+      !normalizedAddress.startsWith('0x') ||
+      !ready
     ) {
       // no session ignore
       return;
@@ -322,14 +340,18 @@ export function useAuth(): IWeb3UseAuthHook {
     reconnectingRef.current = true;
     wagmiReconnect(undefined, {
       onSettled: () => {
+        debug &&
+          console.log('web3/adapter/silk/use-auth:reconnect effect: done');
         reconnectingRef.current = false;
       },
     });
-  }, [normalizedAddress, wagmiReconnect]);
+  }, [normalizedAddress, wagmiReconnect, ready]);
   debug &&
     console.log('web3/adapter/silk/use-auth:render', {
       ready,
-      address,
+      authenticated,
+      normalizedAddress,
+      isWagmiConnected,
     });
   return {
     address: normalizedAddress,
