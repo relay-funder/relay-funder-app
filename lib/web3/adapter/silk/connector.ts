@@ -34,10 +34,10 @@ interface SilkEthereumExtendedProviderInterface
  * @returns
  */
 export function connector(options?: InitSilkOptions) {
-  debug && console.log('web3/adapter/silk-wagmi/connector', { options });
+  debug && console.log('web3/adapter/silk/connector', { options });
   return createConnector<SilkEthereumProviderInterface>((config) => {
     debug &&
-      console.log('web3/adapter/silk-wagmi/connector::createConnector', {
+      console.log('web3/adapter/silk/connector::createConnector', {
         config,
       });
     return {
@@ -49,7 +49,7 @@ export function connector(options?: InitSilkOptions) {
 
       async connect({ chainId, isReconnecting } = {}) {
         debug &&
-          console.log('web3/adapter/silk-wagmi/connector::connect', {
+          console.log('web3/adapter/silk/connector::connect', {
             chainId,
           });
         try {
@@ -63,7 +63,7 @@ export function connector(options?: InitSilkOptions) {
             provider.on('disconnect', this.onDisconnect);
           }
 
-          if (!provider.connected) {
+          if (!isReconnecting && !provider.connected) {
             try {
               await provider.login();
             } catch (error) {
@@ -100,7 +100,7 @@ export function connector(options?: InitSilkOptions) {
       },
 
       async getAccounts() {
-        debug && console.log('web3/adapter/silk-wagmi/connector::getAccounts');
+        debug && console.log('web3/adapter/silk/connector::getAccounts');
         const provider = await this.getProvider();
         const accounts = await provider.request({
           method: SILK_METHOD.eth_accounts,
@@ -118,18 +118,18 @@ export function connector(options?: InitSilkOptions) {
       },
 
       async getChainId() {
-        debug && console.log('web3/adapter/silk-wagmi/connector::getChainId');
+        debug && console.log('web3/adapter/silk/connector::getChainId');
         const provider = await this.getProvider();
         const chainId = await provider.request({
           method: SILK_METHOD.eth_chainId,
         });
         debug &&
-          console.log('web3/adapter/silk-wagmi/connector::getChainId', chainId);
+          console.log('web3/adapter/silk/connector::getChainId', chainId);
         return Number(chainId);
       },
 
       async getProvider(): Promise<SilkEthereumProviderInterface> {
-        debug && console.log('web3/adapter/silk-wagmi/connector::getProvider');
+        debug && console.log('web3/adapter/silk/connector::getProvider');
         if (!window.silk) {
           debug &&
             console.log('Initializing Silk Provider with options:', options);
@@ -140,7 +140,7 @@ export function connector(options?: InitSilkOptions) {
       },
 
       async isAuthorized() {
-        debug && console.log('web3/adapter/silk-wagmi/connector::isAuthorized');
+        debug && console.log('web3/adapter/silk/connector::isAuthorized');
         try {
           const accounts = await this.getAccounts();
           return !!accounts.length;
@@ -151,7 +151,7 @@ export function connector(options?: InitSilkOptions) {
 
       async switchChain({ chainId }) {
         debug &&
-          console.log('web3/adapter/silk-wagmi/connector::switchChain', {
+          console.log('web3/adapter/silk/connector::switchChain', {
             chainId,
           });
         try {
@@ -162,7 +162,7 @@ export function connector(options?: InitSilkOptions) {
 
           const provider = await this.getProvider();
           debug &&
-            console.log('web3/adapter/silk-wagmi/connector::switchChain', {
+            console.log('web3/adapter/silk/connector::switchChain', {
               chainIdHex: `0x${chain.id.toString(16)}`,
             });
           await provider.request({
@@ -184,7 +184,7 @@ export function connector(options?: InitSilkOptions) {
       },
 
       async disconnect(): Promise<void> {
-        debug && console.log('web3/adapter/silk-wagmi/connector::disconnect');
+        debug && console.log('web3/adapter/silk/connector::disconnect');
         const provider =
           (await this.getProvider()) as SilkEthereumExtendedProviderInterface;
         if ('uiMessageManager' in provider) {
@@ -199,20 +199,20 @@ export function connector(options?: InitSilkOptions) {
       },
 
       async requestEmail(): Promise<unknown> {
-        debug && console.log('web3/adapter/silk-wagmi/connector::requestEmail');
+        debug && console.log('web3/adapter/silk/connector::requestEmail');
         const provider = await this.getProvider();
         return provider.requestEmail();
       },
 
       async requestSBT(type: CredentialType): Promise<unknown> {
-        debug && console.log('web3/adapter/silk-wagmi/connector::requestSBT');
+        debug && console.log('web3/adapter/silk/connector::requestSBT');
         const provider = await this.getProvider();
         return provider.requestSBT(type);
       },
 
       onAccountsChanged(accounts) {
         debug &&
-          console.log('web3/adapter/silk-wagmi/connector::onAccountsChanged', {
+          console.log('web3/adapter/silk/connector::onAccountsChanged', {
             accounts,
           });
 
@@ -227,7 +227,7 @@ export function connector(options?: InitSilkOptions) {
 
       onChainChanged(chain) {
         debug &&
-          console.log('web3/adapter/silk-wagmi/connector::onChainChanged', {
+          console.log('web3/adapter/silk/connector::onChainChanged', {
             chain,
           });
         const chainId = Number(chain);
@@ -235,7 +235,7 @@ export function connector(options?: InitSilkOptions) {
       },
 
       onDisconnect(): void {
-        debug && console.log('web3/adapter/silk-wagmi/connector::onDisconnect');
+        debug && console.log('web3/adapter/silk/connector::onDisconnect');
 
         config.emitter.emit('disconnect');
       },

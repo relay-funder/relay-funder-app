@@ -5,6 +5,7 @@ import {
   useContext,
   useMemo,
   useEffect,
+  useRef,
   type ReactNode,
   Suspense,
 } from 'react';
@@ -44,33 +45,38 @@ interface IWeb3Context {
   chainId?: number;
   chain?: IWeb3ContextChain;
   address?: string;
-  provider?: EthereumProvider;
+  initialized: boolean;
   requestWallet: () => Promise<{ address?: `0x${string}`; chainId?: number }>;
-  addConnector: (arg0: CreateConnectorFn) => void;
 }
 const Web3Context = createContext({
   chainId: undefined,
   chain: undefined,
   address: undefined,
-  provider: undefined,
+  initialized: false,
   requestWallet: async () => ({ address: undefined, chainId: undefined }),
-  addConnector: ({}) => undefined,
 } as IWeb3Context);
 
 if (typeof window !== 'undefined' && typeof window.silk === 'undefined') {
   initSilk(silkConnectorOptions);
 }
-
+export function getProvider() {
+  if (typeof window !== 'undefined' && typeof window.silk !== 'undefined') {
+    return window.silk;
+  }
+  return undefined;
+}
 export function Web3ContextProvider({ children }: { children: ReactNode }) {
+  const [chainId, setChainId] = useState<number | undefined>();
+  const [address, setAddress] = useState<string | undefined>();
   const [connectors, setConnectors] = useState<readonly CreateConnectorFn[]>(
     wagmiConfig.connectors ?? [],
   );
 
-  const [provider, setProvider] = useState<EthereumProvider | undefined>();
   const [autoConnected, setAutoConnected] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const providerInitializedRef = useRef(false);
   const session = useSession();
-  debug &&
-    console.log('web3/adapter/silk-wagmi/context-provider: Initializing');
+  debug && console.log('web3/adapter/silk/context-provider: Initializing');
 
   const config = useMemo(
     () =>
@@ -83,10 +89,21 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     [connectors],
   );
 
+  const chain = useMemo(() => {
+    if (!chainId) {
+      return undefined;
+    }
+    for (const configChain of config.chains) {
+      if (configChain.id === chainId) {
+        return configChain;
+      }
+    }
+    return undefined;
+  }, [chainId, config]);
+
   const addConnector = useCallback(
     (newConnector: CreateConnectorFn) => {
-      debug &&
-        console.log('web3/adapter/silk-wagmi/context-provider: addConnector');
+      debug && console.log('web3/adapter/silk/context-provider: addConnector');
       setConnectors((prevState) => {
         if (prevState.includes(newConnector)) {
           return prevState;
@@ -101,37 +118,34 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     address?: `0x${string}`;
     chainId?: number;
   }> => {
-    let walletProvider = provider;
-    if (walletProvider !== window.silk) {
-      walletProvider = window.silk as unknown as EthereumProvider;
-    }
-    if (!walletProvider) {
+    const provider = getProvider();
+    if (!provider) {
       console.warn(
-        'web3/adapter/silk-wagmi/context-provider: requestWallet called without a provider',
+        'web3/adapter/silk/context-provider: requestWallet called without a provider',
       );
       return {};
     }
     debug &&
       console.log(
-        'web3/adapter/silk-wagmi/context-provider: requestWallet: requesting wallet details',
+        'web3/adapter/silk/context-provider: requestWallet: requesting wallet details',
       );
-    const accounts = (await walletProvider.request({
+    const accounts = (await provider.request({
       method: 'eth_requestAccounts',
     })) as `0x${string}`[];
-    const chainIdHex = await walletProvider.request({
+    const chainIdHex = await provider.request({
       method: 'eth_chainId',
     });
     const address = accounts[0];
     const chainId = Number(chainIdHex);
     debug &&
       console.log(
-        'web3/adapter/silk-wagmi/context-provider: requestWallet',
+        'web3/adapter/silk/context-provider: requestWallet',
         address,
         chainId,
         accounts,
       );
     return { address, chainId };
-  }, [provider]);
+  }, []);
 
   const checkWallet = useCallback(async (): Promise<{
     address?: `0x${string}`;
@@ -144,7 +158,7 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
      */
     if (session?.status !== 'authenticated') {
       console.log(
-        'web3/adapter/silk-wagmi/context-provider: checkWallet called without a session',
+        'web3/adapter/silk/context-provider: checkWallet called without a session',
       );
       return {};
     }
@@ -152,11 +166,13 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
   }, [requestWallet, session]);
   const value = useMemo(() => {
     return {
+      chainId,
+      chain,
+      address,
+      initialized,
       requestWallet,
-      provider,
-      addConnector,
     };
-  }, [requestWallet, provider, addConnector]);
+  }, [chainId, chain, address, initialized, requestWallet]);
 
   useEffect(() => {
     /**
@@ -167,12 +183,12 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     }
     let timerId: ReturnType<typeof setTimeout> | undefined = undefined;
     async function checkWalletConnection() {
+      const provider = getProvider();
       if (!provider) {
         timerId = setTimeout(() => checkWalletConnection(), 100);
         return;
       }
-      debug &&
-        console.log('web3/adapter/silk-wagmi/context-provider: auto-connect');
+      debug && console.log('web3/adapter/silk/context-provider: auto-connect');
       const { address, chainId } = await checkWallet();
       if (
         typeof address === 'string' &&
@@ -180,36 +196,16 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
         typeof chainId === 'number'
       ) {
         setAutoConnected(true);
+
+        setAddress(address);
+        setChainId(chainId);
       }
     }
     checkWalletConnection();
     return () => {
       clearTimeout(timerId);
     };
-  }, [provider, checkWallet, autoConnected]);
-  useEffect(() => {
-    /**
-     * this effect ensures that the mutating window.silk is always
-     * set to the provider instance.
-     * beware: await login mutates, so you should not use provider
-     *         afterwards. use window.silk directly or dispatch a
-     *         memo/event
-     */
-    let timerId: ReturnType<typeof setTimeout> | undefined = undefined;
-    function checkProvider() {
-      if (provider !== window.silk) {
-        setProvider(window.silk as EthereumProvider);
-        console.warn(
-          'web3/adapter/silk-wagmi/context-provider: window.silk changed',
-        );
-      }
-      timerId = setTimeout(() => checkProvider(), 100);
-    }
-    checkProvider();
-    return () => {
-      clearTimeout(timerId);
-    };
-  }, [provider]);
+  }, [checkWallet, autoConnected]);
 
   useEffect(() => {
     /**
@@ -222,13 +218,36 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     if (!loadedSilkConnector) {
       debug &&
         console.log(
-          'web3/adapter/silk-wagmi/context-provider: Adding silk connector',
+          'web3/adapter/silk/context-provider: Adding silk connector',
           silkConnector,
         );
       addConnector(silkConnector);
     }
   }, [connectors, addConnector]);
-
+  useEffect(() => {
+    /**
+     * this effect checks if the provider is loaded
+     */
+    if (providerInitializedRef.current) {
+      return;
+    }
+    let checkTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+    const checkProviderInitialized = () => {
+      const globalProvider = getProvider();
+      if (!globalProvider) {
+        checkTimer = setTimeout(checkProviderInitialized, 100);
+        return;
+      }
+      setInitialized(true);
+      providerInitializedRef.current = true;
+    };
+    checkProviderInitialized();
+    return () => {
+      if (checkTimer) {
+        clearTimeout(checkTimer);
+      }
+    };
+  }, []);
   return (
     <WagmiProvider config={config}>
       <Suspense>

@@ -3,7 +3,7 @@ export { categories } from './categories';
 
 export const PROJECT_NAME = 'Akashic';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
-export const USDC_ADDRESS = process.env.NEXT_PUBLIC_PLEDGE_TOKEN;
+export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
 
 // Akashic NFT Contract Addresses
 export const NFT_METADATA = '0x73258C5813AB9494473d34eD57869531B2dd6ac2';
