@@ -4,9 +4,10 @@ import { ReactNode, useEffect, useRef } from 'react';
 import { useNetworkCheck } from '@/hooks/use-network';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { PaymentSwitchWalletNetwork } from './payment/switch-wallet-network';
+import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { useAuth } from '@/contexts';
 import { chainConfig } from '@/lib/web3/config/chain';
+import { useWeb3Context } from '@/lib/web3';
 
 interface NetworkCheckProps {
   children: ReactNode;
@@ -14,7 +15,8 @@ interface NetworkCheckProps {
 
 export function NetworkCheck({ children }: NetworkCheckProps) {
   const { isReady, authenticated } = useAuth();
-  const { isCorrectNetwork, switchToAlfajores } = useNetworkCheck();
+  const { isCorrectNetwork, switchNetwork } = useNetworkCheck();
+  const { chainId } = useWeb3Context();
   const { toast } = useToast();
   const wasWrongNetwork = useRef(false);
 
@@ -23,6 +25,9 @@ export function NetworkCheck({ children }: NetworkCheckProps) {
       return;
     }
     if (!authenticated) {
+      return;
+    }
+    if (!chainId) {
       return;
     }
     if (!isCorrectNetwork) {
@@ -60,7 +65,7 @@ export function NetworkCheck({ children }: NetworkCheckProps) {
         duration: 3000,
       });
     }
-  }, [authenticated, isReady, isCorrectNetwork, switchToAlfajores, toast]);
+  }, [authenticated, isReady, chainId, isCorrectNetwork, switchNetwork, toast]);
 
   return children;
 }

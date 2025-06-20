@@ -17,12 +17,10 @@ const debug = process.env.NODE_ENV !== 'production';
 export function PaymentStripeForm({
   publicKey,
   campaign,
-  userAddress,
   amount,
 }: {
   publicKey: string;
   campaign: Campaign;
-  userAddress: string | null;
   amount: string;
 }) {
   const stripe = useStripe();
@@ -36,7 +34,6 @@ export function PaymentStripeForm({
     console.log('Stripe form props:', {
       publicKey,
       campaign,
-      userAddress,
       amount,
     });
 

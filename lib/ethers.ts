@@ -10,17 +10,17 @@ import { chainConfig } from '@/lib/web3/config/chain';
 export const getProvider = () => {
   // For browser environments
   if (typeof window !== 'undefined' && window.ethereum) {
-    return new ethers.providers.Web3Provider(window.ethereum);
+    return new ethers.BrowserProvider(window.ethereum);
   }
 
   // Fallback to a public provider
-  return new ethers.providers.JsonRpcProvider(chainConfig.rpcUrl);
+  return new ethers.JsonRpcProvider(chainConfig.rpcUrl);
 };
 
 export const getSigner = async () => {
   const provider = getProvider();
 
-  if (provider instanceof ethers.providers.Web3Provider) {
+  if (provider instanceof ethers.BrowserProvider) {
     // Request account access if needed
     await provider.send('eth_requestAccounts', []);
     return provider.getSigner();
@@ -31,7 +31,7 @@ export const getSigner = async () => {
 
 // Get contract instances
 export const getRegistryContract = (
-  signerOrProvider?: ethers.Signer | ethers.providers.Provider,
+  signerOrProvider?: ethers.Signer | ethers.Provider,
 ) => {
   const provider = signerOrProvider || getProvider();
   return new ethers.Contract(
@@ -42,7 +42,7 @@ export const getRegistryContract = (
 };
 
 export const getFactoryContract = (
-  signerOrProvider?: ethers.Signer | ethers.providers.Provider,
+  signerOrProvider?: ethers.Signer | ethers.Provider,
 ) => {
   const provider = signerOrProvider || getProvider();
   return new ethers.Contract(
@@ -54,7 +54,7 @@ export const getFactoryContract = (
 
 export const getCampaignNFTContract = (
   address: string,
-  signerOrProvider?: ethers.Signer | ethers.providers.Provider,
+  signerOrProvider?: ethers.Signer | ethers.Provider,
 ) => {
   const provider = signerOrProvider || getProvider();
   return new ethers.Contract(address, CampaignNFTFactory, provider);

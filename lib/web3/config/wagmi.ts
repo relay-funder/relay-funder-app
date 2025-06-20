@@ -5,7 +5,7 @@ import { chainConfig } from '@/lib/web3/config/chain';
 
 // Export chains for use in other files
 export { sepolia, celoAlfajores, celo, mainnet };
-import { injected } from 'wagmi/connectors';
+import { injected, metaMask } from 'wagmi/connectors';
 
 // Add type declaration for wagmi config
 declare module 'wagmi' {
@@ -16,7 +16,7 @@ declare module 'wagmi' {
 
 export const config: CreateConfigParameters = {
   chains: [celoAlfajores, sepolia, celo, mainnet],
-  connectors: [injected()],
+  connectors: [injected(), metaMask()],
   transports: {
     [celoAlfajores.id]: http(chainConfig.rpcUrl),
     [sepolia.id]: http(),

@@ -5,23 +5,36 @@ import {
   signOut as nextAuthSignOut,
 } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 import { SiweMessage } from 'siwe';
 import { UserRejectedRequestError } from 'viem';
-import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi';
+import {
+  useAccount,
+  useConnect,
+  useReconnect,
+  useDisconnect,
+  useSignMessage,
+} from 'wagmi';
 
 import { chainConfig } from '@/lib/web3/config/chain';
-import {
-  connector as silkConnector,
-  connectorOptions as silkConnectorOptions,
-} from '@/lib/web3/adapter/silk/connector';
 
 import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { useWeb3Context } from './context-provider';
-const debug = false;
+import { ConnectorAlreadyConnectedError } from 'wagmi';
+import { ethers } from 'ethers';
+import { debugWeb3UseAuth as debug } from '@/lib/debug';
+
+async function fetchNonce() {
+  try {
+    return await getCsrfToken();
+  } catch (error) {
+    console.error('Failure fetching nonce (next-auth csrf-token)');
+  }
+  return;
+}
 /**
  * Handles wagmi connect, signMessage, and logout using the Silk wallet.
  * @returns
@@ -29,52 +42,68 @@ const debug = false;
 export function useAuth(): IWeb3UseAuthHook {
   const [state, setState] = useState<{
     loading?: boolean;
-    nonce?: string;
     error?: Error;
   }>({});
   const { toast } = useToast();
-  const { address: wagmiAddress, chainId } = useAccount();
+  const { requestWallet, provider } = useWeb3Context();
+
   const { connectAsync: wagmiConnect, connectors } = useConnect();
-  const { addConnector } = useWeb3Context();
-  const { disconnect } = useDisconnect();
+  const { address, isConnected: isWagmiConnected } = useAccount();
+  const { reconnect: wagmiReconnect } = useReconnect();
+  const { disconnectAsync: wagmiDisconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
+
   const params = useSearchParams();
-  const callbackUrl = params?.get('callbackUrl') || '/dashboard';
-
-  const fetchNonce = useCallback(async () => {
-    try {
-      const nonce = await getCsrfToken();
-      setState((prevState) => ({ ...prevState, nonce }));
-    } catch (error) {
-      setState((prevState) => ({ ...prevState, error: error as Error }));
+  const callbackUrl = useMemo(
+    () => params?.get('callbackUrl') || '/dashboard',
+    [params],
+  );
+  const reconnectingRef = useRef(false);
+  const loginRef = useRef(false);
+  const normalizedAddress = useMemo(() => {
+    if (typeof address !== 'string' || !address.startsWith('0x')) {
+      return undefined;
     }
-  }, []);
-
-  // Pre-fetch random nonce when component using the hook is rendered
-  useEffect(() => {
-    fetchNonce();
-  }, [fetchNonce]);
-  useEffect(() => {
-    setState((prevState) => ({ ...prevState, loading: true }));
-    const loadedSilkConnector = connectors.find(
-      (connector) => connector.id === 'silk',
-    );
-    if (!loadedSilkConnector) {
-      addConnector(silkConnector(silkConnectorOptions));
-      setState((prevState) => ({ ...prevState, loading: false }));
-    } else {
-      setState((prevState) => ({ ...prevState, loading: false }));
+    return address.toLowerCase();
+  }, [address]);
+  const authenticated = useMemo(() => {
+    return typeof normalizedAddress === 'string';
+  }, [normalizedAddress]);
+  const isConnected = useCallback(async () => {
+    return isWagmiConnected;
+  }, [isWagmiConnected]);
+  const getEthereumProvider = useCallback(async () => {
+    if (provider === window.silk) {
+      return provider;
     }
-  }, [connectors, addConnector]);
-  const address = useMemo(() => {
-    debug && console.log('web3/adapter/silk/use-auth:rememo address');
-    return wagmiAddress;
-  }, [wagmiAddress]);
-  const signIn = useCallback(async () => {
+    return window.silk;
+  }, [provider]);
+  const wallet = useMemo(() => {
+    return { address: normalizedAddress, isConnected, getEthereumProvider };
+  }, [normalizedAddress, isConnected, getEthereumProvider]);
+  const logout = useCallback(async () => {
+    debug && console.log('web3/adapter/silk/use-auth:logout');
+    await nextAuthSignOut();
+    await wagmiDisconnect();
+    if (provider) {
+      await provider.logout();
+    }
+    setState({});
+  }, [provider, wagmiDisconnect]);
+
+  const signInToBackend = useCallback(async () => {
     try {
-      debug && console.log('useAuth.signIn', { address, chainId });
-      if (!address || !chainId) {
-        return;
+      // we cannot rely on state here as login() has altered window values
+      const { address, chainId } = await requestWallet();
+      debug &&
+        console.log('web3/adapter/silk/use-auth:signInToBackend', {
+          address,
+          chainId,
+        });
+      if (!address || typeof chainId !== 'number') {
+        throw new Error(
+          'web3/adapter/silk/use-auth:signInToBackend: missing address or chainId',
+        );
       }
 
       setState((prevState) => ({
@@ -82,22 +111,56 @@ export function useAuth(): IWeb3UseAuthHook {
         loading: true,
         error: undefined,
       }));
+      const nonce = await fetchNonce();
+      if (!nonce) {
+        throw new Error(
+          'web3/adapter/silk/use-auth:signInToBackend: Failed to fetch nonce for signature',
+        );
+      }
       // Create SIWE message with pre-fetched nonce and sign with wallet
       const message = new SiweMessage({
         domain: window.location.host,
-        address,
+        address: ethers.getAddress(address),
         statement: `${PROJECT_NAME} - Please sign this message to log in to the app.`,
         uri: window.location.origin,
         version: '1',
         chainId,
-        nonce: state.nonce,
+        nonce,
       });
 
       const preparedMessage = message.prepareMessage();
-      const signature = await signMessageAsync({
-        message: preparedMessage,
+      if (typeof signMessageAsync !== 'function') {
+        throw new Error(
+          'web3/adapter/silk/use-auth:signInToBackend: Wagmi signMessageAsync not found',
+        );
+      }
+      // signMessageAsync cannot work because the wagmi connector is not set yet
+      // that signature would only work if we detach the nextauth login from the wagmi connect
+      // in a way that react could process the contexts&providers
+      // const signature = await signMessageAsync({
+      //   message: preparedMessage,
+      // });
+      if (!window.silk) {
+        throw new Error(
+          'web3/adapter/silk/use-auth:signInToBackend: Silk Wallet is not loaded',
+        );
+      }
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:signInToBackend: request signature',
+        );
+      const signature = await window.silk.request({
+        method: 'personal_sign',
+        params: [
+          ethers.hexlify(ethers.toUtf8Bytes(preparedMessage)),
+          ethers.getAddress(address),
+        ],
       });
 
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:signInToBackend: login to next-auth',
+        );
       const authResult = await nextAuthSignIn('siwe', {
         redirect: false,
         message: JSON.stringify(message),
@@ -106,16 +169,22 @@ export function useAuth(): IWeb3UseAuthHook {
       });
       if (authResult?.ok && !authResult.error) {
         const session = await getSession();
-        console.info('User signed in:', session?.user?.name);
+        console.info(
+          'web3/adapter/silk/use-auth:signInToBackend: user signed in',
+          session?.user?.name,
+          session?.user?.address,
+        );
       } else if (authResult?.error) {
         const errorMessage =
-          'An error occurred while signin in.' +
+          'web3/adapter/silk/use-auth:signInToBackend:' +
+          ' An error occurred while signin in.' +
           ` Code: ${authResult.status} - ${authResult.error}`;
         console.error(errorMessage);
         setState((prevState) => ({
           ...prevState,
           error: new Error(
-            authResult.error || 'Unable to authenticate the message',
+            authResult.error ||
+              'web3/adapter/silk/use-auth:signInToBackend: Unable to authenticate the message',
           ),
         }));
       }
@@ -126,58 +195,58 @@ export function useAuth(): IWeb3UseAuthHook {
         ...prevState,
         loading: false,
         error: error as Error,
-        nonce: undefined,
       }));
-      fetchNonce();
     }
-  }, [
-    address,
-    callbackUrl,
-    chainId,
-    signMessageAsync,
-    state.nonce,
-    fetchNonce,
-  ]);
+  }, [callbackUrl, signMessageAsync, requestWallet]);
 
-  const logout = useCallback(async () => {
-    return nextAuthSignOut().then(() => {
-      disconnect();
-      setState({});
-    });
-  }, [disconnect]);
-
-  const connect = useCallback(async () => {
+  const login = useCallback(async () => {
     setState((prevState) => ({
       ...prevState,
       loading: true,
       error: undefined,
     }));
-    debug && console.log('useAuth.connect');
+    loginRef.current = true;
+    debug && console.log('web3/adapter/silk/use-auth:login');
     const loadedSilkConnector = connectors.find(
       (connector) => connector.id === 'silk',
     );
     const defaultChain = chainConfig.defaultChain;
     try {
-      // There should already be a silk connector in the wagmi config which also
-      // enables automatic reconnect on page refresh, but just in case, we can also create
-      // the connector here.
       if (!loadedSilkConnector) {
-        debug && console.log('useAuth.connect: with new silk connector');
-        await wagmiConnect({
-          // TODO referral code ENV var
-          chainId: defaultChain.id,
-          connector: silkConnector(silkConnectorOptions),
-        });
-      } else {
-        debug && console.log('useAuth.connect with loadedSilkConnector');
-        await wagmiConnect({
-          chainId: defaultChain.id,
-          connector: loadedSilkConnector,
-        });
+        throw new Error(
+          'web3/adapter/silk/use-auth:login: Configuration issue: silk connector not in wagmi config',
+        );
       }
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:login: request wagmi(silk) to login -> connector::connect',
+        );
+      //await window.silk.login();
+      const connectResult = await wagmiConnect({
+        chainId: defaultChain.id,
+        connector: loadedSilkConnector,
+      });
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:login: to wallet complete continue with login to next-auth',
+          connectResult,
+        );
+
+      await signInToBackend();
       setState((prevState) => ({ ...prevState, loading: false }));
     } catch (error) {
-      console.error('Error connecting to Silk:', error);
+      if (error instanceof ConnectorAlreadyConnectedError) {
+        debug &&
+          console.log(
+            'web3/adapter/silk/use-auth:login: already connected, retrying',
+          );
+        await wagmiDisconnect();
+        return await login();
+      }
+      console.error(
+        'web3/adapter/silk/use-auth:login: error connecting to silk',
+        error,
+      );
       if (error instanceof UserRejectedRequestError)
         toast({
           variant: 'destructive',
@@ -190,40 +259,84 @@ export function useAuth(): IWeb3UseAuthHook {
           loading: false,
           error: error as Error,
         }));
+    } finally {
+      loginRef.current = false;
     }
-  }, [toast, connectors, wagmiConnect]);
-  const authenticated = useMemo(() => {
-    debug && console.log('web3/adapter/silk/use-auth:rememo authenticated');
-    return (
-      state.loading === false &&
-      typeof address === 'string' &&
-      address.length > 0
-    );
-  }, [state.loading, address]);
+  }, [toast, connectors, wagmiConnect, wagmiDisconnect, signInToBackend]);
+
   const ready = useMemo(() => {
     debug &&
       console.log(
         'web3/adapter/silk/use-auth:rememo ready',
+        address,
+        typeof provider,
         state.loading,
-        state.error,
+        typeof state.loading,
       );
-    return state.loading === false && !state.error;
-  }, [state.loading, state.error]);
-  const login = useCallback(async () => {
-    await connect();
-    await signIn();
-  }, [signIn, connect]);
+    if (!provider) {
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:rememo ready: silk not yet initialized',
+        );
+      return false;
+    }
+    if (loginRef.current || reconnectingRef.current) {
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:rememo ready: in the middle of reconnect or login',
+        );
+      return false;
+    }
+    if (typeof address === 'string' && address.startsWith('0x')) {
+      debug &&
+        console.log(
+          'web3/adapter/silk/use-auth:rememo ready: silk provided a address',
+        );
+      // silk has provided a address
+      // via
+      // - accountsChanged event
+      // - requestWallet = eth_requestAccounts
+      return true;
+    }
+    debug &&
+      console.log(
+        'web3/adapter/silk/use-auth:rememo ready: check loading state',
+        state.loading === false,
+        typeof state.loading === 'undefined',
+      );
+    return state.loading === false || typeof state.loading === 'undefined';
+  }, [address, state.loading, provider]);
+
+  useEffect(() => {
+    if (
+      typeof normalizedAddress !== 'string' ||
+      !normalizedAddress.startsWith('0x')
+    ) {
+      // no session ignore
+      return;
+    }
+    if (reconnectingRef.current || loginRef.current) {
+      return;
+    }
+    debug && console.log('web3/adapter/silk/use-auth:reconnect effect');
+    reconnectingRef.current = true;
+    wagmiReconnect(undefined, {
+      onSettled: () => {
+        reconnectingRef.current = false;
+      },
+    });
+  }, [normalizedAddress, wagmiReconnect]);
   debug &&
     console.log('web3/adapter/silk/use-auth:render', {
-      authenticated,
       ready,
       address,
     });
   return {
+    address: normalizedAddress,
+    wallet,
+    authenticated,
     login,
     logout,
-    authenticated,
     ready,
-    address,
   };
 }

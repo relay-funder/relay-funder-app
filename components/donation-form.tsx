@@ -33,7 +33,6 @@ import { useStripePaymentCallback } from '@/hooks/use-stripe';
 import { useNetworkCheck } from '@/hooks/use-network';
 import { useDonationCallback } from '@/hooks/use-donation';
 import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
-import { useAuth } from '@/contexts';
 
 interface DonationFormProps {
   campaign: Campaign;
@@ -46,7 +45,6 @@ export default function DonationForm({ campaign }: DonationFormProps) {
   const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card'>('card');
   const usdcBalance = useUsdcBalance();
-  const { address: userAddress } = useAuth();
   // Simulated values - in a real app these would come from an API or wallet
   const tokenPrice = 1; // USD per USDC
   const availableBalance = usdcBalance; // Update available balance to use fetched USDC balance
@@ -180,7 +178,6 @@ export default function DonationForm({ campaign }: DonationFormProps) {
                 <PaymentStripeForm
                   publicKey={stripeData.publicKey}
                   campaign={campaign}
-                  userAddress={userAddress}
                   amount={amount}
                 />
               </Elements>

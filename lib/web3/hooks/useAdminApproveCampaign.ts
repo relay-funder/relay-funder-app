@@ -49,10 +49,13 @@ export function useAdminApproveCampaign() {
       }
 
       // Get provider from wallet
-      const privyProvider = await wallet.getEthereumProvider();
+      const walletProvider = await wallet.getEthereumProvider();
+      if (!walletProvider) {
+        throw new Error('Ethereum Provider not supported by wallet');
+      }
       // Switch to Alfajores network
       try {
-        await privyProvider.request({
+        await walletProvider.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainConfig.chainId.hex }],
         });
@@ -65,7 +68,7 @@ export function useAdminApproveCampaign() {
           (switchError as { code: number }).code === 4902
         ) {
           try {
-            await privyProvider.request({
+            await walletProvider.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
             });
@@ -80,18 +83,18 @@ export function useAdminApproveCampaign() {
       }
 
       // Create providers
-      const walletProvider = new ethers.providers.Web3Provider(privyProvider, {
+      const ethersProvider = new ethers.BrowserProvider(walletProvider, {
         chainId: chainConfig.chainId.decimal,
         name: chainConfig.name,
       });
-      const signer = walletProvider.getSigner();
-      const signerAddress = await signer.getAddress();
+      const signer = await ethersProvider.getSigner();
+      const signerAddress = signer.address;
 
       // Global params check
       const globalParams = new ethers.Contract(
         platformConfig.globalParamsAddress,
         GlobalParamsABI,
-        walletProvider,
+        ethersProvider,
       );
       const platformAdmin = await globalParams.getPlatformAdminAddress(
         platformConfig.platformBytes,

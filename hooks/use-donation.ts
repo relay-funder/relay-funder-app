@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ethers } from 'ethers';
 import { useToast } from '@/hooks/use-toast';
-import { useWallet } from '@/lib/web3/hooks/use-web3';
+import { useAuth } from '@/lib/web3';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
 import {
@@ -20,7 +20,7 @@ export function useDonationCallback({
   amount: string;
   selectedToken: string;
 }) {
-  const wallet = useWallet();
+  const { wallet } = useAuth();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,10 +39,13 @@ export function useDonationCallback({
 
       debug && console.log('Getting wallet provider and signer...');
       const walletProvider = await wallet.getEthereumProvider();
-      const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-      const signer = ethersProvider.getSigner();
-      const userAddress = await signer.getAddress();
-      if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+      if (!walletProvider) {
+        throw new Error('Wallet not supported or connected');
+      }
+      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = signer.address;
+      if (!userAddress || !ethers.isAddress(userAddress)) {
         throw new Error('User address is missing or invalid');
       }
       if (!campaign.treasuryAddress) {

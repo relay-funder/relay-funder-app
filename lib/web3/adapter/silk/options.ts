@@ -19,4 +19,3 @@ export const options: InitSilkOptions = {
     // privacyPolicyUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/privacy-policy`,
   },
 };
-console.log(options);

@@ -27,12 +27,14 @@ CROWDSPLIT_WEBHOOK_SECRET="EFJBQPYXCA"
 
 1. **ngrok Account**: Register a free account at [ngrok.com](https://ngrok.com)
 2. **ngrok Installation** (macOS):
+
    ```bash
    # Using Homebrew (recommended)
    brew install ngrok
-   
+
    # Or download directly from ngrok.com
    ```
+
 3. **ngrok Authentication**:
    ```bash
    # Get your authtoken from ngrok dashboard
@@ -65,7 +67,7 @@ ngrok http 3000
 **⚠️ CRITICAL**: Only ONE developer can have an active webhook at a time!
 
 1. **Check with Team First**: Communicate in your team chat before registering
-2. **Use Postman or curl** to register your webhook (requires a valid access token): 
+2. **Use Postman or curl** to register your webhook (requires a valid access token):
 
 ```bash
 # Register webhook endpoint
@@ -112,14 +114,14 @@ CROWDSPLIT_WEBHOOK_SECRET="NEW_SECRET_FROM_RESPONSE"
 
 ### Payload Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `secret` | string | Authentication secret (must match environment variable) |
-| `data.type` | string | Event type (e.g., `"transaction.updated"`) |
-| `data.id` | string | Unique transaction/payment ID |
-| `data.status` | string | Transaction status (e.g., `"COMPLETED"`) |
-| `data.subStatus` | string | Sub-status for additional detail (e.g., `"CAPTURED"`) |
-| `data.metadata` | object\|null | Additional transaction metadata |
+| Field            | Type         | Description                                             |
+| ---------------- | ------------ | ------------------------------------------------------- |
+| `secret`         | string       | Authentication secret (must match environment variable) |
+| `data.type`      | string       | Event type (e.g., `"transaction.updated"`)              |
+| `data.id`        | string       | Unique transaction/payment ID                           |
+| `data.status`    | string       | Transaction status (e.g., `"COMPLETED"`)                |
+| `data.subStatus` | string       | Sub-status for additional detail (e.g., `"CAPTURED"`)   |
+| `data.metadata`  | object\|null | Additional transaction metadata                         |
 
 ## Event Detection Logic
 
@@ -128,23 +130,24 @@ CROWDSPLIT_WEBHOOK_SECRET="NEW_SECRET_FROM_RESPONSE"
 A webhook should trigger payment confirmation when **ALL** of the following conditions are met:
 
 ```typescript
-const isPaymentEvent = (
+const isPaymentEvent =
   data.type === 'transaction.updated' &&
   data.status === 'COMPLETED' &&
-  data.subStatus === 'CAPTURED'
-);
+  data.subStatus === 'CAPTURED';
 ```
 
 ### Other Event Types
 
 Currently, only `transaction.updated` events are processed. Future event types may include:
+
 - `transaction.created`
-- `transaction.failed` 
+- `transaction.failed`
 - `transaction.refunded`
 
 ## Security Considerations
 
 ### Secret Validation
+
 - **Always validate** the `secret` field before processing any webhook
 - **Use constant-time comparison** to prevent timing attacks:
 
@@ -153,17 +156,18 @@ import crypto from 'crypto';
 
 function validateSecret(received: string, expected: string): boolean {
   if (!received || !expected) return false;
-  
+
   const receivedBuffer = Buffer.from(received, 'utf8');
   const expectedBuffer = Buffer.from(expected, 'utf8');
-  
+
   if (receivedBuffer.length !== expectedBuffer.length) return false;
-  
+
   return crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
 }
 ```
 
 ### Request Validation
+
 - Validate that the request has a proper JSON content-type
 - Ensure the payload structure matches expected format
 - Log all webhook attempts for monitoring
@@ -173,10 +177,10 @@ function validateSecret(received: string, expected: string): boolean {
 ### Payment Status Mapping
 
 | CrowdSplit Status | CrowdSplit SubStatus | Akashic Status |
-|-------------------|---------------------|----------------|
-| `COMPLETED` | `CAPTURED` | `confirmed` |
-| `PENDING` | `PROCESSING` | `pending` |
-| `FAILED` | `DECLINED` | `failed` |
+| ----------------- | -------------------- | -------------- |
+| `COMPLETED`       | `CAPTURED`           | `confirmed`    |
+| `PENDING`         | `PROCESSING`         | `pending`      |
+| `FAILED`          | `DECLINED`           | `failed`       |
 
 ### Payment Lookup Strategy
 
@@ -188,23 +192,25 @@ const payment = await prisma.payment.findFirst({
   where: {
     OR: [
       { externalId: transactionId },
-      { 
+      {
         provider: 'CROWDSPLIT',
         // Add other fallback criteria as needed
-      }
-    ]
-  }
+      },
+    ],
+  },
 });
 ```
 
 ### Local Testing Workflow
 
 1. **Start Development Environment**:
+
    ```bash
    docker-compose up
    ```
 
 2. **Start ngrok** (new terminal):
+
    ```bash
    ngrok http 3000
    ```
@@ -230,15 +236,18 @@ Access the ngrok web interface at `http://127.0.0.1:4040/inspect/http` to see al
 ### Common Issues
 
 1. **Secret Mismatch**
+
    - Verify `CROWDSPLIT_WEBHOOK_SECRET` environment variable
    - Check for extra whitespace or encoding issues
    - Ensure you updated the secret after webhook registration
 
 2. **Payment Not Found**
+
    - Ensure `externalId` is properly set when creating payments
    - Check for timing issues (webhook arrives before payment creation)
 
 3. **Invalid Payload Structure**
+
    - Validate JSON parsing
    - Check for missing required fields
 
@@ -249,10 +258,10 @@ Access the ngrok web interface at `http://127.0.0.1:4040/inspect/http` to see al
 
 ### Response Codes
 
-| Status | Meaning | Action |
-|--------|---------|---------|
-| 200 | Success | Webhook processed successfully |
-| 401 | Unauthorized | Invalid secret |
-| 404 | Not Found | Payment not found |
-| 422 | Invalid Payload | Malformed request body |
-| 500 | Server Error | Internal processing error |
+| Status | Meaning         | Action                         |
+| ------ | --------------- | ------------------------------ |
+| 200    | Success         | Webhook processed successfully |
+| 401    | Unauthorized    | Invalid secret                 |
+| 404    | Not Found       | Payment not found              |
+| 422    | Invalid Payload | Malformed request body         |
+| 500    | Server Error    | Internal processing error      |

@@ -1,5 +1,4 @@
-import { BigNumber, utils } from 'ethers';
-
+import { ethers } from 'ethers';
 export interface Metadata {
   protocol: number;
   pointer: string;
@@ -11,7 +10,7 @@ export interface RecipientRegistrationParams {
   useProfileAnchor: boolean;
   profileAnchor?: string;
   metadata: Metadata;
-  proposalBid: BigNumber | string | number;
+  proposalBid: bigint | string | number;
 }
 
 /**
@@ -26,7 +25,7 @@ export function validateAddress(address: string): string {
       throw new Error('Address cannot be empty');
     }
     // Convert to checksum address and validate format
-    return utils.getAddress(address);
+    return ethers.getAddress(address);
   } catch (error) {
     console.error('Error validating address:', error);
     throw new Error(`Invalid Ethereum address: ${address}`);
@@ -34,25 +33,25 @@ export function validateAddress(address: string): string {
 }
 
 /**
- * Validates a BigNumber is positive and within safe uint256 range
+ * Validates a bigint is positive and within safe uint256 range
  * @param value - Value to validate
  * @param label - Label for error messages
- * @returns Validated BigNumber
+ * @returns Validated bigint
  * @throws Error if value is invalid
  */
 export function validateBigNumber(
-  value: BigNumber | string | number,
+  value: bigint | string | number,
   label: string,
-): BigNumber {
+): bigint {
   try {
-    const bigNumberValue = BigNumber.from(value);
-    if (bigNumberValue.isNegative()) {
+    const bigNumberValue = BigInt(value);
+    if (bigNumberValue < BigInt(0)) {
       throw new Error(`${label} cannot be negative`);
     }
 
     // Check if within uint256 range
-    const maxUint256 = BigNumber.from(2).pow(256).sub(1);
-    if (bigNumberValue.gt(maxUint256)) {
+    const maxUint256 = 2n ** 256n - 1n;
+    if (bigNumberValue > maxUint256) {
       throw new Error(`${label} exceeds maximum uint256 value`);
     }
 
@@ -119,7 +118,7 @@ export function encodeRecipientData(
     const validatedAnchor = validateAddress(anchorOrZero);
     const validatedMetadata = validateMetadata(metadata);
 
-    return utils.defaultAbiCoder.encode(
+    return ethers.AbiCoder.defaultAbiCoder().encode(
       ['address', 'tuple(uint256 protocol, string pointer)', 'bytes'],
       [
         validatedAnchor,
@@ -142,12 +141,15 @@ export function encodeRecipientData(
  * @throws Error if encoding fails
  */
 export function encodeProposalBid(
-  proposalBid: BigNumber | string | number,
+  proposalBid: bigint | string | number,
 ): string {
   try {
     const validatedBid = validateBigNumber(proposalBid, 'Proposal bid');
 
-    return utils.defaultAbiCoder.encode(['uint256'], [validatedBid]);
+    return ethers.AbiCoder.defaultAbiCoder().encode(
+      ['uint256'],
+      [validatedBid],
+    );
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to encode proposal bid: ${error.message}`);
@@ -168,7 +170,10 @@ export function encodeOuterData(innerDataArray: string[]): string {
       throw new Error('Inner data array cannot be empty');
     }
 
-    return utils.defaultAbiCoder.encode(['bytes[]'], [innerDataArray]);
+    return ethers.AbiCoder.defaultAbiCoder().encode(
+      ['bytes[]'],
+      [innerDataArray],
+    );
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to encode outer data: ${error.message}`);
@@ -271,14 +276,14 @@ export function prepareRegistrationData(params: RecipientRegistrationParams) {
  */
 export function estimateTransactionValue(
   params: RecipientRegistrationParams,
-  minimumBid?: BigNumber | string | number,
-): BigNumber {
+  minimumBid?: bigint | string | number,
+): bigint {
   try {
     const proposalBid = validateBigNumber(params.proposalBid, 'Proposal bid');
 
     if (minimumBid) {
       const minimumBidBN = validateBigNumber(minimumBid, 'Minimum bid');
-      if (proposalBid.lt(minimumBidBN)) {
+      if (proposalBid < minimumBidBN) {
         throw new Error(
           `Proposal bid (${proposalBid.toString()}) is less than minimum required (${minimumBidBN.toString()})`,
         );
@@ -302,7 +307,7 @@ export function estimateTransactionValue(
  */
 export function buildTransactionParams(
   params: RecipientRegistrationParams,
-  minimumBid?: BigNumber | string | number,
+  minimumBid?: bigint | string | number,
 ) {
   const preparedData = prepareRegistrationData(params);
   const value = estimateTransactionValue(params, minimumBid);

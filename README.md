@@ -166,6 +166,7 @@ Control Prisma database logging verbosity with the `PRISMA_LOG_LEVELS` environme
 **Available levels:** `error` (default), `warn`, `info`, `query`
 
 **Example for development debugging:**
+
 ```bash
 PRISMA_LOG_LEVELS=error,warn,query
 ```
