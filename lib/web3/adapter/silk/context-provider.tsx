@@ -20,7 +20,6 @@ import {
 import {
   initSilk,
   SilkEthereumProviderInterface,
-  EthereumProvider,
 } from '@silk-wallet/silk-wallet-sdk';
 import {
   connector as silkConnectorCreator,

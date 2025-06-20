@@ -165,7 +165,11 @@ export function useAuth(): IWeb3UseAuthHook {
         console.log(
           'web3/adapter/silk/use-auth:signInToBackend: request signature',
         );
-      const signature = await window.silk.request({
+      const updatedProvider = getProvider();
+      if (!updatedProvider) {
+        throw new Error('Provider no longer available');
+      }
+      const signature = await updatedProvider.request({
         method: 'personal_sign',
         params: [
           ethers.hexlify(ethers.toUtf8Bytes(preparedMessage)),
