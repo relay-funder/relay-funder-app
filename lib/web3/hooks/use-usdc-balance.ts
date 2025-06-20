@@ -33,11 +33,11 @@ export function useUsdcBalance() {
       // Fetch balance
       const balance = await usdcContract.balanceOf(userAddress);
       let unit: number | string = parseInt(
-        process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS ?? '',
+        process.env.NEXT_PUBLIC_USDC_DECIMALS ?? '',
       );
       if (isNaN(unit)) {
-        // literal unit name provided
-        unit = process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS ?? 0;
+        // literal unit name provided or fallback
+        unit = process.env.NEXT_PUBLIC_USDC_DECIMALS ?? 6;
       }
       console.log('fetchUSDCBalance', {
         balance,
