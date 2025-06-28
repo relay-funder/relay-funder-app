@@ -3,17 +3,10 @@
 // up the hot-reloading significantly
 // This file is not imported directly, but bind-mounted by the
 // docker-compose.yml
-let Sentry = {
-  setUser: (any) => {},
-  captureException: (e) => 'mocked-in-development',
-  captureRequestError: (any) => {},
-  getFeedback: () =>
-    undefined as
-      | undefined
-      | {
-          attachTo: (any) => undefined;
-        },
-  addEventProcessor: (any) => any,
+const Sentry = {
+  captureException: (error: unknown) => {
+    console.log('mocked-sentry', error);
+  },
   init: (options: unknown) => {
     console.log('mocked-sentry-init', options);
   },
