@@ -144,3 +144,10 @@ export enum CampaignStatus {
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
 }
+
+export type CampaignCreatedEvent = {
+  args: {
+    identifierHash?: `0x${string}`;
+    campaignInfoAddress?: `0x${string}`;
+  };
+};
