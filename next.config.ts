@@ -71,9 +71,6 @@ if (process.env.SENTRY === 'true' || process.env.NODE_ENV === 'production') {
   module.exports = {
     ...sentryConfig,
     serverExternalPackages: ['@sentry/profiling-node'],
-    async rewrites() {
-      return await nextConfig.rewrites();
-    },
   };
 } else {
   console.log(' ▲ sentry mocked');
