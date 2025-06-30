@@ -30,6 +30,7 @@ import {
 } from './connector';
 
 import { debugWeb3ContextProvider as debug } from '@/lib/debug';
+import { SilkEthereumProviderInterface } from '@silk-wallet/silk-wallet-sdk';
 
 const silkConnector = silkConnectorCreator(silkConnectorOptions);
 

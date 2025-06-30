@@ -10,4 +10,5 @@ export {
   keccak256,
   stringToHex,
   decodeEventLog,
+  BaseError,
 } from 'viem';
