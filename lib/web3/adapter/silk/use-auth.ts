@@ -67,7 +67,7 @@ export function useAuth(): IWeb3UseAuthHook {
   const normalizedAddress = useMemo(() => {
     debug &&
       console.log(
-        'web3/adapter/silk-wagmi/use-auth:rememo normalizedAddress',
+        'web3/adapter/silk/use-auth:rememo normalizedAddress',
         address,
         web3ContextAddress,
       );
