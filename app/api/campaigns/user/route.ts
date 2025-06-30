@@ -2,9 +2,7 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import { response, handleError } from '@/lib/api/response';
 
-import { createPublicClient, http } from 'viem';
-import { celoAlfajores } from 'viem/chains';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig, createPublicClient, http } from '@/lib/web3';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 const RPC_URL = chainConfig.rpcUrl;
@@ -18,7 +16,7 @@ export async function GET() {
     const session = await checkAuth(['user']);
 
     const client = createPublicClient({
-      chain: celoAlfajores,
+      chain: chainConfig.defaultChain,
       transport: http(RPC_URL),
     });
 

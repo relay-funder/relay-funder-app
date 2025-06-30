@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig } from '@/lib/web3';
 import { ProviderRpcError } from '@/lib/web3/types';
 import {
   useWeb3Context,

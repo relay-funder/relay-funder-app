@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNetworkCheck } from '@/hooks/use-network';
 import { AlertCircle } from 'lucide-react';
-import chainConfig from '@/lib/web3/config/chain';
+import { chainConfig } from '@/lib/web3';
 export function PaymentSwitchWalletNetwork() {
   const { toast } = useToast();
   const { isCorrectNetwork, switchNetwork } = useNetworkCheck();

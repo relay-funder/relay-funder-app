@@ -1,4 +1,4 @@
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig } from '@/lib/web3';
 import { ConnectedWallet } from '@/lib/web3/types';
 
 const debug = process.env.NODE_ENV !== 'production';

@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
-import { ethers } from 'ethers';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/lib/web3';
+import { useAuth, ethers } from '@/lib/web3';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
 import {

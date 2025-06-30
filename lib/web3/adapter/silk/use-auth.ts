@@ -1,3 +1,4 @@
+'use client';
 import {
   getCsrfToken,
   getSession,
@@ -7,7 +8,7 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
-import { SiweMessage } from 'siwe';
+//import { SiweMessage } from 'siwe';
 import { UserRejectedRequestError } from 'viem';
 import {
   useAccount,
@@ -16,15 +17,15 @@ import {
   useDisconnect,
   useSignMessage,
 } from 'wagmi';
+import { ConnectorAlreadyConnectedError } from 'wagmi';
+import { ethers } from './ethers';
 
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig } from '@/lib/web3';
 
 import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { useWeb3Context, getProvider } from './context-provider';
-import { ConnectorAlreadyConnectedError } from 'wagmi';
-import { ethers } from 'ethers';
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
 
 async function fetchNonce() {

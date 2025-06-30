@@ -1,8 +1,14 @@
 import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts';
 
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { Log, parseEther, keccak256, stringToHex } from 'viem';
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  parseEther,
+  keccak256,
+  stringToHex,
+} from '@/lib/web3';
+import { type Log } from '@/lib/web3/types';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 
 const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
@@ -26,6 +32,7 @@ export function useCreateCampaignContract({
   } = useWaitForTransactionReceipt({
     hash,
   });
+
   const createCampaignContract = useCallback(
     async ({
       startTime,
