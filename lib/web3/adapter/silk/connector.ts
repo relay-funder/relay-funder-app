@@ -4,6 +4,7 @@ export { options as connectorOptions } from './options';
 
 import { debugWeb3AdapterSilkConnector as debug } from '@/lib/debug';
 
+// ~780 modules:
 import {
   type CredentialType,
   SILK_METHOD,
@@ -173,13 +174,41 @@ export function connector(options?: InitSilkOptions) {
 
           return chain;
         } catch (error: unknown) {
-          debug &&
-            console.error(
-              'Error: Unable to switch chain',
-              error,
-              await this.getProvider(),
-            );
-          throw new SwitchChainError(error as Error);
+          try {
+            const chain = config.chains.find((chain) => chain.id === chainId);
+            if (!chain) {
+              throw new ChainNotConfiguredError();
+            }
+            const provider = await this.getProvider();
+            await provider.request({
+              method: SILK_METHOD.wallet_addEthereumChain,
+              params: [
+                {
+                  chainId: `0x${chain.id.toString(16)}`,
+                  chainName: chain.name,
+                  nativeCurrency: chain.nativeCurrency,
+                  rpcUrls: chain?.rpcUrls,
+                  blockExplorerUrls: [chain?.blockExplorers?.default.url],
+                },
+              ],
+            });
+            await provider.request({
+              method: SILK_METHOD.wallet_switchEthereumChain,
+              params: [{ chainId: `0x${chain.id.toString(16)}` }],
+            });
+            config.emitter.emit('change', { chainId });
+
+            return chain;
+          } catch (addError: unknown) {
+            debug &&
+              console.error(
+                'Error: Unable to switch chain',
+                error,
+                addError,
+                await this.getProvider(),
+              );
+            throw new SwitchChainError(error as Error);
+          }
         }
       },
 

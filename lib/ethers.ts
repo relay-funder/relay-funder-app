@@ -1,11 +1,10 @@
-import { ethers } from 'ethers';
 import { AkashicNFTRegistry } from '@/contracts/nftABI/AkashicNFTRegistry';
 import { CAMPAIGN_NFT_FACTORY } from '@/lib/constant';
 import { AKASHIC_NFT_REGISTRY } from '@/lib/constant';
 // import { CampaignNFTabi } from '@/contracts/nftABI/CampaignNFT';
 import { CampaignNFTFactory } from '@/contracts/nftABI/CampaignNFTFactory';
 // import { NFT_METADATA } from '@/lib/constant';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig, ethers } from '@/lib/web3';
 
 export const getProvider = () => {
   // For browser environments

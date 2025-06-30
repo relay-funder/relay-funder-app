@@ -1,4 +1,4 @@
-import { type Hash } from 'viem';
+import { type Hash } from '@/lib/web3/types';
 
 export interface ActionResponse<TData = unknown> {
   success: boolean;

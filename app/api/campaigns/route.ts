@@ -8,10 +8,8 @@ import {
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 
-import { createPublicClient, http } from 'viem';
-import { celoAlfajores } from 'viem/chains';
 import { DbCampaign } from '@/types/campaign';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig, createPublicClient, http } from '@/lib/web3';
 import { CampaignStatus } from '@/types/campaign';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
@@ -79,7 +77,7 @@ async function getPublicClient() {
 
   return createPublicClient({
     chain: {
-      ...celoAlfajores,
+      ...chainConfig.defaultChain,
       contracts: {
         multicall3: {
           address: '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
