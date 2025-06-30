@@ -3,7 +3,7 @@ import type { Campaign, CampaignImage, Payment, User } from '@/server/db';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignStatus, CampaignCreatedEvent } from '@/types/campaign';
 import { chainConfig, createPublicClient, http } from '@/lib/web3';
-import { QueryClient, queryOptions } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
@@ -221,7 +221,6 @@ export async function listCampaigns({
       return formatCampaignData(dbCampaign, event, forceEvents);
     })
     .filter(Boolean);
-  console.log('>>>>compiled campaigns');
   return {
     campaigns: combinedCampaigns,
     pagination: {
@@ -233,14 +232,12 @@ export async function listCampaigns({
     },
   };
 }
-// Prefetching function
-export async function prefetchCampaigns(
-  queryClient: QueryClient,
-  status?: string,
-) {
-  await queryClient.prefetchInfiniteQuery({
+// Prefetching homepage campaigns
+// sets the default query key and requests the db-data
+export async function prefetchCampaigns(queryClient: QueryClient) {
+  return queryClient.prefetchInfiniteQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10],
-    initialPageParam: 0,
+    initialPageParam: 1,
     queryFn: () => listCampaigns({}),
   });
 }

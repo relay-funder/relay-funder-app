@@ -8,9 +8,6 @@ import {
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 
-import { DbCampaign } from '@/types/campaign';
-import { chainConfig, createPublicClient, http } from '@/lib/web3';
-
 import { CampaignStatus } from '@/types/campaign';
 import { listCampaigns } from '@/lib/api/campaigns';
 
