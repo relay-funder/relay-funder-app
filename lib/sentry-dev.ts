@@ -5,7 +5,13 @@
 // docker-compose.yml
 const Sentry = {
   captureException: (error: unknown) => {
-    console.log('mocked-sentry', error);
+    console.log('mocked-sentry: captureException', error);
+  },
+  captureRouterTransitionStart: () => {
+    console.log('mocked-sentry: captureRouterTransitionStart');
+  },
+  captureRequestError: (error: unknown) => {
+    console.log('mocked-sentry: captureRequestError', error);
   },
   init: (options: unknown) => {
     console.log('mocked-sentry-init', options);
