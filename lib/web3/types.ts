@@ -10,6 +10,7 @@ export type {
   Abi,
   BaseError,
   WriteContractParameters,
+  Chain,
 } from 'viem';
 
 // common types
@@ -40,11 +41,6 @@ export interface ConnectedWallet {
   address?: string;
   isConnected: () => Promise<boolean>;
   getEthereumProvider: () => Promise<EthereumProvider | undefined>;
-}
-export interface Chain {
-  id: { hex: string; decimal: number };
-  name: string;
-  blockExplorers: { default: { url: string } };
 }
 
 export interface IWeb3UseAuthHook {
