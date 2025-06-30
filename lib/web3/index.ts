@@ -15,6 +15,7 @@ export {
   erc20Abi,
   maxUint256,
   decodeEventLog,
+  BaseError,
   // wagmi
   readContract,
   createConfig,

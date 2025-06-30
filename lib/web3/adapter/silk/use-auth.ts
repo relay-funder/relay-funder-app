@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { useWeb3Context, getProvider } from './context-provider';
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
+import { SiweMessage } from 'siwe';
 
 async function fetchNonce() {
   try {

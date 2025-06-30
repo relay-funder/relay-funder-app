@@ -42,10 +42,11 @@ import {
   // viem
   maxUint256,
   decodeEventLog,
+  BaseError,
   // ethers
   ethers,
 } from '@/lib/web3';
-import { type Address, type Hash, BaseError } from '@/lib/web3/types';
+import { type Address, type Hash } from '@/lib/web3/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import {

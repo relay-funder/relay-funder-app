@@ -3754,8 +3754,8 @@ packages:
   elliptic@6.5.4:
     resolution: {integrity: sha512-iLhC6ULemrljPZb+QutR5TQGB+pdW6KGD5RSegS+8sorOZT+rdQFbsQFJgvN3eRqNALqJer4oQ16YvJHlU8hzQ==}
 
-  emitter@https://codeload.github.com/sindresorhus/component-emitter/tar.gz/refs/tags/1.0.1:
-    resolution: {tarball: https://codeload.github.com/sindresorhus/component-emitter/tar.gz/refs/tags/1.0.1}
+  emitter@http://github.com/component/emitter/archive/1.0.1.tar.gz:
+    resolution: {tarball: http://github.com/component/emitter/archive/1.0.1.tar.gz}
     version: 1.0.1
 
   emoji-regex@8.0.0:
@@ -4421,8 +4421,8 @@ packages:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
     engines: {node: '>=16 || 14 >=14.17'}
 
-  global@https://codeload.github.com/component/global/tar.gz/refs/tags/v2.0.1:
-    resolution: {tarball: https://codeload.github.com/component/global/tar.gz/refs/tags/v2.0.1}
+  global@https://github.com/component/global/archive/v2.0.1.tar.gz:
+    resolution: {tarball: https://github.com/component/global/archive/v2.0.1.tar.gz}
     version: 2.0.1
 
   globals@11.12.0:
@@ -7289,8 +7289,8 @@ packages:
     resolution: {integrity: sha512-TEU+nJVUUnA4CYJFLvK5X9AOeH4KvDvhIfm0vV1GaQRtchnG0hgK5p8hw/xjv8cunWYCsiPCSDzObPyhEwq3KQ==}
     engines: {node: '>=0.4.0'}
 
-  xmlhttprequest@https://codeload.github.com/LearnBoost/node-XMLHttpRequest/tar.gz/0f36d0b5ebc03d85f860d42a64ae9791e1daa433:
-    resolution: {tarball: https://codeload.github.com/LearnBoost/node-XMLHttpRequest/tar.gz/0f36d0b5ebc03d85f860d42a64ae9791e1daa433}
+  xmlhttprequest@https://github.com/LearnBoost/node-XMLHttpRequest/archive/0f36d0b5ebc03d85f860d42a64ae9791e1daa433.tar.gz:
+    resolution: {tarball: https://github.com/LearnBoost/node-XMLHttpRequest/archive/0f36d0b5ebc03d85f860d42a64ae9791e1daa433.tar.gz}
     version: 1.5.0
     engines: {node: '>=0.4.0'}
 
@@ -11847,7 +11847,7 @@ snapshots:
       minimalistic-assert: 1.0.1
       minimalistic-crypto-utils: 1.0.1
 
-  emitter@https://codeload.github.com/sindresorhus/component-emitter/tar.gz/refs/tags/1.0.1:
+  emitter@http://github.com/component/emitter/archive/1.0.1.tar.gz:
     dependencies:
       indexof: 0.0.1
 
@@ -11881,7 +11881,7 @@ snapshots:
       parseqs: 0.0.2
       parseuri: 0.0.2
       ws: 0.4.31(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      xmlhttprequest: https://codeload.github.com/LearnBoost/node-XMLHttpRequest/tar.gz/0f36d0b5ebc03d85f860d42a64ae9791e1daa433
+      xmlhttprequest: https://github.com/LearnBoost/node-XMLHttpRequest/archive/0f36d0b5ebc03d85f860d42a64ae9791e1daa433.tar.gz
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -12751,7 +12751,7 @@ snapshots:
       minipass: 4.2.8
       path-scurry: 1.11.1
 
-  global@https://codeload.github.com/component/global/tar.gz/refs/tags/v2.0.1: {}
+  global@https://github.com/component/global/archive/v2.0.1.tar.gz: {}
 
   globals@11.12.0: {}
 
@@ -12820,7 +12820,7 @@ snapshots:
 
   has-cors@1.0.3:
     dependencies:
-      global: https://codeload.github.com/component/global/tar.gz/refs/tags/v2.0.1
+      global: https://github.com/component/global/archive/v2.0.1.tar.gz
 
   has-flag@3.0.0: {}
 
@@ -14805,7 +14805,7 @@ snapshots:
   socket.io-parser@2.1.2:
     dependencies:
       debug: 0.7.4
-      emitter: https://codeload.github.com/sindresorhus/component-emitter/tar.gz/refs/tags/1.0.1
+      emitter: http://github.com/component/emitter/archive/1.0.1.tar.gz
       isarray: 0.0.1
       json3: 3.2.6
     transitivePeerDependencies:
@@ -14814,7 +14814,7 @@ snapshots:
   socket.io-parser@2.2.0:
     dependencies:
       debug: 0.7.4
-      emitter: https://codeload.github.com/sindresorhus/component-emitter/tar.gz/refs/tags/1.0.1
+      emitter: http://github.com/component/emitter/archive/1.0.1.tar.gz
       isarray: 0.0.1
       json3: 3.2.6
     transitivePeerDependencies:
@@ -15818,7 +15818,7 @@ snapshots:
 
   xmlhttprequest-ssl@2.1.2: {}
 
-  xmlhttprequest@https://codeload.github.com/LearnBoost/node-XMLHttpRequest/tar.gz/0f36d0b5ebc03d85f860d42a64ae9791e1daa433: {}
+  xmlhttprequest@https://github.com/LearnBoost/node-XMLHttpRequest/archive/0f36d0b5ebc03d85f860d42a64ae9791e1daa433.tar.gz: {}
 
   xtend@4.0.2: {}
 
