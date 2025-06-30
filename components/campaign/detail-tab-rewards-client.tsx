@@ -13,10 +13,8 @@ import { Loader2, Upload as UploadIcon, Check } from 'lucide-react';
 import { CAMPAIGN_NFT_FACTORY } from '@/lib/constant';
 import { CampaignNFTFactory } from '@/contracts/nftABI/CampaignNFTFactory';
 import { CampaignNFTabi } from '@/contracts/nftABI/CampaignNFT';
-import { parseEther } from 'viem';
-import { ethers } from 'ethers';
 import { Badge } from '@/components/ui/badge';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig, parseEther, ethers } from '@/lib/web3';
 
 interface CampaignDetailTabRewardsClientProps {
   campaignId: string;

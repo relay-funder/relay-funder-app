@@ -3,10 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts';
-import { useConnectorClient } from 'wagmi';
-import { type Address, type Chain, type Client, type Transport } from 'viem';
-import { ethers, Signer } from 'ethers';
 import { AlloABI } from '@/contracts/abi/qf/Allo';
+import { ethers, useConnectorClient } from '@/lib/web3';
+import {
+  type Address,
+  type Chain,
+  type Client,
+  type Transport,
+  type Signer,
+} from '@/lib/web3/types';
 import {
   prepareRegistrationData,
   RecipientRegistrationParams,

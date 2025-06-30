@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts';
-import { type Address } from 'viem';
+import { type Address } from '@/lib/web3/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

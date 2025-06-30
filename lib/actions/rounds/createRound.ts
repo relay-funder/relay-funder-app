@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { type Address, type Hash } from 'viem';
+import { type Address, type Hash } from '@/lib/web3/types';
 import { db, PrismaClientKnownRequestError } from '@/server/db';
 import { type ActionResponse } from '@/types/actions';
 import { checkAuth } from '@/lib/api/auth';

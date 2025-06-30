@@ -1,8 +1,6 @@
-import { useAuth } from '@/lib/web3';
+import { useAuth, erc20Abi, ethers } from '@/lib/web3';
 import { useState, useEffect } from 'react';
-import { erc20Abi } from 'viem';
 import { USDC_ADDRESS } from '@/lib/constant';
-import { ethers } from 'ethers';
 
 export function useUsdcBalance() {
   const { wallet } = useAuth();

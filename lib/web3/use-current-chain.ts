@@ -1,4 +1,4 @@
-import { useChainId, useConfig } from 'wagmi';
+import { useChainId, useConfig } from '@/lib/web3';
 import { useMemo } from 'react';
 
 /**

@@ -6,7 +6,7 @@ import { IWeb3UseAuthHook } from '@/lib/web3/types';
  * but will fail as soon as components are loaded that rely on viem/wagmi/ethers
  */
 
-export { Web3ContextProvider } from './context-provider';
+export { Web3ContextProvider, useWeb3Context } from './context-provider';
 const staticAuth = {
   address: '0x0',
   authenticated: false,
@@ -20,3 +20,11 @@ const staticAuth = {
 export function useAuth(): IWeb3UseAuthHook {
   return staticAuth;
 }
+export function getProvider() {
+  return undefined;
+}
+
+export * from './ethers';
+export * from './config';
+export * from './wagmi';
+export * from './viem';

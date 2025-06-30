@@ -3,28 +3,28 @@
  * This centralizes all chain-related constants used across components.
  */
 
-import { celoAlfajores } from 'wagmi/chains';
+import { defaultChain } from './chains';
 
 export const chainConfig = {
   // Chain identifiers
   chainId: {
-    hex: `0x${celoAlfajores.id.toString(16)}`,
-    decimal: celoAlfajores.id,
+    hex: `0x${defaultChain.id.toString(16)}`,
+    decimal: defaultChain.id,
   },
 
   // Chain details derived from wagmi
-  name: celoAlfajores.name,
-  nativeCurrency: celoAlfajores.nativeCurrency,
+  name: defaultChain.name,
+  nativeCurrency: defaultChain.nativeCurrency,
 
   // Custom values not from wagmi
   rpcUrl:
-    process.env.NEXT_PUBLIC_RPC_URL || celoAlfajores.rpcUrls.default.http[0],
+    process.env.NEXT_PUBLIC_RPC_URL || defaultChain.rpcUrls.default.http[0],
   blockExplorerUrl:
-    celoAlfajores.blockExplorers?.default?.url ||
+    defaultChain.blockExplorers?.default?.url ||
     'https://alfajores.celoscan.io/',
 
   // Reference to the actual chain object for provider configurations
-  defaultChain: celoAlfajores,
+  defaultChain,
 
   // Helper methods
   getAddChainParams() {
