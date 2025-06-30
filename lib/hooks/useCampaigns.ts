@@ -184,7 +184,7 @@ export function useInfiniteCampaigns(
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize],
     queryFn: ({ pageParam = 1 }) =>
       fetchCampaignPage({
-        pageParam,
+        pageParam: pageParam as number,
         status,
         pageSize,
         rounds,
