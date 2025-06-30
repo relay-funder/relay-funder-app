@@ -1,5 +1,4 @@
-import { ethers } from 'ethers';
-import { erc20Abi } from 'viem';
+import { ethers, erc20Abi } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
 import { type ConnectedWallet } from '@/lib/web3/types';
 

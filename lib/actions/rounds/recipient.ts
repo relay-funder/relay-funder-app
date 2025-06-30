@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers } from '@/lib/web3';
 export interface Metadata {
   protocol: number;
   pointer: string;

@@ -10,7 +10,6 @@ import { response, handleError } from '@/lib/api/response';
 
 import { z } from 'zod';
 import { RecipientStatus } from '@/server/db';
-// import { ApplicationStatus } from "@/lib/qfInteractions"
 
 // Define Zod schema for input validation
 const registerSchema = z.object({

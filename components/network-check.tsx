@@ -6,8 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { useAuth } from '@/contexts';
-import { chainConfig } from '@/lib/web3/config/chain';
-import { useWeb3Context } from '@/lib/web3';
+import { chainConfig, useWeb3Context } from '@/lib/web3';
 
 interface NetworkCheckProps {
   children: ReactNode;

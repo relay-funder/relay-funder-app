@@ -2,9 +2,7 @@ import { db } from '@/server/db';
 import type { Campaign, CampaignImage, Payment, User } from '@/server/db';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignStatus, CampaignCreatedEvent } from '@/types/campaign';
-import { createPublicClient, http } from 'viem';
-import { celoAlfajores } from 'viem/chains';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { chainConfig, createPublicClient, http } from '@/lib/web3';
 import { QueryClient, queryOptions } from '@tanstack/react-query';
 import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
 
@@ -54,7 +52,7 @@ async function getPublicClient() {
 
   return createPublicClient({
     chain: {
-      ...celoAlfajores,
+      ...chainConfig.defaultChain,
       contracts: {
         multicall3: {
           address: '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
