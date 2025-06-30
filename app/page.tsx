@@ -4,9 +4,9 @@ import { ExploreStories } from '@/components/explore-stories';
 import { prefetchCampaigns } from '@/lib/api/campaigns';
 import { getQueryClient } from '@/lib/query-client';
 
-export default function HomePage() {
+export default async function HomePage() {
   const queryClient = getQueryClient();
-  prefetchCampaigns(queryClient);
+  await prefetchCampaigns(queryClient);
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ExploreStories />
