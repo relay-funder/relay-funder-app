@@ -61,3 +61,4 @@ export function decodeEventLog(params: unknown) {
 }
 
 export const erc20Abi = [];
+export class BaseError extends Error {}
