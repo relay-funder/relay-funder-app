@@ -4,15 +4,21 @@ import { USDC_ADDRESS } from '@/lib/constant';
 
 export function useUsdcBalance() {
   const { wallet } = useAuth();
-  const [usdcBalance, setUsdcBalance] = useState(0);
+  const [usdcBalance, setUsdcBalance] = useState('0.00');
+  const [isPending, setIsPending] = useState(true);
   useEffect(() => {
     const fetchUsdcBalance = async () => {
       console.log('fetchUSDCBalance');
+      setIsPending(true);
       if (!wallet || !(await wallet.isConnected())) {
+        setUsdcBalance('unknown (not connected)');
+        setIsPending(false);
         return;
       }
       const walletProvider = await wallet.getEthereumProvider();
       if (!walletProvider) {
+        setUsdcBalance('unknown (no wallet provider)');
+        setIsPending(false);
         return;
       }
       const ethersProvider = new ethers.BrowserProvider(walletProvider);
@@ -41,10 +47,11 @@ export function useUsdcBalance() {
         balance,
         unit,
       });
-      setUsdcBalance(parseFloat(ethers.formatUnits(balance, unit)));
+      setUsdcBalance(ethers.formatUnits(balance, unit));
+      setIsPending(false);
     };
 
     fetchUsdcBalance();
   }, [wallet]);
-  return usdcBalance;
+  return { usdcBalance, isPending };
 }

@@ -3,7 +3,6 @@ import localFont from 'next/font/local';
 import './globals.css';
 import Providers from './providers';
 import { Toaster } from '@/components/ui/toaster';
-import { NetworkCheck } from '@/components/network-check';
 import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
 
@@ -34,9 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <NetworkCheck>
-            <PageMainLayout>{children}</PageMainLayout>
-          </NetworkCheck>
+          <PageMainLayout>{children}</PageMainLayout>
           <Toaster />
           <EnvironmentBadge />
         </Providers>

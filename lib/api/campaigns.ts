@@ -6,9 +6,6 @@ import { chainConfig, createPublicClient, http } from '@/lib/web3';
 import { QueryClient } from '@tanstack/react-query';
 import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
 
-const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-const RPC_URL = chainConfig.rpcUrl;
-
 export type PaymentWithUser = Payment & {
   user: User;
 };
@@ -46,6 +43,8 @@ export async function getCampaignBySlug(
 }
 
 async function getPublicClient() {
+  const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+  const RPC_URL = chainConfig.rpcUrl;
   if (!FACTORY_ADDRESS || !RPC_URL) {
     throw new Error('Campaign factory address or RPC URL not configured');
   }

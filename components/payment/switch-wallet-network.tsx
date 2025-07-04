@@ -1,12 +1,15 @@
+'use client';
 import { Button } from '@/components/ui';
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNetworkCheck } from '@/hooks/use-network';
-import { AlertCircle } from 'lucide-react';
-import { chainConfig } from '@/lib/web3';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth, chainConfig } from '@/lib/web3';
+
 export function PaymentSwitchWalletNetwork() {
   const { toast } = useToast();
   const { isCorrectNetwork, switchNetwork } = useNetworkCheck();
+  const { ready } = useAuth();
 
   const handleNetworkSwitch = useCallback(async () => {
     try {
@@ -29,6 +32,18 @@ export function PaymentSwitchWalletNetwork() {
       });
     }
   }, [switchNetwork, toast]);
+  if (!ready) {
+    return (
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={true}
+        className="w-full text-black"
+      >
+        <Loader2 /> Connecting to Wallet
+      </Button>
+    );
+  }
   if (isCorrectNetwork) {
     return null;
   }
