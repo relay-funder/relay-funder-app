@@ -1,8 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui';
 import { PaymentLink } from '@/components/payment/link';
-import { type Payment as PaymentType } from '@/types/campaign';
+import { type DbPayment } from '@/types/campaign';
 import { useMemo } from 'react';
-export function Payment({ payment }: { payment: PaymentType }) {
+export function Payment({ payment }: { payment: DbPayment }) {
   const userName = useMemo(() => {
     if (!payment.user || payment.isAnonymous) {
       return 'Anonymous Donor';
