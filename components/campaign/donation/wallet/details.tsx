@@ -1,0 +1,39 @@
+'use client';
+
+import { useState } from 'react';
+
+import { Campaign } from '@/types/campaign';
+import { CampaignDonationWalletBalance } from './balance';
+import { CampaignDonationWalletAmount } from './amount';
+import { CampaignDonationWalletAkashic } from './akashic';
+import { CampaignDonationWalletProcess } from './process';
+
+export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
+  const [selectedToken, setSelectedToken] = useState('USDC');
+  const [processing, setProcessing] = useState(false);
+  const [amount, setAmount] = useState('0');
+  const [donationToAkashic, setDonationToAkashic] = useState(0);
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="relative">
+          <CampaignDonationWalletAmount
+            onAmountChanged={setAmount}
+            onTokenChanged={setSelectedToken}
+            amount={amount}
+            selectedToken={selectedToken}
+          />
+          <CampaignDonationWalletBalance selectedToken={selectedToken} />
+          <CampaignDonationWalletAkashic onChange={setDonationToAkashic} />
+          <CampaignDonationWalletProcess
+            campaign={campaign}
+            onProcessing={setProcessing}
+            amount={amount}
+            donationToAkashic={donationToAkashic}
+            selectedToken={selectedToken}
+          />
+        </div>
+      </div>
+    </>
+  );
+}

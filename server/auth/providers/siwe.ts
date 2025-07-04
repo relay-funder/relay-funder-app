@@ -40,6 +40,9 @@ export function SiweProvider() {
             'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL) - environment not configured correctly',
           );
         }
+        if (process.env.NODE_ENV === 'development') {
+          return await setupUser(credentials.message);
+        }
 
         const nextAuthHost = new URL(nextAuthUrl).host;
 

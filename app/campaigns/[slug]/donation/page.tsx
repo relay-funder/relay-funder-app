@@ -1,4 +1,4 @@
-import DonationForm from '@/components/donation-form';
+import { CampaignDonationForm } from '@/components/campaign/donation/form';
 import ProjectInfo from '@/components/project-info';
 import { Campaign } from '@/types/campaign';
 import { getCampaign } from '@/lib/database';
@@ -16,7 +16,7 @@ export default async function Page({
     <>
       <PageHeaderSticky message="Donating to" title={campaign.title} />
       <PageMainTwoColums>
-        <DonationForm campaign={campaign} />
+        <CampaignDonationForm campaign={campaign} />
         <ProjectInfo slug={slug} />
       </PageMainTwoColums>
     </>

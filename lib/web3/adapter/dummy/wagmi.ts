@@ -1,3 +1,4 @@
+import { useWeb3Context } from './context-provider';
 import { wagmiConfig, chainConfig } from './config';
 // wagmi/core  1837->2522 + 500ms
 // export { readContract, createConfig } from '@wagmi/core';
@@ -79,5 +80,7 @@ export function useConfig() {
   return wagmiConfig;
 }
 export function useChainId() {
-  return chainConfig.chainId;
+  const { chainId } = useWeb3Context();
+
+  return chainId;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, ethers } from '@/lib/web3';
+import { useAuth as useWeb3Auth, ethers } from '@/lib/web3';
+import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
 import {
@@ -19,7 +20,8 @@ export function useDonationCallback({
   amount: string;
   selectedToken: string;
 }) {
-  const { wallet } = useAuth();
+  const { wallet } = useWeb3Auth();
+  const { authenticated } = useAuth();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -32,6 +34,9 @@ export function useDonationCallback({
       setIsProcessing(true);
       setError(null);
       debug && console.log('Starting donation process...');
+      if (!authenticated) {
+        throw new Error('Not signed in');
+      }
       if (!wallet) {
         throw new Error('Wallet not connected');
       }
@@ -62,7 +67,7 @@ export function useDonationCallback({
 
       // Only create payment record after transaction is sent
       debug && console.log('Creating payment record...');
-      const { id: paymentId } = await createPayment({
+      const { paymentId } = await createPayment({
         amount: amount,
         token: selectedToken,
         campaignId: campaign.id,
@@ -111,12 +116,13 @@ export function useDonationCallback({
     }
   }, [
     wallet,
+    authenticated,
     toast,
     createPayment,
     updatePaymentStatus,
     amount,
-    campaign.id,
-    campaign.treasuryAddress,
+    campaign?.id,
+    campaign?.treasuryAddress,
     selectedToken,
   ]);
   return { onDonate, isProcessing, error };
