@@ -62,7 +62,7 @@ export function useDonationCallback({
 
       // Only create payment record after transaction is sent
       debug && console.log('Creating payment record...');
-      const { id: paymentId } = await createPayment({
+      const { paymentId } = await createPayment({
         amount: amount,
         token: selectedToken,
         campaignId: campaign.id,
