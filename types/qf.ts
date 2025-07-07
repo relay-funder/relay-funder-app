@@ -1,5 +1,3 @@
-import { BigNumber } from 'ethers';
-
 /**
  * Metadata structure as defined in Allo contracts
  * @property protocol - The protocol identifier (e.g., 1 for IPFS)
@@ -16,14 +14,14 @@ export interface Metadata {
  * @property profileAnchor - The profile anchor address (only used if useProfileAnchor is true)
  * @property recipientAddress - The address that will receive funds
  * @property metadata - Metadata information for the recipient
- * @property proposalBid - Proposed bid amount as a number or BigNumber
+ * @property proposalBid - Proposed bid amount as a number or bigint
  */
 export interface RecipientRegistrationParams {
   useProfileAnchor: boolean;
   profileAnchor?: string; // Optional: only needed if useProfileAnchor is true
   recipientAddress: string;
   metadata: Metadata;
-  proposalBid: number | BigNumber;
+  proposalBid: number | bigint;
 }
 
 /**
@@ -45,5 +43,5 @@ export interface RegistrationResponse {
  */
 export interface ContractConfig {
   alloAddress: string;
-  poolId: number | BigNumber;
+  poolId: number | bigint;
 }

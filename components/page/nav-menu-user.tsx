@@ -1,16 +1,32 @@
 import Image from 'next/image';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts';
 import { useAuth } from '@/contexts';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { transition } from './sidebar-constants';
+import { useSession } from 'next-auth/react';
+
 function shortenAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 export function PageNavMenuUser() {
   const { isOpen } = useSidebar();
+  const session = useSession();
   const { login, logout, authenticated, address } = useAuth();
+  const name = useMemo(() => {
+    if (
+      typeof session?.data?.user?.email === 'string' &&
+      session?.data?.user?.email.length
+    ) {
+      return session.data.user.email;
+    }
+    if (typeof address === 'string') {
+      return shortenAddress(address);
+    }
+    return 'User';
+  }, [address, session]);
   return (
     <nav className="flex-1 space-y-1 px-3">
       <div
@@ -56,14 +72,16 @@ export function PageNavMenuUser() {
             </Button>
           ) : (
             <div className="flex items-center justify-center gap-2 px-2">
-              {address ? shortenAddress(address) : 'User'}
-              <LogOut
-                className="h-5 w-5 cursor-pointer text-gray-400 transition-colors group-hover:text-red-600"
-                onClick={async () => {
-                  await logout();
-                  window.location.href = '/';
-                }}
-              />
+              {name}
+              <span title="Logout">
+                <LogOut
+                  className="h-5 w-5 cursor-pointer text-gray-400 transition-colors group-hover:text-red-600"
+                  onClick={async () => {
+                    await logout();
+                    window.location.href = '/';
+                  }}
+                />
+              </span>
             </div>
           )}
         </span>

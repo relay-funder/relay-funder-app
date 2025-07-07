@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ethers } from 'ethers';
-import { useWallet } from '@/hooks/use-wallet';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/web3';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
 import {
@@ -20,7 +20,7 @@ export function useDonationCallback({
   amount: string;
   selectedToken: string;
 }) {
-  const wallet = useWallet();
+  const { wallet } = useAuth();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,11 +38,14 @@ export function useDonationCallback({
       }
 
       debug && console.log('Getting wallet provider and signer...');
-      const privyProvider = await wallet.getEthereumProvider();
-      const walletProvider = new ethers.providers.Web3Provider(privyProvider);
-      const signer = walletProvider.getSigner();
-      const userAddress = await signer.getAddress();
-      if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+      const walletProvider = await wallet.getEthereumProvider();
+      if (!walletProvider) {
+        throw new Error('Wallet not supported or connected');
+      }
+      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = signer.address;
+      if (!userAddress || !ethers.isAddress(userAddress)) {
         throw new Error('User address is missing or invalid');
       }
       if (!campaign.treasuryAddress) {
@@ -66,7 +69,6 @@ export function useDonationCallback({
         campaignId: campaign.id,
         isAnonymous: false,
         status: 'confirming',
-        userAddress,
         transactionHash: tx.hash,
       });
 
@@ -81,7 +83,6 @@ export function useDonationCallback({
       await updatePaymentStatus({
         paymentId,
         status: receipt.status === 1 ? 'confirmed' : 'failed',
-        userAddress,
       });
 
       debug && console.log('Payment status updated');
