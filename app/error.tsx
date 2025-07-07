@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import * as Sentry from '@sentry/nextjs';
+import { Sentry } from '@/lib/sentry';
 
 export default function ErrorPage({
   error,
