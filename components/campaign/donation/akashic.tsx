@@ -9,7 +9,7 @@ import {
 import { HelpCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export function CampaignDonationWalletAkashic({
+export function CampaignDonationAkashic({
   onChange,
 }: {
   onChange: (percent: number) => void;
@@ -22,7 +22,7 @@ export function CampaignDonationWalletAkashic({
       return;
     }
     onChange(percentage);
-  }, [percentage, isDonatingToAkashic]);
+  }, [percentage, isDonatingToAkashic, onChange]);
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
@@ -37,7 +37,10 @@ export function CampaignDonationWalletAkashic({
               <HelpCircle className="h-4 w-4" />
             </TooltipTrigger>
             <TooltipContent>
-              <p>Choose a percentage to donate to Akashic</p>
+              <p>
+                Choose a percentage to donate to Akashic (deducted before the
+                amount is sent to the treasury)
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

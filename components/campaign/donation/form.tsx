@@ -9,6 +9,7 @@ import {
 import { Wallet, CreditCard } from 'lucide-react';
 import { Campaign } from '@/types/campaign';
 import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
+import { CampaignDonationCreditCardTab } from '@/components/campaign/donation/credit-card/tab';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 export function CampaignDonationForm({ campaign }: { campaign: Campaign }) {
   return (
@@ -36,10 +37,7 @@ export function CampaignDonationForm({ campaign }: { campaign: Campaign }) {
           </TabsContent>
 
           <TabsContent value="card">
-            {/* <CampaignDonationTabCreditCard
-              campaign={campaign}
-              amount={amount}
-            /> */}
+            <CampaignDonationCreditCardTab campaign={campaign} />
           </TabsContent>
         </Tabs>
       </CardContent>
