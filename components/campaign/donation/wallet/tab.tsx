@@ -40,8 +40,14 @@ export function CampaignDonationTabWallet({
   }
   if (!ready) {
     return (
-      <div className="flex items-center justify-between">
-        <Loader2 /> Connecting to wallet
+      <div className="flex flex-col items-center justify-center rounded-lg border p-4">
+        <div className="mb-4 flex items-center space-x-2">
+          <Loader2 className="animate-spin" />
+          <span className="text-base font-semibold">Connecting to wallet</span>
+        </div>
+        <p className="text-center text-sm text-muted-foreground">
+          Please wait while we detect your web3 browser wallet.
+        </p>
       </div>
     );
   }
