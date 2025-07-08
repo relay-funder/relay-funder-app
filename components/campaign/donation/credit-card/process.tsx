@@ -4,7 +4,7 @@ import { CreditCard } from 'lucide-react';
 import { useStripePaymentCallback } from '@/hooks/use-stripe';
 import { Campaign } from '@/types/campaign';
 
-export function CampaignDonationTabCreditCard({
+export function CampaignDonationCreditCardProcess({
   amount,
   campaign,
 }: {

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui';
 import { useDonationCallback } from '@/hooks/use-donation';
-import { Campaign } from '@/types/campaign';
+import type { Campaign } from '@/types/campaign';
 import { useEffect, useMemo } from 'react';
 
 export function CampaignDonationWalletProcess({

@@ -5,7 +5,7 @@ import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-n
 import { useNetworkCheck } from '@/hooks/use-network';
 import { useAuth as useWeb3Auth, chainConfig } from '@/lib/web3';
 import { useAuth } from '@/contexts';
-import { CampaignDonationDetails } from './details';
+import { CampaignDonationWalletDetails } from './details';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
 import { Campaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
@@ -72,7 +72,7 @@ export function CampaignDonationWalletTab({
         </>
       )}
       <CampaignDonationDetailsEligible campaign={campaign} />
-      <CampaignDonationDetails campaign={campaign} />
+      <CampaignDonationWalletDetails campaign={campaign} />
     </div>
   );
 }
