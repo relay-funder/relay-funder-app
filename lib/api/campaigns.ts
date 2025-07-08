@@ -42,8 +42,8 @@ export async function getCampaignBySlug(
   }
 }
 
+const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 async function getPublicClient() {
-  const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
   const RPC_URL = chainConfig.rpcUrl;
   if (!FACTORY_ADDRESS || !RPC_URL) {
     throw new Error('Campaign factory address or RPC URL not configured');
@@ -123,6 +123,11 @@ function formatCampaignData(
         return accumulator + value;
       }, 0) ?? 0,
     images: dbCampaign.images,
+    payments: dbCampaign.payments,
+    confirmedPayments:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed') || [],
+    donationCount:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed').length || 0,
     slug: dbCampaign.slug,
     location: dbCampaign.location,
     category: dbCampaign.category,
@@ -191,7 +196,6 @@ export async function listCampaigns({
   let events: CampaignCreatedEvent[] = [];
   if (forceEvents) {
     const client = await getPublicClient();
-    // @ts-expect-error - client issue
     events = await getCampaignCreatedEvents(client);
   }
   const combinedCampaigns = dbCampaigns

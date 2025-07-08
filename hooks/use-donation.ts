@@ -15,10 +15,12 @@ export function useDonationCallback({
   campaign,
   amount,
   selectedToken,
+  isAnonymous = false,
 }: {
   campaign: Campaign;
   amount: string;
   selectedToken: string;
+  isAnonymous?: boolean;
 }) {
   const { wallet } = useWeb3Auth();
   const { authenticated } = useAuth();
@@ -71,7 +73,7 @@ export function useDonationCallback({
         amount: amount,
         token: selectedToken,
         campaignId: campaign.id,
-        isAnonymous: false,
+        isAnonymous: isAnonymous,
         status: 'confirming',
         transactionHash: tx.hash,
       });
@@ -124,6 +126,7 @@ export function useDonationCallback({
     campaign?.id,
     campaign?.treasuryAddress,
     selectedToken,
+    isAnonymous,
   ]);
   return { onDonate, isProcessing, error };
 }
