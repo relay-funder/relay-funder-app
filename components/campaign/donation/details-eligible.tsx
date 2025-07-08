@@ -9,13 +9,11 @@ export function CampaignDonationDetailsEligible({
     return null;
   }
   return (
-    <div className="flex items-center gap-2">
-      <Badge
-        variant="secondary"
-        className="bg-teal-50 text-teal-600 hover:bg-teal-50"
-      >
-        <span className="mr-1">👋</span> Eligible for matching
-      </Badge>
-    </div>
+    <Badge
+      variant="secondary"
+      className="bg-teal-50 text-teal-600 hover:bg-teal-50"
+    >
+      <span className="mr-1">👋</span> Eligible for matching
+    </Badge>
   );
 }

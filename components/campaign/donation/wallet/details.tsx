@@ -14,26 +14,22 @@ export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
   const [amount, setAmount] = useState('0');
   const [donationToAkashic, setDonationToAkashic] = useState(0);
   return (
-    <>
-      <div className="space-y-4">
-        <div className="relative">
-          <CampaignDonationWalletAmount
-            onAmountChanged={setAmount}
-            onTokenChanged={setSelectedToken}
-            amount={amount}
-            selectedToken={selectedToken}
-          />
-          <CampaignDonationWalletBalance selectedToken={selectedToken} />
-          <CampaignDonationWalletAkashic onChange={setDonationToAkashic} />
-          <CampaignDonationWalletProcess
-            campaign={campaign}
-            onProcessing={setProcessing}
-            amount={amount}
-            donationToAkashic={donationToAkashic}
-            selectedToken={selectedToken}
-          />
-        </div>
-      </div>
-    </>
+    <div className="relative flex flex-col gap-4">
+      <CampaignDonationWalletAmount
+        onAmountChanged={setAmount}
+        onTokenChanged={setSelectedToken}
+        amount={amount}
+        selectedToken={selectedToken}
+      />
+      <CampaignDonationWalletBalance selectedToken={selectedToken} />
+      <CampaignDonationWalletAkashic onChange={setDonationToAkashic} />
+      <CampaignDonationWalletProcess
+        campaign={campaign}
+        onProcessing={setProcessing}
+        amount={amount}
+        donationToAkashic={donationToAkashic}
+        selectedToken={selectedToken}
+      />
+    </div>
   );
 }
