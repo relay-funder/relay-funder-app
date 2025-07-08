@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+
 import { Loader2, MessageSquareWarning, Wallet } from 'lucide-react';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { useNetworkCheck } from '@/hooks/use-network';
@@ -20,14 +20,22 @@ export function CampaignDonationTabWallet({
   const { authenticated, login } = useAuth();
   if (!authenticated) {
     return (
-      <>
-        <div className="flex items-center justify-between">
-          <MessageSquareWarning /> You need to be signed in to donate
+      <div className="flex flex-col items-center justify-center rounded-lg border p-4">
+        <div className="mb-4 flex items-center space-x-2">
+          <MessageSquareWarning />
+          <span className="text-base font-semibold">
+            You need to be signed in to donate
+          </span>
         </div>
-        <div className="flex items-center justify-between">
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          To track your payments and the projects you support, it&#39;s crucial
+          to sign in. Signing up with a wallet is free and easy, and no
+          additional personal data is required to donate.
+        </p>
+        <div className="flex items-center justify-center">
           <Button onClick={login}>Login</Button>
         </div>
-      </>
+      </div>
     );
   }
   if (!ready) {
