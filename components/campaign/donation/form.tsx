@@ -8,7 +8,7 @@ import {
 } from '@/components/ui';
 import { Wallet, CreditCard } from 'lucide-react';
 import { Campaign } from '@/types/campaign';
-import { CampaignDonationTabWallet } from '@/components/campaign/donation/wallet/tab';
+import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 export function CampaignDonationForm({ campaign }: { campaign: Campaign }) {
   return (
@@ -31,7 +31,7 @@ export function CampaignDonationForm({ campaign }: { campaign: Campaign }) {
 
           <TabsContent value="wallet">
             <Web3ContextProvider>
-              <CampaignDonationTabWallet campaign={campaign} />
+              <CampaignDonationWalletTab campaign={campaign} />
             </Web3ContextProvider>
           </TabsContent>
 
