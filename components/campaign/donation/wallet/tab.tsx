@@ -10,7 +10,7 @@ import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/
 import { Campaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
 
-export function CampaignDonationTabWallet({
+export function CampaignDonationWalletTab({
   campaign,
 }: {
   campaign: Campaign;
