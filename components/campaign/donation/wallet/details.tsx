@@ -6,6 +6,7 @@ import { Campaign } from '@/types/campaign';
 import { CampaignDonationWalletBalance } from './balance';
 import { CampaignDonationWalletAmount } from './amount';
 import { CampaignDonationWalletAkashic } from './akashic';
+import { CampaignDonationAnonymous } from '../anonymous';
 import { CampaignDonationWalletProcess } from './process';
 
 export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
@@ -13,6 +14,7 @@ export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
   const [processing, setProcessing] = useState(false);
   const [amount, setAmount] = useState('0');
   const [donationToAkashic, setDonationToAkashic] = useState(0);
+  const [donationAnonymous, setDonationAnonymous] = useState(false);
   return (
     <div className="relative flex flex-col gap-4">
       <CampaignDonationWalletAmount
@@ -23,12 +25,17 @@ export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
       />
       <CampaignDonationWalletBalance selectedToken={selectedToken} />
       <CampaignDonationWalletAkashic onChange={setDonationToAkashic} />
+      <CampaignDonationAnonymous
+        anonymous={donationAnonymous}
+        onChange={setDonationAnonymous}
+      />
       <CampaignDonationWalletProcess
         campaign={campaign}
         onProcessing={setProcessing}
         amount={amount}
         donationToAkashic={donationToAkashic}
         selectedToken={selectedToken}
+        anonymous={donationAnonymous}
       />
     </div>
   );
