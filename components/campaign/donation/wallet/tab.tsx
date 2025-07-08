@@ -52,29 +52,27 @@ export function CampaignDonationTabWallet({
     );
   }
   return (
-    <>
-      <div className="flex items-center justify-between">
-        {isCorrectNetwork ? (
-          <>
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              <span className="text-sm">
-                Saving gas fees, network {chainConfig.name} used.
-              </span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              <span className="text-sm">Save on gas fees, switch network.</span>
-            </div>
-            <PaymentSwitchWalletNetwork />
-          </>
-        )}
-      </div>
+    <div className="flex flex-col gap-4 rounded-lg border p-4">
+      {isCorrectNetwork ? (
+        <>
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            <span className="text-sm">
+              Saving gas fees, network {chainConfig.name} used.
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            <span className="text-sm">Save on gas fees, switch network.</span>
+          </div>
+          <PaymentSwitchWalletNetwork />
+        </>
+      )}
       <CampaignDonationDetailsEligible campaign={campaign} />
       <CampaignDonationDetails campaign={campaign} />
-    </>
+    </div>
   );
 }
