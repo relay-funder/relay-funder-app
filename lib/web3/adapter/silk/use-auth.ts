@@ -8,7 +8,6 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
-//import { SiweMessage } from 'siwe';
 import { UserRejectedRequestError } from 'viem';
 import {
   useAccount,
