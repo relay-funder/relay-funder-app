@@ -1,5 +1,15 @@
-import { ExploreStories } from '@/components/explore-stories';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
-export default function HomePage() {
-  return <ExploreStories />;
+import { ExploreStories } from '@/components/explore-stories';
+import { prefetchCampaigns } from '@/lib/api/campaigns';
+import { getQueryClient } from '@/lib/query-client';
+
+export default async function HomePage() {
+  const queryClient = getQueryClient();
+  await prefetchCampaigns(queryClient);
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ExploreStories />
+    </HydrationBoundary>
+  );
 }
