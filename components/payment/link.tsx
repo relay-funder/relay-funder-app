@@ -1,7 +1,7 @@
 import { LinkIcon } from 'lucide-react';
-import { type Payment } from '@/types/campaign';
+import { type DbPayment } from '@/types/campaign';
 
-export function PaymentLink({ payment }: { payment: Payment }) {
+export function PaymentLink({ payment }: { payment: DbPayment }) {
   if (!payment.transactionHash) {
     return null;
   }

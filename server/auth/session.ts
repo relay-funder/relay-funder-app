@@ -13,6 +13,7 @@ export async function session({
     user: {
       ...session.user,
       id: token.sub ?? '0',
+      dbId: parseInt((token.dbId as string) ?? '0'),
       roles: token.roles ?? [],
       address: token.address ?? '',
     },
