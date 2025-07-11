@@ -6,9 +6,8 @@ import {
 } from '@tanstack/react-query';
 import { useAuth } from '@/contexts';
 import type { Campaign } from '@/types/campaign';
-import { QueryClient } from '@tanstack/react-query';
 
-const CAMPAIGNS_QUERY_KEY = 'campaigns';
+export const CAMPAIGNS_QUERY_KEY = 'campaigns';
 
 interface PaginatedResponse {
   campaigns: Campaign[];
@@ -239,16 +238,5 @@ export function useAdminApproveCampaign() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
     },
-  });
-}
-
-// Prefetching function
-export async function prefetchCampaigns(
-  queryClient: QueryClient,
-  status?: string,
-) {
-  await queryClient.prefetchQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, status],
-    queryFn: () => fetchCampaigns(status),
   });
 }
