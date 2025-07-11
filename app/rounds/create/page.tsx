@@ -33,21 +33,20 @@ import {
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts';
-import { useCurrentChain } from '@/lib/web3';
 import {
+  useCurrentChain,
+  // wagmi
   useWriteContract,
   useWaitForTransactionReceipt,
   useDeployContract,
-} from 'wagmi';
-import {
-  parseUnits,
-  formatUnits,
-  type Address,
-  type Hash,
+  // viem
   maxUint256,
   decodeEventLog,
   BaseError,
-} from 'viem';
+  // ethers
+  ethers,
+} from '@/lib/web3';
+import { type Address, type Hash } from '@/lib/web3/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -270,7 +269,7 @@ export default function CreateRoundPage() {
         const registrationEndTime = BigInt(
           Math.floor(new Date(data.applicationClose).getTime() / 1000),
         );
-        const amount = parseUnits(data.matchingPool, data.tokenDecimals);
+        const amount = ethers.parseUnits(data.matchingPool, data.tokenDecimals);
 
         // Metadata structure
         const metadataPointer = JSON.stringify({
@@ -308,7 +307,7 @@ export default function CreateRoundPage() {
           strategyImplementationAddress: strategyAddr, // Use the deployed strategy address
           initializationData: initializationData,
           token: data.tokenAddress,
-          amount: amount,
+          amount: BigInt(amount),
           metadata: metadata,
           managers: managers,
         });
@@ -506,7 +505,7 @@ export default function CreateRoundPage() {
     setNeedsApproval(false);
     try {
       const decimals = tokenDecimals || 6;
-      const amount = parseUnits(matchingPool, decimals);
+      const amount = ethers.parseUnits(matchingPool, decimals);
       setRequiredAmount(amount);
 
       const allowance = await checkErc20Allowance({
@@ -1082,14 +1081,17 @@ export default function CreateRoundPage() {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
                               Current Allowance:{' '}
-                              {formatUnits(
+                              {ethers.formatUnits(
                                 currentAllowance,
                                 tokenDecimals || 6,
                               )}
                             </span>
                             <span className="font-medium">
                               Required:{' '}
-                              {formatUnits(requiredAmount, tokenDecimals || 6)}
+                              {ethers.formatUnits(
+                                requiredAmount,
+                                tokenDecimals || 6,
+                              )}
                             </span>
                           </div>
                           <Progress

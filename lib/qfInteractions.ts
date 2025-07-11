@@ -1,19 +1,34 @@
-import {
-  type Abi,
-  encodeAbiParameters,
-  parseAbiParameters,
-  type Address,
-  type Hash,
-  type WriteContractParameters,
-} from 'viem';
 // {type ReadContractParameters, encodeFunctionData, getContractAddress } from 'viem'
 // Import only necessary functions from @wagmi/core for reads if needed server-side,but primarily rely on client-side hooks for writes.
-import { readContract, createConfig } from '@wagmi/core';
-import { config } from '@/lib/web3/config/wagmi';
+import {
+  wagmiConfig as config,
+  encodeAbiParameters,
+  parseAbiParameters,
+  readContract,
+  createConfig,
+} from '@/lib/web3';
+import {
+  type Address,
+  type Abi,
+  type WriteContractParameters,
+} from '@/lib/web3/types';
 import { ALLO_ADDRESS, KICKSTARTER_QF_ADDRESS } from './constant';
 // import { type Chain } from 'wagmi/chains' // Import Chain type
 // import { deployContract } from 'wagmi/actions'
-
+import {
+  CreatePoolArgs,
+  RegisterRecipientArgs,
+  ReviewRecipientsArgs,
+  CheckAllowanceArgs,
+  ReadDirectTransferArgs,
+  ApproveErc20Args,
+  AllocateNativeArgs,
+  AllocateErc20Args,
+  DistributeArgs,
+  WithdrawArgs,
+  ClaimAllocationArgs,
+  DeployKickstarterQFArgs,
+} from '@/lib/qf/types';
 // --- Import ABIs ---
 import { AlloABI } from '../contracts/abi/qf/Allo';
 import { KickStarterQFABI } from '../contracts/abi/qf/KickStarterQF';
@@ -24,42 +39,6 @@ const kickstarterQfAbi = KickStarterQFABI.abi as Abi;
 const erc20Abi = ERC20ABI as Abi;
 
 // const NATIVE_TOKEN_ADDRESS: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-
-//Define the missing interfaces
-interface RecipientInitializeData {
-  metadataRequired: boolean;
-  registrationStartTime: bigint;
-  registrationEndTime: bigint;
-}
-
-interface Metadata {
-  protocol: bigint;
-  pointer: string;
-}
-
-interface Claim {
-  recipientId: Address;
-  token: Address;
-}
-
-//1. Create Pool - Prepare Args (Using createPoolWithCustomStrategy)
-interface CreatePoolArgs {
-  profileId: Hash; // bytes32
-  // strategyAddress is now the *implementation* address to clone
-  strategyImplementationAddress?: Address; // Defaults to KICKSTARTER_QF_ADDRESS
-  initializationData: {
-    recipientInitializeData: RecipientInitializeData;
-    allocationStartTime: bigint; // uint64
-    allocationEndTime: bigint; // uint64
-    withdrawalCooldown: bigint; // uint64
-    allowedTokens: Address[];
-    isUsingAllocationMetadata: boolean; // Likely false based on KickstarterQF._allocate
-  };
-  token: Address; // Pool's native token (e.g., USDC address)
-  amount: bigint; // Initial funding amount (requires prior ERC20 approval to ALLO_ADDRESS)
-  metadata: Metadata;
-  managers: Address[];
-}
 
 // This function now prepares the arguments for Allo's `createPool` function
 export function prepareCreatePoolArgs({
@@ -132,14 +111,6 @@ export function prepareCreatePoolArgs({
 }
 
 //2: Register Recipient - Prepare Args
-interface RegisterRecipientArgs {
-  poolId: bigint;
-  recipientAddresses?: Address[]; // Array of addresses to register (usually just one)
-  recipientAddress: Address; // Primary address being registered
-  recipientPayoutAddress: Address; // Address that will receive funds
-  metadata: Metadata;
-  proposalBid?: bigint; // Optional proposal bid amount
-}
 
 // Prepares arguments for Allo's `registerRecipient` function with proper encoding
 export function prepareRegisterRecipientArgs({
@@ -228,20 +199,6 @@ export function prepareRegisterRecipientArgs({
 
 //3: Review Recipients - Prepare Args
 // Define ApplicationStatus enum matching Solidity contract
-export enum ApplicationStatus {
-  None = 0,
-  Pending = 1,
-  Approved = 2,
-  Rejected = 3,
-  Appealed = 4,
-}
-
-interface ReviewRecipientsArgs {
-  strategyAddress: Address; // Address of the specific KickstarterQF instance for the pool
-  recipientIds: Address[];
-  newStatuses: ApplicationStatus[]; // Use the enum
-  recipientsCounter: bigint; // Read from strategy.recipientsCounter() before calling
-}
 
 // Prepares arguments for KickstarterQF's `reviewRecipients` function
 export function prepareReviewRecipientsArgs({
@@ -290,13 +247,6 @@ export function prepareReviewRecipientsArgs({
 }
 
 // Utility: Check ERC20 Allowance (Read Operation - Fix chainId type)
-interface CheckAllowanceArgs {
-  tokenAddress: Address;
-  ownerAddress: Address;
-  spenderAddress: Address;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  chainId?: number; // Kept for backward compatibility but not used in readContract
-}
 
 export async function checkErc20Allowance({
   tokenAddress,
@@ -327,10 +277,6 @@ export async function checkErc20Allowance({
 }
 
 // Utility: Read DIRECT_TRANSFER flag (Read Operation - Fix chainId type)
-interface ReadDirectTransferArgs {
-  strategyAddress: Address;
-  chainId?: number; // Kept for backward compatibility but not used in readContract
-}
 
 export async function checkDirectTransferFlag({
   strategyAddress,
@@ -358,11 +304,6 @@ export async function checkDirectTransferFlag({
 }
 
 // ApproveErc20Args interface needed for the function below
-interface ApproveErc20Args {
-  tokenAddress: Address;
-  spenderAddress: Address;
-  amount: bigint;
-}
 
 export function prepareApproveErc20Args({
   tokenAddress,
@@ -398,11 +339,6 @@ export function prepareApproveErc20Args({
 // ==================================
 
 // Use this for allocating Native currency (e.g., ETH, MATIC)
-interface AllocateNativeArgs {
-  poolId: bigint;
-  recipientId: Address;
-  amount: bigint; // Amount in native currency (wei)
-}
 
 // Prepares arguments for Allo's `allocate` function (Native)
 export function prepareAllocateNativeArgs({
@@ -439,12 +375,6 @@ export function prepareAllocateNativeArgs({
 }
 
 // Use this for allocating ERC20 tokens
-interface AllocateErc20Args {
-  poolId: bigint;
-  recipientId: Address;
-  amount: bigint; // Amount in token's smallest unit
-  tokenAddress: Address; // Address of the ERC20 token being allocated
-}
 
 // Prepares arguments for Allo's `allocate` function (ERC20)
 export function prepareAllocateErc20Args({
@@ -491,12 +421,6 @@ export function prepareAllocateErc20Args({
 // Phase 5: Distribute Funds - Prepare Args
 // ==================================
 
-interface DistributeArgs {
-  poolId: bigint;
-  recipientIds: Address[];
-  data: Hash; // bytes - Typically '0x' unless the strategy requires specific data
-}
-
 // Prepares arguments for Allo's `distribute` function
 export function prepareDistributeArgs({
   poolId,
@@ -532,12 +456,6 @@ export function prepareDistributeArgs({
 // Phase 6: Withdraw Funds (KickstarterQF Specific) - Prepare Args
 // ==================================
 
-interface WithdrawArgs {
-  strategyAddress: Address; // Address of the *specific* KickstarterQF instance for the pool
-  recipientId: Address;
-  tokenAddress: Address; // Token to withdraw
-}
-
 // Prepares arguments for KickstarterQF's `withdraw` function
 export function prepareWithdrawArgs({
   strategyAddress,
@@ -570,11 +488,6 @@ export function prepareWithdrawArgs({
 // ==================================
 // Phase 7: Claim Allocations (KickstarterQF Specific) - Prepare Args
 // ==================================
-
-interface ClaimAllocationArgs {
-  strategyAddress: Address; // Address of the *specific* KickstarterQF instance for the pool
-  claims: Claim[]; // Array of { recipientId, token } structs
-}
 
 // Note: The check for DIRECT_TRANSFER still needs to happen client-side before calling this
 // Prepares arguments for KickstarterQF's `claimAllocations` function
@@ -639,12 +552,6 @@ export function prepareClaimAllocationsArgs({
 // ========================================
 // Strategy Deployment - Prior to Pool Creation
 // ========================================
-
-interface DeployKickstarterQFArgs {
-  allo: Address; // Allo contract address
-  name: string; // Strategy name (best to make unique)
-  directTransfers: boolean; // Whether direct transfers are enabled
-}
 
 /**
  * Prepares arguments for deploying a new KickstarterQF contract

@@ -1,3 +1,4 @@
+'use client';
 import {
   useState,
   useCallback,
@@ -10,23 +11,26 @@ import {
   Suspense,
 } from 'react';
 import { useSession } from 'next-auth/react';
-import { config as wagmiConfig } from '@/lib/web3/config/wagmi';
+import { wagmiConfig } from '@/lib/web3';
+
 import {
   WagmiProvider,
   createConfig,
   CreateConnectorFn,
   CreateConfigParameters,
 } from 'wagmi';
-import {
-  initSilk,
-  SilkEthereumProviderInterface,
-} from '@silk-wallet/silk-wallet-sdk';
+
+// import {
+//   initSilk,
+//   SilkEthereumProviderInterface,
+// } from '@silk-wallet/silk-wallet-sdk';
 import {
   connector as silkConnectorCreator,
   connectorOptions as silkConnectorOptions,
 } from './connector';
 
 import { debugWeb3ContextProvider as debug } from '@/lib/debug';
+import { SilkEthereumProviderInterface } from '@silk-wallet/silk-wallet-sdk';
 
 const silkConnector = silkConnectorCreator(silkConnectorOptions);
 
@@ -56,7 +60,7 @@ const Web3Context = createContext({
 } as IWeb3Context);
 
 if (typeof window !== 'undefined' && typeof window.silk === 'undefined') {
-  initSilk(silkConnectorOptions);
+  //initSilk(silkConnectorOptions);
 }
 export function getProvider() {
   if (typeof window !== 'undefined' && typeof window.silk !== 'undefined') {

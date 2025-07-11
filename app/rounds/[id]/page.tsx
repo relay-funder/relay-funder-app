@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, Users, Info } from 'lucide-react';
-import { type Address } from 'viem';
+import { type Address } from '@/lib/web3/types';
 
 import { Button } from '@/components/ui/button';
 import {

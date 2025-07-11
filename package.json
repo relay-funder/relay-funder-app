@@ -41,13 +41,14 @@
     "@radix-ui/react-toast": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.1.6",
     "@sentry/nextjs": "^9.17.0",
-    "@silk-wallet/silk-interface-core": "^0.4.1",
-    "@silk-wallet/silk-wallet-sdk": "^0.7.0",
+    "@silk-wallet/silk-interface-core": "^0.4.2",
+    "@silk-wallet/silk-wallet-sdk": "^0.7.1",
     "@stripe/react-stripe-js": "^3.1.1",
     "@stripe/stripe-js": "^5.6.0",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-query-devtools": "^5.66.0",
-    "@wagmi/core": "^2.17.1",
+    "@wagmi/connectors": "5.8.5",
+    "@wagmi/core": "2.17.3",
     "class-variance-authority": "^0.7.0",
     "cloudinary": "^2.5.1",
     "clsx": "^2.1.1",
@@ -77,9 +78,9 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "use-debounce": "^10.0.4",
-    "viem": "^2.22.3",
-    "wagmi": "^2.13.3",
-    "zod": "^3.24.1",
+    "viem": "2.28.0",
+    "wagmi": "^2.15.6",
+    "zod": "3.22.4",
     "zustand": "^5.0.4"
   },
   "devDependencies": {
@@ -106,5 +107,5 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
+  "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184"
 }

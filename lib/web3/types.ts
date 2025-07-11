@@ -1,3 +1,19 @@
+// types used from ethers and viem
+// type imports have no impact on dev-performance
+export type { Signer } from 'ethers';
+export type {
+  Address,
+  Hash,
+  Client,
+  Transport,
+  Log,
+  Abi,
+  BaseError,
+  WriteContractParameters,
+  Chain,
+} from 'viem';
+
+// common types
 interface RequestArguments {
   method: string;
   params?:
@@ -25,10 +41,6 @@ export interface ConnectedWallet {
   address?: string;
   isConnected: () => Promise<boolean>;
   getEthereumProvider: () => Promise<EthereumProvider | undefined>;
-}
-export interface Chain {
-  name: string;
-  blockExplorers: { default: { url: string } };
 }
 
 export interface IWeb3UseAuthHook {
