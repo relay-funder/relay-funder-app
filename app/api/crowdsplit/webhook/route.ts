@@ -5,7 +5,11 @@ import { response, handleError } from '@/lib/api/response';
 import {
   validateCrowdSplitWebhookAuth,
   getWebhookAuthInfo,
+  type IEventData,
+  type IWebhookData,
+  type EventTypeType,
 } from '@/lib/crowdsplit/webhook-auth';
+import { InputJsonValue } from '@/.generated/prisma/client/runtime/library';
 
 const debug = process.env.NODE_ENV !== 'production';
 
@@ -27,9 +31,9 @@ export async function POST(request: NextRequest) {
     debug && console.log('\n[CROWDSPLIT UNIFIED WEBHOOK] Received webhook');
     debug && console.log('[WEBHOOK] URL:', request.url);
 
-    let webhookData;
+    let webhookData: IWebhookData;
     try {
-      webhookData = JSON.parse(body);
+      webhookData = JSON.parse(body) as IWebhookData;
     } catch (err) {
       throw new ApiParameterError('Invalid JSON body');
     }
@@ -50,9 +54,10 @@ export async function POST(request: NextRequest) {
       );
 
     // Extract event information - handle both formats
-    const eventType =
-      webhookData.data?.type || webhookData.event || webhookData.type;
-    const eventData = webhookData.data || webhookData;
+    const eventType = (webhookData.data?.type ??
+      webhookData.event ??
+      webhookData.type) as EventTypeType;
+    const eventData = (webhookData.data || webhookData) as IEventData;
 
     debug &&
       console.log('[WEBHOOK] Event details:', {
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'kyc.status_updated':
-        result = await handleKycEvent(eventData, webhookData);
+        result = await handleKycEvent(eventData);
         break;
 
       default:
@@ -101,7 +106,11 @@ export async function POST(request: NextRequest) {
 /**
  * Handle payment transaction events (transaction.updated)
  */
-async function handlePaymentEvent(eventData: any, webhookData: any) {
+
+async function handlePaymentEvent(
+  eventData: IEventData,
+  webhookData: IWebhookData,
+) {
   const transactionId = eventData.id;
   const status = eventData.status;
   const subStatus = eventData.subStatus;
@@ -191,19 +200,28 @@ async function handlePaymentEvent(eventData: any, webhookData: any) {
       );
 
     // Update payment with new status and webhook metadata
+    interface IPaymentMetadata {
+      crowdsplitWebhookData?: unknown;
+      lastWebhookStatus?: string;
+      lastWebhookSubStatus?: string;
+      webhookMetadata?: unknown;
+      webhookProcessedAt?: string;
+      paymentMethod?: 'credit_card' | 'crypto';
+    }
+    const metadata: IPaymentMetadata =
+      (payment?.metadata as IPaymentMetadata) ?? {};
+    metadata.crowdsplitWebhookData = webhookData;
+    metadata.lastWebhookStatus = status;
+    metadata.lastWebhookSubStatus = subStatus;
+    metadata.webhookMetadata = metadata;
+    metadata.webhookProcessedAt = new Date().toISOString();
+    metadata.paymentMethod = payment.token === 'USD' ? 'credit_card' : 'crypto';
+
     await db.payment.update({
       where: { id: payment.id },
       data: {
         status: newStatus,
-        metadata: {
-          ...(payment.metadata as any),
-          crowdsplitWebhookData: webhookData,
-          lastWebhookStatus: status,
-          lastWebhookSubStatus: subStatus,
-          webhookMetadata: metadata,
-          webhookProcessedAt: new Date().toISOString(),
-          paymentMethod: payment.token === 'USD' ? 'credit_card' : 'crypto',
-        },
+        metadata: metadata as InputJsonValue,
       },
     });
 
@@ -229,9 +247,8 @@ async function handlePaymentEvent(eventData: any, webhookData: any) {
 /**
  * Handle KYC status events (kyc.status_updated)
  */
-async function handleKycEvent(eventData: any, webhookData: any) {
-  // Handle both webhook formats
-  const kycData = eventData.data || eventData;
+async function handleKycEvent(eventData: IEventData) {
+  const kycData = eventData;
   const customerId = kycData.customer_id;
   const status = kycData.status;
 

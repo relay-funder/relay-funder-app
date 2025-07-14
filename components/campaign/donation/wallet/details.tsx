@@ -15,7 +15,6 @@ export function CampaignDonationWalletDetails({
   campaign: Campaign;
 }) {
   const [selectedToken, setSelectedToken] = useState('USDC');
-  const [processing, setProcessing] = useState(false);
   const [amount, setAmount] = useState('0');
   const [donationToAkashic, setDonationToAkashic] = useState(0);
   const [donationAnonymous, setDonationAnonymous] = useState(false);
@@ -35,7 +34,6 @@ export function CampaignDonationWalletDetails({
       />
       <CampaignDonationWalletProcess
         campaign={campaign}
-        onProcessing={setProcessing}
         amount={amount}
         donationToAkashic={donationToAkashic}
         selectedToken={selectedToken}

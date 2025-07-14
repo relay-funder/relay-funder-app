@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
-import { useAuth } from '@/contexts';
 import { ethers } from 'ethers';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
-import { chainConfig } from '@/lib/web3';
+import { chainConfig, useWeb3Context } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
 
 // Add platform config
@@ -22,12 +21,13 @@ interface TreasuryDeployedEvent {
   };
 }
 export function useAdminApproveCampaign() {
-  const { wallet } = useAuth();
+  const { requestWallet } = useWeb3Context();
   const adminApproveCampaign = useCallback(
     async (campaignId: number, campaignAddress: string) => {
       if (!campaignId || !campaignAddress) {
         throw new Error('Campaign ID and address are required');
       }
+      const wallet = await requestWallet();
       if (
         !wallet ||
         !(
@@ -57,7 +57,7 @@ export function useAdminApproveCampaign() {
       try {
         await walletProvider.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainConfig.chainId.hex }],
+          params: [{ chainId: `0x${chainConfig.chainId.toString(16)}` }],
         });
       } catch (switchError: unknown) {
         // Type guard to check if it's a ProviderRpcError
@@ -84,7 +84,7 @@ export function useAdminApproveCampaign() {
 
       // Create providers
       const ethersProvider = new ethers.BrowserProvider(walletProvider, {
-        chainId: chainConfig.chainId.decimal,
+        chainId: chainConfig.chainId,
         name: chainConfig.name,
       });
       const signer = await ethersProvider.getSigner();
@@ -136,7 +136,7 @@ export function useAdminApproveCampaign() {
       const treasuryAddress = deployEvent.args.treasuryAddress;
       return treasuryAddress;
     },
-    [wallet],
+    [requestWallet],
   );
   return { adminApproveCampaign };
 }

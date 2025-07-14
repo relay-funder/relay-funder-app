@@ -121,7 +121,8 @@ export function useNetworkCheck() {
         // Listen for network changes
         const handleChainChanged = async (newChainIdHex: string) => {
           console.log('use-network:effect: handleChainChanged', newChainIdHex);
-          const isCorrect = newChainIdHex === chainConfig.chainId.hex;
+          const isCorrect =
+            newChainIdHex === `0x${chainConfig.chainId.toString(16)}`;
           setIsCorrectNetwork(isCorrect);
         };
         if (typeof provider?.on !== 'function') {

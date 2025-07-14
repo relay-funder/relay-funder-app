@@ -5,6 +5,7 @@ const PAYMENT_QUERY_KEY = 'payment';
 
 interface ICreatePaymentApi {
   amount: string;
+  poolAmount: number;
   token: string;
   campaignId: number;
   status: string;

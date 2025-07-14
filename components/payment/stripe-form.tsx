@@ -13,7 +13,6 @@ const debug = process.env.NODE_ENV !== 'production';
 interface PaymentStripeFormProps {
   publicKey: string;
   campaign: Campaign;
-  userAddress: string | null;
   amount: string;
 }
 

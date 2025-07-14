@@ -9,7 +9,6 @@ import { CampaignDonationAkashic } from '../akashic';
 import { CampaignDonationAnonymous } from '../anonymous';
 
 export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
-  const [processing, setProcessing] = useState(false);
   const [amount, setAmount] = useState('0');
   const [donationToAkashic, setDonationToAkashic] = useState(0);
   const [donationAnonymous, setDonationAnonymous] = useState(false);
@@ -26,7 +25,6 @@ export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
       />
       <CampaignDonationCreditCardProcess
         campaign={campaign}
-        onProcessing={setProcessing}
         amount={amount}
         donationToAkashic={donationToAkashic}
         anonymous={donationAnonymous}

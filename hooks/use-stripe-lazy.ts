@@ -16,6 +16,7 @@ const debug = process.env.NODE_ENV !== 'production';
 
 interface UseStripeLazyProps {
   amount: string;
+  poolAmount: number;
   campaign: Campaign;
   userEmail?: string;
   isAnonymous?: boolean;
@@ -23,6 +24,7 @@ interface UseStripeLazyProps {
 
 export function useStripeLazy({
   amount,
+  poolAmount,
   campaign,
   userEmail = DEFAULT_USER_EMAIL,
   isAnonymous = false,
@@ -118,6 +120,7 @@ export function useStripeLazy({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: Math.round(numericAmount * 100), // Convert to cents
+          poolAmount: Math.round(poolAmount * 100), // Convert to cents
           customerId,
           currency: 'USD',
           paymentMethod: 'CARD',
@@ -226,7 +229,7 @@ export function useStripeLazy({
     } finally {
       setIsProcessing(false);
     }
-  }, [amount, userEmail, campaign.id, isAnonymous]);
+  }, [amount, poolAmount, userEmail, campaign.id, isAnonymous]);
 
   const reset = useCallback(() => {
     setError(null);

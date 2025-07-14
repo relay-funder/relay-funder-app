@@ -112,8 +112,12 @@ export class CrowdsplitService {
         );
 
         // Attach the original API response for better error handling
-        (apiError as any).apiResponse = data;
-        (apiError as any).statusCode = response.status;
+        interface ApiError extends Error {
+          apiResponse: unknown;
+          statusCode: number;
+        }
+        (apiError as ApiError).apiResponse = data;
+        (apiError as ApiError).statusCode = response.status;
 
         throw apiError;
       }

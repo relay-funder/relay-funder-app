@@ -21,8 +21,7 @@ export async function POST(req: Request) {
   try {
     const session = await checkAuth(['user']);
 
-    const paymentData: ExtendedPaymentRequest;
-    paymentData = await req.json();
+    const paymentData: ExtendedPaymentRequest = await req.json();
 
     // Validate required fields
     if (!paymentData.amount || paymentData.amount <= 0) {

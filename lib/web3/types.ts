@@ -39,6 +39,7 @@ export interface ProviderRpcError extends Error {
 
 export interface ConnectedWallet {
   address?: string;
+  chainId?: number;
   isConnected: () => Promise<boolean>;
   getEthereumProvider: () => Promise<EthereumProvider | undefined>;
 }

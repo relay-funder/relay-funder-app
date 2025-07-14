@@ -14,11 +14,13 @@ const debug = process.env.NODE_ENV !== 'production';
 export function useDonationCallback({
   campaign,
   amount,
+  poolAmount,
   selectedToken,
   isAnonymous = false,
 }: {
   campaign: Campaign;
   amount: string;
+  poolAmount: number;
   selectedToken: string;
   isAnonymous?: boolean;
 }) {
@@ -71,6 +73,7 @@ export function useDonationCallback({
       debug && console.log('Creating payment record...');
       const { paymentId } = await createPayment({
         amount: amount,
+        poolAmount,
         token: selectedToken,
         campaignId: campaign.id,
         isAnonymous: isAnonymous,
@@ -123,6 +126,7 @@ export function useDonationCallback({
     createPayment,
     updatePaymentStatus,
     amount,
+    poolAmount,
     campaign?.id,
     campaign?.treasuryAddress,
     selectedToken,

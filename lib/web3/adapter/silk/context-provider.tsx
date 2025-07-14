@@ -30,7 +30,10 @@ import {
 } from './connector';
 
 import { debugWeb3ContextProvider as debug } from '@/lib/debug';
-import { SilkEthereumProviderInterface } from '@silk-wallet/silk-wallet-sdk';
+import {
+  EthereumProvider,
+  SilkEthereumProviderInterface,
+} from '@silk-wallet/silk-wallet-sdk';
 
 const silkConnector = silkConnectorCreator(silkConnectorOptions);
 
@@ -49,14 +52,26 @@ interface IWeb3Context {
   chain?: IWeb3ContextChain;
   address?: string;
   initialized: boolean;
-  requestWallet: () => Promise<{ address?: `0x${string}`; chainId?: number }>;
+  requestWallet: () => Promise<{
+    address?: `0x${string}`;
+    chainId?: number;
+    isConnected: () => Promise<boolean>;
+    getEthereumProvider: () => Promise<EthereumProvider>;
+  }>;
 }
 const Web3Context = createContext({
   chainId: undefined,
   chain: undefined,
   address: undefined,
   initialized: false,
-  requestWallet: async () => ({ address: undefined, chainId: undefined }),
+  requestWallet: async () => ({
+    address: undefined,
+    chainId: undefined,
+    isConnected: async () => false,
+    getEthereumProvider: async () => {
+      throw new Error('wallet not connected');
+    },
+  }),
 } as IWeb3Context);
 
 if (typeof window !== 'undefined' && typeof window.silk === 'undefined') {
@@ -118,15 +133,24 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
   );
 
   const requestWallet = useCallback(async (): Promise<{
-    address?: `0x${string}`;
-    chainId?: number;
+    address: `0x${string}`;
+    chainId: number;
+    isConnected: () => Promise<boolean>;
+    getEthereumProvider: () => Promise<EthereumProvider>;
   }> => {
     const provider = getProvider();
     if (!provider) {
       console.warn(
         'web3/adapter/silk/context-provider: requestWallet called without a provider',
       );
-      return {};
+      return {
+        address: '0x0',
+        chainId: 0,
+        isConnected: async () => false,
+        getEthereumProvider: async () => {
+          throw new Error('Wallet not connected');
+        },
+      };
     }
     debug &&
       console.log(
@@ -147,7 +171,14 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
         chainId,
         accounts,
       );
-    return { address, chainId };
+    return {
+      address,
+      chainId,
+      isConnected: async () => true,
+      getEthereumProvider: async () => {
+        return window.silk as EthereumProvider;
+      },
+    };
   }, []);
 
   const checkWallet = useCallback(async (): Promise<{

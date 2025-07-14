@@ -20,7 +20,7 @@ export interface DbCampaign {
     campaignId: number;
   }[];
   slug: string;
-  location?: string | null;
+  location: string | null;
   updates?: {
     id: number;
     title: string;
@@ -33,6 +33,7 @@ export interface DbCampaign {
   RoundCampaigns?: { Round: { id: number; title: string } }[];
   rounds?: { id: number; title: string }[];
   payments?: DbPayment[];
+  comments?: DbComment[];
 }
 
 export type CampaignDisplay = {
@@ -67,6 +68,15 @@ export type CampaignDisplay = {
   }[];
 };
 
+export type DbComment = {
+  id: number;
+  content: string;
+  userAddress: string;
+  createdAt: Date;
+  updatedAt: Date;
+  campaignId: number;
+  campaign?: Campaign;
+};
 export type Comment = {
   id: number;
   content: string;
@@ -88,17 +98,17 @@ export type CampaignImage = {
 export type DbPayment = {
   id: number;
   amount: string; // Stored as string to preserve precision
-  token?: string; // Standard: "USDC" (Circle's native multi-chain token on Celo)
-  type?: 'BUY' | 'SELL';
-  status?: string; // 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
-  transactionHash?: string | null;
-  isAnonymous?: boolean;
-  metadata?: { paymentMethod?: string }; // Stores payment method info and other metadata
-  createdAt?: Date;
-  updatedAt?: Date;
-  campaignId?: number;
+  token: string; // Standard: "USDC" (Circle's native multi-chain token on Celo)
+  status: string; // 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
+  type: 'BUY' | 'SELL';
+  transactionHash: string | null;
+  isAnonymous: boolean;
+  metadata: { paymentMethod?: string; originalToken?: string } | null; // Stores payment method info and other metadata
+  createdAt: Date;
+  updatedAt: Date;
+  campaignId: number;
   campaign?: Campaign;
-  userId?: number;
+  userId: number;
   user?: User; // Assuming you have a corresponding type for User
 };
 export type Payment = {

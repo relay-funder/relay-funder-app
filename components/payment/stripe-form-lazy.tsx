@@ -11,7 +11,6 @@ interface LazyStripeFormProps {
   clientSecret: string;
   publicKey: string;
   campaign: Campaign;
-  userAddress: string | null;
   amount: string;
 }
 
@@ -24,7 +23,6 @@ export function LazyStripeForm({
   clientSecret,
   publicKey,
   campaign,
-  userAddress,
   amount,
 }: LazyStripeFormProps) {
   const handleRetry = () => {
@@ -51,7 +49,6 @@ export function LazyStripeForm({
           <PaymentStripeForm
             publicKey={publicKey}
             campaign={campaign}
-            userAddress={userAddress}
             amount={amount}
           />
         </Elements>

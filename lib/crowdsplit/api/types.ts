@@ -157,9 +157,9 @@ export interface CrowdsplitWebhookPostRequest {
     customer_id?: string;
     status?: string;
     id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface CrowdsplitWebhookPostResponse {

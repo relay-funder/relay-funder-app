@@ -18,7 +18,7 @@ export function CampaignDonationForm({ campaign }: { campaign: Campaign }) {
         <div className="space-y-2">
           <h2 className="text-lg font-medium">How do you want to donate?</h2>
         </div>
-        <Tabs defaultValue="wallet">
+        <Tabs defaultValue="card">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="card" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />

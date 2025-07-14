@@ -1,5 +1,5 @@
 import { useWeb3Context } from './context-provider';
-import { wagmiConfig, chainConfig } from './config';
+import { wagmiConfig } from './config';
 // wagmi/core  1837->2522 + 500ms
 // export { readContract, createConfig } from '@wagmi/core';
 export async function readContract(config: unknown, contract: unknown) {

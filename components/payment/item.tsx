@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { type DbPayment } from '@/types/campaign';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui';
 import { PaymentLink } from './link';
+
 export function PaymentItem({ payment }: { payment: DbPayment }) {
   const userName = useMemo(() => {
     if (!payment.user || payment.isAnonymous) {
@@ -30,7 +31,7 @@ export function PaymentItem({ payment }: { payment: DbPayment }) {
 
   // Determine payment method from metadata or transaction hash
   const paymentMethod = useMemo(() => {
-    const metadata = payment.metadata as any;
+    const metadata = payment.metadata;
     if (metadata?.paymentMethod) {
       return metadata.paymentMethod;
     }
@@ -39,7 +40,7 @@ export function PaymentItem({ payment }: { payment: DbPayment }) {
   }, [payment.metadata, payment.transactionHash]);
 
   const originalToken = useMemo(() => {
-    const metadata = payment.metadata as any;
+    const metadata = payment.metadata;
     return metadata?.originalToken || 'USD';
   }, [payment.metadata]);
 

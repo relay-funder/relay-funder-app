@@ -23,12 +23,15 @@ This follows the same pattern as Stripe webhooks where one URL handles multiple 
 CrowdSplit uses **payload-based secret validation** instead of header-based signatures. Our implementation supports multiple authentication methods:
 
 ### Primary Method (Current)
+
 - **Secret Location**: Inside the webhook payload as `secret` field
 - **Validation**: Compare `payload.secret` with `CROWDSPLIT_WEBHOOK_SECRET` environment variable
 - **No Header Signatures**: CrowdSplit does not send signature headers like `x-signature` or `stripe-signature`
 
 ### Enhanced Security (Future-Ready)
+
 Our implementation also supports:
+
 - **HMAC SHA256** signature verification
 - **Stripe-style** timestamp signature validation
 - **Constant-time comparison** for all authentication methods
@@ -146,16 +149,16 @@ CROWDSPLIT_WEBHOOK_SECRET="NEW_SECRET_FROM_RESPONSE"
 
 ### Payload Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `secret` | string | Authentication secret (must match environment variable) |
-| `data.type` | string | Event type for payment events (e.g., `"transaction.updated"`) |
-| `event` | string | Event type for KYC events (e.g., `"kyc.status_updated"`) |
-| `data.id` | string | Unique transaction/payment ID (payment events) |
-| `data.customer_id` | string | Customer ID (KYC events) |
-| `data.status` | string | Transaction or KYC status |
-| `data.subStatus` | string | Sub-status for additional detail (payment events) |
-| `data.metadata` | object\|null | Additional transaction metadata |
+| Field              | Type         | Description                                                   |
+| ------------------ | ------------ | ------------------------------------------------------------- |
+| `secret`           | string       | Authentication secret (must match environment variable)       |
+| `data.type`        | string       | Event type for payment events (e.g., `"transaction.updated"`) |
+| `event`            | string       | Event type for KYC events (e.g., `"kyc.status_updated"`)      |
+| `data.id`          | string       | Unique transaction/payment ID (payment events)                |
+| `data.customer_id` | string       | Customer ID (KYC events)                                      |
+| `data.status`      | string       | Transaction or KYC status                                     |
+| `data.subStatus`   | string       | Sub-status for additional detail (payment events)             |
+| `data.metadata`    | object\|null | Additional transaction metadata                               |
 
 ## Event Detection Logic
 
@@ -175,22 +178,22 @@ const isPaymentEvent = (
 A webhook should trigger KYC completion when:
 
 ```typescript
-const isKycEvent = (
+const isKycEvent =
   (data.event === 'kyc.status_updated' || eventType === 'kyc.status_updated') &&
-  data.status === 'completed'
-);
+  data.status === 'completed';
 ```
 
 ### Supported Event Types
 
 Our unified webhook handler processes:
 
-| Event Type | Description | Handler Function |
-|------------|-------------|------------------|
+| Event Type            | Description                                       | Handler Function       |
+| --------------------- | ------------------------------------------------- | ---------------------- |
 | `transaction.updated` | Payment transaction updates (Stripe & Bridge.xyz) | `handlePaymentEvent()` |
-| `kyc.status_updated` | KYC verification status changes | `handleKycEvent()` |
+| `kyc.status_updated`  | KYC verification status changes                   | `handleKycEvent()`     |
 
 Future event types may include:
+
 - `transaction.created`
 - `transaction.failed`
 - `transaction.refunded`
@@ -227,21 +230,21 @@ function validateSecret(received: string, expected: string): boolean {
 
 ### Payment Status Mapping
 
-| CrowdSplit Status | CrowdSplit SubStatus | Akashic Status |
-|-------------------|---------------------|----------------|
-| `COMPLETED` | `CAPTURED` | `confirmed` |
-| `COMPLETED` | (any other) | `confirmed` |
-| `PENDING` | `PROCESSING` | `pending` |
-| `FAILED` | (any) | `failed` |
-| `CANCELLED`/`CANCELED` | (any) | `canceled` |
-| (any other) | (any) | `pending` |
+| CrowdSplit Status      | CrowdSplit SubStatus | Akashic Status |
+| ---------------------- | -------------------- | -------------- |
+| `COMPLETED`            | `CAPTURED`           | `confirmed`    |
+| `COMPLETED`            | (any other)          | `confirmed`    |
+| `PENDING`              | `PROCESSING`         | `pending`      |
+| `FAILED`               | (any)                | `failed`       |
+| `CANCELLED`/`CANCELED` | (any)                | `canceled`     |
+| (any other)            | (any)                | `pending`      |
 
 ### KYC Status Mapping
 
-| CrowdSplit Status | Akashic Action |
-|-------------------|----------------|
-| `completed` | Set `user.isKycCompleted = true` |
-| (any other) | No database update |
+| CrowdSplit Status | Akashic Action                   |
+| ----------------- | -------------------------------- |
+| `completed`       | Set `user.isKycCompleted = true` |
+| (any other)       | No database update               |
 
 ### Payment Lookup Strategy
 
@@ -343,9 +346,9 @@ Our unified webhook returns detailed responses:
 
 ### Response Codes
 
-| Status | Meaning | Action |
-|--------|---------|---------|
-| 200 | Success | Webhook processed successfully |
-| 400 | Bad Request | Invalid parameters (missing secret, malformed JSON, etc.) |
-| 404 | Not Found | Payment record not found |
-| 500 | Server Error | Internal processing error |
+| Status | Meaning      | Action                                                    |
+| ------ | ------------ | --------------------------------------------------------- |
+| 200    | Success      | Webhook processed successfully                            |
+| 400    | Bad Request  | Invalid parameters (missing secret, malformed JSON, etc.) |
+| 404    | Not Found    | Payment record not found                                  |
+| 500    | Server Error | Internal processing error                                 |

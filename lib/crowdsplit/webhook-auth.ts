@@ -11,6 +11,36 @@ export interface WebhookAuthResult {
   details: string;
 }
 
+export type EventTypeType = 'transaction.updated' | 'kyc.status_updated';
+export type EventDataStatusType =
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'CANCELED'
+  | 'completed';
+export interface IEventData {
+  id: string;
+  status: EventDataStatusType;
+  subStatus: string;
+  metadata: {
+    id: string; // wild guess
+  };
+  customer_id: string;
+  data?: IEventData;
+  type: string;
+}
+export interface IWebhookData {
+  data?: IEventData;
+  event: string;
+  id: string;
+  status: EventDataStatusType;
+  subStatus: string;
+  metadata: {
+    id: string; // wild guess
+  };
+  type: string;
+  secret?: string;
+}
 /**
  * Validate CrowdSplit webhook authentication using multiple methods
  * Supports both current payload-based and future HMAC SHA256 header-based authentication
@@ -18,7 +48,7 @@ export interface WebhookAuthResult {
 export function validateCrowdSplitWebhookAuth(
   request: NextRequest,
   body: string,
-  webhookData: any,
+  webhookData: IWebhookData,
 ): WebhookAuthResult {
   if (!CROWDSPLIT_WEBHOOK_SECRET) {
     throw new ApiUpstreamError('CrowdSplit webhook secret not configured');
