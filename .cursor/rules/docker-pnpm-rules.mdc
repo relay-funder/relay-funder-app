@@ -62,7 +62,7 @@ alwaysApply: true
 - Environment variables MUST be set in `.env.local`
 - Database connection MUST use the Docker service name:
   ```
-  DATABASE_URL=postgres://akashic:akashic@db:5432/akashic_dev
+  DATABASE_URL=postgres://username:password@db:5432/database_name
   ```
 
 ### Container Management

@@ -1,0 +1,457 @@
+# API Patterns and Server Actions
+
+## Next.js API Routes Structure
+
+### Route Organization
+- API routes are located in [app/api/](mdc:app/api/)
+- Follow RESTful conventions where applicable
+- Use route groups for logical organization
+- Implement proper HTTP methods (GET, POST, PUT, DELETE)
+
+### Route File Structure
+```typescript
+// app/api/campaigns/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/server/auth';
+import { db } from '@/server/db';
+import { z } from 'zod';
+
+const createCampaignSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  fundingGoal: z.string(),
+  // ... other fields
+});
+
+export async function GET(request: NextRequest) {
+  try {
+    const campaigns = await db.campaign.findMany({
+      where: { status: 'ACTIVE' },
+      include: { images: true }
+    });
+    
+    return NextResponse.json(campaigns);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to fetch campaigns' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const body = await request.json();
+    const validatedData = createCampaignSchema.parse(body);
+    
+    const campaign = await db.campaign.create({
+      data: {
+        ...validatedData,
+        creatorAddress: session.user.address,
+      }
+    });
+    
+    return NextResponse.json(campaign, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to create campaign' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Dynamic Routes
+```typescript
+// app/api/campaigns/[id]/route.ts
+interface RouteParams {
+  params: { id: string };
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  const { id } = params;
+  
+  const campaign = await db.campaign.findUnique({
+    where: { id: parseInt(id) },
+    include: {
+      images: true,
+      payments: true,
+      comments: true,
+    }
+  });
+  
+  if (!campaign) {
+    return NextResponse.json(
+      { error: 'Campaign not found' },
+      { status: 404 }
+    );
+  }
+  
+  return NextResponse.json(campaign);
+}
+```
+
+## Server Actions
+
+### Server Action Structure
+Server actions are used for form submissions and server-side mutations. They're defined in [lib/actions/](mdc:lib/actions/).
+
+```typescript
+// lib/actions/campaign-actions.ts
+'use server';
+
+import { auth } from '@/server/auth';
+import { db } from '@/server/db';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
+const updateCampaignSchema = z.object({
+  id: z.number(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  status: z.enum(['DRAFT', 'ACTIVE', 'COMPLETED']),
+});
+
+export async function updateCampaign(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { error: 'Unauthorized' };
+    }
+    
+    const rawData = {
+      id: parseInt(formData.get('id') as string),
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      status: formData.get('status') as string,
+    };
+    
+    const validatedData = updateCampaignSchema.parse(rawData);
+    
+    // Check ownership
+    const campaign = await db.campaign.findUnique({
+      where: { id: validatedData.id }
+    });
+    
+    if (!campaign || campaign.creatorAddress !== session.user.address) {
+      return { error: 'Forbidden' };
+    }
+    
+    const updatedCampaign = await db.campaign.update({
+      where: { id: validatedData.id },
+      data: {
+        title: validatedData.title,
+        description: validatedData.description,
+        status: validatedData.status,
+      }
+    });
+    
+    revalidatePath('/campaigns');
+    return { success: true, campaign: updatedCampaign };
+    
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { error: 'Invalid input', details: error.errors };
+    }
+    
+    return { error: 'Failed to update campaign' };
+  }
+}
+```
+
+### Using Server Actions in Components
+```typescript
+// components/campaign/update-form.tsx
+import { updateCampaign } from '@/lib/actions/campaign-actions';
+import { useFormState } from 'react-dom';
+
+export function CampaignUpdateForm({ campaign }: { campaign: Campaign }) {
+  const [state, formAction] = useFormState(updateCampaign, null);
+  
+  return (
+    <form action={formAction}>
+      <input type="hidden" name="id" value={campaign.id} />
+      <input name="title" defaultValue={campaign.title} />
+      <textarea name="description" defaultValue={campaign.description} />
+      <select name="status" defaultValue={campaign.status}>
+        <option value="DRAFT">Draft</option>
+        <option value="ACTIVE">Active</option>
+        <option value="COMPLETED">Completed</option>
+      </select>
+      <button type="submit">Update Campaign</button>
+      
+      {state?.error && <p className="error">{state.error}</p>}
+      {state?.success && <p className="success">Campaign updated!</p>}
+    </form>
+  );
+}
+```
+
+## Authentication and Authorization
+
+### Route Protection
+```typescript
+// Middleware for protected routes
+export async function GET(request: NextRequest) {
+  const session = await auth();
+  
+  if (!session) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+  
+  // Check user roles if needed
+  if (!session.user.roles.includes('admin')) {
+    return NextResponse.json(
+      { error: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+  
+  // Continue with protected logic
+}
+```
+
+### Role-Based Access Control
+```typescript
+// lib/auth/permissions.ts
+export function hasPermission(
+  userRoles: string[],
+  requiredRole: string
+): boolean {
+  return userRoles.includes(requiredRole) || userRoles.includes('admin');
+}
+
+export function requireRole(requiredRole: string) {
+  return async (request: NextRequest) => {
+    const session = await auth();
+    
+    if (!session || !hasPermission(session.user.roles, requiredRole)) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+    
+    return null; // Continue
+  };
+}
+```
+
+## Error Handling
+
+### Standardized Error Responses
+```typescript
+// lib/api/errors.ts
+export class ApiError extends Error {
+  constructor(
+    public message: string,
+    public statusCode: number,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export function handleApiError(error: unknown): NextResponse {
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code },
+      { status: error.statusCode }
+    );
+  }
+  
+  if (error instanceof z.ZodError) {
+    return NextResponse.json(
+      { error: 'Validation failed', details: error.errors },
+      { status: 400 }
+    );
+  }
+  
+  // Log unexpected errors
+  console.error('Unexpected API error:', error);
+  
+  return NextResponse.json(
+    { error: 'Internal server error' },
+    { status: 500 }
+  );
+}
+```
+
+## Data Validation
+
+### Input Validation with Zod
+```typescript
+// lib/api/schemas.ts
+import { z } from 'zod';
+
+export const campaignSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100),
+  description: z.string().min(1, 'Description is required'),
+  fundingGoal: z.string().regex(/^\d+(\.\d+)?$/, 'Invalid funding goal'),
+  startTime: z.string().datetime(),
+  endTime: z.string().datetime(),
+  location: z.string().optional(),
+});
+
+export const paginationSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+});
+```
+
+## Response Formatting
+
+### Standardized Response Structure
+```typescript
+// lib/api/responses.ts
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export function successResponse<T>(
+  data: T,
+  message?: string
+): NextResponse<ApiResponse<T>> {
+  return NextResponse.json({
+    success: true,
+    data,
+    message,
+  });
+}
+
+export function errorResponse(
+  error: string,
+  statusCode: number = 400
+): NextResponse<ApiResponse> {
+  return NextResponse.json(
+    {
+      success: false,
+      error,
+    },
+    { status: statusCode }
+  );
+}
+```
+
+## Rate Limiting and Security
+
+### Rate Limiting
+```typescript
+// lib/api/rate-limit.ts
+import { NextRequest } from 'next/server';
+
+const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
+
+export function rateLimit(
+  request: NextRequest,
+  limit: number = 100,
+  windowMs: number = 60000
+): boolean {
+  const ip = request.ip || 'unknown';
+  const now = Date.now();
+  const windowStart = now - windowMs;
+  
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || record.lastReset < windowStart) {
+    rateLimitMap.set(ip, { count: 1, lastReset: now });
+    return true;
+  }
+  
+  if (record.count >= limit) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
+```
+
+### Input Sanitization
+```typescript
+// lib/api/sanitize.ts
+import DOMPurify from 'dompurify';
+
+export function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html);
+}
+
+export function sanitizeInput(input: string): string {
+  return input.trim().replace(/[<>]/g, '');
+}
+```
+
+## Testing API Routes
+
+### Testing Server Actions
+```typescript
+// __tests__/actions/campaign-actions.test.ts
+import { updateCampaign } from '@/lib/actions/campaign-actions';
+import { auth } from '@/server/auth';
+import { db } from '@/server/db';
+
+jest.mock('@/server/auth');
+jest.mock('@/server/db');
+
+describe('updateCampaign', () => {
+  it('should update campaign successfully', async () => {
+    (auth as jest.Mock).mockResolvedValue({
+      user: { address: '0x123', roles: ['user'] }
+    });
+    
+    (db.campaign.findUnique as jest.Mock).mockResolvedValue({
+      id: 1,
+      creatorAddress: '0x123'
+    });
+    
+    (db.campaign.update as jest.Mock).mockResolvedValue({
+      id: 1,
+      title: 'Updated Title'
+    });
+    
+    const formData = new FormData();
+    formData.append('id', '1');
+    formData.append('title', 'Updated Title');
+    
+    const result = await updateCampaign(formData);
+    
+    expect(result.success).toBe(true);
+    expect(result.campaign.title).toBe('Updated Title');
+  });
+});
+```
+description:
+globs:
+alwaysApply: false
+---
