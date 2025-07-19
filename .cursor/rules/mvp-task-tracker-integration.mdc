@@ -1,0 +1,121 @@
+# MVP Task Tracker Integration Rule
+
+## Overview
+The MVP task tracker ([mvp-task-tracker.mdc](mdc:mvp-task-tracker.mdc)) is the central source of truth for all development work on the Akashic platform. It must be consulted and updated for every feature implementation, bug fix, or code change.
+
+## Mandatory Integration Requirements
+
+### Before Starting Any Work
+1. **Check Task Tracker**: Always review the current phase and task status in mvp-task-tracker.mdc
+2. **Identify Related Tasks**: Find which checkbox items relate to your current work
+3. **Understand Dependencies**: Review task order and dependencies within the current phase
+4. **Verify Completion Status**: Ensure prerequisite tasks are marked [x] before starting dependent tasks
+
+### During Development Work
+1. **Update Progress**: Mark tasks as [x] immediately upon completion
+2. **Add Discoveries**: If you find tasks are more complex than expected, break them down into sub-tasks
+3. **Track Blockers**: Document any blockers or dependencies discovered during implementation
+4. **Maintain Accuracy**: Correct any task status that doesn't match actual implementation state
+
+### After Completing Work
+1. **Mark Complete**: Update checkbox from [ ] to [x] for completed tasks
+2. **Verify Implementation**: Ensure the task is truly complete and tested before marking
+3. **Update Phase Progress**: Recalculate phase completion percentages
+4. **Identify Next Tasks**: Determine which tasks are now unblocked and ready to start
+
+## Task Status Guidelines
+
+### Marking Tasks Complete [x]
+A task should only be marked [x] when:
+- Feature is fully implemented and functional
+- Code follows existing patterns and standards
+- Basic testing has been performed
+- No obvious bugs or issues remain
+- Task deliverable matches the requirement
+
+### Keeping Tasks Incomplete [ ]
+Keep tasks as [ ] when:
+- Feature is partially implemented
+- Implementation needs refactoring or improvement
+- Dependencies are not yet satisfied
+- Testing reveals significant issues
+- Requirements are not fully met
+
+## Phase-Based Development
+
+### Current MVP Phase Priority
+Always prioritize tasks in the current critical path:
+1. **Phase 1**: Database schema & round enhancements (Foundation)
+2. **Phase 2**: Campaign-round workflows (Core Functionality)  
+3. **Phase 3**: Treasury & crypto payments (MVP Core)
+4. **Phase 4**: Homepage & discovery enhancements
+5. **Phase 5**: Admin workflows & match fund management
+
+### Cross-Phase Dependencies
+- Some tasks may span multiple phases
+- Always complete foundation tasks before dependent functionality
+- Document any cross-phase dependencies discovered
+
+## Integration with Existing Rules
+
+### Code Quality Standards
+- Follow all existing coding standards from [typescript-coding-standards.mdc](mdc:typescript-coding-standards.mdc)
+- Apply database patterns from [database-patterns.mdc](mdc:database-patterns.mdc)
+- Use established API patterns from [api-patterns.mdc](mdc:api-patterns.mdc)
+- Maintain component consistency per [component-patterns.mdc](mdc:component-patterns.mdc)
+
+### Development Workflow
+- Follow Docker/pnpm rules from [docker-pnpm-rules.mdc](mdc:docker-pnpm-rules.mdc)
+- Apply Web3 integration patterns when relevant
+- Maintain environment configuration standards
+
+## Task Tracker Maintenance
+
+### Regular Updates
+- Update task tracker with every commit that completes or progresses a task
+- Keep completion percentages accurate for project planning
+- Maintain clear distinction between completed, in-progress, and pending tasks
+
+### Quality Assurance
+- Verify marked complete tasks actually work end-to-end
+- Test task dependencies and workflows
+- Ensure no regression in previously completed functionality
+
+## Examples
+
+### Starting a New Task
+```markdown
+Before implementing "Add sponsorName field to Round model":
+1. Check mvp-task-tracker.mdc Phase 1 status
+2. Verify database schema tasks are in correct order
+3. Plan implementation approach
+4. Update task to show work has started (optional)
+5. Implement the feature
+6. Test the implementation  
+7. Mark task [x] when complete
+```
+
+### Discovering Additional Work
+```markdown
+If while implementing "Round application submission UI" you discover:
+- Need additional validation logic
+- Missing API endpoint
+- Complex UI state management
+
+Add sub-tasks or break down the original task for clarity
+```
+
+### Completing a Phase
+```markdown
+When all Phase 1 tasks are [x]:
+1. Verify all functionality works together
+2. Test integration between completed features
+3. Update overall progress tracking
+4. Plan Phase 2 start
+```
+
+This rule ensures consistent, trackable progress toward MVP completion while maintaining code quality and project organization.
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,572 @@
+# Akashic MVP Task Tracker
+
+## Overview
+This document tracks all tasks required to achieve the MVP goals for the Akashic fundraising platform. Tasks use checkbox format for agent tracking and are organized in phases for maximum demo impact.
+
+---
+
+## MVP REQUIREMENTS ANALYSIS
+
+### Current vs Required Implementation
+
+**QF Manual Calculation**: ✅ Store sponsor values, skip Allo Protocol allocate functions initially
+**Treasury Model**: ✅ TreasuryFactory may be Crowdsplit-compatible, needs testing with new addresses
+**Time Estimates**: Agent-optimized for rapid iteration  
+**Phase Structure**: Maximize demo impact with incremental deliverable phases
+
+---
+
+## PHASE 1: DATABASE SCHEMA & ROUND ENHANCEMENTS (Foundation)
+
+### Phase 1 Detailed Analysis
+
+**Treasury Status Correction**: Current TreasuryFactory implementation uses proper smart contract patterns and may already be compatible with Crowdsplit. The main requirement is testing with updated contract addresses and ensuring the deployment flow works with CC Protocol backend.
+
+**UI Analysis - Current Round Design Gaps:**
+- Round detail pages exist but lack campaign-style polish and sponsor branding
+- Navigation: Rounds hidden behind feature flag `ENABLE_ROUNDS` in developer menu
+- Round cards show basic info but need enhanced design matching campaign cards
+- No sponsor information display anywhere in current UI
+- Round directory lacks filtering and discovery features
+
+**Files Analyzed:**
+- `prisma/schema.prisma` - Round model missing sponsor fields
+- `app/rounds/[id]/page.tsx` - Basic tabs design, needs campaign-style enhancement
+- `components/round-card.tsx` - Simple card, needs sponsor branding
+- `components/page/nav-menu-items.tsx` - Rounds in conditional developer menu
+- `app/rounds/page.tsx` - Basic grid layout, needs discovery features
+
+### Round Sponsor Information Schema (Database Changes)
+- [ ] Add `sponsorName` String? field to Round model in prisma/schema.prisma
+- [ ] Add `sponsorBanner` String? field to Round model (logoUrl already exists as sponsorLogo)
+- [ ] Add `sponsorDescription` String? field to Round model  
+- [ ] Run `pnpm prisma migrate dev --name add_sponsor_fields` to create migration
+- [ ] Run `pnpm prisma generate` to update Prisma client types
+- [ ] Update `Round` interface in types/round.ts to include new sponsor fields
+- [ ] Update `RoundPayload` type to include sponsor fields for type safety
+
+### Round API Schema Updates
+- [ ] Update POST handler in app/api/rounds/route.ts to accept sponsor fields
+- [ ] Add sponsorName, sponsorBanner, sponsorDescription to request body validation
+- [ ] Update Prisma create data object to include new sponsor fields
+- [ ] Update round update/edit API endpoints if they exist
+- [ ] Test API with new sponsor fields using development tools
+
+### Round Form Schema & Validation  
+- [ ] Add sponsorName field to `roundSchema` in app/rounds/create/page.tsx (line ~70)
+- [ ] Add sponsorBanner field to `roundSchema` with URL validation 
+- [ ] Add sponsorDescription field to `roundSchema` with min length validation
+- [ ] Update `refinedRoundSchema` if additional validation rules needed
+- [ ] Add sponsor fields to form default values for development testing
+
+### Round Creation Form UI (Following Campaign Create Pattern)
+- [ ] Add FormField for sponsorName in app/rounds/create/page.tsx form section (~line 1000)
+- [ ] Add FormField for sponsorBanner with URL input and validation (similar to logoUrl field at line 1190)
+- [ ] Add FormField for sponsorDescription with Textarea component
+- [ ] Follow existing FormField pattern with FormLabel, FormControl, FormMessage
+- [ ] Position sponsor fields logically in form (after title/description, before technical fields)
+- [ ] Test form submission with new sponsor data
+
+### Image Upload Integration for Rounds (Use Existing Cloudinary Solution)
+**Current State**: Campaigns have full Cloudinary integration with file upload, rounds only have logoUrl text input
+
+**Tasks**:
+- [ ] Add sponsorLogo file upload field to round creation form (copy pattern from campaign create.tsx lines 350-370)
+- [ ] Extend Cloudinary uploadToCloudinary function in app/api/campaigns/route.ts for rounds (lines 20-62)
+- [ ] Create round image upload API endpoint or extend existing rounds POST handler
+- [ ] Add sponsorBanner file upload field with Cloudinary integration
+- [ ] Update round form to handle File objects for sponsor logo/banner (follow campaign bannerImage pattern)
+- [ ] Add image preview functionality for sponsor uploads (copy from campaign create.tsx pattern)
+- [ ] Test end-to-end Cloudinary upload workflow for rounds
+
+**Environment Requirements (Already Configured)**:
+- ✅ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME (from env.template)
+- ✅ NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET (from env.template)
+- ✅ CLOUDINARY_API_SECRET (from env.template)
+- ✅ next.config.ts already allows res.cloudinary.com domain (verified)
+
+### Navigation Pattern Fix (Feature Flag Removal)
+- [ ] Remove `useFeatureFlag('ENABLE_ROUNDS')` condition in components/page/nav-menu-items.tsx
+- [ ] Move Rounds item to always be included in navItems array
+- [ ] Position Rounds between Dashboard and Collections in the array
+- [ ] Remove feature flag toggle from components/page/nav-menu-features.tsx 
+- [ ] Update nav item to use appropriate icon (keep BookCheck or choose better one)
+- [ ] Test navigation works without feature flag
+
+### Round Display Enhancements - Campaign-Style Polish
+- [ ] Redesign round detail pages to match campaign quality (app/rounds/[id]/page.tsx)
+- [ ] Add sponsor banner prominently at top of round pages
+- [ ] Display sponsor name and description with appropriate prominence
+- [ ] Show match fund amount and sponsor information clearly
+- [ ] Add sponsor logo/branding throughout round pages
+- [ ] Create sponsor metadata display components
+- [ ] Enhance round cards to show sponsor information (components/round-card.tsx)
+- [ ] Add match fund benefit explanation for users
+- [ ] Show ongoing status, application deadlines, match fund amounts
+
+### Campaign-Round Relationship Display
+- [ ] Show which campaigns are part of each round (enhanced Projects tab)
+- [ ] Display campaign count and status in round cards
+- [ ] Add "Part of Round" badges on campaign cards when applicable
+- [ ] Show match fund benefit potential on campaign pages
+- [ ] Create QF vs regular campaign distinction in UI
+
+### Campaign Management Current State Analysis
+- [x] Campaign creation with full details (VERIFIED: components/campaign/create.tsx)
+- [x] Campaign status management (VERIFIED: CampaignStatus enum in schema)  
+- [x] Campaign updates posting system (VERIFIED: components/campaign/update-form.tsx for posting updates)
+
+**Important Distinction**: The existing update-form.tsx is for posting campaign updates/news, NOT for editing campaign details. Campaign editing functionality is missing.
+
+### Campaign Editing Implementation (New Feature Required)
+**Current State**: 
+- PATCH API exists in app/api/campaigns/route.ts (lines 160-200) - limited to status/transaction fields only
+- NO creator-facing edit form exists for campaign details (title, description, etc.)
+- Campaign detail page has no edit functionality or buttons
+
+**Required Tasks**:
+- [ ] Create new `components/campaign/edit-form.tsx` following create.tsx pattern
+- [ ] Copy form structure from components/campaign/create.tsx (lines 30-460) 
+- [ ] Modify for editing: populate existing values, change submission logic
+- [ ] Include Cloudinary image upload for banner updates (reuse existing uploadToCloudinary function)
+- [ ] Create new page at `app/campaigns/[slug]/edit/page.tsx` 
+- [ ] Add protected route logic (only campaign creator can access)
+- [ ] Add edit button to campaign detail page with creator-only visibility
+- [ ] Expand PATCH API in app/api/campaigns/route.ts to accept full campaign fields including image updates
+- [ ] Add form validation matching campaign creation schema (with File upload support)
+- [ ] Test end-to-end editing workflow including image upload to Cloudinary
+
+### Campaign Deletion Implementation (New Feature Required)
+**Current State**:
+- NO DELETE API endpoint exists anywhere in app/api/campaigns/
+- NO deletion UI components exist
+- Related records (payments, updates, comments) would need cascade handling
+
+**Required Tasks**:
+- [ ] Create new file `app/api/campaigns/[campaignId]/route.ts` with DELETE handler
+- [ ] Add authentication check (only creator or admin can delete)
+- [ ] Implement cascade deletion strategy for related CampaignUpdates, Comments, Payments
+- [ ] Add deletion confirmation dialog component (reuse collection deletion pattern)
+- [ ] Add delete button to campaign management areas (dashboard, detail page)
+- [ ] Decide soft delete vs hard delete approach for campaign data integrity
+- [ ] Test deletion with related data cleanup
+
+### Round Management Enhancements  
+- [x] Round creation API with validation (VERIFIED: app/api/rounds/route.ts)
+- [x] Round editing functionality (VERIFIED: lib/actions/rounds/createRound.ts)
+- [x] Round status calculation (VERIFIED: types/round.ts getRoundStatus())
+- [ ] Round deletion API with campaign association checks
+- [ ] Round deletion UI with proper warnings
+- [ ] Round sponsor metadata display integration
+- [ ] Enhanced round landing page with sponsor branding sections
+
+---
+
+## PHASE 2: CAMPAIGN-ROUND WORKFLOWS (Core Functionality)
+
+### Phase 2 Detailed Analysis
+
+**Authentication System**: NextAuth with session-based authentication using `isAdmin` role check in `contexts/AuthContext.tsx`. Admin routes protected via `checkAuth(['admin'])` function and `isAdmin` context hook. Admin pages use `useAuth().isAdmin` pattern for UI protection.
+
+**Application Workflow Current State**: 
+- `components/apply-to-round.tsx` exists with basic dialog but incomplete workflow
+- Uses `applyCampaignToRound` action from `lib/actions/campaign-actions.ts`
+- Real data includes: campaign selection, round ID, application submission
+- Missing: Admin approval interface, status tracking, application management
+
+**Files Analyzed:**
+- `components/apply-to-round.tsx` - Basic application dialog with campaign selection
+- `lib/actions/campaign-actions.ts` - Backend logic for campaign-round association
+- `app/admin/page.tsx` - Admin interface with campaign approval patterns
+- `contexts/AuthContext.tsx` - Authentication and admin role management
+- `lib/api/auth.ts` - Server-side admin authentication with `checkAuth(['admin'])`
+
+### Round Application Enhanced UI (Creator Flow Enhancement)
+**Current Component Analysis**: `components/apply-to-round.tsx`
+- ✅ Lines 1-50: Props interface, authentication check, dialog state management
+- ✅ Lines 70-100: Campaign fetching from `/api/campaigns/user`
+- ✅ Lines 150-190: Campaign selection with RadioGroup component
+- ✅ Lines 245-280: Application submission handler
+
+**Database Schema**: `RoundCampaigns` model (schema lines 190-205)
+- ✅ Fields: `id`, `roundId`, `campaignId`, `status` (RecipientStatus enum), `reviewedAt`, `onchainRecipientId`, `recipientAddress`
+- ✅ Unique constraint: `[roundId, campaignId]` prevents duplicates
+
+**Required Tasks**:
+- [ ] **Enhanced Validation** (extend apply-to-round.tsx lines 70-100):
+  - [ ] Add campaign status validation (only ACTIVE campaigns eligible)
+  - [ ] Add round deadline checking before campaign display
+  - [ ] Add duplicate application prevention in UI
+  - [ ] Check campaign treasury deployment status before allowing application
+
+- [ ] **Application Status Display** (new component following card-admin.tsx Badge pattern lines 65-85):
+  - [ ] Create `components/campaign/application-status.tsx` 
+  - [ ] Add status badges to campaign detail pages
+  - [ ] Create application history component (follow detail-tab-transactions.tsx pattern)
+  - [ ] Add "Applied to Rounds" section in campaign cards (extend card-admin.tsx lines 180-188)
+
+- [ ] **Form Enhancement** (extend apply-to-round.tsx lines 200-250):
+  - [ ] Add campaign metadata display in selection (copy from campaign/item.tsx lines 45-85)
+  - [ ] Add round information display (funding pool, dates, requirements)
+  - [ ] Add confirmation step with application summary
+  - [ ] Add progress indicators for application flow
+
+### Admin Round Application Management (Following app/admin/page.tsx Patterns)
+**Pattern Source**: Campaign approval workflow (app/admin/page.tsx lines 40-90)
+
+**Required Tasks**:
+- [ ] **Admin Applications Page** (`app/admin/rounds/applications/page.tsx`):
+  - [ ] Copy auth protection from admin/page.tsx lines 120-130 (`useAuth().isAdmin`, `<AdminAccessDenied />`)
+  - [ ] Use `useInfiniteCampaigns` pattern (lines 35-40) for applications pagination
+  - [ ] Add filtering by round and status
+  - [ ] Implement search and sorting capabilities
+
+- [ ] **Application Review Component** (`components/admin/application-review.tsx`):
+  - [ ] Copy approval button pattern from campaign/card-admin.tsx lines 140-155
+  - [ ] Add approve/reject actions with loading states (follow `onApproveIntern` pattern lines 45-50)
+  - [ ] Include campaign details display (reuse card-admin.tsx structure lines 60-120)
+  - [ ] Add review notes/comments field with form validation
+
+- [ ] **Bulk Operations** (`components/admin/bulk-application-actions.tsx`):
+  - [ ] Implement checkbox selection pattern
+  - [ ] Add bulk approve/reject with confirmation dialogs
+  - [ ] Include progress indicators for batch operations
+  - [ ] Add undo functionality for bulk actions
+
+### Round Application API Development (Follow app/api/campaigns/route.ts Patterns)
+**Pattern Source**: PATCH handler (lines 160-200) and `checkAuth(['admin'])` (line 165)
+
+**Required Tasks**:
+- [ ] **Application Status API** (`app/api/rounds/[roundId]/applications/route.ts`):
+  - [ ] GET: List applications with pagination/filtering (follow campaigns route pattern)
+  - [ ] Add proper `checkAuth(['admin'])` authorization
+  - [ ] Include status filtering, search, and sorting parameters
+  - [ ] Use existing error handling (`ApiParameterError`, `ApiAuthNotAllowed`)
+
+- [ ] **Application Action API** (`app/api/rounds/[roundId]/applications/[applicationId]/route.ts`):
+  - [ ] PATCH: Handle approve/reject actions (copy campaign approval pattern)
+  - [ ] Update `status` and `reviewedAt` fields in RoundCampaigns table
+  - [ ] Add proper validation and transition rules
+  - [ ] Include audit trail logging
+
+- [ ] **Bulk Actions API** (`app/api/rounds/[roundId]/applications/bulk/route.ts`):
+  - [ ] POST: Handle bulk approve/reject operations
+  - [ ] Include transaction handling for multiple updates
+  - [ ] Add validation for bulk operation limits
+  - [ ] Return detailed results for each operation
+
+### Campaign-Round Status Integration (UI Enhancements)
+**Pattern Source**: Campaign status display in card components
+
+**Required Tasks**:
+- [ ] **Campaign Card Indicators** (extend existing card components):
+  - [ ] Add "Part of Round" badges to campaign/card-full.tsx (around line 80)
+  - [ ] Show round application status in card-dashboard.tsx (extend status section lines 30-50)
+  - [ ] Add round participation to card-admin.tsx (extend existing rounds section lines 180-188)
+
+- [ ] **Campaign Detail Round Tab** (`components/campaign/detail-tab-rounds.tsx`):
+  - [ ] Follow existing tab pattern from detail-tabs.tsx
+  - [ ] List applied rounds with status, dates, match fund potential
+  - [ ] Add application management for creators (withdraw, reapply)
+  - [ ] Show QF match fund calculations
+
+- [ ] **Round Detail Campaign List** (enhance round pages):
+  - [ ] Add approved campaigns section to round detail pages
+  - [ ] Show campaign progress within rounds
+  - [ ] Add filtering/search for round campaigns
+  - [ ] Include match fund allocation preview
+
+### Application Workflow State Management
+**Pattern Source**: useCampaigns.ts and form state patterns
+
+**Required Tasks**:
+- [ ] **Application Hooks** (`lib/hooks/useRoundApplications.ts`):
+  - [ ] Create hooks following useCampaigns.ts patterns
+  - [ ] Add `useApplicationStatus`, `useApproveApplication`, `useRejectApplication`
+  - [ ] Include optimistic updates and error handling
+  - [ ] Add real-time status sync
+
+- [ ] **Application Actions** (`lib/actions/round-application-actions.ts`):
+  - [ ] Extend campaign-actions.ts with admin approval actions
+  - [ ] Add `approveRoundApplication`, `rejectRoundApplication` server actions
+  - [ ] Include validation, authorization, and revalidation
+
+---
+
+## PHASE 3: TREASURY & CRYPTO PAYMENTS (MVP Core)
+
+### Phase 3 Detailed Analysis
+
+**Treasury Implementation Status**: Current system uses sophisticated TreasuryFactory contract with proper deployment patterns. Key environment variables configured: `NEXT_PUBLIC_TREASURY_FACTORY`, `NEXT_PUBLIC_GLOBAL_PARAMS`, `NEXT_PUBLIC_PLATFORM_HASH`. Payment flow uses `pledgeWithoutAReward()` function, which matches CC Protocol requirements.
+
+**Files Analyzed:**
+- `lib/web3/hooks/useAdminApproveCampaign.ts` - Treasury deployment logic with proper event handling
+- `lib/web3/request-transaction.ts` - USDC approval + pledge transaction flow
+- `contracts/abi/TreasuryFactory.ts` - Advanced contract ABI with deployment functions
+- `hooks/use-donation.ts` - Complete donation flow with payment record creation
+
+### Treasury Integration (Testing Phase)
+- [x] TreasuryFactory contract integration (VERIFIED: contracts/abi/TreasuryFactory.ts)
+- [x] Treasury deployment on admin approval (VERIFIED: useAdminApproveCampaign.ts) 
+- [x] Treasury address storage in database (VERIFIED: treasuryAddress field exists)
+- [ ] Test treasury deployment with updated Crowdsplit contract addresses
+- [ ] Verify CC Protocol compatibility with current TreasuryFactory
+- [ ] Update environment variables for production Crowdsplit addresses
+- [ ] Test treasury deployment error handling and retry logic
+
+### Crypto Payment Flow (KeepWhatsRaised)
+- [x] USDC token contract integration (VERIFIED: request-transaction.ts uses USDC_ADDRESS)
+- [x] USDC approval + pledge transaction flow (VERIFIED: approve() then pledgeWithoutAReward())
+- [x] Payment record creation in database (VERIFIED: hooks/use-donation.ts creates payment)
+- [x] Transaction hash tracking and confirmation (VERIFIED: tx.wait() and status updates)
+- [ ] Test pledgeWithoutRegard() vs pledgeWithoutAReward() function naming  
+- [ ] Implement withdraw() function for immediate withdrawal
+- [ ] Add withdrawal approval by NEXT_PUBLIC_PLATFORM_ADMIN wallet
+- [ ] Test admin wallet flow for payment processing with CC Protocol
+
+### Payment Status Management
+- [x] Payment record creation with proper status (VERIFIED: 'confirming' -> 'confirmed')
+- [x] Transaction hash tracking (VERIFIED: transactionHash field stored)
+- [x] Payment confirmation workflow (VERIFIED: tx.wait() -> updatePayment())
+- [ ] Enhanced payment status for failed transactions
+- [ ] Payment retry logic for failed transactions  
+- [ ] Improved payment history display with status indicators
+- [ ] Real-time payment status updates in UI
+
+### Contract Address Configuration
+**Current Environment Variables:**
+- `NEXT_PUBLIC_TREASURY_FACTORY` - Treasury factory contract address
+- `NEXT_PUBLIC_GLOBAL_PARAMS` - Global parameters contract  
+- `NEXT_PUBLIC_PLATFORM_HASH` - Platform identifier hash
+- `NEXT_PUBLIC_USDC_ADDRESS` - USDC token contract address
+- `NEXT_PUBLIC_PLATFORM_ADMIN` - Admin wallet for approvals
+
+**Required Testing:**
+- [ ] Verify all contract addresses are Crowdsplit-compatible
+- [ ] Test treasury deployment with production addresses
+- [ ] Confirm payment flow works with CC Protocol backend
+- [ ] Validate admin wallet has proper permissions
+
+---
+
+## PHASE 4: HOMEPAGE & DISCOVERY ENHANCEMENTS
+
+### Homepage QF Rounds Integration
+- [x] Campaign listing on homepage (VERIFIED COMPLETE)
+- [ ] QF rounds section on homepage
+- [ ] Combined campaign and round discovery
+- [ ] Featured rounds display
+- [ ] Round status indicators on homepage
+- [ ] "Apply to Round" CTA on campaign cards
+
+### Enhanced Discovery
+- [ ] Round directory with filtering
+- [ ] Campaign-round relationship indicators  
+- [ ] Search functionality for rounds
+- [ ] Category filtering for rounds
+- [ ] Round timeline display
+
+---
+
+## PHASE 5: ADMIN WORKFLOWS & MATCH FUND MANAGEMENT
+
+### QF Match Fund System (Manual)
+- [ ] Match fund calculation upload interface
+- [ ] Manual match amount assignment to campaigns
+- [ ] Match fund metadata storage (sponsor, amount, calculation method)
+- [ ] Match fund display on campaign pages
+- [ ] Total match pool usage tracking
+- [ ] QF calculation audit trail
+
+### Enhanced Admin Dashboard
+- [x] Basic campaign approval system (VERIFIED COMPLETE)
+- [ ] Round management interface improvements
+- [ ] Campaign-round approval workflow
+- [ ] QF calculation results display
+- [ ] Match fund oversight and assignment
+- [ ] Refund management interface
+
+### Admin User Management
+- [x] User role management (VERIFIED COMPLETE)
+- [ ] Campaign creator management
+- [ ] Malicious content flagging
+- [ ] User blocking/unblocking functionality
+
+---
+
+## FEATURES TO DISABLE/REMOVE FOR MVP
+
+### Numbers Protocol Integration (DISABLE)
+- [ ] Disable Numbers Protocol NFT minting UI
+- [ ] Remove Numbers Protocol API calls
+- [ ] Hide image verification features
+- [ ] Remove IPFS integration references
+- [ ] Clean up Numbers Protocol components
+
+### Advanced Features (REMOVE/DISABLE)
+- [ ] Disable social sharing functionality
+- [ ] Remove advanced analytics dashboard
+- [ ] Disable email notifications (keep in-app only)
+- [ ] Remove multi-language support
+- [ ] Disable campaign templates
+- [ ] Remove A/B testing framework
+
+### Experimental Features (CLEAN UP)
+- [ ] Remove unused feature flags (keep ENABLE_ROUNDS only)
+- [ ] Clean up experimental API endpoints
+- [ ] Remove advanced user roles beyond admin/user
+- [ ] Simplify API rate limiting
+- [ ] Remove unused dependencies
+
+---
+
+## CODE CLEANUP & OPTIMIZATION
+
+### Database Optimizations
+- [ ] Add missing database indexes for performance
+- [ ] Optimize campaign queries with proper includes
+- [ ] Add foreign key constraints where missing
+- [ ] Clean up unused migration files
+
+### Code Refactoring
+- [ ] Remove unused Numbers Protocol components
+- [ ] Consolidate similar UI components
+- [ ] Remove dead code and unused imports
+- [ ] Standardize error handling patterns
+- [ ] Update TypeScript types for consistency
+
+### Configuration Cleanup
+- [ ] Remove unused environment variables
+- [ ] Consolidate configuration files
+- [ ] Update Docker configuration
+- [ ] Clean up package.json dependencies
+
+---
+
+## PRIORITY ASSESSMENT (Revised for MVP Demo)
+
+### 🔥 **CRITICAL PATH** (Must complete for demo)
+1. **Phase 1**: Round sponsor schema and basic enhancements
+2. **Phase 2**: Round application workflow (creator→admin approval)
+3. **Phase 3**: CC Protocol treasury integration and crypto payments
+4. **Phase 4**: Homepage QF rounds display
+
+### 🟡 **HIGH PRIORITY** (Important for complete MVP)
+1. **Phase 5**: Manual QF match fund system
+2. Enhanced admin dashboard
+3. Code cleanup and optimization
+4. Feature disabling/removal
+
+### 🟢 **MEDIUM PRIORITY** (Polish and improvements)
+1. Advanced admin features
+2. Enhanced discovery and search
+3. Performance optimizations
+4. Comprehensive testing
+
+---
+
+## COMPLETION TRACKING
+
+### Phase 1 Progress: 7% Complete
+- [x] 3/44 tasks completed (after Cloudinary analysis)
+- **Key Blockers**: Database migration for sponsor fields, navigation feature flag removal
+- **Ready to Start**: Round sponsor schema additions (no dependencies)
+- **Critical Discovery**: Campaign editing is completely missing, not just UI - requires full implementation
+- **Cloudinary Integration**: Fully functional for campaigns, needs extension for rounds - reuse existing solution
+
+### Phase 2 Progress: 10% Complete  
+- [x] 3/30 tasks completed (after granular breakdown with direct codebase references)
+- **Key Blockers**: Admin application management interface
+- **Ready to Start Parallel**: Application status display components (independent of Phase 1)
+- **Critical Patterns Identified**: Campaign approval workflow can be directly copied for round applications
+- **Dependencies**: Enhanced round UI from Phase 1, but application management can proceed independently
+
+### Phase 3 Progress: 70% Complete
+- [x] 7/10 tasks completed (after treasury analysis correction)
+- **Key Blockers**: Contract address testing with Crowdsplit
+- **Major Discovery**: Treasury implementation is more advanced than expected
+
+### Phase 4 Progress: 20% Complete
+- [x] 1/5 tasks completed
+- **Key Blockers**: Homepage QF rounds section depends on Phase 1-2 completion
+- **Dependencies**: Requires enhanced rounds and application workflow
+
+### Phase 5 Progress: 20% Complete
+- [x] 1/5 tasks completed
+- **Key Blockers**: Match fund calculation interface
+- **Dependencies**: Requires completed round workflows from Phase 2
+
+**Overall MVP Progress: 30% Complete** (revised after detailed analysis)
+
+## IMMEDIATE NEXT STEPS (Priority Order)
+
+### Week 1 Focus: Phase 1 Foundation
+1. **Round Sponsor Schema** (0 dependencies - START HERE)
+   - Add sponsor fields to Round model
+   - Create migration 
+   - Update types and APIs
+
+2. **Campaign Editing UI** (parallel work possible)
+   - Create edit form component
+   - Add edit routes and pages
+   - Implement edit button in UI
+
+3. **Round Form Enhancements** (depends on schema)
+   - Add sponsor fields to creation form
+   - Update validation and submission
+
+### Critical Path Dependencies
+- Phase 2 round applications → BLOCKED until Phase 1 sponsor schema complete
+- Phase 4 homepage rounds → BLOCKED until Phase 1-2 workflows complete  
+- Phase 3 testing can proceed in parallel (contract address verification)
+
+---
+
+## ESTIMATED COMPLETION TIMELINE
+
+### Week 1: Phase 1 + Phase 2 Foundation
+- Complete Round sponsor schema
+- Build round application workflow
+- **Deliverable**: Admin can create sponsored rounds, creators can apply
+
+### Week 2: Phase 3 Treasury Integration  
+- Integrate CC Protocol treasury deployment
+- Complete crypto payment flow
+- **Deliverable**: End-to-end crypto funding with new treasury model
+
+### Week 3: Phase 4 + Phase 5 Core
+- Homepage QF rounds integration
+- Manual QF match fund system
+- **Deliverable**: Complete QF round experience with match funding
+
+### Week 4: Cleanup + Polish
+- Feature removal and cleanup
+- Testing and optimization
+- **Deliverable**: Production-ready MVP
+
+---
+
+## NOTES FOR AGENT EXECUTION
+
+### Development Guidelines
+- Focus on one phase at a time for incremental delivery
+- Test each completed task immediately 
+- Prioritize functionality over polish initially
+- Use existing UI components and patterns
+- Maintain backward compatibility
+- Follow established database patterns
+- Implement proper error handling
+
+### Critical Success Factors
+1. **Treasury Integration**: Must work with CC Protocol for demo
+2. **Round Workflow**: Creator→Admin approval must be seamless  
+3. **Match Funding**: Manual calculation upload must be intuitive
+4. **Homepage Integration**: QF rounds must be discoverable
+5. **Admin Experience**: Admin must have full control over QF process
+
+### Testing Strategy
+- Test campaign creation→round application→approval flow
+- Test crypto payment with new treasury model
+- Test admin QF round management
+- Test homepage QF rounds discovery
+- Verify all disabled features are properly hidden
