@@ -1,0 +1,110 @@
+# TypeScript Coding Standards
+
+## Code Style Guidelines
+
+### Type Definitions
+- Use explicit type annotations for function parameters and return types
+- Prefer `interface` over `type` for object shapes
+- Use `type` for unions, intersections, and computed types
+- Export types from dedicated files in `/types` directory
+
+### Naming Conventions
+- Use PascalCase for types, interfaces, and React components
+- Use camelCase for variables, functions, and object properties
+- Use UPPER_SNAKE_CASE for constants and environment variables
+- Use descriptive, explicit variable names over abbreviations
+
+### Import/Export Standards
+- Use named imports/exports over default exports (except for React components)
+- Group imports: external libraries, internal modules, relative imports
+- Use absolute imports with `@/` prefix for internal modules
+- Keep imports organized and remove unused imports
+
+### React Component Standards
+- Use function components with TypeScript
+- Define component props with interfaces
+- Use React.FC sparingly, prefer explicit function declarations
+- Extract complex logic into custom hooks in `/hooks`
+
+### Error Handling
+- Use proper error boundaries for React components
+- Implement try-catch blocks for async operations
+- Use Zod for runtime validation and type safety
+- Handle edge cases explicitly
+
+### Database & API Standards
+- Use Prisma types for database operations
+- Define API response types in `/lib/api/types`
+- Use server actions for form submissions
+- Implement proper error handling for database operations
+
+## File Organization
+
+### Component Files
+```typescript
+// ComponentName.tsx
+import { type ComponentProps } from 'react';
+
+interface ComponentNameProps {
+  // Props definition
+}
+
+export function ComponentName({ ...props }: ComponentNameProps) {
+  // Component implementation
+}
+```
+
+### API Route Files
+```typescript
+// route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const requestSchema = z.object({
+  // Request validation
+});
+
+export async function POST(request: NextRequest) {
+  // API implementation
+}
+```
+
+### Type Definition Files
+```typescript
+// types/feature.ts
+export interface FeatureType {
+  // Type definition
+}
+
+export type FeatureStatus = 'active' | 'inactive' | 'pending';
+```
+
+## Best Practices
+
+### Performance
+- Use React.memo for expensive components
+- Implement proper loading states
+- Use server components when possible
+- Optimize database queries with proper includes
+
+### Security
+- Validate all user inputs with Zod schemas
+- Use server actions for sensitive operations
+- Implement proper authentication checks
+- Sanitize data before database operations
+
+### Accessibility
+- Use semantic HTML elements
+- Implement proper ARIA attributes
+- Ensure keyboard navigation support
+- Use Radix UI components for accessibility
+
+### Testing
+- Write unit tests for utility functions
+- Test React components with proper mocking
+- Use TypeScript for test files
+- Mock external dependencies properly
+description:
+globs:
+alwaysApply: false
+---

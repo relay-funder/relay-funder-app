@@ -1,0 +1,218 @@
+# Web3 Integration Patterns
+
+## Architecture Overview
+The Web3 integration uses a multi-adapter pattern to support different wallet providers while maintaining a consistent interface.
+
+### Core Components
+- **Adapters**: Wallet-specific implementations in [lib/web3/adapter/](mdc:lib/web3/adapter/)
+- **Hooks**: React hooks for Web3 interactions in [lib/web3/hooks/](mdc:lib/web3/hooks/)
+- **Contracts**: Smart contract ABIs and interfaces in [contracts/](mdc:contracts/)
+- **Configuration**: Chain and network configuration in [lib/web3/config/](mdc:lib/web3/config/)
+
+## Wallet Adapters
+
+### Supported Wallets
+- **Privy**: Enterprise wallet solution ([lib/web3/adapter/privy/](mdc:lib/web3/adapter/privy/))
+- **Silk**: Silk wallet integration ([lib/web3/adapter/silk/](mdc:lib/web3/adapter/silk/))
+- **Dummy**: Development testing adapter ([lib/web3/adapter/dummy/](mdc:lib/web3/adapter/dummy/))
+
+### Adapter Interface
+```typescript
+interface WalletAdapter {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  getAddress(): Promise<string>;
+  signMessage(message: string): Promise<string>;
+  sendTransaction(tx: TransactionRequest): Promise<string>;
+}
+```
+
+### Usage Pattern
+```typescript
+import { useWallet } from '@/lib/web3/hooks/useWallet';
+
+function MyComponent() {
+  const { address, connect, disconnect, signMessage } = useWallet();
+  
+  const handleConnect = async () => {
+    await connect();
+  };
+  
+  const handleSign = async () => {
+    const signature = await signMessage('Hello World');
+  };
+}
+```
+
+## Authentication with SIWE
+
+### Sign-In with Ethereum
+- Uses SIWE (Sign-In with Ethereum) standard
+- Implemented in [server/auth/providers/](mdc:server/auth/providers/)
+- Integrates with NextAuth.js for session management
+
+### Authentication Flow
+1. User connects wallet
+2. Generate SIWE message
+3. User signs message with wallet
+4. Verify signature server-side
+5. Create authenticated session
+
+### Implementation Example
+```typescript
+import { SiweMessage } from 'siwe';
+
+const message = new SiweMessage({
+  domain: window.location.host,
+  address: walletAddress,
+  statement: 'Sign in to Akashic',
+  uri: window.location.origin,
+  version: '1',
+  chainId: 1,
+  nonce: generateNonce(),
+});
+
+const signature = await signMessage(message.prepareMessage());
+```
+
+## Smart Contract Integration
+
+### Contract ABIs
+- Campaign contracts in [contracts/abi/](mdc:contracts/abi/)
+- NFT contracts in [contracts/nftABI/](mdc:contracts/nftABI/)
+- Quadratic funding contracts in [contracts/abi/qf/](mdc:contracts/abi/qf/)
+
+### Contract Interaction Patterns
+```typescript
+import { useContract } from '@/lib/web3/hooks/useContract';
+import { CampaignABI } from '@/contracts/abi/Campaign';
+
+function CampaignComponent({ campaignAddress }: { campaignAddress: string }) {
+  const contract = useContract(campaignAddress, CampaignABI);
+  
+  const handleDonate = async (amount: string) => {
+    const tx = await contract.donate({
+      value: parseEther(amount)
+    });
+    await tx.wait();
+  };
+}
+```
+
+## Chain Configuration
+
+### Supported Networks
+- Ethereum Mainnet
+- Polygon
+- Arbitrum
+- Base
+- Development networks
+
+### Chain Configuration
+```typescript
+// lib/web3/config/chains.ts
+export const supportedChains = [
+  mainnet,
+  polygon,
+  arbitrum,
+  base,
+  // ... other chains
+];
+
+export const defaultChain = mainnet;
+```
+
+## Transaction Handling
+
+### Transaction States
+- **Pending**: Transaction submitted to network
+- **Confirmed**: Transaction included in block
+- **Failed**: Transaction reverted or failed
+
+### Error Handling
+```typescript
+import { useTransaction } from '@/lib/web3/hooks/useTransaction';
+
+function TransactionComponent() {
+  const { sendTransaction, status, error } = useTransaction();
+  
+  const handleTransaction = async () => {
+    try {
+      const tx = await sendTransaction({
+        to: '0x...',
+        value: parseEther('1.0'),
+        data: '0x...'
+      });
+      
+      // Handle success
+    } catch (error) {
+      // Handle error
+      console.error('Transaction failed:', error);
+    }
+  };
+}
+```
+
+## Gas Management
+
+### Gas Estimation
+- Estimate gas before sending transactions
+- Provide gas price recommendations
+- Handle gas limit adjustments
+
+### Gas Optimization
+- Use efficient contract methods
+- Batch transactions when possible
+- Implement gas price monitoring
+
+## Security Best Practices
+
+### Wallet Security
+- Never store private keys in application
+- Use secure message signing
+- Validate all user inputs
+- Implement proper error handling
+
+### Contract Security
+- Validate contract addresses
+- Use proper ABI encoding/decoding
+- Implement slippage protection
+- Monitor for unusual activity
+
+### Transaction Security
+- Verify transaction parameters
+- Use proper nonce management
+- Implement replay protection
+- Monitor for MEV attacks
+
+## Testing Patterns
+
+### Mock Wallet for Testing
+- Use dummy adapter for development
+- Mock wallet responses
+- Test error scenarios
+- Validate transaction flows
+
+### Integration Testing
+- Test with testnet networks
+- Validate contract interactions
+- Test wallet connectivity
+- Verify authentication flows
+
+## Performance Considerations
+
+### Connection Management
+- Implement connection pooling
+- Cache wallet state
+- Optimize provider calls
+- Handle network switching
+
+### Data Fetching
+- Use React Query for caching
+- Implement proper loading states
+- Handle network errors gracefully
+- Optimize contract calls
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,455 @@
+# Environment and Configuration Management
+
+## Environment Variables
+
+### Environment File Structure
+- **Development**: `.env.local` for local development
+- **Production**: Environment variables set in deployment platform
+- **Example**: `.env.example` for documentation
+
+### Required Environment Variables
+```bash
+# Database
+DATABASE_URL=postgres://username:password@localhost:5432/database_name
+
+# Authentication
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=http://localhost:3000
+
+# Web3 Configuration
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your-project-id
+NEXT_PUBLIC_ALCHEMY_API_KEY=your-alchemy-key
+
+# External Services
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Monitoring
+SENTRY_DSN=your-sentry-dsn
+SENTRY_ORG=your-sentry-org
+SENTRY_PROJECT=your-sentry-project
+
+# Feature Flags
+NEXT_PUBLIC_ENABLE_FEATURES=true
+NODE_ENV=development
+```
+
+### Environment Variable Validation
+```typescript
+// lib/env.ts
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  NEXTAUTH_SECRET: z.string().min(32),
+  NEXTAUTH_URL: z.string().url(),
+  NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: z.string(),
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().startsWith('pk_'),
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string(),
+  NODE_ENV: z.enum(['development', 'production', 'test']),
+});
+
+export const env = envSchema.parse(process.env);
+```
+
+## Configuration Management
+
+### Next.js Configuration
+The main configuration is in [next.config.ts](mdc:next.config.ts):
+
+```typescript
+// next.config.ts
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      // ... other image domains
+    ],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+};
+
+// Conditional Sentry configuration
+if (process.env.SENTRY === 'true' || process.env.NODE_ENV === 'production') {
+  const { withSentryConfig } = require('@sentry/nextjs');
+  
+  module.exports = withSentryConfig(nextConfig, {
+    org: process.env.SENTRY_ORG || 'your-sentry-org',
+    project: process.env.SENTRY_PROJECT || 'your-sentry-project',
+    silent: !process.env.CI,
+    widenClientFileUpload: true,
+    tunnelRoute: '/monitoring',
+    disableLogger: true,
+    automaticVercelMonitors: true,
+  });
+} else {
+  module.exports = nextConfig;
+}
+```
+
+### Tailwind Configuration
+Styling configuration in [tailwind.config.ts](mdc:tailwind.config.ts):
+
+```typescript
+// tailwind.config.ts
+import type { Config } from 'tailwindcss';
+
+export default {
+  darkMode: ['class'],
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // Custom color palette
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        // ... other colors
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+} satisfies Config;
+```
+
+## Feature Flags
+
+### Feature Flag Implementation
+```typescript
+// lib/flags.ts
+export const featureFlags = {
+  enableNewUI: process.env.NEXT_PUBLIC_ENABLE_NEW_UI === 'true',
+  enableBetaFeatures: process.env.NEXT_PUBLIC_ENABLE_BETA === 'true',
+  enableAnalytics: process.env.NODE_ENV === 'production',
+  enableDebugMode: process.env.NODE_ENV === 'development',
+} as const;
+
+export function isFeatureEnabled(flag: keyof typeof featureFlags): boolean {
+  return featureFlags[flag];
+}
+```
+
+### Usage in Components
+```typescript
+// components/feature-component.tsx
+import { isFeatureEnabled } from '@/lib/flags';
+
+export function FeatureComponent() {
+  if (!isFeatureEnabled('enableBetaFeatures')) {
+    return null;
+  }
+
+  return <div>Beta feature content</div>;
+}
+```
+
+## Docker Configuration
+
+### Development Setup
+Docker is used for local development with the following structure:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://username:password@db:5432/database_name
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=database_name
+      - POSTGRES_USER=username
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+### Dockerfile
+```dockerfile
+# Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN pnpm prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# Start development server
+CMD ["pnpm", "dev"]
+```
+
+## Database Configuration
+
+### Prisma Configuration
+Database configuration in [prisma/schema.prisma](mdc:prisma/schema.prisma):
+
+```prisma
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+  output        = "../.generated/prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+### Database Connection
+```typescript
+// server/db.ts
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const db = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = db;
+}
+```
+
+## Deployment Configuration
+
+### Vercel Configuration
+```json
+// vercel.json
+{
+  "buildCommand": "pnpm build:production",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "PRISMA_GENERATE_DATAPROXY": "true"
+  }
+}
+```
+
+### Build Scripts
+```json
+// package.json scripts
+{
+  "scripts": {
+    "dev": "pnpm install && prisma generate && next dev",
+    "build": "NODE_ENV=production next build",
+    "build:production": "node prisma/deploy-migrations.js && NODE_ENV=production next build",
+    "migrate:deploy": "node prisma/deploy-migrations.js",
+    "start": "next start"
+  }
+}
+```
+
+## Security Configuration
+
+### Content Security Policy
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+
+  // Security headers
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+  
+  // CSP header
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+  );
+
+  return response;
+}
+
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+};
+```
+
+### Rate Limiting
+```typescript
+// lib/rate-limit.ts
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+export const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(100, '1 m'),
+  analytics: true,
+});
+```
+
+## Monitoring and Logging
+
+### Sentry Configuration
+```typescript
+// sentry.client.config.ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 1.0,
+  debug: false,
+  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
+  integrations: [
+    new Sentry.Replay({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ],
+});
+```
+
+### Custom Logging
+```typescript
+// lib/logger.ts
+import { createLogger, format, transports } from 'winston';
+
+export const logger = createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    format.json()
+  ),
+  transports: [
+    new transports.Console(),
+    ...(process.env.NODE_ENV === 'production' 
+      ? [new transports.File({ filename: 'app.log' })]
+      : []
+    ),
+  ],
+});
+```
+
+## Performance Configuration
+
+### Bundle Analysis
+```typescript
+// next.config.ts
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+module.exports = withBundleAnalyzer(nextConfig);
+```
+
+### Optimization Settings
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = {
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  swcMinify: true,
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react'],
+  },
+};
+```
+
+## Testing Configuration
+
+### Vitest Configuration
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./test/setup.ts'],
+  },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
+});
+```
+
+### Environment-Specific Testing
+```typescript
+// test/setup.ts
+import '@testing-library/jest-dom';
+import { beforeAll, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+beforeAll(() => {
+  // Setup test environment
+  process.env.NODE_ENV = 'test';
+});
+
+afterEach(() => {
+  cleanup();
+});
+```
+description:
+globs:
+alwaysApply: false
+---

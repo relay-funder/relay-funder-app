@@ -1,0 +1,180 @@
+# Database Patterns and Prisma Guidelines
+
+## Database Schema Reference
+The main database schema is defined in [prisma/schema.prisma](mdc:prisma/schema.prisma) with the following key models:
+
+### Core Models
+- **Campaign**: Fundraising campaigns with status tracking
+- **User**: User accounts with wallet addresses and roles
+- **Payment**: Payment tracking for campaigns
+- **Collection**: Curated campaign collections
+- **Round**: Funding rounds with quadratic funding support
+- **Comment**: Campaign comments and updates
+
+### Key Relationships
+- Campaigns have many Payments, Comments, Updates, and Images
+- Users have many Payments and can be campaign creators
+- Collections can contain many Campaigns
+- Rounds can have many Recipients (campaigns)
+
+## Prisma Client Usage
+
+### Database Connection
+- Use the centralized db instance from [server/db.ts](mdc:server/db.ts)
+- Never create multiple Prisma client instances
+- Use connection pooling for production environments
+
+### Query Patterns
+
+#### Basic CRUD Operations
+```typescript
+// Create
+const campaign = await db.campaign.create({
+  data: {
+    title: 'New Campaign',
+    description: 'Campaign description',
+    // ... other fields
+  }
+});
+
+// Read with relations
+const campaign = await db.campaign.findUnique({
+  where: { slug: 'campaign-slug' },
+  include: {
+    images: true,
+    payments: true,
+    comments: true,
+    updates: true,
+  }
+});
+
+// Update
+const updated = await db.campaign.update({
+  where: { id: campaignId },
+  data: { status: 'ACTIVE' }
+});
+
+// Delete (use soft delete when possible)
+const deleted = await db.campaign.delete({
+  where: { id: campaignId }
+});
+```
+
+#### Complex Queries
+```typescript
+// Filtering and sorting
+const campaigns = await db.campaign.findMany({
+  where: {
+    status: 'ACTIVE',
+    endTime: { gt: new Date() }
+  },
+  orderBy: { createdAt: 'desc' },
+  take: 10,
+  skip: 0
+});
+
+// Aggregations
+const stats = await db.payment.aggregate({
+  where: { campaignId: id },
+  _sum: { amount: true },
+  _count: true
+});
+```
+
+## Data Modeling Best Practices
+
+### Field Naming
+- Use camelCase for field names
+- Use descriptive names (e.g., `creatorAddress` not `creator`)
+- Include units in field names when relevant (e.g., `fundingGoal` for string amounts)
+
+### Relationships
+- Use explicit foreign key fields (e.g., `campaignId`, `userId`)
+- Define proper cascade behaviors for deletions
+- Use `@relation` attributes for complex relationships
+
+### Enums
+- Define enums for status fields and fixed value sets
+- Use UPPER_SNAKE_CASE for enum values
+- Keep enum values descriptive and future-proof
+
+### Indexes
+- Add indexes for frequently queried fields
+- Use compound indexes for multi-field queries
+- Consider unique constraints for business logic
+
+## Migration Guidelines
+
+### Migration Commands
+```bash
+# Generate migration
+docker-compose exec app pnpm prisma migrate dev --name migration_name
+
+# Deploy migrations
+docker-compose exec app pnpm prisma migrate deploy
+
+# Reset database (development only)
+docker-compose exec app pnpm prisma migrate reset
+```
+
+### Migration Best Practices
+- Always review generated migrations before applying
+- Use descriptive migration names
+- Test migrations on staging before production
+- Keep migrations atomic and reversible when possible
+
+## Error Handling
+
+### Common Prisma Errors
+```typescript
+import { Prisma } from '@prisma/client';
+
+try {
+  const result = await db.campaign.create({ data });
+} catch (error) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
+      // Unique constraint violation
+    }
+    if (error.code === 'P2025') {
+      // Record not found
+    }
+  }
+}
+```
+
+### Validation
+- Use Zod schemas for input validation before database operations
+- Validate business logic constraints
+- Handle edge cases explicitly
+
+## Performance Optimization
+
+### Query Optimization
+- Use `select` to fetch only needed fields
+- Use `include` judiciously to avoid N+1 queries
+- Implement pagination for large datasets
+- Use database-level filtering over application-level filtering
+
+### Connection Management
+- Use connection pooling in production
+- Monitor connection usage
+- Implement proper connection cleanup
+
+## Security Considerations
+
+### Data Access
+- Implement proper authorization checks
+- Use parameterized queries (Prisma handles this)
+- Validate all user inputs
+- Sanitize data before storage
+
+### Sensitive Data
+- Hash passwords and sensitive information
+- Use environment variables for secrets
+- Implement proper audit logging
+- Consider data encryption for PII
+description:
+globs:
+alwaysApply: false
+---
