@@ -56,17 +56,46 @@ Based on the specific MVP goals provided, here are the major feature gaps that m
 
 ---
 
-## PHASE 0: CRITICAL MVP FEATURES (Must Complete for Demo)
+## PHASE A: CONTRACT VALIDATION & QUICK WINS (Must Complete for Demo - Day 1)
 
-### Phase 0 Overview - Essential Missing Features
+### Phase A Overview - Contract Validation & High Impact Features
 
-This phase addresses the most critical missing features identified in the MVP requirements analysis. These features are essential for demonstrating the complete full-circle flow for all personas.
+This phase validates the core contract integration with CCP's new addresses and implements the highest visual impact features. Must be completed first to ensure all subsequent work builds on a solid foundation.
 
 **Priority**: 🔥 **CRITICAL PATH** - Must complete before any other phases
-**Estimated Completion**: 2-3 days
-**Dependencies**: None - can start immediately
+**Estimated Completion**: 1 day (8 hours)
+**Dependencies**: CCP contract addresses - can start immediately once received
 
-### Campaign Editing System (Creator Essential)
+### A1. Contract Address Validation (CRITICAL - 2 hours)
+
+**Current State Analysis**:
+- ✅ Treasury deployment system functional via `useAdminApproveCampaign.ts`
+- ✅ Payment flow working with existing contract addresses
+- ❌ Need to update all contract addresses with CCP's new deployment
+- ❌ Need to validate end-to-end flow works with new addresses
+
+**Required Implementation**:
+- [ ] **Update Environment Variables with CCP Contract Details**:
+  - [ ] Update `NEXT_PUBLIC_TREASURY_FACTORY` with new CCP address
+  - [ ] Update `NEXT_PUBLIC_GLOBAL_PARAMS` with new CCP address  
+  - [ ] Update `NEXT_PUBLIC_PLATFORM_HASH` if changed
+  - [ ] Update `NEXT_PUBLIC_USDC_ADDRESS` for correct network
+  - [ ] Update `NEXT_PUBLIC_PLATFORM_ADMIN` wallet address
+
+- [ ] **Test Treasury Deployment End-to-End** (1 hour):
+  - [ ] Create test campaign in DRAFT status
+  - [ ] Test admin approval flow with new contract addresses
+  - [ ] Verify `useAdminApproveCampaign.ts` deploys treasury successfully
+  - [ ] Confirm treasury address is stored in database
+  - [ ] Validate treasury contract functions are accessible
+
+- [ ] **Test Payment Flow with New Treasury** (1 hour):
+  - [ ] Test crypto wallet payment to newly deployed treasury
+  - [ ] Verify USDC approval and pledge transactions work
+  - [ ] Confirm payment records are created correctly
+  - [ ] Test payment status updates and confirmation flow
+
+### A2. Campaign Editing System (HIGH VISUAL IMPACT - 4 hours)
 
 **Current State Analysis**:
 - ✅ Campaign creation fully implemented with Cloudinary image upload
@@ -77,92 +106,169 @@ This phase addresses the most critical missing features identified in the MVP re
 
 **Required Implementation**:
 - [ ] **Create Campaign Edit Form** (`components/campaign/edit-form.tsx`):
-  - [ ] Create a modular form component that is reusable based on `components/campaign/create.tsx` (lines 30-460)
-  - [ ] Modify for editing: populate existing values, change submission logic
-  - [ ] Include Cloudinary image upload for banner updates (reuse existing uploadToCloudinary function)
-  - [ ] Add form validation matching campaign creation schema (with File upload support)
+  - [ ] Copy and modify `components/campaign/create.tsx` structure
+  - [ ] Pre-populate form with existing campaign data
+  - [ ] Reuse existing Cloudinary upload functionality
+  - [ ] Add proper form validation and error handling
 
-- [ ] **Create Edit Page** (`app/campaigns/[slug]/edit/page.tsx`):
-  - [ ] Add protected route logic (only campaign creator can access)
-  - [ ] Implement loading states and error handling
-  - [ ] Add breadcrumb navigation back to campaign detail
+- [ ] **Add Edit Button to Campaign Page** (30 minutes):
+  - [ ] Add edit button to campaign detail page header
+  - [ ] Show only to campaign creators (`campaign.creatorAddress === userAddress`)
+  - [ ] Style consistently with existing UI patterns
 
-- [ ] **Add Edit Button to Campaign Detail Page**:
-  - [ ] Add edit button to campaign detail page with creator-only visibility
-  - [ ] Position button prominently in campaign header area
-  - [ ] Add proper permissions check using `useAuth().address`
+- [ ] **Create Edit Route** (`app/campaigns/[slug]/edit/page.tsx`):
+  - [ ] Create protected edit page with creator-only access
+  - [ ] Add breadcrumb navigation and loading states
+  - [ ] Handle form submission and success/error states
 
 - [ ] **Expand PATCH API** (`app/api/campaigns/route.ts`):
-  - [ ] Extend PATCH handler to accept full campaign fields including image updates
-  - [ ] Add proper validation for all campaign fields
-  - [ ] Include image upload handling for banner changes
-  - [ ] Test end-to-end editing workflow including image upload to Cloudinary
+  - [ ] Extend existing PATCH handler to accept full campaign fields
+  - [ ] Add image upload handling for banner updates
+  - [ ] Maintain existing security checks and validation
 
-- [ ] **Add Round Status Restrictions**:
-  - [ ] Disable campaign editing when campaign is part of active rounds
-  - [ ] Add validation in PATCH API to prevent editing during round periods
-  - [ ] Show appropriate error messages to creators about round restrictions
+### A3. Admin Dashboard Enhancement (MEDIUM VISUAL IMPACT - 2 hours)
 
-### Withdrawal System (Creator Essential)
+**Current State Analysis**:
+- ✅ Admin dashboard with campaign approval system functional
+- ✅ Campaign cards show basic information
+- ❌ No treasury address display for transparency
+- ❌ No treasury deployment status indicators
+
+**Required Implementation**:
+- [ ] **Add Treasury Address Display**:
+  - [ ] Show treasury address in `components/campaign/card-admin.tsx`
+  - [ ] Add treasury deployment status indicators
+  - [ ] Display treasury balance if available
+  - [ ] Add copy-to-clipboard functionality for addresses
+
+### Phase A Progress: 0% Complete
+- [ ] 0/12 tasks completed (Contract validation + Campaign editing + Admin enhancements)
+- **Key Blockers**: Need CCP contract addresses to update environment variables
+- **Ready to Start**: Contract address updates (2 hours) → Campaign editing (4 hours)
+- **Dependencies**: CCP contract details from team
+- **Estimated Time**: 1 day (8 hours total)
+
+---
+
+## PHASE B: NOTIFICATION SYSTEM (Day 2 - High User Value)
+
+### Phase B Overview - Essential UX Improvement
+
+This phase implements the in-app notification system that provides essential feedback to all personas. High visual impact as users see immediate feedback for all their actions.
+
+**Priority**: 🔥 **CRITICAL PATH** - Essential UX improvement with broad impact
+**Estimated Completion**: 1 day (8 hours)
+**Dependencies**: Phase A contract validation must be complete
+
+### B1. Database Schema (30 minutes)
+
+**Required Implementation**:
+- [ ] **Add Notification Model** to `prisma/schema.prisma`:
+```prisma
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      String   // User wallet address
+  type        String   // 'CAMPAIGN_SUBMITTED', 'CAMPAIGN_APPROVED', etc.
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  campaignId  Int?     // Optional campaign reference
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  
+  @@index([userId])
+  @@index([read])
+}
+```
+
+### B2. Notification API (1 hour)
+
+**Required Implementation**:
+- [ ] **Create Notification Endpoints** (`app/api/notifications/route.ts`):
+  - [ ] GET: Fetch user notifications with pagination
+  - [ ] PATCH: Mark notifications as read
+  - [ ] POST: Create system notifications (admin use)
+
+### B3. Notification UI (3 hours)
+
+**Required Implementation**:
+- [ ] **Bell Icon Component** (`components/notifications/bell-icon.tsx`):
+  - [ ] Add to main navigation header
+  - [ ] Show unread count badge
+  - [ ] Implement dropdown with recent notifications
+
+- [ ] **Notification Integration**:
+  - [ ] Trigger notifications in campaign approval flow
+  - [ ] Add notifications for payment confirmations
+  - [ ] Create notifications for campaign status changes
+
+### B4. Campaign Status Integration (2 hours)
+
+**Required Implementation**:
+- [ ] **Auto-notification Triggers**:
+  - [ ] Campaign submitted (DRAFT → PENDING_APPROVAL)
+  - [ ] Campaign approved/rejected (admin action)
+  - [ ] Payment received (donation confirmed)
+  - [ ] Round application status changes
+
+### Phase B Progress: 0% Complete
+- [ ] 0/8 notification system tasks completed
+- **Key Blockers**: Database migration for Notification model
+- **Ready to Start**: After Phase A contract validation complete
+- **Dependencies**: Phase A treasury deployment validation
+- **Estimated Time**: 1 day (8 hours total)
+
+---
+
+## PHASE C: WITHDRAWAL SYSTEM (Day 3 - Creator Essential)
+
+### Phase C Overview - Core Creator Functionality
+
+This phase implements the withdrawal system that allows campaign creators to withdraw funds from their treasury contracts. Essential for demonstrating the complete creator workflow.
+
+**Priority**: 🔥 **CRITICAL PATH** - Core creator functionality
+**Estimated Completion**: 1 day (8 hours)
+**Dependencies**: Phase A contract validation must be complete
+
+### C1. Withdrawal API (2 hours)
 
 **Current State Analysis**:
 - ✅ Treasury deployment system functional via admin approval
 - ✅ Payment tracking system implemented with confirmed payments
 - ❌ NO withdrawal functionality exists anywhere in the system
-- ❌ NO withdrawal UI components or pages exist
 - ❌ NO withdrawal API endpoints exist
 
 **Required Implementation**:
-- [ ] **Withdrawal API** (`app/api/campaigns/[campaignId]/withdraw/route.ts`):
-  - [ ] POST handler for initiating withdrawals
+- [ ] **Create Withdrawal Endpoint** (`app/api/campaigns/[campaignId]/withdraw/route.ts`):
+  - [ ] POST handler for withdrawal requests
   - [ ] Authentication check (only campaign creator can withdraw)
   - [ ] Integration with treasury contract withdrawal functions
-  - [ ] Add withdrawal amount validation (cannot exceed available balance)
-  - [ ] Create withdrawal record in database for tracking
+  - [ ] Add balance validation and withdrawal limits
+  - [ ] Create withdrawal records for tracking
 
-- [ ] **Withdrawal UI** (`components/campaign/withdrawal-form.tsx`):
-  - [ ] Add withdrawal button to campaign dashboard for creators
-  - [ ] Create withdrawal confirmation dialog with balance display
-  - [ ] Add withdrawal amount input with max balance validation
-  - [ ] Show withdrawal history and pending withdrawals
-
-- [ ] **Treasury Balance Integration**:
-  - [ ] Add real-time treasury balance checking
-  - [ ] Display available withdrawal amount to creators
-  - [ ] Add withdrawal fee calculation if applicable
-  - [ ] Include minimum withdrawal amount validation
-
-### In-App Notification System (All Personas Essential)
-
-**Current State Analysis**:
-- ❌ NO notification system exists in the application
-- ❌ NO notification database model exists
-- ❌ NO notification UI components exist
-- ❌ NO notification API endpoints exist
+### C2. Treasury Balance Integration (2 hours)
 
 **Required Implementation**:
-- [ ] **Notification Database Model** (extend `prisma/schema.prisma`):
-  - [ ] Add `Notification` model with fields: id, userId, type, title, message, read, createdAt
-  - [ ] Add relationship to User model
-  - [ ] Run migration to create notification table
+- [ ] **Add Balance Checking**:
+  - [ ] Query treasury contract for available balance
+  - [ ] Display balance in creator dashboard
+  - [ ] Add real-time balance updates after payments
 
-- [ ] **Notification API** (`app/api/notifications/route.ts`):
-  - [ ] GET handler to fetch user notifications with pagination
-  - [ ] PATCH handler to mark notifications as read
-  - [ ] POST handler for creating notifications (admin/system use)
+### C3. Withdrawal UI (4 hours)
 
-- [ ] **Notification UI Components**:
-  - [ ] Create `components/notifications/bell-icon.tsx` with unread count
-  - [ ] Create `components/notifications/dropdown.tsx` for notification list
-  - [ ] Add notification dropdown to main navigation header
-  - [ ] Create notification page for full history view
+**Required Implementation**:
+- [ ] **Withdrawal Interface** (`components/campaign/withdrawal-form.tsx`):
+  - [ ] Add withdrawal button to creator dashboard
+  - [ ] Create withdrawal confirmation dialog
+  - [ ] Show available balance and withdrawal history
+  - [ ] Add withdrawal status tracking and notifications
 
-- [ ] **Campaign Status Notification Integration**:
-  - [ ] Create notifications when campaign is submitted (DRAFT → PENDING_APPROVAL)
-  - [ ] Create notifications when campaign is approved/rejected (PENDING_APPROVAL → ACTIVE/FAILED)
-  - [ ] Create notifications when campaign receives funding
-  - [ ] Create notifications when campaign is added to QF round
-  - [ ] Create notifications when campaign is eligible for match funding
+### Phase C Progress: 0% Complete
+- [ ] 0/7 withdrawal system tasks completed
+- **Key Blockers**: Treasury contract withdrawal function integration
+- **Ready to Start**: After Phase A contract validation complete
+- **Dependencies**: Phase A treasury deployment working
+- **Estimated Time**: 1 day (8 hours total)
 
 ### Admin Match Fund Management (Admin Essential)
 
@@ -225,9 +331,9 @@ This phase addresses the most critical missing features identified in the MVP re
 
 ---
 
-## PHASE 1: DATABASE SCHEMA & ROUND ENHANCEMENTS (Foundation)
+## PHASE E: ROUND SPONSOR SCHEMA & BASIC ENHANCEMENTS (Foundation)
 
-### Phase 1 Detailed Analysis
+### Phase E Overview
 
 **Treasury Status Correction**: Current TreasuryFactory implementation uses proper smart contract patterns and may already be compatible with Crowdsplit. The main requirement is testing with updated contract addresses and ensuring the deployment flow works with CC Protocol backend.
 
@@ -371,9 +477,9 @@ This phase addresses the most critical missing features identified in the MVP re
 
 ---
 
-## PHASE 2: CAMPAIGN-ROUND WORKFLOWS (Core Functionality)
+## PHASE F: ROUND APPLICATION WORKFLOW (Core Functionality)
 
-### Phase 2 Detailed Analysis
+### Phase F Overview
 
 **Authentication System**: NextAuth with session-based authentication using `isAdmin` role check in `contexts/AuthContext.tsx`. Admin routes protected via `checkAuth(['admin'])` function and `isAdmin` context hook. Admin pages use `useAuth().isAdmin` pattern for UI protection.
 
@@ -502,9 +608,9 @@ This phase addresses the most critical missing features identified in the MVP re
 
 ---
 
-## PHASE 3: DUAL TREASURY & PAYMENT FLOWS (MVP Core)
+## PHASE D: DUAL TREASURY INTEGRATION (Payment Flow Validation)
 
-### Phase 3 Detailed Analysis - Dual Contract Architecture (Temporary Testing Pattern)
+### Phase D Overview - Dual Contract Architecture (Temporary Testing Pattern)
 
 **⚠️ IMPORTANT: Dual Treasury is a TEMPORARY Testing Solution**
 The dual treasury implementation is designed ONLY for MVP testing and demonstration of both payment flows in parallel. The architecture must be designed for easy migration to a single unified contract pattern in production.
@@ -770,7 +876,7 @@ CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasu
 
 ---
 
-## PHASE 4: HOMEPAGE & DISCOVERY ENHANCEMENTS
+## PHASE G: HOMEPAGE QF ROUNDS DISPLAY
 
 ### Homepage QF Rounds Integration
 - [x] Campaign listing on homepage (VERIFIED COMPLETE)
@@ -789,7 +895,7 @@ CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasu
 
 ---
 
-## PHASE 5: ADMIN WORKFLOWS & MATCH FUND MANAGEMENT
+## PHASE H: MANUAL QF MATCH FUND SYSTEM
 
 ### QF Match Fund System (Manual)
 - [ ] Match fund calculation upload interface
@@ -867,95 +973,232 @@ CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasu
 ## PRIORITY ASSESSMENT (Revised for MVP Demo)
 
 ### 🔥 **CRITICAL PATH** (Must complete for demo)
-1. **Phase 0**: Critical MVP Features (campaign editing, withdrawal, notifications, admin tools)
-2. **Phase 3**: Dual Treasury integration and crypto payments  
-3. **Phase 1**: Round sponsor schema and basic enhancements
-4. **Phase 2**: Round application workflow (creator→admin approval)
+1. **Phase A**: Contract Validation & Quick Wins (campaign editing, admin enhancements)
+2. **Phase B**: Notification System (essential UX improvement)  
+3. **Phase C**: Withdrawal System (core creator functionality)
+4. **Phase D**: Dual Treasury Integration (payment flow validation)
 
 ### 🟡 **HIGH PRIORITY** (Important for complete MVP)
-1. **Phase 4**: Homepage QF rounds display
-2. **Phase 5**: Manual QF match fund system
-3. Enhanced admin dashboard
-4. Guest persona enhancements (QF explainer, public collections)
+1. **Phase E**: Round Sponsor Schema & Basic Enhancements
+2. **Phase F**: Round Application Workflow (creator→admin approval)
+3. **Phase G**: Homepage QF Rounds Display
+4. **Phase H**: Manual QF Match Fund System
 
 ### 🟢 **MEDIUM PRIORITY** (Polish and improvements)
-1. Code cleanup and optimization
-2. Feature disabling/removal  
-3. Enhanced discovery and search
-4. Performance optimizations
-5. Comprehensive testing
+1. Enhanced admin dashboard features
+2. Guest persona enhancements (QF explainer, public collections)
+3. Code cleanup and optimization
+4. Feature disabling/removal  
+5. Enhanced discovery and search
+6. Performance optimizations
+7. Comprehensive testing
 
 ---
 
-## COMPLETION TRACKING
+## COMPLETION TRACKING (RESTRUCTURED)
 
-### Phase 0 Progress: 0% Complete (NEW - CRITICAL)
-- [ ] 0/25 critical tasks completed
-- **Key Blockers**: All essential MVP features are completely missing
-- **Ready to Start**: Campaign editing (can reuse existing creation patterns)
-- **Dependencies**: None - all features can be implemented in parallel
-- **Estimated Time**: 2-3 days intensive development
+### Phase A Progress: 0% Complete (NEW - CRITICAL START HERE)
+- [ ] 0/12 tasks completed (Contract validation + Campaign editing + Admin enhancements)
+- **Key Blockers**: Need CCP contract addresses to update environment variables
+- **Ready to Start**: Contract address updates (2 hours) → Campaign editing (4 hours)
+- **Dependencies**: CCP contract details from team
+- **Estimated Time**: 1 day (8 hours total)
 
-### Phase 1 Progress: 7% Complete
+### Phase B Progress: 0% Complete (Day 2 - High User Value)
+- [ ] 0/8 notification system tasks completed
+- **Key Blockers**: Database migration for Notification model
+- **Ready to Start**: After Phase A contract validation complete
+- **Dependencies**: Phase A treasury deployment validation
+- **Estimated Time**: 1 day (8 hours total)
+
+### Phase C Progress: 0% Complete (Day 3 - Creator Essential)
+- [ ] 0/7 withdrawal system tasks completed
+- **Key Blockers**: Treasury contract withdrawal function integration
+- **Ready to Start**: After Phase A contract validation complete
+- **Dependencies**: Phase A treasury deployment working
+- **Estimated Time**: 1 day (8 hours total)
+
+### Phase D Progress: 45% Complete (Dual Treasury Integration)
+- [x] 15/34 tasks completed (after dual treasury architecture analysis)
+- **Key Blockers**: PaymentTreasury contract development and deployment, dual treasury database schema
+- **Major Discovery**: Requires complete dual contract architecture - KeepWhatsRaised (70% complete) + PaymentTreasury (15% complete)
+- **Critical Path**: Database schema updates must be completed before PaymentTreasury implementation
+
+### Phase E Progress: 7% Complete (Round Sponsor Schema)
 - [x] 3/44 tasks completed (after Cloudinary analysis)
 - **Key Blockers**: Database migration for sponsor fields, navigation feature flag removal
 - **Ready to Start**: Round sponsor schema additions (no dependencies)
 - **Critical Discovery**: Campaign editing is completely missing, not just UI - requires full implementation
 - **Cloudinary Integration**: Fully functional for campaigns, needs extension for rounds - reuse existing solution
 
-### Phase 2 Progress: 10% Complete  
+### Phase F Progress: 10% Complete (Round Application Workflow)
 - [x] 3/30 tasks completed (after granular breakdown with direct codebase references)
 - **Key Blockers**: Admin application management interface
-- **Ready to Start Parallel**: Application status display components (independent of Phase 1)
+- **Ready to Start Parallel**: Application status display components (independent of Phase E)
 - **Critical Patterns Identified**: Campaign approval workflow can be directly copied for round applications
-- **Dependencies**: Enhanced round UI from Phase 1, but application management can proceed independently
+- **Dependencies**: Enhanced round UI from Phase E, but application management can proceed independently
 
-### Phase 3 Progress: 45% Complete (Revised for Dual Treasury)
-- [x] 15/34 tasks completed (after dual treasury architecture analysis)
-- **Key Blockers**: PaymentTreasury contract development and deployment, dual treasury database schema
-- **Major Discovery**: Requires complete dual contract architecture - KeepWhatsRaised (70% complete) + PaymentTreasury (15% complete)
-- **Critical Path**: Database schema updates must be completed before PaymentTreasury implementation
-
-### Phase 4 Progress: 20% Complete
+### Phase G Progress: 20% Complete (Homepage QF Rounds)
 - [x] 1/5 tasks completed
-- **Key Blockers**: Homepage QF rounds section depends on Phase 1-2 completion
+- **Key Blockers**: Homepage QF rounds section depends on Phase E-F completion
 - **Dependencies**: Requires enhanced rounds and application workflow
 
-### Phase 5 Progress: 20% Complete
+### Phase H Progress: 20% Complete (Match Fund System)
 - [x] 1/5 tasks completed
 - **Key Blockers**: Match fund calculation interface
-- **Dependencies**: Requires completed round workflows from Phase 2
+- **Dependencies**: Requires completed round workflows from Phase F
 
 **Overall MVP Progress: 20% Complete** (revised after comprehensive MVP requirements analysis)
 
-## IMMEDIATE NEXT STEPS (Priority Order)
+## RESTRUCTURED IMMEDIATE NEXT STEPS (Optimized for Visual Impact + Contract Validation)
 
-### Week 1 Focus: Phase 0 Critical Features (MUST START HERE)
-1. **Campaign Editing System** (0 dependencies - START IMMEDIATELY)
-   - Create edit form component reusing existing patterns
-   - Add edit routes and protected pages
-   - Implement edit button with creator permissions
+### 🔥 **PHASE A: CONTRACT VALIDATION & QUICK WINS** (START IMMEDIATELY - Day 1)
 
-2. **Withdrawal System** (parallel work possible)
-   - Create withdrawal API endpoints
-   - Add withdrawal UI components
-   - Integrate with treasury balance checking
+**Priority**: Validate CCP contract integration + High visual impact features
+**Estimated Time**: 1 day
+**Why First**: Must validate core payment system works before building features on top
 
-3. **In-App Notification System** (parallel work possible)
-   - Add Notification database model
-   - Create notification API endpoints
-   - Implement notification UI components
+#### A1. Contract Address Validation (CRITICAL - 2 hours)
+- [ ] **Update Environment Variables with CCP Contract Details**:
+  - [ ] Update `NEXT_PUBLIC_TREASURY_FACTORY` with new CCP address
+  - [ ] Update `NEXT_PUBLIC_GLOBAL_PARAMS` with new CCP address  
+  - [ ] Update `NEXT_PUBLIC_PLATFORM_HASH` if changed
+  - [ ] Update `NEXT_PUBLIC_USDC_ADDRESS` for correct network
+  - [ ] Update `NEXT_PUBLIC_PLATFORM_ADMIN` wallet address
 
-4. **Admin Match Fund & Refund Management** (parallel work possible)
-   - Extend database schema for match funds and refunds
-   - Create admin interfaces for fund management
-   - Add refund processing capabilities
+- [ ] **Test Treasury Deployment End-to-End** (1 hour):
+  - [ ] Create test campaign in DRAFT status
+  - [ ] Test admin approval flow with new contract addresses
+  - [ ] Verify `useAdminApproveCampaign.ts` deploys treasury successfully
+  - [ ] Confirm treasury address is stored in database
+  - [ ] Validate treasury contract functions are accessible
 
-### Critical Path Dependencies
-- **Phase 0 completion is MANDATORY** before any other phases can provide meaningful demo value
-- Phase 1-2 round workflows → BLOCKED until Phase 0 creator tools complete
-- Phase 3 dual treasury → Can proceed in parallel but limited demo value without Phase 0
-- Phase 4-5 → BLOCKED until Phase 0 + Phase 3 complete
+- [ ] **Test Payment Flow with New Treasury** (1 hour):
+  - [ ] Test crypto wallet payment to newly deployed treasury
+  - [ ] Verify USDC approval and pledge transactions work
+  - [ ] Confirm payment records are created correctly
+  - [ ] Test payment status updates and confirmation flow
+
+#### A2. Campaign Editing (HIGH VISUAL IMPACT - 4 hours)
+- [ ] **Create Campaign Edit Form** (`components/campaign/edit-form.tsx`):
+  - [ ] Copy and modify `components/campaign/create.tsx` structure
+  - [ ] Pre-populate form with existing campaign data
+  - [ ] Reuse existing Cloudinary upload functionality
+  - [ ] Add proper form validation and error handling
+
+- [ ] **Add Edit Button to Campaign Page** (30 minutes):
+  - [ ] Add edit button to campaign detail page header
+  - [ ] Show only to campaign creators (`campaign.creatorAddress === userAddress`)
+  - [ ] Style consistently with existing UI patterns
+
+- [ ] **Create Edit Route** (`app/campaigns/[slug]/edit/page.tsx`):
+  - [ ] Create protected edit page with creator-only access
+  - [ ] Add breadcrumb navigation and loading states
+  - [ ] Handle form submission and success/error states
+
+- [ ] **Expand PATCH API** (`app/api/campaigns/route.ts`):
+  - [ ] Extend existing PATCH handler to accept full campaign fields
+  - [ ] Add image upload handling for banner updates
+  - [ ] Maintain existing security checks and validation
+
+#### A3. Admin Dashboard Enhancement (MEDIUM VISUAL IMPACT - 2 hours)
+- [ ] **Add Treasury Address Display**:
+  - [ ] Show treasury address in `components/campaign/card-admin.tsx`
+  - [ ] Add treasury deployment status indicators
+  - [ ] Display treasury balance if available
+  - [ ] Add copy-to-clipboard functionality for addresses
+
+### 🟡 **PHASE B: NOTIFICATION SYSTEM** (Day 2 - High User Value)
+
+**Priority**: Essential UX improvement with broad impact
+**Estimated Time**: 1 day
+**Visual Impact**: High - users see immediate feedback
+
+#### B1. Database Schema (30 minutes)
+- [ ] **Add Notification Model** to `prisma/schema.prisma`:
+```prisma
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      String   // User wallet address
+  type        String   // 'CAMPAIGN_SUBMITTED', 'CAMPAIGN_APPROVED', etc.
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  campaignId  Int?     // Optional campaign reference
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  
+  @@index([userId])
+  @@index([read])
+}
+```
+
+#### B2. Notification API (1 hour)
+- [ ] **Create Notification Endpoints** (`app/api/notifications/route.ts`):
+  - [ ] GET: Fetch user notifications with pagination
+  - [ ] PATCH: Mark notifications as read
+  - [ ] POST: Create system notifications (admin use)
+
+#### B3. Notification UI (3 hours)
+- [ ] **Bell Icon Component** (`components/notifications/bell-icon.tsx`):
+  - [ ] Add to main navigation header
+  - [ ] Show unread count badge
+  - [ ] Implement dropdown with recent notifications
+
+- [ ] **Notification Integration**:
+  - [ ] Trigger notifications in campaign approval flow
+  - [ ] Add notifications for payment confirmations
+  - [ ] Create notifications for campaign status changes
+
+#### B4. Campaign Status Integration (2 hours)
+- [ ] **Auto-notification Triggers**:
+  - [ ] Campaign submitted (DRAFT → PENDING_APPROVAL)
+  - [ ] Campaign approved/rejected (admin action)
+  - [ ] Payment received (donation confirmed)
+  - [ ] Round application status changes
+
+### 🟢 **PHASE C: WITHDRAWAL SYSTEM** (Day 3 - Creator Essential)
+
+**Priority**: Core creator functionality
+**Estimated Time**: 1 day
+**Dependencies**: Phase A contract validation must be complete
+
+#### C1. Withdrawal API (2 hours)
+- [ ] **Create Withdrawal Endpoint** (`app/api/campaigns/[campaignId]/withdraw/route.ts`):
+  - [ ] POST handler for withdrawal requests
+  - [ ] Integrate with treasury contract withdrawal functions
+  - [ ] Add balance validation and withdrawal limits
+  - [ ] Create withdrawal records for tracking
+
+#### C2. Treasury Balance Integration (2 hours)
+- [ ] **Add Balance Checking**:
+  - [ ] Query treasury contract for available balance
+  - [ ] Display balance in creator dashboard
+  - [ ] Add real-time balance updates after payments
+
+#### C3. Withdrawal UI (4 hours)
+- [ ] **Withdrawal Interface** (`components/campaign/withdrawal-form.tsx`):
+  - [ ] Add withdrawal button to creator dashboard
+  - [ ] Create withdrawal confirmation dialog
+  - [ ] Show available balance and withdrawal history
+  - [ ] Add withdrawal status tracking and notifications
+
+### Critical Path Dependencies (CLEAN SEQUENCE)
+- **Phase A is MANDATORY FIRST** - validates core system functionality
+- **Phase B can run parallel** to Phase C after Phase A complete
+- **Phase C requires Phase A** contract validation complete
+- **Phase D can run parallel** to Phases B-C (dual treasury integration)
+- **Phases E-H BLOCKED** until Phase A-D provide stable foundation
+
+**Sequential Order**: A → (B + C + D) → E → F → G → H
+
+### Why This Structure is More Efficient:
+
+1. **Contract Validation First**: Ensures the foundation works before building on it
+2. **High Visual Impact Early**: Campaign editing provides immediate user value
+3. **Parallel Development**: Notifications and withdrawals can be built simultaneously
+4. **Risk Mitigation**: Critical contract integration validated in first 2 hours
+5. **User Experience Focus**: Each phase delivers tangible user-facing improvements
 
 ---
 
@@ -1010,3 +1253,83 @@ CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasu
 - Test admin QF round management
 - Test homepage QF rounds discovery
 - Verify all disabled features are properly hidden
+
+---
+
+## 🚀 **IMMEDIATE ACTION PLAN - START NOW**
+
+### Step 1: Get CCP Contract Details (URGENT - 15 minutes)
+- [ ] Request the following from CCP team:
+  - [ ] `NEXT_PUBLIC_TREASURY_FACTORY` address (new)
+  - [ ] `NEXT_PUBLIC_GLOBAL_PARAMS` address (new)  
+  - [ ] `NEXT_PUBLIC_PLATFORM_HASH` (confirm unchanged)
+  - [ ] `NEXT_PUBLIC_USDC_ADDRESS` (confirm correct network)
+  - [ ] `NEXT_PUBLIC_PLATFORM_ADMIN` wallet address (new)
+
+### Step 2: Contract Validation (CRITICAL - 2 hours)
+- [ ] Update `.env.local` with new contract addresses
+- [ ] Create test campaign and test admin approval flow
+- [ ] Verify treasury deployment works with new addresses
+- [ ] Test end-to-end crypto payment flow
+- [ ] Document any issues or changes needed
+
+### Step 3: Campaign Editing Implementation (HIGH IMPACT - 4 hours)
+- [ ] Create edit form component based on existing create form
+- [ ] Add edit button to campaign detail pages
+- [ ] Create protected edit route
+- [ ] Expand PATCH API for full campaign updates
+- [ ] Test complete editing workflow
+
+### Step 4: Admin Dashboard Enhancement (POLISH - 2 hours)
+- [ ] Add treasury address display to admin campaign cards
+- [ ] Show deployment status indicators
+- [ ] Add treasury balance display if available
+- [ ] Test admin workflow improvements
+
+**Total Day 1**: ~8 hours for complete Phase A
+**Deliverable**: Working contract integration + Campaign editing + Enhanced admin view
+
+This structure prioritizes:
+1. ✅ **Risk mitigation** - validate contracts work first
+2. ✅ **Visual impact** - campaign editing is immediately visible to users  
+3. ✅ **Foundation building** - ensures core systems work before adding features
+4. ✅ **Parallel development** - notifications and withdrawals can be built simultaneously after Phase A
+
+---
+
+## 📋 **CLEAN PHASE SUMMARY**
+
+### 🔥 **CRITICAL PATH** (Must Complete for Demo)
+- **Phase A**: Contract Validation & Quick Wins (Day 1 - 8 hours)
+  - Contract address updates and validation
+  - Campaign editing system (high visual impact)
+  - Admin dashboard enhancements
+
+- **Phase B**: Notification System (Day 2 - 8 hours)
+  - Database schema and API
+  - UI components and integration
+  - Campaign status notifications
+
+- **Phase C**: Withdrawal System (Day 3 - 8 hours)  
+  - Withdrawal API and treasury integration
+  - Balance checking and UI
+  - Creator dashboard enhancements
+
+- **Phase D**: Dual Treasury Integration (Parallel with B-C)
+  - PaymentTreasury contract development
+  - Credit card payment flow integration
+  - Dual treasury routing logic
+
+### 🟡 **HIGH PRIORITY** (Important for Complete MVP)
+- **Phase E**: Round Sponsor Schema & Basic Enhancements
+- **Phase F**: Round Application Workflow (creator→admin approval)
+- **Phase G**: Homepage QF Rounds Display
+- **Phase H**: Manual QF Match Fund System
+
+### 📅 **EXECUTION ORDER**
+1. **Week 1**: Phase A (Day 1) → Phase B + C (Days 2-3) + Phase D (parallel)
+2. **Week 2**: Phase E → Phase F → Phase G → Phase H
+3. **Week 3**: Polish, testing, and optimization
+
+**Total Critical Path**: 3 days for core functionality + visual impact
+**Total MVP**: 2-3 weeks for complete demonstration-ready system
