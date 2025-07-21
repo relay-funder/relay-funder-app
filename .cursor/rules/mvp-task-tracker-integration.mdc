@@ -23,22 +23,145 @@ The MVP task tracker ([mvp-task-tracker.mdc](mdc:mvp-task-tracker.mdc)) is the c
 3. **Update Phase Progress**: Recalculate phase completion percentages
 4. **Identify Next Tasks**: Determine which tasks are now unblocked and ready to start
 
+## 🧪 **MANDATORY TESTING & VERIFICATION PROCESS**
+
+### Code Quality Gates (MUST PASS BEFORE COMMIT)
+
+**🔴 CRITICAL: All code MUST pass these checks before committing to version control:**
+
+#### 1. **TypeScript Compilation** (MANDATORY)
+```bash
+# Generate Prisma client after schema changes
+docker-compose exec app pnpm prisma generate
+
+# Test TypeScript compilation
+docker-compose exec app pnpm build
+```
+**Requirements:**
+- ✅ No TypeScript compilation errors in new code
+- ✅ No new ESLint errors introduced by changes
+- ⚠️ Pre-existing errors in unrelated files are acceptable but should be noted
+- ✅ All imports resolve correctly
+- ✅ Type definitions are complete and accurate
+
+#### 2. **Database Schema Validation** (For Schema Changes)
+```bash
+# Validate schema changes
+docker-compose exec app pnpm prisma db push --accept-data-loss
+
+# Regenerate client
+docker-compose exec app pnpm prisma generate
+
+# Test migration integrity
+docker-compose exec app pnpm prisma migrate status
+```
+**Requirements:**
+- ✅ Database schema applies without errors
+- ✅ Migration files are properly generated
+- ✅ Prisma client regenerates successfully
+- ✅ No breaking changes to existing queries
+
+#### 3. **Basic Functionality Testing** (MANDATORY)
+```bash
+# Start development server
+docker-compose up -d
+
+# Verify application starts without crashes
+docker-compose logs app | grep -E "(error|Error|ERROR)" | tail -10
+```
+**Requirements:**
+- ✅ Application starts without fatal errors
+- ✅ New API endpoints return expected responses
+- ✅ Database connections work correctly
+- ✅ No runtime errors in browser console for new features
+
+#### 4. **Integration Testing** (For Major Features)
+**Test the complete user workflow:**
+- ✅ Admin approval process works end-to-end
+- ✅ Payment flows function correctly
+- ✅ Database records are created/updated properly
+- ✅ Treasury deployment succeeds (when applicable)
+- ✅ UI components render without errors
+
+### Pre-Commit Checklist
+
+**Before running `git add` and `git commit`, verify:**
+
+- [ ] **Build Passes**: `pnpm build` completes without NEW errors
+- [ ] **Schema Valid**: Database changes apply correctly (if applicable)
+- [ ] **Types Generated**: Prisma client regenerated after schema changes
+- [ ] **No Console Errors**: New code doesn't introduce browser console errors
+- [ ] **Basic Testing**: Core functionality tested manually
+- [ ] **Task Tracker Updated**: Completed tasks marked [x] in mvp-task-tracker.mdc
+- [ ] **Documentation Updated**: README or relevant docs updated if needed
+
+### Error Handling Policy
+
+**TypeScript/ESLint Errors:**
+- 🔴 **BLOCKING**: New TypeScript compilation errors in your code
+- 🔴 **BLOCKING**: New ESLint errors introduced by your changes
+- 🟡 **ACCEPTABLE**: Pre-existing errors in unrelated files (note them but don't block)
+- ✅ **PREFERRED**: Fix pre-existing errors when convenient, but not required
+
+**Runtime Errors:**
+- 🔴 **BLOCKING**: Fatal application crashes
+- 🔴 **BLOCKING**: Database connection failures
+- 🔴 **BLOCKING**: API endpoints returning 500 errors
+- 🟡 **REVIEW**: Non-fatal warnings in development logs
+
+**Testing Requirements:**
+- 🔴 **MANDATORY**: Manual testing of new features
+- 🟡 **PREFERRED**: Automated tests for complex logic
+- ✅ **OPTIONAL**: End-to-end testing (nice to have)
+
+### Version Control Integration
+
+**Commit Message Standards:**
+```
+feat: implement dual treasury foundation for MVP testing
+
+- Add TreasuryInterface abstraction layer
+- Create CryptoTreasuryManager and PaymentTreasuryManager
+- Update database schema with dual treasury fields
+- Add migration 20250721161704_add_dual_treasury_fields
+
+Tasks completed:
+- [x] Treasury interface abstraction
+- [x] Database schema updates
+- [x] Contract ABIs for PaymentTreasury
+
+Testing:
+- ✅ TypeScript compilation passes
+- ✅ Database migration applies successfully
+- ✅ Prisma client regenerates correctly
+```
+
+**Required Information in Commits:**
+- Brief description of changes
+- List of completed tasks from mvp-task-tracker.mdc
+- Testing verification status
+- Any known issues or limitations
+
 ## Task Status Guidelines
 
 ### Marking Tasks Complete [x]
 A task should only be marked [x] when:
 - Feature is fully implemented and functional
 - Code follows existing patterns and standards
-- Basic testing has been performed
+- **TESTING COMPLETED**: All verification checks pass
+- **BUILD PASSES**: No new compilation errors
+- **DATABASE WORKS**: Schema changes applied successfully (if applicable)
 - No obvious bugs or issues remain
 - Task deliverable matches the requirement
 
 ### Keeping Tasks Incomplete [ ]
 Keep tasks as [ ] when:
 - Feature is partially implemented
+- **TESTING FAILED**: Verification checks don't pass
+- **BUILD BROKEN**: Compilation errors exist
+- **RUNTIME ERRORS**: Application crashes or fails
 - Implementation needs refactoring or improvement
 - Dependencies are not yet satisfied
-- Testing reveals significant issues
 - Requirements are not fully met
 
 ### Phase A Completion Criteria (Special Requirements)
@@ -49,6 +172,8 @@ Phase A tasks require extra validation due to their critical nature:
 - Test campaign creation and admin approval works end-to-end
 - Treasury deployment confirmed with new addresses
 - Payment flow tested and confirmed working
+- **BUILD PASSES**: No TypeScript errors
+- **TESTING COMPLETE**: Manual verification of full workflow
 
 **A2. Campaign Editing System** - Mark [x] only when:
 - Edit form component fully functional
@@ -56,11 +181,15 @@ Phase A tasks require extra validation due to their critical nature:
 - Edit route protected and working
 - PATCH API expanded to handle full campaign updates
 - End-to-end editing workflow tested
+- **BUILD PASSES**: Component compiles without errors
+- **TESTING COMPLETE**: Full editing workflow verified
 
 **A3. Admin Dashboard Enhancement** - Mark [x] only when:
 - Treasury addresses displayed in admin cards
 - Deployment status indicators working
 - UI enhancements complete and tested
+- **BUILD PASSES**: No compilation errors
+- **TESTING COMPLETE**: Admin interface verified
 
 ## Phase-Based Development
 
@@ -135,32 +264,77 @@ Before implementing "Update contract addresses with CCP details":
 1. Check mvp-task-tracker.mdc Phase A status
 2. Verify contract validation tasks are in correct order
 3. Plan implementation approach
-4. Update task to show work has started (optional)
-5. Implement the feature
-6. Test the implementation  
-7. Mark task [x] when complete
+4. Set up testing environment
 ```
 
-### Discovering Additional Work
+### Completing a Task
 ```markdown
-If while implementing "Campaign Edit Form" you discover:
-- Need additional validation logic
-- Missing API endpoint
-- Complex UI state management
-
-Add sub-tasks or break down the original task for clarity
+After implementing "Treasury interface abstraction":
+1. Run full verification checklist
+2. Test TypeScript compilation
+3. Verify database integration works
+4. Mark task [x] in mvp-task-tracker.mdc
+5. Update phase progress percentage
+6. Commit with proper testing documentation
 ```
 
-### Completing a Phase
-```markdown
-When all Phase A tasks are [x]:
-1. Verify all functionality works together
-2. Test integration between completed features
-3. Update overall progress tracking
-4. Plan Phase B + C start (can run parallel)
+### Example Commit Process
+```bash
+# 1. Complete development work
+# 2. Run verification checks
+docker-compose exec app pnpm build
+docker-compose exec app pnpm prisma generate
+
+# 3. Update task tracker
+# Mark completed tasks [x] in mvp-task-tracker.mdc
+
+# 4. Commit with testing verification
+git add .
+git commit -m "feat: implement treasury interface abstraction
+
+- Add TreasuryInterface with deploy(), getAddress(), processPayment(), withdraw()
+- Create DualTreasuryManager coordination layer
+- Update database schema with dual treasury fields
+
+Tasks completed:
+- [x] Treasury interface abstraction
+- [x] Configuration-driven treasury selection
+- [x] Database schema updates
+
+Testing:
+- ✅ TypeScript compilation passes
+- ✅ Database migration applies successfully
+- ✅ Prisma client regenerates correctly
+- ✅ No new runtime errors introduced"
 ```
 
-This rule ensures consistent, trackable progress toward MVP completion while maintaining code quality and project organization.
+## Emergency Exception Process
+
+**When Testing Must Be Bypassed:**
+In rare cases where immediate deployment is critical, testing may be bypassed with:
+
+1. **Document Exception**: Clearly state why testing was skipped
+2. **Create Follow-up Task**: Add testing task to tracker for immediate completion
+3. **Limit Scope**: Only skip testing for isolated, non-critical changes
+4. **Team Approval**: Get explicit approval from project lead
+
+**Example Exception Commit:**
+```
+hotfix: update contract address for demo
+
+⚠️ TESTING BYPASSED: Critical demo requirement
+- Updated NEXT_PUBLIC_TREASURY_FACTORY address
+- TODO: Full end-to-end testing required immediately after demo
+
+Follow-up tasks added to tracker:
+- [ ] Test treasury deployment with new address
+- [ ] Verify payment flow end-to-end
+- [ ] Confirm no regression in existing functionality
+```
+
+---
+
+**Remember: Quality gates exist to prevent production issues and maintain code stability. The few minutes spent on verification can save hours of debugging later.**
 description:
 globs:
 alwaysApply: false

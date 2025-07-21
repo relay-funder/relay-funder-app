@@ -63,16 +63,18 @@ export async function requestTransaction({
   // Make the pledge transaction
   debug && console.log('Initializing treasury contract...');
   const treasuryABI = [
-    'function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)',
+    'function pledgeWithoutAReward(address backer, uint256 pledgeAmount, uint256 tip) external',
   ];
   const treasuryContract = new ethers.Contract(address!, treasuryABI, signer);
 
   debug && console.log('Estimating gas for pledge transaction...');
   let estimatedGas = 220000n;
+  const tipAmount = 0n; // No tip for now
   try {
     estimatedGas = await treasuryContract.pledgeWithoutAReward.estimateGas(
       userAddress,
       amountInUSDC,
+      tipAmount,
     );
   } catch {}
   debug && console.log('Estimated gas:', estimatedGas.toString());
@@ -81,6 +83,7 @@ export async function requestTransaction({
   const tx = await treasuryContract.pledgeWithoutAReward(
     userAddress,
     amountInUSDC,
+    tipAmount,
     {
       gasLimit: (estimatedGas * 120n) / 100n,
     },

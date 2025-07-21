@@ -110,22 +110,38 @@ export const TreasuryFactoryABI = [
     name: 'deploy',
     inputs: [
       {
-        name: 'platformBytes',
+        name: 'platformHash',
         type: 'bytes32',
         internalType: 'bytes32',
-      },
-      {
-        name: 'bytecodeIndex',
-        type: 'uint256',
-        internalType: 'uint256',
       },
       {
         name: 'infoAddress',
         type: 'address',
         internalType: 'address',
       },
+      {
+        name: 'implementationId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'name',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'symbol',
+        type: 'string',
+        internalType: 'string',
+      },
     ],
-    outputs: [],
+    outputs: [
+      {
+        name: 'clone',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
     stateMutability: 'nonpayable',
   },
   {

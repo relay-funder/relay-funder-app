@@ -8,6 +8,8 @@ The Web3 integration uses a multi-adapter pattern to support different wallet pr
 - **Hooks**: React hooks for Web3 interactions in [lib/web3/hooks/](mdc:lib/web3/hooks/)
 - **Contracts**: Smart contract ABIs and interfaces in [contracts/](mdc:contracts/)
 - **Configuration**: Chain and network configuration in [lib/web3/config/](mdc:lib/web3/config/)
+- **Treasury Management**: CC Protocol treasury deployment and management in [lib/treasury/](mdc:lib/treasury/)
+- **CC Protocol Integration**: Testing and documentation in [cc-protocol/](mdc:cc-protocol/)
 
 ## Wallet Adapters
 
@@ -48,6 +50,189 @@ function MyComponent() {
 
 ### Sign-In with Ethereum
 - Uses SIWE (Sign-In with Ethereum) standard
+
+## CC Protocol Integration
+
+### Treasury Architecture
+The application implements a **dual treasury system** using CC Protocol contracts:
+
+#### Treasury Types
+1. **KeepWhatsRaised Treasury** (Crypto-Only Flow)
+   - **Implementation ID**: `0`
+   - **Primary Method**: `pledgeWithoutAReward(address backer, uint256 pledgeAmount, uint256 tip)`
+   - **Use Case**: Direct wallet-to-wallet USDC payments
+
+2. **PaymentTreasury** (Credit Card Flow)
+   - **Implementation ID**: `1`
+   - **Primary Methods**: `createPayment()` → `confirmPayment()` workflow
+   - **Use Case**: Fiat-to-crypto via Crowdsplit integration
+
+### Two-Phase Deployment Workflow
+
+**CRITICAL**: CC Protocol requires a specific two-phase deployment pattern:
+
+#### Phase 1: CampaignInfo Deployment
+```typescript
+// Campaign creation deploys CampaignInfo contract first
+const campaignInfoFactory = new ethers.Contract(
+  CAMPAIGN_INFO_FACTORY_ADDRESS,
+  CampaignInfoFactoryABI,
+  signer
+);
+
+const tx = await campaignInfoFactory.createCampaign(
+  creator,
+  identifierHash,
+  [PLATFORM_HASH],
+  [],
+  [],
+  { launchTime, deadline, goalAmount }
+);
+```
+
+#### Phase 2: Treasury Deployment (Admin Approval)
+```typescript
+// Admin approval deploys dual treasuries using CampaignInfo address
+const treasuryFactory = new ethers.Contract(
+  TREASURY_FACTORY_ADDRESS,
+  TreasuryFactoryABI,
+  signer
+);
+
+// Deploy KeepWhatsRaised Treasury
+const cryptoTx = await treasuryFactory.deploy(
+  platformHash,
+  campaignInfoAddress, // CRITICAL: Must be CampaignInfo contract
+  0, // implementationId (KeepWhatsRaised)
+  `Campaign ${campaignId} Crypto`,
+  `C${campaignId}CRYPTO`
+);
+
+// Deploy PaymentTreasury
+const paymentTx = await treasuryFactory.deploy(
+  platformHash,
+  campaignInfoAddress, // CRITICAL: Must be CampaignInfo contract
+  1, // implementationId (PaymentTreasury)
+  `Campaign ${campaignId} Payment`,
+  `C${campaignId}PAY`
+);
+```
+
+### Treasury Manager Pattern
+
+Use the treasury manager abstraction for consistent deployment:
+
+```typescript
+import { createTreasuryManager } from '@/lib/treasury/interface';
+
+// Create dual treasury manager
+const treasuryManager = await createTreasuryManager('DUAL');
+
+// Deploy both treasuries
+const result = await treasuryManager.deploy({
+  campaignId,
+  platformBytes: PLATFORM_HASH,
+  campaignAddress: campaignInfoAddress, // CampaignInfo contract
+  signer: adminSigner,
+});
+```
+
+### Payment Processing Patterns
+
+#### Crypto Payments (KeepWhatsRaised)
+```typescript
+// Direct pledge to crypto treasury
+const cryptoTreasury = new ethers.Contract(
+  campaign.cryptoTreasuryAddress,
+  KeepWhatsRaisedABI,
+  signer
+);
+
+const tx = await cryptoTreasury.pledgeWithoutAReward(
+  backerAddress,
+  pledgeAmount, // in USDC wei (6 decimals)
+  tipAmount
+);
+```
+
+#### Credit Card Payments (PaymentTreasury)
+```typescript
+// Two-step payment process
+const paymentTreasury = new ethers.Contract(
+  campaign.paymentTreasuryAddress,
+  PaymentTreasuryABI,
+  signer
+);
+
+// Step 1: Create payment
+const createTx = await paymentTreasury.createPayment(
+  paymentId,
+  buyerAddress,
+  itemId,
+  amount,
+  expiration
+);
+
+// Step 2: Confirm payment (called by webhook)
+const confirmTx = await paymentTreasury.confirmPayment(paymentId);
+```
+
+### Testing and Validation
+
+**MANDATORY**: Before deploying CC Protocol changes, run validation tests:
+
+```bash
+# Run comprehensive CC Protocol validation
+cd cc-protocol
+./cc-protocol-test.sh workflow
+
+# Validate specific treasury operations
+./cc-protocol-test.sh pledge-test
+./cc-protocol-test.sh payment-test
+```
+
+### Error Handling Patterns
+
+#### Common CC Protocol Errors
+- `TreasuryFactoryImplementationNotSetOrApproved`: Implementation not approved by protocol admin
+- `CampaignInfoInvalidInput`: Invalid CampaignInfo contract address
+- `TreasuryFactoryTreasuryCreationFailed`: Treasury deployment failed
+
+#### Validation Pattern
+```typescript
+// Always validate CampaignInfo contract before treasury deployment
+try {
+  const campaignInfo = new ethers.Contract(
+    campaignAddress,
+    CampaignInfoABI,
+    provider
+  );
+  
+  // Verify it's a valid CampaignInfo by calling a read function
+  await campaignInfo.getDeadline();
+  console.log('✓ CampaignInfo contract validated');
+} catch (error) {
+  throw new Error(`Invalid CampaignInfo contract: ${error}`);
+}
+```
+
+### Database Integration
+
+Store dual treasury addresses with proper mode tracking:
+
+```typescript
+// Update campaign with dual treasury deployment results
+await db.campaign.update({
+  where: { id: campaignId },
+  data: {
+    status: CampaignStatus.ACTIVE,
+    cryptoTreasuryAddress,
+    paymentTreasuryAddress,
+    treasuryAddress: cryptoTreasuryAddress, // Primary for backward compatibility
+    treasuryMode: 'DUAL',
+  },
+});
+```
 - Implemented in [server/auth/providers/](mdc:server/auth/providers/)
 - Integrates with NextAuth.js for session management
 

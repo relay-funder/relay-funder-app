@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
-import { useAuth } from '@/contexts';
+import { useAuth } from '@/lib/web3';
 import { ethers } from 'ethers';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
+import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 import { chainConfig } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
 
@@ -18,13 +19,24 @@ interface TreasuryDeployedEvent {
   event: string;
   args: {
     treasuryAddress: string;
-    campaignInfo: string;
+    infoAddress: string;
+    platformBytes: string;
+    bytecodeIndex: bigint;
   };
 }
+
+interface DualTreasuryDeploymentResult {
+  cryptoTreasuryAddress: string;
+  paymentTreasuryAddress: string;
+  cryptoTreasuryTx: string;
+  paymentTreasuryTx: string;
+}
+
 export function useAdminApproveCampaign() {
   const { wallet } = useAuth();
+  
   const adminApproveCampaign = useCallback(
-    async (campaignId: number, campaignAddress: string) => {
+    async (campaignId: number, campaignAddress: string): Promise<DualTreasuryDeploymentResult> => {
       if (!campaignId || !campaignAddress) {
         throw new Error('Campaign ID and address are required');
       }
@@ -37,6 +49,7 @@ export function useAdminApproveCampaign() {
       ) {
         throw new Error('Wallet not connected');
       }
+      
       // Platform config checks
       if (!platformConfig.globalParamsAddress) {
         throw new Error('Global Params contract address is not configured');
@@ -53,6 +66,7 @@ export function useAdminApproveCampaign() {
       if (!walletProvider) {
         throw new Error('Ethereum Provider not supported by wallet');
       }
+      
       // Switch to Alfajores network
       try {
         await walletProvider.request({
@@ -106,6 +120,22 @@ export function useAdminApproveCampaign() {
           throw new Error('Not authorized as platform admin');
         }
       }
+
+      // CRITICAL: Validate that campaignAddress is a deployed CampaignInfo contract
+      try {
+        const campaignInfo = new ethers.Contract(
+          campaignAddress,
+          CampaignInfoABI,
+          ethersProvider,
+        );
+        
+        // Verify it's a valid CampaignInfo by calling a read function
+        await campaignInfo.getDeadline();
+        console.log('✓ CampaignInfo contract validated:', campaignAddress);
+      } catch (error) {
+        throw new Error(`Invalid CampaignInfo contract at ${campaignAddress}: ${error}`);
+      }
+
       // Initialize TreasuryFactory contract
       const treasuryFactory = new ethers.Contract(
         platformConfig.treasuryFactoryAddress,
@@ -113,30 +143,72 @@ export function useAdminApproveCampaign() {
         signer,
       );
 
-      // Deploy treasury
-      const tx = await treasuryFactory.deploy(
-        platformConfig.platformBytes,
-        0,
-        campaignAddress,
-        { gasLimit: 100000 },
+      console.log('Deploying dual treasuries for campaign:', campaignId);
+      console.log('Using CampaignInfo address:', campaignAddress);
+
+      // Deploy KeepWhatsRaised Treasury (Crypto Payments) - Implementation ID: 0
+      console.log('1/2 Deploying KeepWhatsRaised Treasury (Crypto Payments)...');
+      const cryptoTx = await treasuryFactory.deploy(
+        platformConfig.platformBytes, // platformHash
+        campaignAddress, // infoAddress (CampaignInfo contract)
+        0, // implementationId (0 = KeepWhatsRaised)
+        `Campaign ${campaignId} Crypto`, // name
+        `C${campaignId}CRYPTO`, // symbol
+        { gasLimit: 2000000 },
       );
 
-      const receipt = await tx.wait();
-
-      // Find deployment event
-      const deployEvent = receipt.events?.find(
+      const cryptoReceipt = await cryptoTx.wait();
+      
+      // Find KeepWhatsRaised deployment event
+      const cryptoDeployEvent = cryptoReceipt.events?.find(
         (e: TreasuryDeployedEvent) =>
           e.event === 'TreasuryFactoryTreasuryDeployed',
       );
 
-      if (!deployEvent) {
-        throw new Error('Treasury deployment event not found');
+      if (!cryptoDeployEvent) {
+        throw new Error('KeepWhatsRaised treasury deployment event not found');
       }
 
-      const treasuryAddress = deployEvent.args.treasuryAddress;
-      return treasuryAddress;
+      const cryptoTreasuryAddress = cryptoDeployEvent.args.treasuryAddress;
+      console.log('✓ KeepWhatsRaised Treasury deployed:', cryptoTreasuryAddress);
+
+      // Deploy PaymentTreasury (Credit Card Payments) - Implementation ID: 1
+      console.log('2/2 Deploying PaymentTreasury (Credit Card Payments)...');
+      const paymentTx = await treasuryFactory.deploy(
+        platformConfig.platformBytes, // platformHash
+        campaignAddress, // infoAddress (CampaignInfo contract)
+        1, // implementationId (1 = PaymentTreasury)
+        `Campaign ${campaignId} Payment`, // name
+        `C${campaignId}PAY`, // symbol
+        { gasLimit: 2000000 },
+      );
+
+      const paymentReceipt = await paymentTx.wait();
+      
+      // Find PaymentTreasury deployment event
+      const paymentDeployEvent = paymentReceipt.events?.find(
+        (e: TreasuryDeployedEvent) =>
+          e.event === 'TreasuryFactoryTreasuryDeployed',
+      );
+
+      if (!paymentDeployEvent) {
+        throw new Error('PaymentTreasury deployment event not found');
+      }
+
+      const paymentTreasuryAddress = paymentDeployEvent.args.treasuryAddress;
+      console.log('✓ PaymentTreasury deployed:', paymentTreasuryAddress);
+
+      console.log('✅ Dual treasury deployment completed successfully!');
+      
+      return {
+        cryptoTreasuryAddress,
+        paymentTreasuryAddress,
+        cryptoTreasuryTx: cryptoTx.hash,
+        paymentTreasuryTx: paymentTx.hash,
+      };
     },
     [wallet],
   );
+  
   return { adminApproveCampaign };
 }
