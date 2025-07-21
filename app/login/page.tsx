@@ -8,8 +8,6 @@ import React, {
   useRef,
 } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -32,8 +30,6 @@ import { ConnectorAlreadyConnectedError, type Connector } from 'wagmi';
 import { useAuth } from '@/contexts';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [connectSuccess, setConnectSuccess] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +110,6 @@ export default function Login() {
     },
     [connect],
   );
-  const handleDevelopmentLogin = useCallback(() => {}, []);
   const message = useMemo(() => {
     if (!ready) {
       return 'Connecting Wallet';
