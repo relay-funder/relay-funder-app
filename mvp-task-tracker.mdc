@@ -7,138 +7,221 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 
 ---
 
-## MVP REQUIREMENTS ANALYSIS - STREAMLINED FOR DEMO
+## MVP REQUIREMENTS ANALYSIS - COMPREHENSIVE FEATURE GAP ASSESSMENT
 
-### MVP Demo Goals - Essential User Stories Only
+### Critical Missing Features for MVP Demo
 
-For a successful MVP demo, we need to show these core flows:
+Based on the specific MVP goals provided, here are the major feature gaps that must be addressed:
 
-#### 🎯 **CORE DEMO FLOW** (Must Work Perfectly):
-1. **Creator**: Create campaign → Get approved → Receive funding → Withdraw funds
-2. **Admin**: Approve campaigns → Manage rounds → Assign match funds (manual)
-3. **Guest**: Browse campaigns → Contribute via crypto/credit card → See QF vs regular distinction
+#### 🔴 **CREATOR/REFUGEE PERSONA - MISSING FEATURES**:
+- **Campaign Editing**: Complete feature missing - no interface for creators to edit campaign details
+- **Withdrawal System**: Missing campaign fund withdrawal functionality  
+- **In-App Notifications**: No notification system for campaign status updates
+- **Round Status Restrictions**: Campaign editing not disabled when in active rounds
+- **Match Fund Withdrawal**: Missing additional match funding withdrawal capability
 
-#### 🔴 **CRITICAL MVP GAPS** (Blocking Demo):
-- **Campaign Editing**: Basic edit form (title, description only - skip images for MVP)
-- **Withdrawal System**: Simple withdrawal button with treasury balance check
-- **Match Fund Assignment**: Admin can manually assign match amounts (skip calculation upload)
-- **QF Distinction**: Simple badge showing "Part of QF Round" vs "Regular Campaign"
+#### 🔴 **ADMIN PERSONA - MISSING FEATURES**:
+- **Match Fund Management**: No manual QF calculation upload or assignment interface
+- **Refund Management**: Missing refund viewing and triggering capabilities  
+- **User Blocking**: No user/creator blocking or content moderation system
+- **Wallet Address Suppression**: Missing banned address management
+- **Enhanced Admin Dashboard**: Limited oversight tools for match fund tracking
 
-#### ✅ **ALREADY WORKS** (Don't Touch):
-- Campaign creation and blockchain deployment
-- Admin approval system with treasury deployment  
-- Payment flows (crypto wallet + credit card via Crowdsplit)
-- Round creation and management
-- User authentication and basic role management
+#### 🔴 **GUEST PERSONA - MISSING FEATURES**:
+- **Server-Side Filtering**: Category filtering not server-side implemented
+- **QF Explainer**: Missing clear quadratic funding explanation
+- **Round vs Campaign Distinction**: UI doesn't clearly show QF vs regular contributions
+- **Public Collections**: Missing public collection viewing by other users
 
-#### ❌ **MVP SCOPE CUTS** (Build Later):
-- In-app notification system (use email/external for MVP)
-- User blocking and content moderation (admin can delete manually)
-- Advanced admin dashboard features
-- Public collections and social features
-- Server-side filtering (client-side is fine for MVP)
-- Refund management (handle manually for MVP)
-- Advanced QF explainer (simple text explanation is sufficient)
+#### ✅ **WELL-IMPLEMENTED FEATURES**:
+- Campaign creation with full details and blockchain deployment
+- Admin campaign approval system with treasury deployment  
+- Basic payment flows (crypto wallet + credit card via Crowdsplit)
+- Round creation and management infrastructure
+- Collections and favorites system (logged-in users)
+- User authentication and role management
+- Campaign updates and comments system
+- Homepage featuring campaigns and rounds
+- Campaign directory with basic filtering
 
-### Streamlined Implementation Strategy
+### Current vs Required Implementation
 
-**Focus**: Minimum code to demonstrate value proposition
-**Quality**: Good enough for demo, not production-ready
-**Scope**: Core user journeys only, no edge cases
-**UI/UX**: Functional over beautiful (reuse existing components)
-**Testing**: Manual testing only, no automated tests for MVP
+**QF Manual Calculation**: ❌ **MISSING** - No admin interface for match fund assignment
+**Withdrawal System**: ❌ **MISSING** - No fund withdrawal functionality for creators
+**Notification System**: ❌ **MISSING** - No in-app notifications for any persona
+**User Management**: ❌ **MISSING** - No blocking, content moderation, or address suppression
+**Treasury Model**: ✅ TreasuryFactory may be Crowdsplit-compatible, needs testing with new addresses
+**Time Estimates**: Agent-optimized for rapid iteration  
+**Phase Structure**: Maximize demo impact with incremental deliverable phases
 
 ---
 
-## PHASE 0: CRITICAL MVP FEATURES (Streamlined for Demo)
+## PHASE 0: CRITICAL MVP FEATURES (Must Complete for Demo)
 
-### Phase 0 Overview - Absolute Essentials Only
+### Phase 0 Overview - Essential Missing Features
 
-This phase contains ONLY the features that block the core demo flow. Everything else is cut from MVP scope.
+This phase addresses the most critical missing features identified in the MVP requirements analysis. These features are essential for demonstrating the complete full-circle flow for all personas.
 
-**Priority**: 🔥 **CRITICAL PATH** - Must complete for demo
-**Estimated Completion**: 1 day (streamlined scope)
+**Priority**: 🔥 **CRITICAL PATH** - Must complete before any other phases
+**Estimated Completion**: 2-3 days
 **Dependencies**: None - can start immediately
 
-### Campaign Editing System (MVP Minimum)
+### Campaign Editing System (Creator Essential)
 
-**MVP Scope**: Basic text editing only (title, description) - NO image upload, NO advanced validation
-
-**Required Implementation**:
-- [ ] **Simple Campaign Edit Form** (`components/campaign/edit-form.tsx`):
-  - [ ] Copy ONLY title and description fields from `create.tsx`
-  - [ ] Skip image upload (reuse existing image for MVP)
-  - [ ] Skip advanced validation (basic required field checks only)
-  - [ ] Reuse existing form styling and components
-
-- [ ] **Basic Edit Page** (`app/campaigns/[slug]/edit/page.tsx`):
-  - [ ] Simple protected route (creator check only)
-  - [ ] Minimal error handling (redirect to campaign page on error)
-  - [ ] No breadcrumbs (simple back link is sufficient)
-
-- [ ] **Edit Button** (add to existing campaign detail page):
-  - [ ] Single edit button with creator-only visibility
-  - [ ] Use existing button styling from other campaign actions
-
-- [ ] **Extend PATCH API** (`app/api/campaigns/route.ts`):
-  - [ ] Add title and description fields to existing PATCH handler
-  - [ ] Basic validation only (required fields)
-  - [ ] Skip image handling for MVP
-
-### Withdrawal System (MVP Minimum)
-
-**MVP Scope**: Simple "Withdraw All" button - NO partial withdrawals, NO history, NO complex validation
+**Current State Analysis**:
+- ✅ Campaign creation fully implemented with Cloudinary image upload
+- ✅ PATCH API exists in `app/api/campaigns/route.ts` but limited to status/transaction fields only  
+- ❌ NO creator-facing edit form exists for campaign details (title, description, etc.)
+- ❌ Campaign detail page has no edit functionality or buttons
+- ❌ No protected route for campaign editing
 
 **Required Implementation**:
-- [ ] **Simple Withdrawal API** (`app/api/campaigns/[campaignId]/withdraw/route.ts`):
-  - [ ] Basic POST handler for full withdrawal only
-  - [ ] Creator authentication check only
-  - [ ] Call treasury contract withdrawal function (reuse existing patterns)
-  - [ ] No complex validation (treasury contract handles limits)
+- [ ] **Create Campaign Edit Form** (`components/campaign/edit-form.tsx`):
+  - [ ] Create a modular form component that is reusable based on `components/campaign/create.tsx` (lines 30-460)
+  - [ ] Modify for editing: populate existing values, change submission logic
+  - [ ] Include Cloudinary image upload for banner updates (reuse existing uploadToCloudinary function)
+  - [ ] Add form validation matching campaign creation schema (with File upload support)
 
-- [ ] **Simple Withdrawal Button** (add to existing campaign dashboard):
-  - [ ] Single "Withdraw Funds" button for creators
-  - [ ] Simple confirmation dialog ("Are you sure?")
-  - [ ] Show success/error toast messages
-  - [ ] No balance display (creators can check externally for MVP)
+- [ ] **Create Edit Page** (`app/campaigns/[slug]/edit/page.tsx`):
+  - [ ] Add protected route logic (only campaign creator can access)
+  - [ ] Implement loading states and error handling
+  - [ ] Add breadcrumb navigation back to campaign detail
 
-### QF Round Distinction (Guest Essential)
+- [ ] **Add Edit Button to Campaign Detail Page**:
+  - [ ] Add edit button to campaign detail page with creator-only visibility
+  - [ ] Position button prominently in campaign header area
+  - [ ] Add proper permissions check using `useAuth().address`
 
-**MVP Scope**: Simple badge to show if campaign is part of QF round - NO complex explanations
+- [ ] **Expand PATCH API** (`app/api/campaigns/route.ts`):
+  - [ ] Extend PATCH handler to accept full campaign fields including image updates
+  - [ ] Add proper validation for all campaign fields
+  - [ ] Include image upload handling for banner changes
+  - [ ] Test end-to-end editing workflow including image upload to Cloudinary
+
+- [ ] **Add Round Status Restrictions**:
+  - [ ] Disable campaign editing when campaign is part of active rounds
+  - [ ] Add validation in PATCH API to prevent editing during round periods
+  - [ ] Show appropriate error messages to creators about round restrictions
+
+### Withdrawal System (Creator Essential)
+
+**Current State Analysis**:
+- ✅ Treasury deployment system functional via admin approval
+- ✅ Payment tracking system implemented with confirmed payments
+- ❌ NO withdrawal functionality exists anywhere in the system
+- ❌ NO withdrawal UI components or pages exist
+- ❌ NO withdrawal API endpoints exist
 
 **Required Implementation**:
-- [ ] **QF Badge Component** (`components/campaign/qf-badge.tsx`):
-  - [ ] Simple badge showing "QF Round" or "Regular Campaign"
-  - [ ] Use existing badge styling from campaign status badges
-  - [ ] Check if campaign has RoundCampaigns relationship
+- [ ] **Withdrawal API** (`app/api/campaigns/[campaignId]/withdraw/route.ts`):
+  - [ ] POST handler for initiating withdrawals
+  - [ ] Authentication check (only campaign creator can withdraw)
+  - [ ] Integration with treasury contract withdrawal functions
+  - [ ] Add withdrawal amount validation (cannot exceed available balance)
+  - [ ] Create withdrawal record in database for tracking
 
-- [ ] **Add Badge to Campaign Cards**:
-  - [ ] Add QF badge to campaign card components
-  - [ ] Position badge prominently near campaign title
-  - [ ] Use existing campaign card layout patterns
+- [ ] **Withdrawal UI** (`components/campaign/withdrawal-form.tsx`):
+  - [ ] Add withdrawal button to campaign dashboard for creators
+  - [ ] Create withdrawal confirmation dialog with balance display
+  - [ ] Add withdrawal amount input with max balance validation
+  - [ ] Show withdrawal history and pending withdrawals
 
-### Admin Match Fund Assignment (MVP Minimum)
+- [ ] **Treasury Balance Integration**:
+  - [ ] Add real-time treasury balance checking
+  - [ ] Display available withdrawal amount to creators
+  - [ ] Add withdrawal fee calculation if applicable
+  - [ ] Include minimum withdrawal amount validation
 
-**MVP Scope**: Simple manual input field to assign match amounts - NO calculation upload, NO complex tracking
+### In-App Notification System (All Personas Essential)
+
+**Current State Analysis**:
+- ❌ NO notification system exists in the application
+- ❌ NO notification database model exists
+- ❌ NO notification UI components exist
+- ❌ NO notification API endpoints exist
 
 **Required Implementation**:
-- [ ] **Simple Match Fund Field** (add to existing admin campaign cards):
-  - [ ] Add "Match Fund Amount" input field to `components/campaign/card-admin.tsx`
-  - [ ] Simple number input with save button
-  - [ ] Store in existing campaign database (add `matchFundAmount` field to Campaign model)
-  - [ ] Show match amount on campaign cards for all users
+- [ ] **Notification Database Model** (extend `prisma/schema.prisma`):
+  - [ ] Add `Notification` model with fields: id, userId, type, title, message, read, createdAt
+  - [ ] Add relationship to User model
+  - [ ] Run migration to create notification table
 
-- [ ] **Basic Database Update** (`prisma/schema.prisma`):
-  - [ ] Add `matchFundAmount` Decimal? field to Campaign model
-  - [ ] Run simple migration to add field
-  - [ ] No complex relationships or separate tables needed
+- [ ] **Notification API** (`app/api/notifications/route.ts`):
+  - [ ] GET handler to fetch user notifications with pagination
+  - [ ] PATCH handler to mark notifications as read
+  - [ ] POST handler for creating notifications (admin/system use)
 
-### Phase 0 Progress: 0% Complete (Streamlined)
-- [ ] 0/8 critical tasks completed (reduced from 25 after scope cuts)
-- **Key Blockers**: Simple features, can be built quickly by reusing existing patterns
-- **Ready to Start**: Campaign editing (copy existing create form)
-- **Dependencies**: None - all features independent
-- **Time Estimate**: 1 day total (4 simple features)
+- [ ] **Notification UI Components**:
+  - [ ] Create `components/notifications/bell-icon.tsx` with unread count
+  - [ ] Create `components/notifications/dropdown.tsx` for notification list
+  - [ ] Add notification dropdown to main navigation header
+  - [ ] Create notification page for full history view
+
+- [ ] **Campaign Status Notification Integration**:
+  - [ ] Create notifications when campaign is submitted (DRAFT → PENDING_APPROVAL)
+  - [ ] Create notifications when campaign is approved/rejected (PENDING_APPROVAL → ACTIVE/FAILED)
+  - [ ] Create notifications when campaign receives funding
+  - [ ] Create notifications when campaign is added to QF round
+  - [ ] Create notifications when campaign is eligible for match funding
+
+### Admin Match Fund Management (Admin Essential)
+
+**Current State Analysis**:
+- ✅ Round creation and management system implemented
+- ✅ Admin dashboard with campaign approval system
+- ❌ NO match fund calculation upload interface
+- ❌ NO manual match amount assignment system
+- ❌ NO match fund tracking or oversight tools
+
+**Required Implementation**:
+- [ ] **Match Fund Database Schema** (extend `prisma/schema.prisma`):
+  - [ ] Add `MatchFund` model with fields: id, roundId, campaignId, amount, calculationMethod, assignedAt
+  - [ ] Add relationship to Round and Campaign models
+  - [ ] Add `totalMatchPoolUsed` field to Round model
+
+- [ ] **Match Fund API** (`app/api/rounds/[roundId]/match-funds/route.ts`):
+  - [ ] POST handler for assigning match funds to campaigns
+  - [ ] GET handler for retrieving match fund assignments
+  - [ ] PUT handler for updating match fund amounts
+  - [ ] Include validation for total pool usage limits
+
+- [ ] **Match Fund Admin Interface** (`components/admin/match-fund-manager.tsx`):
+  - [ ] Add match fund assignment interface to admin dashboard
+  - [ ] Create JSON upload interface for QF calculation results
+  - [ ] Add manual match amount assignment form for individual campaigns
+  - [ ] Display total match pool usage and remaining amounts
+  - [ ] Show match fund history and audit trail
+
+### Admin Refund Management (Admin Essential)
+
+**Current State Analysis**:
+- ✅ Payment tracking system with status management
+- ❌ NO refund management interface exists
+- ❌ NO refund API endpoints exist
+- ❌ NO refund tracking system
+
+**Required Implementation**:
+- [ ] **Refund Database Schema** (extend Payment model):
+  - [ ] Add `refundStatus` field to Payment model ('NONE', 'PENDING', 'COMPLETED', 'FAILED')
+  - [ ] Add `refundReason` String? field
+  - [ ] Add `refundedAt` DateTime? field
+
+- [ ] **Refund API** (`app/api/payments/[paymentId]/refund/route.ts`):
+  - [ ] POST handler for initiating refunds (admin only)
+  - [ ] Integration with payment provider refund APIs (Stripe, Crowdsplit)
+  - [ ] Update payment status and refund tracking
+
+- [ ] **Refund Admin Interface** (`components/admin/refund-manager.tsx`):
+  - [ ] Add refund management section to admin dashboard
+  - [ ] Display payments eligible for refund
+  - [ ] Add refund initiation buttons with reason selection
+  - [ ] Show refund status and history
+
+### Phase 0 Progress: 0% Complete
+- [ ] 0/25 critical tasks completed
+- **Key Blockers**: All features are completely missing and must be built from scratch
+- **Ready to Start**: Campaign editing (can reuse existing creation patterns)
+- **Dependencies**: None - all features can be implemented in parallel
 
 ---
 
@@ -784,31 +867,34 @@ CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasu
 ## PRIORITY ASSESSMENT (Revised for MVP Demo)
 
 ### 🔥 **CRITICAL PATH** (Must complete for demo)
-1. **Phase 0**: Streamlined MVP Features (4 simple features, 1 day total)
-2. **Phase 3**: Dual Treasury integration (already 45% complete)
-3. **Basic QF Demo Setup**: Existing round system + Phase 0 features = complete demo
+1. **Phase 0**: Critical MVP Features (campaign editing, withdrawal, notifications, admin tools)
+2. **Phase 3**: Dual Treasury integration and crypto payments  
+3. **Phase 1**: Round sponsor schema and basic enhancements
+4. **Phase 2**: Round application workflow (creator→admin approval)
 
-### ❌ **MVP SCOPE CUTS** (Build after user feedback)
-1. **Phase 1-2**: Round enhancements and application workflows (existing system works)
-2. **Phase 4-5**: Homepage and advanced features (existing homepage works)
-3. All notification, refund, user management, and advanced admin features
-4. Complex UI/UX improvements and polish features
+### 🟡 **HIGH PRIORITY** (Important for complete MVP)
+1. **Phase 4**: Homepage QF rounds display
+2. **Phase 5**: Manual QF match fund system
+3. Enhanced admin dashboard
+4. Guest persona enhancements (QF explainer, public collections)
 
-### 🎯 **MVP SUCCESS CRITERIA** (Demo Ready)
-- Creator can: Create → Edit → Get approved → Receive funds → Withdraw funds
-- Admin can: Approve campaigns → Assign match funds → Manage rounds
-- Guest can: Browse campaigns → Contribute → See QF distinction
-- **Total Development Time**: 1-2 days maximum
+### 🟢 **MEDIUM PRIORITY** (Polish and improvements)
+1. Code cleanup and optimization
+2. Feature disabling/removal  
+3. Enhanced discovery and search
+4. Performance optimizations
+5. Comprehensive testing
 
 ---
 
 ## COMPLETION TRACKING
 
-### Phase 0 Progress: 0% Complete (STREAMLINED)
-- [ ] 0/8 critical tasks completed (massively reduced scope)
-- **Key Blockers**: None - all features are simple additions to existing code
-- **Ready to Start**: All features can start immediately (no dependencies)
-- **Estimated Time**: 1 day total (4 hours per feature maximum)
+### Phase 0 Progress: 0% Complete (NEW - CRITICAL)
+- [ ] 0/25 critical tasks completed
+- **Key Blockers**: All essential MVP features are completely missing
+- **Ready to Start**: Campaign editing (can reuse existing creation patterns)
+- **Dependencies**: None - all features can be implemented in parallel
+- **Estimated Time**: 2-3 days intensive development
 
 ### Phase 1 Progress: 7% Complete
 - [x] 3/44 tasks completed (after Cloudinary analysis)
@@ -840,41 +926,36 @@ CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasu
 - **Key Blockers**: Match fund calculation interface
 - **Dependencies**: Requires completed round workflows from Phase 2
 
-**Overall MVP Progress: 75% Complete** (revised after massive scope reduction - existing features work!)
+**Overall MVP Progress: 20% Complete** (revised after comprehensive MVP requirements analysis)
 
-## IMMEDIATE NEXT STEPS (MVP Demo Focus)
+## IMMEDIATE NEXT STEPS (Priority Order)
 
-### Day 1: Complete Phase 0 (4 Simple Features)
-1. **Campaign Editing** (2 hours max):
-   - Copy title/description fields from create form
-   - Add edit page and button
-   - Extend existing PATCH API
+### Week 1 Focus: Phase 0 Critical Features (MUST START HERE)
+1. **Campaign Editing System** (0 dependencies - START IMMEDIATELY)
+   - Create edit form component reusing existing patterns
+   - Add edit routes and protected pages
+   - Implement edit button with creator permissions
 
-2. **Withdrawal Button** (2 hours max):
-   - Add single "Withdraw All" button to creator dashboard
-   - Create simple API endpoint calling treasury contract
-   - Add confirmation dialog
+2. **Withdrawal System** (parallel work possible)
+   - Create withdrawal API endpoints
+   - Add withdrawal UI components
+   - Integrate with treasury balance checking
 
-3. **QF Badge** (1 hour max):
-   - Create simple badge component
-   - Add to campaign cards
-   - Check for RoundCampaigns relationship
+3. **In-App Notification System** (parallel work possible)
+   - Add Notification database model
+   - Create notification API endpoints
+   - Implement notification UI components
 
-4. **Match Fund Field** (1 hour max):
-   - Add input field to admin campaign cards
-   - Add database field to Campaign model
-   - Simple save functionality
+4. **Admin Match Fund & Refund Management** (parallel work possible)
+   - Extend database schema for match funds and refunds
+   - Create admin interfaces for fund management
+   - Add refund processing capabilities
 
-### Day 2: Test & Polish
-- Manual testing of all 4 features
-- Fix any bugs found
-- Basic styling cleanup
-- **MVP Demo Ready**
-
-### MVP Demo Flow (Works with existing + 4 new features)
-1. ✅ **Already Works**: Campaign creation, approval, payments, rounds
-2. 🔄 **Added Today**: Campaign editing, withdrawal, QF badges, match fund assignment
-3. 🎯 **Result**: Complete creator/admin/guest demo flow
+### Critical Path Dependencies
+- **Phase 0 completion is MANDATORY** before any other phases can provide meaningful demo value
+- Phase 1-2 round workflows → BLOCKED until Phase 0 creator tools complete
+- Phase 3 dual treasury → Can proceed in parallel but limited demo value without Phase 0
+- Phase 4-5 → BLOCKED until Phase 0 + Phase 3 complete
 
 ---
 
