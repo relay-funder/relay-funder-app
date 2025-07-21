@@ -3,16 +3,142 @@
 ## Overview
 This document tracks all tasks required to achieve the MVP goals for the Akashic fundraising platform. Tasks use checkbox format for agent tracking and are organized in phases for maximum demo impact.
 
+**Overall MVP Progress: 35% Complete**
+
 ---
 
-## MVP REQUIREMENTS ANALYSIS
+## MVP REQUIREMENTS ANALYSIS - STREAMLINED FOR DEMO
 
-### Current vs Required Implementation
+### MVP Demo Goals - Essential User Stories Only
 
-**QF Manual Calculation**: ✅ Store sponsor values, skip Allo Protocol allocate functions initially
-**Treasury Model**: ✅ TreasuryFactory may be Crowdsplit-compatible, needs testing with new addresses
-**Time Estimates**: Agent-optimized for rapid iteration  
-**Phase Structure**: Maximize demo impact with incremental deliverable phases
+For a successful MVP demo, we need to show these core flows:
+
+#### 🎯 **CORE DEMO FLOW** (Must Work Perfectly):
+1. **Creator**: Create campaign → Get approved → Receive funding → Withdraw funds
+2. **Admin**: Approve campaigns → Manage rounds → Assign match funds (manual)
+3. **Guest**: Browse campaigns → Contribute via crypto/credit card → See QF vs regular distinction
+
+#### 🔴 **CRITICAL MVP GAPS** (Blocking Demo):
+- **Campaign Editing**: Basic edit form (title, description only - skip images for MVP)
+- **Withdrawal System**: Simple withdrawal button with treasury balance check
+- **Match Fund Assignment**: Admin can manually assign match amounts (skip calculation upload)
+- **QF Distinction**: Simple badge showing "Part of QF Round" vs "Regular Campaign"
+
+#### ✅ **ALREADY WORKS** (Don't Touch):
+- Campaign creation and blockchain deployment
+- Admin approval system with treasury deployment  
+- Payment flows (crypto wallet + credit card via Crowdsplit)
+- Round creation and management
+- User authentication and basic role management
+
+#### ❌ **MVP SCOPE CUTS** (Build Later):
+- In-app notification system (use email/external for MVP)
+- User blocking and content moderation (admin can delete manually)
+- Advanced admin dashboard features
+- Public collections and social features
+- Server-side filtering (client-side is fine for MVP)
+- Refund management (handle manually for MVP)
+- Advanced QF explainer (simple text explanation is sufficient)
+
+### Streamlined Implementation Strategy
+
+**Focus**: Minimum code to demonstrate value proposition
+**Quality**: Good enough for demo, not production-ready
+**Scope**: Core user journeys only, no edge cases
+**UI/UX**: Functional over beautiful (reuse existing components)
+**Testing**: Manual testing only, no automated tests for MVP
+
+---
+
+## PHASE 0: CRITICAL MVP FEATURES (Streamlined for Demo)
+
+### Phase 0 Overview - Absolute Essentials Only
+
+This phase contains ONLY the features that block the core demo flow. Everything else is cut from MVP scope.
+
+**Priority**: 🔥 **CRITICAL PATH** - Must complete for demo
+**Estimated Completion**: 1 day (streamlined scope)
+**Dependencies**: None - can start immediately
+
+### Campaign Editing System (MVP Minimum)
+
+**MVP Scope**: Basic text editing only (title, description) - NO image upload, NO advanced validation
+
+**Required Implementation**:
+- [ ] **Simple Campaign Edit Form** (`components/campaign/edit-form.tsx`):
+  - [ ] Copy ONLY title and description fields from `create.tsx`
+  - [ ] Skip image upload (reuse existing image for MVP)
+  - [ ] Skip advanced validation (basic required field checks only)
+  - [ ] Reuse existing form styling and components
+
+- [ ] **Basic Edit Page** (`app/campaigns/[slug]/edit/page.tsx`):
+  - [ ] Simple protected route (creator check only)
+  - [ ] Minimal error handling (redirect to campaign page on error)
+  - [ ] No breadcrumbs (simple back link is sufficient)
+
+- [ ] **Edit Button** (add to existing campaign detail page):
+  - [ ] Single edit button with creator-only visibility
+  - [ ] Use existing button styling from other campaign actions
+
+- [ ] **Extend PATCH API** (`app/api/campaigns/route.ts`):
+  - [ ] Add title and description fields to existing PATCH handler
+  - [ ] Basic validation only (required fields)
+  - [ ] Skip image handling for MVP
+
+### Withdrawal System (MVP Minimum)
+
+**MVP Scope**: Simple "Withdraw All" button - NO partial withdrawals, NO history, NO complex validation
+
+**Required Implementation**:
+- [ ] **Simple Withdrawal API** (`app/api/campaigns/[campaignId]/withdraw/route.ts`):
+  - [ ] Basic POST handler for full withdrawal only
+  - [ ] Creator authentication check only
+  - [ ] Call treasury contract withdrawal function (reuse existing patterns)
+  - [ ] No complex validation (treasury contract handles limits)
+
+- [ ] **Simple Withdrawal Button** (add to existing campaign dashboard):
+  - [ ] Single "Withdraw Funds" button for creators
+  - [ ] Simple confirmation dialog ("Are you sure?")
+  - [ ] Show success/error toast messages
+  - [ ] No balance display (creators can check externally for MVP)
+
+### QF Round Distinction (Guest Essential)
+
+**MVP Scope**: Simple badge to show if campaign is part of QF round - NO complex explanations
+
+**Required Implementation**:
+- [ ] **QF Badge Component** (`components/campaign/qf-badge.tsx`):
+  - [ ] Simple badge showing "QF Round" or "Regular Campaign"
+  - [ ] Use existing badge styling from campaign status badges
+  - [ ] Check if campaign has RoundCampaigns relationship
+
+- [ ] **Add Badge to Campaign Cards**:
+  - [ ] Add QF badge to campaign card components
+  - [ ] Position badge prominently near campaign title
+  - [ ] Use existing campaign card layout patterns
+
+### Admin Match Fund Assignment (MVP Minimum)
+
+**MVP Scope**: Simple manual input field to assign match amounts - NO calculation upload, NO complex tracking
+
+**Required Implementation**:
+- [ ] **Simple Match Fund Field** (add to existing admin campaign cards):
+  - [ ] Add "Match Fund Amount" input field to `components/campaign/card-admin.tsx`
+  - [ ] Simple number input with save button
+  - [ ] Store in existing campaign database (add `matchFundAmount` field to Campaign model)
+  - [ ] Show match amount on campaign cards for all users
+
+- [ ] **Basic Database Update** (`prisma/schema.prisma`):
+  - [ ] Add `matchFundAmount` Decimal? field to Campaign model
+  - [ ] Run simple migration to add field
+  - [ ] No complex relationships or separate tables needed
+
+### Phase 0 Progress: 0% Complete (Streamlined)
+- [ ] 0/8 critical tasks completed (reduced from 25 after scope cuts)
+- **Key Blockers**: Simple features, can be built quickly by reusing existing patterns
+- **Ready to Start**: Campaign editing (copy existing create form)
+- **Dependencies**: None - all features independent
+- **Time Estimate**: 1 day total (4 simple features)
 
 ---
 
@@ -293,59 +419,271 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 
 ---
 
-## PHASE 3: TREASURY & CRYPTO PAYMENTS (MVP Core)
+## PHASE 3: DUAL TREASURY & PAYMENT FLOWS (MVP Core)
 
-### Phase 3 Detailed Analysis
+### Phase 3 Detailed Analysis - Dual Contract Architecture (Temporary Testing Pattern)
 
-**Treasury Implementation Status**: Current system uses sophisticated TreasuryFactory contract with proper deployment patterns. Key environment variables configured: `NEXT_PUBLIC_TREASURY_FACTORY`, `NEXT_PUBLIC_GLOBAL_PARAMS`, `NEXT_PUBLIC_PLATFORM_HASH`. Payment flow uses `pledgeWithoutAReward()` function, which matches CC Protocol requirements.
+**⚠️ IMPORTANT: Dual Treasury is a TEMPORARY Testing Solution**
+The dual treasury implementation is designed ONLY for MVP testing and demonstration of both payment flows in parallel. The architecture must be designed for easy migration to a single unified contract pattern in production.
+
+**Dual Treasury Implementation Status**: The MVP requires supporting TWO distinct payment flows with separate smart contract deployments FOR TESTING PURPOSES:
+
+1. **Crypto-Only Flow (KeepWhatsRaised Contract)** - *Temporary*:
+   - Direct wallet-to-wallet USDC transactions via existing TreasuryFactory
+   - Immediate withdrawal capability for campaign creators
+   - Contract function: `pledgeWithoutAReward(address backer, uint256 pledgeAmount)`
+   - Uses current treasury deployment pattern in `useAdminApproveCampaign.ts`
+
+2. **Credit Card Flow (PaymentTreasury Contract)** - *Temporary*:
+   - Fiat-to-crypto conversion via Crowdsplit API + Stripe integration
+   - Requires separate PaymentTreasury contract deployment for bridge functionality
+   - Integration with Crowdsplit webhook system for automated treasury funding
+   - Bridge between Stripe payments and blockchain treasury contracts
+
+**Future Production State**: Single unified contract that handles both payment flows internally, eliminating the need for dual deployment and treasury routing logic.
+
+**Current Implementation Analysis**:
+- ✅ TreasuryFactory pattern established (70% complete)
+- ✅ Crypto payment flow functional (80% complete)  
+- ✅ Crowdsplit API integration implemented (90% complete)
+- ❌ PaymentTreasury contract deployment missing (0% complete)
+- ❌ Payment flow routing logic incomplete (20% complete)
+- ❌ Dual treasury address management not implemented (0% complete)
 
 **Files Analyzed:**
-- `lib/web3/hooks/useAdminApproveCampaign.ts` - Treasury deployment logic with proper event handling
+- `lib/web3/hooks/useAdminApproveCampaign.ts` - KeepWhatsRaised treasury deployment
 - `lib/web3/request-transaction.ts` - USDC approval + pledge transaction flow
-- `contracts/abi/TreasuryFactory.ts` - Advanced contract ABI with deployment functions
-- `hooks/use-donation.ts` - Complete donation flow with payment record creation
+- `lib/crowdsplit/service.ts` - Complete Crowdsplit API service (buy/sell transactions)
+- `hooks/use-donation.ts` - Crypto donation flow with payment record creation
+- `hooks/use-stripe.ts` - Stripe payment flow with Crowdsplit integration
+- `app/api/crowdsplit/transactions/route.ts` - Transaction API with payment records
+- `app/api/webhooks/crowdsplit/route.ts` - Webhook handling for payment confirmation
 
-### Treasury Integration (Testing Phase)
+### Migration-Ready Architecture Design
+
+**Core Design Principle**: All dual treasury logic must be easily replaceable with single contract logic through configuration and abstraction layers.
+
+**Abstraction Strategy**:
+- [ ] **Treasury Interface Abstraction** (`lib/treasury/interface.ts`):
+  - [ ] Create `TreasuryInterface` with methods: `deploy()`, `getAddress()`, `processPayment()`, `withdraw()`
+  - [ ] Implement `DualTreasuryManager` class that handles routing between two contracts
+  - [ ] Design for easy replacement with `UnifiedTreasuryManager` class in production
+  - [ ] Use dependency injection pattern for treasury manager selection
+
+- [ ] **Configuration-Driven Treasury Selection**:
+  - [ ] Add `TREASURY_MODE` environment variable ('DUAL' | 'UNIFIED')
+  - [ ] Create treasury factory that returns appropriate manager based on mode
+  - [ ] Ensure all treasury interactions go through abstraction layer
+  - [ ] Design database fields to support both dual and unified patterns
+
+- [ ] **Payment Flow Abstraction** (`lib/payment/flows/`):
+  - [ ] Create `PaymentFlowInterface` with standardized methods
+  - [ ] Implement separate flow classes: `CryptoPaymentFlow`, `CreditCardPaymentFlow`
+  - [ ] Design unified `PaymentProcessor` that routes to appropriate flow
+  - [ ] Ensure flow selection logic is easily configurable for single contract migration
+
+### Dual Treasury Database Schema Updates (Migration-Ready)
+
+**Required Campaign Model Changes** (designed for easy migration):
+- [ ] **Add Treasury Fields with Migration Path**:
+  - [ ] Keep existing `treasuryAddress` field as primary (will become unified contract address)
+  - [ ] Add `cryptoTreasuryAddress` String? field (temporary for dual mode)
+  - [ ] Add `paymentTreasuryAddress` String? field (temporary for dual mode)  
+  - [ ] Add `treasuryMode` enum field ('DUAL' | 'UNIFIED') for tracking deployment type
+  - [ ] Add migration script to consolidate dual addresses back to single `treasuryAddress`
+  - [ ] Run `pnpm prisma migrate dev --name add_migration_ready_treasury_fields`
+
+- [ ] **Payment Model with Unified Design**:
+  - [ ] Keep existing Payment model structure (minimize changes for migration)
+  - [ ] Add `paymentFlow` enum field ('CRYPTO' | 'CREDIT_CARD') instead of treasury type
+  - [ ] Add `processingDetails` JSON field for flow-specific metadata (replaces separate fields)
+  - [ ] Design payment creation APIs to work with both dual and unified treasury modes
+  - [ ] Add indexes optimized for both current dual mode and future unified mode
+
+### KeepWhatsRaised Treasury (Crypto-Only Flow) - Enhanced
+
+**Current Status**: 70% Complete - Needs dual treasury integration
 - [x] TreasuryFactory contract integration (VERIFIED: contracts/abi/TreasuryFactory.ts)
-- [x] Treasury deployment on admin approval (VERIFIED: useAdminApproveCampaign.ts) 
-- [x] Treasury address storage in database (VERIFIED: treasuryAddress field exists)
-- [ ] Test treasury deployment with updated Crowdsplit contract addresses
-- [ ] Verify CC Protocol compatibility with current TreasuryFactory
-- [ ] Update environment variables for production Crowdsplit addresses
-- [ ] Test treasury deployment error handling and retry logic
+- [x] Treasury deployment logic (VERIFIED: useAdminApproveCampaign.ts)
+- [x] USDC approval + pledge flow (VERIFIED: request-transaction.ts)
+- [x] Payment record creation (VERIFIED: hooks/use-donation.ts)
 
-### Crypto Payment Flow (KeepWhatsRaised)
-- [x] USDC token contract integration (VERIFIED: request-transaction.ts uses USDC_ADDRESS)
-- [x] USDC approval + pledge transaction flow (VERIFIED: approve() then pledgeWithoutAReward())
-- [x] Payment record creation in database (VERIFIED: hooks/use-donation.ts creates payment)
-- [x] Transaction hash tracking and confirmation (VERIFIED: tx.wait() and status updates)
-- [ ] Test pledgeWithoutRegard() vs pledgeWithoutAReward() function naming  
-- [ ] Implement withdraw() function for immediate withdrawal
-- [ ] Add withdrawal approval by NEXT_PUBLIC_PLATFORM_ADMIN wallet
-- [ ] Test admin wallet flow for payment processing with CC Protocol
+**Required Enhancements** (with abstraction for easy migration):
+- [ ] **Treasury Deployment Updates** (abstracted):
+  - [ ] Create `lib/treasury/managers/CryptoTreasuryManager.ts` implementing `TreasuryInterface`
+  - [ ] Update `useAdminApproveCampaign.ts` to use treasury manager abstraction
+  - [ ] Add validation through treasury interface (works for both dual and unified modes)
+  - [ ] Test treasury deployment with updated CC Protocol addresses
+  - [ ] Add deployment retry logic in treasury manager (reusable for unified contract)
 
-### Payment Status Management
-- [x] Payment record creation with proper status (VERIFIED: 'confirming' -> 'confirmed')
-- [x] Transaction hash tracking (VERIFIED: transactionHash field stored)
-- [x] Payment confirmation workflow (VERIFIED: tx.wait() -> updatePayment())
-- [ ] Enhanced payment status for failed transactions
-- [ ] Payment retry logic for failed transactions  
-- [ ] Improved payment history display with status indicators
-- [ ] Real-time payment status updates in UI
+- [ ] **Enhanced Crypto Payment Flow** (abstracted):
+  - [ ] Update `hooks/use-donation.ts` to use `PaymentProcessor` abstraction
+  - [ ] Implement `CryptoPaymentFlow` class following `PaymentFlowInterface`
+  - [ ] Add payment flow tracking in payment records (`paymentFlow: 'CRYPTO'`)
+  - [ ] Implement withdrawal functions through treasury interface
+  - [ ] Add withdrawal approval through configurable admin wallet
 
-### Contract Address Configuration
-**Current Environment Variables:**
-- `NEXT_PUBLIC_TREASURY_FACTORY` - Treasury factory contract address
-- `NEXT_PUBLIC_GLOBAL_PARAMS` - Global parameters contract  
-- `NEXT_PUBLIC_PLATFORM_HASH` - Platform identifier hash
-- `NEXT_PUBLIC_USDC_ADDRESS` - USDC token contract address
-- `NEXT_PUBLIC_PLATFORM_ADMIN` - Admin wallet for approvals
+- [ ] **Payment Status & Error Handling**:
+  - [ ] Enhanced payment status for failed crypto transactions
+  - [ ] Payment retry logic for failed blockchain transactions
+  - [ ] Real-time payment status updates in crypto donation UI
+  - [ ] Improved payment history with crypto-specific indicators
 
-**Required Testing:**
-- [ ] Verify all contract addresses are Crowdsplit-compatible
-- [ ] Test treasury deployment with production addresses
-- [ ] Confirm payment flow works with CC Protocol backend
-- [ ] Validate admin wallet has proper permissions
+### PaymentTreasury Contract (Credit Card Flow) - New Implementation
+
+**Current Crowdsplit Integration**: 90% Complete - Needs treasury bridge
+- [x] Crowdsplit service implementation (VERIFIED: lib/crowdsplit/service.ts)
+- [x] Customer creation and KYC workflow (VERIFIED: bridge.md)
+- [x] Stripe payment processing (VERIFIED: hooks/use-stripe.ts)
+- [x] Transaction API with payment records (VERIFIED: app/api/crowdsplit/transactions/route.ts)
+- [x] Webhook payment confirmation (VERIFIED: app/api/webhooks/crowdsplit/route.ts)
+
+**Required PaymentTreasury Implementation** (abstracted for migration):
+- [ ] **PaymentTreasury Contract Development** (temporary):
+  - [ ] Create `contracts/abi/PaymentTreasury.ts` with Crowdsplit bridge functions (temporary contract)
+  - [ ] Implement `contracts/abi/PaymentTreasuryFactory.ts` following TreasuryFactory pattern
+  - [ ] Add automated USDC deposit functions from Crowdsplit wallet to treasury
+  - [ ] Include withdrawal functions compatible with future unified contract interface
+
+- [ ] **PaymentTreasury Deployment Logic** (abstracted):
+  - [ ] Create `lib/treasury/managers/PaymentTreasuryManager.ts` implementing `TreasuryInterface`
+  - [ ] Add PaymentTreasury deployment through treasury manager abstraction
+  - [ ] Store addresses using migration-ready database fields
+  - [ ] Add environment variables with clear naming for temporary contracts
+
+- [ ] **Credit Card to Treasury Bridge** (abstracted):
+  - [ ] Enhance `app/api/webhooks/crowdsplit/route.ts` to use `PaymentProcessor` abstraction
+  - [ ] Implement `CreditCardPaymentFlow` class following `PaymentFlowInterface`
+  - [ ] Add automatic USDC deposit through treasury interface (works for unified contract)
+  - [ ] Implement payment status sync through payment flow abstraction
+
+- [ ] **Enhanced Credit Card Payment Flow** (abstracted):
+  - [ ] Update `hooks/use-stripe.ts` to use `PaymentProcessor` abstraction
+  - [ ] Add treasury validation through treasury interface (mode-agnostic)
+  - [ ] Implement treasury funding confirmation UI through payment flow interface
+  - [ ] Add payment flow tracking in payment records (`paymentFlow: 'CREDIT_CARD'`)
+
+### Payment Flow Routing & UI Integration
+
+**Dynamic Payment Method Availability**:
+- [ ] **Treasury-Based Payment Method Validation**:
+  - [ ] Update `components/campaign/donation/form.tsx` to check both treasury addresses
+  - [ ] Disable crypto wallet tab if `cryptoTreasuryAddress` is null or deployment failed
+  - [ ] Disable credit card tab if `paymentTreasuryAddress` is null or deployment failed
+  - [ ] Add loading states during treasury deployment status validation
+
+- [ ] **Payment Flow Router Implementation**:
+  - [ ] Create `lib/payment/router.ts` to route payments based on method selection
+  - [ ] Route crypto payments through `hooks/use-donation.ts` to KeepWhatsRaised treasury
+  - [ ] Route credit card payments through `hooks/use-stripe.ts` to PaymentTreasury
+  - [ ] Add payment method validation with specific error messages for unavailable methods
+
+- [ ] **Unified Payment Status Management**:
+  - [ ] Update payment record creation to include `treasuryType` and `treasuryAddress`
+  - [ ] Add unified payment status display supporting both treasury types
+  - [ ] Implement payment history with treasury type indicators and balances
+  - [ ] Add payment confirmation UI that works for both crypto and credit card flows
+
+### Admin Workflow Updates for Dual Treasury
+
+**Enhanced Campaign Approval Process**:
+- [ ] **Dual Treasury Deployment in Admin Approval**:
+  - [ ] Update `app/api/campaigns/[campaignId]/approve/route.ts` for dual deployment
+  - [ ] Deploy KeepWhatsRaised treasury first, then PaymentTreasury sequentially
+  - [ ] Handle partial deployment failures with rollback and retry logic
+  - [ ] Update `treasuryDeploymentStatus` field based on successful deployments
+
+- [ ] **Admin Dashboard Dual Treasury Management**:
+  - [ ] Add dual treasury address display in `components/campaign/card-admin.tsx`
+  - [ ] Show deployment status indicators for both treasury types
+  - [ ] Add manual treasury deployment triggers for failed deployments
+  - [ ] Include real-time treasury balance monitoring for both contract types
+
+- [ ] **Treasury Management Interface**:
+  - [ ] Create admin interface to view balances for both KeepWhatsRaised and PaymentTreasury
+  - [ ] Add manual withdrawal triggers for both treasury types with admin approval
+  - [ ] Implement treasury reconciliation reports comparing on-chain vs database records
+  - [ ] Add treasury contract health monitoring and alerting for failed transactions
+
+### Environment Configuration for Dual Treasury
+
+**Enhanced Environment Variables**:
+```bash
+# Existing KeepWhatsRaised Configuration  
+NEXT_PUBLIC_TREASURY_FACTORY=           # KeepWhatsRaised factory contract
+NEXT_PUBLIC_GLOBAL_PARAMS=              # Global parameters contract
+NEXT_PUBLIC_PLATFORM_HASH=              # Platform identifier hash
+NEXT_PUBLIC_USDC_ADDRESS=               # USDC token contract address
+NEXT_PUBLIC_PLATFORM_ADMIN=             # Admin wallet for KeepWhatsRaised approvals
+
+# New PaymentTreasury Configuration
+NEXT_PUBLIC_PAYMENT_TREASURY_FACTORY=   # PaymentTreasury factory contract address
+NEXT_PUBLIC_CROWDSPLIT_BRIDGE_ADDRESS=  # Crowdsplit bridge contract for auto-funding
+NEXT_PUBLIC_PAYMENT_TREASURY_ADMIN=     # PaymentTreasury admin wallet address
+
+# Enhanced Crowdsplit Integration
+CROWDSPLIT_TREASURY_WEBHOOK_URL=        # Webhook endpoint for treasury funding notifications
+CROWDSPLIT_AUTO_FUNDING_ENABLED=        # Feature flag for automatic treasury funding
+CROWDSPLIT_TREASURY_FUNDING_DELAY=      # Delay in seconds before funding treasury (default: 60)
+```
+
+**Configuration Tasks**:
+- [ ] Add PaymentTreasury factory contract addresses for testnet and mainnet
+- [ ] Configure Crowdsplit bridge contract addresses for automated funding
+- [ ] Set up treasury funding webhook endpoints with proper authentication
+- [ ] Test dual treasury deployment on Alfajores testnet
+- [ ] Validate all contract addresses are compatible with CC Protocol backend
+
+### Migration Strategy to Unified Contract
+
+**Migration Path Design**:
+- [ ] **Phase 1: Abstraction Layer Implementation** (Current MVP):
+  - [ ] Implement all dual treasury logic through abstraction interfaces
+  - [ ] Ensure zero direct contract calls outside of treasury managers
+  - [ ] Design database schema to support both modes with minimal changes
+
+- [ ] **Phase 2: Unified Contract Development** (Post-MVP):
+  - [ ] Develop single contract that handles both crypto and credit card flows internally
+  - [ ] Implement `UnifiedTreasuryManager` class following same `TreasuryInterface`
+  - [ ] Create migration scripts to consolidate dual addresses to single `treasuryAddress`
+
+- [ ] **Phase 3: Seamless Migration** (Production Deployment):
+  - [ ] Switch `TREASURY_MODE` environment variable from 'DUAL' to 'UNIFIED'
+  - [ ] Run database migration to consolidate treasury addresses
+  - [ ] Deploy unified contracts and update environment variables
+  - [ ] Remove temporary dual treasury code and database fields
+
+**Migration Validation Tasks**:
+- [ ] **Code Architecture Validation**:
+  - [ ] Verify all treasury interactions go through abstraction layer
+  - [ ] Ensure no direct references to dual treasury fields in UI components
+  - [ ] Test treasury manager factory with both modes
+  - [ ] Validate payment processor works with both dual and unified flows
+
+- [ ] **Database Migration Testing**:
+  - [ ] Test migration scripts on development data
+  - [ ] Verify payment history integrity during treasury consolidation
+  - [ ] Validate all queries work with both database schemas
+  - [ ] Test rollback procedures for migration failure scenarios
+
+### Testing Strategy for Dual Treasury Implementation
+
+**End-to-End Payment Flow Validation**:
+- [ ] **KeepWhatsRaised Flow Testing**:
+  - [ ] Test: Campaign approval → Crypto treasury deployment → USDC wallet payment → creator withdrawal
+  - [ ] Validate treasury balance updates and payment record creation with `treasuryType: 'CRYPTO'`
+  - [ ] Test error scenarios: insufficient USDC, network failures, contract deployment failures
+
+- [ ] **PaymentTreasury Flow Testing**:
+  - [ ] Test: Campaign approval → Payment treasury deployment → Stripe payment → Crowdsplit webhook → treasury funding
+  - [ ] Validate automatic USDC deposit to PaymentTreasury after successful credit card payment
+  - [ ] Test payment confirmation UI and treasury balance updates with `treasuryType: 'PAYMENT'`
+
+- [ ] **Dual Treasury Integration Testing**:
+  - [ ] Test campaigns with both treasury types successfully deployed
+  - [ ] Validate payment method availability based on treasury deployment status
+  - [ ] Test admin dashboard treasury management for both contract types
+  - [ ] Verify payment history and reconciliation across both treasury types
 
 ---
 
@@ -446,26 +784,31 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 ## PRIORITY ASSESSMENT (Revised for MVP Demo)
 
 ### 🔥 **CRITICAL PATH** (Must complete for demo)
-1. **Phase 1**: Round sponsor schema and basic enhancements
-2. **Phase 2**: Round application workflow (creator→admin approval)
-3. **Phase 3**: CC Protocol treasury integration and crypto payments
-4. **Phase 4**: Homepage QF rounds display
+1. **Phase 0**: Streamlined MVP Features (4 simple features, 1 day total)
+2. **Phase 3**: Dual Treasury integration (already 45% complete)
+3. **Basic QF Demo Setup**: Existing round system + Phase 0 features = complete demo
 
-### 🟡 **HIGH PRIORITY** (Important for complete MVP)
-1. **Phase 5**: Manual QF match fund system
-2. Enhanced admin dashboard
-3. Code cleanup and optimization
-4. Feature disabling/removal
+### ❌ **MVP SCOPE CUTS** (Build after user feedback)
+1. **Phase 1-2**: Round enhancements and application workflows (existing system works)
+2. **Phase 4-5**: Homepage and advanced features (existing homepage works)
+3. All notification, refund, user management, and advanced admin features
+4. Complex UI/UX improvements and polish features
 
-### 🟢 **MEDIUM PRIORITY** (Polish and improvements)
-1. Advanced admin features
-2. Enhanced discovery and search
-3. Performance optimizations
-4. Comprehensive testing
+### 🎯 **MVP SUCCESS CRITERIA** (Demo Ready)
+- Creator can: Create → Edit → Get approved → Receive funds → Withdraw funds
+- Admin can: Approve campaigns → Assign match funds → Manage rounds
+- Guest can: Browse campaigns → Contribute → See QF distinction
+- **Total Development Time**: 1-2 days maximum
 
 ---
 
 ## COMPLETION TRACKING
+
+### Phase 0 Progress: 0% Complete (STREAMLINED)
+- [ ] 0/8 critical tasks completed (massively reduced scope)
+- **Key Blockers**: None - all features are simple additions to existing code
+- **Ready to Start**: All features can start immediately (no dependencies)
+- **Estimated Time**: 1 day total (4 hours per feature maximum)
 
 ### Phase 1 Progress: 7% Complete
 - [x] 3/44 tasks completed (after Cloudinary analysis)
@@ -481,10 +824,11 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 - **Critical Patterns Identified**: Campaign approval workflow can be directly copied for round applications
 - **Dependencies**: Enhanced round UI from Phase 1, but application management can proceed independently
 
-### Phase 3 Progress: 70% Complete
-- [x] 7/10 tasks completed (after treasury analysis correction)
-- **Key Blockers**: Contract address testing with Crowdsplit
-- **Major Discovery**: Treasury implementation is more advanced than expected
+### Phase 3 Progress: 45% Complete (Revised for Dual Treasury)
+- [x] 15/34 tasks completed (after dual treasury architecture analysis)
+- **Key Blockers**: PaymentTreasury contract development and deployment, dual treasury database schema
+- **Major Discovery**: Requires complete dual contract architecture - KeepWhatsRaised (70% complete) + PaymentTreasury (15% complete)
+- **Critical Path**: Database schema updates must be completed before PaymentTreasury implementation
 
 ### Phase 4 Progress: 20% Complete
 - [x] 1/5 tasks completed
@@ -496,29 +840,41 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 - **Key Blockers**: Match fund calculation interface
 - **Dependencies**: Requires completed round workflows from Phase 2
 
-**Overall MVP Progress: 30% Complete** (revised after detailed analysis)
+**Overall MVP Progress: 75% Complete** (revised after massive scope reduction - existing features work!)
 
-## IMMEDIATE NEXT STEPS (Priority Order)
+## IMMEDIATE NEXT STEPS (MVP Demo Focus)
 
-### Week 1 Focus: Phase 1 Foundation
-1. **Round Sponsor Schema** (0 dependencies - START HERE)
-   - Add sponsor fields to Round model
-   - Create migration 
-   - Update types and APIs
+### Day 1: Complete Phase 0 (4 Simple Features)
+1. **Campaign Editing** (2 hours max):
+   - Copy title/description fields from create form
+   - Add edit page and button
+   - Extend existing PATCH API
 
-2. **Campaign Editing UI** (parallel work possible)
-   - Create edit form component
-   - Add edit routes and pages
-   - Implement edit button in UI
+2. **Withdrawal Button** (2 hours max):
+   - Add single "Withdraw All" button to creator dashboard
+   - Create simple API endpoint calling treasury contract
+   - Add confirmation dialog
 
-3. **Round Form Enhancements** (depends on schema)
-   - Add sponsor fields to creation form
-   - Update validation and submission
+3. **QF Badge** (1 hour max):
+   - Create simple badge component
+   - Add to campaign cards
+   - Check for RoundCampaigns relationship
 
-### Critical Path Dependencies
-- Phase 2 round applications → BLOCKED until Phase 1 sponsor schema complete
-- Phase 4 homepage rounds → BLOCKED until Phase 1-2 workflows complete  
-- Phase 3 testing can proceed in parallel (contract address verification)
+4. **Match Fund Field** (1 hour max):
+   - Add input field to admin campaign cards
+   - Add database field to Campaign model
+   - Simple save functionality
+
+### Day 2: Test & Polish
+- Manual testing of all 4 features
+- Fix any bugs found
+- Basic styling cleanup
+- **MVP Demo Ready**
+
+### MVP Demo Flow (Works with existing + 4 new features)
+1. ✅ **Already Works**: Campaign creation, approval, payments, rounds
+2. 🔄 **Added Today**: Campaign editing, withdrawal, QF badges, match fund assignment
+3. 🎯 **Result**: Complete creator/admin/guest demo flow
 
 ---
 
@@ -529,10 +885,11 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 - Build round application workflow
 - **Deliverable**: Admin can create sponsored rounds, creators can apply
 
-### Week 2: Phase 3 Treasury Integration  
-- Integrate CC Protocol treasury deployment
-- Complete crypto payment flow
-- **Deliverable**: End-to-end crypto funding with new treasury model
+### Week 2-3: Phase 3 Dual Treasury Implementation  
+- Implement dual treasury database schema updates
+- Complete PaymentTreasury contract development and deployment
+- Integrate Crowdsplit bridge with PaymentTreasury automation
+- **Deliverable**: End-to-end funding with both crypto and credit card flows via dual treasury architecture
 
 ### Week 3: Phase 4 + Phase 5 Core
 - Homepage QF rounds integration
@@ -558,11 +915,13 @@ This document tracks all tasks required to achieve the MVP goals for the Akashic
 - Implement proper error handling
 
 ### Critical Success Factors
-1. **Treasury Integration**: Must work with CC Protocol for demo
-2. **Round Workflow**: Creator→Admin approval must be seamless  
-3. **Match Funding**: Manual calculation upload must be intuitive
-4. **Homepage Integration**: QF rounds must be discoverable
-5. **Admin Experience**: Admin must have full control over QF process
+1. **Migration-Ready Architecture**: All dual treasury logic must be easily replaceable with unified contract through configuration changes
+2. **Abstraction Layer Integrity**: Zero direct contract calls outside of treasury managers - all interactions through interfaces
+3. **Dual Treasury Demo**: Both KeepWhatsRaised and PaymentTreasury contracts must work with CC Protocol for testing demonstration
+4. **Payment Flow Abstraction**: Seamless switching between crypto and credit card flows through unified payment processor
+5. **Database Schema Flexibility**: Schema must support both dual and unified modes with minimal migration complexity
+6. **Crowdsplit Bridge Testing**: Automatic treasury funding from credit card payments must be reliable for demo
+7. **Clean Migration Path**: Clear roadmap and tooling for transitioning from dual to unified contract in production
 
 ### Testing Strategy
 - Test campaign creation→round application→approval flow
