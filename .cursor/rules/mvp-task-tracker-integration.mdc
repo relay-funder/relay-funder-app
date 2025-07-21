@@ -41,20 +41,66 @@ Keep tasks as [ ] when:
 - Testing reveals significant issues
 - Requirements are not fully met
 
+### Phase A Completion Criteria (Special Requirements)
+Phase A tasks require extra validation due to their critical nature:
+
+**A1. Contract Address Validation** - Mark [x] only when:
+- All environment variables updated with CCP addresses
+- Test campaign creation and admin approval works end-to-end
+- Treasury deployment confirmed with new addresses
+- Payment flow tested and confirmed working
+
+**A2. Campaign Editing System** - Mark [x] only when:
+- Edit form component fully functional
+- Edit button visible on campaign pages (creator-only)
+- Edit route protected and working
+- PATCH API expanded to handle full campaign updates
+- End-to-end editing workflow tested
+
+**A3. Admin Dashboard Enhancement** - Mark [x] only when:
+- Treasury addresses displayed in admin cards
+- Deployment status indicators working
+- UI enhancements complete and tested
+
 ## Phase-Based Development
 
 ### Current MVP Phase Priority
 Always prioritize tasks in the current critical path:
-1. **Phase 1**: Database schema & round enhancements (Foundation)
-2. **Phase 2**: Campaign-round workflows (Core Functionality)  
-3. **Phase 3**: Treasury & crypto payments (MVP Core)
-4. **Phase 4**: Homepage & discovery enhancements
-5. **Phase 5**: Admin workflows & match fund management
+
+**🔥 CRITICAL PATH** (Must Complete for Demo):
+1. **Phase A**: Contract Validation & Quick Wins (Day 1 - 8 hours)
+2. **Phase B**: Notification System (Day 2 - 8 hours)
+3. **Phase C**: Withdrawal System (Day 3 - 8 hours)
+4. **Phase D**: Dual Treasury Integration (Parallel with B-C)
+
+**🟡 HIGH PRIORITY** (Important for Complete MVP):
+5. **Phase E**: Round Sponsor Schema & Basic Enhancements
+6. **Phase F**: Round Application Workflow (creator→admin approval)
+7. **Phase G**: Homepage QF Rounds Display
+8. **Phase H**: Manual QF Match Fund System
+
+### Immediate Priority (START HERE)
+**Phase A is the ONLY work that should be started right now**:
+- A1. Contract Address Validation (CRITICAL - 2 hours)
+- A2. Campaign Editing System (HIGH VISUAL IMPACT - 4 hours)  
+- A3. Admin Dashboard Enhancement (MEDIUM VISUAL IMPACT - 2 hours)
+
+**DO NOT START** any Phase B, C, D, E, F, G, or H tasks until Phase A is 100% complete.
 
 ### Cross-Phase Dependencies
-- Some tasks may span multiple phases
-- Always complete foundation tasks before dependent functionality
-- Document any cross-phase dependencies discovered
+**Sequential Order**: A → (B + C + D) → E → F → G → H
+
+**Critical Dependencies**:
+- **Phase A is MANDATORY FIRST** - validates core system functionality
+- **Phase B can run parallel** to Phase C after Phase A complete
+- **Phase C requires Phase A** contract validation complete  
+- **Phase D can run parallel** to Phases B-C (dual treasury integration)
+- **Phases E-H BLOCKED** until Phase A-D provide stable foundation
+
+**Key Rules**:
+- Never start Phase B or C until Phase A contract validation is complete
+- Phases B, C, and D can be developed simultaneously after Phase A
+- Phases E-H must wait for critical path (A-D) completion
 
 ## Integration with Existing Rules
 
@@ -85,9 +131,9 @@ Always prioritize tasks in the current critical path:
 
 ### Starting a New Task
 ```markdown
-Before implementing "Add sponsorName field to Round model":
-1. Check mvp-task-tracker.mdc Phase 1 status
-2. Verify database schema tasks are in correct order
+Before implementing "Update contract addresses with CCP details":
+1. Check mvp-task-tracker.mdc Phase A status
+2. Verify contract validation tasks are in correct order
 3. Plan implementation approach
 4. Update task to show work has started (optional)
 5. Implement the feature
@@ -97,7 +143,7 @@ Before implementing "Add sponsorName field to Round model":
 
 ### Discovering Additional Work
 ```markdown
-If while implementing "Round application submission UI" you discover:
+If while implementing "Campaign Edit Form" you discover:
 - Need additional validation logic
 - Missing API endpoint
 - Complex UI state management
@@ -107,11 +153,11 @@ Add sub-tasks or break down the original task for clarity
 
 ### Completing a Phase
 ```markdown
-When all Phase 1 tasks are [x]:
+When all Phase A tasks are [x]:
 1. Verify all functionality works together
 2. Test integration between completed features
 3. Update overall progress tracking
-4. Plan Phase 2 start
+4. Plan Phase B + C start (can run parallel)
 ```
 
 This rule ensures consistent, trackable progress toward MVP completion while maintaining code quality and project organization.
