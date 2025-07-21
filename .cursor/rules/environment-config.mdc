@@ -1,3 +1,13 @@
+---
+description: |
+  Defines environment variable management and validation standards for the Akashic project. All environment variables must be documented, validated, and securely managed across development, testing, and production environments.
+globs:
+  - ".env*"
+  - "lib/env.ts"
+  - "test/setup.ts"
+alwaysApply: true
+---
+
 # Environment and Configuration Management
 
 ## Environment Variables
@@ -449,7 +459,3 @@ afterEach(() => {
   cleanup();
 });
 ```
-description:
-globs:
-alwaysApply: false
----

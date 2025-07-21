@@ -1,3 +1,10 @@
+---
+description: |
+  Guidelines and patterns for structuring, organizing, and implementing React components in this project.
+globs: []
+alwaysApply: true
+---
+
 # React Component Patterns
 
 ## Component Architecture
@@ -497,7 +504,3 @@ export function CampaignDetails({ campaign }: { campaign: Campaign }) {
   );
 }
 ```
-description:
-globs:
-alwaysApply: false
----

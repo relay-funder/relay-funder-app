@@ -1,3 +1,26 @@
+---
+description: |
+  Defines the required directory and file structure for the Akashic project. All code, configuration, and documentation must adhere to this structure to ensure maintainability, scalability, and consistency across the codebase.
+globs:
+  - "app/**"
+  - "components/**"
+  - "lib/**"
+  - "server/**"
+  - "prisma/**"
+  - "contracts/**"
+  - "public/**"
+  - "types/**"
+  - "test/**"
+  - "scripts/**"
+  - "tailwind.config.ts"
+  - "next.config.js"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - "docker-compose.yml"
+  - ".env*"
+alwaysApply: true
+---
+
 # Akashic Project Structure Guide
 
 ## Overview
@@ -74,7 +97,3 @@ Akashic is a Next.js 15 fundraising platform for open source projects built with
 - Database migrations via Prisma
 - pnpm for package management
 - ESLint and Prettier for code quality
-description:
-globs:
-alwaysApply: false
----

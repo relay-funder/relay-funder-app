@@ -1,3 +1,29 @@
+---
+description: |
+  Database patterns and Prisma guidelines for Akashic. 
+  - Use the centralized db instance from server/db.ts for all database operations.
+  - Never instantiate multiple Prisma clients.
+  - Always validate input with Zod schemas before database writes.
+  - Use descriptive migration names and review generated migrations before applying.
+  - Prefer select/include for efficient queries and avoid N+1 problems.
+  - Implement pagination for large datasets.
+  - Enforce proper authorization and input sanitization for all queries.
+  - Hash sensitive data and use environment variables for secrets.
+  - Test migrations on staging before production and keep them atomic and reversible.
+  - Handle Prisma errors explicitly and log for audit purposes.
+  - Use connection pooling in production and monitor connection usage.
+  - Reference main schema in prisma/schema.prisma.
+globs:
+  - prisma/schema.prisma
+  - server/db.ts
+  - lib/database.ts
+  - app/api/**/*.ts
+  - app/api/**/*.tsx
+  - server/**/*.ts
+  - server/**/*.tsx
+alwaysApply: true
+---
+
 # Database Patterns and Prisma Guidelines
 
 ## Database Schema Reference
@@ -174,7 +200,3 @@ try {
 - Use environment variables for secrets
 - Implement proper audit logging
 - Consider data encryption for PII
-description:
-globs:
-alwaysApply: false
----

@@ -1,3 +1,12 @@
+---
+description: |
+  Enforces TypeScript coding standards for the Akashic project. All TypeScript code must use explicit types, leverage Zod for runtime validation, and follow project-specific patterns for API, component, and database code. Adhere to best practices for performance, security, accessibility, and testing as outlined in this rule file.
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: true
+---
+
 # TypeScript Coding Standards
 
 ## Code Style Guidelines
@@ -104,7 +113,3 @@ export type FeatureStatus = 'active' | 'inactive' | 'pending';
 - Test React components with proper mocking
 - Use TypeScript for test files
 - Mock external dependencies properly
-description:
-globs:
-alwaysApply: false
----

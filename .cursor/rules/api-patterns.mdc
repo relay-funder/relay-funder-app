@@ -1,3 +1,10 @@
+---
+description: |
+  Guidelines and patterns for structuring API routes and server actions in Next.js projects.
+globs: []
+alwaysApply: true
+---
+
 # API Patterns and Server Actions
 
 ## Next.js API Routes Structure
@@ -451,7 +458,3 @@ describe('updateCampaign', () => {
   });
 });
 ```
-description:
-globs:
-alwaysApply: false
----

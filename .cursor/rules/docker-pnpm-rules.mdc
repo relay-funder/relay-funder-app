@@ -1,8 +1,20 @@
 ---
-description: 
-globs: 
+description: |
+  Defines strict rules for using Docker and pnpm in the Akashic project. Ensures all development, package management, and database operations are performed using Docker for local development and pnpm as the sole package manager. Prohibits npm/yarn usage, enforces correct command context, and mandates secure, consistent environment and container practices.
+globs:
+  - "docker-compose.yml"
+  - "Dockerfile"
+  - "pnpm-lock.yaml"
+  - "package.json"
+  - "prisma/**"
+  - "app/**"
+  - "lib/**"
+  - "server/**"
+  - "components/**"
+  - "test/**"
 alwaysApply: true
 ---
+
 # Docker and pnpm Command Execution Rules
 
 ## Core Principles

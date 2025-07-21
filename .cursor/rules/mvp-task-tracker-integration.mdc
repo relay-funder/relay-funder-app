@@ -1,3 +1,19 @@
+---
+description: |
+  Ensures that all development work on the Akashic platform is tracked, updated, and validated through the MVP task tracker. This rule mandates strict adherence to the process outlined in mvp-task-tracker.mdc for every code change, feature, or bug fix.
+globs:
+  - "mvp-task-tracker.mdc"
+  - "app/**"
+  - "components/**"
+  - "lib/**"
+  - "server/**"
+  - "prisma/**"
+  - "contracts/**"
+  - "types/**"
+  - "test/**"
+alwaysApply: true
+---
+
 # MVP Task Tracker Integration Rule
 
 ## Overview
@@ -161,7 +177,3 @@ When all Phase A tasks are [x]:
 ```
 
 This rule ensures consistent, trackable progress toward MVP completion while maintaining code quality and project organization.
-description:
-globs:
-alwaysApply: false
----
