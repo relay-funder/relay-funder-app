@@ -10,4 +10,8 @@ export {
   useDeployContract,
   useConfig,
   useChainId,
+  useConnectors,
+  useConnect,
+  useSignMessage,
+  useAccount,
 } from 'wagmi';

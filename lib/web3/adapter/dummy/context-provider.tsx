@@ -55,7 +55,9 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     // mock that loading web3 components might take time
     const timer = setTimeout(() => {
       setInitialized(true);
-      setAddress('0x0000deb0000');
+      setAddress(
+        `0xdefe10ca1${BigInt(Math.floor(Math.random() * 16 ** 10)).toString(16)}`,
+      );
     }, initTime);
     return () => {
       clearTimeout(timer);

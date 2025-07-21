@@ -79,8 +79,53 @@ export function useDeployContract() {
 export function useConfig() {
   return wagmiConfig;
 }
+export function useAccount() {
+  const { chainId, address } = useWeb3Context();
+
+  console.log('dummy:wagmi:useAccount');
+  return {
+    address,
+    chainId,
+    isConnected: true,
+    status: 'connected',
+  };
+}
+export function useConnect() {
+  console.log('dummy:wagmi:useConnect');
+  return {
+    connectors: [],
+    connect: (
+      { connector }: { connector: unknown },
+      {
+        onSuccess,
+        onError,
+      }: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      console.log('dummy:wagmi:useConnect:connect', {
+        connector,
+        onSuccess,
+        onError,
+      });
+      if (typeof onSuccess === 'function') {
+        onSuccess();
+      }
+    },
+  };
+}
+
 export function useChainId() {
   const { chainId } = useWeb3Context();
 
   return chainId;
+}
+export function useSignMessage() {
+  return {
+    signMessageAsync: async (arg0: unknown) => {
+      console.warn('useConnect::signMessageAsync', arg0);
+      return 'mock-signed-message';
+    },
+  };
+}
+export function useConnectors() {
+  return [];
 }

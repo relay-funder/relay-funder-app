@@ -16,8 +16,8 @@ import { wagmiConfig } from '@/lib/web3';
 import {
   WagmiProvider,
   createConfig,
-  CreateConnectorFn,
-  CreateConfigParameters,
+  type CreateConnectorFn,
+  type CreateConfigParameters,
 } from 'wagmi';
 
 // import {
@@ -32,6 +32,7 @@ import {
 import { debugWeb3ContextProvider as debug } from '@/lib/debug';
 import {
   EthereumProvider,
+  initSilk,
   SilkEthereumProviderInterface,
 } from '@silk-wallet/silk-wallet-sdk';
 
@@ -58,6 +59,7 @@ interface IWeb3Context {
     isConnected: () => Promise<boolean>;
     getEthereumProvider: () => Promise<EthereumProvider>;
   }>;
+  connectors: readonly CreateConnectorFn[];
 }
 const Web3Context = createContext({
   chainId: undefined,
@@ -72,6 +74,7 @@ const Web3Context = createContext({
       throw new Error('wallet not connected');
     },
   }),
+  connectors: [] as CreateConnectorFn[],
 } as IWeb3Context);
 
 if (typeof window !== 'undefined' && typeof window.silk === 'undefined') {
@@ -205,8 +208,9 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
       address,
       initialized,
       requestWallet,
+      connectors,
     };
-  }, [chainId, chain, address, initialized, requestWallet]);
+  }, [chainId, chain, address, initialized, requestWallet, connectors]);
 
   useEffect(() => {
     /**
@@ -215,9 +219,18 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     if (autoConnected) {
       return;
     }
+    const loadedSilkConnector = connectors.find(
+      (connector) => connector === silkConnector,
+    );
+    if (!loadedSilkConnector) {
+      console.log('no silk yet');
+      return;
+    }
+
     let timerId: ReturnType<typeof setTimeout> | undefined = undefined;
     async function checkWalletConnection() {
-      const provider = getProvider();
+      console.log('check wallet connection');
+      const provider = initSilk(silkConnectorOptions);
       if (!provider) {
         timerId = setTimeout(() => checkWalletConnection(), 100);
         return;
@@ -239,7 +252,7 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     return () => {
       clearTimeout(timerId);
     };
-  }, [checkWallet, autoConnected]);
+  }, [checkWallet, autoConnected, connectors]);
 
   useEffect(() => {
     /**

@@ -47,7 +47,8 @@ export interface ConnectedWallet {
 export interface IWeb3UseAuthHook {
   address?: string;
   wallet?: ConnectedWallet;
-  authenticated: boolean;
+  authenticating: boolean;
+  error?: Error;
 
   login: () => Promise<void>;
   logout: () => Promise<void>;

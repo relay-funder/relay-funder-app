@@ -6,7 +6,7 @@ import { chainConfig } from '@/lib/web3';
 import { ProviderRpcError } from '@/lib/web3/types';
 import {
   useWeb3Context,
-  useAuth,
+  useWeb3Auth,
   useCurrentChain,
   getProvider,
 } from '@/lib/web3';
@@ -14,7 +14,7 @@ import {
 export function useNetworkCheck() {
   const { address } = useWeb3Context();
   const { chainId } = useCurrentChain();
-  const { ready } = useAuth();
+  const { ready } = useWeb3Auth();
   const { toast } = useToast();
   const [triggerCheck, setTriggerCheck] = useState(Date.now());
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
@@ -65,6 +65,7 @@ export function useNetworkCheck() {
           switchError === 'wallet_switchEthereumChain failed. Invalid chain ID'
         ) {
           try {
+            console.log('trying to add chain', chainId);
             await provider.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
