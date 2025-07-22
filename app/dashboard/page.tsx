@@ -1,6 +1,6 @@
 'use client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts';
 import { Heart } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
 import { Campaign } from '@/types/campaign';

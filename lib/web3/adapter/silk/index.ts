@@ -1,4 +1,4 @@
-export { useAuth } from './use-auth';
+export { useWeb3Auth } from './use-web3-auth';
 export {
   Web3ContextProvider,
   useWeb3Context,

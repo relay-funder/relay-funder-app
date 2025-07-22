@@ -42,8 +42,11 @@ export async function getCampaignBySlug(
   }
 }
 
-async function getPublicClient() {
-  const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
+interface IPublicClient {
+  getLogs: (arg0: unknown) => Promise<unknown>;
+}
+async function getPublicClient(): Promise<IPublicClient> {
   const RPC_URL = chainConfig.rpcUrl;
   if (!FACTORY_ADDRESS || !RPC_URL) {
     throw new Error('Campaign factory address or RPC URL not configured');
@@ -66,12 +69,10 @@ async function getPublicClient() {
         wait: 16,
       },
     },
-  });
+  }) as IPublicClient;
 }
 
-async function getCampaignCreatedEvents(
-  client: ReturnType<typeof createPublicClient>,
-) {
+async function getCampaignCreatedEvents(client: IPublicClient) {
   return client.getLogs({
     address: FACTORY_ADDRESS as `0x${string}`,
     event: {
@@ -123,6 +124,11 @@ function formatCampaignData(
         return accumulator + value;
       }, 0) ?? 0,
     images: dbCampaign.images,
+    payments: dbCampaign.payments,
+    confirmedPayments:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed') || [],
+    donationCount:
+      dbCampaign.payments?.filter((p) => p.status === 'confirmed').length || 0,
     slug: dbCampaign.slug,
     location: dbCampaign.location,
     category: dbCampaign.category,
@@ -191,12 +197,24 @@ export async function listCampaigns({
   let events: CampaignCreatedEvent[] = [];
   if (forceEvents) {
     const client = await getPublicClient();
-    // @ts-expect-error - client issue
-    events = await getCampaignCreatedEvents(client);
+    events = (await getCampaignCreatedEvents(client)) as CampaignCreatedEvent[];
   }
   const combinedCampaigns = dbCampaigns
     .filter((campaign) => campaign.transactionHash)
     .map((dbCampaign) => {
+      // typescript transform payment.metadata type
+      return {
+        ...dbCampaign,
+        payments: dbCampaign.payments?.map((dbPayment) => ({
+          ...dbPayment,
+          metadata: dbPayment.metadata as {
+            paymentMethod?: string;
+            originalToken?: string;
+          },
+        })),
+      };
+    })
+    .map((dbCampaign: DbCampaign) => {
       const event = events.find(
         (onChainCampaign) =>
           onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===

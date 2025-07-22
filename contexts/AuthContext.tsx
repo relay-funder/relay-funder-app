@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return true;
     }
     return false;
-  }, [session]);
+  }, [session?.status]);
 
   const isReady = useMemo(() => {
     debug &&
@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return false;
     }
     return true;
-  }, [session]);
+  }, [session?.status]);
 
   const address = useMemo(() => {
     debug &&
@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return undefined;
     }
     return session.data.user.address;
-  }, [session]);
+  }, [session?.data?.user?.address]);
   // Set client-side flag on mount
   useEffect(() => {
     setIsClient(true);
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isAdmin = useMemo(() => {
     return session?.data?.user?.roles?.includes('admin') ?? false;
-  }, [session]);
+  }, [session?.data?.user?.roles]);
   // Debugging logs
   useEffect(() => {
     if (!isClient || !debug) {

@@ -8,23 +8,16 @@ export function CampaignDonationWalletProcess({
   amount,
   selectedToken,
   donationToAkashic,
+  anonymous,
   onProcessing,
 }: {
   campaign: Campaign;
   amount: string;
   selectedToken: string;
   donationToAkashic: number;
-  onProcessing: (processing: boolean) => void;
+  anonymous: boolean;
+  onProcessing?: (processing: boolean) => void;
 }) {
-  const {
-    onDonate,
-    isProcessing,
-    error: donateError,
-  } = useDonationCallback({
-    campaign,
-    amount,
-    selectedToken,
-  });
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const akashicAmount = useMemo(() => {
     if (donationToAkashic) {
@@ -35,8 +28,17 @@ export function CampaignDonationWalletProcess({
   const poolAmount = useMemo(() => {
     return numericAmount - akashicAmount;
   }, [numericAmount, akashicAmount]);
+  const { onDonate, isProcessing } = useDonationCallback({
+    campaign,
+    amount,
+    poolAmount,
+    isAnonymous: anonymous,
+    selectedToken,
+  });
   useEffect(() => {
-    onProcessing(isProcessing);
+    if (typeof onProcessing === 'function') {
+      onProcessing(isProcessing);
+    }
   }, [onProcessing, isProcessing]);
   return (
     <Button

@@ -1,9 +1,9 @@
-import { useAuth, erc20Abi, ethers } from '@/lib/web3';
+import { useWeb3Auth, erc20Abi, ethers } from '@/lib/web3';
 import { useState, useEffect } from 'react';
 import { USDC_ADDRESS } from '@/lib/constant';
 
 export function useUsdcBalance() {
-  const { wallet } = useAuth();
+  const { wallet } = useWeb3Auth();
   const [usdcBalance, setUsdcBalance] = useState('0.00');
   const [isPending, setIsPending] = useState(true);
   useEffect(() => {

@@ -3,7 +3,8 @@ import { PROJECT_NAME, REOWN_CLOUD_PROJECT_ID } from '@/lib/constant';
 import type { InitSilkOptions } from '@silk-wallet/silk-wallet-sdk';
 
 export const options: InitSilkOptions = {
-  useStaging: true,
+  useStaging: false,
+  useProd: true,
   config: {
     styles: { darkMode: true },
     allowedSocials: ['google'],

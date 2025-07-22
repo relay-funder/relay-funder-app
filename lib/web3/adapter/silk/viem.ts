@@ -11,4 +11,5 @@ export {
   stringToHex,
   decodeEventLog,
   BaseError,
+  UserRejectedRequestError,
 } from 'viem';

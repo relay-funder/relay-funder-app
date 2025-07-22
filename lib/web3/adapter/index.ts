@@ -12,7 +12,7 @@
 
 export {
   Web3ContextProvider,
-  useAuth,
+  useWeb3Auth,
   useWeb3Context,
   getProvider,
   // config
@@ -30,6 +30,7 @@ export {
   maxUint256,
   decodeEventLog,
   BaseError,
+  UserRejectedRequestError,
   // wagmi
   readContract,
   createConfig,
@@ -39,6 +40,10 @@ export {
   useDeployContract,
   useChainId,
   useConfig,
+  useConnectors,
+  useConnect,
+  useSignMessage,
+  useAccount,
   // ethers
   ethers,
 } from './silk';

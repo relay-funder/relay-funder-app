@@ -3,7 +3,7 @@
 import { Loader2, MessageSquareWarning, Wallet } from 'lucide-react';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { useNetworkCheck } from '@/hooks/use-network';
-import { useAuth as useWeb3Auth, chainConfig } from '@/lib/web3';
+import { useWeb3Auth, chainConfig } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { CampaignDonationWalletDetails } from './details';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';

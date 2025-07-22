@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth as useWeb3Auth, ethers } from '@/lib/web3';
+import { useWeb3Auth, ethers } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
@@ -14,11 +14,15 @@ const debug = process.env.NODE_ENV !== 'production';
 export function useDonationCallback({
   campaign,
   amount,
+  poolAmount,
   selectedToken,
+  isAnonymous = false,
 }: {
   campaign: Campaign;
   amount: string;
+  poolAmount: number;
   selectedToken: string;
+  isAnonymous?: boolean;
 }) {
   const { wallet } = useWeb3Auth();
   const { authenticated } = useAuth();
@@ -69,9 +73,10 @@ export function useDonationCallback({
       debug && console.log('Creating payment record...');
       const { paymentId } = await createPayment({
         amount: amount,
+        poolAmount,
         token: selectedToken,
         campaignId: campaign.id,
-        isAnonymous: false,
+        isAnonymous: isAnonymous,
         status: 'confirming',
         transactionHash: tx.hash,
       });
@@ -121,9 +126,11 @@ export function useDonationCallback({
     createPayment,
     updatePaymentStatus,
     amount,
+    poolAmount,
     campaign?.id,
     campaign?.treasuryAddress,
     selectedToken,
+    isAnonymous,
   ]);
   return { onDonate, isProcessing, error };
 }
