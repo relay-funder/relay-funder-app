@@ -15,11 +15,24 @@ alwaysApply: true
 - Use route groups for logical organization
 - Implement proper HTTP methods (GET, POST, PUT, DELETE)
 
+### Required Imports
+```typescript
+// Standard imports for all API routes
+import { ApiNotFoundError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { checkAuth } from '@/lib/api/auth';
+import { db } from '@/server/db';
+
+// Import specific parameter types from /lib/api/types
+import { CampaignsWithIdParams } from '@/lib/api/types';
+```
+
 ### Route File Structure
 ```typescript
 // app/api/campaigns/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/server/auth';
+import { ApiParameterError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { checkAuth } from '@/lib/api/auth';
 import { db } from '@/server/db';
 import { z } from 'zod';
 
@@ -30,33 +43,36 @@ const createCampaignSchema = z.object({
   // ... other fields
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(req: Request) {
   try {
+    // For public endpoints, explain why no auth is needed and DDoS prevention
+    // This is a public endpoint for browsing campaigns with pagination limits
+    // DDoS prevention: pageSize limited to 10, rate limiting in middleware
+    
+    const { searchParams } = new URL(req.url);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
+    }
+    
     const campaigns = await db.campaign.findMany({
       where: { status: 'ACTIVE' },
-      include: { images: true }
+      include: { images: true },
+      take: pageSize
     });
     
-    return NextResponse.json(campaigns);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 }
-    );
+    return response(campaigns);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const session = await checkAuth(['user']);
     
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = createCampaignSchema.parse(body);
     
     const campaign = await db.campaign.create({
@@ -66,243 +82,284 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    return NextResponse.json(campaign, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to create campaign' },
-      { status: 500 }
-    );
+    return response(campaign);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 ```
 
 ### Dynamic Routes
 ```typescript
-// app/api/campaigns/[id]/route.ts
-interface RouteParams {
-  params: { id: string };
+// app/api/campaigns/[campaignId]/route.ts
+import { ApiNotFoundError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { CampaignsWithIdParams } from '@/lib/api/types';
+import { db } from '@/server/db';
+
+export async function GET(req: Request, { params }: CampaignsWithIdParams) {
+  try {
+    // Public endpoint - campaign details are publicly viewable
+    // DDoS prevention: Database query optimization, caching headers
+    
+    const { campaignId } = await params;
+    
+    const campaign = await db.campaign.findUnique({
+      where: { id: parseInt(campaignId) },
+      include: {
+        images: true,
+        payments: true,
+        comments: true,
+      }
+    });
+    
+    if (!campaign) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
+    
+    return response({ campaign });
+  } catch (error: unknown) {
+    return handleError(error);
+  }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
-  const { id } = params;
-  
-  const campaign = await db.campaign.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      images: true,
-      payments: true,
-      comments: true,
+export async function PATCH(req: Request, { params }: CampaignsWithIdParams) {
+  try {
+    const session = await checkAuth(['user']);
+    const { campaignId } = await params;
+    const body = await req.json();
+    
+    // Check ownership
+    const campaign = await db.campaign.findUnique({
+      where: { id: parseInt(campaignId) }
+    });
+    
+    if (!campaign) {
+      throw new ApiNotFoundError('Campaign not found');
     }
-  });
-  
-  if (!campaign) {
-    return NextResponse.json(
-      { error: 'Campaign not found' },
-      { status: 404 }
-    );
+    
+    if (campaign.creatorAddress !== session.user.address) {
+      throw new ApiAuthNotAllowed('Not authorized to edit this campaign');
+    }
+    
+    const updatedCampaign = await db.campaign.update({
+      where: { id: parseInt(campaignId) },
+      data: body
+    });
+    
+    return response({ campaign: updatedCampaign });
+  } catch (error: unknown) {
+    return handleError(error);
   }
-  
-  return NextResponse.json(campaign);
 }
 ```
 
-## Server Actions
+## Form Handling
 
-### Server Action Structure
-Server actions are used for form submissions and server-side mutations. They're defined in [lib/actions/](mdc:lib/actions/).
+### Client-Side Form Submission to API Routes
+Instead of server actions, use client-side form handling with API routes for proper security:
 
 ```typescript
-// lib/actions/campaign-actions.ts
-'use server';
+// components/campaign/update-form.tsx
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
-import { auth } from '@/server/auth';
-import { db } from '@/server/db';
-import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+interface CampaignUpdateFormProps {
+  campaign: Campaign;
+  onSuccess?: () => void;
+}
 
-const updateCampaignSchema = z.object({
-  id: z.number(),
-  title: z.string().min(1),
-  description: z.string().min(1),
-  status: z.enum(['DRAFT', 'ACTIVE', 'COMPLETED']),
-});
+export function CampaignUpdateForm({ campaign, onSuccess }: CampaignUpdateFormProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export async function updateCampaign(formData: FormData) {
-  try {
-    const session = await auth();
-    if (!session) {
-      return { error: 'Unauthorized' };
-    }
-    
-    const rawData = {
-      id: parseInt(formData.get('id') as string),
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       status: formData.get('status') as string,
     };
-    
-    const validatedData = updateCampaignSchema.parse(rawData);
-    
-    // Check ownership
-    const campaign = await db.campaign.findUnique({
-      where: { id: validatedData.id }
-    });
-    
-    if (!campaign || campaign.creatorAddress !== session.user.address) {
-      return { error: 'Forbidden' };
-    }
-    
-    const updatedCampaign = await db.campaign.update({
-      where: { id: validatedData.id },
-      data: {
-        title: validatedData.title,
-        description: validatedData.description,
-        status: validatedData.status,
+
+    try {
+      const response = await fetch(`/api/campaigns/${campaign.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update campaign');
       }
-    });
-    
-    revalidatePath('/campaigns');
-    return { success: true, campaign: updatedCampaign };
-    
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { error: 'Invalid input', details: error.errors };
+
+      onSuccess?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
-    
-    return { error: 'Failed to update campaign' };
-  }
-}
-```
+  };
 
-### Using Server Actions in Components
-```typescript
-// components/campaign/update-form.tsx
-import { updateCampaign } from '@/lib/actions/campaign-actions';
-import { useFormState } from 'react-dom';
-
-export function CampaignUpdateForm({ campaign }: { campaign: Campaign }) {
-  const [state, formAction] = useFormState(updateCampaign, null);
-  
   return (
-    <form action={formAction}>
-      <input type="hidden" name="id" value={campaign.id} />
-      <input name="title" defaultValue={campaign.title} />
-      <textarea name="description" defaultValue={campaign.description} />
-      <select name="status" defaultValue={campaign.status}>
-        <option value="DRAFT">Draft</option>
-        <option value="ACTIVE">Active</option>
-        <option value="COMPLETED">Completed</option>
-      </select>
-      <button type="submit">Update Campaign</button>
-      
-      {state?.error && <p className="error">{state.error}</p>}
-      {state?.success && <p className="success">Campaign updated!</p>}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="title">Title</label>
+        <Input
+          id="title"
+          name="title"
+          defaultValue={campaign.title}
+          required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="description">Description</label>
+        <Textarea
+          id="description"
+          name="description"
+          defaultValue={campaign.description}
+          required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="status">Status</label>
+        <select id="status" name="status" defaultValue={campaign.status}>
+          <option value="DRAFT">Draft</option>
+          <option value="ACTIVE">Active</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
+      </div>
+
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? 'Updating...' : 'Update Campaign'}
+      </Button>
+
+      {error && <p className="text-red-500">{error}</p>}
     </form>
   );
 }
 ```
 
+### Why API Routes Over Server Actions
+
+1. **Security**: API routes use `checkAuth()` for proper session validation
+2. **Consistency**: All data mutations go through the same authentication flow
+3. **Error Handling**: Centralized error handling with proper HTTP status codes
+4. **Testing**: API routes are easier to test in isolation
+5. **Debugging**: Clear separation of concerns and easier to debug
+
 ## Authentication and Authorization
 
-### Route Protection
+### Route Protection Patterns
 ```typescript
-// Middleware for protected routes
-export async function GET(request: NextRequest) {
-  const session = await auth();
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
+// Always use checkAuth for protected routes
+export async function POST(req: Request) {
+  try {
+    const session = await checkAuth(['user']); // for regular users
+    // or
+    const session = await checkAuth(['admin']); // for admin-only routes
+    
+    // Route implementation
+  } catch (error: unknown) {
+    return handleError(error);
   }
-  
-  // Check user roles if needed
-  if (!session.user.roles.includes('admin')) {
-    return NextResponse.json(
-      { error: 'Insufficient permissions' },
-      { status: 403 }
-    );
+}
+```
+
+### Public Endpoint Guidelines
+For public endpoints that don't require authentication, always include:
+
+1. **Clear comment explaining why it's public**
+2. **DDoS prevention measures**
+
+```typescript
+export async function GET(req: Request) {
+  try {
+    // Public endpoint - campaign browsing is publicly available
+    // DDoS prevention: pagination limits, rate limiting in middleware
+    
+    const { searchParams } = new URL(req.url);
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
+    }
+    
+    // Implementation
+  } catch (error: unknown) {
+    return handleError(error);
   }
-  
-  // Continue with protected logic
 }
 ```
 
 ### Role-Based Access Control
 ```typescript
-// lib/auth/permissions.ts
-export function hasPermission(
-  userRoles: string[],
-  requiredRole: string
-): boolean {
-  return userRoles.includes(requiredRole) || userRoles.includes('admin');
-}
+import { checkAuth } from '@/lib/api/auth';
+import { ApiAuthNotAllowed } from '@/lib/api/error';
 
-export function requireRole(requiredRole: string) {
-  return async (request: NextRequest) => {
-    const session = await auth();
-    
-    if (!session || !hasPermission(session.user.roles, requiredRole)) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
-    
-    return null; // Continue
-  };
+// Different role requirements
+const userSession = await checkAuth(['user']);
+const adminSession = await checkAuth(['admin']);
+
+// Custom permission checks
+if (resource.ownerId !== session.user.address) {
+  throw new ApiAuthNotAllowed('Not authorized to access this resource');
 }
 ```
 
 ## Error Handling
 
-### Standardized Error Responses
+### Available Error Types
 ```typescript
-// lib/api/errors.ts
-export class ApiError extends Error {
-  constructor(
-    public message: string,
-    public statusCode: number,
-    public code?: string
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+// Import from @/lib/api/error
+import {
+  ApiAuthError,           // 401 - Authentication required
+  ApiAuthNotAllowed,      // 403 - Insufficient permissions
+  ApiParameterError,      // 400 - Invalid parameters
+  ApiNotFoundError,       // 404 - Resource not found
+  ApiIntegrityError,      // 500 - Data integrity failure
+  ApiConflictError,       // 409 - Data conflict
+  ApiUpstreamError,       // 503 - External service failure
+} from '@/lib/api/error';
+```
 
-export function handleApiError(error: unknown): NextResponse {
-  if (error instanceof ApiError) {
-    return NextResponse.json(
-      { error: error.message, code: error.code },
-      { status: error.statusCode }
-    );
+### Error Handling Pattern
+```typescript
+export async function POST(req: Request) {
+  try {
+    const session = await checkAuth(['user']);
+    
+    const body = await req.json();
+    if (!body.requiredField) {
+      throw new ApiParameterError('Missing required field');
+    }
+    
+    const resource = await db.resource.findUnique({
+      where: { id: body.id }
+    });
+    
+    if (!resource) {
+      throw new ApiNotFoundError('Resource not found');
+    }
+    
+    if (resource.ownerId !== session.user.address) {
+      throw new ApiAuthNotAllowed('Not authorized');
+    }
+    
+    return response({ success: true });
+  } catch (error: unknown) {
+    return handleError(error); // Centralized error handling
   }
-  
-  if (error instanceof z.ZodError) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: error.errors },
-      { status: 400 }
-    );
-  }
-  
-  // Log unexpected errors
-  console.error('Unexpected API error:', error);
-  
-  return NextResponse.json(
-    { error: 'Internal server error' },
-    { status: 500 }
-  );
 }
 ```
 
@@ -310,10 +367,10 @@ export function handleApiError(error: unknown): NextResponse {
 
 ### Input Validation with Zod
 ```typescript
-// lib/api/schemas.ts
 import { z } from 'zod';
+import { ApiParameterError } from '@/lib/api/error';
 
-export const campaignSchema = z.object({
+const campaignSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().min(1, 'Description is required'),
   fundingGoal: z.string().regex(/^\d+(\.\d+)?$/, 'Invalid funding goal'),
@@ -322,139 +379,206 @@ export const campaignSchema = z.object({
   location: z.string().optional(),
 });
 
-export const paginationSchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(10),
-});
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const validatedData = campaignSchema.parse(body);
+    
+    // Use validatedData
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      throw new ApiParameterError('Invalid input', error.errors);
+    }
+    return handleError(error);
+  }
+}
 ```
 
 ## Response Formatting
 
-### Standardized Response Structure
+### Response Patterns
 ```typescript
-// lib/api/responses.ts
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+import { response, handleError } from '@/lib/api/response';
+
+// Success responses
+return response({ campaign }); // Single object
+return response(campaigns); // Array
+return response({ success: true, data: result }); // Structured response
+
+// Error handling is automatic through handleError
+catch (error: unknown) {
+  return handleError(error);
+}
+```
+
+### API Response Structure
+The `response` utility automatically wraps data in JSON with 200 status.
+The `handleError` utility provides consistent error formatting:
+
+```typescript
+// Success response
+{
+  "campaign": { ... }
 }
 
-export function successResponse<T>(
-  data: T,
-  message?: string
-): NextResponse<ApiResponse<T>> {
-  return NextResponse.json({
-    success: true,
-    data,
-    message,
-  });
-}
-
-export function errorResponse(
-  error: string,
-  statusCode: number = 400
-): NextResponse<ApiResponse> {
-  return NextResponse.json(
-    {
-      success: false,
-      error,
-    },
-    { status: statusCode }
-  );
+// Error response
+{
+  "success": false,
+  "error": "ApplicationError, invalid parameters: Missing required field",
+  "details": [...]
 }
 ```
 
 ## Rate Limiting and Security
 
-### Rate Limiting
+### DDoS Prevention for Public Endpoints
 ```typescript
-// lib/api/rate-limit.ts
-import { NextRequest } from 'next/server';
-
-const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
-
-export function rateLimit(
-  request: NextRequest,
-  limit: number = 100,
-  windowMs: number = 60000
-): boolean {
-  const ip = request.ip || 'unknown';
-  const now = Date.now();
-  const windowStart = now - windowMs;
-  
-  const record = rateLimitMap.get(ip);
-  
-  if (!record || record.lastReset < windowStart) {
-    rateLimitMap.set(ip, { count: 1, lastReset: now });
-    return true;
-  }
-  
-  if (record.count >= limit) {
-    return false;
-  }
-  
-  record.count++;
-  return true;
+// Pagination limits
+const pageSize = parseInt(searchParams.get('pageSize') || '10');
+if (pageSize > 10) {
+  throw new ApiParameterError('Maximum Page size exceeded');
 }
+
+// Query optimization
+const campaigns = await db.campaign.findMany({
+  where: { status: 'ACTIVE' },
+  take: pageSize,
+  select: {
+    id: true,
+    title: true,
+    description: true,
+    // Only select needed fields
+  }
+});
 ```
 
 ### Input Sanitization
 ```typescript
-// lib/api/sanitize.ts
-import DOMPurify from 'dompurify';
+// Use Zod schemas for validation
+const sanitizedData = schema.parse(rawInput);
 
-export function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html);
+// Additional sanitization if needed
+const sanitizedTitle = title.trim().substring(0, 100);
+```
+
+## Type Definitions
+
+### Parameter Types
+Define route parameter types in `/lib/api/types/`:
+
+```typescript
+// lib/api/types/campaigns/index.ts
+export interface CampaignsWithIdParams {
+  params: Promise<{
+    campaignId: string;
+  }>;
 }
 
-export function sanitizeInput(input: string): string {
-  return input.trim().replace(/[<>]/g, '');
+export interface PostCampaignsBody {
+  title: string;
+  description: string;
+  fundingGoal: string;
+}
+```
+
+### Usage in Routes
+```typescript
+import { CampaignsWithIdParams } from '@/lib/api/types';
+
+export async function GET(req: Request, { params }: CampaignsWithIdParams) {
+  const { campaignId } = await params;
+  // ...
 }
 ```
 
 ## Testing API Routes
 
-### Testing Server Actions
+### Mock Testing Structure
 ```typescript
-// __tests__/actions/campaign-actions.test.ts
-import { updateCampaign } from '@/lib/actions/campaign-actions';
-import { auth } from '@/server/auth';
+// __tests__/api/campaigns.test.ts
+import { GET, POST } from '@/app/api/campaigns/route';
+import { checkAuth } from '@/lib/api/auth';
 import { db } from '@/server/db';
 
-jest.mock('@/server/auth');
+jest.mock('@/lib/api/auth');
 jest.mock('@/server/db');
 
-describe('updateCampaign', () => {
-  it('should update campaign successfully', async () => {
-    (auth as jest.Mock).mockResolvedValue({
-      user: { address: '0x123', roles: ['user'] }
+describe('/api/campaigns', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return campaigns for GET request', async () => {
+    (db.campaign.findMany as jest.Mock).mockResolvedValue([
+      { id: 1, title: 'Test Campaign' }
+    ]);
+
+    const request = new Request('http://localhost/api/campaigns');
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toHaveLength(1);
+  });
+
+  it('should create campaign for authenticated user', async () => {
+    (checkAuth as jest.Mock).mockResolvedValue({
+      user: { address: '0x123' }
     });
     
-    (db.campaign.findUnique as jest.Mock).mockResolvedValue({
+    (db.campaign.create as jest.Mock).mockResolvedValue({
       id: 1,
-      creatorAddress: '0x123'
+      title: 'New Campaign'
     });
-    
-    (db.campaign.update as jest.Mock).mockResolvedValue({
-      id: 1,
-      title: 'Updated Title'
+
+    const request = new Request('http://localhost/api/campaigns', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'New Campaign',
+        description: 'Test description',
+        fundingGoal: '1000'
+      })
     });
-    
-    const formData = new FormData();
-    formData.append('id', '1');
-    formData.append('title', 'Updated Title');
-    
-    const result = await updateCampaign(formData);
-    
-    expect(result.success).toBe(true);
-    expect(result.campaign.title).toBe('Updated Title');
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.title).toBe('New Campaign');
   });
 });
 ```
+
+## Best Practices Summary
+
+### Required Structure
+1. **Use `Request` not `NextRequest`**
+2. **Import from `@/lib/api/error` for error classes**
+3. **Import from `@/lib/api/response` for response utilities**
+4. **Import from `@/lib/api/types` for parameter types**
+5. **Use `checkAuth(['role'])` for authentication**
+6. **Use `response()` and `handleError()` consistently**
+
+### Public Endpoint Requirements
+1. **Comment explaining why endpoint is public**
+2. **Describe DDoS prevention measures**
+3. **Implement pagination limits**
+4. **Optimize database queries**
+
+### Error Handling
+1. **Use try/catch with `handleError(error)`**
+2. **Throw appropriate error types**
+3. **Add parameter validation with Zod**
+4. **Handle edge cases explicitly**
+
+### Security
+1. **Always validate inputs**
+2. **Check resource ownership**
+3. **Use type-safe parameter extraction**
+4. **Implement proper authorization checks**
+5. **AVOID server actions** - Use API routes with client-side form handling instead
+
+### Deprecated Patterns to Avoid
+1. **Server Actions** - Not properly secured by session validation
+2. **NextRequest/NextResponse** - Use `Request` and response utilities instead
+3. **Manual auth checks** - Use `checkAuth(['role'])` consistently

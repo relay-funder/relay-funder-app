@@ -48,7 +48,7 @@ The main database schema is defined in [prisma/schema.prisma](mdc:prisma/schema.
 ### Database Connection
 - Use the centralized db instance from [server/db.ts](mdc:server/db.ts)
 - Never create multiple Prisma client instances
-- Use connection pooling for production environments
+- Import pattern: `import { db } from '@/server/db';`
 
 ### Query Patterns
 
@@ -132,15 +132,20 @@ const stats = await db.payment.aggregate({
 ## Migration Guidelines
 
 ### Migration Commands
+Use the modern Docker Compose syntax with app-shell:
+
 ```bash
 # Generate migration
-docker-compose exec app pnpm prisma migrate dev --name migration_name
+docker compose run --rm app-shell /bin/sh -c 'pnpm prisma migrate dev --name migration_name'
 
 # Deploy migrations
-docker-compose exec app pnpm prisma migrate deploy
+docker compose run --rm app-shell /bin/sh -c 'pnpm prisma migrate deploy'
 
 # Reset database (development only)
-docker-compose exec app pnpm prisma migrate reset
+docker compose run --rm app-shell /bin/sh -c 'pnpm prisma migrate reset'
+
+# Generate Prisma client
+docker compose run --rm app-shell /bin/sh -c 'pnpm prisma generate'
 ```
 
 ### Migration Best Practices
@@ -151,52 +156,152 @@ docker-compose exec app pnpm prisma migrate reset
 
 ## Error Handling
 
-### Common Prisma Errors
-```typescript
-import { Prisma } from '@prisma/client';
+### API Route Error Handling
+Database errors are typically handled in API functions using the centralized error handling system. Most business logic should not directly handle Prisma errors:
 
-try {
-  const result = await db.campaign.create({ data });
-} catch (error) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === 'P2002') {
-      // Unique constraint violation
+```typescript
+// In API routes - this is where Prisma errors are caught
+export async function GET(req: Request) {
+  try {
+    const campaign = await db.campaign.findUnique({
+      where: { id: campaignId }
+    });
+    
+    if (!campaign) {
+      throw new ApiNotFoundError('Campaign not found');
     }
-    if (error.code === 'P2025') {
-      // Record not found
-    }
+    
+    return response({ campaign });
+  } catch (error: unknown) {
+    return handleError(error); // Centralized error handling
   }
 }
 ```
 
-### Validation
+### Rare Business Logic Error Handling
+Only handle Prisma errors directly in business logic when absolutely necessary:
+
+```typescript
+import { db } from '@/server/db'; // Correct import pattern
+
+try {
+  const result = await db.campaign.create({ data });
+} catch (error) {
+  // Handle specific business logic requirements
+  if (error instanceof Error && error.message.includes('P2002')) {
+    // Handle unique constraint violation in business logic
+  }
+}
+```
+
+## Data Validation and Sanitization
+
+### Input Validation
 - Use Zod schemas for input validation before database operations
 - Validate business logic constraints
 - Handle edge cases explicitly
 
-## Performance Optimization
+### Data Sanitization
+**Sanitize data on retrieval** to ensure all functions can assume valid data with TypeScript insurance:
 
-### Query Optimization
-- Use `select` to fetch only needed fields
-- Use `include` judiciously to avoid N+1 queries
-- Implement pagination for large datasets
-- Use database-level filtering over application-level filtering
+```typescript
+// Sanitize when reading from database
+export async function getCampaignById(id: number) {
+  const campaign = await db.campaign.findUnique({
+    where: { id }
+  });
+  
+  if (!campaign) {
+    throw new ApiNotFoundError('Campaign not found');
+  }
+  
+  // Sanitize on retrieval
+  return {
+    ...campaign,
+    title: campaign.title.trim(),
+    description: sanitizeHtml(campaign.description),
+    // All downstream functions can assume clean data
+  };
+}
+```
 
-### Connection Management
-- Use connection pooling in production
-- Monitor connection usage
-- Implement proper connection cleanup
+### Security Considerations
 
-## Security Considerations
+#### Data Access
+- Implement proper authorization checks in API routes
+- Validate all user inputs with Zod schemas
+- Use parameterized queries (Prisma handles this automatically)
 
-### Data Access
-- Implement proper authorization checks
-- Use parameterized queries (Prisma handles this)
-- Validate all user inputs
-- Sanitize data before storage
-
-### Sensitive Data
+#### Best Practices
 - Hash passwords and sensitive information
 - Use environment variables for secrets
 - Implement proper audit logging
 - Consider data encryption for PII
+
+## Performance Considerations
+
+### Query Optimization
+- Use `include` judiciously to avoid N+1 queries
+- Implement pagination for large datasets
+- Use database-level filtering over application-level filtering
+- Only use `select` for fields that significantly impact performance (large JSON fields)
+
+## Common Patterns
+
+### User-Owned Resources
+```typescript
+// Check ownership in API routes
+const campaign = await db.campaign.findUnique({
+  where: { id: campaignId }
+});
+
+if (!campaign || campaign.creatorAddress !== session.user.address) {
+  throw new ApiAuthNotAllowed('Not authorized to access this campaign');
+}
+```
+
+### Pagination
+```typescript
+// Standard pagination pattern
+const campaigns = await db.campaign.findMany({
+  where: { status: 'ACTIVE' },
+  orderBy: { createdAt: 'desc' },
+  take: pageSize,
+  skip: (page - 1) * pageSize,
+});
+```
+
+### Aggregations
+```typescript
+// Get campaign statistics
+const campaignStats = await db.payment.aggregate({
+  where: { campaignId: id },
+  _sum: { amount: true },
+  _count: true,
+  _avg: { amount: true },
+});
+```
+
+## Best Practices Summary
+
+### Import and Connection
+1. **Always use**: `import { db } from '@/server/db'`
+2. **Never create multiple Prisma client instances**
+3. **Use centralized database connection**
+
+### Error Handling
+1. **Handle Prisma errors in API routes** with centralized error handling
+2. **Rarely handle Prisma errors in business logic** - only when specifically needed
+3. **Use proper error types** from `@/lib/api/error`
+
+### Data Management
+1. **Sanitize data on retrieval** for TypeScript insurance
+2. **Validate inputs with Zod** before database operations
+3. **Use descriptive field names** and proper relationships
+4. **Implement proper authorization checks** in API routes
+
+### Performance
+1. **Use `include` carefully** to avoid N+1 queries
+2. **Implement pagination** for large datasets
+3. **Only use `select` when performance-critical** (large JSON fields)
+4. **Prefer database-level filtering** over application filtering
