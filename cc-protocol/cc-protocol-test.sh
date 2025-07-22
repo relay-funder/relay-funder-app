@@ -120,6 +120,45 @@ check_admin_balances() {
     else
         echo -e "${GREEN}✓ Protocol admin funded${NC}"
     fi
+
+    # Also check USDC balances on Celo Alfajores
+    echo -e "\n${BLUE}=== Admin USDC Balances ===${NC}"
+
+    local platform_usdc_raw=$(cast call $NEXT_PUBLIC_USDC_ADDRESS "balanceOf(address)(uint256)" $NEXT_PUBLIC_PLATFORM_ADMIN --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "0")
+    local protocol_usdc_raw=$(cast call $NEXT_PUBLIC_USDC_ADDRESS "balanceOf(address)(uint256)" $NEXT_PUBLIC_PROTOCOL_ADMIN --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "0")
+
+    # Clean up the values - remove scientific notation and convert to decimal
+    platform_usdc=$(echo "$platform_usdc_raw" | sed 's/\[.*\]//' | xargs)
+    protocol_usdc=$(echo "$protocol_usdc_raw" | sed 's/\[.*\]//' | xargs)
+
+    # Convert hex to decimal if needed
+    if [[ "$platform_usdc" == 0x* ]]; then
+        platform_usdc=$(cast to-dec $platform_usdc 2>/dev/null || echo "0")
+    fi
+    if [[ "$protocol_usdc" == 0x* ]]; then
+        protocol_usdc=$(cast to-dec $protocol_usdc 2>/dev/null || echo "0")
+    fi
+
+    # Convert USDC balances to human readable (divide by 10^6 for 6 decimals)
+    local platform_usdc_hr=$(echo "scale=6; $platform_usdc / 1000000" | bc -l 2>/dev/null || echo "0")
+    local protocol_usdc_hr=$(echo "scale=6; $protocol_usdc / 1000000" | bc -l 2>/dev/null || echo "0")
+
+    echo "Platform Admin: $platform_usdc_hr USDC (raw: $platform_usdc)"
+    echo "Protocol Admin: $protocol_usdc_hr USDC (raw: $protocol_usdc)"
+
+    # Check minimum USDC balance (1 USDC = 1000000 wei)
+    local min_usdc="1000000"
+    if [[ -n "$platform_usdc" ]] && [[ "$platform_usdc" =~ ^[0-9]+$ ]] && [ "$platform_usdc" -lt "$min_usdc" ]; then
+        echo -e "${YELLOW}⚠ Platform admin USDC balance is low${NC}"
+    else
+        echo -e "${GREEN}✓ Platform admin USDC funded${NC}"
+    fi
+
+    if [[ -n "$protocol_usdc" ]] && [[ "$protocol_usdc" =~ ^[0-9]+$ ]] && [ "$protocol_usdc" -lt "$min_usdc" ]; then
+        echo -e "${YELLOW}⚠ Protocol admin USDC balance is low${NC}"
+    else
+        echo -e "${GREEN}✓ Protocol admin USDC funded${NC}"
+    fi
 }
 
 # Test complete workflow: CampaignInfo → Dual Treasury deployment
