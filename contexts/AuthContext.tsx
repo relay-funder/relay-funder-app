@@ -35,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const session = useSession();
-  console.log('session', { session });
 
   const [isClient, setIsClient] = useState(false);
 

@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
+import { Suspense } from 'react';
 const geistSans = localFont({
   src: '../fonts/GeistVF.woff',
   variable: '--font-geist-sans',
@@ -34,7 +35,9 @@ export default function RootLayout({
       >
         <Providers>
           <Web3ContextProvider>
-            <PageMainLayout>{children}</PageMainLayout>
+            <PageMainLayout>
+              <Suspense>{children}</Suspense>
+            </PageMainLayout>
           </Web3ContextProvider>
           <Toaster />
           <EnvironmentBadge />
