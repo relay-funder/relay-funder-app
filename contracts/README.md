@@ -34,7 +34,7 @@ Both treasuries use the **same TreasuryFactory** contract with different `implem
 1. **Foundry** - Smart contract development toolkit
 2. **Node.js 18+** - For our Next.js application
 3. **Docker** - For our development environment
-4. **CC Protocol Contracts** - Already available in `contracts/tmp/ccprotocol-contracts-internal/`
+4. **CC Protocol Contracts** - Contract ABIs available in `contracts/abi/` directory
 
 ### Environment Configuration
 
@@ -70,22 +70,17 @@ NEXT_PUBLIC_ENABLE_DUAL_TREASURY=true
 
 ### 1. Deploy Core Contracts
 
-Using the CC Protocol deployment script:
+Using the CC Protocol deployment script available in the `cc-protocol/` directory:
 
 ```bash
-cd contracts/tmp/ccprotocol-contracts-internal
-
 # Set environment variables
 export PRIVATE_KEY="your-private-key"
 export PLATFORM_NAME="Akashic"
 export PROTOCOL_FEE_PERCENT=100    # 1%
 export PLATFORM_FEE_PERCENT=400    # 4%
 
-# Deploy all contracts including PaymentTreasury
-forge script script/DeployAllAndSetupPaymentTreasury.s.sol:DeployAllAndSetupPaymentTreasury \
-  --rpc-url http://localhost:8545 \
-  --private-key $PRIVATE_KEY \
-  --broadcast
+# Use the test script for deployment verification
+./cc-protocol/cc-protocol-test.sh workflow
 ```
 
 ### 2. Register KeepWhatsRaised Implementation
@@ -385,10 +380,10 @@ The protocol admin has system-wide control and security functions:
 
 To use the provided admin wallets in your local environment:
 
-1. **Copy the staging environment file**:
+1. **Copy the template environment file**:
 
    ```bash
-   cp cc-protocol-staging.env .env.local
+   cp cc-protocol/env.foundry.template .env.local
    ```
 
 2. **Add the complete private keys** (provided by CC Protocol team):
@@ -462,10 +457,10 @@ cast send $CRYPTO_TREASURY_ADDRESS \
 
 ## 📞 Support & Resources
 
-- **CC Protocol Docs**: Available in `contracts/tmp/ccprotocol-contracts-internal/docs/`
-- **Contract Source**: `contracts/tmp/ccprotocol-contracts-internal/src/`
-- **Deployment Scripts**: `contracts/tmp/ccprotocol-contracts-internal/script/`
-- **Test Files**: `contracts/tmp/ccprotocol-contracts-internal/test/`
-- **Staging Environment**: `cc-protocol-staging.env` (copy to `.env.local`)
+- **CC Protocol Setup Guide**: Available in `cc-protocol/CCP-STAGING-SETUP.md`
+- **Deployment Test Script**: `cc-protocol/cc-protocol-test.sh`
+- **Environment Template**: `cc-protocol/env.foundry.template`
+- **Contract ABIs**: Available in `contracts/abi/` directory
+- **NFT Contract ABIs**: Available in `contracts/nftABI/` directory
 
-For issues or questions, refer to the CC Protocol documentation or check the contract source code directly.
+For issues or questions, refer to the CC Protocol documentation in the `cc-protocol/` directory or use the provided test script for deployment verification.

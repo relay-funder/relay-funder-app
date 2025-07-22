@@ -13,16 +13,16 @@ This guide helps you set up the CC Protocol staging environment for dual treasur
 
 ## 🔧 Environment Setup
 
-### 1. Copy Staging Configuration
+### 1. Copy Template Configuration
 
 ```bash
-# Copy the staging environment file
-cp cc-protocol-staging.env .env.local
+# Copy the template environment file
+cp cc-protocol/env.foundry.template .env.local
 ```
 
 ### 2. Add Complete Private Keys
 
-Edit `.env.local` and replace the truncated private keys with the full keys provided by CC Protocol:
+Edit `.env.local` and replace the placeholder private keys with the full keys provided by CC Protocol:
 
 ```bash
 # Platform Admin Wallet (for treasury deployment, payment operations)

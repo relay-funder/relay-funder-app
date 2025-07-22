@@ -23,7 +23,7 @@ load_environment() {
         set +a
     else
         echo -e "${RED}Error: .env.foundry file not found!${NC}"
-        echo "Please copy cc-protocol-staging.env to .env.foundry and add your private keys"
+        echo "Please copy cc-protocol/env.foundry.template to .env.foundry and add your private keys"
         exit 1
     fi
 }
