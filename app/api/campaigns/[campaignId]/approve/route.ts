@@ -12,6 +12,14 @@ import {
 } from '@/lib/api/types';
 import { CampaignStatus } from '@/types/campaign';
 
+interface CampaignUpdateData {
+  status: CampaignStatus;
+  treasuryAddress?: string;
+  cryptoTreasuryAddress?: string;
+  paymentTreasuryAddress?: string;
+  treasuryMode?: 'DUAL' | 'CRYPTO_ONLY' | 'PAYMENT_ONLY' | 'LEGACY';
+}
+
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['admin']);
@@ -59,7 +67,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     });
 
     // Determine treasury mode and update data
-    let updateData: any = {
+    let updateData: CampaignUpdateData = {
       status: CampaignStatus.ACTIVE,
     };
 
