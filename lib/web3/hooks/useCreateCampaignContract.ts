@@ -24,7 +24,7 @@ export function useCreateCampaignContract({
   onConfirmed: (arg0: IOnCreateCampaignConfirmed) => void;
 }) {
   const { address, authenticated } = useAuth();
-  const { data: hash, isPending, writeContract } = useWriteContract();
+  const { data: hash, isPending, writeContractAsync } = useWriteContract();
   const {
     isLoading: isConfirming,
     isSuccess,
@@ -54,7 +54,7 @@ export function useCreateCampaignContract({
 
       // Then proceed with blockchain transaction
       const identifierHash = keccak256(stringToHex('KickStarter'));
-      writeContract({
+      await writeContractAsync({
         address: campaignInfoFactory as `0x${string}`,
         abi: CampaignInfoFactoryABI,
         functionName: 'createCampaign',
@@ -68,7 +68,7 @@ export function useCreateCampaignContract({
         ],
       });
     },
-    [address, authenticated, writeContract],
+    [address, authenticated, writeContractAsync],
   );
 
   useEffect(() => {

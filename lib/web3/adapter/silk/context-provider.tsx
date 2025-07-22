@@ -266,7 +266,6 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
       debug &&
         console.log(
           'web3/adapter/silk/context-provider: Adding silk connector',
-          silkConnector,
         );
       addConnector(silkConnector);
     }
@@ -296,7 +295,7 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     };
   }, []);
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config} reconnectOnMount={true}>
       <Suspense>
         <Web3Context.Provider value={value}>{children}</Web3Context.Provider>
       </Suspense>
