@@ -48,10 +48,22 @@ export default function AdminPage() {
   const approveCampaign = useCallback(
     async (campaignId: number, campaignAddress: string) => {
       try {
-        const treasuryAddress = enableBypassContractAdmin
-          ? 'mock-treasury-address'
-          : await adminApproveWeb3Campaign(campaignId, campaignAddress);
-        await adminApproveCampaign({ campaignId, treasuryAddress });
+        if (enableBypassContractAdmin) {
+          await adminApproveCampaign({ 
+            campaignId, 
+            treasuryAddress: 'mock-treasury-address' 
+          });
+        } else {
+          const deploymentResult = await adminApproveWeb3Campaign(campaignId, campaignAddress);
+          await adminApproveCampaign({ 
+            campaignId, 
+            treasuryAddress: deploymentResult.cryptoTreasuryAddress,
+            cryptoTreasuryAddress: deploymentResult.cryptoTreasuryAddress,
+            paymentTreasuryAddress: deploymentResult.paymentTreasuryAddress,
+            cryptoTreasuryTx: deploymentResult.cryptoTreasuryTx,
+            paymentTreasuryTx: deploymentResult.paymentTreasuryTx
+          });
+        }
 
         toast({
           title: 'Success',
