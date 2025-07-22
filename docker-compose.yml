@@ -53,6 +53,7 @@ services:
       - database
     ports:
       - "${DEV_APP_PORT:-3000}:3000"
+      - "${PRISMA_STUDIO_PORT:-5555}:5555"
     volumes:
       - ./:/app
       - ./lib/sentry-dev.ts:/app/lib/sentry.ts

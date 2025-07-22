@@ -29,6 +29,12 @@ interface SilkEthereumExtendedProviderInterface
   };
 }
 
+export function initConnectorGlobal() {
+  if (!window.silk) {
+    return initSilk();
+  }
+  return window.silk;
+}
 /**
  * Creates a WAGMI connector for the Silk Wallet SDK
  * @param options the initialization options passed to the Silk Wallet SDK
@@ -104,7 +110,7 @@ export function connector(options?: InitSilkOptions) {
         debug && console.log('web3/adapter/silk/connector::getAccounts');
         const provider = await this.getProvider();
         const accounts = await provider.request({
-          method: SILK_METHOD.eth_accounts,
+          method: 'eth_requestAccounts',
         });
         if (accounts && Array.isArray(accounts)) {
           return accounts
@@ -162,6 +168,7 @@ export function connector(options?: InitSilkOptions) {
           }
 
           const provider = await this.getProvider();
+
           debug &&
             console.log('web3/adapter/silk/connector::switchChain', {
               chainIdHex: `0x${chain.id.toString(16)}`,

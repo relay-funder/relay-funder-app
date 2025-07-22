@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import { useAuth } from '@/lib/web3';
 import { ethers } from 'ethers';
-import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
-import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
 import { chainConfig } from '@/lib/web3';
+import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
+import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
+import { chainConfig, useWeb3Context } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
 
 // Add platform config
@@ -33,13 +33,13 @@ interface DualTreasuryDeploymentResult {
 }
 
 export function useAdminApproveCampaign() {
-  const { wallet } = useAuth();
-  
+  const { requestWallet } = useWeb3Context();
   const adminApproveCampaign = useCallback(
     async (campaignId: number, campaignAddress: string): Promise<DualTreasuryDeploymentResult> => {
       if (!campaignId || !campaignAddress) {
         throw new Error('Campaign ID and address are required');
       }
+      const wallet = await requestWallet();
       if (
         !wallet ||
         !(
@@ -71,7 +71,7 @@ export function useAdminApproveCampaign() {
       try {
         await walletProvider.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainConfig.chainId.hex }],
+          params: [{ chainId: `0x${chainConfig.chainId.toString(16)}` }],
         });
       } catch (switchError: unknown) {
         // Type guard to check if it's a ProviderRpcError
@@ -98,7 +98,7 @@ export function useAdminApproveCampaign() {
 
       // Create providers
       const ethersProvider = new ethers.BrowserProvider(walletProvider, {
-        chainId: chainConfig.chainId.decimal,
+        chainId: chainConfig.chainId,
         name: chainConfig.name,
       });
       const signer = await ethersProvider.getSigner();
@@ -207,7 +207,7 @@ export function useAdminApproveCampaign() {
         paymentTreasuryTx: paymentTx.hash,
       };
     },
-    [wallet],
+    [requestWallet],
   );
   
   return { adminApproveCampaign };

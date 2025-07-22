@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { type DbPayment } from '@/types/campaign';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui';
 import { PaymentLink } from './link';
+
 export function PaymentItem({ payment }: { payment: DbPayment }) {
   const userName = useMemo(() => {
     if (!payment.user || payment.isAnonymous) {
@@ -27,6 +28,22 @@ export function PaymentItem({ payment }: { payment: DbPayment }) {
     }
     return `https://avatar.vercel.sh/${payment.user.address}`;
   }, [payment?.user?.address]);
+
+  // Determine payment method from metadata or transaction hash
+  const paymentMethod = useMemo(() => {
+    const metadata = payment.metadata;
+    if (metadata?.paymentMethod) {
+      return metadata.paymentMethod;
+    }
+    // Fallback: if has transaction hash, it's crypto, otherwise credit card
+    return payment.transactionHash ? 'crypto' : 'credit_card';
+  }, [payment.metadata, payment.transactionHash]);
+
+  const originalToken = useMemo(() => {
+    const metadata = payment.metadata;
+    return metadata?.originalToken || 'USD';
+  }, [payment.metadata]);
+
   return (
     <div
       key={payment.id}
@@ -45,8 +62,9 @@ export function PaymentItem({ payment }: { payment: DbPayment }) {
         </div>
       </div>
       <div className="text-right">
-        <p className="font-medium">
-          {payment.amount} {payment.token}
+        <p className="font-medium">${payment.amount} USD</p>
+        <p className="text-xs text-gray-500">
+          {paymentMethod === 'crypto' ? `via ${originalToken}` : 'Credit Card'}
         </p>
         <PaymentLink payment={payment} />
       </div>

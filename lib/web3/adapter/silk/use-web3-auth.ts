@@ -1,71 +1,49 @@
 'use client';
-import {
-  getCsrfToken,
-  getSession,
-  signIn as nextAuthSignIn,
-  signOut as nextAuthSignOut,
-} from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
-//import { SiweMessage } from 'siwe';
 import { UserRejectedRequestError } from 'viem';
-import {
-  useAccount,
-  useConnect,
-  useReconnect,
-  useDisconnect,
-  useSignMessage,
-} from 'wagmi';
+import { useAccount, useConnect, useReconnect, useDisconnect } from 'wagmi';
 import { ConnectorAlreadyConnectedError } from 'wagmi';
-import { ethers } from './ethers';
+import { useRouter } from 'next/navigation';
 
 import { chainConfig } from '@/lib/web3';
 
-import { PROJECT_NAME } from '@/lib/constant';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { useWeb3Context, getProvider } from './context-provider';
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
-import { SiweMessage } from 'siwe';
+import { useSignInToBackend } from '@/lib/web3/hooks/use-signin-to-backend';
 
-async function fetchNonce() {
-  try {
-    return await getCsrfToken();
-  } catch (error) {
-    console.error('Failure fetching nonce (next-auth csrf-token)');
-  }
-  return;
-}
 /**
  * Handles wagmi connect, signMessage, and logout using the Silk wallet.
  * @returns
  */
-export function useAuth(): IWeb3UseAuthHook {
+export function useWeb3Auth(): IWeb3UseAuthHook {
   const [state, setState] = useState<{
     loading?: boolean;
+    authenticating?: boolean;
     error?: Error;
   }>({});
   const { toast } = useToast();
-  const {
-    requestWallet,
-    address: web3ContextAddress,
-    initialized,
-  } = useWeb3Context();
+  const router = useRouter();
+  const { address: web3ContextAddress, initialized } = useWeb3Context();
+  const [connectSuccess, setConnectSuccess] = useState(false);
 
-  const { connectAsync: wagmiConnect, connectors } = useConnect();
-  const { address, isConnected: isWagmiConnected } = useAccount();
+  const { connectAsync: wagmiConnectAsync, connectors } = useConnect();
+
+  const {
+    address,
+    isConnected: isWagmiConnected,
+    status: wagmiStatus,
+  } = useAccount();
   const { reconnect: wagmiReconnect } = useReconnect();
   const { disconnectAsync: wagmiDisconnect } = useDisconnect();
-  const { signMessageAsync } = useSignMessage();
 
-  const params = useSearchParams();
-  const callbackUrl = useMemo(
-    () => params?.get('callbackUrl') || '/dashboard',
-    [params],
-  );
   const reconnectingRef = useRef(false);
+  const [reconnectingReadyUpdated, setReconnectingReadyUpdated] = useState(0);
   const loginRef = useRef(false);
+
   const normalizedAddress = useMemo(() => {
     debug &&
       console.log(
@@ -84,18 +62,18 @@ export function useAuth(): IWeb3UseAuthHook {
     }
     return undefined;
   }, [address, web3ContextAddress]);
-  const authenticated = useMemo(() => {
-    return typeof normalizedAddress === 'string';
-  }, [normalizedAddress]);
   const isConnected = useCallback(async () => {
     return isWagmiConnected;
   }, [isWagmiConnected]);
+
   const getEthereumProvider = useCallback(async () => {
     return getProvider();
   }, []);
+
   const wallet = useMemo(() => {
     return { address: normalizedAddress, isConnected, getEthereumProvider };
   }, [normalizedAddress, isConnected, getEthereumProvider]);
+
   const logout = useCallback(async () => {
     debug && console.log('web3/adapter/silk/use-auth:logout');
     await nextAuthSignOut();
@@ -108,123 +86,39 @@ export function useAuth(): IWeb3UseAuthHook {
     setState({});
   }, [wagmiDisconnect]);
 
-  const signInToBackend = useCallback(async () => {
+  const signInToBackend = useSignInToBackend();
+  const signinAfterConnect = useCallback(async () => {
     try {
-      // we cannot rely on state here as login() has altered window values
-      const { address, chainId } = await requestWallet();
-      debug &&
-        console.log('web3/adapter/silk/use-auth:signInToBackend', {
-          address,
-          chainId,
-        });
-      if (!address || typeof chainId !== 'number') {
-        throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: missing address or chainId',
-        );
-      }
-
-      setState((prevState) => ({
-        ...prevState,
-        loading: true,
-        error: undefined,
-      }));
-      const nonce = await fetchNonce();
-      if (!nonce) {
-        throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: Failed to fetch nonce for signature',
-        );
-      }
-      // Create SIWE message with pre-fetched nonce and sign with wallet
-      const message = new SiweMessage({
-        domain: window.location.host,
-        address: ethers.getAddress(address),
-        statement: `${PROJECT_NAME} - Please sign this message to log in to the app.`,
-        uri: window.location.origin,
-        version: '1',
-        chainId,
-        nonce,
-      });
-
-      const preparedMessage = message.prepareMessage();
-      if (typeof signMessageAsync !== 'function') {
-        throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: Wagmi signMessageAsync not found',
-        );
-      }
-      // signMessageAsync cannot work because the wagmi connector is not set yet
-      // that signature would only work if we detach the nextauth login from the wagmi connect
-      // in a way that react could process the contexts&providers
-      // const signature = await signMessageAsync({
-      //   message: preparedMessage,
-      // });
-      const provider = getProvider();
-      if (!provider) {
-        throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: Wallet is not loaded',
-        );
-      }
-      debug &&
-        console.log(
-          'web3/adapter/silk/use-auth:signInToBackend: request signature',
-        );
-      const updatedProvider = getProvider();
-      if (!updatedProvider) {
-        throw new Error('Provider no longer available');
-      }
-      const signature = await updatedProvider.request({
-        method: 'personal_sign',
-        params: [
-          ethers.hexlify(ethers.toUtf8Bytes(preparedMessage)),
-          ethers.getAddress(address),
-        ],
-      });
-
-      debug &&
-        console.log(
-          'web3/adapter/silk/use-auth:signInToBackend: login to next-auth',
-        );
-      const authResult = await nextAuthSignIn('siwe', {
-        redirect: false,
-        message: JSON.stringify(message),
-        signature,
-        callbackUrl,
-      });
-      if (authResult?.ok && !authResult.error) {
-        const session = await getSession();
-        console.info(
-          'web3/adapter/silk/use-auth:signInToBackend: user signed in',
-          session?.user?.name,
-          session?.user?.address,
-        );
-      } else if (authResult?.error) {
-        const errorMessage =
-          'web3/adapter/silk/use-auth:signInToBackend:' +
-          ' An error occurred while signin in.' +
-          ` Code: ${authResult.status} - ${authResult.error}`;
-        console.error(errorMessage);
-        setState((prevState) => ({
-          ...prevState,
-          error: new Error(
-            authResult.error ||
-              'web3/adapter/silk/use-auth:signInToBackend: Unable to authenticate the message',
-          ),
-        }));
-      }
-
-      setState((prevState) => ({ ...prevState, loading: false }));
+      const callbackUrl = await signInToBackend();
+      router.push(callbackUrl);
     } catch (error) {
+      console.error('Login failed:', error);
       setState((prevState) => ({
         ...prevState,
-        loading: false,
+        authenticating: false,
         error: error as Error,
       }));
+    } finally {
+      setState((prevState) => ({
+        ...prevState,
+        authenticating: false,
+      }));
+      loginRef.current = false;
+      setReconnectingReadyUpdated(Date.now());
     }
-  }, [callbackUrl, signMessageAsync, requestWallet]);
+  }, [router, signInToBackend]);
+  useEffect(() => {
+    // synchronize the connect(connector) and the actual connected state
+    if (connectSuccess && wagmiStatus === 'connected') {
+      signinAfterConnect().catch(console.warn);
+      setConnectSuccess(false);
+    }
+  }, [connectSuccess, wagmiStatus, signinAfterConnect]);
 
   const login = useCallback(async () => {
     setState((prevState) => ({
       ...prevState,
-      loading: true,
+      authenticating: true,
       error: undefined,
     }));
     loginRef.current = true;
@@ -243,8 +137,7 @@ export function useAuth(): IWeb3UseAuthHook {
         console.log(
           'web3/adapter/silk/use-auth:login: request wagmi(silk) to login -> connector::connect',
         );
-      //await window.silk.login();
-      const connectResult = await wagmiConnect({
+      const connectResult = await wagmiConnectAsync({
         chainId: defaultChain.id,
         connector: loadedSilkConnector,
       });
@@ -253,9 +146,8 @@ export function useAuth(): IWeb3UseAuthHook {
           'web3/adapter/silk/use-auth:login: connect to wallet complete continue with login to next-auth',
           connectResult,
         );
-
-      await signInToBackend();
-      setState((prevState) => ({ ...prevState, loading: false }));
+      // decouple connect from signin to backend (wait for wagmi to pick up the connection)
+      setConnectSuccess(true);
     } catch (error) {
       if (error instanceof ConnectorAlreadyConnectedError) {
         debug &&
@@ -269,22 +161,23 @@ export function useAuth(): IWeb3UseAuthHook {
         'web3/adapter/silk/use-auth:login: error connecting to silk',
         error,
       );
-      if (error instanceof UserRejectedRequestError)
+      if (error instanceof UserRejectedRequestError) {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
           description: 'Operation cancelled by user',
         });
-      else
-        setState((prevState) => ({
-          ...prevState,
-          loading: false,
-          error: error as Error,
-        }));
+      }
+      setState((prevState) => ({
+        ...prevState,
+        error: error as Error,
+      }));
+      throw error;
     } finally {
+      setState((prevState) => ({ ...prevState, authenticating: false }));
       loginRef.current = false;
     }
-  }, [toast, connectors, wagmiConnect, wagmiDisconnect, signInToBackend]);
+  }, [toast, connectors, wagmiConnectAsync, wagmiDisconnect]);
 
   const ready = useMemo(() => {
     const provider = getProvider();
@@ -295,6 +188,7 @@ export function useAuth(): IWeb3UseAuthHook {
         typeof provider,
         state.loading,
         typeof state.loading,
+        reconnectingReadyUpdated,
       );
     if (!provider || !initialized) {
       debug &&
@@ -307,6 +201,8 @@ export function useAuth(): IWeb3UseAuthHook {
       debug &&
         console.log(
           'web3/adapter/silk/use-auth:rememo ready: in the middle of reconnect or login',
+          loginRef.current,
+          reconnectingRef.current,
         );
       return false;
     }
@@ -328,7 +224,7 @@ export function useAuth(): IWeb3UseAuthHook {
         typeof state.loading === 'undefined',
       );
     return state.loading === false || typeof state.loading === 'undefined';
-  }, [address, state.loading, initialized]);
+  }, [address, state.loading, initialized, reconnectingReadyUpdated]);
 
   useEffect(() => {
     if (
@@ -349,20 +245,21 @@ export function useAuth(): IWeb3UseAuthHook {
         debug &&
           console.log('web3/adapter/silk/use-auth:reconnect effect: done');
         reconnectingRef.current = false;
+        setReconnectingReadyUpdated(Date.now());
       },
     });
   }, [normalizedAddress, wagmiReconnect, ready]);
   debug &&
     console.log('web3/adapter/silk/use-auth:render', {
       ready,
-      authenticated,
       normalizedAddress,
       isWagmiConnected,
     });
   return {
     address: normalizedAddress,
     wallet,
-    authenticated,
+    authenticating: state.authenticating ?? false,
+    error: state.error,
     login,
     logout,
     ready,

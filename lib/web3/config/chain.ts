@@ -7,10 +7,7 @@ import { defaultChain } from './chains';
 
 export const chainConfig = {
   // Chain identifiers
-  chainId: {
-    hex: `0x${defaultChain.id.toString(16)}`,
-    decimal: defaultChain.id,
-  },
+  chainId: defaultChain.id,
 
   // Chain details derived from wagmi
   name: defaultChain.name,
@@ -29,7 +26,7 @@ export const chainConfig = {
   // Helper methods
   getAddChainParams() {
     return {
-      chainId: this.chainId.hex,
+      chainId: `0x${this.chainId.toString(16)}`,
       chainName: this.name,
       nativeCurrency: this.nativeCurrency,
       rpcUrls: [this.rpcUrl],

@@ -1,6 +1,6 @@
 export { useWeb3Context, getProvider } from './context-provider';
 export {
-  useAuth,
+  useWeb3Auth,
   // config
   chainConfig,
   wagmiConfig,
@@ -16,6 +16,7 @@ export {
   maxUint256,
   decodeEventLog,
   BaseError,
+  UserRejectedRequestError,
   // wagmi
   readContract,
   createConfig,
@@ -25,6 +26,10 @@ export {
   useDeployContract,
   useChainId,
   useConfig,
+  useConnectors,
+  useConnect,
+  useSignMessage,
+  useAccount,
   // ethers
   ethers,
 } from './adapter';
