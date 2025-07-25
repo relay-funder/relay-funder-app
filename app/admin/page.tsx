@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Wallet, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,10 +19,16 @@ import { CampaignCardAdmin } from '@/components/campaign/card-admin';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { type Campaign } from '@/types/campaign';
 import { DashboardOverview } from '@/components/dashboard/overview';
+import { useWeb3Auth } from '@/lib/web3';
+import { useNetworkCheck } from '@/hooks/use-network';
+import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
+import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
-export default function AdminPage() {
-  const { isAdmin, isReady } = useAuth();
+function AdminPageContent() {
+  const { isAdmin, isReady, authenticated } = useAuth();
   const { toast } = useToast();
+  const { ready: walletReady } = useWeb3Auth();
+  const { isCorrectNetwork } = useNetworkCheck();
 
   const [error, setError] = useState<string | null>(null);
   const { adminApproveCampaign: adminApproveWeb3Campaign } =
@@ -45,9 +51,23 @@ export default function AdminPage() {
   const filteredCampaignPages = useMemo(() => {
     return data?.pages;
   }, [data]);
+
   const approveCampaign = useCallback(
     async (campaignId: number, campaignAddress: string) => {
       try {
+        // Check wallet connection for Web3 operations (unless bypassing)
+        if (!enableBypassContractAdmin) {
+          if (!authenticated) {
+            throw new Error('Please connect your wallet to perform admin operations');
+          }
+          if (!walletReady) {
+            throw new Error('Wallet is not ready. Please ensure your wallet is connected');
+          }
+          if (!isCorrectNetwork) {
+            throw new Error('Please switch to the correct network before approving campaigns');
+          }
+        }
+
         if (enableBypassContractAdmin) {
           await adminApproveCampaign({ 
             campaignId, 
@@ -82,8 +102,9 @@ export default function AdminPage() {
         });
       }
     },
-    [toast, adminApproveCampaign, adminApproveWeb3Campaign],
+    [toast, adminApproveCampaign, adminApproveWeb3Campaign, authenticated, walletReady, isCorrectNetwork],
   );
+
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -165,6 +186,65 @@ export default function AdminPage() {
       <div className="mx-auto max-w-7xl p-5">
         <div className="mb-8 pt-5 text-3xl font-bold">Admin Dashboard</div>
 
+        {/* Wallet Connection Status for Web3 Operations */}
+        {!enableBypassContractAdmin && (
+          <div className="mb-6">
+            <Alert className={`${authenticated && walletReady && isCorrectNetwork ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
+              <Wallet className="h-4 w-4" />
+              <AlertTitle>Wallet Status for Campaign Approvals</AlertTitle>
+              <AlertDescription>
+                <div className="mt-2 space-y-2">
+                  {!authenticated ? (
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <span>Wallet not connected. Connect your wallet to approve campaigns.</span>
+                    </div>
+                  ) : !walletReady ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Connecting to wallet...</span>
+                    </div>
+                  ) : !isCorrectNetwork ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        <span>Wrong network. Switch to the correct network to approve campaigns.</span>
+                      </div>
+                      <PaymentSwitchWalletNetwork />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                      <span>Wallet connected and ready for campaign approvals</span>
+                    </div>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {/* Admin Configuration Debug Info */}
+        {!enableBypassContractAdmin && (
+          <div className="mb-6">
+            <Alert className="border-blue-200 bg-blue-50">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Admin Configuration</AlertTitle>
+              <AlertDescription>
+                <div className="mt-2 space-y-1 text-sm font-mono">
+                  <div><strong>Expected Platform Admin:</strong> {process.env.NEXT_PUBLIC_PLATFORM_ADMIN || 'Not configured'}</div>
+                  <div><strong>Current Connected Wallet:</strong> {authenticated ? 'Check browser console for address' : 'Not connected'}</div>
+                  <div><strong>Platform Hash:</strong> {process.env.NEXT_PUBLIC_PLATFORM_HASH || 'Not configured'}</div>
+                  <div><strong>Global Params Contract:</strong> {process.env.NEXT_PUBLIC_GLOBAL_PARAMS || 'Not configured'}</div>
+                </div>
+                <div className="mt-2 text-sm text-blue-700">
+                  💡 <strong>Tip:</strong> Connect the wallet with the expected platform admin address to approve campaigns. Check browser console for detailed address comparison.
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {filteredCampaignPages?.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-gray-500">No campaigns found.</p>
@@ -192,5 +272,13 @@ export default function AdminPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Web3ContextProvider>
+      <AdminPageContent />
+    </Web3ContextProvider>
   );
 }

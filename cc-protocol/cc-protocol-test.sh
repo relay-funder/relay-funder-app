@@ -883,6 +883,127 @@ test_payment_flows() {
     fi
 }
 
+# Check campaign-specific treasury balance and database consistency
+check_campaign_balance() {
+    echo -e "\n${BOLD}${BLUE}=== Campaign Balance Verification ===${NC}"
+    
+    local campaign_id="$1"
+    if [ -z "$campaign_id" ]; then
+        echo -e "${RED}✗ Campaign ID is required${NC}"
+        echo "Usage: $0 campaign-balance <campaign_id>"
+        return 1
+    fi
+    
+    echo "Checking balance for Campaign ID: $campaign_id"
+    
+    # Get campaign details from database via API (requires Docker app running)
+    echo -e "\n${YELLOW}Step 1: Retrieving campaign details from database...${NC}"
+    
+    # Check if Docker app is running
+    if ! docker compose ps app | grep -q "Up"; then
+        echo -e "${RED}✗ Docker app container is not running${NC}"
+        echo "Please start the application: docker compose up -d"
+        return 1
+    fi
+    
+    # Query campaign details using database query
+    local campaign_query="SELECT id, title, status, \"campaignAddress\", \"treasuryAddress\", \"cryptoTreasuryAddress\", \"treasuryMode\" FROM \"Campaign\" WHERE id = $campaign_id;"
+    local campaign_result=$(docker compose exec -T app pnpm prisma db execute --command "$campaign_query" 2>/dev/null || echo "")
+    
+    if [ -z "$campaign_result" ]; then
+        echo -e "${RED}✗ Campaign not found or database query failed${NC}"
+        return 1
+    fi
+    
+    echo "Campaign Details:"
+    echo "$campaign_result"
+    
+    # Extract treasury address (try both cryptoTreasuryAddress and treasuryAddress)
+    local treasury_address=$(echo "$campaign_result" | grep -o '0x[a-fA-F0-9]\{40\}' | head -1 || echo "")
+    
+    if [ -z "$treasury_address" ]; then
+        echo -e "${YELLOW}⚠ No treasury address found - campaign may not be approved yet${NC}"
+        return 0
+    fi
+    
+    echo -e "${GREEN}✓ Treasury address found: $treasury_address${NC}"
+    
+    # Step 2: Query treasury contract balance
+    echo -e "\n${YELLOW}Step 2: Querying treasury contract balance...${NC}"
+    
+    # Get raised amount from treasury contract
+    local raised_amount_raw=$(cast call $treasury_address "getRaisedAmount()" --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "0")
+    local raised_amount=$(cast to-dec $raised_amount_raw 2>/dev/null || echo "0")
+    local raised_hr=$(echo "scale=6; $raised_amount / 1000000" | bc -l 2>/dev/null || echo "0")
+    
+    # Get available amount
+    local available_amount_raw=$(cast call $treasury_address "getAvailableRaisedAmount()" --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "0")
+    local available_amount=$(cast to-dec $available_amount_raw 2>/dev/null || echo "0")
+    local available_hr=$(echo "scale=6; $available_amount / 1000000" | bc -l 2>/dev/null || echo "0")
+    
+    # Get goal amount
+    local goal_amount_raw=$(cast call $treasury_address "getGoalAmount()" --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "0")
+    local goal_amount=$(cast to-dec $goal_amount_raw 2>/dev/null || echo "0")
+    local goal_hr=$(echo "scale=6; $goal_amount / 1000000" | bc -l 2>/dev/null || echo "0")
+    
+    echo "Treasury Balance Information:"
+    echo "  Address: $treasury_address"
+    echo "  Raised Amount: $raised_hr USDC (raw: $raised_amount)"
+    echo "  Available Amount: $available_hr USDC (raw: $available_amount)"
+    echo "  Goal Amount: $goal_hr USDC (raw: $goal_amount)"
+    
+    # Step 3: Query database payment records
+    echo -e "\n${YELLOW}Step 3: Checking database payment records...${NC}"
+    
+    local payments_query="SELECT COUNT(*) as count, COALESCE(SUM(CAST(amount AS NUMERIC)), 0) as total FROM \"Payment\" WHERE \"campaignId\" = $campaign_id AND status = 'confirmed';"
+    local payments_result=$(docker compose exec -T app pnpm prisma db execute --command "$payments_query" 2>/dev/null || echo "")
+    
+    if [ -n "$payments_result" ]; then
+        echo "Database Payment Records:"
+        echo "$payments_result"
+        
+        # Extract payment total from result
+        local db_total=$(echo "$payments_result" | grep -o '[0-9]\+\.[0-9]\+\|[0-9]\+' | tail -1 || echo "0")
+    else
+        echo -e "${YELLOW}⚠ Could not retrieve payment records${NC}"
+        local db_total="0"
+    fi
+    
+    # Step 4: Compare database vs treasury balance
+    echo -e "\n${YELLOW}Step 4: Database vs Treasury consistency check...${NC}"
+    
+    local treasury_total_usdc=$(echo "scale=6; $raised_amount / 1000000" | bc -l 2>/dev/null || echo "0")
+    
+    echo "Consistency Check:"
+    echo "  Database Total: $db_total USDC"
+    echo "  Treasury Total: $treasury_total_usdc USDC"
+    
+    # Calculate difference (allowing for small precision differences)
+    local difference=$(echo "scale=6; $treasury_total_usdc - $db_total" | bc -l 2>/dev/null || echo "0")
+    local abs_diff=$(echo "$difference" | sed 's/-//')
+    
+    if [ $(echo "$abs_diff < 0.01" | bc -l) -eq 1 ]; then
+        echo -e "${GREEN}✓ Database and treasury balances are consistent${NC}"
+    else
+        echo -e "${YELLOW}⚠ Balance difference detected: $difference USDC${NC}"
+        echo "This may indicate:"
+        echo "  - Pending transactions not yet confirmed"
+        echo "  - Database sync issues"
+        echo "  - Different precision handling"
+    fi
+    
+    # Step 5: Generate summary report
+    echo -e "\n${BOLD}${BLUE}=== Campaign Balance Summary ===${NC}"
+    echo "Campaign ID: $campaign_id"
+    echo "Treasury Address: $treasury_address"
+    echo "Treasury Balance: $raised_hr USDC"
+    echo "Database Payments: $db_total USDC"
+    echo "Goal Amount: $goal_hr USDC"
+    echo "Progress: $(echo "scale=2; $raised_hr * 100 / $goal_hr" | bc -l 2>/dev/null || echo "0")%"
+    
+    return 0
+}
+
 # Display next steps and integration guidance
 show_integration_guidance() {
     echo -e "\n${BOLD}${BLUE}=== Integration Guidance ===${NC}"
@@ -908,6 +1029,11 @@ show_integration_guidance() {
     echo "  - Review CC-PROTOCOL-INTEGRATION-GUIDE.md for complete implementation"
     echo "  - See TESTING-RESULTS-SUMMARY.md for architectural findings"
     echo "  - Check contracts/README.md for contract details"
+    
+    echo -e "\n${YELLOW}🧪 Testing Tools:${NC}"
+    echo "  - Use './cc-protocol/crypto-flow-debug.sh' for complete workflow testing"
+    echo "  - Use './cc-protocol/cc-protocol-test.sh campaign-balance <id>' for balance verification"
+    echo "  - Review './cc-protocol/ADMIN-AUTH-WORKFLOW.md' for admin authentication"
 }
 
 # Main execution function
@@ -979,6 +1105,15 @@ case "${1:-}" in
         load_environment
         diagnose_payment_treasury_issue
         ;;
+    "campaign-balance"|"check-campaign")
+        if [ -n "$2" ]; then
+            load_environment
+            check_campaign_balance "$2"
+        else
+            echo "Usage: $0 campaign-balance <campaign_id>"
+            echo "Example: $0 campaign-balance 123"
+        fi
+        ;;
     "full"|"complete")
         load_environment
         verify_environment
@@ -992,17 +1127,18 @@ case "${1:-}" in
         echo "Usage: $0 [command]"
         echo ""
         echo "Commands:"
-        echo "  env          - Verify environment variables only"
-        echo "  connect      - Test RPC connectivity and contract access"
-        echo "  balance      - Check admin wallet balances"
-        echo "  workflow     - Run complete workflow test (includes PaymentTreasury approval)"
-        echo "  pledge-test  - Test KeepWhatsRaised pledge patterns"
-        echo "  payment-test - Test PaymentTreasury credit card flow patterns"
-        echo "  balances-test- Test treasury balance query patterns"
-        echo "  payment-flows- Run all payment-related tests"
-        echo "  diagnose     - Isolated PaymentTreasury deployment diagnostic for CCP team"
-        echo "  full         - Run complete test suite including payments"
-        echo "  help         - Show this help message"
+        echo "  env              - Verify environment variables only"
+        echo "  connect          - Test RPC connectivity and contract access"
+        echo "  balance          - Check admin wallet balances"
+        echo "  workflow         - Run complete workflow test (includes PaymentTreasury approval)"
+        echo "  pledge-test      - Test KeepWhatsRaised pledge patterns"
+        echo "  payment-test     - Test PaymentTreasury credit card flow patterns"
+        echo "  balances-test    - Test treasury balance query patterns"
+        echo "  payment-flows    - Run all payment-related tests"
+        echo "  campaign-balance - Check specific campaign treasury balance vs database"
+        echo "  diagnose         - Isolated PaymentTreasury deployment diagnostic for CCP team"
+        echo "  full             - Run complete test suite including payments"
+        echo "  help             - Show this help message"
         echo ""
         echo "Note: 'approve-payment' command is deprecated - approval integrated into 'workflow'"
         echo ""
