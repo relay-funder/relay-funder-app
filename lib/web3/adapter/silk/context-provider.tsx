@@ -8,17 +8,11 @@ import {
   useEffect,
   useRef,
   type ReactNode,
-  Suspense,
 } from 'react';
 import { useSession } from 'next-auth/react';
 import { wagmiConfig } from '@/lib/web3';
 
-import {
-  WagmiProvider,
-  createConfig,
-  type CreateConnectorFn,
-  type CreateConfigParameters,
-} from 'wagmi';
+import { WagmiProvider, createConfig, type CreateConnectorFn } from 'wagmi';
 
 // import {
 //   initSilk,
@@ -35,6 +29,7 @@ import {
   initSilk,
   SilkEthereumProviderInterface,
 } from '@silk-wallet/silk-wallet-sdk';
+import { Config } from 'wagmi';
 
 const silkConnector = silkConnectorCreator(silkConnectorOptions);
 
@@ -59,7 +54,6 @@ interface IWeb3Context {
     isConnected: () => Promise<boolean>;
     getEthereumProvider: () => Promise<EthereumProvider>;
   }>;
-  connectors: readonly CreateConnectorFn[];
 }
 const Web3Context = createContext({
   chainId: undefined,
@@ -86,12 +80,23 @@ export function getProvider() {
   }
   return undefined;
 }
+let config: Config | null = null;
+function getConfig() {
+  if (config) {
+    return config;
+  }
+  const silkWagmiConfig = wagmiConfig;
+  silkWagmiConfig.connectors = [
+    ...(silkWagmiConfig?.connectors ?? []),
+    silkConnector,
+  ];
+  config = createConfig(silkWagmiConfig);
+  return config;
+}
+
 export function Web3ContextProvider({ children }: { children: ReactNode }) {
   const [chainId, setChainId] = useState<number | undefined>();
   const [address, setAddress] = useState<string | undefined>();
-  const [connectors, setConnectors] = useState<readonly CreateConnectorFn[]>(
-    wagmiConfig.connectors ?? [],
-  );
 
   const [autoConnected, setAutoConnected] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -99,41 +104,17 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
   const session = useSession();
   debug && console.log('web3/adapter/silk/context-provider: Initializing');
 
-  const config = useMemo(
-    () =>
-      createConfig({
-        chains: wagmiConfig.chains,
-        connectors,
-        transports: wagmiConfig.transports,
-        ssr: wagmiConfig.ssr,
-      } as CreateConfigParameters),
-    [connectors],
-  );
-
   const chain = useMemo(() => {
     if (!chainId) {
       return undefined;
     }
-    for (const configChain of config.chains) {
+    for (const configChain of getConfig().chains) {
       if (configChain.id === chainId) {
         return configChain;
       }
     }
     return undefined;
-  }, [chainId, config]);
-
-  const addConnector = useCallback(
-    (newConnector: CreateConnectorFn) => {
-      debug && console.log('web3/adapter/silk/context-provider: addConnector');
-      setConnectors((prevState) => {
-        if (prevState.includes(newConnector)) {
-          return prevState;
-        }
-        return [...prevState, newConnector] as readonly CreateConnectorFn[];
-      });
-    },
-    [setConnectors],
-  );
+  }, [chainId]);
 
   const requestWallet = useCallback(async (): Promise<{
     address: `0x${string}`;
@@ -208,22 +189,14 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
       address,
       initialized,
       requestWallet,
-      connectors,
     };
-  }, [chainId, chain, address, initialized, requestWallet, connectors]);
+  }, [chainId, chain, address, initialized, requestWallet]);
 
   useEffect(() => {
     /**
      * This triggers the auto-connect of silk
      */
     if (autoConnected) {
-      return;
-    }
-    const loadedSilkConnector = connectors.find(
-      (connector) => connector === silkConnector,
-    );
-    if (!loadedSilkConnector) {
-      console.log('no silk yet');
       return;
     }
 
@@ -252,25 +225,8 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     return () => {
       clearTimeout(timerId);
     };
-  }, [checkWallet, autoConnected, connectors]);
+  }, [checkWallet, autoConnected]);
 
-  useEffect(() => {
-    /**
-     * this effect adds the silk connector to the wagmi-connectors
-     * only in the client-code
-     */
-    const loadedSilkConnector = connectors.find(
-      (connector) => connector === silkConnector,
-    );
-    if (!loadedSilkConnector) {
-      debug &&
-        console.log(
-          'web3/adapter/silk/context-provider: Adding silk connector',
-          silkConnector,
-        );
-      addConnector(silkConnector);
-    }
-  }, [connectors, addConnector]);
   useEffect(() => {
     /**
      * this effect checks if the provider is loaded
@@ -296,10 +252,8 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     };
   }, []);
   return (
-    <WagmiProvider config={config}>
-      <Suspense>
-        <Web3Context.Provider value={value}>{children}</Web3Context.Provider>
-      </Suspense>
+    <WagmiProvider config={getConfig()} reconnectOnMount={true}>
+      <Web3Context.Provider value={value}>{children}</Web3Context.Provider>
     </WagmiProvider>
   );
 }
