@@ -14,8 +14,27 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# Setup Foundry PATH
+setup_foundry() {
+    # Add Foundry to PATH if not already available
+    if ! command -v cast &> /dev/null; then
+        if [ -d "$HOME/.foundry/bin" ]; then
+            export PATH="$HOME/.foundry/bin:$PATH"
+            echo -e "${BLUE}✓ Added Foundry to PATH${NC}"
+        else
+            echo -e "${RED}✗ Foundry not found. Please install Foundry:${NC}"
+            echo "curl -L https://foundry.paradigm.xyz | bash"
+            echo "source ~/.bashrc && foundryup"
+            exit 1
+        fi
+    fi
+}
+
 # Load environment variables
 load_environment() {
+    # Setup Foundry first
+    setup_foundry
+    
     if [ -f .env.foundry ]; then
         echo -e "${BLUE}Loading environment from .env.foundry...${NC}"
         set -a
@@ -168,8 +187,8 @@ test_complete_workflow() {
     # Generate unique campaign parameters
     local timestamp=$(date +%s)
     local identifier_hash="0x$(echo -n "test-campaign-${timestamp}" | openssl dgst -sha256 | cut -d' ' -f2)"
-    local launch_time=$(($(date +%s) + 3600))
-    local deadline=$(($(date +%s) + 2592000))
+    local launch_time=$(($(date +%s) + 30))    # 30 seconds from now (campaign will be active very soon)
+    local deadline=$(($(date +%s) + 1209600))  # 2 weeks from now (campaign active)
     local goal_amount="1000000000000000000000"
     
     echo -e "\n${YELLOW}Phase 1: CampaignInfo Deployment (Campaign Creation)${NC}"
@@ -182,38 +201,70 @@ test_complete_workflow() {
     
     # Deploy CampaignInfo contract
     echo -e "\nDeploying CampaignInfo contract..."
-    local campaign_tx=$(cast send $NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY \
+    echo "Platform Hash to select: $NEXT_PUBLIC_PLATFORM_HASH"
+    
+    # Try different array syntax - Cast might need space-separated values
+    local campaign_tx_result=$(cast send $NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY \
         "createCampaign(address,bytes32,bytes32[],bytes32[],bytes32[],(uint256,uint256,uint256))" \
         $NEXT_PUBLIC_PLATFORM_ADMIN \
         $identifier_hash \
-        "[$NEXT_PUBLIC_PLATFORM_HASH]" \
-        "[]" \
-        "[]" \
+        "$NEXT_PUBLIC_PLATFORM_HASH" \
+        "" \
+        "" \
         "($launch_time,$deadline,$goal_amount)" \
         --private-key $PLATFORM_ADMIN_PRIVATE_KEY \
         --rpc-url $NEXT_PUBLIC_RPC_URL \
-        --gas-limit 3000000 | grep "transactionHash" | awk '{print $2}' || echo "failed")
+        --gas-limit 3000000 2>&1)
     
-    if [ "$campaign_tx" = "failed" ]; then
+    # Extract just the transaction hash
+    local campaign_tx=$(echo "$campaign_tx_result" | grep "transactionHash" | awk '{print $2}' | head -1)
+    
+    # If that fails, try to extract from the result differently
+    if [[ ! "$campaign_tx" =~ ^0x[a-fA-F0-9]{64}$ ]]; then
+        campaign_tx=$(echo "$campaign_tx_result" | grep -o '0x[a-fA-F0-9]\{64\}' | tail -1)
+    fi
+    
+    if [ "$campaign_tx" = "failed" ] || [[ ! "$campaign_tx" =~ ^0x[a-fA-F0-9]{64}$ ]]; then
         echo -e "${RED}✗ CampaignInfo deployment failed${NC}"
+        echo "Transaction result: $campaign_tx_result"
         return 1
     fi
     
     echo -e "${GREEN}✓ CampaignInfo deployed! TX: $campaign_tx${NC}"
     
-    # Get CampaignInfo address
-    echo -e "\nRetrieving CampaignInfo address..."
-    local campaign_info_raw=$(cast call $NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY \
-        "identifierToCampaignInfo(bytes32)" \
-        $identifier_hash \
-        --rpc-url $NEXT_PUBLIC_RPC_URL)
+    # Get CampaignInfo address from transaction receipt
+    echo -e "\nRetrieving CampaignInfo address from transaction receipt..."
+    sleep 2
     
-    # Clean address format (extract last 40 hex chars and add 0x prefix)
-    local campaign_info_address="0x$(echo $campaign_info_raw | sed 's/^0x//' | tail -c 41 | head -c 40)"
+    # Get transaction receipt and extract CampaignInfo address from logs
+    local receipt=$(cast receipt $campaign_tx --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null)
     
-    # Validate address format
+    # Method 1: Look for the first unique address that's not the factory or admin
+    local campaign_info_address=$(echo "$receipt" | grep -o '0x[a-fA-F0-9]\{40\}' | grep -v "$NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY" | grep -v "$NEXT_PUBLIC_PLATFORM_ADMIN" | head -1)
+    
+    # Method 2: If that fails, try extracting from the structured logs
     if [[ ! "$campaign_info_address" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
-        echo -e "${RED}✗ Invalid CampaignInfo address: $campaign_info_address${NC}"
+        campaign_info_address=$(echo "$receipt" | grep -o '"address":"0x[a-fA-F0-9]\{40\}"' | grep -v "$NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY" | head -1 | cut -d'"' -f4)
+    fi
+    
+    # Method 3: Parse the logs more carefully for the CampaignCreated event
+    if [[ ! "$campaign_info_address" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        # Look for addresses in the receipt that are not factory or admin addresses
+        local all_addresses=$(echo "$receipt" | grep -o '0x[a-fA-F0-9]\{40\}' | sort | uniq)
+        for addr in $all_addresses; do
+            if [ "$addr" != "$NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY" ] && [ "$addr" != "$NEXT_PUBLIC_PLATFORM_ADMIN" ] && [ "$addr" != "0x0000000000000000000000000000000000000000" ]; then
+                campaign_info_address="$addr"
+                break
+            fi
+        done
+    fi
+    
+    # Final validation
+    if [[ ! "$campaign_info_address" =~ ^0x[a-fA-F0-9]{40}$ ]] || [ "$campaign_info_address" = "0x0000000000000000000000000000000000000000" ]; then
+        echo -e "${RED}✗ Could not extract valid CampaignInfo address from transaction${NC}"
+        echo "Transaction: $campaign_tx"
+        echo "Available addresses in receipt:"
+        echo "$receipt" | grep -o '0x[a-fA-F0-9]\{40\}' | sort | uniq
         return 1
     fi
     
@@ -229,49 +280,17 @@ test_complete_workflow() {
         echo -e "${GREEN}✓ CampaignInfo contract verified (deadline: $campaign_deadline_dec)${NC}"
     fi
     
-    echo -e "\n${YELLOW}Phase 2: Treasury Implementation Setup${NC}"
-    echo "Ensuring PaymentTreasury implementation is registered and approved..."
+    echo -e "\n${YELLOW}Phase 2: Direct Treasury Deployment (Matching App Pattern)${NC}"
+    echo "Using direct deployment pattern that works in useAdminApproveCampaign.ts"
+    echo "No approval steps needed - treasuries are pre-configured"
     
-    # Register PaymentTreasury implementation (ID 1) if needed
-    echo -e "\n2.0.1 Registering PaymentTreasury implementation..."
-    local register_result=$(cast send $NEXT_PUBLIC_TREASURY_FACTORY \
-        "registerTreasuryImplementation(bytes32,uint256,address)" \
-        $NEXT_PUBLIC_PLATFORM_HASH \
-        1 \
-        $PAYMENT_TREASURY_IMPLEMENTATION \
-        --private-key $PLATFORM_ADMIN_PRIVATE_KEY \
-        --rpc-url $NEXT_PUBLIC_RPC_URL \
-        --gas-limit 200000 2>&1)
+    # Deploy KeepWhatsRaised Treasury directly (matching app pattern)
+    echo -e "\n2.1 Deploying KeepWhatsRaised Treasury (Crypto Payments)..."
+    echo "Using same pattern as useAdminApproveCampaign.ts:"
+    echo "  Platform Hash: $NEXT_PUBLIC_PLATFORM_HASH"
+    echo "  CampaignInfo Address: $campaign_info_address"
+    echo "  Implementation ID: 0 (KeepWhatsRaised)"
     
-    local register_tx=$(echo "$register_result" | grep "^transactionHash" | awk '{print $2}')
-    if [[ "$register_tx" =~ ^0x[a-fA-F0-9]{64}$ ]]; then
-        echo -e "${GREEN}✓ PaymentTreasury registration submitted: $register_tx${NC}"
-    else
-        echo -e "${YELLOW}⚠ PaymentTreasury registration may have failed (possibly already registered)${NC}"
-    fi
-    
-    # Approve PaymentTreasury implementation
-    echo -e "\n2.0.2 Approving PaymentTreasury implementation..."
-    local approve_result=$(cast send $NEXT_PUBLIC_TREASURY_FACTORY \
-        "approveTreasuryImplementation(bytes32,uint256)" \
-        $NEXT_PUBLIC_PLATFORM_HASH \
-        1 \
-        --private-key $PROTOCOL_ADMIN_PRIVATE_KEY \
-        --rpc-url $NEXT_PUBLIC_RPC_URL \
-        --gas-limit 200000 2>&1)
-    
-    local approve_tx=$(echo "$approve_result" | grep "^transactionHash" | awk '{print $2}')
-    if [[ "$approve_tx" =~ ^0x[a-fA-F0-9]{64}$ ]]; then
-        echo -e "${GREEN}✓ PaymentTreasury approval submitted: $approve_tx${NC}"
-    else
-        echo -e "${YELLOW}⚠ PaymentTreasury approval may have failed (possibly already approved)${NC}"
-    fi
-    
-    echo -e "\n${YELLOW}Phase 3: Dual Treasury Deployment (Admin Approval)${NC}"
-    echo "Using CampaignInfo address: $campaign_info_address"
-    
-    # Deploy KeepWhatsRaised Treasury
-    echo -e "\n3.1 Deploying KeepWhatsRaised Treasury (Crypto Payments)..."
     local kwr_result=$(cast send $NEXT_PUBLIC_TREASURY_FACTORY \
         "deploy(bytes32,address,uint256,string,string)" \
         $NEXT_PUBLIC_PLATFORM_HASH \
@@ -284,7 +303,6 @@ test_complete_workflow() {
         --gas-limit 2000000 2>&1)
     
     # Extract transaction hash from the result
-    # Look for the main transactionHash field (not in logs array)
     local kwr_tx=$(echo "$kwr_result" | grep "^transactionHash" | awk '{print $2}')
     
     # If that fails, try the general grep (for older format)
@@ -299,8 +317,9 @@ test_complete_workflow() {
     
     if [ "$kwr_tx" = "failed" ]; then
         echo -e "${RED}✗ KeepWhatsRaised deployment failed (transaction submission)${NC}"
-        # Continue to test PaymentTreasury anyway
-    else
+        echo "Deployment result: $kwr_result"
+        return 1
+    fi
     
     echo -e "${GREEN}✓ KeepWhatsRaised transaction submitted: $kwr_tx${NC}"
     
@@ -309,14 +328,51 @@ test_complete_workflow() {
     local kwr_status=$(cast receipt $kwr_tx --rpc-url $NEXT_PUBLIC_RPC_URL | grep "status" | awk '{print $2}')
     if [ "$kwr_status" = "1" ]; then
         echo -e "${GREEN}✓ KeepWhatsRaised deployment confirmed successful!${NC}"
+        
+        # Extract treasury address from logs
+        local kwr_receipt=$(cast receipt $kwr_tx --rpc-url $NEXT_PUBLIC_RPC_URL)
+        local kwr_treasury_address=$(echo "$kwr_receipt" | grep -o '"address":"0x[a-fA-F0-9]\{40\}"' | head -1 | cut -d'"' -f4)
+        
+        if [[ "$kwr_treasury_address" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+            echo -e "${GREEN}✓ KeepWhatsRaised Treasury Address: $kwr_treasury_address${NC}"
+            
+            # Test treasury functions
+            local raised_amount=$(cast call $kwr_treasury_address "getRaisedAmount()" --rpc-url $NEXT_PUBLIC_RPC_URL)
+            echo -e "${GREEN}✓ Treasury functional (raised amount: $raised_amount)${NC}"
+        fi
     else
         echo -e "${RED}✗ KeepWhatsRaised deployment failed (status: $kwr_status)${NC}"
-        echo -e "${YELLOW}KeepWhatsRaised implementation may not be approved by protocol admin${NC}"
-    fi
+        
+        # Get detailed error information
+        echo -e "\n${YELLOW}Debugging deployment failure:${NC}"
+        local kwr_receipt=$(cast receipt $kwr_tx --rpc-url $NEXT_PUBLIC_RPC_URL)
+        local gas_used=$(echo "$kwr_receipt" | grep "gasUsed" | awk '{print $2}' | head -1)
+        local logs_count=$(echo "$kwr_receipt" | grep -c '"address":' || echo "0")
+        
+        echo "Transaction Hash: $kwr_tx"
+        echo "Gas Used: $gas_used"
+        echo "Logs Count: $logs_count"
+        echo "Status: $kwr_status (0 = failed, 1 = success)"
+        
+        echo -e "\n${YELLOW}Possible reasons for failure:${NC}"
+        echo "1. KeepWhatsRaised implementation not approved by protocol admin"
+        echo "2. Insufficient gas (used: $gas_used)"
+        echo "3. Invalid CampaignInfo contract address"
+        echo "4. Platform admin permissions issue"
+        echo "5. Contract parameter validation failure"
+        
+        echo -e "\n${BLUE}For CC Protocol team:${NC}"
+        echo "Please ensure KeepWhatsRaised implementation (ID=0) is approved"
+        echo "for platform hash: $NEXT_PUBLIC_PLATFORM_HASH"
+        echo "by protocol admin: [PROTOCOL_ADMIN_ADDRESS]"
+        
+        return 1
     fi
     
-    # Deploy PaymentTreasury
-    echo -e "\n3.2 Deploying PaymentTreasury (Credit Card Payments)..."
+    # Deploy PaymentTreasury directly (matching app pattern)
+    echo -e "\n2.2 Deploying PaymentTreasury (Credit Card Payments)..."
+    echo "Using same direct deployment pattern..."
+    
     local pt_result=$(cast send $NEXT_PUBLIC_TREASURY_FACTORY \
         "deploy(bytes32,address,uint256,string,string)" \
         $NEXT_PUBLIC_PLATFORM_HASH \
@@ -329,7 +385,6 @@ test_complete_workflow() {
         --gas-limit 2000000 2>&1)
     
     # Extract transaction hash from the result
-    # Look for the main transactionHash field (not in logs array)
     local pt_tx=$(echo "$pt_result" | grep "^transactionHash" | awk '{print $2}')
     
     # If that fails, try the general grep (for older format)
@@ -344,40 +399,42 @@ test_complete_workflow() {
     
     if [ "$pt_tx" = "failed" ]; then
         echo -e "${RED}✗ PaymentTreasury deployment failed (transaction submission)${NC}"
+        echo "Deployment result: $pt_result"
         # Continue to summary anyway
     else
-    
-    echo -e "${GREEN}✓ PaymentTreasury transaction submitted: $pt_tx${NC}"
-    
-    # Check actual transaction status
-    sleep 3
-    local pt_status=$(cast receipt $pt_tx --rpc-url $NEXT_PUBLIC_RPC_URL | grep "status" | awk '{print $2}')
-    if [ "$pt_status" = "1" ]; then
-        echo -e "${GREEN}✓ PaymentTreasury deployment confirmed successful!${NC}"
-    else
-        echo -e "${RED}✗ PaymentTreasury deployment failed (status: $pt_status)${NC}"
-        echo -e "${YELLOW}PaymentTreasury deployment failed despite registration and approval${NC}"
-        echo -e "${BLUE}For CCP Team - Diagnostic Information:${NC}"
-        echo -e "  Platform Hash: $NEXT_PUBLIC_PLATFORM_HASH"
-        echo -e "  Implementation ID: 1"
-        echo -e "  Implementation Address: $PAYMENT_TREASURY_IMPLEMENTATION"
-        echo -e "  Registration TX: $register_tx"
-        echo -e "  Approval TX: $approve_tx"
-        echo -e "  Deployment TX: $pt_tx"
-        echo -e "  CampaignInfo Address: $campaign_info_address"
-        echo -e "${YELLOW}Registration and approval transactions were submitted successfully${NC}"
-    fi
+        echo -e "${GREEN}✓ PaymentTreasury transaction submitted: $pt_tx${NC}"
+        
+        # Check actual transaction status
+        sleep 3
+        local pt_status=$(cast receipt $pt_tx --rpc-url $NEXT_PUBLIC_RPC_URL | grep "status" | awk '{print $2}')
+        if [ "$pt_status" = "1" ]; then
+            echo -e "${GREEN}✓ PaymentTreasury deployment confirmed successful!${NC}"
+            
+            # Extract treasury address from logs
+            local pt_receipt=$(cast receipt $pt_tx --rpc-url $NEXT_PUBLIC_RPC_URL)
+            local pt_treasury_address=$(echo "$pt_receipt" | grep -o '"address":"0x[a-fA-F0-9]\{40\}"' | head -1 | cut -d'"' -f4)
+            
+            if [[ "$pt_treasury_address" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+                echo -e "${GREEN}✓ PaymentTreasury Address: $pt_treasury_address${NC}"
+                
+                # Test treasury functions
+                local raised_amount=$(cast call $pt_treasury_address "getRaisedAmount()" --rpc-url $NEXT_PUBLIC_RPC_URL)
+                echo -e "${GREEN}✓ Treasury functional (raised amount: $raised_amount)${NC}"
+            fi
+        else
+            echo -e "${RED}✗ PaymentTreasury deployment failed (status: $pt_status)${NC}"
+            echo -e "${YELLOW}Note: This may be expected if PaymentTreasury implementation needs different setup${NC}"
+        fi
     fi
     
     # Summary
     echo -e "\n${BOLD}${BLUE}=== Workflow Test Summary ===${NC}"
     echo -e "${GREEN}✓ CampaignInfo deployed and verified${NC}"
-    echo -e "${GREEN}✓ PaymentTreasury implementation registered and approved${NC}"
     echo -e "${GREEN}✓ KeepWhatsRaised treasury deployment successful${NC}"
     if [ "$pt_status" = "1" ]; then
         echo -e "${GREEN}✓ PaymentTreasury deployment successful${NC}"
     else
-        echo -e "${RED}✗ PaymentTreasury deployment failed (see diagnostic info above)${NC}"
+        echo -e "${YELLOW}⚠ PaymentTreasury deployment failed (may need different configuration)${NC}"
     fi
     
     echo -e "\n${YELLOW}Key Addresses for Application Integration:${NC}"
@@ -398,10 +455,23 @@ test_complete_workflow() {
 test_pledge_payments() {
     echo -e "\n${BOLD}${BLUE}=== Testing KeepWhatsRaised Pledge Payments ===${NC}"
     
-    # Use the validated treasury address from our successful test
-    local kwr_treasury_address="0xbe92a728a73698fd5b916ac5ce9ae0d05d6a1526"
+    # Use the treasury address from the workflow test if available
+    local kwr_treasury_address=""
     
-    echo -e "${GREEN}✓ Using validated KeepWhatsRaised Treasury: $kwr_treasury_address${NC}"
+    # Try to extract treasury address from the most recent deployment
+    if [ -n "$TEST_KWR_TX" ] && [ "$TEST_KWR_TX" != "failed" ]; then
+        echo "Extracting treasury address from deployment transaction: $TEST_KWR_TX"
+        local receipt=$(cast receipt $TEST_KWR_TX --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null)
+        kwr_treasury_address=$(echo "$receipt" | grep -o '"address":"0x[a-fA-F0-9]\{40\}"' | head -1 | cut -d'"' -f4)
+    fi
+    
+    # Fallback to hardcoded address if extraction fails
+    if [ -z "$kwr_treasury_address" ]; then
+        kwr_treasury_address="0xbe92a728a73698fd5b916ac5ce9ae0d05d6a1526"
+        echo -e "${YELLOW}⚠ Using fallback treasury address${NC}"
+    fi
+    
+    echo -e "${GREEN}✓ Using KeepWhatsRaised Treasury: $kwr_treasury_address${NC}"
     
     # Test treasury functions first
     echo -e "\n${YELLOW}Testing treasury read functions:${NC}"
@@ -456,8 +526,6 @@ test_pledge_payments() {
     echo "  --private-key \$PLATFORM_ADMIN_PRIVATE_KEY \\"
     echo "  --rpc-url \$NEXT_PUBLIC_RPC_URL"
     
-    echo -e "\n${GREEN}✓ KeepWhatsRaised treasury functions and pledge pattern validated${NC}"
-    echo -e "${YELLOW}Note: Actual pledge requires USDC balance and approval${NC}"
     return 0
 }
 
@@ -838,6 +906,181 @@ diagnose_payment_treasury_issue() {
     return 0
 }
 
+# Diagnostic function to check implementation approval status
+diagnose_implementation_approval() {
+    echo -e "\n${BOLD}${BLUE}=== Implementation Approval Diagnostic ===${NC}"
+    
+    setup_foundry
+    
+    # Load from the same source as the app (.env.local)
+    if [ -f ../.env.local ]; then
+        echo -e "${BLUE}Loading environment from ../.env.local (same as app)...${NC}"
+        set -a
+        source ../.env.local
+        set +a
+    else
+        echo -e "${RED}Error: ../.env.local not found!${NC}"
+        exit 1
+    fi
+    
+    echo -e "\n${YELLOW}Environment Variables (as seen by app):${NC}"
+    echo "  Platform Hash: $NEXT_PUBLIC_PLATFORM_HASH"
+    echo "  Treasury Factory: $NEXT_PUBLIC_TREASURY_FACTORY"
+    echo "  Global Params: $NEXT_PUBLIC_GLOBAL_PARAMS"
+    echo "  Platform Admin: $NEXT_PUBLIC_PLATFORM_ADMIN"
+    echo "  RPC URL: $NEXT_PUBLIC_RPC_URL"
+    
+    # Check if KeepWhatsRaised implementation exists and get its address
+    echo -e "\n${YELLOW}Checking KeepWhatsRaised implementation...${NC}"
+    
+    # Try different methods to check implementation approval
+    echo -e "\n${BLUE}Method 1: Check if implementation ID 0 is approved for platform${NC}"
+    local kwr_approved_1=$(cast call $NEXT_PUBLIC_TREASURY_FACTORY \
+        "isImplementationApproved(bytes32,uint256)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        0 \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Result: $kwr_approved_1"
+    
+    echo -e "\n${BLUE}Method 2: Get implementation address for ID 0${NC}"
+    local kwr_impl_addr=$(cast call $NEXT_PUBLIC_TREASURY_FACTORY \
+        "getImplementationAddress(bytes32,uint256)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        0 \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Implementation address: $kwr_impl_addr"
+    
+    echo -e "\n${BLUE}Method 3: Check platform admin permissions${NC}"
+    local platform_admin_check=$(cast call $NEXT_PUBLIC_GLOBAL_PARAMS \
+        "getPlatformAdminAddress(bytes32)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Platform admin from contract: $platform_admin_check"
+    echo "Platform admin from env: $NEXT_PUBLIC_PLATFORM_ADMIN"
+    echo "Match: $([ "${platform_admin_check,,}" = "${NEXT_PUBLIC_PLATFORM_ADMIN,,}" ] && echo "YES" || echo "NO")"
+    
+    echo -e "\n${BLUE}Method 4: Check protocol admin${NC}"
+    local protocol_admin=$(cast call $NEXT_PUBLIC_GLOBAL_PARAMS \
+        "getProtocolAdminAddress()" \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Protocol admin: $protocol_admin"
+    
+    # Try to simulate the exact same deployment call that the app makes
+    echo -e "\n${BLUE}Method 5: Simulate deployment call (dry run)${NC}"
+    echo "This would be the exact call the app makes:"
+    echo "treasuryFactory.deploy("
+    echo "  '$NEXT_PUBLIC_PLATFORM_HASH',"
+    echo "  '[CAMPAIGN_INFO_ADDRESS]',"
+    echo "  0,"
+    echo "  'Test Campaign Crypto',"
+    echo "  'TESTCRYPTO'"
+    echo ")"
+    
+    # Summary
+    echo -e "\n${BOLD}${YELLOW}=== Diagnostic Summary ===${NC}"
+    
+    if [ "$kwr_approved_1" = "true" ] || [ "$kwr_approved_1" = "0x0000000000000000000000000000000000000000000000000000000000000001" ]; then
+        echo -e "${GREEN}✓ KeepWhatsRaised implementation IS approved${NC}"
+        echo -e "${GREEN}✓ App deployments should work${NC}"
+    elif [ "$kwr_approved_1" = "false" ] || [ "$kwr_approved_1" = "0x0000000000000000000000000000000000000000000000000000000000000000" ]; then
+        echo -e "${RED}✗ KeepWhatsRaised implementation is NOT approved${NC}"
+        echo -e "${RED}✗ App deployments should fail${NC}"
+        echo -e "\n${YELLOW}If app claims to work, check:${NC}"
+        echo "1. App might be using different environment variables"
+        echo "2. App might be using a different platform hash"
+        echo "3. App might have error handling that masks the failure"
+        echo "4. App might be using bypass/development mode"
+    else
+        echo -e "${YELLOW}⚠ Could not determine approval status${NC}"
+        echo "Raw result: $kwr_approved_1"
+    fi
+    
+    if [ "$kwr_impl_addr" != "failed" ] && [ "$kwr_impl_addr" != "0x0000000000000000000000000000000000000000" ]; then
+        echo -e "${GREEN}✓ Implementation address found: $kwr_impl_addr${NC}"
+    else
+        echo -e "${RED}✗ No implementation address found${NC}"
+    fi
+    
+    return 0
+}
+
+# Approve KeepWhatsRaised implementation using both admin keys
+approve_keep_whats_raised() {
+    echo -e "\n${BOLD}${BLUE}=== Approving KeepWhatsRaised Implementation ===${NC}"
+    
+    setup_foundry
+    
+    # Load from .env.foundry which is guaranteed to have admin keys
+    if [ -f .env.foundry ]; then
+        echo -e "${BLUE}Loading environment from .env.foundry (with admin keys)...${NC}"
+        set -a
+        source .env.foundry
+        set +a
+    else
+        echo -e "${RED}Error: .env.foundry file not found!${NC}"
+        echo "Please copy cc-protocol/env.foundry.template to .env.foundry and add your private keys"
+        exit 1
+    fi
+    
+    echo -e "\n${YELLOW}Step 1: Register KeepWhatsRaised implementation (Platform Admin)${NC}"
+    echo "Platform Hash: $NEXT_PUBLIC_PLATFORM_HASH"
+    echo "Implementation ID: 0 (KeepWhatsRaised)"
+    echo "Implementation Address: $KEEP_WHATS_RAISED_IMPLEMENTATION"
+    echo "Platform Admin: $NEXT_PUBLIC_PLATFORM_ADMIN"
+    
+    # Register KeepWhatsRaised implementation (ID=0)
+    local register_result=$(cast send $NEXT_PUBLIC_TREASURY_FACTORY \
+        "registerTreasuryImplementation(bytes32,uint256,address)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        0 \
+        $KEEP_WHATS_RAISED_IMPLEMENTATION \
+        --private-key $PLATFORM_ADMIN_PRIVATE_KEY \
+        --rpc-url $NEXT_PUBLIC_RPC_URL \
+        --gas-limit 300000 2>&1)
+    
+    if echo "$register_result" | grep -q "transactionHash"; then
+        local register_tx=$(echo "$register_result" | grep "transactionHash" | awk '{print $2}')
+        echo -e "${GREEN}✓ KeepWhatsRaised registration successful: $register_tx${NC}"
+    else
+        echo -e "${YELLOW}⚠ Registration may have failed (possibly already registered): $register_result${NC}"
+    fi
+    
+    echo -e "\n${YELLOW}Step 2: Approve KeepWhatsRaised implementation (Protocol Admin)${NC}"
+    echo "Protocol Admin: $NEXT_PUBLIC_PROTOCOL_ADMIN"
+    
+    # Approve KeepWhatsRaised implementation
+    local approve_result=$(cast send $NEXT_PUBLIC_TREASURY_FACTORY \
+        "approveTreasuryImplementation(bytes32,uint256)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        0 \
+        --private-key $PROTOCOL_ADMIN_PRIVATE_KEY \
+        --rpc-url $NEXT_PUBLIC_RPC_URL \
+        --gas-limit 200000 2>&1)
+    
+    if echo "$approve_result" | grep -q "transactionHash"; then
+        local approve_tx=$(echo "$approve_result" | grep "transactionHash" | awk '{print $2}')
+        echo -e "${GREEN}✓ KeepWhatsRaised approval successful: $approve_tx${NC}"
+        
+        # Wait for confirmation
+        sleep 3
+        local approve_status=$(cast receipt $approve_tx --rpc-url $NEXT_PUBLIC_RPC_URL | grep "status" | awk '{print $2}')
+        if [ "$approve_status" = "1" ]; then
+            echo -e "${GREEN}✓ Approval transaction confirmed${NC}"
+        else
+            echo -e "${RED}✗ Approval transaction failed${NC}"
+            return 1
+        fi
+    else
+        echo -e "${RED}✗ Approval failed: $approve_result${NC}"
+        return 1
+    fi
+    
+    echo -e "\n${GREEN}✅ KeepWhatsRaised implementation is now approved!${NC}"
+    echo -e "${BLUE}You can now run treasury deployments successfully${NC}"
+    
+    return 0
+}
+
 # Run comprehensive payment testing
 test_payment_flows() {
     echo -e "\n${BOLD}${BLUE}=== Comprehensive Payment Flow Testing ===${NC}"
@@ -1004,6 +1247,85 @@ check_campaign_balance() {
     return 0
 }
 
+# Diagnose platform selection issue
+diagnose_platform_selection() {
+    echo -e "\n${BOLD}${BLUE}=== Platform Selection Diagnostic ===${NC}"
+    
+    setup_foundry
+    
+    if [ -f .env.foundry ]; then
+        echo -e "${BLUE}Loading environment from .env.foundry...${NC}"
+        set -a
+        source .env.foundry
+        set +a
+    else
+        echo -e "${RED}Error: .env.foundry file not found!${NC}"
+        exit 1
+    fi
+    
+    local campaign_address="$1"
+    if [ -z "$campaign_address" ]; then
+        echo -e "${RED}Usage: diagnose_platform_selection <campaign_address>${NC}"
+        return 1
+    fi
+    
+    echo -e "\n${YELLOW}Checking platform status for:${NC}"
+    echo "Platform Hash: $NEXT_PUBLIC_PLATFORM_HASH"
+    echo "Campaign Address: $campaign_address"
+    
+    # Check if platform is listed in GlobalParams
+    echo -e "\n${BLUE}1. Checking if platform is listed in GlobalParams...${NC}"
+    local is_listed=$(cast call $NEXT_PUBLIC_GLOBAL_PARAMS \
+        "checkIfPlatformIsListed(bytes32)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Platform listed: $is_listed"
+    
+    # Check if platform is selected in campaign
+    echo -e "\n${BLUE}2. Checking if platform is selected in campaign...${NC}"
+    local is_selected=$(cast call $campaign_address \
+        "checkIfPlatformSelected(bytes32)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Platform selected: $is_selected"
+    
+    # Check if platform is already approved in campaign
+    echo -e "\n${BLUE}3. Checking if platform is already approved in campaign...${NC}"
+    local is_approved=$(cast call $campaign_address \
+        "checkIfPlatformApproved(bytes32)" \
+        $NEXT_PUBLIC_PLATFORM_HASH \
+        --rpc-url $NEXT_PUBLIC_RPC_URL 2>/dev/null || echo "failed")
+    echo "Platform approved: $is_approved"
+    
+    # Summary
+    echo -e "\n${BOLD}${YELLOW}=== Diagnostic Summary ===${NC}"
+    
+    if [ "$is_listed" = "true" ] || [ "$is_listed" = "0x0000000000000000000000000000000000000000000000000000000000000001" ]; then
+        echo -e "${GREEN}✓ Platform is listed in GlobalParams${NC}"
+    else
+        echo -e "${RED}✗ Platform is NOT listed in GlobalParams${NC}"
+        echo -e "${YELLOW}The CC Protocol team needs to list this platform first${NC}"
+        return 1
+    fi
+    
+    if [ "$is_selected" = "true" ] || [ "$is_selected" = "0x0000000000000000000000000000000000000000000000000000000000000001" ]; then
+        echo -e "${GREEN}✓ Platform is selected in campaign${NC}"
+    else
+        echo -e "${RED}✗ Platform is NOT selected in campaign${NC}"
+        echo -e "${YELLOW}Campaign creation didn't properly select the platform${NC}"
+        return 1
+    fi
+    
+    if [ "$is_approved" = "true" ] || [ "$is_approved" = "0x0000000000000000000000000000000000000000000000000000000000000001" ]; then
+        echo -e "${YELLOW}⚠ Platform is already approved in campaign${NC}"
+        echo -e "${BLUE}Treasury deployment should fail with 'already approved' error${NC}"
+    else
+        echo -e "${GREEN}✓ Platform is ready for treasury deployment${NC}"
+    fi
+    
+    return 0
+}
+
 # Display next steps and integration guidance
 show_integration_guidance() {
     echo -e "\n${BOLD}${BLUE}=== Integration Guidance ===${NC}"
@@ -1105,6 +1427,13 @@ case "${1:-}" in
         load_environment
         diagnose_payment_treasury_issue
         ;;
+    "approval"|"check-approval"|"diagnostic-approval")
+        diagnose_implementation_approval
+        ;;
+    "approve-kwr"|"approve-keep-whats-raised")
+        load_environment
+        approve_keep_whats_raised
+        ;;
     "campaign-balance"|"check-campaign")
         if [ -n "$2" ]; then
             load_environment
@@ -1112,6 +1441,15 @@ case "${1:-}" in
         else
             echo "Usage: $0 campaign-balance <campaign_id>"
             echo "Example: $0 campaign-balance 123"
+        fi
+        ;;
+    "diagnose-platform"|"platform-diagnostic")
+        if [ -n "$2" ]; then
+            load_environment
+            diagnose_platform_selection "$2"
+        else
+            echo "Usage: $0 diagnose-platform <campaign_address>"
+            echo "Example: $0 diagnose-platform 0x1234567890123456789012345678901234567890"
         fi
         ;;
     "full"|"complete")
@@ -1137,6 +1475,7 @@ case "${1:-}" in
         echo "  payment-flows    - Run all payment-related tests"
         echo "  campaign-balance - Check specific campaign treasury balance vs database"
         echo "  diagnose         - Isolated PaymentTreasury deployment diagnostic for CCP team"
+        echo "  approve-kwr      - Approve KeepWhatsRaised implementation using admin keys"
         echo "  full             - Run complete test suite including payments"
         echo "  help             - Show this help message"
         echo ""

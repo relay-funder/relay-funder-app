@@ -115,17 +115,33 @@ export const TreasuryFactoryABI = [
         internalType: 'bytes32',
       },
       {
-        name: 'bytecodeIndex',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
         name: 'infoAddress',
         type: 'address',
         internalType: 'address',
       },
+      {
+        name: 'implementationId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'name',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'symbol',
+        type: 'string',
+        internalType: 'string',
+      },
     ],
-    outputs: [],
+    outputs: [
+      {
+        name: 'treasuryAddress',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
     stateMutability: 'nonpayable',
   },
   {
@@ -139,6 +155,47 @@ export const TreasuryFactoryABI = [
       },
       {
         name: 'bytecodeIndex',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'registerTreasuryImplementation',
+    inputs: [
+      {
+        name: 'platformBytes',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'implementationId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'implementation',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'approveTreasuryImplementation',
+    inputs: [
+      {
+        name: 'platformBytes',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'implementationId',
         type: 'uint256',
         internalType: 'uint256',
       },

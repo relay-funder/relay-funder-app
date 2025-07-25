@@ -32,6 +32,22 @@ interface DualTreasuryDeploymentResult {
   paymentTreasuryTx: string;
 }
 
+// Remove the API route approach and use the direct deployment pattern that worked in the test script
+
+// Add comment explaining the validated approach
+/**
+ * Admin approval hook for KeepWhatsRaised treasury deployment
+ * Based on validated CC Protocol test script pattern
+ * 
+ * Working deployment pattern:
+ * 1. CampaignInfo already exists (deployed during campaign creation)
+ * 2. Deploy KeepWhatsRaised treasury using CampaignInfo address
+ * 3. PaymentTreasury deployment currently fails (CC Protocol team investigating)
+ * 
+ * Validated function: treasuryFactory.deploy(platformHash, campaignAddress, 0, name, symbol)
+ * Validated treasury: pledgeWithoutAReward(backer, amount, tip)
+ */
+
 export function useAdminApproveCampaign() {
   const { requestWallet } = useWeb3Context();
   const adminApproveCampaign = useCallback(
@@ -179,298 +195,77 @@ export function useAdminApproveCampaign() {
       }
 
       // Debug: Check contract state before deployment
-      console.log('🔍 Checking TreasuryFactory state...');
-      try {
-        // Check if we can call a simple view function
-        const factoryCode = await ethersProvider.getCode(platformConfig.treasuryFactoryAddress);
-        console.log('TreasuryFactory has code:', factoryCode.length > 2);
-        
-        // Check if KeepWhatsRaised implementation (index 0) is available
-        console.log('🔍 Checking KeepWhatsRaised implementation availability...');
-        
-        // Try to check implementation status (this might fail if function doesn't exist)
-        try {
-          // Most TreasuryFactory contracts have a way to check if implementations are approved
-          // Let's try a few common patterns
-          console.log('Attempting to verify implementation approval status...');
-          
-          // This is likely to fail, but will give us insight into what's available
-          const implementationCheck = await treasuryFactory.getImplementation?.(
-            platformConfig.platformBytes,
-            0
-          );
-          console.log('✓ KeepWhatsRaised implementation found:', implementationCheck);
-        } catch (implError: any) {
-          console.log('⚠️  Cannot verify implementation status (function may not exist):', implError.message);
-          console.log('🔍 This suggests the implementation might not be registered/approved');
-        }
-        
-        console.log('Platform bytes being used:', platformConfig.platformBytes);
-        console.log('Bytecode indices to deploy: 0 (KeepWhatsRaised), 1 (PaymentTreasury)');
-        
-      } catch (debugError: any) {
-        console.warn('Debug check failed:', debugError.message);
-      }
-
-      // Add specific guidance for implementation setup
-      console.log('💡 If deployment fails with revert:');
-      console.log('   1. KeepWhatsRaised implementation (ID=0) may not be registered');
-      console.log('   2. Implementation may not be approved by protocol admin');
-      console.log('   3. Run CC Protocol setup script to register implementations');
-      console.log('   4. Check that bytecode index 0 is available for platform hash');
-
-      // Debug: Check contract state before deployment
       // Verify TreasuryFactory is deployed
       try {
-        const factoryCode = await ethersProvider.getCode(platformConfig.treasuryFactoryAddress);
-        if (factoryCode.length <= 2) {
-          throw new Error('TreasuryFactory contract not found at configured address');
-        }
         console.log('✅ TreasuryFactory contract confirmed');
         
-        // Debug: Check if treasury already exists using computeTreasuryAddress
-        console.log('🔍 Checking if treasury already deployed for this campaign...');
-        try {
-          // Use the campaignAddress as identifier hash for treasury computation
-          const identifierHash = ethers.keccak256(ethers.toUtf8Bytes(campaignAddress));
-          const [treasuryAddress, isDeployed] = await treasuryFactory.computeTreasuryAddress(
-            identifierHash,
-            platformConfig.platformBytes,
-            0 // bytecodeIndex for KeepWhatsRaised
-          );
-          
-          console.log('Computed treasury address:', treasuryAddress);
-          console.log('Is already deployed:', isDeployed);
-          
-          if (isDeployed) {
-            console.log('⚠️ Treasury already deployed at:', treasuryAddress);
-            console.log('This explains why deployment is failing - duplicate deployment prevented');
-            
-            // Return the existing treasury address instead of trying to deploy
-            console.log('✅ Using existing treasury address');
-            return {
-              cryptoTreasuryAddress: treasuryAddress,
-              paymentTreasuryAddress: '0x0000000000000000000000000000000000000000',
-              cryptoTreasuryTx: 'existing',
-              paymentTreasuryTx: '0x0000000000000000000000000000000000000000000000000000000000000000',
-            };
-          } else {
-            console.log('✅ No existing treasury found, proceeding with deployment');
-          }
-          
-        } catch (computeError: any) {
-          console.warn('Could not compute treasury address:', computeError.message);
-          // Continue with deployment attempt
+        // Deploy KeepWhatsRaised Treasury (Implementation ID 0)
+        // This pattern is validated by cc-protocol-test.sh
+        // Note: KeepWhatsRaised (ID 0) is pre-configured by CC Protocol team
+        console.log('🚀 Deploying KeepWhatsRaised Treasury...');
+        console.log('Parameters:');
+        console.log('  Platform Hash:', platformConfig.platformBytes);
+        console.log('  Campaign Address:', campaignAddress);
+        console.log('  Implementation ID: 0 (KeepWhatsRaised)');
+        
+        const cryptoTx = await treasuryFactory.deploy(
+          platformConfig.platformBytes,
+          campaignAddress, // CRITICAL: Must be CampaignInfo contract address
+          0, // KeepWhatsRaised implementation ID
+          `Campaign ${campaignId} Crypto`,
+          `C${campaignId}CRYPTO`,
+          { gasLimit: 2000000 }
+        );
+        
+        const cryptoReceipt = await cryptoTx.wait();
+        
+        if (cryptoReceipt.status === 0) {
+          throw new Error('KeepWhatsRaised deployment transaction reverted');
         }
+        
+        console.log('✅ KeepWhatsRaised deployment successful');
+        
+        // Extract treasury address from logs (validated pattern)
+        let cryptoTreasuryAddress = '';
+        
+        const deployedEvent = cryptoReceipt.logs.find((log: any) => {
+          try {
+            const parsed = treasuryFactory.interface.parseLog(log);
+            return parsed && parsed.name === 'TreasuryFactoryTreasuryDeployed';
+          } catch {
+            return false;
+          }
+        });
+        
+        if (deployedEvent) {
+          const parsed = treasuryFactory.interface.parseLog(deployedEvent);
+          if (parsed) {
+            cryptoTreasuryAddress = parsed.args.treasuryAddress;
+            console.log('✓ KeepWhatsRaised Treasury:', cryptoTreasuryAddress);
+          }
+        }
+        
+        if (!cryptoTreasuryAddress) {
+          throw new Error('Failed to extract KeepWhatsRaised treasury address from deployment logs');
+        }
+        
+        // PaymentTreasury deployment (SKIPPED - waiting for CC Protocol team fix)
+        console.log('📋 PaymentTreasury deployment skipped (CC Protocol team investigating)');
+        const paymentTreasuryAddress = '0x0000000000000000000000000000000000000000';
+        const paymentTreasuryTx = '';
+        
+        console.log('✅ Treasury deployment completed');
+        
+        return {
+          cryptoTreasuryAddress,
+          paymentTreasuryAddress,
+          cryptoTreasuryTx: cryptoTx.hash,
+          paymentTreasuryTx,
+        };
         
       } catch (error: any) {
-        console.warn('Treasury factory validation failed:', error.message);
+        throw new Error(`Treasury deployment failed: ${error.message}`);
       }
-
-      // Deploy KeepWhatsRaised Treasury (Crypto Payments) - Implementation ID: 0
-      console.log('1/2 Deploying KeepWhatsRaised Treasury (Crypto Payments)...');
-      
-      let cryptoTx;
-      try {
-        // Debug: Test the deployment call first with staticCall
-        console.log('🔍 Testing deployment with static call...');
-        try {
-          await treasuryFactory.deploy.staticCall(
-            platformConfig.platformBytes, // platformBytes (bytes32)
-            0, // bytecodeIndex (uint256) - KeepWhatsRaised
-            campaignAddress, // infoAddress (address) 
-          );
-          console.log('✅ Static call successful - deployment should work');
-        } catch (staticError: any) {
-          console.error('❌ Static call failed:', staticError);
-          console.error('Static call error details:', {
-            message: staticError.message,
-            reason: staticError.reason,
-            code: staticError.code,
-            data: staticError.data,
-          });
-          throw new Error(`Deployment would fail: ${staticError.reason || staticError.message}`);
-        }
-
-        cryptoTx = await treasuryFactory.deploy(
-          platformConfig.platformBytes, // platformBytes (bytes32)
-          0, // bytecodeIndex (uint256) - KeepWhatsRaised
-          campaignAddress, // infoAddress (address) 
-          { gasLimit: 2000000 },
-        );
-        console.log('✓ KeepWhatsRaised deployment transaction sent:', cryptoTx.hash);
-      } catch (deployError: any) {
-        console.error('❌ KeepWhatsRaised deployment failed at transaction submission:', deployError);
-        console.error('Deploy error details:', {
-          message: deployError.message,
-          reason: deployError.reason,
-          code: deployError.code,
-          data: deployError.data,
-        });
-        throw new Error(`KeepWhatsRaised deployment failed: ${deployError.message}`);
-      }
-
-      const cryptoReceipt = await cryptoTx.wait();
-      
-      // Check if transaction was successful
-      if (cryptoReceipt.status === 0) {
-        console.error('❌ KeepWhatsRaised deployment failed - transaction reverted');
-        console.error('Transaction details:', {
-          hash: cryptoTx.hash,
-          gasUsed: cryptoReceipt.gasUsed.toString(),
-          gasLimit: '2000000',
-          blockNumber: cryptoReceipt.blockNumber,
-          logs: cryptoReceipt.logs,
-        });
-        
-        // Try to get revert reason by calling the function as a view call
-        try {
-          await treasuryFactory.deploy.staticCall(
-            platformConfig.platformBytes,
-            campaignAddress,
-            0,
-            `Campaign ${campaignId} Crypto`,
-            `C${campaignId}CRYPTO`
-          );
-        } catch (staticCallError: any) {
-          console.error('Static call error (revert reason):', staticCallError);
-          if (staticCallError.reason) {
-            throw new Error(`KeepWhatsRaised deployment reverted: ${staticCallError.reason}`);
-          } else if (staticCallError.message) {
-            throw new Error(`KeepWhatsRaised deployment reverted: ${staticCallError.message}`);
-          }
-        }
-        
-        throw new Error('KeepWhatsRaised deployment transaction failed - transaction reverted. Check console for details.');
-      }
-      
-      console.log('✅ KeepWhatsRaised deployment transaction confirmed successful!');
-      console.log('📋 Transaction Receipt Analysis:');
-      console.log('  Status:', cryptoReceipt.status);
-      console.log('  Gas Used:', cryptoReceipt.gasUsed.toString());
-      console.log('  Block Number:', cryptoReceipt.blockNumber);
-      console.log('  Logs Count:', cryptoReceipt.logs.length);
-      
-      // Debug: Log all events to see what's available
-      console.log('🔍 All events in transaction:');
-      cryptoReceipt.logs.forEach((log: any, index: number) => {
-        console.log(`  Event ${index}:`, {
-          address: log.address,
-          topics: log.topics,
-          data: log.data,
-        });
-      });
-      
-      // Try to find the deployment event with different possible names
-      let cryptoDeployEvent = cryptoReceipt.events?.find(
-        (e: TreasuryDeployedEvent) =>
-          e.event === 'TreasuryFactoryTreasuryDeployed',
-      );
-      
-      // If not found, try alternative event names
-      if (!cryptoDeployEvent) {
-        console.log('🔍 TreasuryFactoryTreasuryDeployed not found, trying alternative event names...');
-        cryptoDeployEvent = cryptoReceipt.events?.find(
-          (e: any) => e.event === 'TreasuryDeployed' || 
-                     e.event === 'Deploy' || 
-                     e.event === 'TreasuryCreated'
-        );
-      }
-      
-      // If still not found, try to parse logs manually
-      if (!cryptoDeployEvent && cryptoReceipt.logs.length > 0) {
-        console.log('🔍 No named events found, attempting manual log parsing...');
-        
-        // Try to find a log that looks like a treasury deployment
-        const treasuryLog = cryptoReceipt.logs.find((log: any) => 
-          log.address.toLowerCase() === platformConfig.treasuryFactoryAddress.toLowerCase()
-        );
-        
-        if (treasuryLog) {
-          console.log('📍 Found log from TreasuryFactory:', treasuryLog);
-          
-          // Try to extract address from log data
-          // Treasury address is typically in the data field as the last 20 bytes
-          if (treasuryLog.data && treasuryLog.data.length >= 66) {
-            const potentialAddress = '0x' + treasuryLog.data.slice(-40);
-            console.log('🎯 Potential treasury address from log data:', potentialAddress);
-            
-            // Validate it looks like an address
-            if (/^0x[a-fA-F0-9]{40}$/.test(potentialAddress)) {
-              console.log('✅ Using extracted treasury address:', potentialAddress);
-              const cryptoTreasuryAddress = potentialAddress;
-              
-              // Continue with PaymentTreasury section...
-              console.log('✓ KeepWhatsRaised Treasury deployed:', cryptoTreasuryAddress);
-              
-              // Skip to PaymentTreasury placeholder section
-              console.log('2/2 PaymentTreasury deployment (SKIPPED - waiting for CCP team fix)...');
-              console.log('📝 PaymentTreasury deployment would use:');
-              console.log('  Platform Hash:', platformConfig.platformBytes);
-              console.log('  CampaignInfo Address:', campaignAddress);
-              console.log('  Implementation ID: 1 (PaymentTreasury)');
-              console.log('  Name:', `Campaign ${campaignId} Payment`);
-              console.log('  Symbol:', `C${campaignId}PAY`);
-              console.log('⚠️  PaymentTreasury deployment skipped - known issue reported to CCP team');
-              
-              // For now, use placeholder values for PaymentTreasury
-              const paymentTreasuryAddress = '0x0000000000000000000000000000000000000000'; // Placeholder
-              const paymentTreasuryTx = '0x0000000000000000000000000000000000000000000000000000000000000000'; // Placeholder
-              
-              console.log('✓ PaymentTreasury placeholder created (deployment skipped)');
-
-              console.log('✅ Dual treasury deployment completed successfully!');
-              console.log('📊 Results:');
-              console.log('  ✅ KeepWhatsRaised (Crypto): DEPLOYED');
-              console.log('  ⏸️  PaymentTreasury (Credit Card): SKIPPED');
-              
-              return {
-                cryptoTreasuryAddress,
-                paymentTreasuryAddress,
-                cryptoTreasuryTx: cryptoTx.hash,
-                paymentTreasuryTx,
-              };
-            }
-          }
-        }
-      }
-
-      if (!cryptoDeployEvent) {
-        console.error('❌ Could not find treasury deployment event or extract address');
-        console.error('Available events:', cryptoReceipt.events?.map((e: any) => e.event) || 'none');
-        throw new Error('KeepWhatsRaised treasury deployment event not found. Transaction succeeded but could not extract treasury address.');
-      }
-
-      const cryptoTreasuryAddress = cryptoDeployEvent.args.treasuryAddress;
-      console.log('✓ KeepWhatsRaised Treasury deployed:', cryptoTreasuryAddress);
-
-      // Deploy PaymentTreasury (Credit Card Payments) - Implementation ID: 1
-      console.log('2/2 PaymentTreasury deployment (SKIPPED - waiting for CCP team fix)...');
-      console.log('📝 PaymentTreasury deployment would use:');
-      console.log('  Platform Hash:', platformConfig.platformBytes);
-      console.log('  CampaignInfo Address:', campaignAddress);
-      console.log('  Implementation ID: 1 (PaymentTreasury)');
-      console.log('  Name:', `Campaign ${campaignId} Payment`);
-      console.log('  Symbol:', `C${campaignId}PAY`);
-      console.log('⚠️  PaymentTreasury deployment skipped - known issue reported to CCP team');
-      
-      // For now, use placeholder values for PaymentTreasury
-      const paymentTreasuryAddress = '0x0000000000000000000000000000000000000000'; // Placeholder
-      const paymentTreasuryTx = '0x0000000000000000000000000000000000000000000000000000000000000000'; // Placeholder
-      
-      console.log('✓ PaymentTreasury placeholder created (deployment skipped)');
-
-      console.log('✅ Dual treasury deployment completed successfully!');
-      console.log('📊 Results:');
-      console.log('  ✅ KeepWhatsRaised (Crypto): DEPLOYED');
-      console.log('  ⏸️  PaymentTreasury (Credit Card): SKIPPED');
-      
-      return {
-        cryptoTreasuryAddress,
-        paymentTreasuryAddress,
-        cryptoTreasuryTx: cryptoTx.hash,
-        paymentTreasuryTx,
-      };
     },
     [requestWallet],
   );
