@@ -43,14 +43,7 @@ export function useCreateCampaignContract({
       endTime: string;
       fundingGoal: string;
     }) => {
-      console.log('🔗 createCampaignContract called with:', {
-        startTime,
-        endTime,
-        fundingGoal,
-        authenticated,
-        address,
-        campaignInfoFactory
-      });
+      console.log('🔗 Creating campaign contract');
       
       if (!authenticated) {
         console.error('❌ Wallet not authenticated');
@@ -63,17 +56,10 @@ export function useCreateCampaignContract({
         goalAmount: parseEther(fundingGoal || '0'),
       };
 
-      console.log('📋 Campaign data prepared:', {
-        launchTime: campaignData.launchTime.toString(),
-        deadline: campaignData.deadline.toString(),
-        goalAmount: campaignData.goalAmount.toString()
-      });
-
-      // Then proceed with blockchain transaction
       // Generate a unique identifier based on campaign data and timestamp
       const uniqueString = `KickStarter-${Date.now()}-${address}-${campaignData.launchTime}`;
       const identifierHash = keccak256(stringToHex(uniqueString));
-      console.log('🔑 Unique identifier hash:', identifierHash, 'from:', uniqueString);
+      console.log('🔑 Generated unique identifier hash');
       
       const contractArgs = [
         address, // Use connected wallet as creator (this is correct!)
@@ -84,14 +70,6 @@ export function useCreateCampaignContract({
         campaignData,
       ];
       
-      console.log('📞 Calling writeContractAsync with:', {
-        address: campaignInfoFactory,
-        functionName: 'createCampaign',
-        args: contractArgs,
-        creator: address, // Connected wallet is the creator
-        identifierHash: identifierHash
-      });
-      
       try {
         const result = await writeContractAsync({
           address: campaignInfoFactory as `0x${string}`,
@@ -100,10 +78,10 @@ export function useCreateCampaignContract({
           args: contractArgs,
         });
         
-        console.log('✅ writeContractAsync completed:', result);
+        console.log('✅ Contract call submitted:', result);
         return result;
       } catch (error) {
-        console.error('❌ writeContractAsync failed:', error);
+        console.error('❌ Contract call failed:', error);
         throw error;
       }
     },
@@ -111,24 +89,9 @@ export function useCreateCampaignContract({
   );
 
   useEffect(() => {
-    console.log('🔍 useCreateCampaignContract state:', {
-      hash,
-      isSuccess,
-      receipt: !!receipt,
-      isPending,
-      isConfirming,
-      receiptStatus: receipt?.status,
-      receiptLogs: receipt?.logs?.length
-    });
-    
     // Check for failed transactions
     if (hash && receipt && receipt.status === 'reverted') {
-      console.error('❌ Transaction failed/reverted:', {
-        hash,
-        status: receipt.status,
-        gasUsed: receipt.gasUsed,
-        logs: receipt.logs
-      });
+      console.error('❌ Transaction failed/reverted:', hash);
       
       // Call onConfirmed with failure status so the UI can handle it
       onConfirmed({ 
@@ -141,26 +104,13 @@ export function useCreateCampaignContract({
     }
     
     if (hash && isSuccess && receipt) {
-      console.log('🎉 All conditions met, calling onConfirmed');
-      console.log('📋 Receipt details:', {
-        status: receipt.status,
-        logs: receipt.logs,
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      });
+      console.log('🎉 Transaction confirmed successfully');
       
       const campaignAddress = receipt.logs[0]?.address;
       const status = receipt.status;
       const event = receipt.logs.find(
         (log: Log) => log.transactionHash === hash,
       );
-      
-      console.log('📍 Extracted data:', {
-        campaignAddress,
-        status,
-        event: !!event,
-        hash
-      });
       
       if (!campaignAddress) {
         console.error('❌ No campaign address found in logs');
@@ -174,13 +124,6 @@ export function useCreateCampaignContract({
       }
       
       onConfirmed({ hash, status, campaignAddress, event });
-    } else {
-      console.log('⏳ Waiting for transaction completion...', {
-        hasHash: !!hash,
-        isSuccess,
-        hasReceipt: !!receipt,
-        receiptStatus: receipt?.status
-      });
     }
   }, [hash, isSuccess, receipt, onConfirmed]);
   return {

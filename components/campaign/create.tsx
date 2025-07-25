@@ -144,34 +144,18 @@ export function CampaignCreate() {
       campaignAddress,
       event,
     }: IOnCreateCampaignConfirmed) => {
-      console.log('🔍 onConfirmed called with:', {
-        hash,
-        status,
-        campaignAddress,
-        event,
-        campaignId
-      });
+      console.log('🎉 Campaign creation confirmed:', { hash, status, campaignAddress });
       
       if (!campaignId) {
-        console.error('❌ No campaignId available in onConfirmed');
+        console.error('❌ No campaignId available');
         return;
       }
       
       try {
         if (status === 'success') {
-          console.log('✅ Transaction successful, updating campaign status...');
-          toast({
-            title: 'Transaction Confirmed',
-            description: 'Updating campaign status...',
-          });
-          // First update the campaign status to pending_approval
-          console.log('📝 Updating campaign to pending_approval:', {
-            campaignId,
-            transactionHash: hash,
-            status: 'pending_approval',
-            campaignAddress,
-          });
+          console.log('✅ Blockchain transaction successful');
           
+          // Update campaign with blockchain details
           await updateCampaign({
             campaignId,
             transactionHash: hash,
@@ -179,29 +163,15 @@ export function CampaignCreate() {
             campaignAddress,
           });
           
-          console.log('✅ Campaign status updated successfully');
-          
           if (event) {
-            console.log('🔍 Processing event:', event);
-            // Get the campaign address from the event topics
             const eventCampaignAddress = event.address;
-            console.log('📍 Event campaign address:', eventCampaignAddress);
-
             if (eventCampaignAddress) {
-              console.log('📝 Updating campaign with event address:', {
-                campaignId,
-                campaignAddress: eventCampaignAddress,
-              });
-              
               await updateCampaign({
                 campaignId,
                 campaignAddress: eventCampaignAddress,
               });
-              
-              console.log('✅ Campaign address updated from event');
             }
 
-            console.log('🎊 Showing success toast and setting complete success state');
             toast({
               title: 'Success!',
               description:
@@ -209,32 +179,21 @@ export function CampaignCreate() {
               variant: 'default',
             });
             
-            console.log('🎉 Campaign creation completely successful!');
             setIsCompleteSuccess(true);
             
-            // Redirect to dashboard after a short delay to show the success message
+            // Redirect to dashboard after success
             setTimeout(() => {
-              console.log('🔄 Redirecting to dashboard...');
               router.push('/dashboard');
             }, 2000);
           } else {
-            console.log('⚠️ No event data available - success flow incomplete');
-            toast({
-              title: 'Campaign Created',
-              description: 'Campaign saved but blockchain confirmation pending. Check your dashboard.',
-              variant: 'default',
-            });
-            
-            // Still redirect to dashboard after delay, even without event data
+            // Fallback if no event data
             setTimeout(() => {
-              console.log('🔄 Redirecting to dashboard (fallback)...');
               router.push('/dashboard');
             }, 3000);
           }
         } else if (status === 'failed') {
           console.error('❌ Blockchain transaction failed');
           
-          // Decode the error and provide specific guidance
           const errorMessage = 'Blockchain transaction failed. This often happens when:\n' +
             '• The launch time is in the past (check your start time)\n' +
             '• The campaign identifier already exists (try again with different details)\n' +
@@ -249,56 +208,33 @@ export function CampaignCreate() {
           
           // Update campaign status to failed
           try {
-            console.log('📝 Updating campaign status to failed...');
             await updateCampaign({
               campaignId,
               status: 'failed',
               transactionHash: hash,
             });
-            console.log('✅ Campaign status updated to failed');
           } catch (updateError) {
-            console.error('❌ Failed to update campaign status to failed:', updateError);
+            console.error('❌ Failed to update campaign status:', updateError);
           }
-        } else {
-          console.error('❌ Transaction status is not success:', status);
         }
       } catch (error) {
-        console.error('❌ Error processing transaction:', error);
+        console.error('❌ Error processing transaction confirmation:', error);
         
-        // Decode contract error details
+        // Decode contract error details for debugging
         const errorDetails = decodeContractError(error);
-        console.error('🔍 Decoded error details:', errorDetails);
         
-        console.error('Full error context:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          campaignId,
-          hash,
-          status,
-          errorDetails
-        });
+        let userMessage = 'An error occurred while processing the transaction.';
+        if (errorDetails.reason) {
+          userMessage = `Transaction failed: ${errorDetails.reason}`;
+        } else if (errorDetails.message?.includes('missing required fields')) {
+          userMessage = 'Invalid campaign parameters. Please check your form inputs.';
+        }
         
         toast({
           variant: 'destructive',
-          title: 'Transaction Failed',
-          description:
-            error instanceof Error
-              ? `${error.message}${errorDetails.selector ? ` (Error: ${errorDetails.selector})` : ''}`
-              : 'Campaign remains in draft state. Please try again.',
+          title: 'Transaction Error',
+          description: userMessage,
         });
-
-        // Update campaign status to failed
-        try {
-          console.log('📝 Updating campaign status to failed...');
-          await updateCampaign({
-            campaignId,
-            status: 'failed',
-            transactionHash: hash,
-          });
-          console.log('✅ Campaign status updated to failed');
-        } catch (updateError) {
-          console.error('❌ Failed to update campaign status to failed:', updateError);
-        }
       }
     },
     [campaignId, toast, updateCampaign, router],
@@ -313,30 +249,19 @@ export function CampaignCreate() {
 
   // Also add loading state toasts
   useEffect(() => {
-    console.log('🔍 Transaction states:', {
-      isPending,
-      isConfirming,
-      isSuccess,
-      createCampaignContractHash,
-      isCompleteSuccess
-    });
-    
     if (isPending) {
-      console.log('⏳ Transaction pending - showing wallet prompt toast');
       toast({
         title: 'Transaction Pending',
         description: 'Please confirm the transaction in your wallet...',
       });
     }
     if (isConfirming) {
-      console.log('🔄 Transaction confirming - waiting for blockchain');
       toast({
         title: 'Transaction Confirming',
         description: 'Waiting for blockchain confirmation...',
       });
     }
     if (isSuccess && createCampaignContractHash) {
-      console.log('✅ Transaction success detected:', createCampaignContractHash);
       toast({
         title: 'Transaction Confirmed',
         description: (
@@ -361,7 +286,7 @@ export function CampaignCreate() {
 
   const onSubmit = useCallback(
     async (data: CampaignFormValues) => {
-      console.log('🚀 Campaign creation started with data:', data);
+      console.log('🚀 Campaign creation started');
       setDbError(null);
 
       if (!authenticated) {
@@ -374,8 +299,6 @@ export function CampaignCreate() {
         return;
       }
 
-      console.log('✅ User authenticated, proceeding with campaign creation');
-
       try {
         toast({
           title: 'Creating Campaign',
@@ -383,67 +306,28 @@ export function CampaignCreate() {
         });
         setIsSubmitting(true);
         
-        console.log('📝 Saving campaign to database...');
-        try {
-          // Format the data properly for the API
-          const campaignData = {
-            title: data.title.trim(),
-            description: data.description.trim(),
-            fundingGoal: data.fundingGoal.trim(),
-            startTime: data.startTime,
-            endTime: data.endTime,
-            location: (data.location || '').trim(), // Ensure string, API handles empty strings
-            category: (data.category || '').trim(), // Ensure string, API handles empty strings
-            bannerImage: data.bannerImage,
-          };
-          
-          console.log('📋 Formatted campaign data:', campaignData);
-          
-          // Schema validation already handles required fields
-          
-          const newCampaign = await createCampaign(campaignData);
-          console.log('✅ Campaign saved to database:', newCampaign);
-          
-          toast({
-            title: 'Campaign Saved',
-            description: 'Initiating blockchain transaction...',
-          });
-
-          const { campaignId: newCampaignId } = newCampaign;
-          console.log('📍 New campaign ID:', newCampaignId);
-          setCampaignId(newCampaignId);
-        } catch (error: unknown) {
-          console.error('❌ Database save failed:', error);
-          if (error instanceof Error) {
-            console.error('Database error details:', {
-              message: error.message,
-              stack: error.stack
-            });
-            
-            // Provide more user-friendly error messages
-            let userMessage = error.message;
-            if (error.message.includes('missing required fields')) {
-              userMessage = 'Please fill in all required fields (title, description, funding goal, start time, and end time).';
-            } else if (error.message.includes('invalid parameters')) {
-              userMessage = 'Please check your form inputs and try again.';
-            }
-            
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: userMessage,
-            });
-            setDbError(userMessage);
-          }
-          return;
-        }
-        
-        console.log('🔗 Initiating blockchain transaction...');
-        console.log('Contract parameters:', {
+        // Format the data properly for the API
+        const campaignData = {
+          title: data.title.trim(),
+          description: data.description.trim(),
+          fundingGoal: data.fundingGoal.trim(),
           startTime: data.startTime,
           endTime: data.endTime,
-          fundingGoal: data.fundingGoal,
+          location: (data.location || '').trim(),
+          category: (data.category || '').trim(),
+          bannerImage: data.bannerImage,
+        };
+        
+        const newCampaign = await createCampaign(campaignData);
+        console.log('✅ Campaign saved to database:', newCampaign.campaignId);
+        
+        toast({
+          title: 'Campaign Saved',
+          description: 'Initiating blockchain transaction...',
         });
+
+        const { campaignId: newCampaignId } = newCampaign;
+        setCampaignId(newCampaignId);
         
         await createCampaignContract({
           startTime: data.startTime,
@@ -451,42 +335,27 @@ export function CampaignCreate() {
           fundingGoal: data.fundingGoal,
         });
         
-        console.log('✅ Blockchain transaction initiated successfully');
+        console.log('✅ Blockchain transaction initiated');
       } catch (error) {
         console.error('❌ Campaign creation failed:', error);
-        
-        // Decode contract error details
-        const errorDetails = decodeContractError(error);
-        console.error('🔍 Decoded error details:', errorDetails);
-        
-        console.error('Full error context:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          data: data,
-          authenticated,
-          campaignId,
-          errorDetails
-        });
-        
-        // Provide more specific error message based on error type
-        let errorMessage = error instanceof Error ? error.message : 'Failed to create campaign. Your campaign has been saved as draft.';
-        
-        if (errorDetails.selector) {
-          errorMessage += ` (Contract Error: ${errorDetails.selector})`;
+        if (error instanceof Error) {
+          // Provide more user-friendly error messages
+          let userMessage = error.message;
+          if (error.message.includes('missing required fields')) {
+            userMessage = 'Please fill in all required fields (title, description, funding goal, start time, and end time).';
+          } else if (error.message.includes('invalid parameters')) {
+            userMessage = 'Please check your form inputs and try again.';
+          }
+          
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: userMessage,
+          });
+          setDbError(userMessage);
         }
-        
-        if (errorDetails.selector === '0x3ff3e6bc') {
-          errorMessage += ' - This appears to be a campaign validation error. The CampaignInfo contract may already exist or have invalid parameters.';
-        }
-        
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: errorMessage,
-        });
-        setDbError(errorMessage);
+        return;
       } finally {
-        console.log('🏁 Campaign creation process completed');
         setIsSubmitting(false);
       }
     },
