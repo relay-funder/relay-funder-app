@@ -89,6 +89,7 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     login,
     ready: initialized,
     authenticating,
+    connecting: authenticating,
     address,
     wallet,
   };

@@ -23,6 +23,7 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
   const [state, setState] = useState<{
     loading?: boolean;
     authenticating?: boolean;
+    connecting?: boolean;
     error?: Error;
   }>({});
   const { toast } = useToast();
@@ -89,36 +90,65 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
   const signInToBackend = useSignInToBackend();
   const signinAfterConnect = useCallback(async () => {
     try {
+      setState((prevState) => ({
+        ...prevState,
+        authenticating: true,
+        connecting: false,
+      }));
       const callbackUrl = await signInToBackend();
       router.push(callbackUrl);
     } catch (error) {
       console.error('Login failed:', error);
       setState((prevState) => ({
         ...prevState,
-        authenticating: false,
         error: error as Error,
       }));
+      wagmiDisconnect().catch((wagmiDisconnectError) => {
+        console.warn(
+          'signinAfterConnect>wagmiDisconnect error:',
+          wagmiDisconnectError,
+        );
+      });
+      window.silk?.logout().catch((silkLogoutError) => {
+        console.warn('signinAfterConnect>silk.logout error:', silkLogoutError);
+      });
     } finally {
       setState((prevState) => ({
         ...prevState,
         authenticating: false,
+        connecting: false,
       }));
       loginRef.current = false;
       setReconnectingReadyUpdated(Date.now());
     }
-  }, [router, signInToBackend]);
+  }, [router, signInToBackend, wagmiDisconnect]);
   useEffect(() => {
     // synchronize the connect(connector) and the actual connected state
     if (connectSuccess && wagmiStatus === 'connected') {
-      signinAfterConnect().catch(console.warn);
       setConnectSuccess(false);
+      signinAfterConnect().catch((error) => {
+        wagmiDisconnect().catch((wagmiDisconnectError) => {
+          console.warn(
+            'effect:signinAfterConnect>wagmiDisconnect error:',
+            wagmiDisconnectError,
+          );
+        });
+        window.silk?.logout().catch((silkLogoutError) => {
+          console.warn(
+            'effect:signinAfterConnect>silk.logout error:',
+            silkLogoutError,
+          );
+        });
+        console.warn('effect:signinAfterConnect error:', error);
+      });
     }
-  }, [connectSuccess, wagmiStatus, signinAfterConnect]);
+  }, [connectSuccess, wagmiStatus, wagmiDisconnect, signinAfterConnect]);
 
   const login = useCallback(async () => {
     setState((prevState) => ({
       ...prevState,
-      authenticating: true,
+      authenticating: false,
+      connecting: true,
       error: undefined,
     }));
     loginRef.current = true;
@@ -170,12 +200,12 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
       }
       setState((prevState) => ({
         ...prevState,
+        authenticating: false,
+        connecting: false,
         error: error as Error,
       }));
-      throw error;
-    } finally {
-      setState((prevState) => ({ ...prevState, authenticating: false }));
       loginRef.current = false;
+      throw error;
     }
   }, [toast, connectors, wagmiConnectAsync, wagmiDisconnect]);
 
@@ -204,7 +234,7 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
           loginRef.current,
           reconnectingRef.current,
         );
-      return false;
+      return true;
     }
     if (typeof address === 'string' && address.startsWith('0x')) {
       debug &&
@@ -240,12 +270,28 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     }
     debug && console.log('web3/adapter/silk/use-auth:reconnect effect');
     reconnectingRef.current = true;
+    setState((prevState) => ({
+      ...prevState,
+      connecting: true,
+      error: undefined,
+    }));
     wagmiReconnect(undefined, {
       onSettled: () => {
         debug &&
           console.log('web3/adapter/silk/use-auth:reconnect effect: done');
+        setState((prevState) => ({
+          ...prevState,
+          connecting: false,
+        }));
         reconnectingRef.current = false;
         setReconnectingReadyUpdated(Date.now());
+      },
+      onError: (error) => {
+        setState((prevState) => ({
+          ...prevState,
+          connecting: false,
+          error,
+        }));
       },
     });
   }, [normalizedAddress, wagmiReconnect, ready]);
@@ -259,6 +305,7 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     address: normalizedAddress,
     wallet,
     authenticating: state.authenticating ?? false,
+    connecting: state.connecting ?? false,
     error: state.error,
     login,
     logout,

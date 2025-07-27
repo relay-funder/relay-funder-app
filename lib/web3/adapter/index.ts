@@ -42,8 +42,10 @@ export {
   useConfig,
   useConnectors,
   useConnect,
+  useDisconnect,
   useSignMessage,
   useAccount,
+  ConnectorAlreadyConnectedError,
   // ethers
   ethers,
 } from './silk';

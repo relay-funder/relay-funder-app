@@ -90,6 +90,12 @@ export function useAccount() {
     status: 'connected',
   };
 }
+export function useDisconnect() {
+  console.log('dummy:wagmi:useConnect');
+  return {
+    disconnectAsync: async () => {},
+  };
+}
 export function useConnect() {
   console.log('dummy:wagmi:useConnect');
   return {
@@ -129,3 +135,4 @@ export function useSignMessage() {
 export function useConnectors() {
   return [];
 }
+export class ConnectorAlreadyConnectedError extends Error {}
