@@ -22,7 +22,7 @@ export default function ProfilePage() {
     setEditProfile(false);
   }, [setEditProfile]);
 
-  if (!isReady || isProfilePending) {
+  if (!isReady || (authenticated && isProfilePending)) {
     return (
       <PageLoading>Please wait while we initialize your profile.</PageLoading>
     );
