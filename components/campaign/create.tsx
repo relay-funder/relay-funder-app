@@ -33,21 +33,23 @@ import {
 import { useAuth } from '@/contexts';
 
 // Utility function to decode contract errors
-const decodeContractError = (error: any) => {
+const decodeContractError = (error: unknown) => {
   console.log('🔍 Decoding contract error:', error);
   
+  const errorObj = error as Record<string, unknown>;
+  
   // Check for different error formats
-  if (error?.data) {
-    console.log('📋 Error data found:', error.data);
+  if (errorObj?.data) {
+    console.log('📋 Error data found:', errorObj.data);
     
     // Extract error selector (first 4 bytes)
-    if (typeof error.data === 'string' && error.data.length >= 10) {
-      const selector = error.data.slice(0, 10);
+    if (typeof errorObj.data === 'string' && errorObj.data.length >= 10) {
+      const selector = errorObj.data.slice(0, 10);
       console.log('🎯 Error selector:', selector);
       
       // Extract additional data
-      if (error.data.length > 10) {
-        const additionalData = error.data.slice(10);
+      if (errorObj.data.length > 10) {
+        const additionalData = errorObj.data.slice(10);
         console.log('📄 Additional error data:', additionalData);
         
         // Try to extract address from the data (last 40 characters)
@@ -60,26 +62,27 @@ const decodeContractError = (error: any) => {
   }
   
   // Check for RPC error format
-  if (error?.error?.data) {
-    console.log('🌐 RPC error data:', error.error.data);
+  const nestedError = errorObj?.error as Record<string, unknown>;
+  if (nestedError?.data) {
+    console.log('🌐 RPC error data:', nestedError.data);
   }
   
   // Check for reason string
-  if (error?.reason) {
-    console.log('💬 Error reason:', error.reason);
+  if (errorObj?.reason) {
+    console.log('💬 Error reason:', errorObj.reason);
   }
   
   // Check for message
-  if (error?.message) {
-    console.log('📝 Error message:', error.message);
+  if (errorObj?.message) {
+    console.log('📝 Error message:', errorObj.message);
   }
   
   return {
-    selector: error?.data?.slice(0, 10),
-    data: error?.data,
-    reason: error?.reason,
-    message: error?.message,
-    code: error?.code || error?.error?.code,
+    selector: typeof errorObj?.data === 'string' ? errorObj.data.slice(0, 10) : undefined,
+    data: errorObj?.data,
+    reason: errorObj?.reason,
+    message: errorObj?.message,
+    code: errorObj?.code || nestedError?.code,
   };
 };
 
@@ -226,7 +229,7 @@ export function CampaignCreate() {
         let userMessage = 'An error occurred while processing the transaction.';
         if (errorDetails.reason) {
           userMessage = `Transaction failed: ${errorDetails.reason}`;
-        } else if (errorDetails.message?.includes('missing required fields')) {
+        } else if (typeof errorDetails.message === 'string' && errorDetails.message.includes('missing required fields')) {
           userMessage = 'Invalid campaign parameters. Please check your form inputs.';
         }
         
@@ -415,7 +418,7 @@ export function CampaignCreate() {
           <h2 className="text-2xl font-bold text-green-600">Campaign Created Successfully!</h2>
           <p className="text-gray-600">
             Your campaign has been created and is now pending admin approval.
-            You'll be redirected to your dashboard shortly.
+            You&apos;ll be redirected to your dashboard shortly.
           </p>
           <div className="flex items-center justify-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin" />

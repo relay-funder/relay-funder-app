@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
-import { ethers } from 'ethers';
+import { ethers, type Log } from 'ethers';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { CampaignInfoABI } from '@/contracts/abi/CampaignInfo';
-import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { chainConfig, useWeb3Context } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
 
@@ -14,16 +13,6 @@ const platformConfig = {
   platformBytes: process.env.NEXT_PUBLIC_PLATFORM_HASH as string,
   rpcUrl: chainConfig.rpcUrl as string,
 };
-
-interface TreasuryDeployedEvent {
-  event: string;
-  args: {
-    treasuryAddress: string;
-    infoAddress: string;
-    platformBytes: string;
-    bytecodeIndex: bigint;
-  };
-}
 
 interface DualTreasuryDeploymentResult {
   cryptoTreasuryAddress: string;
@@ -228,7 +217,7 @@ export function useAdminApproveCampaign() {
         // Extract treasury address from logs (validated pattern)
         let cryptoTreasuryAddress = '';
         
-        const deployedEvent = cryptoReceipt.logs.find((log: any) => {
+        const deployedEvent = cryptoReceipt.logs.find((log: Log) => {
           try {
             const parsed = treasuryFactory.interface.parseLog(log);
             return parsed && parsed.name === 'TreasuryFactoryTreasuryDeployed';
@@ -263,8 +252,8 @@ export function useAdminApproveCampaign() {
           paymentTreasuryTx,
         };
         
-      } catch (error: any) {
-        throw new Error(`Treasury deployment failed: ${error.message}`);
+      } catch (error: unknown) {
+        throw new Error(`Treasury deployment failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
     [requestWallet],
