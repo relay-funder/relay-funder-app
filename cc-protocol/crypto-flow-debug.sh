@@ -231,11 +231,11 @@ get_campaign_details() {
         return 1
     fi
     
-    # Query campaign from database using Docker
+    # Query campaign from database using Docker PostgreSQL
     local campaign_query="SELECT id, title, status, \"campaignAddress\", \"treasuryAddress\", \"cryptoTreasuryAddress\", \"treasuryMode\" FROM \"Campaign\" WHERE id = $TEST_CAMPAIGN_ID;"
     
     echo "Querying campaign details..."
-    local campaign_result=$(docker compose exec -T app pnpm prisma db execute --command "$campaign_query" 2>/dev/null || echo "")
+    local campaign_result=$(docker compose exec -T database psql -U akashic -d akashic_dev -c "$campaign_query" 2>/dev/null || echo "")
     
     if [ -n "$campaign_result" ]; then
         echo "Campaign Details:"
@@ -324,7 +324,7 @@ check_campaign_treasury_balance() {
     # Check database payment records
     echo -e "\n${YELLOW}Checking database payment records...${NC}"
     local payments_query="SELECT COUNT(*), SUM(CAST(amount AS NUMERIC)) FROM \"Payment\" WHERE \"campaignId\" = $TEST_CAMPAIGN_ID AND status = 'confirmed';"
-    local payments_result=$(docker compose exec -T app pnpm prisma db execute --command "$payments_query" 2>/dev/null || echo "")
+    local payments_result=$(docker compose exec -T database psql -U akashic -d akashic_dev -c "$payments_query" 2>/dev/null || echo "")
     
     if [ -n "$payments_result" ]; then
         echo "Database Payment Records:"
@@ -382,7 +382,7 @@ verify_database_consistency() {
     
     # Get total payments from database
     local db_total_query="SELECT COALESCE(SUM(CAST(amount AS NUMERIC)), 0) FROM \"Payment\" WHERE \"campaignId\" = $TEST_CAMPAIGN_ID AND status = 'confirmed';"
-    local db_total_result=$(docker compose exec -T app pnpm prisma db execute --command "$db_total_query" 2>/dev/null || echo "0")
+    local db_total_result=$(docker compose exec -T database psql -U akashic -d akashic_dev -c "$db_total_query" 2>/dev/null || echo "0")
     local db_total=$(echo "$db_total_result" | grep -o '[0-9]\+' | head -1 || echo "0")
     
     # Convert treasury amount to same units (USDC with 6 decimals)
