@@ -15,5 +15,8 @@ export {
   useDisconnect,
   useSignMessage,
   useAccount,
+  useBalance,
+  useChains,
+  useSwitchChain,
   ConnectorAlreadyConnectedError,
 } from 'wagmi';

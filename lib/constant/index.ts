@@ -23,9 +23,6 @@ export const CROWDSPLIT_CLIENT_ID = process.env.CROWDSPLIT_CLIENT_ID;
 export const CROWDSPLIT_CLIENT_SECRET = process.env.CROWDSPLIT_CLIENT_SECRET;
 export const CROWDSPLIT_WEBHOOK_SECRET = process.env.CROWDSPLIT_WEBHOOK_SECRET;
 
-// Auth (privy|silk)
-export const AUTH_PROVIDER: 'privy' | 'silk' = 'privy';
-
 // silk / appkit
 export const REOWN_CLOUD_PROJECT_ID =
   process.env.NEXT_PUBLIC_REOWN_CLOUD_PROJECT_ID || '';

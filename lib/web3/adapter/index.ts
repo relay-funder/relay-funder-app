@@ -45,6 +45,9 @@ export {
   useDisconnect,
   useSignMessage,
   useAccount,
+  useBalance,
+  useChains,
+  useSwitchChain,
   ConnectorAlreadyConnectedError,
   // ethers
   ethers,

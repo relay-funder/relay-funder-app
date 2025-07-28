@@ -124,6 +124,15 @@ export function useChainId() {
 
   return chainId;
 }
+export function useChains() {
+  return [];
+}
+export function useSwitchChain() {
+  return {
+    switchChainAsync: async (arg0: { chainId: number }) =>
+      console.log('dummy::useSwitchChain::switchChainAsync', arg0),
+  };
+}
 export function useSignMessage() {
   return {
     signMessageAsync: async (arg0: unknown) => {
@@ -134,5 +143,18 @@ export function useSignMessage() {
 }
 export function useConnectors() {
   return [];
+}
+export function useBalance({
+  address,
+  token,
+}: {
+  address: `0x${string}`;
+  token?: `0x${string}`;
+}) {
+  console.log('dummy::wagmi::useBalance', { address, token });
+  return {
+    data: { formatted: `1234.5678`, symbol: 'DMMY' },
+    isPending: false,
+  };
 }
 export class ConnectorAlreadyConnectedError extends Error {}
