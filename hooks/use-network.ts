@@ -92,7 +92,7 @@ export function useNetworkCheck() {
         variant: 'destructive',
       });
     }
-  }, [ready, toast]);
+  }, [ready, toast, chainId]);
 
   useEffect(() => {
     if (!address) {

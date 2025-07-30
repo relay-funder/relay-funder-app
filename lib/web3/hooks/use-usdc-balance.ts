@@ -1,57 +1,20 @@
-import { useWeb3Auth, erc20Abi, ethers } from '@/lib/web3';
-import { useState, useEffect } from 'react';
+import { useBalance, useAccount, formatUnits } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
+import { useMemo } from 'react';
 
 export function useUsdcBalance() {
-  const { wallet } = useWeb3Auth();
-  const [usdcBalance, setUsdcBalance] = useState('0.00');
-  const [isPending, setIsPending] = useState(true);
-  useEffect(() => {
-    const fetchUsdcBalance = async () => {
-      console.log('fetchUSDCBalance');
-      setIsPending(true);
-      if (!wallet || !(await wallet.isConnected())) {
-        setUsdcBalance('unknown (not connected)');
-        setIsPending(false);
-        return;
-      }
-      const walletProvider = await wallet.getEthereumProvider();
-      if (!walletProvider) {
-        setUsdcBalance('unknown (no wallet provider)');
-        setIsPending(false);
-        return;
-      }
-      const ethersProvider = new ethers.BrowserProvider(walletProvider);
-      const signer = await ethersProvider.getSigner();
-      const userAddress = signer.address;
-      console.log('fetchUSDCBalance', { userAddress });
+  const { address } = useAccount();
 
-      // Initialize USDC contract
-      const usdcContract = new ethers.Contract(
-        USDC_ADDRESS as string,
-        erc20Abi,
-        signer,
-      );
-      console.log('fetchUSDCBalance', { usdcContract });
+  const { data: usdcBalance, isPending: usdcBalanceIsPending } = useBalance({
+    address,
+    token: USDC_ADDRESS as `0x${string}`,
+  });
+  const usdcBalanceFormatted = useMemo(() => {
+    return formatUnits(
+      usdcBalance?.value ?? BigInt(0),
+      usdcBalance?.decimals ?? 0,
+    );
+  }, [usdcBalance?.value, usdcBalance?.decimals]);
 
-      // Fetch balance
-      const balance = await usdcContract.balanceOf(userAddress);
-      let unit: number | string = parseInt(
-        process.env.NEXT_PUBLIC_USDC_DECIMALS ?? '',
-      );
-      if (isNaN(unit)) {
-        // literal unit name provided or fallback
-        unit = process.env.NEXT_PUBLIC_USDC_DECIMALS ?? 6;
-      }
-      console.log('fetchUSDCBalance', {
-        balance,
-        unit,
-      });
-      setUsdcBalance(ethers.formatUnits(balance, unit));
-      setIsPending(false);
-    };
-
-    fetchUsdcBalance();
-  }, [wallet]);
-  return { usdcBalance, isPending };
+  return { usdcBalance: usdcBalanceFormatted, isPending: usdcBalanceIsPending };
 }

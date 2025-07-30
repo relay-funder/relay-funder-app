@@ -40,7 +40,7 @@ export function ConnectedWalletInfo() {
           </div>
 
           {currentChain && (
-            <Card className="border-2 border-primary">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Current Chain</CardTitle>
               </CardHeader>

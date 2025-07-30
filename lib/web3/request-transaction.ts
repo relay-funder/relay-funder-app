@@ -1,17 +1,19 @@
 import { ethers, erc20Abi } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
 import { type ConnectedWallet } from '@/lib/web3/types';
-
+import { DonationProcessStates } from '@/types/campaign';
 const debug = process.env.NODE_ENV !== 'production';
 
 export async function requestTransaction({
   wallet,
   address,
   amount,
+  onStateChanged,
 }: {
   wallet: ConnectedWallet;
   address: string;
   amount: string;
+  onStateChanged: (arg0: keyof typeof DonationProcessStates) => void;
 }) {
   if (!wallet || !(await wallet.isConnected())) {
     throw new Error('Wallet not connected');
@@ -55,8 +57,10 @@ export async function requestTransaction({
   // First approve the treasury to spend USDC
   debug && console.log('Treasury address:', address);
   debug && console.log('Approving USDC spend...');
+  onStateChanged('approveUsdcContract');
   const approveTx = await usdcContract.approve(address, amountInUSDC);
   debug && console.log('Approval transaction hash:', approveTx.hash);
+  onStateChanged('waitForUsdcContractConfirmation');
   await approveTx.wait();
   debug && console.log('USDC approval confirmed');
 
@@ -78,6 +82,7 @@ export async function requestTransaction({
   debug && console.log('Estimated gas:', estimatedGas.toString());
 
   debug && console.log('Sending pledge transaction...');
+  onStateChanged('pledgeContract');
   const tx = await treasuryContract.pledgeWithoutAReward(
     userAddress,
     amountInUSDC,
@@ -86,5 +91,6 @@ export async function requestTransaction({
     },
   );
   debug && console.log('Pledge transaction hash:', tx.hash);
+  onStateChanged('waitForPledgeContractConfirmation');
   return tx;
 }

@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { useWeb3Auth, ethers } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
@@ -8,7 +7,7 @@ import {
   useCreatePayment,
   useUpdatePaymentStatus,
 } from '@/lib/hooks/usePayments';
-import { Campaign } from '@/types/campaign';
+import { type Campaign, DonationProcessStates } from '@/types/campaign';
 const debug = process.env.NODE_ENV !== 'production';
 
 export function useDonationCallback({
@@ -17,16 +16,17 @@ export function useDonationCallback({
   poolAmount,
   selectedToken,
   isAnonymous = false,
+  onStateChanged,
 }: {
   campaign: Campaign;
   amount: string;
   poolAmount: number;
   selectedToken: string;
   isAnonymous?: boolean;
+  onStateChanged: (state: keyof typeof DonationProcessStates) => void;
 }) {
   const { wallet } = useWeb3Auth();
   const { authenticated } = useAuth();
-  const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -37,6 +37,7 @@ export function useDonationCallback({
     try {
       setIsProcessing(true);
       setError(null);
+      onStateChanged('connect');
       debug && console.log('Starting donation process...');
       if (!authenticated) {
         throw new Error('Not signed in');
@@ -61,12 +62,15 @@ export function useDonationCallback({
       }
       debug && console.log('User address:', userAddress);
 
-      // Switch to Alfajores network first
+      onStateChanged('switch');
       await switchNetwork({ wallet });
+
+      onStateChanged('requestTransaction');
       const tx = await requestTransaction({
         address: campaign.treasuryAddress,
         amount,
         wallet,
+        onStateChanged,
       });
 
       // Only create payment record after transaction is sent
@@ -87,32 +91,19 @@ export function useDonationCallback({
       const receipt = await tx.wait();
       debug && console.log('Transaction confirmed:', receipt);
 
+      onStateChanged('storageComplete');
       // Update payment status based on receipt
       debug && console.log('Updating payment status...');
       await updatePaymentStatus({
         paymentId,
         status: receipt.status === 1 ? 'confirmed' : 'failed',
       });
+      onStateChanged('done');
 
       debug && console.log('Payment status updated');
-
-      toast({
-        title: 'Success!',
-        description: 'Your donation has been processed',
-      });
     } catch (err) {
       debug && console.error('Donation error:', err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'object' && err && 'message' in err
-            ? String(err.message)
-            : 'Failed to process donation';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      onStateChanged('failed');
       setError(
         err instanceof Error ? err.message : 'Failed to process wallet payment',
       );
@@ -122,7 +113,6 @@ export function useDonationCallback({
   }, [
     wallet,
     authenticated,
-    toast,
     createPayment,
     updatePaymentStatus,
     amount,
@@ -131,6 +121,7 @@ export function useDonationCallback({
     campaign?.treasuryAddress,
     selectedToken,
     isAnonymous,
+    onStateChanged,
   ]);
   return { onDonate, isProcessing, error };
 }

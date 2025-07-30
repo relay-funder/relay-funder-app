@@ -1,7 +1,11 @@
+'use client';
+
 import { Button } from '@/components/ui';
 import { useDonationCallback } from '@/hooks/use-donation';
-import type { Campaign } from '@/types/campaign';
-import { useEffect, useMemo } from 'react';
+import { type Campaign, DonationProcessStates } from '@/types/campaign';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { VisibilityToggle } from '@/components/visibility-toggle';
+import { DonationProcessDisplay } from './process-display';
 
 export function CampaignDonationWalletProcess({
   campaign,
@@ -28,26 +32,81 @@ export function CampaignDonationWalletProcess({
   const poolAmount = useMemo(() => {
     return numericAmount - akashicAmount;
   }, [numericAmount, akashicAmount]);
-  const { onDonate, isProcessing } = useDonationCallback({
+  const [state, setState] =
+    useState<keyof typeof DonationProcessStates>('idle');
+  const [processing, setProcessing] = useState<boolean>(false);
+  const {
+    onDonate,
+    isProcessing: processingOnDonate,
+    error: errorOnDonate,
+  } = useDonationCallback({
     campaign,
     amount,
     poolAmount,
     isAnonymous: anonymous,
     selectedToken,
+    onStateChanged: setState,
   });
-  useEffect(() => {
+  const onDonateStart = useCallback(() => {
     if (typeof onProcessing === 'function') {
-      onProcessing(isProcessing);
+      onProcessing(true);
     }
-  }, [onProcessing, isProcessing]);
+    onDonate().catch((error) => {
+      console.error('process:onDonate:catch', error);
+      setProcessing(false);
+    });
+  }, [onDonate, onProcessing]);
+  useEffect(() => {
+    // auto-reset state when done
+    if (state === 'idle') {
+      setProcessing(false);
+      if (typeof onProcessing === 'function') {
+        onProcessing(false);
+      }
+    }
+    if (state === 'done') {
+      setTimeout(() => {
+        setState('idle');
+      }, 3000);
+
+      return;
+    }
+  }, [state]);
+  useEffect(() => {
+    let deferTimerId = null;
+    if (processingOnDonate) {
+      setProcessing(true);
+    } else {
+      deferTimerId = setTimeout(() => {
+        setProcessing(false);
+      }, 1000);
+    }
+    return () => {
+      if (!deferTimerId) {
+        return;
+      }
+      clearTimeout(deferTimerId);
+    };
+  }, [processingOnDonate, onProcessing]);
   return (
-    <Button
-      className="w-full"
-      size="lg"
-      disabled={!numericAmount || isProcessing}
-      onClick={onDonate}
-    >
-      {isProcessing ? 'Processing...' : `Donate with Wallet`}
-    </Button>
+    <>
+      <Button
+        className="w-full"
+        size="lg"
+        disabled={!numericAmount || processing}
+        onClick={onDonateStart}
+      >
+        {processing ? 'Processing...' : `Donate with Wallet`}
+      </Button>
+      <VisibilityToggle isVisible={state !== 'idle'}>
+        <DonationProcessDisplay
+          currentState={state}
+          failureMessage={errorOnDonate}
+          isProcessing={processing}
+          onFailureCancel={() => setState('idle')}
+          onFailureRetry={onDonateStart}
+        />
+      </VisibilityToggle>
+    </>
   );
 }

@@ -181,3 +181,75 @@ export type CampaignCreatedEvent = {
     campaignInfoAddress?: `0x${string}`;
   };
 };
+/**
+ * Defines the various states a donation process can be in.
+ * Each state represents a step in the user's interaction with the wallet and blockchain.
+ */
+export const DonationProcessStates = {
+  /**
+   * The wallet is not connected to the application.
+   * The user will be prompted to connect their wallet.
+   * This step may or may not require direct user interaction.
+   */
+  connect: 'connect',
+
+  /**
+   * The wallet is connected but is on the wrong network.
+   * The user may be prompted to switch to the correct network or add it if not already configured.
+   * This step may or may not require direct user interaction.
+   */
+  switch: 'switch',
+
+  /**
+   * The application is requesting the wallet to set up certain properties for contract execution.
+   * Multiple checks might occur here, and issues could require the user to restart the process.
+   * This step is unlikely to require direct user interaction.
+   */
+  requestTransaction: 'requestTransaction',
+
+  /**
+   * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDC.
+   * This action will require confirmation from the user within their wallet.
+   */
+  approveUsdcContract: 'approveUsdcContract',
+
+  /**
+   * The contract has been executed, and the application is waiting for blockchain confirmation.
+   * No user interaction is required during this phase, but it can take some time.
+   */
+  waitForUsdcContractConfirmation: 'waitForUsdcContractConfirmation',
+
+  /**
+   * The wallet is asked to execute the treasury pledge contract.
+   * This action locks the previously approved spending cap into the donation, transferring the funds.
+   */
+  pledgeContract: 'pledgeContract',
+
+  /**
+   * The pledge contract has been executed, and the application is waiting for blockchain confirmation.
+   * No user interaction is required during this phase.
+   */
+  waitForPledgeContractConfirmation: 'waitForPledgeContractConfirmation',
+
+  /**
+   * The successful execution of the donation is being stored in the application's database.
+   * This is typically the final step after blockchain confirmation.
+   */
+  storageComplete: 'storageComplete',
+
+  /**
+   * The initial idle state of the donation process, before any steps have begun.
+   */
+  idle: 'idle',
+
+  /**
+   * The donation process has successfully completed, and the requested funds have been transferred.
+   */
+  done: 'done',
+
+  /**
+   * The donation process has failed at some point.
+   * An error message should be displayed to the user.
+   */
+  failed: 'failed',
+};

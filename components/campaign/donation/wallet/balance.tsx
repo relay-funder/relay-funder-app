@@ -1,5 +1,6 @@
 'use client';
 import { useMemo } from 'react';
+import { formatUnits } from '@/lib/web3';
 import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
 import { HelpCircle, Loader2 } from 'lucide-react';
 import {
