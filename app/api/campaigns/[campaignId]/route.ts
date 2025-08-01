@@ -1,102 +1,19 @@
+import { getCampaign } from '@/lib/api/campaigns';
 import { ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
-import { CampaignsWithIdParams } from '@/lib/api/types';
-import { db, Payment, User } from '@/server/db';
-interface PaymentWithUserType extends Payment {
-  user: User | null;
-}
-interface PaymentWithWhitelistedUserType extends Payment {
-  user: {
-    id: number;
-    address: string;
-    firstName: string;
-    lastName: string;
-  } | null;
-}
+import { CampaignsWithIdParams, GetCampaignResponse } from '@/lib/api/types';
+
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const { campaignId: campaignIdOrSlug } = await params;
-    let where = undefined;
-    if (!isNaN(Number(campaignIdOrSlug))) {
-      where = { id: Number(campaignIdOrSlug) };
-    } else {
-      where = { slug: campaignIdOrSlug };
-    }
-    const instance = await db.campaign.findUnique({
-      where,
-      include: {
-        images: true,
-        payments: {
-          include: {
-            user: true,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        comments: true,
-        updates: true,
-      },
-    });
+    const instance = await getCampaign(campaignIdOrSlug);
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
     }
-    const creator: { name: string | null; isKycCompleted: boolean } = {
-      name: null,
-      isKycCompleted: false,
-    };
-    try {
-      if (instance.creatorAddress) {
-        const creatorInstance = await db.user.findUnique({
-          where: { address: instance.creatorAddress },
-        });
-        if (creatorInstance?.isKycCompleted) {
-          creator.isKycCompleted = true;
-        }
-        if (creatorInstance?.username) {
-          creator.name = creatorInstance.username;
-        } else if (creatorInstance?.firstName) {
-          creator.name = creatorInstance.firstName;
-        }
-      }
-    } catch {}
-    const campaign = {
-      ...instance,
-      creator,
-      payments:
-        instance.payments?.reduce(
-          (
-            accumulator: PaymentWithWhitelistedUserType[],
-            payment: PaymentWithUserType,
-          ) => {
-            if (isNaN(Number(payment.amount)) || !payment.user) {
-              return accumulator;
-            }
-            if (payment.isAnonymous) {
-              const anonymousUser = {
-                id: 0,
-                address: '0x00000000000000000000000000000000',
-                firstName: 'Arno',
-                lastName: 'Nym',
-              };
-              return accumulator.concat({ ...payment, user: anonymousUser });
-            }
-            const whitelistedUser = {
-              id: payment.user.id,
-              address: payment.user.address,
-              firstName: payment.user.firstName,
-              lastName: payment.user.lastName,
-            };
-            return accumulator.concat({
-              ...payment,
-              user: whitelistedUser,
-            } as PaymentWithWhitelistedUserType);
-          },
-          [],
-        ) ?? [],
-    };
 
-    return response({ campaign });
+    return response({
+      campaign: instance,
+    } as GetCampaignResponse);
   } catch (error: unknown) {
     return handleError(error);
   }
