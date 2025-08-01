@@ -1,11 +1,14 @@
+import type React from 'react';
 import Link from 'next/link';
 
 export function ContractLink({
   address,
   chainConfig,
+  children = 'View Contract',
 }: {
   address?: string | null;
   chainConfig: { blockExplorerUrl?: string };
+  children?: React.ReactNode;
 }) {
   const blockExplorerUrl =
     chainConfig.blockExplorerUrl ?? 'https://etherscan.io/address/';
@@ -20,7 +23,7 @@ export function ContractLink({
       target="_blank"
       rel="noopener noreferrer"
     >
-      View Contract
+      {children}
     </Link>
   );
 }

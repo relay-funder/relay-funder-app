@@ -47,8 +47,10 @@ export function useCreateCampaignContract({
         throw new Error('wallet not connected');
       }
       const campaignData = {
-        launchTime: BigInt(new Date(startTime ?? '').getTime() / 1000),
-        deadline: BigInt(new Date(endTime ?? '').getTime() / 1000),
+        launchTime: BigInt(
+          Math.floor(new Date(startTime ?? '').getTime() / 1000),
+        ),
+        deadline: BigInt(Math.floor(new Date(endTime ?? '').getTime() / 1000)),
         goalAmount: parseEther(fundingGoal || '0'),
       };
 

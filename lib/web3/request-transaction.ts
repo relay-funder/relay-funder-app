@@ -49,7 +49,10 @@ export async function requestTransaction({
     process.env.NEXT_PUBLIC_USDC_DECIMALS ?? '',
   );
   if (isNaN(unit)) {
-    unit = process.env.NEXT_PUBLIC_USDC_DECIMALS ?? 6;
+    unit =
+      typeof process.env.NEXT_PUBLIC_USDC_DECIMALS === 'string'
+        ? parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)
+        : 6;
   }
   const amountInUSDC = ethers.parseUnits(amount || '0', unit);
   debug && console.log('Amount in USDC:', amountInUSDC.toString());

@@ -5,12 +5,17 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import { useAuth } from '@/contexts';
-import type { Campaign } from '@/types/campaign';
+import type {
+  GetCampaignResponseInstance,
+  GetCampaignResponse,
+  GetCampaignPaymentsResponse,
+} from '@/lib/api/types';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
+export const CAMPAIGN_PAYMENTS_QUERY_KEY = 'campaign_payments';
 
 interface PaginatedResponse {
-  campaigns: Campaign[];
+  campaigns: GetCampaignResponseInstance[];
   pagination: {
     currentPage: number;
     pageSize: number;
@@ -30,7 +35,7 @@ async function fetchCampaigns(status?: string) {
   const data = await response.json();
   return data.campaigns;
 }
-async function fetchCampaign(slug?: string) {
+async function fetchCampaign(slug: string | number) {
   const url = `/api/campaigns/${slug}`;
   const response = await fetch(url);
   if (!response.ok) {
@@ -38,7 +43,28 @@ async function fetchCampaign(slug?: string) {
     throw new Error(error.error || 'Failed to fetch campaign');
   }
   const data = await response.json();
-  return data.campaign;
+  return data as GetCampaignResponse;
+}
+
+async function fetchCampaignPayments({
+  id,
+  pageParam = 1,
+  status = 'confirmed',
+  pageSize = 10,
+}: {
+  id: number;
+  pageParam?: number;
+  status?: 'confirmed' | 'pending';
+  pageSize?: number;
+}) {
+  const url = `/api/campaigns/${id}/payments?status=${status}&page=${pageParam}&pageSize=${pageSize}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch campaign');
+  }
+  const data = (await response.json()) as GetCampaignPaymentsResponse;
+  return data?.payments ?? [];
 }
 
 async function fetchCampaignPage({
@@ -53,17 +79,18 @@ async function fetchCampaignPage({
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch campaigns');
   }
-  return (await response.json()) as PaginatedResponse;
+  const data = await response.json();
+  return data as PaginatedResponse;
 }
 
-async function fetchUserCampaigns(): Promise<Campaign[]> {
+async function fetchUserCampaigns() {
   const response = await fetch(`/api/campaigns/user`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch user campaigns');
   }
   const data = await response.json();
-  return data.campaigns;
+  return data.campaigns as GetCampaignResponseInstance[];
 }
 interface IUpdateCampaign {
   campaignId: number;
@@ -159,6 +186,30 @@ async function approveCampaign(variables: IApproveCampaign) {
   }
   return response.json();
 }
+interface IDisableCampaign {
+  campaignId: number;
+}
+
+async function disableCampaign(variables: IDisableCampaign) {
+  const response = await fetch(
+    `/api/campaigns/${variables.campaignId}/disable`,
+    {
+      method: 'POST',
+      body: JSON.stringify(variables),
+    },
+  );
+  if (!response.ok) {
+    let errorMsg = 'Failed to disable campaign';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData?.error
+        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
+        : errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+}
 
 export function useCampaigns(status?: string) {
   return useQuery({
@@ -167,7 +218,7 @@ export function useCampaigns(status?: string) {
     enabled: true,
   });
 }
-export function useCampaign(slug?: string) {
+export function useCampaign(slug: string | number) {
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, slug],
     queryFn: () => fetchCampaign(slug),
@@ -210,6 +261,14 @@ export function useUserCampaigns() {
     enabled: authenticated,
   });
 }
+export function useCampaignPayments({ id }: { id: number }) {
+  return useQuery({
+    queryKey: [CAMPAIGN_PAYMENTS_QUERY_KEY, id],
+    queryFn: () => fetchCampaignPayments({ id }),
+    enabled: true,
+  });
+}
+
 export function useUpdateCampaign() {
   const queryClient = useQueryClient();
 
@@ -235,6 +294,16 @@ export function useAdminApproveCampaign() {
 
   return useMutation({
     mutationFn: approveCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+    },
+  });
+}
+export function useAdminDisableCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: disableCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
     },

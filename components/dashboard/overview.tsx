@@ -1,45 +1,19 @@
-import { Campaign } from '@/types/campaign';
+import type { DbCampaign } from '@/types/campaign';
 import { Card, CardContent } from '@/components/ui';
 import { Users, Coins, Calendar, TrendingUp } from 'lucide-react';
-const calculateStats = (campaigns: Campaign[]) => {
-  if (!Array.isArray(campaigns)) {
-    return {
-      totalCampaigns: 0,
-      totalRaised: 0,
-      activeCampaigns: 0,
-      averageProgress: 0,
-    };
-  }
+const calculateStats = (campaigns: DbCampaign[]) => {
+  console.warn('Bad implementation, needs the backend to summarize', {
+    campaigns,
+  });
   return {
-    totalCampaigns: campaigns.length,
-    totalRaised: campaigns.reduce((sum, campaign) => {
-      const raised = campaign.totalRaised ? Number(campaign.totalRaised) : 0;
-      return sum + raised;
-    }, 0),
-    activeCampaigns: campaigns.filter((campaign) => {
-      const now = Math.floor(Date.now() / 1000);
-      const launchTime = campaign.launchTime
-        ? parseInt(campaign.launchTime)
-        : now;
-      const deadline = campaign.deadline ? parseInt(campaign.deadline) : now;
-      return (
-        now >= launchTime && now <= deadline && campaign.status === 'ACTIVE'
-      );
-    }).length,
-    averageProgress:
-      campaigns.length > 0
-        ? campaigns.reduce((sum, campaign) => {
-            if (!campaign.totalRaised || !campaign.goalAmount) return sum;
-            const progress =
-              (Number(campaign.totalRaised) / Number(campaign.goalAmount)) *
-              100;
-            return sum + (isNaN(progress) ? 0 : progress);
-          }, 0) / campaigns.length
-        : 0,
+    totalCampaigns: 0,
+    totalRaised: 0,
+    activeCampaigns: 0,
+    averageProgress: 0,
   };
 };
 
-export function DashboardOverview({ campaigns }: { campaigns?: Campaign[] }) {
+export function DashboardOverview({ campaigns }: { campaigns?: DbCampaign[] }) {
   const hasCampaigns = Array.isArray(campaigns);
   return (
     <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

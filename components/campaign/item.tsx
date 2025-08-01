@@ -15,6 +15,7 @@ import {
   DialogTrigger,
   Dialog,
   DialogContent,
+  DialogTitle,
   Badge,
 } from '@/components/ui';
 import { Info } from 'lucide-react';
@@ -22,45 +23,51 @@ import Image from 'next/image';
 import { MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { categories } from '@/lib/constant';
-import { Campaign } from '@/types/campaign';
-import { FormattedDate } from '../formatted-date';
-import { DialogTitle } from '../ui/dailog';
+import { FormattedDate } from '@/components/formatted-date';
+import { CampaignMainImage } from '@/components/campaign/main-image';
+import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import type { DbCampaign } from '@/types/campaign';
+import { UserInlineName } from '@/components/user/inline-name';
+import ContractLink from '../page/contract-link';
+import { chainConfig } from '@/lib/web3';
 
 export function CampaignItem({
   campaign,
   onSelect,
 }: {
-  campaign: Campaign;
-  onSelect: (campaign: Campaign) => void;
+  campaign: DbCampaign;
+  onSelect?: (campaign: DbCampaign) => void;
 }) {
   const categoryDetails = campaign.category
     ? categories.find((cat) => cat.id === campaign.category)
     : null;
+  const {
+    amountRaised,
+    amountGoal,
+    contributorCount,
+    contributorPendingCount,
+    progress,
+  } = useCampaignStatsFromInstance({
+    campaign,
+  });
+
   return (
     <Card
-      key={campaign.address}
+      key={campaign.id}
       className="flex h-full flex-col overflow-hidden transition-shadow hover:shadow-lg"
     >
       <div className="flex-1">
         <Link href={`/campaigns/${campaign.slug}`}>
           <CardHeader className="p-0">
-            <Image
-              src={
-                campaign.images?.find(
-                  (img: { isMainImage: boolean }) => img.isMainImage,
-                )?.imageUrl || '/images/placeholder.svg'
-              }
-              alt={campaign.title || campaign.address}
-              width={600}
-              height={400}
-              className="h-[200px] w-full object-cover"
-              loading="lazy"
-            />
+            <CampaignMainImage campaign={campaign} />
           </CardHeader>
           <CardContent className="p-6">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="mb-2 text-xl font-bold">
-                {campaign.title || 'Campaign Title'}
+              <h2
+                className="mb-2 line-clamp-1 text-xl font-bold"
+                title={campaign.title ?? 'No Title Set'}
+              >
+                {campaign.title ?? 'Campaign Title'}
               </h2>
               {categoryDetails && (
                 <Badge variant="outline" className="flex items-center gap-1">
@@ -73,15 +80,7 @@ export function CampaignItem({
             </div>
             <div className="mb-2 flex items-center justify-between gap-1">
               <div className="align flex gap-2 self-start">
-                <Image
-                  src={`https://avatar.vercel.sh/${campaign.address}`}
-                  alt="user-pr"
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                  loading="lazy"
-                />
-                <span className="font-medium">{`${campaign.owner.slice(0, 10)}...`}</span>
+                <UserInlineName user={campaign.creator} />
               </div>
               <div className="align flex self-start">
                 <MapPin className="mt-0.5 text-[#55DFAB]" />
@@ -102,36 +101,24 @@ export function CampaignItem({
           <div className="mt-auto space-y-2 px-6 py-4">
             <div className="flex items-center justify-between text-sm">
               <span className="flex">
-                <div className="px-1 font-bold text-[#55DFAB]">
-                  {campaign.donationCount}
+                <div
+                  className="px-1 font-bold text-[#55DFAB]"
+                  title={`${contributorCount} Contributors, ${contributorPendingCount} pending`}
+                >
+                  {contributorCount - contributorPendingCount}
                 </div>
                 donations
               </span>
               <span className="flex">
-                <div className="px-1 font-bold text-[#55DFAB]">
-                  {(
-                    (Number(campaign.totalRaised) /
-                      Number(campaign.goalAmount)) *
-                    100
-                  ).toFixed(2)}
-                  %
-                </div>
+                <div className="px-1 font-bold text-[#55DFAB]">{progress}%</div>
                 of funding goal
               </span>
             </div>
             <div className="mb-2 flex items-center justify-between text-xs text-gray-600">
-              <span>
-                ${Number(campaign.totalRaised).toLocaleString()} raised
-              </span>
-              <span>Goal: ${Number(campaign.goalAmount).toLocaleString()}</span>
+              <span>{amountRaised} raised</span>
+              <span>Goal: {amountGoal}</span>
             </div>
-            <Progress
-              value={
-                (Number(campaign.totalRaised) / Number(campaign.goalAmount)) *
-                100
-              }
-              className="h-2"
-            />
+            <Progress value={progress} className="h-2" />
           </div>
         </Link>
       </div>
@@ -146,7 +133,7 @@ export function CampaignItem({
         <Button
           variant="outline"
           className="flex-1"
-          onClick={() => onSelect(campaign)}
+          onClick={() => typeof onSelect === 'function' && onSelect(campaign)}
         >
           <Image src="/sparkles.png" alt="wallet" width={24} height={24} />
           Add to Collection
@@ -161,35 +148,41 @@ export function CampaignItem({
               <TableBody>
                 <TableRow>
                   <TableHead>Address</TableHead>
-                  <TableCell>{campaign.address}</TableCell>
+                  <TableCell>
+                    <ContractLink
+                      address={campaign.campaignAddress}
+                      chainConfig={chainConfig}
+                    >
+                      {campaign.campaignAddress ?? 'No Address'}
+                    </ContractLink>
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableHead>Owner</TableHead>
-                  <TableCell>{campaign.owner}</TableCell>
+                  <TableCell>
+                    <UserInlineName user={campaign.creator} />{' '}
+                    {campaign.creatorAddress}
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableHead>Launch Time</TableHead>
                   <TableCell>
-                    <FormattedDate timestamp={campaign.launchTime} />
+                    <FormattedDate date={campaign.startTime} />
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableHead>Deadline</TableHead>
                   <TableCell>
-                    <FormattedDate timestamp={campaign.deadline} />
+                    <FormattedDate date={campaign.endTime} />
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableHead>Goal Amount</TableHead>
-                  <TableCell>
-                    ${Number(campaign.goalAmount).toLocaleString()} USD
-                  </TableCell>
+                  <TableCell>{amountGoal}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableHead>Total Raised</TableHead>
-                  <TableCell>
-                    ${Number(campaign.totalRaised).toLocaleString()} USD
-                  </TableCell>
+                  <TableCell>{amountRaised}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>

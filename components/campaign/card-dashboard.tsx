@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import Image from 'next/image';
-import { Progress } from '@/components/ui/progress';
-import { Campaign } from '@/types/campaign';
-import { cn } from '@/lib/utils';
+import { type DbCampaign } from '@/types/campaign';
 import { FavoriteButton } from '@/components/favorite-button';
 import { categories } from '@/lib/constant';
 import { Badge } from '@/components/ui/badge';
+import { FormattedDate } from '../formatted-date';
+import { CampaignMainImage } from './main-image';
+import { CampaignDashboardStatus } from './dashboard-status';
+import { CampaignProgress } from './progress';
 
 interface CampaignCardDashboardProps {
-  campaign: Campaign;
+  campaign: DbCampaign;
   isFavorite?: boolean;
   onFavoriteToggle?: (isFavorite: boolean) => void;
 }
@@ -18,27 +19,6 @@ export function CampaignCardDashboard({
   isFavorite,
   onFavoriteToggle,
 }: CampaignCardDashboardProps) {
-  const formatDate = (timestamp: string) => {
-    return new Date(parseInt(timestamp) * 1000).toLocaleDateString();
-  };
-
-  const getCampaignStatus = (campaign: Campaign) => {
-    if (campaign.status === 'DRAFT') return 'Draft';
-    if (campaign.status === 'PENDING_APPROVAL') return 'Pending Approval';
-    if (campaign.status === 'FAILED') return 'Failed';
-    if (campaign.status === 'COMPLETED') return 'Completed';
-
-    const now = Math.floor(Date.now() / 1000);
-    const launchTime = campaign.launchTime
-      ? parseInt(campaign.launchTime)
-      : now;
-    const deadline = campaign.deadline ? parseInt(campaign.deadline) : now;
-
-    if (now < launchTime) return 'Upcoming';
-    if (now > deadline) return 'Ended';
-    return 'Active';
-  };
-
   // Find the category details
   const categoryDetails = campaign.category
     ? categories.find((cat) => cat.id === campaign.category)
@@ -47,17 +27,7 @@ export function CampaignCardDashboard({
   return (
     <Card className="overflow-hidden">
       <CardHeader className="relative p-0">
-        <Image
-          src={
-            campaign.images?.find((img) => img.isMainImage)?.imageUrl ||
-            '/images/placeholder.svg'
-          }
-          alt={campaign.title || 'Campaign'}
-          width={600}
-          height={400}
-          className="h-[200px] w-full object-cover"
-          loading="lazy"
-        />
+        <CampaignMainImage campaign={campaign} />
         <div className="absolute right-4 top-4 z-10">
           <FavoriteButton
             campaignId={campaign.id}
@@ -77,26 +47,7 @@ export function CampaignCardDashboard({
               </Badge>
             )}
           </div>
-          <div
-            className={cn('rounded-full px-3 py-1 text-sm', {
-              'bg-blue-100 text-blue-600':
-                getCampaignStatus(campaign) === 'Active',
-              'bg-yellow-100 text-yellow-600':
-                getCampaignStatus(campaign) === 'Upcoming',
-              'bg-gray-100 text-gray-600':
-                getCampaignStatus(campaign) === 'Ended',
-              'bg-orange-100 text-orange-600':
-                getCampaignStatus(campaign) === 'Pending Approval',
-              'bg-purple-100 text-purple-600':
-                getCampaignStatus(campaign) === 'Draft',
-              'bg-red-100 text-red-600':
-                getCampaignStatus(campaign) === 'Failed',
-              'bg-green-100 text-green-600':
-                getCampaignStatus(campaign) === 'Completed',
-            })}
-          >
-            {getCampaignStatus(campaign)}
-          </div>
+          <CampaignDashboardStatus campaign={campaign} />
         </div>
 
         <div className="space-y-2">
@@ -108,47 +59,19 @@ export function CampaignCardDashboard({
               <strong>Treasury:</strong> {campaign.treasuryAddress}
             </p>
           )}
-          {campaign.launchTime && (
+          {campaign.startTime && (
             <p>
-              <strong>Launch:</strong> {formatDate(campaign.launchTime)}
+              <strong>Launch:</strong>{' '}
+              <FormattedDate date={campaign.startTime} />
             </p>
           )}
-          {campaign.deadline && (
+          {campaign.endTime && (
             <p>
-              <strong>Deadline:</strong> {formatDate(campaign.deadline)}
+              <strong>Deadline:</strong>{' '}
+              <FormattedDate date={campaign.endTime} />
             </p>
           )}
-          <p>
-            <strong>Goal:</strong> {campaign.goalAmount || campaign.fundingGoal}{' '}
-            USDC
-          </p>
-          {campaign.totalRaised && (
-            <p>
-              <strong>Raised:</strong> {campaign.totalRaised} USDC
-            </p>
-          )}
-          {campaign.totalRaised && campaign.goalAmount && (
-            <div className="mt-4">
-              <div className="mb-2 flex justify-between text-sm">
-                <span>Progress</span>
-                <span>
-                  {(
-                    (Number(campaign.totalRaised) /
-                      Number(campaign.goalAmount)) *
-                    100
-                  ).toFixed(2)}
-                  %
-                </span>
-              </div>
-              <Progress
-                value={
-                  (Number(campaign.totalRaised) / Number(campaign.goalAmount)) *
-                  100
-                }
-                className="h-2"
-              />
-            </div>
-          )}
+          <CampaignProgress campaign={campaign} />
         </div>
       </CardContent>
     </Card>
