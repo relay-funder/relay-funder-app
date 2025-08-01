@@ -4,6 +4,7 @@ export {
   Decimal,
   PrismaClientKnownRequestError,
 } from '@/.generated/prisma/client/runtime/library';
+export { Prisma } from '@/.generated/prisma/client';
 export type * from '@/.generated/prisma/client';
 export { RecipientStatus } from '@/.generated/prisma/client';
 const createPrismaClient = () =>

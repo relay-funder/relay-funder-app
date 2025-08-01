@@ -1,18 +1,27 @@
 import Image from 'next/image';
 import { useMemo } from 'react';
-import { CampaignDisplay, CampaignImage } from '@/types/campaign';
-export function CampaignMainImage({ campaign }: { campaign: CampaignDisplay }) {
+export function CampaignMainImage({
+  campaign,
+}: {
+  campaign: {
+    title?: string;
+    images?: { isMainImage?: boolean; imageUrl?: string }[];
+  };
+}) {
   const mainImage = useMemo(() => {
     if (!Array.isArray(campaign.images)) {
       return null;
     }
-    return (
-      campaign.images.find((img: CampaignImage) => img.isMainImage) ||
-      campaign.images[0]
-    );
+    return campaign.images.find((img) => img.isMainImage) || campaign.images[0];
   }, [campaign?.images]);
-  const imageUrl = useMemo(() => mainImage?.imageUrl, [mainImage]);
-  const alt = useMemo(() => campaign?.title, [campaign?.title]);
+  const imageUrl = useMemo(
+    () => mainImage?.imageUrl ?? '/images/placeholder.svg',
+    [mainImage],
+  );
+  const alt = useMemo(
+    () => campaign?.title ?? 'Illustration',
+    [campaign?.title],
+  );
   return (
     <div className="lg:col-span-8">
       <div className="space-y-6">

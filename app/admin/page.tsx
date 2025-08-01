@@ -11,24 +11,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminAccessDenied } from '@/components/admin/access-denied';
 import { AdminLoading } from '@/components/admin/loading';
 import { useAdminApproveCampaign as useAdminApproveWeb3Campaign } from '@/lib/web3/hooks/useAdminApproveCampaign';
-import { useAdminApproveCampaign } from '@/lib/hooks/useCampaigns';
-import { enableBypassContractAdmin } from '@/lib/develop';
+import {
+  useAdminApproveCampaign,
+  useAdminDisableCampaign,
+} from '@/lib/hooks/useCampaigns';
 import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
 import { useInView } from 'react-intersection-observer';
 import { CampaignCardAdmin } from '@/components/campaign/card-admin';
 import { CampaignLoading } from '@/components/campaign/loading';
-import { type Campaign } from '@/types/campaign';
 import { DashboardOverview } from '@/components/dashboard/overview';
+import { AdminApproveProcessStates } from '@/types/admin';
+import { DbCampaign } from '@/types/campaign';
 
 export default function AdminPage() {
   const { isAdmin, isReady } = useAuth();
   const { toast } = useToast();
 
   const [error, setError] = useState<string | null>(null);
+  const [approvalState, setApprovalState] =
+    useState<keyof typeof AdminApproveProcessStates>('idle');
   const { adminApproveCampaign: adminApproveWeb3Campaign } =
     useAdminApproveWeb3Campaign();
 
   const { mutateAsync: adminApproveCampaign } = useAdminApproveCampaign();
+  const { mutateAsync: adminDisableCampaign } = useAdminDisableCampaign();
   /* TODO: Implement rounds functionality
    * - Add state management for rounds
    * - Add state for selected rounds
@@ -45,33 +51,71 @@ export default function AdminPage() {
   const filteredCampaignPages = useMemo(() => {
     return data?.pages;
   }, [data]);
+  const onStateChanged = useCallback(
+    (state: keyof typeof AdminApproveProcessStates) => {
+      setApprovalState(state);
+    },
+    [],
+  );
   const approveCampaign = useCallback(
-    async (campaignId: number, campaignAddress: string) => {
+    async (campaign: DbCampaign) => {
       try {
-        const treasuryAddress = enableBypassContractAdmin
-          ? 'mock-treasury-address'
-          : await adminApproveWeb3Campaign(campaignId, campaignAddress);
-        await adminApproveCampaign({ campaignId, treasuryAddress });
-
-        toast({
-          title: 'Success',
-          description: 'Campaign has been approved successfully',
-        });
-      } catch (err) {
-        console.error('Error approving campaign:', err);
+        if (campaign.treasuryAddress) {
+          await adminApproveCampaign({
+            campaignId: campaign.id,
+            treasuryAddress: campaign.treasuryAddress,
+          });
+        } else {
+          if (!campaign.campaignAddress) {
+            throw new Error('Invalid campaign, missing campaignAddress');
+          }
+          const treasuryAddress = await adminApproveWeb3Campaign(
+            campaign.id,
+            campaign.campaignAddress,
+            onStateChanged,
+          );
+          await adminApproveCampaign({
+            campaignId: campaign.id,
+            treasuryAddress,
+          });
+        }
+        onStateChanged('done');
+      } catch (error) {
+        onStateChanged('failed');
+        console.error('Error approving campaign:', error);
         setError(
-          err instanceof Error ? err.message : 'Failed to approve campaign',
+          error instanceof Error ? error.message : 'Failed to approve campaign',
         );
-        toast({
-          title: 'Error',
-          description:
-            err instanceof Error ? err.message : 'Failed to approve campaign',
-          variant: 'destructive',
-        });
       }
     },
-    [toast, adminApproveCampaign, adminApproveWeb3Campaign],
+    [adminApproveCampaign, adminApproveWeb3Campaign, onStateChanged],
   );
+  useEffect(() => {
+    if (approvalState === 'done') {
+      toast({
+        title: 'Success',
+        description: 'Campaign has been approved successfully',
+      });
+    }
+    if (approvalState === 'failed') {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    }
+  }, [toast, approvalState, error]);
+  const disableCampaign = useCallback(
+    async (campaign: DbCampaign) => {
+      try {
+        adminDisableCampaign({ campaignId: campaign.id });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [adminDisableCampaign],
+  );
+
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -165,11 +209,12 @@ export default function AdminPage() {
             {/* Campaign Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredCampaignPages?.map((page) =>
-                page.campaigns.map((campaign: Campaign) => (
+                page.campaigns.map((campaign) => (
                   <CampaignCardAdmin
                     campaign={campaign}
                     key={campaign.id}
                     onApprove={approveCampaign}
+                    onDisable={disableCampaign}
                   />
                 )),
               )}
