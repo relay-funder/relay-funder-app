@@ -1,11 +1,11 @@
 'use server';
 import { checkAuth } from '@/lib/api/auth';
-import { db } from '@/server/db';
-import { CampaignDisplay } from '@/types/campaign';
+import { addCampaignComment } from '@/lib/api/campaigns';
+import { type DbCampaign } from '@/types/campaign';
 import { revalidatePath } from 'next/cache';
 
 export async function commentCreateFormAction(
-  campaign: CampaignDisplay,
+  campaign: DbCampaign,
   formData: FormData,
 ) {
   const session = await checkAuth(['user']);
@@ -13,14 +13,7 @@ export async function commentCreateFormAction(
   const content = formData.get('content') as string;
 
   try {
-    const comment = await db.comment.create({
-      data: {
-        content,
-        userAddress: session.user.address,
-        campaignId: campaign.id,
-      },
-    });
-    console.log('comment', comment);
+    addCampaignComment(campaign.id, content, session.user.address);
     revalidatePath(`/campaigns/${campaign.slug}`);
   } catch (error) {
     console.error('Failed to create comment:', error);

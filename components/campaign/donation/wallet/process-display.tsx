@@ -4,7 +4,7 @@ import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { DonationProcessStates } from '@/types/campaign';
 import { CheckCircle2, Loader2, Timer } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 interface DonationProcessDisplayProps {
   currentState: keyof typeof DonationProcessStates | null;

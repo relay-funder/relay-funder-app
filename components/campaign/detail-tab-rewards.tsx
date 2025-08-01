@@ -1,11 +1,11 @@
 import { CampaignDetailTabRewardsClient } from './detail-tab-rewards-client';
-import { CampaignDisplay } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
 export function CampaignDetailTabRewards({
   campaign,
 }: {
-  campaign: CampaignDisplay;
+  campaign: DbCampaign;
 }) {
   return (
     <Web3ContextProvider>

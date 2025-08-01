@@ -1,18 +1,17 @@
 'use client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { type CampaignDisplay } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { CampaignDetailTabAbout } from './detail-tab-about';
 import { CampaignDetailTabRewards } from './detail-tab-rewards';
 import { CampaignDetailTabUpdates } from './detail-tab-updates';
 import { CampaignDetailTabComments } from './detail-tab-comments';
 import { CampaignDetailTabTransactions } from './detail-tab-transactions';
+import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 const TAB_TRIGGER_CLASS_NAMES =
   'rounded-none data-[state=active]:border-b-2 data-[state=active]:border-green-600';
-export function CampaignDetailTabs({
-  campaign,
-}: {
-  campaign: CampaignDisplay;
-}) {
+export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
+  const { contributorCount, contributorPendingCount } =
+    useCampaignStatsFromInstance({ campaign });
   return (
     <div className="">
       <Tabs defaultValue="campaign" className="min-h-[380px] space-y-8">
@@ -30,7 +29,7 @@ export function CampaignDetailTabs({
             Comments ({campaign.comments?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="transactions" className={TAB_TRIGGER_CLASS_NAMES}>
-            Transactions ({campaign.donationCount})
+            Transactions ({contributorCount - contributorPendingCount})
           </TabsTrigger>
         </TabsList>
 

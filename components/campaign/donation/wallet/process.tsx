@@ -71,7 +71,7 @@ export function CampaignDonationWalletProcess({
 
       return;
     }
-  }, [state]);
+  }, [state, onProcessing]);
   useEffect(() => {
     let deferTimerId = null;
     if (processingOnDonate) {

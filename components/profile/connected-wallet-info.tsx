@@ -13,12 +13,12 @@ import {
 export function ConnectedWalletInfo() {
   const { address } = useAccount();
   const { data: balance, isPending: balanceIsPending } = useBalance({
-    address: address,
+    address: address as `0x${string}`,
   });
   const chains = useChains();
   const { chain: currentChain } = useCurrentChain();
   const { data: usdcBalance, isPending: usdcBalanceIsPending } = useBalance({
-    address: address,
+    address: address as `0x${string}`,
     token: USDC_ADDRESS as `0x${string}`,
   });
 

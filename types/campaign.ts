@@ -1,3 +1,6 @@
+import { GetCampaignPaymentSummary } from '@/lib/api/types';
+import { DisplayUserWithStates } from '@/lib/api/types/user';
+
 export interface DbCampaign {
   id: number;
   title: string;
@@ -34,6 +37,9 @@ export interface DbCampaign {
   rounds?: { id: number; title: string }[];
   payments?: DbPayment[];
   comments?: DbComment[];
+  // transient from server
+  paymentSummary?: GetCampaignPaymentSummary;
+  creator?: DisplayUserWithStates;
 }
 
 export type CampaignDisplay = {

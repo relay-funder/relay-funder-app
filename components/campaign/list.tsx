@@ -1,6 +1,5 @@
 'use client';
 
-import { Campaign } from '@/types/campaign';
 import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
 import { useInView } from 'react-intersection-observer';
 import { useEffect, useState } from 'react';
@@ -8,7 +7,7 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignItem } from '@/components/campaign/item';
 import { CollectionAddDialog } from '@/components/collection/add-dialog';
-
+import type { DbCampaign } from '@/types/campaign';
 interface CampaignListProps {
   searchTerm: string;
   categoryFilter?: string | null;
@@ -52,7 +51,7 @@ export function CampaignList({
     }),
   }));
 
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
+  const [selectedCampaign, setSelectedCampaign] = useState<DbCampaign | null>(
     null,
   );
 
@@ -68,7 +67,7 @@ export function CampaignList({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredCampaigns?.map((page) =>
-          page.campaigns.map((campaign: Campaign) => (
+          page.campaigns.map((campaign) => (
             <CampaignItem
               key={campaign.id}
               campaign={campaign}

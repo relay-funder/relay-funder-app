@@ -3,8 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { useAuth } from '@/contexts';
 import { Heart } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
-import { Campaign } from '@/types/campaign';
-import { Favourite } from '@/types';
 import { CampaignCardDashboard } from '@/components/campaign/card-dashboard';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
@@ -98,7 +96,7 @@ export default function DashboardPage() {
             <CampaignEmpty onCreate={() => setShowCampaignCreate(true)} />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {campaigns?.map((campaign: Campaign) => (
+              {campaigns?.map((campaign) => (
                 <CampaignCardDashboard key={campaign.id} campaign={campaign} />
               ))}
             </div>
@@ -116,7 +114,7 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {favourites?.map((favourite: Favourite) => (
+              {favourites?.map((favourite) => (
                 <CampaignCardDashboard
                   key={`favorite-${favourite.campaign.id}`}
                   campaign={favourite.campaign}

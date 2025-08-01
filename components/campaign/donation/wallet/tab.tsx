@@ -11,8 +11,6 @@ import { Campaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
 import ContractLink from '@/components/page/contract-link';
 
-const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-
 export function CampaignDonationWalletTab({
   campaign,
 }: {

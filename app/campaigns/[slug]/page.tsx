@@ -1,9 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui';
-// import { getCampaignBySlug, type PaymentWithUser } from "@/lib/api/campaigns";
-import { CampaignDisplay } from '@/types/campaign';
-import { getCampaign } from '@/lib/database';
+import { getCampaign } from '@/lib/api/campaigns';
 import { PageHeader } from '@/components/page/header';
 import { CampaignMainImage } from '@/components/campaign/main-image';
 import { CampaignCardFull } from '@/components/campaign/card-full';
@@ -15,7 +13,7 @@ export default async function CampaignPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const campaign: CampaignDisplay = await getCampaign((await params).slug);
+  const campaign = await getCampaign((await params).slug);
 
   if (!campaign) {
     notFound();

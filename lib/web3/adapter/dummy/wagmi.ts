@@ -1,5 +1,7 @@
 import { useWeb3Context } from './context-provider';
 import { wagmiConfig } from './config';
+import type { Chain } from 'viem';
+import { useMemo, useState } from 'react';
 // wagmi/core  1837->2522 + 500ms
 // export { readContract, createConfig } from '@wagmi/core';
 export async function readContract(config: unknown, contract: unknown) {
@@ -19,13 +21,15 @@ export function createConfig(config: unknown) {
 //   useConfig,
 //   useChainId,
 // } from 'wagmi';
+const contractTime = 3000;
 
 export function useConnectorClient() {
   return { data: { chain: {} } };
 }
 export function useWriteContract() {
+  const [data, setData] = useState('');
   return {
-    data: '',
+    data,
     isPending: false,
     error: null as Error | null,
     reset: () => {},
@@ -37,6 +41,18 @@ export function useWriteContract() {
       },
     ) => {
       console.log('dummy::wagmi:useWriteContract', params, callbacks);
+      setTimeout(() => {
+        setData(
+          `0xdummy-write-contract-async-hash${Math.round(Math.random() * 1000000000).toString(16)}`,
+        );
+      }, contractTime);
+    },
+    writeContractAsync: async (params: unknown) => {
+      console.log('dummy::wagmi:useWriteContractAsync', params);
+      await new Promise((resolve) => setTimeout(resolve, contractTime));
+      setData(
+        `0xdummy-write-contract-async-hash${Math.round(Math.random() * 1000000000).toString(16)}`,
+      );
     },
   };
 }
@@ -47,16 +63,35 @@ export function useWaitForTransactionReceipt({
   hash?: string | `0x${string}`;
   query?: unknown;
 }) {
+  const isPending = hash?.startsWith('0xdummy-write-contract-async-hash')
+    ? false
+    : true;
+  const data = useMemo(() => {
+    return {
+      logs: [
+        {
+          address:
+            `0xdeb${Math.round(Math.random() * 1000000000).toString(16)}` as `0x${string}`,
+          blockHash: '0x00' as `0x${string}`,
+          blockNumber: 1n,
+          data: '0x00' as `0x${string}`,
+          logIndex: 0,
+          transactionHash: '0x00' as `0x${string}`,
+          transactionIndex: 0,
+          removed: false,
+          topics: [] as [] | [`0x${string}`, ...`0x${string}`[]],
+        },
+      ],
+      contractAddress: '0x00',
+      status: isPending ? 'dummy' : 'success',
+      transactionHash: '0x00',
+    };
+  }, [isPending]);
   console.log('dummy wagmi::useWaitForTransactionReceipt', { hash, query });
   return {
-    data: {
-      logs: [{ address: '0x00' }],
-      contractAddress: '0x00',
-      status: 'dummy',
-      transactionHash: '0x00',
-    },
-    isSuccess: false,
-    isLoading: false,
+    data,
+    isSuccess: isPending === false,
+    isLoading: isPending,
     isError: false,
     error: null as Error | null,
   };
@@ -125,7 +160,7 @@ export function useChainId() {
   return chainId;
 }
 export function useChains() {
-  return [];
+  return [] as Chain[];
 }
 export function useSwitchChain() {
   return {

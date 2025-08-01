@@ -5,7 +5,7 @@ import ProjectInfo from '@/components/project-info';
 import { Campaign } from '@/types/campaign';
 import { getCampaign } from '@/lib/database';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColums } from '@/components/page/two-cols';
+import { PageMainTwoColumns } from '@/components/page/two-cols';
 
 export default async function Page({
   params,
@@ -17,12 +17,12 @@ export default async function Page({
   return (
     <>
       <PageHeaderSticky message="Donating to" title={campaign.title} />
-      <PageMainTwoColums>
+      <PageMainTwoColumns>
         <Suspense fallback={<PaymentStatusLoading />}>
           <PaymentStatus />
         </Suspense>
         <ProjectInfo slug={slug} />
-      </PageMainTwoColums>
+      </PageMainTwoColumns>
     </>
   );
 }

@@ -39,6 +39,10 @@ export async function getCampaign(
   slug: string,
 ): Promise<CampaignType & CampaignDisplay> {
   console.log('getCampaign', slug);
+  console.warn(
+    'database::getCampaign is deprecated, use @/lib/api/getCampaign',
+  );
+
   // Get the campaign with all relations
   const dbCampaign = (await db.campaign.findUnique({
     where: { slug },
