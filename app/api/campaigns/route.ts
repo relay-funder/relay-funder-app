@@ -164,6 +164,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const session = await checkAuth(['user']);
+    const asAdmin = await isAdmin();
     const body = await req.json();
     const {
       status: statusRaw,
@@ -195,7 +196,7 @@ export async function PATCH(req: Request) {
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
     }
-    if (instance.creatorAddress !== session?.user?.address) {
+    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
       throw new ApiAuthNotAllowed('User cannot modify this campaign');
     }
     const campaign = await db.campaign.update({
