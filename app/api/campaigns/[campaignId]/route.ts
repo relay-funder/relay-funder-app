@@ -41,8 +41,28 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
     }
+    const creator: { name: string | null; isKycCompleted: boolean } = {
+      name: null,
+      isKycCompleted: false,
+    };
+    try {
+      if (instance.creatorAddress) {
+        const creatorInstance = await db.user.findUnique({
+          where: { address: instance.creatorAddress },
+        });
+        if (creatorInstance?.isKycCompleted) {
+          creator.isKycCompleted = true;
+        }
+        if (creatorInstance?.username) {
+          creator.name = creatorInstance.username;
+        } else if (creatorInstance?.firstName) {
+          creator.name = creatorInstance.firstName;
+        }
+      }
+    } catch {}
     const campaign = {
       ...instance,
+      creator,
       payments:
         instance.payments?.reduce(
           (
