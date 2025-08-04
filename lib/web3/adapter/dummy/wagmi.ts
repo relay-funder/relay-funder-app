@@ -1,6 +1,7 @@
 import { useWeb3Context } from './context-provider';
 import { wagmiConfig } from './config';
-import type { Chain } from 'viem';
+import type { Chain, Client, Transport } from 'viem';
+import type { Connector } from 'wagmi';
 import { useMemo, useState } from 'react';
 // wagmi/core  1837->2522 + 500ms
 // export { readContract, createConfig } from '@wagmi/core';
@@ -24,7 +25,7 @@ export function createConfig(config: unknown) {
 const contractTime = 3000;
 
 export function useConnectorClient() {
-  return { data: { chain: {} } };
+  return { data: {} as unknown as Client<Transport, Chain> };
 }
 export function useWriteContract() {
   const [data, setData] = useState('');
@@ -134,7 +135,7 @@ export function useDisconnect() {
 export function useConnect() {
   console.log('dummy:wagmi:useConnect');
   return {
-    connectors: [],
+    connectors: [] as Connector[],
     connect: (
       { connector }: { connector: unknown },
       {
@@ -177,18 +178,23 @@ export function useSignMessage() {
   };
 }
 export function useConnectors() {
-  return [];
+  return [] as { id: string; name: string }[];
 }
 export function useBalance({
   address,
   token,
 }: {
-  address: `0x${string}`;
+  address?: `0x${string}` | string;
   token?: `0x${string}`;
 }) {
   console.log('dummy::wagmi::useBalance', { address, token });
   return {
-    data: { formatted: `1234.5678`, symbol: 'DMMY' },
+    data: {
+      formatted: `1234.5678`,
+      symbol: 'DMMY',
+      decimals: 4,
+      value: 12345678n,
+    },
     isPending: false,
   };
 }

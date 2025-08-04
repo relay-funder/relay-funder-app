@@ -5,9 +5,9 @@ import { response, handleError } from '@/lib/api/response';
 import { chainConfig, createPublicClient, http } from '@/lib/web3';
 
 const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-const RPC_URL = chainConfig.rpcUrl;
 
 export async function GET() {
+  const RPC_URL = chainConfig.rpcUrl;
   try {
     if (!FACTORY_ADDRESS || !RPC_URL) {
       throw new Error('Campaign factory address or RPC URL not configured');

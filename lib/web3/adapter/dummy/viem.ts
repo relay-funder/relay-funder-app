@@ -29,7 +29,15 @@ export function createPublicClient(params: unknown) {
   return {
     getLogs: async (params: unknown) => {
       console.log('dummy createPublicClient::client::getLogs', params);
-      return [];
+      return [] as {
+        transactionHash: `0x${string}`;
+        args?: {
+          owner?: `0x${string}`;
+          launchTime?: bigint;
+          deadline?: bigint;
+          goalAmount?: bigint;
+        };
+      }[];
     },
   };
 }
@@ -74,5 +82,11 @@ export function formatUnits(value: bigint, decimals: number) {
 }
 
 export const erc20Abi = [];
-export class BaseError extends Error {}
+export class BaseError extends Error {
+  shortMessage: string;
+  constructor(message: string, cause?: Error) {
+    super(message, cause);
+    this.shortMessage = message;
+  }
+}
 export class UserRejectedRequestError extends Error {}

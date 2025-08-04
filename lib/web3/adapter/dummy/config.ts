@@ -1,4 +1,5 @@
 import type { Chain } from '@/lib/web3/types';
+import type { CreateConnectorFn } from 'wagmi';
 
 const mockEthereum = {
   id: 1,
@@ -52,8 +53,8 @@ const mockAlfajores = {
   },
 };
 export const wagmiConfig = {
-  chains: [mockEthereum, mockAlfajores] as Chain[],
-  connectors: [],
+  chains: [mockEthereum, mockAlfajores] as readonly [Chain, ...Chain[]],
+  connectors: [] as CreateConnectorFn[],
   transports: {},
   ssr: true,
 };
