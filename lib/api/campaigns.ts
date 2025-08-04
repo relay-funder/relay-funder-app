@@ -170,6 +170,7 @@ export async function listCampaigns({
         status: {
           in: statusList,
         },
+        transactionHash: { not: null },
       },
       include: {
         images: true,

@@ -26,18 +26,12 @@ import { categories } from '@/lib/constant';
 import { FormattedDate } from '@/components/formatted-date';
 import { CampaignMainImage } from '@/components/campaign/main-image';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
-import type { DbCampaign } from '@/types/campaign';
+import type { CampaignItemProps } from '@/types/campaign';
 import { UserInlineName } from '@/components/user/inline-name';
 import ContractLink from '../page/contract-link';
 import { chainConfig } from '@/lib/web3';
 
-export function CampaignItem({
-  campaign,
-  onSelect,
-}: {
-  campaign: DbCampaign;
-  onSelect?: (campaign: DbCampaign) => void;
-}) {
+export function CampaignItem({ campaign, onSelect }: CampaignItemProps) {
   const categoryDetails = campaign.category
     ? categories.find((cat) => cat.id === campaign.category)
     : null;

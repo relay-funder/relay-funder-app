@@ -1,12 +1,6 @@
-import {
-  QueryClient,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Payment } from '@/types/campaign';
-import { CAMPAIGNS_QUERY_KEY } from './useCampaigns';
-import { GetCampaignResponse } from '../api/types';
-
+import { resetCampaign } from './useCampaigns';
 export const PAYMENT_QUERY_KEY = 'payment';
 interface ICreatePaymentApi {
   amount: string;
@@ -17,29 +11,7 @@ interface ICreatePaymentApi {
   transactionHash: string;
   isAnonymous: boolean;
 }
-function resetCampaign(id: number, queryClient: QueryClient) {
-  queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
-  queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY, id] });
-  // we only know the campaignId here, use the query-cache to find the
-  // slug which is commonly stored as queryKey
-  const queries = queryClient.getQueryCache().findAll();
-  const campaignQueries = queries.filter(
-    (query) => query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
-  );
-  for (const campaignQuery of campaignQueries) {
-    const campaignData = queryClient.getQueryData(
-      campaignQuery.queryKey,
-    ) as GetCampaignResponse;
-    if (
-      campaignData?.campaign?.id === id &&
-      typeof campaignData?.campaign?.slug !== 'undefined'
-    ) {
-      queryClient.invalidateQueries({
-        queryKey: [CAMPAIGNS_QUERY_KEY, campaignData.campaign.slug],
-      });
-    }
-  }
-}
+
 async function createPayment(variables: ICreatePaymentApi): Promise<Payment> {
   const response = await fetch(`/api/payments`, {
     method: 'POST',

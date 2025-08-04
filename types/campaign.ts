@@ -259,3 +259,10 @@ export const DonationProcessStates = {
    */
   failed: 'failed',
 };
+
+export interface CampaignItemProps {
+  campaign: DbCampaign;
+  onSelect?: (arg0: DbCampaign) => Promise<void>;
+  onApprove?: (arg0: DbCampaign) => Promise<void>;
+  onDisable?: (arg0: DbCampaign) => Promise<void>;
+}

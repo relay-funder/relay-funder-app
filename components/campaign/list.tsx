@@ -2,20 +2,28 @@
 
 import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
 import { useInView } from 'react-intersection-observer';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignItem } from '@/components/campaign/item';
 import { CollectionAddDialog } from '@/components/collection/add-dialog';
-import type { DbCampaign } from '@/types/campaign';
+import type { DbCampaign, CampaignItemProps } from '@/types/campaign';
 interface CampaignListProps {
   searchTerm: string;
   categoryFilter?: string | null;
+  statusFilter?: string;
+  pageSize?: number;
+  withRounds?: boolean;
+  item?: React.ComponentType<CampaignItemProps>;
 }
 
 export function CampaignList({
   searchTerm,
   categoryFilter,
+  statusFilter = undefined,
+  pageSize = 10,
+  withRounds = false,
+  item: ItemComponent = CampaignItem,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
   const {
@@ -25,7 +33,7 @@ export function CampaignList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteCampaigns();
+  } = useInfiniteCampaigns(statusFilter, pageSize, withRounds);
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -54,6 +62,9 @@ export function CampaignList({
   const [selectedCampaign, setSelectedCampaign] = useState<DbCampaign | null>(
     null,
   );
+  const onSelectIntern = useCallback(async (campaign: DbCampaign) => {
+    setSelectedCampaign(campaign);
+  }, []);
 
   if (loading && !data) {
     return <CampaignLoading minimal={true} />;
@@ -68,12 +79,10 @@ export function CampaignList({
       <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredCampaigns?.map((page) =>
           page.campaigns.map((campaign) => (
-            <CampaignItem
+            <ItemComponent
               key={campaign.id}
               campaign={campaign}
-              onSelect={() => {
-                setSelectedCampaign(campaign);
-              }}
+              onSelect={onSelectIntern}
             />
           )),
         )}

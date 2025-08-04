@@ -1,9 +1,11 @@
+import { useCallback } from 'react';
 import {
   useQuery,
   useMutation,
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts';
 import type {
   GetCampaignResponseInstance,
@@ -210,7 +212,47 @@ async function disableCampaign(variables: IDisableCampaign) {
   }
   return response.json();
 }
+async function removeCampaign(variables: IDisableCampaign) {
+  const response = await fetch(`/api/campaigns/${variables.campaignId}`, {
+    method: 'DELETE',
+    body: JSON.stringify(variables),
+  });
+  if (!response.ok) {
+    let errorMsg = 'Failed to remove campaign';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData?.error
+        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
+        : errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+}
 
+export function resetCampaign(id: number, queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY, id] });
+  // we only know the campaignId here, use the query-cache to find the
+  // slug which is commonly stored as queryKey
+  const queries = queryClient.getQueryCache().findAll();
+  const campaignQueries = queries.filter(
+    (query) => query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+  );
+  for (const campaignQuery of campaignQueries) {
+    const campaignData = queryClient.getQueryData(
+      campaignQuery.queryKey,
+    ) as GetCampaignResponse;
+    if (
+      campaignData?.campaign?.id === id &&
+      typeof campaignData?.campaign?.slug !== 'undefined'
+    ) {
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, campaignData.campaign.slug],
+      });
+    }
+  }
+}
 export function useCampaigns(status?: string) {
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, status],
@@ -308,4 +350,22 @@ export function useAdminDisableCampaign() {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
     },
   });
+}
+export function useAdminRemoveCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: removeCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+    },
+  });
+}
+
+export function useRefetchCampaign(campaignId: number) {
+  const queryClient = useQueryClient();
+  const refetch = useCallback(() => {
+    resetCampaign(campaignId, queryClient);
+  }, [queryClient, campaignId]);
+  return refetch;
 }
