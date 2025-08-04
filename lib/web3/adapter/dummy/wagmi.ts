@@ -42,17 +42,23 @@ export function useWriteContract() {
       },
     ) => {
       console.log('dummy::wagmi:useWriteContract', params, callbacks);
+      setData(
+        `0xdummy-write-contract-async-hash-pending${Math.round(Math.random() * 1000000000).toString(16)}`,
+      );
       setTimeout(() => {
         setData(
-          `0xdummy-write-contract-async-hash${Math.round(Math.random() * 1000000000).toString(16)}`,
+          `0xdummy-write-contract-async-hash-done${Math.round(Math.random() * 1000000000).toString(16)}`,
         );
       }, contractTime);
     },
     writeContractAsync: async (params: unknown) => {
       console.log('dummy::wagmi:useWriteContractAsync', params);
+      setData(
+        `0xdummy-write-contract-async-hash-pending${Math.round(Math.random() * 1000000000).toString(16)}`,
+      );
       await new Promise((resolve) => setTimeout(resolve, contractTime));
       setData(
-        `0xdummy-write-contract-async-hash${Math.round(Math.random() * 1000000000).toString(16)}`,
+        `0xdummy-write-contract-async-hash-done${Math.round(Math.random() * 1000000000).toString(16)}`,
       );
     },
   };
@@ -64,9 +70,9 @@ export function useWaitForTransactionReceipt({
   hash?: string | `0x${string}`;
   query?: unknown;
 }) {
-  const isPending = hash?.startsWith('0xdummy-write-contract-async-hash')
-    ? false
-    : true;
+  const isPending = hash?.startsWith(
+    '0xdummy-write-contract-async-hash-pending',
+  );
   const data = useMemo(() => {
     return {
       logs: [
