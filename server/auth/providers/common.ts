@@ -5,11 +5,18 @@ export async function setupUser(address: string) {
     where: { address: normalizedAddress },
   });
   if (!dbUser) {
+    const roles = ['user'];
+    if (
+      process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' &&
+      normalizedAddress.startsWith('0xadadad')
+    ) {
+      roles.push('admin');
+    }
     dbUser = await db.user.create({
       data: {
         address: normalizedAddress,
         createdAt: new Date(),
-        roles: ['user'],
+        roles,
       },
     });
   }

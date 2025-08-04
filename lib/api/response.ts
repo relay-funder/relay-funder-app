@@ -15,10 +15,10 @@ export async function response(data: unknown) {
 
 export async function handleError(error: unknown) {
   if (error instanceof ApiAuthError) {
-    return notAuthorized();
+    return notAuthorized(error);
   }
   if (error instanceof ApiAuthNotAllowed) {
-    return notAllowed();
+    return notAllowed(error);
   }
   if (error instanceof ApiIntegrityError) {
     return NextResponse.json(
@@ -80,9 +80,14 @@ export async function handleError(error: unknown) {
  * not authorized: the resource accessed requires authorization but
  *                 the required header was not found
  */
-export async function notAuthorized() {
+export async function notAuthorized(cause?: Error) {
   return NextResponse.json(
-    { success: false, error: 'Not authorized' },
+    {
+      success: false,
+      error: 'Not authorized',
+      details:
+        process.env.NODE_ENV === 'production' ? undefined : cause?.message,
+    },
     { status: 401 },
   );
 }
@@ -90,9 +95,14 @@ export async function notAuthorized() {
  * not authorized: the resource accessed is not accessible to the
  *                 authorization provided.
  */
-export async function notAllowed() {
+export async function notAllowed(cause: Error) {
   return NextResponse.json(
-    { success: false, error: 'No permission to access resource' },
+    {
+      success: false,
+      error: 'No permission to access resource',
+      details:
+        process.env.NODE_ENV === 'production' ? undefined : cause?.message,
+    },
     { status: 403 },
   );
 }
