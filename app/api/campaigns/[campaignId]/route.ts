@@ -26,7 +26,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 }
 export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
   try {
-    await checkAuth(['admin']);
+    const session = await checkAuth(['user']);
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');
@@ -40,6 +40,9 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
     }
     if (campaign.status === 'ACTIVE') {
       throw new ApiIntegrityError('cannot delete a active campaign');
+    }
+    if (campaign.creatorAddress !== session.user.address) {
+      await checkAuth(['admin']);
     }
 
     await db.campaign.delete({ where: { id: campaignId } });

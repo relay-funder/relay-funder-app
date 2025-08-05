@@ -147,31 +147,57 @@ export async function listCampaigns({
   rounds = false,
   skip = 0,
   forceEvents = false,
+  creatorAddress,
+}: {
+  admin?: boolean;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+  rounds?: boolean;
+  skip?: number;
+  forceEvents?: boolean;
+  creatorAddress?: string;
 }) {
-  const statusList = !admin
-    ? [CampaignStatus.ACTIVE]
-    : status === 'active'
-      ? [CampaignStatus.ACTIVE]
-      : status === 'all'
-        ? [
-            CampaignStatus.DRAFT,
-            CampaignStatus.PENDING_APPROVAL,
-            CampaignStatus.COMPLETED,
-            CampaignStatus.ACTIVE,
-          ]
-        : [
-            CampaignStatus.PENDING_APPROVAL,
-            CampaignStatus.COMPLETED,
-            CampaignStatus.ACTIVE,
-          ];
+  const statusList = [CampaignStatus.ACTIVE];
+  if (!admin) {
+    if (creatorAddress) {
+      // users may request all states for their own campaigns
+      if (status === 'all') {
+        statusList.push(
+          CampaignStatus.DRAFT,
+          CampaignStatus.PENDING_APPROVAL,
+          CampaignStatus.COMPLETED,
+          CampaignStatus.ACTIVE,
+        );
+      }
+    }
+  } else {
+    if (status === 'all') {
+      statusList.push(
+        CampaignStatus.DRAFT,
+        CampaignStatus.PENDING_APPROVAL,
+        CampaignStatus.COMPLETED,
+        CampaignStatus.ACTIVE,
+      );
+    } else {
+      statusList.push(
+        CampaignStatus.PENDING_APPROVAL,
+        CampaignStatus.COMPLETED,
+        CampaignStatus.ACTIVE,
+      );
+    }
+  }
+  const where = {
+    status: {
+      in: statusList,
+    },
+    transactionHash: { not: null },
+    creatorAddress,
+  };
+  console.log(where);
   const [dbCampaigns, totalCount] = await Promise.all([
     db.campaign.findMany({
-      where: {
-        status: {
-          in: statusList,
-        },
-        transactionHash: { not: null },
-      },
+      where,
       include: {
         images: true,
         RoundCampaigns: {
@@ -187,11 +213,7 @@ export async function listCampaigns({
       },
     }),
     db.campaign.count({
-      where: {
-        status: {
-          in: statusList,
-        },
-      },
+      where,
     }),
   ]);
   const filteredDbCampaigns = dbCampaigns.filter(
@@ -264,6 +286,16 @@ export async function prefetchCampaigns(queryClient: QueryClient) {
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10],
     initialPageParam: 1,
     queryFn: () => listCampaigns({}),
+  });
+}
+// Prefetching campaign
+// sets the default query key and requests the db-data
+export async function prefetchCampaign(queryClient: QueryClient, slug: string) {
+  return queryClient.prefetchQuery({
+    queryKey: [CAMPAIGNS_QUERY_KEY, slug],
+    queryFn: async () => ({
+      campaign: await getCampaign(slug),
+    }),
   });
 }
 type PaymentTokenList = {
@@ -397,6 +429,8 @@ export async function getPaymentSummary(id: number) {
 
     paymentSummary.lastConfirmed = lastConfirmed
       ? {
+          id: lastConfirmed.id,
+          status: lastConfirmed.status,
           amount: Number(lastConfirmed?.amount ?? 0),
           token: lastConfirmed?.token,
           user: getPaymentUser(lastConfirmed),
@@ -405,6 +439,8 @@ export async function getPaymentSummary(id: number) {
       : null;
     paymentSummary.lastPending = lastPending
       ? {
+          id: lastPending.id,
+          status: lastPending.status,
           amount: Number(lastPending?.amount ?? 0),
           token: lastPending?.token,
           user: getPaymentUser(lastPending),
@@ -428,13 +464,15 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
         where: { isMainImage: true },
         take: 1,
       },
-      comments: {
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      },
       updates: {
         orderBy: { createdAt: 'desc' },
         take: 10,
+      },
+      _count: {
+        select: {
+          comments: true, // { where: { deleted: false, reportCount: { lt: 5 } } },
+          updates: true,
+        },
       },
     },
   });
@@ -442,6 +480,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
     return null;
   }
   const creator = await getUserWithStates(instance.creatorAddress);
+
   const paymentSummary = await getPaymentSummary(instance.id);
 
   return {

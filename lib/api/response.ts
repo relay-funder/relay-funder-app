@@ -7,6 +7,7 @@ import {
   ApiNotFoundError,
   ApiIntegrityError,
   ApiConflictError,
+  ApiRateLimitError,
 } from './error';
 
 export async function response(data: unknown) {
@@ -19,6 +20,9 @@ export async function handleError(error: unknown) {
   }
   if (error instanceof ApiAuthNotAllowed) {
     return notAllowed(error);
+  }
+  if (error instanceof ApiRateLimitError) {
+    return rateLimited(error);
   }
   if (error instanceof ApiIntegrityError) {
     return NextResponse.json(
@@ -104,5 +108,18 @@ export async function notAllowed(cause: Error) {
         process.env.NODE_ENV === 'production' ? undefined : cause?.message,
     },
     { status: 403 },
+  );
+}
+/**
+ * rate limited: the resource accessed is refusing the request to prevent abuse
+ */
+export async function rateLimited(cause: Error) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Rate Limited',
+      details: cause?.message,
+    },
+    { status: 429 },
   );
 }

@@ -23,10 +23,10 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
             Rewards
           </TabsTrigger>
           <TabsTrigger value="updates" className={TAB_TRIGGER_CLASS_NAMES}>
-            Updates ({campaign.updates?.length || 0})
+            Updates ({campaign._count?.updates ?? 0})
           </TabsTrigger>
           <TabsTrigger value="comments" className={TAB_TRIGGER_CLASS_NAMES}>
-            Comments ({campaign.comments?.length || 0})
+            Comments ({campaign._count?.comments ?? 0})
           </TabsTrigger>
           <TabsTrigger value="transactions" className={TAB_TRIGGER_CLASS_NAMES}>
             Transactions ({contributorCount - contributorPendingCount})

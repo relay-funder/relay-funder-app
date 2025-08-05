@@ -54,7 +54,7 @@ const defaultValues: CampaignFormValues = {
   category: '',
   bannerImage: undefined,
 };
-export function CampaignCreate() {
+export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const { authenticated } = useAuth();
 
   const { toast } = useToast();
@@ -105,7 +105,9 @@ export function CampaignCreate() {
                 campaignAddress,
               });
             }
-
+            if (typeof onCreated === 'function') {
+              onCreated();
+            }
             toast({
               title: 'Success!',
               description:
@@ -131,14 +133,9 @@ export function CampaignCreate() {
           status: 'failed',
           transactionHash: hash,
         });
-        await updateCampaign({
-          campaignId,
-          transactionHash: hash,
-          status: 'failed',
-        });
       }
     },
-    [campaignId, toast, updateCampaign],
+    [campaignId, toast, updateCampaign, onCreated],
   );
   const {
     createCampaignContract,

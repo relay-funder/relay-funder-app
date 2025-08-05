@@ -52,6 +52,15 @@ async function getMockContractSimpleStringReturn() {
   // any type:
   return `0x${Math.round(Math.random() * 100000).toString(16)}` as unknown as IContractSimpleStringReturn;
 }
+async function getMockContractDeterministicStringReturn(data: unknown) {
+  // any type:
+  const stringData = JSON.stringify(data);
+  const buffer = Buffer.from(stringData, 'utf-8');
+  const hexString = buffer.toString('hex');
+
+  // Return the hex string with '0x' prefix
+  return `0x${hexString}`;
+}
 type IContractSimpleNumberReturn = number;
 async function getMockContractSimpleNumberReturn() {
   // any type:
@@ -219,7 +228,7 @@ export class Contract {
       campaignId: string,
     ) => {
       console.log('getCampaignNFT', campaignId);
-      return getMockContractSimpleStringReturn();
+      return getMockContractDeterministicStringReturn(campaignId);
     }) as unknown as IContractStringString;
     getCampaignNFT.estimateGas = async () => {
       return 100000n;

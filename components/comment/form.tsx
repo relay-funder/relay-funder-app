@@ -1,19 +1,23 @@
 'use client';
-
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTransition } from 'react';
 import { useRef } from 'react';
+import { useCreateComment } from '@/lib/hooks/useComments';
+import { DbCampaign } from '@/types/campaign';
+import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
 
 interface CommentFormProps {
-  onSubmit: (formData: FormData, userAddress: string) => Promise<void>;
+  campaign: DbCampaign;
 }
 
-export function CommentForm({ onSubmit }: CommentFormProps) {
+export function CommentForm({ campaign }: CommentFormProps) {
   const [isPending, startTransition] = useTransition();
   const { address } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
+  const { mutateAsync: createComment } = useCreateComment();
+  const refetchCampaign = useRefetchCampaign(campaign.id);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,7 +36,11 @@ export function CommentForm({ onSubmit }: CommentFormProps) {
 
     startTransition(async () => {
       try {
-        await onSubmit(formData, walletAddress);
+        await createComment({
+          campaignId: campaign.id,
+          content: formData.get('content')?.toString() ?? '',
+        });
+        refetchCampaign();
         // Clear the form using ref
         formRef.current?.reset();
       } catch (error) {

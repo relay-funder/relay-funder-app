@@ -7,7 +7,7 @@ export function CampaignProgress({
   campaign,
   className,
 }: {
-  campaign: DbCampaign;
+  campaign?: DbCampaign;
   className?: string;
 }) {
   const {
@@ -22,9 +22,9 @@ export function CampaignProgress({
     <div className={cn('space-y-2', className)}>
       <div
         className="text-sm text-muted-foreground"
-        title={`Treasury Address ${campaign.treasuryAddress}`}
+        title={`Treasury Address ${campaign?.treasuryAddress ?? 'No Treasury Deployed'}`}
       >
-        {formatAddress(campaign.treasuryAddress ?? '')} Raised
+        {formatAddress(campaign?.treasuryAddress ?? '')} Raised
       </div>{' '}
       <div className="flex flex-row justify-between text-3xl font-bold text-green-600">
         <span>{amountRaised}</span>

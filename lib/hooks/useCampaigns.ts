@@ -85,6 +85,22 @@ async function fetchCampaignPage({
   return data as PaginatedResponse;
 }
 
+async function fetchUserCampaignPage({
+  pageParam = 1,
+  status = 'active',
+  rounds = false,
+  pageSize = 10,
+}) {
+  const url = `/api/campaigns/user?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch campaigns');
+  }
+  const data = await response.json();
+  return data as PaginatedResponse;
+}
+
 async function fetchUserCampaigns() {
   const response = await fetch(`/api/campaigns/user`);
   if (!response.ok) {
@@ -295,6 +311,33 @@ export function useInfiniteCampaigns(
   });
 }
 
+export function useInfiniteUserCampaigns(
+  status = 'active',
+  pageSize = 10,
+  rounds = false,
+) {
+  return useInfiniteQuery<PaginatedResponse, Error>({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', status, pageSize],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchUserCampaignPage({
+        pageParam: pageParam as number,
+        status,
+        pageSize,
+        rounds,
+      }),
+    getNextPageParam: (lastPage: PaginatedResponse) => {
+      return lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined;
+    },
+    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
+    initialPageParam: 1,
+  });
+}
+
 export function useUserCampaigns() {
   const { authenticated } = useAuth();
   return useQuery({
@@ -328,6 +371,12 @@ export function useCreateCampaign() {
     mutationFn: createCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 10],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
+      });
     },
   });
 }

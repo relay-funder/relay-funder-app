@@ -32,6 +32,8 @@ export function useWriteContract() {
   return {
     data,
     isPending: false,
+    isSuccess: data.startsWith('0xdummy-write-contract-async-hash-done'),
+    isError: false,
     error: null as Error | null,
     reset: () => {},
     writeContract: (
@@ -83,7 +85,7 @@ export function useWaitForTransactionReceipt({
           blockNumber: 1n,
           data: '0x00' as `0x${string}`,
           logIndex: 0,
-          transactionHash: '0x00' as `0x${string}`,
+          transactionHash: hash as `0x${string}`,
           transactionIndex: 0,
           removed: false,
           topics: [] as [] | [`0x${string}`, ...`0x${string}`[]],
@@ -93,7 +95,7 @@ export function useWaitForTransactionReceipt({
       status: isPending ? 'dummy' : 'success',
       transactionHash: '0x00',
     };
-  }, [isPending]);
+  }, [isPending, hash]);
   console.log('dummy wagmi::useWaitForTransactionReceipt', { hash, query });
   return {
     data,

@@ -1,7 +1,10 @@
 import { DbCampaign } from '@/types/campaign';
 import { cn } from '@/lib/utils';
 
-const getCampaignStatus = (campaign: DbCampaign) => {
+const getCampaignStatus = (campaign?: DbCampaign) => {
+  if (!campaign) {
+    return 'Draft';
+  }
   if (campaign.status === 'DRAFT') {
     return 'Draft';
   } else if (campaign.status === 'PENDING_APPROVAL') {
@@ -20,7 +23,7 @@ const getCampaignStatus = (campaign: DbCampaign) => {
   }
   return 'Active';
 };
-export function CampaignAdminStatus({ campaign }: { campaign: DbCampaign }) {
+export function CampaignAdminStatus({ campaign }: { campaign?: DbCampaign }) {
   return (
     <div
       className={cn('inline-block rounded-full px-3 py-1 text-sm', {

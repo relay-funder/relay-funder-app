@@ -1,7 +1,14 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 import type { Payment } from '@/types/campaign';
 import { resetCampaign } from './useCampaigns';
+import { GetCampaignPaymentResponseInstance } from '../api/types/campaigns/payments';
 export const PAYMENT_QUERY_KEY = 'payment';
+export const CAMPAIGNS_PAYMENTS_QUERY_KEY = 'campaign_payment';
+
 interface ICreatePaymentApi {
   amount: string;
   poolAmount: number;
@@ -43,7 +50,77 @@ async function updatePaymentStatus(variables: IUpdatePaymentStatusApi) {
   }
   return response.json();
 }
+interface IRemovePayment {
+  campaignId: number;
+  paymentId: number;
+}
+async function removePayment(variables: IRemovePayment) {
+  const response = await fetch(
+    `/api/campaigns/${variables.campaignId}/payments/`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(variables),
+    },
+  );
 
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to remove comment');
+  }
+
+  return response.json();
+}
+interface PaginatedResponse {
+  payments: GetCampaignPaymentResponseInstance[];
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+}
+async function fetchPaymentPage({
+  campaignId,
+  pageParam = 1,
+  pageSize = 10,
+}: {
+  campaignId: number;
+  pageParam?: number;
+  pageSize?: number;
+}) {
+  const url = `/api/campaigns/${campaignId}/payments?page=${pageParam}&pageSize=${pageSize}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch payments');
+  }
+  const data = await response.json();
+  return data as PaginatedResponse;
+}
+
+export function useInfinitePayments(campaignId: number, pageSize = 10) {
+  return useInfiniteQuery<PaginatedResponse, Error>({
+    queryKey: [CAMPAIGNS_PAYMENTS_QUERY_KEY, 'infinite', campaignId],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchPaymentPage({
+        campaignId,
+        pageParam: pageParam as number,
+        pageSize,
+      }),
+    getNextPageParam: (lastPage: PaginatedResponse) => {
+      return lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined;
+    },
+    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
+    initialPageParam: 1,
+  });
+}
 export function useCreatePayment() {
   const queryClient = useQueryClient();
 
@@ -67,6 +144,21 @@ export function useUpdatePaymentStatus() {
         queryKey: [PAYMENT_QUERY_KEY],
       });
       resetCampaign(data.campaignId, queryClient);
+    },
+  });
+}
+export function useRemovePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: removePayment,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          CAMPAIGNS_PAYMENTS_QUERY_KEY,
+          'infinite',
+          variables.campaignId,
+        ],
+      });
     },
   });
 }

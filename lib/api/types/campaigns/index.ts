@@ -1,9 +1,15 @@
 import { DbCampaign } from '@/types/campaign';
 import { DisplayUser, DisplayUserWithStates } from '../user';
-
+export * from './comments';
 export interface CampaignsWithIdParams {
   params: Promise<{
     campaignId: string;
+  }>;
+}
+export interface CampaignsWithIdWithCommentWithIdParams {
+  params: Promise<{
+    campaignId: string;
+    commentId: string;
   }>;
 }
 export interface PostCampaignsWithIdApproveBody {
@@ -19,6 +25,8 @@ export interface PostCampaignsRouteBody {
 }
 
 export interface PaymentSummaryContribution {
+  id: number;
+  status?: string | null;
   amount: number;
   token?: string | null;
   user?: DisplayUser;

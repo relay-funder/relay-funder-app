@@ -3,13 +3,13 @@ import { useMemo } from 'react';
 export function CampaignMainImage({
   campaign,
 }: {
-  campaign: {
+  campaign?: {
     title?: string;
     images?: { isMainImage?: boolean; imageUrl?: string }[];
   };
 }) {
   const mainImage = useMemo(() => {
-    if (!Array.isArray(campaign.images)) {
+    if (!Array.isArray(campaign?.images)) {
       return null;
     }
     return campaign.images.find((img) => img.isMainImage) || campaign.images[0];

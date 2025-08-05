@@ -40,6 +40,7 @@ export interface DbCampaign {
   // transient from server
   paymentSummary?: GetCampaignPaymentSummary;
   creator?: DisplayUserWithStates;
+  _count?: { comments: number; updates: number };
 }
 
 export type CampaignDisplay = {
@@ -82,6 +83,7 @@ export type DbComment = {
   updatedAt: Date;
   campaignId: number;
   campaign?: Campaign;
+  creator?: DisplayUserWithStates;
 };
 export type Comment = {
   id: number;
@@ -261,8 +263,11 @@ export const DonationProcessStates = {
 };
 
 export interface CampaignItemProps {
-  campaign: DbCampaign;
+  campaign?: DbCampaign;
+  isFavorite?: boolean;
   onSelect?: (arg0: DbCampaign) => Promise<void>;
   onApprove?: (arg0: DbCampaign) => Promise<void>;
   onDisable?: (arg0: DbCampaign) => Promise<void>;
+  onFavoriteToggle?: (isFavorite: boolean) => Promise<void>;
+  onCreate?: () => Promise<void>;
 }

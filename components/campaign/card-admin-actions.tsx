@@ -7,8 +7,11 @@ import { CampaignAdminDisableButton } from './admin/disable';
 export function CampaignCardAdminActions({
   campaign,
 }: {
-  campaign: DbCampaign;
+  campaign?: DbCampaign;
 }) {
+  if (!campaign) {
+    return null;
+  }
   return (
     <div className="justify-even w-full flex-row">
       <CampaignAdminApproveButton campaign={campaign} />
