@@ -83,16 +83,19 @@ export default function DashboardPage() {
   }
   if (showCampaignCreate) {
     return (
-      <div className="mb-8">
-        <Button
-          variant="outline"
-          onClick={() => setShowCampaignCreate(false)}
-          className="mb-4"
-        >
-          ← Back to Dashboard
-        </Button>
+      <PageDashboard
+        title={
+          <Button
+            variant="outline"
+            onClick={() => setShowCampaignCreate(false)}
+            className="ml-2"
+          >
+            ← Back to Dashboard
+          </Button>
+        }
+      >
         <CampaignCreate onCreated={onCreated} />
-      </div>
+      </PageDashboard>
     );
   }
   return (
