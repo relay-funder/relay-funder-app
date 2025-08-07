@@ -73,22 +73,31 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
       if (!enableFormDefault) {
         return;
       }
-      await onSubmit({
-        title: uniqueName(),
-        description: uniqueDescription(),
-        fundingGoal: `${(Math.random() * 1000).toFixed(2)}`,
-        fundingModel:
-          fundingModels[Math.floor(Math.random() * fundingModels.length)].id,
-        startTime: new Date().toISOString().slice(0, 16),
-        endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      form.setValue('title', uniqueName());
+      form.setValue('description', uniqueDescription());
+      form.setValue('fundingGoal', `${(Math.random() * 1000).toFixed(2)}`);
+      form.setValue(
+        'fundingModel',
+        fundingModels[Math.floor(Math.random() * fundingModels.length)].id,
+      );
+      form.setValue('startTime', new Date().toISOString().slice(0, 16));
+      form.setValue(
+        'endTime',
+        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
           .toISOString()
           .slice(0, 16),
-        location: countries[Math.floor(Math.random() * countries.length)],
-        category:
-          categories[Math.floor(Math.random() * categories.length)].name,
-      });
+      );
+      form.setValue(
+        'location',
+        countries[Math.floor(Math.random() * countries.length)],
+      );
+      form.setValue(
+        'category',
+        categories[Math.floor(Math.random() * categories.length)].name,
+      );
+      setFormState('summary');
     },
-    [onSubmit],
+    [onSubmit, form],
   );
 
   const onFailureRetry = useCallback(async () => {
