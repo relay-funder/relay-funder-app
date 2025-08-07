@@ -93,11 +93,11 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
       );
       form.setValue(
         'category',
-        categories[Math.floor(Math.random() * categories.length)].name,
+        categories[Math.floor(Math.random() * categories.length)].id,
       );
       setFormState('summary');
     },
-    [onSubmit, form],
+    [form],
   );
 
   const onFailureRetry = useCallback(async () => {
