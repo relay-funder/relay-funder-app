@@ -103,6 +103,7 @@ export function useWaitForTransactionReceipt({
     console.log('dummy wagmi::useWaitForTransactionReceipt', {
       data,
       isPending,
+      query,
     });
     return {
       data,
@@ -111,7 +112,7 @@ export function useWaitForTransactionReceipt({
       isError: false,
       error: null as Error | null,
     };
-  }, [data, isPending]);
+  }, [data, isPending, query]);
   return value;
 }
 export function useDeployContract() {

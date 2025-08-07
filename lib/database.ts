@@ -38,6 +38,7 @@ export async function getCampaignUpdates(
 export async function getCampaign(
   slug: string,
 ): Promise<CampaignType & CampaignDisplay> {
+  // only pages/campaign/slug/donate uses this, needs refactor to prefetch&tanstack
   console.log('getCampaign', slug);
   console.warn(
     'database::getCampaign is deprecated, use @/lib/api/getCampaign',
