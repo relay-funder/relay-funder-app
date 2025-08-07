@@ -24,7 +24,6 @@ export function CampaignCardDashboard({
   onFavoriteToggle,
   onCreate,
 }: CampaignItemProps) {
-  // Find the category details
   const session = useSession();
   const categoryDetails = campaign?.category
     ? categories.find((category) => category.id === campaign.category)

@@ -7,6 +7,7 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignItem } from '@/components/campaign/item';
 import type { CampaignItemProps } from '@/types/campaign';
+import { CampaignCardDashboardCreate } from './card-create';
 interface CampaignListProps {
   searchTerm: string;
   categoryFilter?: string | null;
@@ -71,7 +72,9 @@ export function CampaignUserList({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
-        <ItemComponent onCreate={onCreate} />
+        {typeof onCreate === 'function' && (
+          <CampaignCardDashboardCreate onCreate={onCreate} />
+        )}
         {filteredCampaigns?.map((page) =>
           page.campaigns.map((campaign) => (
             <ItemComponent key={campaign.id} campaign={campaign} />

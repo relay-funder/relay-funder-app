@@ -23,7 +23,7 @@ export function CampaignDashboardStatus({
 }) {
   return (
     <div
-      className={cn('rounded-full px-3 py-1 text-sm', {
+      className={cn('inline-block rounded-full px-3 py-1 text-sm', {
         'bg-blue-100 text-blue-600': getCampaignStatus(campaign) === 'Active',
         'bg-yellow-100 text-yellow-600':
           getCampaignStatus(campaign) === 'Upcoming',

@@ -16,12 +16,7 @@ export interface DbCampaign {
   category?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  images?: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-    campaignId: number;
-  }[];
+  images?: CampaignImage[];
   slug: string;
   location: string | null;
   updates?: {
@@ -97,7 +92,7 @@ export type Comment = {
 
 export type CampaignImage = {
   id: number;
-  imageUrl: string;
+  imageUrl: string | File;
   isMainImage: boolean;
   campaignId: number;
   campaign?: Campaign;
@@ -271,3 +266,51 @@ export interface CampaignItemProps {
   onFavoriteToggle?: (isFavorite: boolean) => Promise<void>;
   onCreate?: () => Promise<void>;
 }
+
+/**
+ * Defines the various states a campaign create process can be in.
+ * Each state represents a step in the user's interaction with the wallet and blockchain.
+ */
+export const CreateProcessStates = {
+  /**
+   * The deploy process is starting
+   */
+  setup: 'setup',
+
+  /**
+   * Create the campaign in the database
+   */
+  create: 'create',
+
+  /**
+   * use CampaignInfoFactory smart-contract to create a treasury address for
+   * this campaign
+   */
+  createOnChain: 'createOnChain',
+
+  /**
+   * waiting for the blockchain to confirm the transaction
+   */
+  waitForCreationConfirmation: 'waitForCreationConfirmation',
+
+  /**
+   * wait for db to store the transaction hash
+   */
+  updateDbCampaign: 'updateDbCampaign',
+
+  /**
+   * The initial idle state of the create process, before any steps have begun.
+   */
+  idle: 'idle',
+
+  /**
+   * Campaign created successfully and pending approval by an administrator.
+   */
+  done: 'done',
+
+  /**
+   * The donation process has failed at some point.
+   * An error message should be displayed to the user.
+   */
+  failed: 'failed',
+};

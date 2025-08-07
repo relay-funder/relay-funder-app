@@ -4,12 +4,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { useUpdateCampaign } from '@/lib/hooks/useCampaigns';
-import { AdminDeployProcessStates } from '@/types/admin';
 import {
   useCreateCampaignContract,
   IOnCreateCampaignConfirmed,
 } from '@/lib/web3/hooks/useCreateCampaignContract';
 import type { DbCampaign } from '@/types/campaign';
+import { CreateProcessStates } from '@/types/campaign';
 
 export function CampaignAdminDeployButton({
   campaign,
@@ -19,12 +19,12 @@ export function CampaignAdminDeployButton({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processState, setProcessState] =
-    useState<keyof typeof AdminDeployProcessStates>('idle');
+    useState<keyof typeof CreateProcessStates>('idle');
 
   const { toast } = useToast();
 
   const onStateChanged = useCallback(
-    (state: keyof typeof AdminDeployProcessStates) => {
+    (state: keyof typeof CreateProcessStates) => {
       setProcessState(state);
     },
     [],
@@ -32,19 +32,34 @@ export function CampaignAdminDeployButton({
   const { mutateAsync: updateCampaign } = useUpdateCampaign();
 
   const onDeployCampaignConfirmed = useCallback(
-    async ({ hash, status, campaignAddress }: IOnCreateCampaignConfirmed) => {
-      if (status === 'success') {
-        // First update the campaign status to pending_approval
-        await updateCampaign({
-          campaignId: campaign.id,
-          transactionHash: hash,
-          status: 'pending_approval',
-          campaignAddress,
-        });
-        onStateChanged('done');
+    async ({
+      hash,
+      status,
+      campaignAddress,
+      campaignId,
+    }: IOnCreateCampaignConfirmed) => {
+      try {
+        if (status === 'success') {
+          // First update the campaign status to pending_approval
+          await updateCampaign({
+            campaignId,
+            transactionHash: hash,
+            status: 'pending_approval',
+            campaignAddress,
+          });
+          onStateChanged('done');
+        } else {
+          onStateChanged('failed');
+          setError('Failed to deploy campaign: Unknown Error');
+        }
+      } catch (error) {
+        onStateChanged('failed');
+        setError(
+          `Failed to deploy campaign: ${error instanceof Error ? error.message : 'Unknown Error'}`,
+        );
       }
     },
-    [campaign, updateCampaign, onStateChanged],
+    [updateCampaign, onStateChanged],
   );
   const { createCampaignContract } = useCreateCampaignContract({
     onConfirmed: onDeployCampaignConfirmed,
@@ -57,6 +72,8 @@ export function CampaignAdminDeployButton({
           startTime: campaign.startTime as unknown as string,
           endTime: campaign.endTime as unknown as string,
           fundingGoal: campaign.fundingGoal,
+          campaignId: campaign.id,
+          onStateChanged,
         });
       } catch (error) {
         onStateChanged('failed');
