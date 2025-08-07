@@ -101,15 +101,6 @@ async function fetchUserCampaignPage({
   return data as PaginatedResponse;
 }
 
-async function fetchUserCampaigns() {
-  const response = await fetch(`/api/campaigns/user`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user campaigns');
-  }
-  const data = await response.json();
-  return data.campaigns as GetCampaignResponseInstance[];
-}
 interface IUpdateCampaign {
   campaignId: number;
   status?: string;
@@ -338,14 +329,6 @@ export function useInfiniteUserCampaigns(
   });
 }
 
-export function useUserCampaigns() {
-  const { authenticated } = useAuth();
-  return useQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'user'],
-    queryFn: fetchUserCampaigns,
-    enabled: authenticated,
-  });
-}
 export function useCampaignPayments({ id }: { id: number }) {
   return useQuery({
     queryKey: [CAMPAIGN_PAYMENTS_QUERY_KEY, id],
