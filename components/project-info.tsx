@@ -1,17 +1,17 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui';
+import { Card, CardContent, CardHeader } from '@/components/ui';
 import { ZeroFeePromise } from '@/components/zero-fee-promise';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { GetCampaignResponse } from '@/lib/api/types';
 import { FormattedDate } from './formatted-date';
 import { UserInlineName } from './user/inline-name';
-import { UserInlineBadges } from './user/inline-badges';
 import { useCampaignStats } from '@/hooks/use-campaign-stats';
 import { CampaignProgress } from './campaign/progress';
 import { CampaignDaysLeftBlock } from './campaign/days-left-block';
 import { CampaignMainImage } from './campaign/main-image';
 import { CampaignLoading } from './campaign/loading';
+import { CampaignDashboardStatus } from './campaign/dashboard-status';
 
 interface ProjectInfoProps {
   slug: string;
@@ -34,18 +34,24 @@ export default function ProjectInfo({ slug }: ProjectInfoProps) {
   return (
     <div className="space-y-4">
       <Card className="w-fit overflow-hidden">
-        <div className="relative">
+        <CardHeader className="relative p-0">
           <CampaignMainImage campaign={campaign} />
-        </div>
+          <div className="absolute pl-1">
+            <CampaignDashboardStatus campaign={campaign} />
+          </div>
+        </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between gap-3">
-              <h1 className="text-xl font-semibold text-pink-500">
+              <h1 className="pt-4 text-xl font-semibold text-pink-500">
                 {campaign.title}
               </h1>
-              <div className="">
-                By
-                <UserInlineBadges user={campaign?.creator} />
+              <div className="pt-4 align-middle text-sm font-semibold">
+                <UserInlineName
+                  user={campaign?.creator}
+                  badges={true}
+                  prefix="By"
+                />
               </div>
             </div>
             <div className="flex flex-row items-center gap-3">
