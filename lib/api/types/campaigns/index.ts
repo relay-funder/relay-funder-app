@@ -56,3 +56,8 @@ export interface GetCampaignResponse {
 export interface GetCampaignPaymentsResponse {
   payments: PaymentSummaryContribution[];
 }
+export interface PostCampaignsResponse {
+  campaignId: number;
+}
+export interface PatchCampaignResponse extends GetCampaignResponse {}
+export interface PostCampaignApproveResponse extends GetCampaignResponse {}
