@@ -6,11 +6,13 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts';
 import type {
   GetCampaignResponseInstance,
   GetCampaignResponse,
   GetCampaignPaymentsResponse,
+  PostCampaignsResponse,
+  PatchCampaignResponse,
+  PostCampaignApproveResponse,
 } from '@/lib/api/types';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
@@ -119,7 +121,8 @@ async function updateCampaign(variables: IUpdateCampaign) {
     throw new Error(error.error || 'Failed to update campaign');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data as PatchCampaignResponse;
 }
 interface ICreateCampaign {
   title: string;
@@ -130,7 +133,7 @@ interface ICreateCampaign {
   status?: string;
   location: string;
   category: string;
-  bannerImage?: File;
+  bannerImage?: File | null;
 }
 async function createCampaign({
   title,
@@ -169,7 +172,8 @@ async function createCampaign({
     } catch {}
     throw new Error(errorMsg);
   }
-  return response.json();
+  const data = await response.json();
+  return data as PostCampaignsResponse;
 }
 interface IApproveCampaign {
   campaignId: number;
@@ -193,7 +197,8 @@ async function approveCampaign(variables: IApproveCampaign) {
     } catch {}
     throw new Error(errorMsg);
   }
-  return response.json();
+  const data = await response.json();
+  return data as PostCampaignApproveResponse;
 }
 interface IDisableCampaign {
   campaignId: number;
