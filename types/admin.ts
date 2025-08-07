@@ -110,30 +110,3 @@ export const AdminDisableProcessStates = {
    */
   failed: 'failed',
 };
-
-/**
- * Defines the various states a camaign deploy process can be in.
- * Each state represents a step in the user's interaction with the wallet and blockchain.
- */
-export const AdminDeployProcessStates = {
-  /**
-   * The deploy process is starting
-   */
-  setup: 'setup',
-
-  /**
-   * The initial idle state of the process, before any steps have begun.
-   */
-  idle: 'idle',
-
-  /**
-   * The process has successfully completed.
-   */
-  done: 'done',
-
-  /**
-   * The process has failed at some point.
-   * An error message should be displayed to the user.
-   */
-  failed: 'failed',
-};
