@@ -13,9 +13,11 @@ import type {
   PostCampaignsResponse,
   PatchCampaignResponse,
   PostCampaignApproveResponse,
+  GetCampaignsStatsResponse,
 } from '@/lib/api/types';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
+export const CAMPAIGN_STATS_QUERY_KEY = 'campaign_stats';
 export const CAMPAIGN_PAYMENTS_QUERY_KEY = 'campaign_payments';
 
 interface PaginatedResponse {
@@ -101,6 +103,16 @@ async function fetchUserCampaignPage({
   }
   const data = await response.json();
   return data as PaginatedResponse;
+}
+async function fetchCampaignStats() {
+  const url = `/api/campaigns/stats`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch campaign');
+  }
+  const data = await response.json();
+  return data as GetCampaignsStatsResponse;
 }
 
 interface IUpdateCampaign {
@@ -365,6 +377,7 @@ export function useCreateCampaign() {
       queryClient.invalidateQueries({
         queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
       });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
   });
 }
@@ -375,6 +388,7 @@ export function useAdminApproveCampaign() {
     mutationFn: approveCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
   });
 }
@@ -385,6 +399,7 @@ export function useAdminDisableCampaign() {
     mutationFn: disableCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
   });
 }
@@ -395,6 +410,7 @@ export function useAdminRemoveCampaign() {
     mutationFn: removeCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
   });
 }
@@ -405,4 +421,12 @@ export function useRefetchCampaign(campaignId: number) {
     resetCampaign(campaignId, queryClient);
   }, [queryClient, campaignId]);
   return refetch;
+}
+
+export function useCampaignStats() {
+  return useQuery({
+    queryKey: [CAMPAIGN_STATS_QUERY_KEY],
+    queryFn: fetchCampaignStats,
+    enabled: true,
+  });
 }

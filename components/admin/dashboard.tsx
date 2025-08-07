@@ -5,6 +5,7 @@ import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
 import { CampaignList } from '@/components/campaign/list';
 import { CampaignCardAdmin } from '@/components/campaign/card-admin';
+import { DashboardOverview } from '../dashboard/overview';
 
 export function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -17,6 +18,7 @@ export function AdminDashboard() {
         />
       }
     >
+      <DashboardOverview />
       <CampaignList
         searchTerm={searchTerm}
         statusFilter="all"

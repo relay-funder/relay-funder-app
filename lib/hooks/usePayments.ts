@@ -7,8 +7,10 @@ import type { Payment } from '@/types/campaign';
 import { resetCampaign } from './useCampaigns';
 import { GetCampaignPaymentResponseInstance } from '../api/types/campaigns/payments';
 export const PAYMENT_QUERY_KEY = 'payment';
-export const CAMPAIGNS_PAYMENTS_QUERY_KEY = 'campaign_payment';
-
+import {
+  CAMPAIGN_STATS_QUERY_KEY,
+  CAMPAIGN_PAYMENTS_QUERY_KEY,
+} from './useCampaigns';
 interface ICreatePaymentApi {
   amount: string;
   poolAmount: number;
@@ -102,7 +104,7 @@ async function fetchPaymentPage({
 
 export function useInfinitePayments(campaignId: number, pageSize = 10) {
   return useInfiniteQuery<PaginatedResponse, Error>({
-    queryKey: [CAMPAIGNS_PAYMENTS_QUERY_KEY, 'infinite', campaignId],
+    queryKey: [CAMPAIGN_PAYMENTS_QUERY_KEY, 'infinite', campaignId],
     queryFn: ({ pageParam = 1 }) =>
       fetchPaymentPage({
         campaignId,
@@ -143,6 +145,7 @@ export function useUpdatePaymentStatus() {
       queryClient.invalidateQueries({
         queryKey: [PAYMENT_QUERY_KEY],
       });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
       resetCampaign(data.campaignId, queryClient);
     },
   });
@@ -154,11 +157,12 @@ export function useRemovePayment() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [
-          CAMPAIGNS_PAYMENTS_QUERY_KEY,
+          CAMPAIGN_PAYMENTS_QUERY_KEY,
           'infinite',
           variables.campaignId,
         ],
       });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
   });
 }

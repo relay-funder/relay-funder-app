@@ -8,6 +8,7 @@ import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
 import {
   GetCampaignPaymentSummary,
   GetCampaignResponseInstance,
+  GetCampaignsStatsResponse,
 } from './types';
 import { getPaymentUser, getUserWithStates } from './user';
 import { ApiConflictError } from './error';
@@ -528,4 +529,136 @@ export async function addCampaignComment(
     }),
     db.campaign.update({ where: { id }, data: { updatedAt: new Date() } }),
   ]);
+}
+export async function getStats({
+  creatorAddress,
+  admin,
+}: {
+  creatorAddress: string;
+  admin: boolean;
+}) {
+  const stats: GetCampaignsStatsResponse = {
+    totalCampaigns: 0,
+    totalRaised: 0,
+    activeCampaigns: 0,
+    averageProgress: 0,
+  };
+
+  if (admin) {
+    stats.totalCampaigns = await db.campaign.count();
+    stats.activeCampaigns = await db.campaign.count({
+      where: { status: 'ACTIVE' },
+    });
+    const raisedQuery = Prisma.sql`
+      WITH TotalRaised AS (
+        SELECT
+          "campaignId",
+          SUM(
+            CASE
+              WHEN "token" IN ('USD', 'USDC')
+                    AND "type" = 'BUY'
+                    AND "status" = 'confirmed'
+                    THEN
+                    "amount"::numeric
+              ELSE 0
+            END
+          ) AS total_raised
+        FROM
+          "Payment"
+        GROUP BY
+          "campaignId"
+      ),
+      CampaignProgress AS (
+        SELECT
+          "Campaign".id AS campaign_id,
+          "Campaign"."fundingGoal"::numeric,
+          COALESCE(TotalRaised.total_raised, 0) AS total_raised
+        FROM
+          "Campaign"
+        LEFT JOIN
+          TotalRaised ON "Campaign".id = TotalRaised."campaignId"
+        WHERE
+          "Campaign"."status" in ('ACTIVE', 'COMPLETED')
+      )
+      SELECT
+        SUM(total_raised) AS total_raised,
+        AVG(total_raised / "fundingGoal") AS average_progress
+      FROM
+        CampaignProgress
+      ;`;
+    const raised = (await db.$queryRaw(raisedQuery)) as {
+      total_raised: string;
+      average_progress: string;
+    }[];
+    if (raised.length === 1) {
+      stats.totalRaised = parseFloat(raised[0].total_raised);
+      stats.averageProgress = parseFloat(raised[0].average_progress);
+    }
+  } else {
+    stats.totalCampaigns = await db.campaign.count({
+      where: { creatorAddress },
+    });
+    stats.activeCampaigns = await db.campaign.count({
+      where: { creatorAddress, status: 'ACTIVE' },
+    });
+    const raisedQuery = Prisma.sql`
+      WITH TotalRaised AS (
+        SELECT
+          "Campaign"."id" AS "campaignId",
+          SUM(
+            CASE
+              WHEN "Payment"."token" IN ('USD', 'USDC')
+                    AND "Payment"."type" = 'BUY'
+                    AND "Payment"."status" = 'confirmed'
+                    THEN
+                    "Payment"."amount"::numeric
+              ELSE 0
+            END
+            ) AS total_raised
+        FROM
+          "Campaign"
+            INNER JOIN "Payment"
+            ON "Payment"."campaignId" = "Campaign"."id"
+        WHERE
+          "Campaign"."creatorAddress" = ${creatorAddress}
+        GROUP BY
+          "Campaign"."id"
+      ),
+      CampaignProgress AS (
+        SELECT
+          "Campaign".id AS campaign_id,
+          "Campaign"."fundingGoal"::numeric,
+          COALESCE(TotalRaised.total_raised, 0) AS total_raised
+        FROM
+          "Campaign"
+            LEFT JOIN
+          TotalRaised
+            ON "Campaign".id = TotalRaised."campaignId"
+        WHERE
+            "Campaign"."creatorAddress" = ${creatorAddress}
+          AND
+            "Campaign"."status" in ('ACTIVE', 'COMPLETED')
+      )
+      SELECT
+        SUM(total_raised) AS total_raised,
+        AVG(total_raised / "fundingGoal") AS average_progress
+      FROM
+        CampaignProgress
+      ;`;
+    const raised = (await db.$queryRaw(raisedQuery)) as {
+      total_raised: string;
+      average_progress: string;
+    }[];
+    if (raised.length === 1) {
+      stats.totalRaised = parseFloat(raised[0].total_raised);
+      stats.averageProgress = parseFloat(raised[0].average_progress);
+    }
+  }
+  if (isNaN(stats.totalRaised)) {
+    stats.totalRaised = 0;
+  }
+  if (isNaN(stats.averageProgress)) {
+    stats.averageProgress = 0;
+  }
+  return stats;
 }

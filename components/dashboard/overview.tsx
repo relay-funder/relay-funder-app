@@ -1,22 +1,11 @@
-import type { DbCampaign } from '@/types/campaign';
 import { Card, CardContent } from '@/components/ui';
+import { useCampaignStats } from '@/lib/hooks/useCampaigns';
 import { Users, Coins, Calendar, TrendingUp } from 'lucide-react';
-const calculateStats = (campaigns: DbCampaign[]) => {
-  console.warn('Bad implementation, needs the backend to summarize', {
-    campaigns,
-  });
-  return {
-    totalCampaigns: 0,
-    totalRaised: 0,
-    activeCampaigns: 0,
-    averageProgress: 0,
-  };
-};
 
-export function DashboardOverview({ campaigns }: { campaigns?: DbCampaign[] }) {
-  const hasCampaigns = Array.isArray(campaigns);
+export function DashboardOverview() {
+  const { data: stats, isPending } = useCampaignStats();
   return (
-    <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="mb-8 grid grid-cols-2 gap-6 lg:grid-cols-4">
       <Card>
         <CardContent className="flex items-center p-6">
           <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
@@ -24,12 +13,12 @@ export function DashboardOverview({ campaigns }: { campaigns?: DbCampaign[] }) {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
-            {hasCampaigns ? (
-              <h3 className="text-2xl font-bold">
-                {calculateStats(campaigns).totalCampaigns}
-              </h3>
-            ) : (
+            {isPending ? (
               <div className="mt-1 h-8 animate-pulse rounded bg-gray-200" />
+            ) : (
+              <h3 className="text-2xl font-bold">
+                {stats?.totalCampaigns ?? 0}
+              </h3>
             )}
           </div>
         </CardContent>
@@ -42,12 +31,12 @@ export function DashboardOverview({ campaigns }: { campaigns?: DbCampaign[] }) {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-600">Total Raised</p>
-            {hasCampaigns ? (
-              <h3 className="text-2xl font-bold">
-                {calculateStats(campaigns).totalRaised.toFixed(2)} USDC
-              </h3>
-            ) : (
+            {isPending ? (
               <div className="mt-1 h-8 animate-pulse rounded bg-gray-200" />
+            ) : (
+              <h3 className="text-2xl font-bold">
+                {stats?.totalRaised.toFixed(2) ?? 0} USDC
+              </h3>
             )}
           </div>
         </CardContent>
@@ -62,12 +51,12 @@ export function DashboardOverview({ campaigns }: { campaigns?: DbCampaign[] }) {
             <p className="text-sm font-medium text-gray-600">
               Active Campaigns
             </p>
-            {hasCampaigns ? (
-              <h3 className="text-2xl font-bold">
-                {calculateStats(campaigns).activeCampaigns}
-              </h3>
-            ) : (
+            {isPending ? (
               <div className="mt-1 h-8 animate-pulse rounded bg-gray-200" />
+            ) : (
+              <h3 className="text-2xl font-bold">
+                {stats?.activeCampaigns ?? 0}
+              </h3>
             )}
           </div>
         </CardContent>
@@ -82,12 +71,12 @@ export function DashboardOverview({ campaigns }: { campaigns?: DbCampaign[] }) {
             <p className="text-sm font-medium text-gray-600">
               Average Progress
             </p>
-            {hasCampaigns ? (
-              <h3 className="text-2xl font-bold">
-                {calculateStats(campaigns).averageProgress.toFixed(1)}%
-              </h3>
-            ) : (
+            {isPending ? (
               <div className="mt-1 h-8 animate-pulse rounded bg-gray-200" />
+            ) : (
+              <h3 className="text-2xl font-bold">
+                {((stats?.averageProgress ?? 0) * 100).toFixed(1)}%
+              </h3>
             )}
           </div>
         </CardContent>

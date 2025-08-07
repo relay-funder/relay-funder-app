@@ -61,3 +61,9 @@ export interface PostCampaignsResponse {
 }
 export interface PatchCampaignResponse extends GetCampaignResponse {}
 export interface PostCampaignApproveResponse extends GetCampaignResponse {}
+export interface GetCampaignsStatsResponse {
+  totalCampaigns: number;
+  totalRaised: number;
+  activeCampaigns: number;
+  averageProgress: number;
+}
