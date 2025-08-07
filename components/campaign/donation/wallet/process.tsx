@@ -6,6 +6,7 @@ import { type Campaign, DonationProcessStates } from '@/types/campaign';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DonationProcessDisplay } from './process-display';
+import { useRouter } from 'next/navigation';
 
 export function CampaignDonationWalletProcess({
   campaign,
@@ -22,6 +23,7 @@ export function CampaignDonationWalletProcess({
   anonymous: boolean;
   onProcessing?: (processing: boolean) => void;
 }) {
+  const router = useRouter();
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const akashicAmount = useMemo(() => {
     if (donationToAkashic) {
@@ -66,12 +68,18 @@ export function CampaignDonationWalletProcess({
     }
     if (state === 'done') {
       setTimeout(() => {
-        setState('idle');
+        if (typeof onProcessing === 'function') {
+          onProcessing(false);
+        }
       }, 3000);
 
       return;
     }
   }, [state, onProcessing]);
+  const onDoneView = useCallback(() => {
+    setState('idle');
+    router.push(`/campaigns/${campaign.slug}`);
+  }, [router, campaign]);
   useEffect(() => {
     let deferTimerId = null;
     if (processingOnDonate) {
@@ -105,6 +113,7 @@ export function CampaignDonationWalletProcess({
           isProcessing={processing}
           onFailureCancel={() => setState('idle')}
           onFailureRetry={onDonateStart}
+          onDoneView={onDoneView}
         />
       </VisibilityToggle>
     </>

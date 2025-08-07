@@ -12,6 +12,7 @@ interface DonationProcessDisplayProps {
   isProcessing: boolean;
   onFailureCancel?: () => void;
   onFailureRetry?: () => void;
+  onDoneView?: () => void;
 }
 
 const PROCESS_STEP_INFO: Record<
@@ -78,6 +79,7 @@ export function DonationProcessDisplay({
   failureMessage,
   onFailureCancel,
   onFailureRetry,
+  onDoneView,
   isProcessing,
 }: DonationProcessDisplayProps) {
   // Ensure the order of steps is maintained
@@ -139,6 +141,13 @@ export function DonationProcessDisplay({
         <CheckCircle2 className="mx-auto h-12 w-12" />
         <p className="text-lg font-semibold">{PROCESS_STEP_INFO.done.title}</p>
         <p className="text-sm">{PROCESS_STEP_INFO.done.description}</p>
+        <div className="flex justify-center gap-2">
+          {onFailureRetry && (
+            <Button onClick={onDoneView} variant="default">
+              View Campaign
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
