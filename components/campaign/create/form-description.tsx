@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { useFormContext } from 'react-hook-form';
 import {
   Input,
@@ -11,7 +12,7 @@ import {
 export function CampaignCreateFormDescription() {
   const form = useFormContext();
   return (
-    <div className="flex flex-col">
+    <>
       <FormField
         control={form.control}
         name="title"
@@ -32,11 +33,11 @@ export function CampaignCreateFormDescription() {
         control={form.control}
         name="description"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className={cn('flex-grow')}>
             <FormLabel>Description</FormLabel>
             <FormControl>
               <Textarea
-                className="h-[50vh]"
+                className={cn('block h-[90%]')}
                 placeholder="Imagine a world where every child has access to quality education. Our project aims to build a library in an underserved community, providing resources and a safe space for learning. With your support, we can make this dream a reality!"
                 {...field}
               />
@@ -45,6 +46,6 @@ export function CampaignCreateFormDescription() {
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 }

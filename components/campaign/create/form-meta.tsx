@@ -23,7 +23,7 @@ function CountrySelectItems() {
 export function CampaignCreateFormMeta() {
   const form = useFormContext();
   return (
-    <div>
+    <>
       <FormField
         control={form.control}
         name="location"
@@ -71,6 +71,6 @@ export function CampaignCreateFormMeta() {
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 }

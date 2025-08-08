@@ -67,22 +67,27 @@ export function CampaignCardDashboard({
     <Card className="flex h-full flex-col overflow-hidden transition-shadow hover:shadow-lg">
       <CardHeader className="relative p-0">
         <CampaignMainImage campaign={campaign} />
-        <div className="absolute right-4 top-4 z-10">
-          <FavoriteButton
-            campaignId={campaign.id}
-            initialIsFavorite={isFavorite}
-            onToggle={onFavoriteToggle}
-          />
-        </div>
+        {typeof onFavoriteToggle === 'function' && (
+          <div className="absolute right-4 top-4 z-10">
+            <FavoriteButton
+              campaignId={campaign.id}
+              initialIsFavorite={isFavorite}
+              onToggle={onFavoriteToggle}
+            />
+          </div>
+        )}
         <div className="absolute right-4 top-16 z-10">
           <CampaignRemoveButton campaign={campaign} />
+        </div>
+        <div className="absolute left-4 top-4 z-10">
+          <CampaignDashboardStatus campaign={campaign} />
         </div>
       </CardHeader>
       <CardContent className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2
-              className="mb-2 line-clamp-1 text-xl font-bold"
+              className="mb-2 line-clamp-1 text-sm font-bold md:text-xl"
               title={campaign?.title ?? 'No Title Set'}
             >
               {campaign?.title ?? 'Campaign Title'}
@@ -94,7 +99,6 @@ export function CampaignCardDashboard({
               </Badge>
             )}
           </div>
-          <CampaignDashboardStatus campaign={campaign} />
         </div>
 
         <div className="space-y-2">
@@ -109,9 +113,13 @@ export function CampaignCardDashboard({
           </p>
           <div className="flex items-center justify-between">
             <div className="mb-4 cursor-pointer items-center gap-2 text-[14px] text-black underline decoration-black hover:text-gray-600">
-              <Link href={`/campaigns/${campaign?.slug}`} target="_blank">
-                Read More
-              </Link>
+              {campaign?.status !== 'CREATING' ? (
+                <Link href={`/campaigns/${campaign?.slug}`} target="_blank">
+                  Read More
+                </Link>
+              ) : (
+                <>Read More</>
+              )}
             </div>
           </div>
         </div>

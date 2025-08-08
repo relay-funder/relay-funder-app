@@ -17,7 +17,7 @@ import { fundingModels } from '@/lib/constant';
 export function CampaignCreateFormFunding() {
   const form = useFormContext();
   return (
-    <div>
+    <>
       <FormField
         control={form.control}
         name="fundingGoal"
@@ -58,6 +58,6 @@ export function CampaignCreateFormFunding() {
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 }

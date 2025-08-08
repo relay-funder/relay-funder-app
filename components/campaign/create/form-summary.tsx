@@ -5,7 +5,7 @@ import { DbCampaign } from '@/types/campaign';
 import { useSession } from 'next-auth/react';
 import { CampaignCardDashboard } from '../card-dashboard';
 import { CampaignFormSchema } from './form';
-
+import { cn } from '@/lib/utils';
 export function CampaignCreateFormSummary() {
   const form = useFormContext();
   const session = useSession();
@@ -21,7 +21,7 @@ export function CampaignCreateFormSummary() {
         startTime: new Date(values.startTime),
         endTime: new Date(values.endTime),
         creatorAddress: session?.data?.user.address,
-        status: 'DRAFT',
+        status: 'CREATING',
         transactionHash: null,
         campaignAddress: null,
         treasuryAddress: null,
@@ -46,8 +46,11 @@ export function CampaignCreateFormSummary() {
     }
   }, [form, session?.data?.user]);
   return (
-    <div>
-      <CampaignCardDashboard campaign={campaign} />
+    <div className="pb-2">
+      <h2 className={cn('flex justify-self-center text-lg')}>Preview</h2>
+      <div className="flex max-w-[400px] justify-self-center">
+        <CampaignCardDashboard campaign={campaign} />
+      </div>
     </div>
   );
 }

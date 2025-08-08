@@ -11,7 +11,7 @@ import {
 export function CampaignCreateFormTimeline() {
   const form = useFormContext();
   return (
-    <div>
+    <>
       <FormField
         control={form.control}
         name="startTime"
@@ -38,6 +38,6 @@ export function CampaignCreateFormTimeline() {
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 }

@@ -13,9 +13,13 @@ export function CampaignCreateFormMedia() {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
-  const onReset = useCallback(() => {
-    form.setValue('bannerImage', null);
-  }, [form]);
+  const onReset = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      form.setValue('bannerImage', null);
+    },
+    [form],
+  );
   useEffect(() => {
     if (!imageWatch) {
       return;
@@ -32,12 +36,14 @@ export function CampaignCreateFormMedia() {
   return (
     <>
       {bannerImage ? (
-        <>
-          <picture>
-            <img src={bannerImage} alt="img-input" />
+        <div className="flex flex-col">
+          <picture className="flex justify-center">
+            <img src={bannerImage} alt="img-input" className="max-h-[50vh]" />
           </picture>
-          <Button onClick={onReset}>Reset</Button>
-        </>
+          <Button variant="ghost" onClick={onReset}>
+            Reset
+          </Button>
+        </div>
       ) : null}
       <FormField
         control={form.control}
