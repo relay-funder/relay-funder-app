@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import {
   Button,
@@ -31,22 +32,87 @@ import {
 } from '@/lib/web3/hooks/useCreateCampaignContract';
 import { useAuth } from '@/contexts';
 
+// Utility function to decode contract errors
+const decodeContractError = (error: unknown) => {
+  console.log('🔍 Decoding contract error:', error);
+  
+  const errorObj = error as Record<string, unknown>;
+  
+  // Check for different error formats
+  if (errorObj?.data) {
+    console.log('📋 Error data found:', errorObj.data);
+    
+    // Extract error selector (first 4 bytes)
+    if (typeof errorObj.data === 'string' && errorObj.data.length >= 10) {
+      const selector = errorObj.data.slice(0, 10);
+      console.log('🎯 Error selector:', selector);
+      
+      // Extract additional data
+      if (errorObj.data.length > 10) {
+        const additionalData = errorObj.data.slice(10);
+        console.log('📄 Additional error data:', additionalData);
+        
+        // Try to extract address from the data (last 40 characters)
+        if (additionalData.length >= 40) {
+          const address = '0x' + additionalData.slice(-40);
+          console.log('📍 Address in error data:', address);
+        }
+      }
+    }
+  }
+  
+  // Check for RPC error format
+  const nestedError = errorObj?.error as Record<string, unknown>;
+  if (nestedError?.data) {
+    console.log('🌐 RPC error data:', nestedError.data);
+  }
+  
+  // Check for reason string
+  if (errorObj?.reason) {
+    console.log('💬 Error reason:', errorObj.reason);
+  }
+  
+  // Check for message
+  if (errorObj?.message) {
+    console.log('📝 Error message:', errorObj.message);
+  }
+  
+  return {
+    selector: typeof errorObj?.data === 'string' ? errorObj.data.slice(0, 10) : undefined,
+    data: errorObj?.data,
+    reason: errorObj?.reason,
+    message: errorObj?.message,
+    code: errorObj?.code || nestedError?.code,
+  };
+};
+
 const campaignSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  fundingGoal: z.string(),
-  startTime: z.string(),
-  endTime: z.string(),
-  location: z.string(),
-  category: z.string(),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  fundingGoal: z.string().min(1, 'Funding goal is required'),
+  startTime: z.string().min(1, 'Start time is required').refine((startTime) => {
+    const startDate = new Date(startTime);
+    const now = new Date();
+    return startDate.getTime() > now.getTime();
+  }, 'Start time must be in the future'),
+  endTime: z.string().min(1, 'End time is required'),
+  location: z.string().default(''),
+  category: z.string().default(''),
   bannerImage: z.instanceof(File).optional(),
+}).refine((data) => {
+  const startDate = new Date(data.startTime);
+  const endDate = new Date(data.endTime);
+  return endDate.getTime() > startDate.getTime();
+}, {
+  message: 'End time must be after start time',
+  path: ['endTime'],
 });
 type CampaignFormValues = z.infer<typeof campaignSchema>;
 const defaultValues: CampaignFormValues = {
   title: '',
   description: '',
   fundingGoal: '',
-  startTime: new Date().toISOString().slice(0, 16),
+  startTime: new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16), // 1 hour from now
   endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 16),
@@ -56,6 +122,7 @@ const defaultValues: CampaignFormValues = {
 };
 export function CampaignCreate() {
   const { authenticated } = useAuth();
+  const router = useRouter();
 
   const { toast } = useToast();
   const form = useForm<CampaignFormValues>({
@@ -66,6 +133,7 @@ export function CampaignCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState<number | null>(null);
+  const [isCompleteSuccess, setIsCompleteSuccess] = useState(false);
 
   const { mutateAsync: createCampaign, isPending: isCreateCampaignPending } =
     useCreateCampaign();
@@ -79,30 +147,31 @@ export function CampaignCreate() {
       campaignAddress,
       event,
     }: IOnCreateCampaignConfirmed) => {
+      console.log('🎉 Campaign creation confirmed:', { hash, status, campaignAddress });
+      
       if (!campaignId) {
+        console.error('❌ No campaignId available');
         return;
       }
+      
       try {
         if (status === 'success') {
-          toast({
-            title: 'Transaction Confirmed',
-            description: 'Updating campaign status...',
-          });
-          // First update the campaign status to pending_approval
+          console.log('✅ Blockchain transaction successful');
+          
+          // Update campaign with blockchain details
           await updateCampaign({
             campaignId,
             transactionHash: hash,
             status: 'pending_approval',
             campaignAddress,
           });
+          
           if (event) {
-            // Get the campaign address from the event topics
-            const campaignAddress = event.address;
-
-            if (campaignAddress) {
+            const eventCampaignAddress = event.address;
+            if (eventCampaignAddress) {
               await updateCampaign({
                 campaignId,
-                campaignAddress,
+                campaignAddress: eventCampaignAddress,
               });
             }
 
@@ -112,33 +181,66 @@ export function CampaignCreate() {
                 'Campaign created successfully and pending approval.',
               variant: 'default',
             });
+            
+            setIsCompleteSuccess(true);
+            
+            // Redirect to dashboard after success
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 2000);
+          } else {
+            // Fallback if no event data
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 3000);
+          }
+        } else if (status === 'failed') {
+          console.error('❌ Blockchain transaction failed');
+          
+          const errorMessage = 'Blockchain transaction failed. This often happens when:\n' +
+            '• The launch time is in the past (check your start time)\n' +
+            '• The campaign identifier already exists (try again with different details)\n' +
+            '• Network congestion (try again later)\n' +
+            '• Invalid parameters (check your dates and funding goal)';
+          
+          toast({
+            variant: 'destructive',
+            title: 'Blockchain Transaction Failed',
+            description: errorMessage,
+          });
+          
+          // Update campaign status to failed
+          try {
+            await updateCampaign({
+              campaignId,
+              status: 'failed',
+              transactionHash: hash,
+            });
+          } catch (updateError) {
+            console.error('❌ Failed to update campaign status:', updateError);
           }
         }
       } catch (error) {
-        console.error('Error processing transaction:', error);
+        console.error('❌ Error processing transaction confirmation:', error);
+        
+        // Decode contract error details for debugging
+        const errorDetails = decodeContractError(error);
+        
+        let userMessage = 'An error occurred while processing the transaction.';
+        if (errorDetails.reason) {
+          userMessage = `Transaction failed: ${errorDetails.reason}`;
+        } else if (typeof errorDetails.message === 'string' && errorDetails.message.includes('missing required fields')) {
+          userMessage = 'Invalid campaign parameters. Please check your form inputs.';
+        }
+        
         toast({
           variant: 'destructive',
-          title: 'Transaction Failed',
-          description:
-            error instanceof Error
-              ? error.message
-              : 'Campaign remains in draft state. Please try again.',
-        });
-
-        // Update campaign status to failed
-        await updateCampaign({
-          campaignId,
-          status: 'failed',
-          transactionHash: hash,
-        });
-        await updateCampaign({
-          campaignId,
-          transactionHash: hash,
-          status: 'failed',
+          title: 'Transaction Error',
+          description: userMessage,
         });
       }
     },
-    [campaignId, toast, updateCampaign],
+    [campaignId, toast, updateCampaign, router],
   );
   const {
     createCampaignContract,
@@ -187,9 +289,11 @@ export function CampaignCreate() {
 
   const onSubmit = useCallback(
     async (data: CampaignFormValues) => {
+      console.log('🚀 Campaign creation started');
       setDbError(null);
 
       if (!authenticated) {
+        console.error('❌ User not authenticated');
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -204,46 +308,56 @@ export function CampaignCreate() {
           description: 'Saving campaign details to database...',
         });
         setIsSubmitting(true);
-        try {
-          const newCampaign = await createCampaign(data);
-          toast({
-            title: 'Campaign Saved',
-            description: 'Initiating blockchain transaction...',
-          });
+        
+        // Format the data properly for the API
+        const campaignData = {
+          title: data.title.trim(),
+          description: data.description.trim(),
+          fundingGoal: data.fundingGoal.trim(),
+          startTime: data.startTime,
+          endTime: data.endTime,
+          location: (data.location || '').trim(),
+          category: (data.category || '').trim(),
+          bannerImage: data.bannerImage,
+        };
+        
+        const newCampaign = await createCampaign(campaignData);
+        console.log('✅ Campaign saved to database:', newCampaign.campaignId);
+        
+        toast({
+          title: 'Campaign Saved',
+          description: 'Initiating blockchain transaction...',
+        });
 
-          const { campaignId: newCampaignId } = newCampaign;
-          setCampaignId(newCampaignId);
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: error.message,
-            });
-            setDbError(error.message);
-          }
-          return;
-        }
+        const { campaignId: newCampaignId } = newCampaign;
+        setCampaignId(newCampaignId);
+        
         await createCampaignContract({
           startTime: data.startTime,
           endTime: data.endTime,
           fundingGoal: data.fundingGoal,
         });
+        
+        console.log('✅ Blockchain transaction initiated');
       } catch (error) {
-        console.error('Error:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description:
-            error instanceof Error
-              ? error.message
-              : 'Failed to create campaign. Your campaign has been saved as draft.',
-        });
-        setDbError(
-          error instanceof Error
-            ? error.message
-            : 'Failed to create campaign. Your campaign has been saved as draft.',
-        );
+        console.error('❌ Campaign creation failed:', error);
+        if (error instanceof Error) {
+          // Provide more user-friendly error messages
+          let userMessage = error.message;
+          if (error.message.includes('missing required fields')) {
+            userMessage = 'Please fill in all required fields (title, description, funding goal, start time, and end time).';
+          } else if (error.message.includes('invalid parameters')) {
+            userMessage = 'Please check your form inputs and try again.';
+          }
+          
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: userMessage,
+          });
+          setDbError(userMessage);
+        }
+        return;
       } finally {
         setIsSubmitting(false);
       }
@@ -255,15 +369,15 @@ export function CampaignCreate() {
       return;
     }
     await onSubmit({
-      title: 'title',
-      description: 'lorem ipsum description',
+      title: 'Debug Campaign',
+      description: 'This is a debug campaign created for testing purposes with detailed logging and error handling.',
       fundingGoal: '100',
-      startTime: new Date().toISOString().slice(0, 16),
-      endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      startTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // 1 week from now
+      endTime: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) // 3 weeks from now
         .toISOString()
         .slice(0, 16),
-      location: 'Belgium',
-      category: 'visual-arts',
+      location: 'Portugal',
+      category: 'technology',
     });
   }, [onSubmit]);
   useEffect(() => {
@@ -280,13 +394,40 @@ export function CampaignCreate() {
     }
   }, [imageWatch]);
 
+  // Clear errors when success is achieved
+  useEffect(() => {
+    if (isCompleteSuccess) {
+      setDbError(null);
+    }
+  }, [isCompleteSuccess]);
+
   const isCreating =
     isSubmitting ||
     isCreateCampaignPending ||
     isUpdateCampaignPending ||
     isPending ||
     isConfirming;
-  const canCreate = Boolean(!isCreating);
+  const canCreate = Boolean(!isCreating && !isCompleteSuccess);
+
+  // Show success message when completely done
+  if (isCompleteSuccess) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6 p-6">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">🎉</div>
+          <h2 className="text-2xl font-bold text-green-600">Campaign Created Successfully!</h2>
+          <p className="text-gray-600">
+            Your campaign has been created and is now pending admin approval.
+            You&apos;ll be redirected to your dashboard shortly.
+          </p>
+          <div className="flex items-center justify-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm text-gray-500">Redirecting to dashboard...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -445,17 +586,24 @@ export function CampaignCreate() {
             )}
           />
           <Button type="submit" disabled={!canCreate} className="w-full">
-            {isCreating && <Loader2 className="animate-spin" />}Create
+            {isSubmitting && <Loader2 className="animate-spin mr-2" />}
+            {isPending && <Loader2 className="animate-spin mr-2" />}
+            {isConfirming && <Loader2 className="animate-spin mr-2" />}
+            {isCompleteSuccess ? (
+              'Campaign Created Successfully!'
+            ) : isConfirming ? (
+              'Confirming Transaction...'
+            ) : isPending ? (
+              'Waiting for Wallet...'
+            ) : isSubmitting || isCreateCampaignPending || isUpdateCampaignPending ? (
+              'Saving Campaign...'
+            ) : (
+              'Create Campaign'
+            )}
           </Button>
         </form>
       </Form>
       {dbError && <div className="text-center text-red-600">{dbError}</div>}
-
-      {isSuccess && (
-        <div className="text-center text-green-600">
-          Campaign created successfully!
-        </div>
-      )}
     </div>
   );
 }
