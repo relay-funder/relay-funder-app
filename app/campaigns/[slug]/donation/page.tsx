@@ -1,9 +1,7 @@
-import { CampaignDonationForm } from '@/components/campaign/donation/form';
-import ProjectInfo from '@/components/project-info';
-import { Campaign } from '@/types/campaign';
-import { getCampaign } from '@/lib/database';
-import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColumns } from '@/components/page/two-cols';
+import { prefetchCampaign } from '@/lib/api/campaigns';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/query-client';
+import { CampaignDonationPage } from '@/components/campaign/donation/page';
 
 export default async function Page({
   params,
@@ -11,14 +9,13 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const campaign: Campaign = await getCampaign(slug);
+  const queryClient = getQueryClient();
+  await prefetchCampaign(queryClient, slug);
   return (
     <>
-      <PageHeaderSticky message="Donating to" title={campaign.title} />
-      <PageMainTwoColumns>
-        <CampaignDonationForm campaign={campaign} />
-        <ProjectInfo slug={slug} />
-      </PageMainTwoColumns>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <CampaignDonationPage slug={slug} />
+      </HydrationBoundary>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui';
 import { useDonationCallback } from '@/hooks/use-donation';
-import { type Campaign, DonationProcessStates } from '@/types/campaign';
+import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DonationProcessDisplay } from './process-display';
@@ -16,7 +16,7 @@ export function CampaignDonationWalletProcess({
   anonymous,
   onProcessing,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
   amount: string;
   selectedToken: string;
   donationToAkashic: number;

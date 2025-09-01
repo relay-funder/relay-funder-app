@@ -15,6 +15,7 @@ import type {
   PostCampaignApproveResponse,
   GetCampaignsStatsResponse,
 } from '@/lib/api/types';
+import { DbCampaign } from '@/types/campaign';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
 export const CAMPAIGN_STATS_QUERY_KEY = 'campaign_stats';
@@ -123,6 +124,29 @@ interface IUpdateCampaign {
 }
 async function updateCampaign(variables: IUpdateCampaign) {
   const response = await fetch('/api/campaigns', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(variables),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update campaign');
+  }
+
+  const data = await response.json();
+  return data as PatchCampaignResponse;
+}
+interface IUpdateCampaignData {
+  campaignId: number;
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  bannerImage?: File | null;
+}
+async function updateCampaignData(variables: IUpdateCampaignData) {
+  const response = await fetch('/api/campaigns/user', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(variables),
@@ -361,6 +385,25 @@ export function useUpdateCampaign() {
     mutationFn: updateCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+    },
+  });
+}
+export function useUpdateCampaignData({ campaign }: { campaign: DbCampaign }) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCampaignData,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, campaign.slug],
+      });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 10],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
+      });
     },
   });
 }

@@ -11,6 +11,7 @@ import { response, handleError } from '@/lib/api/response';
 import { CampaignStatus } from '@/types/campaign';
 import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
 import { PatchCampaignResponse, PostCampaignsResponse } from '@/lib/api/types';
+import { uploadFile } from '@/lib/storage/upload-file';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -19,54 +20,6 @@ const statusMap: Record<string, CampaignStatus> = {
   completed: CampaignStatus.COMPLETED,
   failed: CampaignStatus.FAILED,
 };
-async function uploadToCloudinary(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append(
-    'upload_preset',
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '',
-  );
-
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  if (!cloudName) {
-    throw new Error('Cloudinary cloud name is not configured');
-  }
-
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-  if (!uploadPreset) {
-    throw new Error('Cloudinary upload preset is not configured');
-  }
-
-  console.log('Uploading to Cloudinary with:', {
-    cloudName,
-    uploadPreset,
-    fileName: file.name,
-    fileSize: file.size,
-    fileType: file.type,
-  });
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: 'POST',
-      body: formData,
-    },
-  );
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error('Cloudinary upload failed:', {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData,
-    });
-    throw new Error(`Cloudinary upload failed: ${errorData}`);
-  }
-
-  const data = await response.json();
-  console.log('Cloudinary upload successful:', data);
-  return data.secure_url;
-}
 
 export async function POST(req: Request) {
   try {
@@ -121,7 +74,7 @@ export async function POST(req: Request) {
     let imageUrl = null;
     if (bannerImage) {
       try {
-        imageUrl = await uploadToCloudinary(bannerImage);
+        imageUrl = await uploadFile(bannerImage);
       } catch (imageError) {
         console.error('Error uploading image:', imageError);
         throw new ApiUpstreamError('Image upload failed');

@@ -7,14 +7,14 @@ import { useWeb3Auth, chainConfig } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { CampaignDonationWalletDetails } from './details';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
 import ContractLink from '@/components/page/contract-link';
 
 export function CampaignDonationWalletTab({
   campaign,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
 }) {
   const { isCorrectNetwork } = useNetworkCheck();
   const { ready } = useWeb3Auth();

@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { useToast } from '@/hooks/use-toast';
-import { type Campaign } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { useStripeIsReady } from '@/hooks/use-stripe-ready';
 
 const debug = process.env.NODE_ENV !== 'production';
 
 interface UseStripeFormSubmissionProps {
   publicKey: string;
-  campaign: Campaign;
+  campaign: DbCampaign;
 }
 
 /**

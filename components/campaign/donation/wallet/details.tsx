@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletBalance } from './balance';
 import { CampaignDonationWalletAmount } from './amount';
 import { CampaignDonationWalletProcess } from './process';
@@ -13,7 +13,7 @@ import { VisibilityToggle } from '@/components/visibility-toggle';
 export function CampaignDonationWalletDetails({
   campaign,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
 }) {
   const [selectedToken, setSelectedToken] = useState('USDC');
   const [amount, setAmount] = useState('0');

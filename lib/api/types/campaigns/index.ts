@@ -67,3 +67,4 @@ export interface GetCampaignsStatsResponse {
   activeCampaigns: number;
   averageProgress: number;
 }
+export interface PatchUserCampaignResponse extends GetCampaignResponse {}

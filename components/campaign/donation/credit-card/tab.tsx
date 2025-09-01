@@ -4,13 +4,13 @@ import { MessageSquareWarning } from 'lucide-react';
 import { useAuth } from '@/contexts';
 import { CampaignDonationDetails } from './details';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
 
 export function CampaignDonationCreditCardTab({
   campaign,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
 }) {
   const { authenticated, login } = useAuth();
   if (!authenticated) {

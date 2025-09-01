@@ -1,7 +1,7 @@
 import { prefetchCampaign } from '@/lib/api/campaigns';
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { CampaignDonationSuccessPage } from '@/components/campaign/donation/page-success';
+import { CampaignEditPage } from '@/components/campaign/edit/page';
 
 export default async function Page({
   params,
@@ -14,7 +14,7 @@ export default async function Page({
   return (
     <>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <CampaignDonationSuccessPage slug={slug} />
+        <CampaignEditPage slug={slug} />
       </HydrationBoundary>
     </>
   );

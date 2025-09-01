@@ -1,7 +1,15 @@
+import { db } from '@/server/db';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
 import { response, handleError } from '@/lib/api/response';
-import { listCampaigns } from '@/lib/api/campaigns';
-import { ApiParameterError } from '@/lib/api/error';
+import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+  ApiUpstreamError,
+} from '@/lib/api/error';
+import { PatchUserCampaignResponse } from '@/lib/api/types';
+import { uploadFile } from '@/lib/storage/upload-file';
 
 export async function GET(req: Request) {
   try {
@@ -32,6 +40,72 @@ export async function GET(req: Request) {
         forceEvents,
       }),
     );
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await checkAuth(['user']);
+    const asAdmin = await isAdmin();
+    const formData = await req.formData();
+
+    // Extract form fields
+    const campaignId = formData.get('campaignId') as string;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+
+    const location = formData.get('location') as string;
+    const category = formData.get('category') as string;
+    const bannerImage = formData.get('bannerImage') as File | null;
+
+    if (!campaignId) {
+      throw new ApiParameterError('campaignId is required');
+    }
+    if (!title || !description) {
+      throw new ApiParameterError('missing required fields');
+    }
+
+    const instance = await db.campaign.findUnique({
+      where: {
+        id: parseInt(campaignId),
+      },
+    });
+    if (!instance) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
+    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
+      throw new ApiAuthNotAllowed('User cannot modify this campaign');
+    }
+
+    let imageUrl = null;
+    if (bannerImage) {
+      try {
+        imageUrl = await uploadFile(bannerImage);
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
+      }
+    }
+    await db.campaign.update({
+      where: {
+        id: instance.id,
+      },
+      data: {
+        title,
+        description,
+        location,
+        category,
+        images: imageUrl
+          ? { create: { imageUrl, isMainImage: true } }
+          : undefined,
+      },
+    });
+
+    return response({
+      campaign: await getCampaign(instance.id),
+    } as PatchUserCampaignResponse);
   } catch (error: unknown) {
     return handleError(error);
   }

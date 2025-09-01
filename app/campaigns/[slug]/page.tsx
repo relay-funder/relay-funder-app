@@ -8,7 +8,7 @@ export default async function CampaignPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const slug = (await params).slug;
+  const { slug } = await params;
   const queryClient = getQueryClient();
   await prefetchCampaign(queryClient, slug);
   return (

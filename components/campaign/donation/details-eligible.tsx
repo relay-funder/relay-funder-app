@@ -1,9 +1,9 @@
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { Badge } from '@/components/ui';
 export function CampaignDonationDetailsEligible({
   campaign,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
 }) {
   if (!campaign.treasuryAddress) {
     return null;

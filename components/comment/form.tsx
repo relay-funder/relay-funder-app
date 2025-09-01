@@ -53,7 +53,18 @@ export function CommentForm({ campaign }: CommentFormProps) {
       }
     });
   };
-
+  if (campaign.creatorAddress === address) {
+    return (
+      <div className="space-y-4 p-4">
+        <h2 className="text-2xl font-bold">Your Campaign Comments</h2>
+        <p className="text-gray-600">
+          {campaign._count?.comments}{' '}
+          {campaign._count?.comments === 1 ? 'Comment' : 'Comments'} entered by
+          users for your Campaign.
+        </p>
+      </div>
+    );
+  }
   return (
     <form ref={formRef} onSubmit={handleSubmit}>
       <div className="rounded-lg bg-white p-4 shadow">

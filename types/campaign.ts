@@ -140,7 +140,10 @@ type User = {
   createdAt: Date;
   updatedAt: Date;
 };
-
+/**
+ * Campaign
+ * @deprecated, use DbCampaign consistently!
+ */
 export interface Campaign extends DbCampaign {
   address: string;
   owner: string;
@@ -292,6 +295,38 @@ export const CreateProcessStates = {
    * waiting for the blockchain to confirm the transaction
    */
   waitForCreationConfirmation: 'waitForCreationConfirmation',
+
+  /**
+   * wait for db to store the transaction hash
+   */
+  updateDbCampaign: 'updateDbCampaign',
+
+  /**
+   * The initial idle state of the create process, before any steps have begun.
+   */
+  idle: 'idle',
+
+  /**
+   * Campaign created successfully and pending approval by an administrator.
+   */
+  done: 'done',
+
+  /**
+   * The donation process has failed at some point.
+   * An error message should be displayed to the user.
+   */
+  failed: 'failed',
+};
+
+/**
+ * Defines the various states a campaign update process can be in.
+ * Each state represents a step in the user's interaction with the wallet and blockchain.
+ */
+export const UpdateProcessStates = {
+  /**
+   * The deploy process is starting
+   */
+  setup: 'setup',
 
   /**
    * wait for db to store the transaction hash

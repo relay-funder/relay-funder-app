@@ -11,12 +11,15 @@ import { FavoriteButton } from '@/components/favorite-button';
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { useAuth } from '@/contexts';
 
 export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
+  const { address } = useAuth();
   const { contributorCount, contributorPendingCount } =
     useCampaignStatsFromInstance({
       campaign,
     });
+  const isOwner = campaign.creatorAddress === address;
 
   return (
     <Card className="sticky top-8">
@@ -46,12 +49,19 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
             <p className="text-sm text-gray-600">days left</p>
           </div>
         </div>
-
-        <Link href={`/campaigns/${campaign.slug}/donation`}>
-          <Button className="mt-4 h-12 w-full text-lg" size="lg">
-            Back this project
-          </Button>
-        </Link>
+        {isOwner ? (
+          <Link href={`/campaigns/${campaign.slug}/edit`}>
+            <Button className="mt-4 h-12 w-full text-lg" size="lg">
+              Edit this project
+            </Button>
+          </Link>
+        ) : (
+          <Link href={`/campaigns/${campaign.slug}/donation`}>
+            <Button className="mt-4 h-12 w-full text-lg" size="lg">
+              Back this project
+            </Button>
+          </Link>
+        )}
 
         <div className="flex justify-center gap-2">
           <FavoriteButton campaignId={campaign.id} />

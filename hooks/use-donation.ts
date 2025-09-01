@@ -7,7 +7,7 @@ import {
   useCreatePayment,
   useUpdatePaymentStatus,
 } from '@/lib/hooks/usePayments';
-import { type Campaign, DonationProcessStates } from '@/types/campaign';
+import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 const debug = process.env.NODE_ENV !== 'production';
 
 export function useDonationCallback({
@@ -18,7 +18,7 @@ export function useDonationCallback({
   isAnonymous = false,
   onStateChanged,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
   amount: string;
   poolAmount: number;
   selectedToken: string;

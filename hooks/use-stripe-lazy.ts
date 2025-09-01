@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { type Stripe } from '@stripe/stripe-js';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { enableApiMock } from '@/lib/develop';
 import { mockStripeInstance } from '@/lib/test/mock-stripe';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
@@ -18,7 +18,7 @@ const debug = process.env.NODE_ENV !== 'production';
 interface UseStripeLazyProps {
   amount: string;
   poolAmount: number;
-  campaign: Campaign;
+  campaign: DbCampaign;
   userEmail?: string;
   isAnonymous?: boolean;
 }

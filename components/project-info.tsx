@@ -2,8 +2,6 @@
 
 import { Card, CardContent, CardHeader } from '@/components/ui';
 import { ZeroFeePromise } from '@/components/zero-fee-promise';
-import { useCampaign } from '@/lib/hooks/useCampaigns';
-import { GetCampaignResponse } from '@/lib/api/types';
 import { FormattedDate } from './formatted-date';
 import { UserInlineName } from './user/inline-name';
 import { useCampaignStats } from '@/hooks/use-campaign-stats';
@@ -12,22 +10,17 @@ import { CampaignDaysLeftBlock } from './campaign/days-left-block';
 import { CampaignMainImage } from './campaign/main-image';
 import { CampaignLoading } from './campaign/loading';
 import { CampaignDashboardStatus } from './campaign/dashboard-status';
+import type { DbCampaign } from '@/types/campaign';
 
-interface ProjectInfoProps {
-  slug: string;
-}
-
-export default function ProjectInfo({ slug }: ProjectInfoProps) {
-  const { data, isPending } = useCampaign(slug);
-  const { campaign } = data ?? ({} as GetCampaignResponse);
+export default function ProjectInfo({ campaign }: { campaign?: DbCampaign }) {
   const { contributorCount } = useCampaignStats({
-    slug,
+    slug: campaign?.slug ?? '',
   });
   const hasContributors = contributorCount > 0;
   const lastConfirmed = campaign?.paymentSummary?.lastConfirmed;
   const lastPending = campaign?.paymentSummary?.lastPending;
 
-  if (isPending || !campaign) {
+  if (!campaign) {
     return <CampaignLoading expectItemCount={1} />;
   }
 
