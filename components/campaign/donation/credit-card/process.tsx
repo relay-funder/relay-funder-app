@@ -1,6 +1,6 @@
 import { useMemo, Suspense } from 'react';
 import { CreditCard } from 'lucide-react';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { LazyStripeForm } from '@/components/payment/stripe-form-lazy';
 import { CampaignDonationCreditCardStripeLoading } from './stripe-loading';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
@@ -12,7 +12,7 @@ export function CampaignDonationCreditCardProcess({
   donationToAkashic,
   anonymous,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
   amount: string;
   donationToAkashic: number;
   anonymous: boolean;

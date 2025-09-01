@@ -7,11 +7,11 @@ import {
   TabsContent,
 } from '@/components/ui';
 import { Wallet, CreditCard } from 'lucide-react';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
 import { CampaignDonationCreditCardTab } from '@/components/campaign/donation/credit-card/tab';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
-export function CampaignDonationForm({ campaign }: { campaign: Campaign }) {
+export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
   return (
     <Card className="border-0 shadow-none">
       <CardContent className="space-y-4">

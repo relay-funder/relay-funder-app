@@ -1,72 +1,75 @@
-import { useMemo } from 'react';
-import { type DbPayment } from '@/types/campaign';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui';
+import type { PaymentSummaryContribution } from '@/lib/api/types';
 import { PaymentLink } from './link';
+import { UserInlineName } from '../user/inline-name';
+import { FormattedDate } from '../formatted-date';
+import { DbCampaign } from '@/types/campaign';
+import { useRemovePayment } from '@/lib/hooks/usePayments';
+import { useCallback, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
+import { cn } from '@/lib/utils';
+import { Button } from '../ui';
+import { Trash } from 'lucide-react';
+import { useAuth } from '@/contexts';
 
-export function PaymentItem({ payment }: { payment: DbPayment }) {
-  const userName = useMemo(() => {
-    if (!payment.user || payment.isAnonymous) {
-      return 'Anonymous Donor';
+export function PaymentItem({
+  payment,
+  campaign,
+}: {
+  payment: PaymentSummaryContribution;
+  campaign: DbCampaign;
+}) {
+  const { toast } = useToast();
+  const [hidden, setHidden] = useState(false);
+  const { isAdmin } = useAuth();
+  const { mutateAsync: removePayment, isPending: isRemovingPayment } =
+    useRemovePayment();
+  const refetchCampaign = useRefetchCampaign(campaign.id);
+  const canRemove = isAdmin;
+  const onRemove = useCallback(async () => {
+    try {
+      await removePayment({ campaignId: campaign.id, paymentId: payment.id });
+      setHidden(true);
+      refetchCampaign();
+    } catch (error) {
+      console.error('Error removing payment:', error);
+      toast({
+        title: 'Error',
+        description: `Failed remove payment: ${error instanceof Error ? error.message : 'Unknown Error'}`,
+        variant: 'destructive',
+      });
     }
-    if (
-      typeof payment.user.firstName === 'string' &&
-      typeof payment.user.lastName === 'string'
-    ) {
-      return `${payment.user.firstName} ${payment.user.lastName}`;
-    }
-    if (typeof payment.user.username === 'string') {
-      return payment.user.username;
-    }
-    if (typeof payment.user.address !== 'string') {
-      return 'Anonymous Donor';
-    }
-    return `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`;
-  }, [payment.user, payment.isAnonymous]);
-  const userAvatar = useMemo(() => {
-    if (!payment?.user?.address) {
-      return null;
-    }
-    return `https://avatar.vercel.sh/${payment.user.address}`;
-  }, [payment?.user?.address]);
-
-  // Determine payment method from metadata or transaction hash
-  const paymentMethod = useMemo(() => {
-    const metadata = payment.metadata;
-    if (metadata?.paymentMethod) {
-      return metadata.paymentMethod;
-    }
-    // Fallback: if has transaction hash, it's crypto, otherwise credit card
-    return payment.transactionHash ? 'crypto' : 'credit_card';
-  }, [payment.metadata, payment.transactionHash]);
-
-  const originalToken = useMemo(() => {
-    const metadata = payment.metadata;
-    return metadata?.originalToken || 'USD';
-  }, [payment.metadata]);
+  }, [removePayment, refetchCampaign, campaign, payment, toast]);
 
   return (
     <div
-      key={payment.id}
-      className="flex items-center justify-between rounded-lg bg-white p-4 shadow"
+      className={cn(
+        hidden && 'hidden',
+        'flex items-center justify-between rounded-lg bg-white p-4 shadow',
+      )}
     >
       <div className="flex items-center gap-4">
-        <Avatar>
-          {userAvatar ? <AvatarImage src={userAvatar} /> : null}
-          <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
         <div>
-          <p className="font-medium">{userName}</p>
+          <UserInlineName user={payment.user} />
           <p className="text-sm text-gray-500">
-            {new Date(payment.createdAt ?? 0).toLocaleDateString()}
+            <FormattedDate date={payment.date} />
           </p>
+          {payment.status !== 'confirmed' && <p>Unconfirmed</p>}
         </div>
       </div>
       <div className="text-right">
-        <p className="font-medium">${payment.amount} USD</p>
+        <p className="font-medium">
+          {payment.amount} {payment.token}
+        </p>
         <p className="text-xs text-gray-500">
-          {paymentMethod === 'crypto' ? `via ${originalToken}` : 'Credit Card'}
+          {payment.token === 'USD' ? 'Credit Card' : `via ${payment.token}`}
         </p>
         <PaymentLink payment={payment} />
+        {canRemove && (
+          <Button onClick={onRemove} disabled={isRemovingPayment}>
+            <Trash />
+          </Button>
+        )}
       </div>
     </div>
   );

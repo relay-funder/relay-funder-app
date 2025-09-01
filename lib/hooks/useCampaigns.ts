@@ -1,16 +1,28 @@
+import { useCallback } from 'react';
 import {
   useQuery,
   useMutation,
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
-import { useAuth } from '@/contexts';
-import type { Campaign } from '@/types/campaign';
+import type { QueryClient } from '@tanstack/react-query';
+import type {
+  GetCampaignResponseInstance,
+  GetCampaignResponse,
+  GetCampaignPaymentsResponse,
+  PostCampaignsResponse,
+  PatchCampaignResponse,
+  PostCampaignApproveResponse,
+  GetCampaignsStatsResponse,
+} from '@/lib/api/types';
+import { DbCampaign } from '@/types/campaign';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
+export const CAMPAIGN_STATS_QUERY_KEY = 'campaign_stats';
+export const CAMPAIGN_PAYMENTS_QUERY_KEY = 'campaign_payments';
 
 interface PaginatedResponse {
-  campaigns: Campaign[];
+  campaigns: GetCampaignResponseInstance[];
   pagination: {
     currentPage: number;
     pageSize: number;
@@ -30,7 +42,7 @@ async function fetchCampaigns(status?: string) {
   const data = await response.json();
   return data.campaigns;
 }
-async function fetchCampaign(slug?: string) {
+async function fetchCampaign(slug: string | number) {
   const url = `/api/campaigns/${slug}`;
   const response = await fetch(url);
   if (!response.ok) {
@@ -38,7 +50,28 @@ async function fetchCampaign(slug?: string) {
     throw new Error(error.error || 'Failed to fetch campaign');
   }
   const data = await response.json();
-  return data.campaign;
+  return data as GetCampaignResponse;
+}
+
+async function fetchCampaignPayments({
+  id,
+  pageParam = 1,
+  status = 'confirmed',
+  pageSize = 10,
+}: {
+  id: number;
+  pageParam?: number;
+  status?: 'confirmed' | 'pending';
+  pageSize?: number;
+}) {
+  const url = `/api/campaigns/${id}/payments?status=${status}&page=${pageParam}&pageSize=${pageSize}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch campaign');
+  }
+  const data = (await response.json()) as GetCampaignPaymentsResponse;
+  return data?.payments ?? [];
 }
 
 async function fetchCampaignPage({
@@ -53,18 +86,36 @@ async function fetchCampaignPage({
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch campaigns');
   }
-  return (await response.json()) as PaginatedResponse;
+  const data = await response.json();
+  return data as PaginatedResponse;
 }
 
-async function fetchUserCampaigns(): Promise<Campaign[]> {
-  const response = await fetch(`/api/campaigns/user`);
+async function fetchUserCampaignPage({
+  pageParam = 1,
+  status = 'active',
+  rounds = false,
+  pageSize = 10,
+}) {
+  const url = `/api/campaigns/user?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
+  const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user campaigns');
+    throw new Error(error.error || 'Failed to fetch campaigns');
   }
   const data = await response.json();
-  return data.campaigns;
+  return data as PaginatedResponse;
 }
+async function fetchCampaignStats() {
+  const url = `/api/campaigns/stats`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch campaign');
+  }
+  const data = await response.json();
+  return data as GetCampaignsStatsResponse;
+}
+
 interface IUpdateCampaign {
   campaignId: number;
   status?: string;
@@ -83,7 +134,31 @@ async function updateCampaign(variables: IUpdateCampaign) {
     throw new Error(error.error || 'Failed to update campaign');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data as PatchCampaignResponse;
+}
+interface IUpdateCampaignData {
+  campaignId: number;
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  bannerImage?: File | null;
+}
+async function updateCampaignData(variables: IUpdateCampaignData) {
+  const response = await fetch('/api/campaigns/user', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(variables),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update campaign');
+  }
+
+  const data = await response.json();
+  return data as PatchCampaignResponse;
 }
 interface ICreateCampaign {
   title: string;
@@ -94,7 +169,7 @@ interface ICreateCampaign {
   status?: string;
   location: string;
   category: string;
-  bannerImage?: File;
+  bannerImage?: File | null;
 }
 async function createCampaign({
   title,
@@ -133,7 +208,8 @@ async function createCampaign({
     } catch {}
     throw new Error(errorMsg);
   }
-  return response.json();
+  const data = await response.json();
+  return data as PostCampaignsResponse;
 }
 interface IApproveCampaign {
   campaignId: number;
@@ -157,9 +233,74 @@ async function approveCampaign(variables: IApproveCampaign) {
     } catch {}
     throw new Error(errorMsg);
   }
+  const data = await response.json();
+  return data as PostCampaignApproveResponse;
+}
+interface IDisableCampaign {
+  campaignId: number;
+}
+
+async function disableCampaign(variables: IDisableCampaign) {
+  const response = await fetch(
+    `/api/campaigns/${variables.campaignId}/disable`,
+    {
+      method: 'POST',
+      body: JSON.stringify(variables),
+    },
+  );
+  if (!response.ok) {
+    let errorMsg = 'Failed to disable campaign';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData?.error
+        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
+        : errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+}
+async function removeCampaign(variables: IDisableCampaign) {
+  const response = await fetch(`/api/campaigns/${variables.campaignId}`, {
+    method: 'DELETE',
+    body: JSON.stringify(variables),
+  });
+  if (!response.ok) {
+    let errorMsg = 'Failed to remove campaign';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData?.error
+        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
+        : errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
   return response.json();
 }
 
+export function resetCampaign(id: number, queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY, id] });
+  // we only know the campaignId here, use the query-cache to find the
+  // slug which is commonly stored as queryKey
+  const queries = queryClient.getQueryCache().findAll();
+  const campaignQueries = queries.filter(
+    (query) => query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+  );
+  for (const campaignQuery of campaignQueries) {
+    const campaignData = queryClient.getQueryData(
+      campaignQuery.queryKey,
+    ) as GetCampaignResponse;
+    if (
+      campaignData?.campaign?.id === id &&
+      typeof campaignData?.campaign?.slug !== 'undefined'
+    ) {
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, campaignData.campaign.slug],
+      });
+    }
+  }
+}
 export function useCampaigns(status?: string) {
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, status],
@@ -167,7 +308,7 @@ export function useCampaigns(status?: string) {
     enabled: true,
   });
 }
-export function useCampaign(slug?: string) {
+export function useCampaign(slug: string | number) {
   return useQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, slug],
     queryFn: () => fetchCampaign(slug),
@@ -202,14 +343,41 @@ export function useInfiniteCampaigns(
   });
 }
 
-export function useUserCampaigns() {
-  const { authenticated } = useAuth();
-  return useQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'user'],
-    queryFn: fetchUserCampaigns,
-    enabled: authenticated,
+export function useInfiniteUserCampaigns(
+  status = 'active',
+  pageSize = 10,
+  rounds = false,
+) {
+  return useInfiniteQuery<PaginatedResponse, Error>({
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', status, pageSize],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchUserCampaignPage({
+        pageParam: pageParam as number,
+        status,
+        pageSize,
+        rounds,
+      }),
+    getNextPageParam: (lastPage: PaginatedResponse) => {
+      return lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined;
+    },
+    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
+    initialPageParam: 1,
   });
 }
+
+export function useCampaignPayments({ id }: { id: number }) {
+  return useQuery({
+    queryKey: [CAMPAIGN_PAYMENTS_QUERY_KEY, id],
+    queryFn: () => fetchCampaignPayments({ id }),
+    enabled: true,
+  });
+}
+
 export function useUpdateCampaign() {
   const queryClient = useQueryClient();
 
@@ -220,6 +388,25 @@ export function useUpdateCampaign() {
     },
   });
 }
+export function useUpdateCampaignData({ campaign }: { campaign: DbCampaign }) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCampaignData,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, campaign.slug],
+      });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 10],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
+      });
+    },
+  });
+}
 export function useCreateCampaign() {
   const queryClient = useQueryClient();
 
@@ -227,6 +414,13 @@ export function useCreateCampaign() {
     mutationFn: createCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 10],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
+      });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
   });
 }
@@ -237,6 +431,45 @@ export function useAdminApproveCampaign() {
     mutationFn: approveCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
     },
+  });
+}
+export function useAdminDisableCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: disableCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
+    },
+  });
+}
+export function useAdminRemoveCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: removeCampaign,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
+    },
+  });
+}
+
+export function useRefetchCampaign(campaignId: number) {
+  const queryClient = useQueryClient();
+  const refetch = useCallback(() => {
+    resetCampaign(campaignId, queryClient);
+  }, [queryClient, campaignId]);
+  return refetch;
+}
+
+export function useCampaignStats() {
+  return useQuery({
+    queryKey: [CAMPAIGN_STATS_QUERY_KEY],
+    queryFn: fetchCampaignStats,
+    enabled: true,
   });
 }

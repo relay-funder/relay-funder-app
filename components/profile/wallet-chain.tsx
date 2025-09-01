@@ -1,6 +1,7 @@
 import type { Chain } from 'viem';
-import { useSwitchChain } from '@/lib/web3';
+import { useSwitchChain, chainConfig } from '@/lib/web3';
 import { Button, Card, CardContent } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 export function WalletChain({
   chain,
@@ -10,9 +11,16 @@ export function WalletChain({
   isCurrent?: boolean;
 }) {
   const { switchChainAsync } = useSwitchChain();
+  const isPreferred = chain.id === chainConfig.chainId;
 
   return (
-    <Card className={`p-4 ${isCurrent ? 'border-2 border-primary' : ''}`}>
+    <Card
+      className={cn(
+        'p-4',
+        isPreferred && 'border-2 border-blue-500',
+        isCurrent && isPreferred && 'border-green-500 bg-green-100',
+      )}
+    >
       <CardContent className="flex flex-col items-start p-0">
         <div className="flex w-full items-center justify-between">
           {chain.blockExplorers?.default?.url ? (
@@ -27,6 +35,11 @@ export function WalletChain({
           ) : (
             <span>
               {chain.name} (ID: {chain.id})
+            </span>
+          )}
+          {isCurrent && !isPreferred && (
+            <span className="text-sm text-red-500">
+              {chainConfig.name} is preferred. Some features might fail.
             </span>
           )}
           {!isCurrent && (

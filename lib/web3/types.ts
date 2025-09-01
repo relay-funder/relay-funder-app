@@ -18,7 +18,7 @@ interface RequestArguments {
   method: string;
   params?:
     | {
-        chainId: string;
+        chainId: string | number;
         chainName?: string;
         nativeCurrency?: { decimals: number; name: string; symbol: string };
         rpcUrls?: string[];

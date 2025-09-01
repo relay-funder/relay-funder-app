@@ -1,11 +1,11 @@
-import { CampaignDisplay } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { PaymentList } from '@/components/payment/list';
 import { PaymentEmpty } from '@/components/payment/empty';
 
 export function CampaignDetailTabTransactions({
   campaign,
 }: {
-  campaign: CampaignDisplay;
+  campaign: DbCampaign;
 }) {
   return (
     <div className="space-y-4">
@@ -14,8 +14,8 @@ export function CampaignDetailTabTransactions({
         All confirmed donations to this campaign are listed here.
       </p>
 
-      {campaign.confirmedPayments.length > 0 ? (
-        <PaymentList payments={campaign.confirmedPayments} />
+      {(campaign.paymentSummary?.countConfirmed ?? 0) > 0 ? (
+        <PaymentList campaign={campaign} />
       ) : (
         <PaymentEmpty />
       )}
