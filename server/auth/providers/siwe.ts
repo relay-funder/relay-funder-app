@@ -40,6 +40,16 @@ export function SiweProvider() {
             'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL) - environment not configured correctly',
           );
         }
+        if (
+          // on production, the auth should always be active, the only
+          // exception is when we want to deploy with the dummy-web3-context
+          // (which needs a changed & committed @/lib/web3/adapter import
+          (process.env.NODE_ENV !== 'production' ||
+            process.env.NEXT_PUBLIC_MOCK_AUTH === 'true') &&
+          credentials.message === credentials.signature
+        ) {
+          return await setupUser(credentials.message);
+        }
 
         const nextAuthHost = new URL(nextAuthUrl).host;
 
@@ -56,14 +66,14 @@ export function SiweProvider() {
             siwedomain: siwe.domain,
             nextAuthHost,
           });
-          throw new Error('siwe.verify succeded but for a different domain');
+          throw new Error('siwe.verify succeeded but for a different domain');
         }
         if (siwe.nonce !== nonce) {
           console.error('auth::siwe::siwe-nonce', {
             siwenonce: siwe.nonce,
             nonce,
           });
-          throw new Error('siwe.verify succeded but for a different nonce');
+          throw new Error('siwe.verify succeeded but for a different nonce');
         }
         const verificationParams = {
           signature,

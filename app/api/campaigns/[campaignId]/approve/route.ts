@@ -9,8 +9,10 @@ import { response, handleError } from '@/lib/api/response';
 import {
   PostCampaignsWithIdApproveBody,
   CampaignsWithIdParams,
+  PostCampaignApproveResponse,
 } from '@/lib/api/types';
 import { CampaignStatus } from '@/types/campaign';
+import { getCampaign } from '@/lib/api/campaigns';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -41,7 +43,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     }
 
     // Update campaign status and treasury address in database
-    const updatedCampaign = await db.campaign.update({
+    await db.campaign.update({
       where: { id: campaignId },
       data: {
         status: CampaignStatus.ACTIVE,
@@ -50,8 +52,8 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     });
 
     return response({
-      campaign: updatedCampaign,
-    });
+      campaign: await getCampaign(campaignId),
+    } as PostCampaignApproveResponse);
   } catch (error: unknown) {
     return handleError(error);
   }

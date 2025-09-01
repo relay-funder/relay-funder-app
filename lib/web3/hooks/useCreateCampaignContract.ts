@@ -1,5 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts';
+import { CreateProcessStates } from '@/types/campaign';
 
 import {
   useWriteContract,
@@ -15,8 +16,8 @@ const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 export interface IOnCreateCampaignConfirmed {
   hash: string;
   status: string;
-  campaignAddress: string;
-  event?: Log<bigint, number, false>;
+  campaignAddress?: string;
+  campaignId: number;
 }
 export function useCreateCampaignContract({
   onConfirmed,
@@ -24,7 +25,8 @@ export function useCreateCampaignContract({
   onConfirmed: (arg0: IOnCreateCampaignConfirmed) => void;
 }) {
   const { address, authenticated } = useAuth();
-  const { data: hash, isPending, writeContract } = useWriteContract();
+  const [campaignId, setCampaignId] = useState<number | undefined>();
+  const { data: hash, isPending, writeContractAsync } = useWriteContract();
   const {
     isLoading: isConfirming,
     isSuccess,
@@ -38,23 +40,31 @@ export function useCreateCampaignContract({
       startTime,
       endTime,
       fundingGoal,
+      campaignId,
+      onStateChanged,
     }: {
       startTime: string;
       endTime: string;
       fundingGoal: string;
+      campaignId: number;
+      onStateChanged: (arg0: keyof typeof CreateProcessStates) => void;
     }) => {
       if (!authenticated) {
         throw new Error('wallet not connected');
       }
       const campaignData = {
-        launchTime: BigInt(new Date(startTime ?? '').getTime() / 1000),
-        deadline: BigInt(new Date(endTime ?? '').getTime() / 1000),
+        launchTime: BigInt(
+          Math.floor(new Date(startTime ?? '').getTime() / 1000),
+        ),
+        deadline: BigInt(Math.floor(new Date(endTime ?? '').getTime() / 1000)),
         goalAmount: parseEther(fundingGoal || '0'),
       };
+      setCampaignId(campaignId);
 
       // Then proceed with blockchain transaction
       const identifierHash = keccak256(stringToHex('KickStarter'));
-      writeContract({
+      onStateChanged('createOnChain');
+      await writeContractAsync({
         address: campaignInfoFactory as `0x${string}`,
         abi: CampaignInfoFactoryABI,
         functionName: 'createCampaign',
@@ -67,20 +77,28 @@ export function useCreateCampaignContract({
           campaignData,
         ],
       });
+      onStateChanged('waitForCreationConfirmation');
+      // -> useEffect: hash + state:success,
+      // then the receipt has the address in the event-logs
     },
-    [address, authenticated, writeContract],
+    [address, authenticated, writeContractAsync],
   );
 
   useEffect(() => {
-    if (hash && isSuccess && receipt) {
-      const campaignAddress = receipt.logs[0].address;
+    if (campaignId && hash && isSuccess && receipt) {
       const status = receipt.status;
       const event = receipt.logs.find(
         (log: Log) => log.transactionHash === hash,
       );
-      onConfirmed({ hash, status, campaignAddress, event });
+      const campaignAddress =
+        status === 'success'
+          ? (event?.address ?? receipt.logs?.at(0)?.address ?? '')
+          : '';
+      onConfirmed({ hash, status, campaignAddress, campaignId });
+      setCampaignId(undefined);
     }
-  }, [hash, isSuccess, receipt, onConfirmed]);
+  }, [hash, isSuccess, receipt, onConfirmed, campaignId]);
+
   return {
     isPending,
     isConfirming,

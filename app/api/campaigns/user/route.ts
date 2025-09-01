@@ -1,139 +1,111 @@
 import { db } from '@/server/db';
-import { checkAuth } from '@/lib/api/auth';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
 import { response, handleError } from '@/lib/api/response';
+import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+  ApiUpstreamError,
+} from '@/lib/api/error';
+import { PatchUserCampaignResponse } from '@/lib/api/types';
+import { uploadFile } from '@/lib/storage/upload-file';
 
-import { chainConfig, createPublicClient, http } from '@/lib/web3';
-
-const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-const RPC_URL = chainConfig.rpcUrl;
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    if (!FACTORY_ADDRESS || !RPC_URL) {
-      throw new Error('Campaign factory address or RPC URL not configured');
+    const session = await checkAuth(['user']);
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status') || 'active';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const rounds =
+      (searchParams.get('rounds') || 'false') === 'true' ? true : false;
+    const syncChain = searchParams.get('sync-chain') || 'false';
+    const skip = (page - 1) * pageSize;
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
+    }
+    const forceEvents = syncChain === 'true' ? true : false;
+    // status active should be enforced if access-token is not admin
+    const admin = await isAdmin();
+    return response(
+      await listCampaigns({
+        creatorAddress: session.user.address,
+        admin,
+        status,
+        page,
+        pageSize,
+        rounds,
+        skip,
+        forceEvents,
+      }),
+    );
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await checkAuth(['user']);
+    const asAdmin = await isAdmin();
+    const formData = await req.formData();
+
+    // Extract form fields
+    const campaignId = formData.get('campaignId') as string;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+
+    const location = formData.get('location') as string;
+    const category = formData.get('category') as string;
+    const bannerImage = formData.get('bannerImage') as File | null;
+
+    if (!campaignId) {
+      throw new ApiParameterError('campaignId is required');
+    }
+    if (!title || !description) {
+      throw new ApiParameterError('missing required fields');
     }
 
-    const session = await checkAuth(['user']);
-
-    const client = createPublicClient({
-      chain: chainConfig.defaultChain,
-      transport: http(RPC_URL),
-    });
-
-    // First, fetch all campaigns from the database
-    const dbCampaigns = await db.campaign.findMany({
+    const instance = await db.campaign.findUnique({
       where: {
-        creatorAddress: session.user.address,
+        id: parseInt(campaignId),
       },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        fundingGoal: true,
-        startTime: true,
-        endTime: true,
-        creatorAddress: true,
-        status: true,
-        transactionHash: true,
-        campaignAddress: true,
-        treasuryAddress: true,
-        createdAt: true,
-        updatedAt: true,
-        images: true,
-      },
-      orderBy: { createdAt: 'desc' },
     });
+    if (!instance) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
+    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
+      throw new ApiAuthNotAllowed('User cannot modify this campaign');
+    }
 
-    // Get campaign created events
-    const events = await client.getLogs({
-      address: FACTORY_ADDRESS as `0x${string}`,
-      event: {
-        type: 'event',
-        name: 'CampaignInfoFactoryCampaignCreated',
-        inputs: [
-          { type: 'bytes32', name: 'identifierHash', indexed: true },
-          { type: 'address', name: 'campaignInfoAddress', indexed: true },
-          { type: 'address', name: 'owner' },
-          { type: 'uint256', name: 'launchTime' },
-          { type: 'uint256', name: 'deadline' },
-          { type: 'uint256', name: 'goalAmount' },
-        ],
-      },
-      fromBlock: 0n,
-      toBlock: 'latest',
-    });
-
-    // Combine data from events and database
-    const combinedCampaigns = dbCampaigns.map((dbCampaign) => {
-      // For campaigns without transaction hash (draft, etc), use database values
-      if (!dbCampaign.transactionHash) {
-        return {
-          ...dbCampaign,
-          address: dbCampaign.campaignAddress || '',
-          owner: dbCampaign.creatorAddress,
-          launchTime: Math.floor(
-            new Date(dbCampaign.startTime).getTime() / 1000,
-          ).toString(),
-          deadline: Math.floor(
-            new Date(dbCampaign.endTime).getTime() / 1000,
-          ).toString(),
-          goalAmount: dbCampaign.fundingGoal,
-          totalRaised: '0',
-        };
+    let imageUrl = null;
+    if (bannerImage) {
+      try {
+        imageUrl = await uploadFile(bannerImage);
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
       }
-
-      // For campaigns with transaction hash, try to get blockchain data
-      const event = events.find(
-        (e: {
-          transactionHash?: `0x${string}`;
-          args?: {
-            owner?: `0x${string}`;
-            launchTime?: bigint;
-            deadline?: bigint;
-            goalAmount?: bigint;
-          };
-        }) =>
-          e.transactionHash?.toLowerCase() ===
-          dbCampaign.transactionHash?.toLowerCase(),
-      );
-
-      if (event && event.args) {
-        return {
-          ...dbCampaign,
-          address: dbCampaign.campaignAddress || '',
-          owner: event.args.owner || dbCampaign.creatorAddress,
-          launchTime: String(
-            event.args.launchTime ||
-              Math.floor(new Date(dbCampaign.startTime).getTime() / 1000),
-          ),
-          deadline: String(
-            event.args.deadline ||
-              Math.floor(new Date(dbCampaign.endTime).getTime() / 1000),
-          ),
-          goalAmount: event.args.goalAmount
-            ? (Number(event.args.goalAmount) / 1e18).toString()
-            : dbCampaign.fundingGoal,
-          totalRaised: '0',
-        };
-      }
-
-      // Fallback to database values if event parsing fails
-      return {
-        ...dbCampaign,
-        address: dbCampaign.campaignAddress || '',
-        owner: dbCampaign.creatorAddress,
-        launchTime: Math.floor(
-          new Date(dbCampaign.startTime).getTime() / 1000,
-        ).toString(),
-        deadline: Math.floor(
-          new Date(dbCampaign.endTime).getTime() / 1000,
-        ).toString(),
-        goalAmount: dbCampaign.fundingGoal,
-        totalRaised: '0',
-      };
+    }
+    await db.campaign.update({
+      where: {
+        id: instance.id,
+      },
+      data: {
+        title,
+        description,
+        location,
+        category,
+        images: imageUrl
+          ? { create: { imageUrl, isMainImage: true } }
+          : undefined,
+      },
     });
 
-    return response({ campaigns: combinedCampaigns });
+    return response({
+      campaign: await getCampaign(instance.id),
+    } as PatchUserCampaignResponse);
   } catch (error: unknown) {
     return handleError(error);
   }

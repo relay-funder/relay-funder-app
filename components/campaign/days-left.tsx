@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
-import { CampaignDisplay } from '@/types/campaign';
 
-export function CampaignDaysLeft({ campaign }: { campaign: CampaignDisplay }) {
+export function CampaignDaysLeft({
+  campaign,
+}: {
+  campaign: { endTime: string | Date };
+}) {
   const daysLeft = useMemo(() => {
     if (!campaign?.endTime) {
       return 0;

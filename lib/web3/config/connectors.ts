@@ -1,4 +1,4 @@
 // 4313->7336
-import { injected, metaMask } from '@wagmi/connectors';
+import { injected } from '@wagmi/connectors';
 
-export { injected, metaMask };
+export { injected };

@@ -1,11 +1,10 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider } from 'next-auth/react';
-import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import {
   AuthProvider,
   SidebarProvider,
@@ -21,20 +20,16 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <Web3ContextProvider>
-          <FeatureFlagsProvider>
-            <SidebarProvider>
-              <EnvironmentProvider>
-                <Suspense>
-                  <AuthProvider>
-                    <CollectionProvider>{children}</CollectionProvider>
-                  </AuthProvider>
-                </Suspense>
-              </EnvironmentProvider>
-            </SidebarProvider>
-          </FeatureFlagsProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
-        </Web3ContextProvider>
+        <FeatureFlagsProvider>
+          <SidebarProvider>
+            <EnvironmentProvider>
+              <AuthProvider>
+                <CollectionProvider>{children}</CollectionProvider>
+              </AuthProvider>
+            </EnvironmentProvider>
+          </SidebarProvider>
+        </FeatureFlagsProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </SessionProvider>
   );

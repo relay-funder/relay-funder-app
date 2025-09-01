@@ -6,7 +6,7 @@ import { chainConfig } from '@/lib/web3';
 import { ProviderRpcError } from '@/lib/web3/types';
 import {
   useWeb3Context,
-  useAuth,
+  useWeb3Auth,
   useCurrentChain,
   getProvider,
 } from '@/lib/web3';
@@ -14,17 +14,20 @@ import {
 export function useNetworkCheck() {
   const { address } = useWeb3Context();
   const { chainId } = useCurrentChain();
-  const { ready } = useAuth();
+  const { ready } = useWeb3Auth();
   const { toast } = useToast();
+  const [triggerCheck, setTriggerCheck] = useState(Date.now());
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
   const checkNetwork = useCallback(async () => {
+    console.log('use-network::checkNetwork');
     const provider = getProvider();
     if (!provider) {
       return;
     }
     try {
-      const correctNetwork = chainId === chainConfig.chainId.decimal;
+      console.log('use-network::checkNetwork', chainId, chainConfig.chainId);
+      const correctNetwork = chainId === chainConfig.chainId;
       setIsCorrectNetwork(correctNetwork);
       return correctNetwork;
     } catch (error) {
@@ -33,6 +36,9 @@ export function useNetworkCheck() {
       return false;
     }
   }, [chainId]);
+  useEffect(() => {
+    checkNetwork();
+  }, [checkNetwork, triggerCheck]);
 
   const switchNetwork = useCallback(async () => {
     const provider = getProvider();
@@ -41,14 +47,14 @@ export function useNetworkCheck() {
     }
 
     try {
-      const chainIdHex = chainConfig.chainId.hex;
+      const chainIdHex = `0x${chainConfig.chainId?.toString(16)}`;
 
       try {
         await provider.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: chainIdHex }],
         });
-        await checkNetwork();
+        setTriggerCheck(Date.now());
       } catch (switchError) {
         // This error code indicates that the chain has not been added to MetaMask
         if (
@@ -59,12 +65,12 @@ export function useNetworkCheck() {
           switchError === 'wallet_switchEthereumChain failed. Invalid chain ID'
         ) {
           try {
+            console.log('trying to add chain', chainId);
             await provider.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
             });
-            // Check network again after adding
-            await checkNetwork();
+            setTriggerCheck(Date.now());
           } catch (addError) {
             console.error('Error adding network:', addError);
             throw new Error('Failed to add network');
@@ -86,7 +92,7 @@ export function useNetworkCheck() {
         variant: 'destructive',
       });
     }
-  }, [ready, toast, checkNetwork]);
+  }, [ready, toast, chainId]);
 
   useEffect(() => {
     if (!address) {
@@ -111,12 +117,13 @@ export function useNetworkCheck() {
         }
 
         // Initial network check
-        await checkNetwork();
+        setTriggerCheck(Date.now());
 
         // Listen for network changes
         const handleChainChanged = async (newChainIdHex: string) => {
           console.log('use-network:effect: handleChainChanged', newChainIdHex);
-          const isCorrect = newChainIdHex === chainConfig.chainId.hex;
+          const isCorrect =
+            newChainIdHex === `0x${chainConfig.chainId.toString(16)}`;
           setIsCorrectNetwork(isCorrect);
         };
         if (typeof provider?.on !== 'function') {

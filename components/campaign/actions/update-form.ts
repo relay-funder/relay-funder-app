@@ -1,11 +1,11 @@
 'use server';
 import { checkAuth } from '@/lib/api/auth';
-import { db } from '@/server/db';
-import { CampaignDisplay } from '@/types/campaign';
+import { addCampaignUpdate } from '@/lib/api/campaigns';
+import { type DbCampaign } from '@/types/campaign';
 import { revalidatePath } from 'next/cache';
 
 export async function campaignUpdateFormAction(
-  campaign: CampaignDisplay,
+  campaign: DbCampaign,
   formData: FormData,
 ) {
   try {
@@ -25,17 +25,8 @@ export async function campaignUpdateFormAction(
     if (session.user.address !== campaign.creatorAddress) {
       throw new Error('Only the campaign creator can post updates');
     }
+    await addCampaignUpdate(campaign.id, title, content);
 
-    const update = await db.campaignUpdate.create({
-      data: {
-        title: title,
-        content: content,
-        campaignId: campaign.id,
-        creatorAddress: session.user.address,
-      },
-    });
-
-    console.log('Created update:', update);
     revalidatePath(`/campaigns/${campaign.slug}`);
   } catch (error) {
     console.error('Failed to create update:', error);

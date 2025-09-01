@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Profile } from '@/types/profile';
 import {
   Card,
@@ -6,7 +8,7 @@ import {
   CardContent,
   Button,
 } from '@/components/ui';
-import { UserRound, Pencil } from 'lucide-react';
+import { UserRound, Pencil, LogOut } from 'lucide-react';
 import { FormattedDate } from '@/components/formatted-date';
 import { useAuth } from '@/contexts';
 export function ProfileCard({
@@ -16,9 +18,14 @@ export function ProfileCard({
   profile?: Profile;
   onEdit?: () => void;
 }) {
-  const { address } = useAuth();
+  const { address, logout } = useAuth();
+  const router = useRouter();
+  const onLogout = useCallback(async () => {
+    await logout();
+    router.push('/');
+  }, [logout, router]);
   return (
-    <Card>
+    <Card className="relative">
       <CardContent className="pt-6">
         <div className="flex flex-col gap-6 md:flex-row">
           <Avatar className="h-24 w-24">
@@ -44,13 +51,16 @@ export function ProfileCard({
               )}
             </p>
           </div>
-          <div className="flex justify-end">
-            <Button variant="ghost" title="Edit" onClick={onEdit}>
-              <Pencil />
-            </Button>
-          </div>
         </div>
       </CardContent>
+      <div className="absolute right-4 top-4 flex space-x-2">
+        <Button variant="ghost" title="Edit" onClick={onEdit}>
+          <Pencil />
+        </Button>
+        <Button variant="ghost" title="Sign Out" onClick={onLogout}>
+          <LogOut />
+        </Button>
+      </div>
     </Card>
   );
 }

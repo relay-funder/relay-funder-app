@@ -1,31 +1,50 @@
 'use client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { useAuth } from '@/contexts/AuthContext';
-import { Heart } from 'lucide-react';
+import {
+  Input,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui';
+import { useAuth } from '@/contexts';
+import { Heart, Search } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
-import { Campaign } from '@/types/campaign';
-import { Favourite } from '@/types';
 import { CampaignCardDashboard } from '@/components/campaign/card-dashboard';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignEmpty } from '@/components/campaign/empty';
-import { useUserCampaigns } from '@/lib/hooks/useCampaigns';
+import { useInfiniteUserCampaigns } from '@/lib/hooks/useCampaigns';
 import { useUserFavourites } from '@/lib/hooks/useFavourites';
 import { DashboardNotAuthenticated } from '@/components/dashboard/not-authenticated';
 import { PageDashboard } from '@/components/page/dashboard';
 import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
-import { useState } from 'react';
-
+import { useCallback, useState, type ChangeEvent } from 'react';
+import { CampaignUserList } from '@/components/campaign/list-user';
+import { cn } from '@/lib/utils';
 export default function DashboardPage() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const { authenticated } = useAuth();
-  const { data: campaigns, isLoading: loading, error } = useUserCampaigns();
+  const { isLoading: loading, error } = useInfiniteUserCampaigns();
+
   const {
     data: favourites,
     isLoading: loadingFavourites,
     error: favouriteError,
   } = useUserFavourites();
+  const onCreate = useCallback(async () => {
+    setShowCampaignCreate(true);
+  }, []);
+  const onCreated = useCallback(async () => {
+    setShowCampaignCreate(false);
+  }, []);
+  const onSearchInputChanged = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(event.target.value);
+    },
+    [setSearchTerm],
+  );
 
   if (!authenticated) {
     return (
@@ -64,21 +83,24 @@ export default function DashboardPage() {
   }
   if (showCampaignCreate) {
     return (
-      <div className="mb-8">
-        <Button
-          variant="outline"
-          onClick={() => setShowCampaignCreate(false)}
-          className="mb-4"
-        >
-          ← Back to Dashboard
-        </Button>
-        <CampaignCreate />
-      </div>
+      <PageDashboard
+        title={
+          <Button
+            variant="outline"
+            onClick={() => setShowCampaignCreate(false)}
+            className="ml-2"
+          >
+            ← Back to Dashboard
+          </Button>
+        }
+      >
+        <CampaignCreate onCreated={onCreated} />
+      </PageDashboard>
     );
   }
   return (
     <PageDashboard>
-      {!error && <DashboardOverview campaigns={campaigns} />}
+      {!error && <DashboardOverview />}
 
       <Tabs defaultValue="my-campaigns" className="mt-8">
         <TabsList className="mb-6">
@@ -94,14 +116,33 @@ export default function DashboardPage() {
         <TabsContent value="my-campaigns">
           {error ? (
             <CampaignError error={error.message} />
-          ) : campaigns?.length === 0 ? (
-            <CampaignEmpty onCreate={() => setShowCampaignCreate(true)} />
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {campaigns?.map((campaign: Campaign) => (
-                <CampaignCardDashboard key={campaign.id} campaign={campaign} />
-              ))}
-            </div>
+            <>
+              <div className="flex flex-row items-center py-1 md:ml-4">
+                <div className="relative">
+                  <Search
+                    className={cn(
+                      'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400',
+                    )}
+                  />
+                  <Input
+                    className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
+                    placeholder={'Search Your Stories'}
+                    type="search"
+                    value={searchTerm}
+                    onChange={onSearchInputChanged}
+                  />
+                </div>
+              </div>
+              <CampaignUserList
+                searchTerm={searchTerm}
+                statusFilter="all"
+                pageSize={3}
+                withRounds={true}
+                item={CampaignCardDashboard}
+                onCreate={onCreate}
+              />
+            </>
           )}
         </TabsContent>
 
@@ -116,7 +157,7 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {favourites?.map((favourite: Favourite) => (
+              {favourites?.map((favourite) => (
                 <CampaignCardDashboard
                   key={`favorite-${favourite.campaign.id}`}
                   campaign={favourite.campaign}

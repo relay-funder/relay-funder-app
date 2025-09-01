@@ -1,13 +1,13 @@
 'use client';
 import { CampaignUpdateForm } from '@/components/campaign/update-form';
 import { Timeline } from '@/components/timeline';
-import { CampaignDisplay } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { campaignUpdateFormAction } from './actions/update-form';
 
 export function CampaignDetailTabUpdates({
   campaign,
 }: {
-  campaign: CampaignDisplay;
+  campaign: DbCampaign;
 }) {
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4">

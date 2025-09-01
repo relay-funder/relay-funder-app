@@ -13,9 +13,10 @@ export async function switchNetwork({ wallet }: { wallet: ConnectedWallet }) {
   }
   try {
     debug && console.log('Switching to Alfajores network...');
+    const chainIdHex = `0x${chainConfig.chainId.toString(16)}`;
     await walletProvider.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: chainConfig.chainId.hex }],
+      params: [{ chainId: chainIdHex }],
     });
     debug && console.log('Successfully switched to Alfajores network');
   } catch (switchError: unknown) {

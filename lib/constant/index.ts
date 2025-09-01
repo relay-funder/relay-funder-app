@@ -1,5 +1,6 @@
 export { countries } from './countries';
 export { categories } from './categories';
+export { fundingModels } from './funding-models';
 
 export const PROJECT_NAME = 'Akashic';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
@@ -23,9 +24,6 @@ export const CROWDSPLIT_CLIENT_ID = process.env.CROWDSPLIT_CLIENT_ID;
 export const CROWDSPLIT_CLIENT_SECRET = process.env.CROWDSPLIT_CLIENT_SECRET;
 export const CROWDSPLIT_WEBHOOK_SECRET = process.env.CROWDSPLIT_WEBHOOK_SECRET;
 
-// Auth (privy|silk)
-export const AUTH_PROVIDER: 'privy' | 'silk' = 'privy';
-
 // silk / appkit
 export const REOWN_CLOUD_PROJECT_ID =
   process.env.NEXT_PUBLIC_REOWN_CLOUD_PROJECT_ID || '';
@@ -33,3 +31,6 @@ export const REOWN_CLOUD_PROJECT_ID =
 // privy
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
+
+export const DEFAULT_USER_EMAIL = 'test.donor@akashic.org';
+export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [25, 50, 100, 250, 500];

@@ -18,7 +18,7 @@ interface RequestArguments {
   method: string;
   params?:
     | {
-        chainId: string;
+        chainId: string | number;
         chainName?: string;
         nativeCurrency?: { decimals: number; name: string; symbol: string };
         rpcUrls?: string[];
@@ -39,6 +39,7 @@ export interface ProviderRpcError extends Error {
 
 export interface ConnectedWallet {
   address?: string;
+  chainId?: number;
   isConnected: () => Promise<boolean>;
   getEthereumProvider: () => Promise<EthereumProvider | undefined>;
 }
@@ -46,7 +47,9 @@ export interface ConnectedWallet {
 export interface IWeb3UseAuthHook {
   address?: string;
   wallet?: ConnectedWallet;
-  authenticated: boolean;
+  authenticating: boolean;
+  connecting: boolean;
+  error?: Error;
 
   login: () => Promise<void>;
   logout: () => Promise<void>;

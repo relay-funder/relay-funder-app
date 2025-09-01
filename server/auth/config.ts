@@ -35,6 +35,9 @@ declare module 'next-auth/jwt' {
  */
 export const authConfig = {
   providers: [SiweProvider()],
+  pages: {
+    signIn: '/login',
+  },
   events: {
     signIn: async ({ user }) => {
       /**

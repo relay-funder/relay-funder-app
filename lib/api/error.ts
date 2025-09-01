@@ -87,3 +87,15 @@ export class ApiIntegrityError extends Error {
     this.name = 'IntegrityError';
   }
 }
+/**
+ * Rate Limit Error
+ * Error to be thrown from route functions.
+ * This error indicates that the route was executed too frequently
+ */
+export class ApiRateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, ApiRateLimitError.prototype);
+    this.name = 'RateLimitError';
+  }
+}
