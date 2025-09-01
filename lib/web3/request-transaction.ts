@@ -1,36 +1,40 @@
-import { BigNumber, ethers } from 'ethers';
-import { erc20Abi } from 'viem';
+import { ethers, erc20Abi } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
 import { type ConnectedWallet } from '@/lib/web3/types';
-
+import { DonationProcessStates } from '@/types/campaign';
 const debug = process.env.NODE_ENV !== 'production';
 
 export async function requestTransaction({
   wallet,
   address,
   amount,
+  onStateChanged,
 }: {
   wallet: ConnectedWallet;
   address: string;
   amount: string;
+  onStateChanged: (arg0: keyof typeof DonationProcessStates) => void;
 }) {
   if (!wallet || !(await wallet.isConnected())) {
     throw new Error('Wallet not connected');
   }
   const walletProvider = await wallet.getEthereumProvider();
-  const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-  const signer = ethersProvider.getSigner();
-  const userAddress = await signer.getAddress();
-  if (!USDC_ADDRESS || !ethers.utils.isAddress(USDC_ADDRESS as string)) {
+  if (!walletProvider) {
+    throw new Error('Wallet not supported or connected');
+  }
+  const ethersProvider = new ethers.BrowserProvider(walletProvider);
+  const signer = await ethersProvider.getSigner();
+  const userAddress = signer.address;
+  if (!USDC_ADDRESS || !ethers.isAddress(USDC_ADDRESS as string)) {
     throw new Error('USDC_ADDRESS is missing or invalid');
   }
-  if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+  if (!userAddress || !ethers.isAddress(userAddress)) {
     throw new Error('User address is missing or invalid');
   }
   if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
     throw new Error('Donation amount is missing or invalid');
   }
-  if (!address || !ethers.utils.isAddress(address)) {
+  if (!address || !ethers.isAddress(address)) {
     throw new Error('Treasury address is missing or invalid');
   }
   // Initialize contracts
@@ -40,17 +44,26 @@ export async function requestTransaction({
     erc20Abi,
     signer,
   );
-  const amountInUSDC = ethers.utils.parseUnits(
-    amount || '0',
-    process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS,
+
+  let unit: number | string = parseInt(
+    process.env.NEXT_PUBLIC_USDC_DECIMALS ?? '',
   );
+  if (isNaN(unit)) {
+    unit =
+      typeof process.env.NEXT_PUBLIC_USDC_DECIMALS === 'string'
+        ? parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)
+        : 6;
+  }
+  const amountInUSDC = ethers.parseUnits(amount || '0', unit);
   debug && console.log('Amount in USDC:', amountInUSDC.toString());
 
   // First approve the treasury to spend USDC
   debug && console.log('Treasury address:', address);
   debug && console.log('Approving USDC spend...');
+  onStateChanged('approveUsdcContract');
   const approveTx = await usdcContract.approve(address, amountInUSDC);
   debug && console.log('Approval transaction hash:', approveTx.hash);
+  onStateChanged('waitForUsdcContractConfirmation');
   await approveTx.wait();
   debug && console.log('USDC approval confirmed');
 
@@ -62,9 +75,9 @@ export async function requestTransaction({
   const treasuryContract = new ethers.Contract(address!, treasuryABI, signer);
 
   debug && console.log('Estimating gas for pledge transaction...');
-  let estimatedGas = BigNumber.from(220000);
+  let estimatedGas = 220000n;
   try {
-    estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(
+    estimatedGas = await treasuryContract.pledgeWithoutAReward.estimateGas(
       userAddress,
       amountInUSDC,
     );
@@ -72,13 +85,15 @@ export async function requestTransaction({
   debug && console.log('Estimated gas:', estimatedGas.toString());
 
   debug && console.log('Sending pledge transaction...');
+  onStateChanged('pledgeContract');
   const tx = await treasuryContract.pledgeWithoutAReward(
     userAddress,
     amountInUSDC,
     {
-      gasLimit: estimatedGas.mul(120).div(100),
+      gasLimit: (estimatedGas * 120n) / 100n,
     },
   );
   debug && console.log('Pledge transaction hash:', tx.hash);
+  onStateChanged('waitForPledgeContractConfirmation');
   return tx;
 }

@@ -9,8 +9,47 @@
  * or to completely swap out to a dummy interface for enhanced
  * frontend development
  */
-export { Web3ContextProvider, useAuth, useWallet, useChain } from './privy';
-// export { Web3ContextProvider, useAuth, useWallet, useChain } from './silk';
 
-// never commit this line uncommented, this is for local development only
-// export { Web3ContextProvider, useAuth, useWallet, useChain } from './dummy';
+export {
+  Web3ContextProvider,
+  useWeb3Auth,
+  useWeb3Context,
+  getProvider,
+  // config
+  chainConfig,
+  wagmiConfig,
+  // viem
+  encodeAbiParameters,
+  parseAbiParameters,
+  createPublicClient,
+  http,
+  parseEther,
+  keccak256,
+  stringToHex,
+  erc20Abi,
+  maxUint256,
+  decodeEventLog,
+  formatUnits,
+  BaseError,
+  UserRejectedRequestError,
+  // wagmi
+  readContract,
+  createConfig,
+  useConnectorClient,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useDeployContract,
+  useChainId,
+  useConfig,
+  useConnectors,
+  useConnect,
+  useDisconnect,
+  useSignMessage,
+  useAccount,
+  useBalance,
+  useChains,
+  useSwitchChain,
+  ConnectorAlreadyConnectedError,
+  // ethers
+  ethers,
+} from './dummy';

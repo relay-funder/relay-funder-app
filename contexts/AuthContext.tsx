@@ -9,18 +9,11 @@ import React, {
 } from 'react';
 
 const debug = process.env.NODE_ENV !== 'production';
-import { ConnectedWallet } from '@/lib/web3/types';
-import {
-  useAuth as useWeb3Auth,
-  useWallet,
-  useChain,
-} from '@/lib/web3/hooks/use-web3';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 interface AuthContextType {
-  address: string | null;
+  address?: string;
   authenticated: boolean;
-  wallet: ConnectedWallet | null;
   isAdmin: boolean;
   isClient: boolean;
   isReady: boolean;
@@ -29,9 +22,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  address: null,
+  address: undefined,
   authenticated: false,
-  wallet: null,
   isAdmin: false,
   isClient: false,
   isReady: false,
@@ -42,100 +34,74 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { address: web3ChainAddress } = useChain();
-  const {
-    address: web3Address,
-    login,
-    logout,
-    ready: web3Ready,
-  } = useWeb3Auth();
   const session = useSession();
 
   const [isClient, setIsClient] = useState(false);
 
-  // Get the primary wallet if available
-  const wallet = useWallet();
-
   const authenticated = useMemo(() => {
-    debug && console.log('contexts/AuthContext: rememo authenticated');
-    if (session?.status === 'authenticated') {
+    debug &&
+      console.log('contexts/AuthContext: rememo authenticated', session.status);
+    if (session.status === 'authenticated') {
       return true;
     }
     return false;
-  }, [session]);
+  }, [session?.status]);
 
   const isReady = useMemo(() => {
-    debug && console.log('contexts/AuthContext: rememo isReady');
+    debug &&
+      console.log('contexts/AuthContext: rememo isReady', session.status);
     if (session.status === 'loading') {
       return false;
     }
-    return web3Ready;
-  }, [web3Ready, session]);
+    return true;
+  }, [session?.status]);
 
   const address = useMemo(() => {
-    debug && console.log('contexts/AuthContext: rememo address');
-    if (!session?.data?.user?.address) {
-      return null;
+    debug &&
+      console.log(
+        'contexts/AuthContext: rememo address',
+        session?.data?.user?.address,
+      );
+
+    if (typeof session?.data?.user?.address !== 'string') {
+      return undefined;
     }
     return session.data.user.address;
-  }, [session]);
+  }, [session?.data?.user?.address]);
   // Set client-side flag on mount
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   const isAdmin = useMemo(() => {
-    debug && console.log('contexts/AuthContext: rememo isAdmin');
     return session?.data?.user?.roles?.includes('admin') ?? false;
-  }, [session]);
+  }, [session?.data?.user?.roles]);
   // Debugging logs
   useEffect(() => {
     if (!isClient || !debug) {
       return;
     }
-    debug &&
-      console.log(
-        'contexts/AuthContext: [AUTH DEBUG]',
-        JSON.stringify({
-          web3ChainAddress,
-          web3Address,
-          wallet,
-          authenticated,
-          address,
-          isAdmin,
-        }),
-      );
-  }, [
-    web3ChainAddress,
-    web3Address,
-    wallet,
-    authenticated,
-    address,
-    isAdmin,
-    isClient,
-  ]);
+    console.log(
+      '[AUTH DEBUG]',
+      JSON.stringify({
+        authenticated,
+        address,
+        isAdmin,
+      }),
+    );
+  }, [authenticated, address, isAdmin, isClient]);
 
   const value = useMemo(() => {
     return {
       address,
       authenticated,
       isReady,
-      wallet,
       isAdmin,
       isClient,
-      login,
-      logout,
+      login: signIn,
+      logout: signOut,
     };
-  }, [
-    address,
-    authenticated,
-    isReady,
-    wallet,
-    isAdmin,
-    isClient,
-    login,
-    logout,
-  ]);
+  }, [address, authenticated, isReady, isAdmin, isClient]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

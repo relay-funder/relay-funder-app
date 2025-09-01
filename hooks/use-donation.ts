@@ -1,29 +1,32 @@
 import { useCallback, useState } from 'react';
-import { ethers } from 'ethers';
-import { useToast } from '@/hooks/use-toast';
-import { useWallet } from '@/lib/web3/hooks/use-web3';
+import { useWeb3Auth, ethers } from '@/lib/web3';
+import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
 import {
   useCreatePayment,
   useUpdatePaymentStatus,
 } from '@/lib/hooks/usePayments';
-import { Campaign } from '@/types/campaign';
+import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 const debug = process.env.NODE_ENV !== 'production';
 
 export function useDonationCallback({
   campaign,
   amount,
+  poolAmount,
   selectedToken,
   isAnonymous = false,
+  onStateChanged,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
   amount: string;
+  poolAmount: number;
   selectedToken: string;
   isAnonymous?: boolean;
+  onStateChanged: (state: keyof typeof DonationProcessStates) => void;
 }) {
-  const wallet = useWallet();
-  const { toast } = useToast();
+  const { wallet } = useWeb3Auth();
+  const { authenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -34,17 +37,24 @@ export function useDonationCallback({
     try {
       setIsProcessing(true);
       setError(null);
+      onStateChanged('connect');
       debug && console.log('Starting donation process...');
+      if (!authenticated) {
+        throw new Error('Not signed in');
+      }
       if (!wallet) {
         throw new Error('Wallet not connected');
       }
 
       debug && console.log('Getting wallet provider and signer...');
       const walletProvider = await wallet.getEthereumProvider();
-      const ethersProvider = new ethers.providers.Web3Provider(walletProvider);
-      const signer = ethersProvider.getSigner();
-      const userAddress = await signer.getAddress();
-      if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+      if (!walletProvider) {
+        throw new Error('Wallet not supported or connected');
+      }
+      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = signer.address;
+      if (!userAddress || !ethers.isAddress(userAddress)) {
         throw new Error('User address is missing or invalid');
       }
       if (!campaign.treasuryAddress) {
@@ -52,18 +62,22 @@ export function useDonationCallback({
       }
       debug && console.log('User address:', userAddress);
 
-      // Switch to Alfajores network first
+      onStateChanged('switch');
       await switchNetwork({ wallet });
+
+      onStateChanged('requestTransaction');
       const tx = await requestTransaction({
         address: campaign.treasuryAddress,
         amount,
         wallet,
+        onStateChanged,
       });
 
       // Only create payment record after transaction is sent
       debug && console.log('Creating payment record...');
-      const { id: paymentId } = await createPayment({
+      const { paymentId } = await createPayment({
         amount: amount,
+        poolAmount,
         token: selectedToken,
         campaignId: campaign.id,
         isAnonymous: isAnonymous,
@@ -77,32 +91,19 @@ export function useDonationCallback({
       const receipt = await tx.wait();
       debug && console.log('Transaction confirmed:', receipt);
 
+      onStateChanged('storageComplete');
       // Update payment status based on receipt
       debug && console.log('Updating payment status...');
       await updatePaymentStatus({
         paymentId,
         status: receipt.status === 1 ? 'confirmed' : 'failed',
       });
+      onStateChanged('done');
 
       debug && console.log('Payment status updated');
-
-      toast({
-        title: 'Success!',
-        description: 'Your donation has been processed',
-      });
     } catch (err) {
       debug && console.error('Donation error:', err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'object' && err && 'message' in err
-            ? String(err.message)
-            : 'Failed to process donation';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      onStateChanged('failed');
       setError(
         err instanceof Error ? err.message : 'Failed to process wallet payment',
       );
@@ -111,14 +112,16 @@ export function useDonationCallback({
     }
   }, [
     wallet,
-    toast,
+    authenticated,
     createPayment,
     updatePaymentStatus,
     amount,
-    campaign.id,
-    campaign.treasuryAddress,
+    poolAmount,
+    campaign?.id,
+    campaign?.treasuryAddress,
     selectedToken,
     isAnonymous,
+    onStateChanged,
   ]);
   return { onDonate, isProcessing, error };
 }

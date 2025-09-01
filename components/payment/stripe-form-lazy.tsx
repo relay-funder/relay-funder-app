@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { type Campaign } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { type Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { PaymentStripeForm } from '@/components/payment/stripe-form';
@@ -10,8 +10,7 @@ interface LazyStripeFormProps {
   stripePromise: Promise<Stripe | null>;
   clientSecret: string;
   publicKey: string;
-  campaign: Campaign;
-  userAddress: string | null;
+  campaign: DbCampaign;
   amount: string;
 }
 
@@ -24,7 +23,6 @@ export function LazyStripeForm({
   clientSecret,
   publicKey,
   campaign,
-  userAddress,
   amount,
 }: LazyStripeFormProps) {
   const handleRetry = () => {
@@ -51,7 +49,6 @@ export function LazyStripeForm({
           <PaymentStripeForm
             publicKey={publicKey}
             campaign={campaign}
-            userAddress={userAddress}
             amount={amount}
           />
         </Elements>

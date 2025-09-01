@@ -1,1 +1,1 @@
-export { Web3ContextProvider } from './adapter';
+export { Web3ContextProvider, useWeb3Context, getProvider } from './adapter';

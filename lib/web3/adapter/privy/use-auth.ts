@@ -8,9 +8,10 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { useSession } from 'next-auth/react';
-
+import { useWallet } from './use-wallet';
 export function useAuth(): IWeb3UseAuthHook {
   const { user, ready, logout: privyLogout, getAccessToken } = usePrivy();
+  const wallet = useWallet();
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
   const params = useSearchParams();
@@ -89,6 +90,7 @@ export function useAuth(): IWeb3UseAuthHook {
   return {
     address,
     authenticated,
+    wallet,
     ready,
     login,
     logout,

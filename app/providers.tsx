@@ -1,11 +1,10 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { SessionProvider } from 'next-auth/react';
-import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import {
   AuthProvider,
   SidebarProvider,
@@ -13,36 +12,24 @@ import {
   EnvironmentProvider,
   CollectionProvider,
 } from '@/contexts';
+import { getQueryClient } from '@/lib/query-client';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      gcTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+const queryClient = getQueryClient();
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <Web3ContextProvider>
-          <FeatureFlagsProvider>
-            <SidebarProvider>
-              <EnvironmentProvider>
-                <Suspense>
-                  <AuthProvider>
-                    <CollectionProvider>{children}</CollectionProvider>
-                  </AuthProvider>
-                </Suspense>
-              </EnvironmentProvider>
-            </SidebarProvider>
-          </FeatureFlagsProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
-        </Web3ContextProvider>
+        <FeatureFlagsProvider>
+          <SidebarProvider>
+            <EnvironmentProvider>
+              <AuthProvider>
+                <CollectionProvider>{children}</CollectionProvider>
+              </AuthProvider>
+            </EnvironmentProvider>
+          </SidebarProvider>
+        </FeatureFlagsProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </SessionProvider>
   );

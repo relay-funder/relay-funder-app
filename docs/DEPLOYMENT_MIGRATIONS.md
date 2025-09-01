@@ -5,6 +5,7 @@ Automatic database migrations for Vercel deployments using Prisma and Railway Cl
 ## Overview
 
 The migration system automatically:
+
 1. ✅ Checks if migrations need to be run during Vercel deployment
 2. ✅ Runs pending migrations before the app starts
 3. ✅ Fails deployment safely if migrations fail
@@ -22,7 +23,7 @@ The migration system automatically:
 2. **Generate**: `prisma generate` (via postinstall hook)
 3. **Migrate**: `node prisma/deploy-migrations.js`
    - ✅ **Preview (staging) deployments**: Runs migrations
-   - ✅ **Production deployments**: Runs migrations  
+   - ✅ **Production deployments**: Runs migrations
    - ⏭️ **Local development**: Skips migrations (use `pnpm dev:db`)
 4. **Build**: `next build`
 
@@ -39,6 +40,7 @@ The migration system automatically:
 ## Troubleshooting
 
 ### Check Deployment Logs
+
 1. Go to Vercel dashboard
 2. Click on deployment
 3. Check "Build Logs" for migration output
@@ -47,9 +49,11 @@ The migration system automatically:
 ### Common Issues
 
 **Migration fails:**
+
 - Verify `DATABASE_URL` is correct
 - Look for schema conflicts in logs
 
 **Database connection fails:**
+
 - Verify Railway database URL
 - Check environment variables in Vercel

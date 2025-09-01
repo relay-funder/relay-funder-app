@@ -1,8 +1,24 @@
+// types used from ethers and viem
+// type imports have no impact on dev-performance
+export type { Signer } from 'ethers';
+export type {
+  Address,
+  Hash,
+  Client,
+  Transport,
+  Log,
+  Abi,
+  BaseError,
+  WriteContractParameters,
+  Chain,
+} from 'viem';
+
+// common types
 interface RequestArguments {
   method: string;
   params?:
     | {
-        chainId: string;
+        chainId: string | number;
         chainName?: string;
         nativeCurrency?: { decimals: number; name: string; symbol: string };
         rpcUrls?: string[];
@@ -23,20 +39,19 @@ export interface ProviderRpcError extends Error {
 
 export interface ConnectedWallet {
   address?: string;
+  chainId?: number;
   isConnected: () => Promise<boolean>;
-  getEthereumProvider: () => Promise<EthereumProvider>;
+  getEthereumProvider: () => Promise<EthereumProvider | undefined>;
 }
 
 export interface IWeb3UseAuthHook {
   address?: string;
-  authenticated: boolean;
+  wallet?: ConnectedWallet;
+  authenticating: boolean;
+  connecting: boolean;
+  error?: Error;
+
   login: () => Promise<void>;
-  connect?: () => Promise<void>;
   logout: () => Promise<void>;
   ready: boolean;
-}
-export interface IWeb3UseChainHook {
-  chain?: { name?: string; blockExplorers?: { default: { url: string } } };
-  chainId?: number;
-  address?: `0x${string}`;
 }

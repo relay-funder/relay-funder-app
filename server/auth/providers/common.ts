@@ -1,15 +1,23 @@
 import { db } from '@/server/db';
+
 export async function setupUser(address: string) {
   const normalizedAddress = address.toLowerCase();
   let dbUser = await db.user.findUnique({
     where: { address: normalizedAddress },
   });
   if (!dbUser) {
+    const roles = ['user'];
+    if (
+      process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' &&
+      normalizedAddress.startsWith('0xadadad')
+    ) {
+      roles.push('admin');
+    }
     dbUser = await db.user.create({
       data: {
         address: normalizedAddress,
         createdAt: new Date(),
-        roles: ['user'],
+        roles,
       },
     });
   }

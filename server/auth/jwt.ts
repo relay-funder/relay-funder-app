@@ -9,7 +9,12 @@ export async function jwt({
   user: User;
 }): Promise<JWT> {
   if (user) {
-    return { ...token, roles: user.roles, address: user.address };
+    return {
+      ...token,
+      roles: user.roles,
+      address: user.address,
+      dbId: user.dbId,
+    };
   }
   return token;
 }

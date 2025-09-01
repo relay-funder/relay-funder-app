@@ -1,10 +1,6 @@
 import { type DefaultSession, type NextAuthConfig } from 'next-auth';
 
-import {
-  SiweProvider,
-  PrivyTokenProvider,
-  PrivyFakeProvider,
-} from '@/server/auth/providers';
+import { SiweProvider } from '@/server/auth/providers';
 import { db } from '@/server/db';
 import { jwt } from '@/server/auth/jwt';
 import { session } from '@/server/auth/session';
@@ -38,7 +34,10 @@ declare module 'next-auth/jwt' {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
-  providers: [SiweProvider(), PrivyTokenProvider(), PrivyFakeProvider()],
+  providers: [SiweProvider()],
+  pages: {
+    signIn: '/login',
+  },
   events: {
     signIn: async ({ user }) => {
       /**

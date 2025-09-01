@@ -12,13 +12,13 @@ import { useCallback, useState, type ChangeEvent } from 'react';
 import { useCollection } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import { type Campaign } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 
 export function CollectionAddDialog({
   campaign,
   onClosed,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
   onClosed: () => void;
 }) {
   const [open, setOpen] = useState<boolean>(true);

@@ -2,6 +2,9 @@ import { ChainNotConfiguredError, createConnector } from '@wagmi/core';
 import { SwitchChainError, UserRejectedRequestError, getAddress } from 'viem';
 export { options as connectorOptions } from './options';
 
+import { debugWeb3AdapterSilkConnector as debug } from '@/lib/debug';
+
+// ~780 modules:
 import {
   type CredentialType,
   SILK_METHOD,
@@ -25,31 +28,25 @@ interface SilkEthereumExtendedProviderInterface
     ) => void;
   };
 }
-const debug = false;
-// For reference: WAGMI connector event map: wagmi/packages/core/src/connectors/createConnector.ts
-// type ConnectorEventMap = {
-//   change: {
-//     accounts?: readonly Address[] | undefined
-//     chainId?: number | undefined
-//   }
-//   connect: { accounts: readonly Address[]; chainId: number }
-//   disconnect: never
-//   error: { error: Error }
-//   message: { type: string; data?: unknown | undefined }
-// }
 
+export function initConnectorGlobal() {
+  if (!window.silk) {
+    return initSilk();
+  }
+  return window.silk;
+}
 /**
  * Creates a WAGMI connector for the Silk Wallet SDK
  * @param options the initialization options passed to the Silk Wallet SDK
  * @returns
  */
 export function connector(options?: InitSilkOptions) {
-  let silkProvider: SilkEthereumProviderInterface | null = null;
-  debug &&
-    console.log('web3/adapter/silk/connector', { options }, new Error('trace'));
+  debug && console.log('web3/adapter/silk/connector', { options });
   return createConnector<SilkEthereumProviderInterface>((config) => {
     debug &&
-      console.log('web3/adapter/silk/connector::createConnector', { config });
+      console.log('web3/adapter/silk/connector::createConnector', {
+        config,
+      });
     return {
       id: 'silk',
       name: 'Silk Connector',
@@ -57,24 +54,27 @@ export function connector(options?: InitSilkOptions) {
       chains: config.chains,
       supportsSimulation: false,
 
-      async connect({ chainId } = {}) {
+      async connect({ chainId, isReconnecting } = {}) {
         debug &&
-          console.log('web3/adapter/silk/connector::connect', { chainId });
+          console.log('web3/adapter/silk/connector::connect', {
+            chainId,
+          });
         try {
           config.emitter.emit('message', {
             type: 'connecting',
           });
           const provider = await this.getProvider();
+          if (!isReconnecting && typeof provider.on === 'function') {
+            provider.on('accountsChanged', this.onAccountsChanged);
+            provider.on('chainChanged', this.onChainChanged);
+            provider.on('disconnect', this.onDisconnect);
+          }
 
-          provider.on('accountsChanged', this.onAccountsChanged);
-          provider.on('chainChanged', this.onChainChanged);
-          provider.on('disconnect', this.onDisconnect);
-
-          if (!provider.connected) {
+          if (!isReconnecting && !provider.connected) {
             try {
               await provider.login();
             } catch (error) {
-              console.warn('Unable to login', error);
+              debug && console.warn('Unable to login', error);
               throw new UserRejectedRequestError(
                 'User rejected login or login failed' as unknown as Error,
               );
@@ -83,9 +83,10 @@ export function connector(options?: InitSilkOptions) {
 
           let currentChainId = await this.getChainId();
           if (chainId && currentChainId !== chainId) {
-            console.info(
-              `Switching chain from ${currentChainId} to ${chainId}`,
-            );
+            debug &&
+              console.info(
+                `Switching chain from ${currentChainId} to ${chainId}`,
+              );
             const chain = await this.switchChain!({ chainId }).catch(
               (error) => {
                 if (error.code === UserRejectedRequestError.code) throw error;
@@ -99,7 +100,7 @@ export function connector(options?: InitSilkOptions) {
 
           return { accounts, chainId: currentChainId };
         } catch (error) {
-          console.error('Error while connecting', error);
+          debug && console.error('Error while connecting', error);
           this.onDisconnect();
           throw error;
         }
@@ -109,9 +110,8 @@ export function connector(options?: InitSilkOptions) {
         debug && console.log('web3/adapter/silk/connector::getAccounts');
         const provider = await this.getProvider();
         const accounts = await provider.request({
-          method: SILK_METHOD.eth_accounts,
+          method: 'eth_requestAccounts',
         });
-        debug && console.log({ accounts, k: Object.keys(SILK_METHOD) });
         if (accounts && Array.isArray(accounts)) {
           return accounts
             .filter(
@@ -130,18 +130,20 @@ export function connector(options?: InitSilkOptions) {
         const chainId = await provider.request({
           method: SILK_METHOD.eth_chainId,
         });
+        debug &&
+          console.log('web3/adapter/silk/connector::getChainId', chainId);
         return Number(chainId);
       },
 
       async getProvider(): Promise<SilkEthereumProviderInterface> {
         debug && console.log('web3/adapter/silk/connector::getProvider');
-        if (!silkProvider) {
+        if (!window.silk) {
           debug &&
             console.log('Initializing Silk Provider with options:', options);
-          silkProvider = initSilk(options ?? {});
+          window.silk = initSilk(options ?? {});
         }
 
-        return silkProvider;
+        return window.silk;
       },
 
       async isAuthorized() {
@@ -156,7 +158,9 @@ export function connector(options?: InitSilkOptions) {
 
       async switchChain({ chainId }) {
         debug &&
-          console.log('web3/adapter/silk/connector::switchChain', { chainId });
+          console.log('web3/adapter/silk/connector::switchChain', {
+            chainId,
+          });
         try {
           const chain = config.chains.find((chain) => chain.id === chainId);
           if (!chain) {
@@ -164,6 +168,7 @@ export function connector(options?: InitSilkOptions) {
           }
 
           const provider = await this.getProvider();
+
           debug &&
             console.log('web3/adapter/silk/connector::switchChain', {
               chainIdHex: `0x${chain.id.toString(16)}`,
@@ -173,14 +178,44 @@ export function connector(options?: InitSilkOptions) {
             params: [{ chainId: `0x${chain.id.toString(16)}` }],
           });
           config.emitter.emit('change', { chainId });
+
           return chain;
         } catch (error: unknown) {
-          console.error(
-            'Error: Unable to switch chain',
-            error,
-            await this.getProvider(),
-          );
-          throw new SwitchChainError(error as Error);
+          try {
+            const chain = config.chains.find((chain) => chain.id === chainId);
+            if (!chain) {
+              throw new ChainNotConfiguredError();
+            }
+            const provider = await this.getProvider();
+            await provider.request({
+              method: SILK_METHOD.wallet_addEthereumChain,
+              params: [
+                {
+                  chainId: `0x${chain.id.toString(16)}`,
+                  chainName: chain.name,
+                  nativeCurrency: chain.nativeCurrency,
+                  rpcUrls: chain?.rpcUrls,
+                  blockExplorerUrls: [chain?.blockExplorers?.default.url],
+                },
+              ],
+            });
+            await provider.request({
+              method: SILK_METHOD.wallet_switchEthereumChain,
+              params: [{ chainId: `0x${chain.id.toString(16)}` }],
+            });
+            config.emitter.emit('change', { chainId });
+
+            return chain;
+          } catch (addError: unknown) {
+            debug &&
+              console.error(
+                'Error: Unable to switch chain',
+                error,
+                addError,
+                await this.getProvider(),
+              );
+            throw new SwitchChainError(error as Error);
+          }
         }
       },
 
@@ -228,7 +263,9 @@ export function connector(options?: InitSilkOptions) {
 
       onChainChanged(chain) {
         debug &&
-          console.log('web3/adapter/silk/connector::onChainChanged', { chain });
+          console.log('web3/adapter/silk/connector::onChainChanged', {
+            chain,
+          });
         const chainId = Number(chain);
         config.emitter.emit('change', { chainId });
       },

@@ -1,16 +1,19 @@
+'use client';
 import { Button } from '@/components/ui';
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNetworkCheck } from '@/hooks/use-network';
-import { AlertCircle } from 'lucide-react';
-import chainConfig from '@/lib/web3/config/chain';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useWeb3Auth, chainConfig } from '@/lib/web3';
+
 export function PaymentSwitchWalletNetwork() {
   const { toast } = useToast();
-  const { isCorrectNetwork, switchToAlfajores } = useNetworkCheck();
+  const { isCorrectNetwork, switchNetwork } = useNetworkCheck();
+  const { ready } = useWeb3Auth();
 
   const handleNetworkSwitch = useCallback(async () => {
     try {
-      await switchToAlfajores();
+      await switchNetwork();
     } catch (error) {
       console.error('Error switching network:', error);
       toast({
@@ -28,7 +31,19 @@ export function PaymentSwitchWalletNetwork() {
         duration: 5000,
       });
     }
-  }, [switchToAlfajores, toast]);
+  }, [switchNetwork, toast]);
+  if (!ready) {
+    return (
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={true}
+        className="w-full text-black"
+      >
+        <Loader2 /> Connecting to Wallet
+      </Button>
+    );
+  }
   if (isCorrectNetwork) {
     return null;
   }

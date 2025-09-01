@@ -7,6 +7,7 @@ import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
+import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
 export function ExploreStories() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
@@ -33,7 +34,9 @@ export function ExploreStories() {
           >
             ← Back to Stories
           </Button>
-          <CampaignCreate />
+          <Web3ContextProvider>
+            <CampaignCreate />
+          </Web3ContextProvider>
         </div>
       ) : (
         <>

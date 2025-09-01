@@ -21,8 +21,7 @@ export async function POST(req: Request) {
   try {
     const session = await checkAuth(['user']);
 
-    let paymentData: ExtendedPaymentRequest;
-    paymentData = await req.json();
+    const paymentData: ExtendedPaymentRequest = await req.json();
 
     // Validate required fields
     if (!paymentData.amount || paymentData.amount <= 0) {
@@ -64,10 +63,14 @@ export async function POST(req: Request) {
     let crowdsplitPayment;
     try {
       crowdsplitPayment = await crowdsplitService.createPayment(paymentData);
-    } catch (error) {
+    } catch (error: unknown) {
       debug && console.error('[PAYMENT] CrowdSplit API error:', error);
 
-      const apiError = error as any;
+      const apiError = error as {
+        apiResponse?: { msg: string };
+        statusCode?: number;
+        message?: string;
+      };
 
       // If we have the original API response, use its message
       if (apiError.apiResponse?.msg) {

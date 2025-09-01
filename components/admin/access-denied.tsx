@@ -1,3 +1,5 @@
+'use client';
+
 import { useRouter } from 'next/navigation';
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts';

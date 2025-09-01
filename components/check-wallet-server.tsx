@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts';
-import { type Address } from 'viem';
+import type { Address } from '@/lib/web3/types';
+
 // import { ReviewRecipients } from "@/components/review-recipients"
-import { ApplicationStatus } from '@/lib/qfInteractions';
+import { ApplicationStatus } from '@/lib/qf/types';
 // import { RecipientStatus } from '@/.generated/prisma/client'
 
 interface Campaign {

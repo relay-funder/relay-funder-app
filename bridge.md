@@ -151,12 +151,12 @@ These Next.js API routes handle requests from the frontend, interact with the `c
     1.  Validates webhook authentication using multiple methods (payload secret, HMAC SHA256, Stripe-style signatures).
     2.  Parses the request body and extracts event type.
     3.  Routes events internally based on event type:
-       - **Payment Events (`transaction.updated`):**
-         - Finds the corresponding `Payment` record in Prisma using `transaction_id` (as `externalId`).
-         - Updates the `status` of the Prisma `Payment` record based on the webhook status (`COMPLETED` -> `confirmed`, `FAILED` -> `failed`, etc.).
-         - Stores the webhook payload in the payment's metadata.
-       - **KYC Events (`kyc.status_updated`):**
-         - If `status === 'completed'`, updates the `isKycCompleted` flag to `true` for the user matching `customer_id` in Prisma.
+    - **Payment Events (`transaction.updated`):**
+      - Finds the corresponding `Payment` record in Prisma using `transaction_id` (as `externalId`).
+      - Updates the `status` of the Prisma `Payment` record based on the webhook status (`COMPLETED` -> `confirmed`, `FAILED` -> `failed`, etc.).
+      - Stores the webhook payload in the payment's metadata.
+    - **KYC Events (`kyc.status_updated`):**
+      - If `status === 'completed'`, updates the `isKycCompleted` flag to `true` for the user matching `customer_id` in Prisma.
   - **Authentication:** Uses shared webhook authentication utility supporting:
     - Payload secret validation (current CrowdSplit method)
     - HMAC SHA256 signature verification (future-ready)

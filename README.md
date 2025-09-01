@@ -97,7 +97,7 @@ echo "DEV_APP_PORT=1234" >> .env
 
 ### Development Container
 
-In order to run commands, use the shell service: 
+In order to run commands, use the shell service:
 
 ```bash
 docker compose run --rm app-shell /bin/bash
@@ -118,18 +118,20 @@ prefixed with `aka-app` so you immediately see that you are not in your host.
 
 Sometimes it is required to inquire the postgres database directly. If you
 prefer a desktop-tool, just expose the port of the database-container to your
-host, but ideally all you need is a browser. 
+host, but ideally all you need is a browser.
 
 #### Prisma Studio (Database Browser)
 
 Prisma Studio provides a visual interface to browse and edit your database data:
 
 **Option 1: Direct Docker Exec**
+
 ```bash
 docker compose exec app pnpm prisma studio --port 5555
 ```
 
 **Option 2: Via App Shell**
+
 ```bash
 docker compose run --rm app-shell pnpm prisma studio --port 5555
 ```
@@ -191,6 +193,7 @@ Control Prisma database logging verbosity with the `PRISMA_LOG_LEVELS` environme
 **Available levels:** `error` (default), `warn`, `info`, `query`
 
 **Example for development debugging:**
+
 ```bash
 PRISMA_LOG_LEVELS=error,warn,query
 ```

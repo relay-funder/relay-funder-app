@@ -12,7 +12,7 @@ Our implementation uses a **single unified webhook endpoint** that handles all C
 
 - **Endpoint**: `/api/crowdsplit/webhook`
 - **Event Routing**: Internal routing based on event type
-- **Supported Events**: 
+- **Supported Events**:
   - `transaction.updated` → Payment processing
   - `kyc.status_updated` → KYC status updates
 
@@ -23,12 +23,15 @@ This follows the same pattern as Stripe webhooks where one URL handles multiple 
 CrowdSplit uses **payload-based secret validation** instead of header-based signatures. Our implementation supports multiple authentication methods:
 
 ### Primary Method (Current)
+
 - **Secret Location**: Inside the webhook payload as `secret` field
 - **Validation**: Compare `payload.secret` with `CROWDSPLIT_WEBHOOK_SECRET` environment variable
 - **No Header Signatures**: CrowdSplit does not send signature headers like `x-signature` or `stripe-signature`
 
 ### Enhanced Security (Future-Ready)
+
 Our implementation also supports:
+
 - **HMAC SHA256** signature verification
 - **Stripe-style** timestamp signature validation
 - **Constant-time comparison** for all authentication methods
@@ -46,12 +49,14 @@ CROWDSPLIT_WEBHOOK_SECRET="EFJBQPYXCA"
 
 1. **ngrok Account**: Register a free account at [ngrok.com](https://ngrok.com)
 2. **ngrok Installation** (macOS):
+
    ```bash
    # Using Homebrew (recommended)
    brew install ngrok
-   
+
    # Or download directly from ngrok.com
    ```
+
 3. **ngrok Authentication**:
    ```bash
    # Get your authtoken from ngrok dashboard
@@ -84,7 +89,7 @@ ngrok http 3000
 **⚠️ CRITICAL**: Only ONE developer can have an active webhook at a time!
 
 1. **Check with Team First**: Communicate in your team chat before registering
-2. **Use Postman or curl** to register your webhook (requires a valid access token): 
+2. **Use Postman or curl** to register your webhook (requires a valid access token):
 
 ```bash
 # Register webhook endpoint
@@ -144,16 +149,16 @@ CROWDSPLIT_WEBHOOK_SECRET="NEW_SECRET_FROM_RESPONSE"
 
 ### Payload Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `secret` | string | Authentication secret (must match environment variable) |
-| `data.type` | string | Event type for payment events (e.g., `"transaction.updated"`) |
-| `event` | string | Event type for KYC events (e.g., `"kyc.status_updated"`) |
-| `data.id` | string | Unique transaction/payment ID (payment events) |
-| `data.customer_id` | string | Customer ID (KYC events) |
-| `data.status` | string | Transaction or KYC status |
-| `data.subStatus` | string | Sub-status for additional detail (payment events) |
-| `data.metadata` | object\|null | Additional transaction metadata |
+| Field              | Type         | Description                                                   |
+| ------------------ | ------------ | ------------------------------------------------------------- |
+| `secret`           | string       | Authentication secret (must match environment variable)       |
+| `data.type`        | string       | Event type for payment events (e.g., `"transaction.updated"`) |
+| `event`            | string       | Event type for KYC events (e.g., `"kyc.status_updated"`)      |
+| `data.id`          | string       | Unique transaction/payment ID (payment events)                |
+| `data.customer_id` | string       | Customer ID (KYC events)                                      |
+| `data.status`      | string       | Transaction or KYC status                                     |
+| `data.subStatus`   | string       | Sub-status for additional detail (payment events)             |
+| `data.metadata`    | object\|null | Additional transaction metadata                               |
 
 ## Event Detection Logic
 
@@ -165,8 +170,7 @@ A webhook should trigger payment confirmation when **ALL** of the following cond
 const isPaymentEvent = (
   (data.type === 'transaction.updated' || eventType === 'transaction.updated') &&
   data.status === 'COMPLETED' &&
-  data.subStatus === 'CAPTURED'
-);
+  data.subStatus === 'CAPTURED';
 ```
 
 ### KYC Completion Events
@@ -174,29 +178,30 @@ const isPaymentEvent = (
 A webhook should trigger KYC completion when:
 
 ```typescript
-const isKycEvent = (
+const isKycEvent =
   (data.event === 'kyc.status_updated' || eventType === 'kyc.status_updated') &&
-  data.status === 'completed'
-);
+  data.status === 'completed';
 ```
 
 ### Supported Event Types
 
 Our unified webhook handler processes:
 
-| Event Type | Description | Handler Function |
-|------------|-------------|------------------|
+| Event Type            | Description                                       | Handler Function       |
+| --------------------- | ------------------------------------------------- | ---------------------- |
 | `transaction.updated` | Payment transaction updates (Stripe & Bridge.xyz) | `handlePaymentEvent()` |
-| `kyc.status_updated` | KYC verification status changes | `handleKycEvent()` |
+| `kyc.status_updated`  | KYC verification status changes                   | `handleKycEvent()`     |
 
 Future event types may include:
+
 - `transaction.created`
-- `transaction.failed` 
+- `transaction.failed`
 - `transaction.refunded`
 
 ## Security Considerations
 
 ### Secret Validation
+
 - **Always validate** the `secret` field before processing any webhook
 - **Use constant-time comparison** to prevent timing attacks:
 
@@ -205,17 +210,18 @@ import crypto from 'crypto';
 
 function validateSecret(received: string, expected: string): boolean {
   if (!received || !expected) return false;
-  
+
   const receivedBuffer = Buffer.from(received, 'utf8');
   const expectedBuffer = Buffer.from(expected, 'utf8');
-  
+
   if (receivedBuffer.length !== expectedBuffer.length) return false;
-  
+
   return crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
 }
 ```
 
 ### Request Validation
+
 - Validate that the request has a proper JSON content-type
 - Ensure the payload structure matches expected format
 - Log all webhook attempts for monitoring
@@ -224,21 +230,21 @@ function validateSecret(received: string, expected: string): boolean {
 
 ### Payment Status Mapping
 
-| CrowdSplit Status | CrowdSplit SubStatus | Akashic Status |
-|-------------------|---------------------|----------------|
-| `COMPLETED` | `CAPTURED` | `confirmed` |
-| `COMPLETED` | (any other) | `confirmed` |
-| `PENDING` | `PROCESSING` | `pending` |
-| `FAILED` | (any) | `failed` |
-| `CANCELLED`/`CANCELED` | (any) | `canceled` |
-| (any other) | (any) | `pending` |
+| CrowdSplit Status      | CrowdSplit SubStatus | Akashic Status |
+| ---------------------- | -------------------- | -------------- |
+| `COMPLETED`            | `CAPTURED`           | `confirmed`    |
+| `COMPLETED`            | (any other)          | `confirmed`    |
+| `PENDING`              | `PROCESSING`         | `pending`      |
+| `FAILED`               | (any)                | `failed`       |
+| `CANCELLED`/`CANCELED` | (any)                | `canceled`     |
+| (any other)            | (any)                | `pending`      |
 
 ### KYC Status Mapping
 
-| CrowdSplit Status | Akashic Action |
-|-------------------|----------------|
-| `completed` | Set `user.isKycCompleted = true` |
-| (any other) | No database update |
+| CrowdSplit Status | Akashic Action                   |
+| ----------------- | -------------------------------- |
+| `completed`       | Set `user.isKycCompleted = true` |
+| (any other)       | No database update               |
 
 ### Payment Lookup Strategy
 
@@ -266,11 +272,13 @@ const updatedUsers = await db.user.updateMany({
 ### Local Testing Workflow
 
 1. **Start Development Environment**:
+
    ```bash
    docker-compose up
    ```
 
 2. **Start ngrok** (new terminal):
+
    ```bash
    ngrok http 3000
    ```
@@ -315,16 +323,19 @@ Our unified webhook returns detailed responses:
 ### Common Issues
 
 1. **Secret Mismatch**
+
    - Verify `CROWDSPLIT_WEBHOOK_SECRET` environment variable
    - Check for extra whitespace or encoding issues
    - Ensure you updated the secret after webhook registration
 
 2. **Payment Not Found**
+
    - Ensure `externalId` is properly set when creating payments
    - Check for timing issues (webhook arrives before payment creation)
    - Review recent payments in debug logs
 
 3. **Invalid Payload Structure**
+
    - Validate JSON parsing
    - Check for missing required fields (`secret`, event type, transaction ID)
 
@@ -335,9 +346,9 @@ Our unified webhook returns detailed responses:
 
 ### Response Codes
 
-| Status | Meaning | Action |
-|--------|---------|---------|
-| 200 | Success | Webhook processed successfully |
-| 400 | Bad Request | Invalid parameters (missing secret, malformed JSON, etc.) |
-| 404 | Not Found | Payment record not found |
-| 500 | Server Error | Internal processing error |
+| Status | Meaning      | Action                                                    |
+| ------ | ------------ | --------------------------------------------------------- |
+| 200    | Success      | Webhook processed successfully                            |
+| 400    | Bad Request  | Invalid parameters (missing secret, malformed JSON, etc.) |
+| 404    | Not Found    | Payment record not found                                  |
+| 500    | Server Error | Internal processing error                                 |

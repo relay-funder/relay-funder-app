@@ -1,43 +1,15 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui';
 import { PaymentLink } from '@/components/payment/link';
-import { type Payment as PaymentType } from '@/types/campaign';
-import { useMemo } from 'react';
-export function Payment({ payment }: { payment: PaymentType }) {
-  const userName = useMemo(() => {
-    if (!payment.user || payment.isAnonymous) {
-      return 'Anonymous Donor';
-    }
-    if (
-      typeof payment.user.firstName === 'string' &&
-      typeof payment.user.lastName === 'string'
-    ) {
-      return `${payment.user.firstName} ${payment.user.lastName}`;
-    }
-    if (typeof payment.user.username === 'string') {
-      return payment.user.username;
-    }
-    if (typeof payment.user.address !== 'string') {
-      return 'Anonymous Donor';
-    }
-    return `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`;
-  }, [payment.user, payment.isAnonymous]);
-  const userAvatar = useMemo(() => {
-    if (!payment?.user?.address) {
-      return null;
-    }
-    return `https://avatar.vercel.sh/${payment.user.address}`;
-  }, [payment?.user?.address]);
+import { type PaymentSummaryContribution } from '@/lib/api/types';
+import { UserInlineName } from '@/components/user/inline-name';
+import { FormattedDate } from '@/components/formatted-date';
+export function Payment({ payment }: { payment: PaymentSummaryContribution }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-white p-4 shadow">
       <div className="flex items-center gap-4">
-        <Avatar>
-          {userAvatar ? <AvatarImage src={userAvatar} /> : null}
-          <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
         <div>
-          <p className="font-medium">{userName}</p>
+          <UserInlineName user={payment.user} />
           <p className="text-sm text-gray-500">
-            {new Date(payment.createdAt ?? 0).toLocaleDateString()}
+            <FormattedDate date={payment.date} />
           </p>
         </div>
       </div>

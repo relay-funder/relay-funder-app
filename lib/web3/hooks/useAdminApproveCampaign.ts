@@ -1,10 +1,12 @@
 import { useCallback } from 'react';
-import { useAuth } from '@/contexts';
-import { ethers } from 'ethers';
+import { ethers } from '@/lib/web3';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
-import chainConfig from '@/lib/web3/config/chain';
+import { chainConfig, useWeb3Auth } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
+import { useAuth } from '@/contexts';
+import { switchNetwork } from '../switch-network';
+import { AdminApproveProcessStates } from '@/types/admin';
 
 // Add platform config
 const platformConfig = {
@@ -22,21 +24,26 @@ interface TreasuryDeployedEvent {
   };
 }
 export function useAdminApproveCampaign() {
-  const { wallet } = useAuth();
+  const { wallet } = useWeb3Auth();
+  const { authenticated } = useAuth();
+
   const adminApproveCampaign = useCallback(
-    async (campaignId: number, campaignAddress: string) => {
+    async (
+      campaignId: number,
+      campaignAddress: string,
+      onStateChanged: (arg0: keyof typeof AdminApproveProcessStates) => void,
+    ) => {
+      onStateChanged('setup');
+      if (!authenticated) {
+        throw new Error('Not signed in');
+      }
       if (!campaignId || !campaignAddress) {
         throw new Error('Campaign ID and address are required');
       }
-      if (
-        !wallet ||
-        !(
-          typeof wallet.isConnected === 'function' &&
-          (await wallet.isConnected())
-        )
-      ) {
+      if (!wallet) {
         throw new Error('Wallet not connected');
       }
+
       // Platform config checks
       if (!platformConfig.globalParamsAddress) {
         throw new Error('Global Params contract address is not configured');
@@ -47,62 +54,47 @@ export function useAdminApproveCampaign() {
       if (!platformConfig.platformBytes) {
         throw new Error('Platform bytes is not configured');
       }
-
-      // Get provider from wallet
-      const privyProvider = await wallet.getEthereumProvider();
-      // Switch to Alfajores network
-      try {
-        await privyProvider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainConfig.chainId.hex }],
-        });
-      } catch (switchError: unknown) {
-        // Type guard to check if it's a ProviderRpcError
-        if (
-          typeof switchError === 'object' &&
-          switchError !== null &&
-          'code' in switchError &&
-          (switchError as { code: number }).code === 4902
-        ) {
-          try {
-            await privyProvider.request({
-              method: 'wallet_addEthereumChain',
-              params: [chainConfig.getAddChainParams()],
-            });
-          } catch (addError) {
-            console.error('Error adding Alfajores network:', addError);
-            throw new Error('Failed to add Alfajores network to wallet');
-          }
-        } else {
-          console.error('Error switching to Alfajores network:', switchError);
-          throw new Error('Failed to switch to Alfajores network');
-        }
+      if (!wallet || !(await wallet.isConnected())) {
+        throw new Error('Wallet not connected');
+      }
+      const walletProvider = await wallet.getEthereumProvider();
+      if (!walletProvider) {
+        throw new Error('Wallet not supported or connected');
       }
 
+      await switchNetwork({ wallet });
+      onStateChanged('switch');
+
       // Create providers
-      const walletProvider = new ethers.providers.Web3Provider(privyProvider, {
-        chainId: chainConfig.chainId.decimal,
-        name: chainConfig.name,
-      });
-      const signer = walletProvider.getSigner();
-      const signerAddress = await signer.getAddress();
+      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+      const signer = await ethersProvider.getSigner();
+      const signerAddress = signer.address;
 
       // Global params check
       const globalParams = new ethers.Contract(
         platformConfig.globalParamsAddress,
         GlobalParamsABI,
-        walletProvider,
+        ethersProvider,
       );
-      const platformAdmin = await globalParams.getPlatformAdminAddress(
+      onStateChanged('requestAdminAddress');
+      const platformAdminTx = await globalParams.getPlatformAdminAddress(
         platformConfig.platformBytes,
       );
+      const platformAdmin = await platformAdminTx.wait();
 
       // Admin check
       if (!enableBypassContractAdmin) {
-        if (platformAdmin.toLowerCase() !== signerAddress.toLowerCase()) {
+        if (
+          platformAdmin.account.toLowerCase() !== signerAddress.toLowerCase()
+        ) {
+          console.warn(
+            'useAdminApproveCampaign: Platform admin address Mismatch',
+            { platformAdmin, signerAddress },
+          );
           throw new Error('Not authorized as platform admin');
         }
       }
+      onStateChanged('treasuryFactory');
       // Initialize TreasuryFactory contract
       const treasuryFactory = new ethers.Contract(
         platformConfig.treasuryFactoryAddress,
@@ -118,6 +110,7 @@ export function useAdminApproveCampaign() {
         { gasLimit: 100000 },
       );
 
+      onStateChanged('treasuryFactoryWait');
       const receipt = await tx.wait();
 
       // Find deployment event
@@ -127,13 +120,18 @@ export function useAdminApproveCampaign() {
       );
 
       if (!deployEvent) {
+        console.warn(
+          'useAdminApproveCampaign: Events do not contain TreasuryDeployed event',
+          receipt,
+        );
+
         throw new Error('Treasury deployment event not found');
       }
 
       const treasuryAddress = deployEvent.args.treasuryAddress;
       return treasuryAddress;
     },
-    [wallet],
+    [wallet, authenticated],
   );
   return { adminApproveCampaign };
 }

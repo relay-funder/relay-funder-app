@@ -1,4 +1,4 @@
-import { type Campaign } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { PaymentElement } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui';
 import type {
@@ -12,8 +12,7 @@ const debug = process.env.NODE_ENV !== 'production';
 
 interface PaymentStripeFormProps {
   publicKey: string;
-  campaign: Campaign;
-  userAddress: string | null;
+  campaign: DbCampaign;
   amount: string;
 }
 
@@ -24,7 +23,6 @@ interface PaymentStripeFormProps {
 export function PaymentStripeForm({
   publicKey,
   campaign,
-  userAddress,
   amount,
 }: PaymentStripeFormProps) {
   const { error, isProcessing, isReady, handleSubmit, clearError } =
@@ -37,7 +35,6 @@ export function PaymentStripeForm({
     console.log('Stripe form props:', {
       publicKey,
       campaign,
-      userAddress,
       amount,
     });
 

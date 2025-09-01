@@ -7,22 +7,25 @@
 import { useState, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { type Stripe } from '@stripe/stripe-js';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { enableApiMock } from '@/lib/develop';
 import { mockStripeInstance } from '@/lib/test/mock-stripe';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
+import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
 
 const debug = process.env.NODE_ENV !== 'production';
 
 interface UseStripeLazyProps {
   amount: string;
-  campaign: Campaign;
+  poolAmount: number;
+  campaign: DbCampaign;
   userEmail?: string;
   isAnonymous?: boolean;
 }
 
 export function useStripeLazy({
   amount,
+  poolAmount,
   campaign,
   userEmail = DEFAULT_USER_EMAIL,
   isAnonymous = false,
@@ -36,6 +39,7 @@ export function useStripeLazy({
     publicKey: string;
     paymentIntentId: string;
   } | null>(null);
+  const refetchCampaign = useRefetchCampaign(campaign.id);
 
   const createPaymentIntent = useCallback(async () => {
     try {
@@ -118,6 +122,7 @@ export function useStripeLazy({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: Math.round(numericAmount * 100), // Convert to cents
+          poolAmount: Math.round(poolAmount * 100), // Convert to cents
           customerId,
           currency: 'USD',
           paymentMethod: 'CARD',
@@ -216,6 +221,7 @@ export function useStripeLazy({
         setStripePromise(loadStripe(publicKey));
       }
 
+      refetchCampaign();
       return stripeCredentials;
     } catch (err) {
       const errorMessage =
@@ -224,9 +230,17 @@ export function useStripeLazy({
       setError(errorMessage);
       throw err;
     } finally {
+      refetchCampaign();
       setIsProcessing(false);
     }
-  }, [amount, userEmail, campaign.id, isAnonymous]);
+  }, [
+    amount,
+    poolAmount,
+    userEmail,
+    campaign.id,
+    isAnonymous,
+    refetchCampaign,
+  ]);
 
   const reset = useCallback(() => {
     setError(null);
