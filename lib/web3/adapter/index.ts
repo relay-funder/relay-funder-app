@@ -52,4 +52,4 @@ export {
   ConnectorAlreadyConnectedError,
   // ethers
   ethers,
-} from './dummy';
+} from './silk';
