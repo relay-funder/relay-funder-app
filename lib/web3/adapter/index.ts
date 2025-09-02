@@ -29,6 +29,7 @@ export {
   erc20Abi,
   maxUint256,
   decodeEventLog,
+  formatUnits,
   BaseError,
   UserRejectedRequestError,
   // wagmi
@@ -42,8 +43,13 @@ export {
   useConfig,
   useConnectors,
   useConnect,
+  useDisconnect,
   useSignMessage,
   useAccount,
+  useBalance,
+  useChains,
+  useSwitchChain,
+  ConnectorAlreadyConnectedError,
   // ethers
   ethers,
 } from './silk';

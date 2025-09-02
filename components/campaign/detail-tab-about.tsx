@@ -1,10 +1,6 @@
-import { CampaignDisplay } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 
-export function CampaignDetailTabAbout({
-  campaign,
-}: {
-  campaign: CampaignDisplay;
-}) {
+export function CampaignDetailTabAbout({ campaign }: { campaign: DbCampaign }) {
   return (
     <div className="max-w-3xl">
       <div className="prose prose-lg">

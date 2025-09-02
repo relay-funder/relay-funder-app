@@ -1,4 +1,4 @@
-import { type Campaign } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { PaymentElement } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui';
 import type {
@@ -12,7 +12,7 @@ const debug = process.env.NODE_ENV !== 'production';
 
 interface PaymentStripeFormProps {
   publicKey: string;
-  campaign: Campaign;
+  campaign: DbCampaign;
   amount: string;
 }
 

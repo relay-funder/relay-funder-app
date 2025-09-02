@@ -204,6 +204,7 @@ async function main() {
   await db.campaignImage.deleteMany();
   await db.campaignCollection.deleteMany();
   await db.payment.deleteMany();
+  await db.comment.deleteMany();
   await db.campaign.deleteMany();
 
   // Create 25 users instead of 100 (more realistic for debugging)

@@ -1,11 +1,7 @@
-import { Suspense } from 'react';
-import { PaymentStatus } from '@/components/payment/status';
-import { PaymentStatusLoading } from '@/components/payment/status-loading';
-import ProjectInfo from '@/components/project-info';
-import { Campaign } from '@/types/campaign';
-import { getCampaign } from '@/lib/database';
-import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColums } from '@/components/page/two-cols';
+import { prefetchCampaign } from '@/lib/api/campaigns';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/query-client';
+import { CampaignDonationSuccessPage } from '@/components/campaign/donation/page-success';
 
 export default async function Page({
   params,
@@ -13,16 +9,13 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const campaign: Campaign = await getCampaign(slug);
+  const queryClient = getQueryClient();
+  await prefetchCampaign(queryClient, slug);
   return (
     <>
-      <PageHeaderSticky message="Donating to" title={campaign.title} />
-      <PageMainTwoColums>
-        <Suspense fallback={<PaymentStatusLoading />}>
-          <PaymentStatus />
-        </Suspense>
-        <ProjectInfo slug={slug} />
-      </PageMainTwoColums>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <CampaignDonationSuccessPage slug={slug} />
+      </HydrationBoundary>
     </>
   );
 }

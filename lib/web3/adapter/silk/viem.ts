@@ -10,6 +10,7 @@ export {
   keccak256,
   stringToHex,
   decodeEventLog,
+  formatUnits,
   BaseError,
   UserRejectedRequestError,
 } from 'viem';

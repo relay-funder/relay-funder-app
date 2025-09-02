@@ -1,10 +1,21 @@
 import { Card, CardContent, CardHeader, Skeleton } from '@/components/ui';
-
-export function CampaignLoading({ minimal = false }: { minimal?: boolean }) {
+import { cn } from '@/lib/utils';
+export function CampaignLoading({
+  minimal = false,
+  expectItemCount = 3,
+}: {
+  minimal?: boolean;
+  expectItemCount?: number;
+}) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={cn(
+        'grid gap-6',
+        expectItemCount > 1 ? 'md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1',
+      )}
+    >
       {/* home: grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 */}
-      {[...Array(3)].map((_, index) =>
+      {[...Array(expectItemCount)].map((_, index) =>
         minimal ? (
           <Card key={index} className="animate-pulse">
             <CardHeader>

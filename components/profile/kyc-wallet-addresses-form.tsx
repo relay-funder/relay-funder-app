@@ -45,7 +45,9 @@ interface WalletAddressesFormProps {
   onSuccess?: () => void;
 }
 
-export function WalletAddressesForm({ onSuccess }: WalletAddressesFormProps) {
+export function KycWalletAddressesForm({
+  onSuccess,
+}: WalletAddressesFormProps) {
   const router = useRouter();
   const { authenticated, address } = useAuth();
   const { data: profile, isPending: isUserProfilePending } = useUserProfile();

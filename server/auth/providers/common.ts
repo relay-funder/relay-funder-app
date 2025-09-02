@@ -5,12 +5,17 @@ export async function setupUser(address: string) {
   let dbUser = await db.user.findUnique({
     where: { address: normalizedAddress },
   });
-  
-  // Determine roles based on platform admin address
+
+  // Determine roles based on platform admin address and mock auth
   const platformAdminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN?.toLowerCase();
-  const isAdmin = platformAdminAddress && normalizedAddress === platformAdminAddress;
-  const userRoles = isAdmin ? ['user', 'admin'] : ['user'];
-  
+  const isPlatformAdmin = platformAdminAddress && normalizedAddress === platformAdminAddress;
+  const isMockAdmin = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' && normalizedAddress.startsWith('0xadadad');
+  const userRoles = ['user'];
+
+  if (isPlatformAdmin || isMockAdmin) {
+    userRoles.push('admin');
+  }
+
   if (!dbUser) {
     dbUser = await db.user.create({
       data: {
@@ -20,14 +25,21 @@ export async function setupUser(address: string) {
         roles: userRoles,
       },
     });
-  } else if (isAdmin && !dbUser.roles.includes('admin')) {
-    // Update existing user to add admin role if they're the platform admin
-    dbUser = await db.user.update({
-      where: { id: dbUser.id },
-      data: {
-        roles: [...new Set([...dbUser.roles, 'admin'])], // Add admin role if not present
-      },
-    });
+  } else {
+    // Check if user needs role updates
+    const needsAdminRole = (isPlatformAdmin || isMockAdmin) && !dbUser.roles.includes('admin');
+    const hasExtraRoles = dbUser.roles.some(role => !userRoles.includes(role));
+
+    if (needsAdminRole || hasExtraRoles) {
+      const updatedRoles = [...new Set([...dbUser.roles, ...userRoles])];
+      dbUser = await db.user.update({
+        where: { id: dbUser.id },
+        data: {
+          roles: updatedRoles,
+          updatedAt: new Date(),
+        },
+      });
+    }
   }
   
   if (dbUser) {

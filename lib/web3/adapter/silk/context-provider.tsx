@@ -41,6 +41,8 @@ declare global {
 interface IWeb3ContextChain {
   name?: string;
   blockExplorers?: { default: { url: string } };
+  testnet?: boolean;
+  id?: number;
 }
 
 interface IWeb3Context {

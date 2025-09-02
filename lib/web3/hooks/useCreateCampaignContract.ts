@@ -1,5 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts';
+import { CreateProcessStates } from '@/types/campaign';
 
 import {
   useWriteContract,
@@ -15,8 +16,8 @@ const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 export interface IOnCreateCampaignConfirmed {
   hash: string;
   status: string;
-  campaignAddress: string;
-  event?: Log<bigint, number, false>;
+  campaignAddress?: string;
+  campaignId: number;
 }
 export function useCreateCampaignContract({
   onConfirmed,
@@ -24,6 +25,7 @@ export function useCreateCampaignContract({
   onConfirmed: (arg0: IOnCreateCampaignConfirmed) => void;
 }) {
   const { address, authenticated } = useAuth();
+  const [campaignId, setCampaignId] = useState<number | undefined>();
   const { data: hash, isPending, writeContractAsync } = useWriteContract();
   const {
     isLoading: isConfirming,
@@ -38,94 +40,65 @@ export function useCreateCampaignContract({
       startTime,
       endTime,
       fundingGoal,
+      campaignId,
+      onStateChanged,
     }: {
       startTime: string;
       endTime: string;
       fundingGoal: string;
+      campaignId: number;
+      onStateChanged: (arg0: keyof typeof CreateProcessStates) => void;
     }) => {
-      console.log('🔗 Creating campaign contract');
-      
       if (!authenticated) {
-        console.error('❌ Wallet not authenticated');
         throw new Error('wallet not connected');
       }
-      
       const campaignData = {
-        launchTime: BigInt(new Date(startTime ?? '').getTime() / 1000),
-        deadline: BigInt(new Date(endTime ?? '').getTime() / 1000),
+        launchTime: BigInt(
+          Math.floor(new Date(startTime ?? '').getTime() / 1000),
+        ),
+        deadline: BigInt(Math.floor(new Date(endTime ?? '').getTime() / 1000)),
         goalAmount: parseEther(fundingGoal || '0'),
       };
+      setCampaignId(campaignId);
 
-      // Generate a unique identifier based on campaign data and timestamp
-      const uniqueString = `KickStarter-${Date.now()}-${address}-${campaignData.launchTime}`;
-      const identifierHash = keccak256(stringToHex(uniqueString));
-      console.log('🔑 Generated unique identifier hash');
-      
-      const contractArgs = [
-        address, // Use connected wallet as creator (this is correct!)
-        identifierHash,
-        [process.env.NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`],
-        [], // Platform data keys
-        [], // Platform data values
-        campaignData,
-      ];
-      
-      try {
-        const result = await writeContractAsync({
-          address: campaignInfoFactory as `0x${string}`,
-          abi: CampaignInfoFactoryABI,
-          functionName: 'createCampaign',
-          args: contractArgs,
-        });
-        
-        console.log('✅ Contract call submitted:', result);
-        return result;
-      } catch (error) {
-        console.error('❌ Contract call failed:', error);
-        throw error;
-      }
+      // Then proceed with blockchain transaction
+      const identifierHash = keccak256(stringToHex('KickStarter'));
+      onStateChanged('createOnChain');
+      await writeContractAsync({
+        address: campaignInfoFactory as `0x${string}`,
+        abi: CampaignInfoFactoryABI,
+        functionName: 'createCampaign',
+        args: [
+          address,
+          identifierHash,
+          [process.env.NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`],
+          [], // Platform data keys
+          [], // Platform data values
+          campaignData,
+        ],
+      });
+      onStateChanged('waitForCreationConfirmation');
+      // -> useEffect: hash + state:success,
+      // then the receipt has the address in the event-logs
     },
     [address, authenticated, writeContractAsync],
   );
 
   useEffect(() => {
-    // Check for failed transactions
-    if (hash && receipt && receipt.status === 'reverted') {
-      console.error('❌ Transaction failed/reverted:', hash);
-      
-      // Call onConfirmed with failure status so the UI can handle it
-      onConfirmed({ 
-        hash, 
-        status: 'failed', 
-        campaignAddress: '', 
-        event: undefined 
-      });
-      return;
-    }
-    
-    if (hash && isSuccess && receipt) {
-      console.log('🎉 Transaction confirmed successfully');
-      
-      const campaignAddress = receipt.logs[0]?.address;
+    if (campaignId && hash && isSuccess && receipt) {
       const status = receipt.status;
       const event = receipt.logs.find(
         (log: Log) => log.transactionHash === hash,
       );
-      
-      if (!campaignAddress) {
-        console.error('❌ No campaign address found in logs');
-        onConfirmed({ 
-          hash, 
-          status: 'failed', 
-          campaignAddress: '', 
-          event: undefined 
-        });
-        return;
-      }
-      
-      onConfirmed({ hash, status, campaignAddress, event });
+      const campaignAddress =
+        status === 'success'
+          ? (event?.address ?? receipt.logs?.at(0)?.address ?? '')
+          : '';
+      onConfirmed({ hash, status, campaignAddress, campaignId });
+      setCampaignId(undefined);
     }
-  }, [hash, isSuccess, receipt, onConfirmed]);
+  }, [hash, isSuccess, receipt, onConfirmed, campaignId]);
+
   return {
     isPending,
     isConfirming,

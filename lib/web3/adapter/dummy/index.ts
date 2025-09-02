@@ -17,6 +17,7 @@ import {
 const staticAuth = {
   ready: true,
   logout: async () => {
+    localStorage.removeItem('dummyAuthAccount');
     nextAuthSignOut({ redirect: false });
   },
 };
@@ -37,6 +38,9 @@ export function getProvider() {
             detail: params[0],
           }),
         );
+      }
+      if (method === 'personal_sign') {
+        return params[1];
       }
     },
     on: (event: string, callback: unknown) =>
@@ -71,30 +75,40 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
   const login = useCallback(async () => {
     setAuthenticating(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    if (
-      confirm('dummy context only, login with randomized address: ' + address)
-    ) {
+    const userAddress = prompt(
+      'dummy context, sign in with any address',
+      address,
+    );
+    if (userAddress?.startsWith('0x')) {
       await nextAuthSignIn('siwe', {
         redirect: false,
-        message: address,
-        signature: address,
+        message: userAddress,
+        signature: userAddress,
       });
+      localStorage.setItem('dummyAuthAccount', userAddress);
+      if (userAddress.startsWith('0xadadad')) {
+        location.href = '/admin';
+      } else {
+        location.href = '/profile';
+      }
+      setAuthenticating(false);
     } else {
-      throw new Error('Canceled');
+      setAuthenticating(false);
+      throw new Error('UserRejectedRequestError: Canceled');
     }
-    setAuthenticating(false);
   }, [address, setAuthenticating]);
   return {
     ...staticAuth,
     login,
     ready: initialized,
     authenticating,
+    connecting: authenticating,
     address,
     wallet,
   };
 }
 
-export * from './ethers';
+export * as ethers from './ethers';
 export * from './config';
 export * from './wagmi';
 export * from './viem';

@@ -7,13 +7,14 @@ import { useWeb3Auth, chainConfig } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { CampaignDonationWalletDetails } from './details';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
+import ContractLink from '@/components/page/contract-link';
 
 export function CampaignDonationWalletTab({
   campaign,
 }: {
-  campaign: Campaign;
+  campaign: DbCampaign;
 }) {
   const { isCorrectNetwork } = useNetworkCheck();
   const { ready } = useWeb3Auth();
@@ -58,21 +59,34 @@ export function CampaignDonationWalletTab({
           <div className="flex items-center gap-2">
             <Wallet className="h-4 w-4" />
             <span className="text-sm">
-              Saving gas fees, network {chainConfig.name} used.
+              Using {chainConfig.name} network to execute{' '}
+              <ContractLink
+                address={campaign.treasuryAddress}
+                chainConfig={chainConfig}
+              />{' '}
+              treasury.
             </span>
           </div>
+          <CampaignDonationDetailsEligible campaign={campaign} />
+          <CampaignDonationWalletDetails campaign={campaign} />
         </>
       ) : (
         <>
-          <div className="flex items-center gap-2">
+          <div className="flex h-24 items-center gap-2">
             <Wallet className="h-4 w-4" />
-            <span className="text-sm">Save on gas fees, switch network.</span>
+            <span className="text-sm">
+              To donate you need to use the <b>{chainConfig.name}</b> network.
+              This ensures that the treasury{' '}
+              <ContractLink
+                address={campaign.treasuryAddress}
+                chainConfig={chainConfig}
+              />{' '}
+              can be executed.
+            </span>
           </div>
           <PaymentSwitchWalletNetwork />
         </>
       )}
-      <CampaignDonationDetailsEligible campaign={campaign} />
-      <CampaignDonationWalletDetails campaign={campaign} />
     </div>
   );
 }

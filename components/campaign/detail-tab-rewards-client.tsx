@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { useAuth } from '@/contexts';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,7 +13,14 @@ import { CAMPAIGN_NFT_FACTORY } from '@/lib/constant';
 import { CampaignNFTFactory } from '@/contracts/nftABI/CampaignNFTFactory';
 import { CampaignNFTabi } from '@/contracts/nftABI/CampaignNFT';
 import { Badge } from '@/components/ui/badge';
-import { chainConfig, parseEther, ethers } from '@/lib/web3';
+import {
+  chainConfig,
+  parseEther,
+  ethers,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from '@/lib/web3';
+import { CopyText } from '../copy-text';
 
 interface CampaignDetailTabRewardsClientProps {
   campaignId: string;
@@ -660,40 +666,25 @@ export function CampaignDetailTabRewardsClient({
                         </div>
                       </>
                     )}
-
-                    <Button
+                    <CopyText
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => {
-                        if (nftContractDetails?.campaignDefaultTokenURI) {
-                          navigator.clipboard.writeText(
-                            nftContractDetails?.campaignDefaultTokenURI,
-                          );
-                          toast({
-                            title: 'Copied!',
-                            description: 'IPFS CID copied to clipboard',
-                          });
-                        }
-                      }}
+                      text={nftContractDetails?.campaignDefaultTokenURI}
+                      description="IPFS CID copied to clipboard"
                     >
                       Copy IPFS CID
-                    </Button>
+                    </CopyText>
 
-                    <Button
+                    <CopyText
                       variant="outline"
                       size="sm"
                       className="mt-2 w-full"
-                      onClick={() => {
-                        navigator.clipboard.writeText(deployedContractAddress);
-                        toast({
-                          title: 'Copied!',
-                          description: 'Contract address copied to clipboard',
-                        });
-                      }}
+                      text={deployedContractAddress}
+                      description="Contract address copied to clipboard"
                     >
                       Copy Contract Address
-                    </Button>
+                    </CopyText>
                   </div>
 
                   <div className="space-y-2">

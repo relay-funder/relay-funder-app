@@ -3,13 +3,14 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/contexts';
 import { useUserProfile } from '@/lib/hooks/useProfile';
-import { WalletAddressesForm } from '@/components/profile/wallet-addresses-form';
+import { KycWalletAddressesForm } from '@/components/profile/kyc-wallet-addresses-form';
 import { PageHome } from '@/components/page/home';
 import { PageHeader } from '@/components/page/header';
 import { PageDefaultContent } from '@/components/page/default-content';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
-import { ProfileNotComplete } from '@/components/profile/not-complete';
+import { ConnectedWalletInfo } from '@/components/profile/connected-wallet-info';
+import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
 export default function WalletSettingsPage() {
   const { authenticated, isReady } = useAuth();
@@ -19,11 +20,7 @@ export default function WalletSettingsPage() {
     [profile],
   );
   if (!authenticated) {
-    return (
-      <PageConnectWallet>
-        Please connect your wallet to access KYC verification
-      </PageConnectWallet>
-    );
+    return <PageConnectWallet>Please connect your wallet</PageConnectWallet>;
   }
   if (!isReady || isProfilePending) {
     return (
@@ -40,14 +37,9 @@ export default function WalletSettingsPage() {
       }
     >
       <PageDefaultContent title="Wallet Settings">
-        {customerId ? (
-          <WalletAddressesForm />
-        ) : (
-          <ProfileNotComplete>
-            You need to complete your personal information and create a customer
-            account before managing wallet addresses.
-          </ProfileNotComplete>
-        )}
+        <Web3ContextProvider>
+          {customerId ? <KycWalletAddressesForm /> : <ConnectedWalletInfo />}
+        </Web3ContextProvider>
       </PageDefaultContent>
     </PageHome>
   );

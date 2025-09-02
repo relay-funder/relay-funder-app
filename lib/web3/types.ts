@@ -18,7 +18,7 @@ interface RequestArguments {
   method: string;
   params?:
     | {
-        chainId: string;
+        chainId: string | number;
         chainName?: string;
         nativeCurrency?: { decimals: number; name: string; symbol: string };
         rpcUrls?: string[];
@@ -48,6 +48,7 @@ export interface IWeb3UseAuthHook {
   address?: string;
   wallet?: ConnectedWallet;
   authenticating: boolean;
+  connecting: boolean;
   error?: Error;
 
   login: () => Promise<void>;

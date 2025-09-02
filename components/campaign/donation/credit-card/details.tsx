@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 
-import { Campaign } from '@/types/campaign';
+import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationCreditCardAmount } from './amount';
 import { CampaignDonationCreditCardProcess } from './process';
 import { CampaignDonationAkashic } from '../akashic';
 import { CampaignDonationAnonymous } from '../anonymous';
 
-export function CampaignDonationDetails({ campaign }: { campaign: Campaign }) {
+export function CampaignDonationDetails({
+  campaign,
+}: {
+  campaign: DbCampaign;
+}) {
   const [amount, setAmount] = useState('0');
   const [donationToAkashic, setDonationToAkashic] = useState(0);
   const [donationAnonymous, setDonationAnonymous] = useState(false);

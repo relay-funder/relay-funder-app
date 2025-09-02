@@ -13,7 +13,7 @@ import {
 interface FavoriteButtonProps {
   campaignId: number;
   initialIsFavorite?: boolean;
-  onToggle?: (isFavorite: boolean) => void;
+  onToggle?: (isFavorite: boolean) => Promise<void>;
 }
 
 export function FavoriteButton({
@@ -40,7 +40,7 @@ export function FavoriteButton({
       setFavourite(!favourite);
 
       if (onToggle) {
-        onToggle(!favourite);
+        await onToggle(!favourite);
       }
 
       toast({

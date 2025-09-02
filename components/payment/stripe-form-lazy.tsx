@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { type Campaign } from '@/types/campaign';
+import { type DbCampaign } from '@/types/campaign';
 import { type Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { PaymentStripeForm } from '@/components/payment/stripe-form';
@@ -10,7 +10,7 @@ interface LazyStripeFormProps {
   stripePromise: Promise<Stripe | null>;
   clientSecret: string;
   publicKey: string;
-  campaign: Campaign;
+  campaign: DbCampaign;
   amount: string;
 }
 
