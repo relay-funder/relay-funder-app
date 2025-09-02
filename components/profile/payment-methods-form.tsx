@@ -1,53 +1,54 @@
-'use client';
+// Credit card functionality commented out for single treasury MVP focus
+// 'use client';
 
-import { useState, useCallback } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from '@/components/ui/card';
+// import { useState, useCallback } from 'react';
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+// } from '@/components/ui/card';
 
-import { useToast } from '@/hooks/use-toast';
+// import { useToast } from '@/hooks/use-toast';
 
-import { PaymentMethod } from '@/types/payment';
-import { useCrowdsplitDeletePaymentMethod } from '@/lib/crowdsplit/hooks/useCrowdsplit';
-import { ProfileAddPaymentMethodDialog } from './add-payment-method-dialog';
-import { ProfilePaymentMethodsTable } from './payment-methods-table';
+// import { PaymentMethod } from '@/types/payment';
+// import { useCrowdsplitDeletePaymentMethod } from '@/lib/crowdsplit/hooks/useCrowdsplit';
+// import { ProfileAddPaymentMethodDialog } from './add-payment-method-dialog';
+// import { ProfilePaymentMethodsTable } from './payment-methods-table';
 
-interface PaymentMethodsFormProps {
-  paymentMethods: PaymentMethod[];
-  onSuccess?: () => void;
-}
+// interface PaymentMethodsFormProps {
+//   paymentMethods: PaymentMethod[];
+//   onSuccess?: () => void;
+// }
 
-export function PaymentMethodsForm({
-  paymentMethods,
-  onSuccess,
-}: PaymentMethodsFormProps) {
-  const { toast } = useToast();
-  const [showAddDialog, setShowAddDialog] = useState(false);
+// export function PaymentMethodsForm({
+//   paymentMethods,
+//   onSuccess,
+// }: PaymentMethodsFormProps) {
+//   const { toast } = useToast();
+//   const [showAddDialog, setShowAddDialog] = useState(false);
 
-  const { mutateAsync: deletePaymentMethod } =
-    useCrowdsplitDeletePaymentMethod();
-  const onCreateNewPaymentMethod = useCallback(() => {
-    setShowAddDialog(true);
-  }, [setShowAddDialog]);
-  const onDeletePaymentMethod = useCallback(
-    async (paymentMethodId: number) => {
-      try {
-        await deletePaymentMethod({ paymentMethodId });
-        if (typeof onSuccess === 'function') {
-          onSuccess();
-        }
-        toast({
-          title: 'Success',
-          description: 'Payment method deleted successfully',
-        });
-      } catch (error) {
-        console.error('Error deleting payment method:', error);
-        toast({
-          title: 'Error',
-          description:
+//   const { mutateAsync: deletePaymentMethod } =
+//     useCrowdsplitDeletePaymentMethod();
+//   const onCreateNewPaymentMethod = useCallback(() => {
+//     setShowAddDialog(true);
+//   }, [setShowAddDialog]);
+//   const onDeletePaymentMethod = useCallback(
+//     async (paymentMethodId: number) => {
+//       try {
+//         await deletePaymentMethod({ paymentMethodId });
+//         if (typeof onSuccess === 'function') {
+//           onSuccess();
+//         }
+//         toast({
+//           title: 'Success',
+//           description: 'Payment method deleted successfully',
+//         });
+//       } catch (error) {
+//         console.error('Error deleting payment method:', error);
+//         toast({
+//           title: 'Error',
+//           description:
             error instanceof Error
               ? error.message
               : 'Failed to delete payment method',
@@ -77,5 +78,18 @@ export function PaymentMethodsForm({
         />
       </CardContent>
     </Card>
+  );
+// }
+
+// Placeholder component for single treasury mode
+export function PaymentMethodsForm({
+  paymentMethods,
+  onSuccess,
+}: { paymentMethods: any[]; onSuccess?: () => void }) {
+  return (
+    <div className="p-4 text-center text-gray-500">
+      <p>Credit card payment methods are currently disabled.</p>
+      <p>Only crypto wallet donations are supported in single treasury mode.</p>
+    </div>
   );
 }
