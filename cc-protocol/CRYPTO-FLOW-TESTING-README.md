@@ -123,6 +123,7 @@ The application uses **Silk for authentication** (SIWE), but **MetaMask as the b
 #### **Step 2: Network Setup**
 
 1. **Add Celo Alfajores Testnet** to MetaMask:
+
    - Network Name: `Celo Alfajores Testnet`
    - RPC URL: `https://alfajores-forno.celo-testnet.org`
    - Chain ID: `44787`
@@ -160,6 +161,7 @@ The application uses **Silk for authentication** (SIWE), but **MetaMask as the b
 ```
 
 **Expected Output**:
+
 - ✅ All environment variables present
 - ✅ Database connection successful
 - ✅ Admin wallet has CELO and USDC
@@ -221,6 +223,7 @@ The application uses **Silk for authentication** (SIWE), but **MetaMask as the b
 ```
 
 **Expected Output**:
+
 - ✅ Treasury contract balance
 - ✅ Database payment records
 - ✅ Consistency verification
@@ -276,6 +279,7 @@ The application uses **Silk for authentication** (SIWE), but **MetaMask as the b
 **Error**: `.env.local file not found`
 
 **Solution**:
+
 ```bash
 # Ensure .env.local is in project root, not cc-protocol/
 # Wrong: cc-protocol/.env.local
@@ -289,6 +293,7 @@ cp cc-protocol/env.foundry.template .env.local
 **Error**: `Database connection failed`
 
 **Solution**:
+
 ```bash
 # Start Docker containers
 docker compose up -d
@@ -302,6 +307,7 @@ docker compose ps
 **Error**: `Not authorized as admin`
 
 **Solution**:
+
 - Verify wallet address matches `NEXT_PUBLIC_PLATFORM_ADMIN`
 - Ensure MetaMask is connected with correct account
 - Check private key is correctly imported
@@ -311,6 +317,7 @@ docker compose ps
 **Error**: Treasury deployment transaction fails
 
 **Solution**:
+
 ```bash
 # Check contract connectivity
 ./cc-protocol/cc-protocol-test.sh connect
@@ -326,6 +333,7 @@ docker compose ps
 **Error**: Database vs treasury balance mismatch
 
 **Solution**:
+
 ```bash
 # Wait for blockchain confirmation
 # Check for pending transactions
@@ -337,6 +345,7 @@ docker compose ps
 **Error**: Insufficient CELO or USDC
 
 **Solution**:
+
 - **CELO**: Visit https://faucet.celo.org/
 - **USDC**: Use Celo Alfajores faucet
 - Add admin wallet address and request tokens
@@ -346,6 +355,7 @@ docker compose ps
 **Error**: `cast: command not found`
 
 **Solution**:
+
 ```bash
 # Install Foundry if not installed
 curl -L https://foundry.paradigm.xyz | bash
@@ -460,4 +470,4 @@ After successful crypto flow validation:
 
 ---
 
-**🎉 Ready to test the complete crypto-only payment flow!** 
+**🎉 Ready to test the complete crypto-only payment flow!**
