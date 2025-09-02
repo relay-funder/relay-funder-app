@@ -22,10 +22,7 @@ enum PaymentType {
   SELL
 }
 
-enum PaymentFlow {
-  CRYPTO
-  CREDIT_CARD
-}
+
 
 enum RecipientStatus {
   PENDING
@@ -39,13 +36,7 @@ enum Status {
   CLOSED
 }
 
-enum TreasuryMode {
-  DUAL
-  UNIFIED
-  CRYPTO_ONLY
-  PAYMENT_ONLY
-  LEGACY
-}
+
 
 model Campaign {
   id              Int                  @id @default(autoincrement())
@@ -63,9 +54,6 @@ model Campaign {
   slug            String               @unique
   location              String?
   treasuryAddress       String?
-  cryptoTreasuryAddress String?
-  paymentTreasuryAddress String?
-  treasuryMode          TreasuryMode?        @default(DUAL)
   category              String?
   collections     CampaignCollection[]
   images          CampaignImage[]
@@ -124,8 +112,6 @@ model Payment {
   externalId      String?
   metadata        Json?
   provider        String?
-  paymentFlow     PaymentFlow?
-  processingDetails Json?
   campaign        Campaign    @relation(fields: [campaignId], references: [id])
   user            User        @relation(fields: [userId], references: [id])
 

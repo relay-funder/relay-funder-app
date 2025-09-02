@@ -1,31 +1,33 @@
 # CC Protocol Contracts Integration Guide
 
-This guide provides comprehensive instructions for testing and deploying CC Protocol contracts with our dual treasury system.
+This guide provides comprehensive instructions for testing and deploying CC Protocol contracts with KeepWhat'sRaised treasury.
 
 ## 🏗️ Contract Architecture Overview
 
-### Treasury Types
+### Treasury Type
 
-1. **KeepWhatsRaised Treasury** (Crypto-Only Flow)
+**KeepWhat'sRaised Treasury** (Crypto-Only Flow)
 
-   - **Implementation ID**: `0`
-   - **Primary Method**: `pledgeWithoutAReward(address backer, uint256 pledgeAmount, uint256 tip)`
-   - **Withdrawal**: Complex fee-based system with admin approval required
-   - **Use Case**: Direct wallet-to-wallet USDC payments
+- **Implementation ID**: `0`
+- **Primary Method**: `pledgeWithoutAReward(address backer, uint256 pledgeAmount, uint256 tip)`
+- **Withdrawal**: Complex fee-based system with admin approval required
+- **Use Case**: Direct wallet-to-wallet USDC payments
 
-2. **PaymentTreasury** (Credit Card Flow)
+<!-- PaymentTreasury commented out for single treasury MVP focus -->
+<!-- **PaymentTreasury** (Credit Card Flow) - Commented out for MVP
    - **Implementation ID**: `1`
    - **Primary Methods**: `createPayment()` → `confirmPayment()` workflow
    - **Withdrawal**: Simple `disburseFees()` → `withdraw()` sequence
    - **Use Case**: Fiat-to-crypto via Crowdsplit integration
+-->
 
 ### Factory System
 
-Both treasuries use the **same TreasuryFactory** contract with different `implementationId` parameters:
+The **TreasuryFactory** contract deploys KeepWhat'sRaised treasury clones using minimal proxy pattern:
 
-- Factory deploys treasury clones using minimal proxy pattern
+- Factory deploys treasury clones with `implementationId = 0` for KeepWhat'sRaised
 - Requires implementation registration and approval by protocol admin
-- Each treasury type must be registered separately
+- Supports crypto-only donations via wallet connections
 
 ## 🚀 Local Development Setup
 
@@ -42,11 +44,10 @@ Update your `.env.local` with the following CC Protocol addresses:
 
 ```bash
 # =============================================================================
-# DUAL TREASURY CONFIGURATION (MVP TESTING ONLY)
+# CC PROTOCOL CONFIGURATION
 # =============================================================================
 
-# Treasury Mode Configuration
-TREASURY_MODE=DUAL
+# Treasury Configuration
 
 # KeepWhatsRaised Treasury (Crypto-Only Flow)
 NEXT_PUBLIC_TREASURY_FACTORY=0x1234567890123456789012345678901234567890    # TreasuryFactory address
@@ -54,16 +55,14 @@ NEXT_PUBLIC_GLOBAL_PARAMS=0x2345678901234567890123456789012345678901      # Glob
 NEXT_PUBLIC_PLATFORM_HASH=0x3456789012345678901234567890123456789012      # Platform identifier
 NEXT_PUBLIC_PLATFORM_ADMIN=0x4567890123456789012345678901234567890123     # Platform admin wallet
 
-# PaymentTreasury (Credit Card Flow) - Uses same factory
-# NEXT_PUBLIC_PAYMENT_TREASURY_FACTORY=                                   # Not needed - uses same factory
-NEXT_PUBLIC_PAYMENT_TREASURY_ADMIN=0x5678901234567890123456789012345678901234  # PaymentTreasury admin
+# Single Treasury Mode - Only KeepWhat'sRaised supported
+# PaymentTreasury functionality commented out for MVP focus
 
 # Test Token Configuration
 NEXT_PUBLIC_USDC_ADDRESS=0x6789012345678901234567890123456789012345        # USDC token address
 NEXT_PUBLIC_USDC_DECIMALS=6
 
-# Feature Flags
-NEXT_PUBLIC_ENABLE_DUAL_TREASURY=true
+
 ```
 
 ## 📋 Contract Deployment Sequence
@@ -102,6 +101,7 @@ cast send $TREASURY_FACTORY_ADDRESS \
   --private-key $PRIVATE_KEY
 ```
 
+<!-- PaymentTreasury Implementation Registration - Commented out for single treasury MVP
 ### 3. Register PaymentTreasury Implementation
 
 ```bash
@@ -120,19 +120,20 @@ cast send $TREASURY_FACTORY_ADDRESS \
   1 \
   --private-key $PRIVATE_KEY
 ```
+-->
 
 ## 🧪 Testing Procedures
 
 ### Campaign Creation & Treasury Deployment
 
 1. **Create Campaign** via our admin interface
-2. **Admin Approval** triggers dual treasury deployment:
+2. **Admin Approval** triggers treasury deployment:
 
 ```typescript
 // In admin approval API route
 import { createTreasuryManager } from '@/lib/treasury/interface';
 
-const treasuryManager = await createTreasuryManager('DUAL');
+const treasuryManager = await createTreasuryManager();
 
 const result = await treasuryManager.deploy({
   campaignId: campaign.id,
@@ -148,7 +149,7 @@ console.log('Treasury deployment result:', result);
 
 ```bash
 # Test crypto donation
-cast send $CRYPTO_TREASURY_ADDRESS \
+cast send $TREASURY_ADDRESS \
   "pledgeWithoutAReward(address,uint256,uint256)" \
   $BACKER_ADDRESS \
   1000000 \
@@ -156,11 +157,12 @@ cast send $CRYPTO_TREASURY_ADDRESS \
   --private-key $BACKER_PRIVATE_KEY
 
 # Check raised amount
-cast call $CRYPTO_TREASURY_ADDRESS \
+cast call $TREASURY_ADDRESS \
   "getRaisedAmount()" \
   --rpc-url $RPC_URL
 ```
 
+<!-- PaymentTreasury Flow Testing - Commented out for single treasury MVP
 ### Testing PaymentTreasury Flow
 
 ```bash
@@ -185,6 +187,7 @@ cast call $PAYMENT_TREASURY_ADDRESS \
   "getRaisedAmount()" \
   --rpc-url $RPC_URL
 ```
+-->
 
 ## 🔧 Integration Testing
 
@@ -193,33 +196,29 @@ cast call $PAYMENT_TREASURY_ADDRESS \
 After treasury deployment, verify database records:
 
 ```sql
--- Check dual treasury addresses are stored
+-- Check single treasury address is stored
 SELECT
   id,
   title,
-  treasuryAddress,
-  cryptoTreasuryAddress,
-  paymentTreasuryAddress,
-  treasuryMode
+  treasuryAddress
 FROM "Campaign"
 WHERE id = 'your-campaign-id';
 ```
 
 ### 2. Payment Flow Testing
 
-Test both payment flows through our UI:
+Test the single payment flow through our UI:
 
-1. **Crypto Payment**: Use wallet connection → pledge directly
-2. **Credit Card Payment**: Use Stripe → Crowdsplit → PaymentTreasury confirmation
+1. **Crypto Payment**: Use wallet connection → pledge directly to KeepWhat'sRaised treasury
 
 ### 3. Admin Dashboard Verification
 
 Verify admin can see:
 
-- Both treasury addresses
-- Deployment status indicators
-- Individual treasury balances
-- Combined balance totals
+- Single treasury address
+- Deployment status indicator
+- Treasury balance
+- Payment records
 
 ## 📊 Monitoring & Debugging
 
@@ -276,49 +275,47 @@ interface PaymentConfirmedEvent {
 ### Pre-Deployment
 
 - [ ] CC Protocol contracts deployed locally
-- [ ] Both treasury implementations registered and approved
+- [ ] KeepWhat'sRaised implementation registered and approved
 - [ ] Environment variables configured correctly
-- [ ] Database schema includes dual treasury fields
+- [ ] Database schema includes treasury field
 
 ### Treasury Deployment
 
 - [ ] Campaign creation successful
-- [ ] Admin approval triggers dual deployment
-- [ ] Both treasury addresses stored in database
-- [ ] Treasury contracts initialized correctly
+- [ ] Admin approval triggers treasury deployment
+- [ ] Treasury address stored in database
+- [ ] Treasury contract initialized correctly
 
 ### Payment Testing
 
-- [ ] Crypto payments work through KeepWhatsRaised
-- [ ] Credit card payments work through PaymentTreasury
-- [ ] Payment records created with correct flow type
+- [ ] Crypto payments work through KeepWhat'sRaised
+- [ ] Payment records created correctly
 - [ ] Treasury balances update correctly
 
 ### Withdrawal Testing
 
-- [ ] KeepWhatsRaised withdrawal requires approval
-- [ ] PaymentTreasury withdrawal works after fee disbursement
+- [ ] KeepWhat'sRaised withdrawal requires approval
 - [ ] Admin permissions enforced correctly
 - [ ] Funds transferred to campaign owner
 
 ### UI Integration
 
-- [ ] Admin dashboard shows dual treasury status
-- [ ] Payment method selection works correctly
+- [ ] Admin dashboard shows treasury status
+- [ ] Crypto wallet donation flow works correctly
 - [ ] Treasury availability validation working
 - [ ] Payment confirmation UI functions properly
 
-## 🔄 Migration Path to Unified Treasury
+## 🔄 Future Migration to Unified Treasury
 
-When ready to migrate to a single unified treasury contract:
+When ready to add credit card support with a unified contract:
 
-1. Update `TREASURY_MODE=UNIFIED` in environment
-2. Deploy new unified treasury implementation
-3. Register unified implementation with ID `2`
-4. Update `createTreasuryManager()` to use unified manager
-5. Run database migration to consolidate addresses
+1. Deploy new unified treasury implementation
+2. Register unified implementation with ID `1`
+3. Update `createTreasuryManager()` to use unified manager
+4. Uncomment credit card UI components
+5. Add unified contract ABI and deployment logic
 
-The abstraction layer ensures this migration requires minimal code changes.
+The current single treasury architecture provides a clean foundation for this future migration.
 
 ## 🔐 Admin Wallet Permissions & Functions
 
@@ -422,11 +419,11 @@ To use the provided admin wallets in your local environment:
 
 ### **Admin Function Call Examples**
 
-#### **Deploy Dual Treasury (Platform Admin)**
+#### **Deploy Treasury (Platform Admin)**
 
 ```bash
 # Using our treasury manager
-const treasuryManager = await createTreasuryManager('DUAL');
+const treasuryManager = await createTreasuryManager();
 const result = await treasuryManager.deploy({
   campaignId: 'campaign-id',
   platformBytes: process.env.NEXT_PUBLIC_PLATFORM_HASH!,
@@ -438,19 +435,19 @@ const result = await treasuryManager.deploy({
 #### **Approve Treasury Implementation (Protocol Admin)**
 
 ```bash
-# Approve PaymentTreasury implementation
+# Approve KeepWhat'sRaised implementation (ID = 0)
 cast send $TREASURY_FACTORY_ADDRESS \
   "approveTreasuryImplementation(bytes32,uint256)" \
   $PLATFORM_HASH \
-  1 \
+  0 \
   --private-key $PROTOCOL_ADMIN_PRIVATE_KEY
 ```
 
 #### **Approve Withdrawal (Platform Admin)**
 
 ```bash
-# Approve KeepWhatsRaised withdrawal
-cast send $CRYPTO_TREASURY_ADDRESS \
+# Approve KeepWhat'sRaised withdrawal
+cast send $TREASURY_ADDRESS \
   "approveWithdrawal()" \
   --private-key $PLATFORM_ADMIN_PRIVATE_KEY
 ```

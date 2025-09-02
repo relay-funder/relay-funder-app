@@ -33,6 +33,7 @@ npm-debug.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.template
 
 # vercel
 .vercel

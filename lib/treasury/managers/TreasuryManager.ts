@@ -14,10 +14,10 @@ import {
 } from '../interface';
 
 /**
- * Treasury manager for crypto-only payments using KeepWhatsRaised contracts
- * Implements the existing TreasuryFactory deployment pattern
+ * Treasury manager for KeepWhat'sRaised contracts
+ * Single treasury implementation for crypto payments
  */
-export class CryptoTreasuryManager extends TreasuryInterface {
+export class TreasuryManager extends TreasuryInterface {
   private readonly treasuryFactoryAddress: string;
   private readonly globalParamsAddress: string;
   private readonly platformBytes: string;
@@ -111,26 +111,24 @@ export class CryptoTreasuryManager extends TreasuryInterface {
   }
 
   /**
-   * Get the crypto treasury address for a campaign
+   * Get the treasury address for a campaign
    */
   async getAddress(campaignId: number): Promise<string | null> {
     try {
       const campaign = await db.campaign.findUnique({
         where: { id: campaignId },
-        select: { cryptoTreasuryAddress: true, treasuryAddress: true },
+        select: { treasuryAddress: true },
       });
 
-      return (
-        campaign?.cryptoTreasuryAddress || campaign?.treasuryAddress || null
-      );
+      return campaign?.treasuryAddress || null;
     } catch (error) {
-      console.error('Error getting crypto treasury address:', error);
+      console.error('Error getting treasury address:', error);
       return null;
     }
   }
 
   /**
-   * Process a crypto payment through the KeepWhatsRaised treasury
+   * Process a payment through the KeepWhatsRaised treasury
    */
   async processPayment(
     params: PaymentProcessingParams,

@@ -57,7 +57,6 @@ export interface PaymentProcessingParams {
   amount: string;
   userAddress: string;
   treasuryAddress: string;
-  paymentMethod: 'CRYPTO' | 'CREDIT_CARD';
   transactionId?: string;
   signer?: ethers.Signer;
 }
@@ -74,7 +73,7 @@ export interface WithdrawalParams {
 
 /**
  * Abstract interface for treasury management
- * Enables easy migration between dual treasury (MVP) and unified treasury (production)
+ * Single treasury implementation focused on KeepWhat'sRaised
  */
 export abstract class TreasuryInterface {
   /**
@@ -113,19 +112,10 @@ export abstract class TreasuryInterface {
 }
 
 /**
- * Factory function to create appropriate treasury manager based on mode
+ * Factory function to create the treasury manager
  */
-export async function createTreasuryManager(
-  mode: 'DUAL' | 'UNIFIED' = 'DUAL',
-): Promise<TreasuryInterface> {
-  if (mode === 'DUAL') {
-    // Import dynamically to avoid circular dependencies
-    const { DualTreasuryManager } = await import(
-      './managers/DualTreasuryManager'
-    );
-    return new DualTreasuryManager();
-  } else {
-    // Future implementation for unified treasury
-    throw new Error('Unified treasury manager not yet implemented');
-  }
+export async function createTreasuryManager(): Promise<TreasuryInterface> {
+  // Import dynamically to avoid circular dependencies
+  const { TreasuryManager } = await import('./managers/TreasuryManager');
+  return new TreasuryManager();
 }
