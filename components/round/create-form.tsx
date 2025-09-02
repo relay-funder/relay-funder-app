@@ -935,7 +935,7 @@ export function RoundCreateForm() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-8">
           <Link
-            href="/rounds"
+            href="/admin/rounds"
             className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -1264,7 +1264,7 @@ export function RoundCreateForm() {
                             variant="link"
                             className="mt-2 h-auto p-0 text-current"
                             onClick={() =>
-                              router.push(`/rounds/${finalRoundId}`)
+                              router.push(`/admin/rounds/${finalRoundId}`)
                             }
                           >
                             View Created Round
@@ -1279,7 +1279,7 @@ export function RoundCreateForm() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => router.push('/rounds')}
+                    onClick={() => router.push('/admin/rounds')}
                     disabled={isProcessing}
                   >
                     Cancel

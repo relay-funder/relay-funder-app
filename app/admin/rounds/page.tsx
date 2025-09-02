@@ -1,12 +1,14 @@
 // Force dynamic rendering to ensure fresh data on each request
 export const dynamic = 'force-dynamic';
 
+import { auth } from '@/server/auth';
 import RoundCard from '@/components/round-card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { db } from '@/server/db';
 import { Round } from '@/types/round';
+import { AdminAccessDenied } from '@/components/admin/access-denied';
 
 async function getRounds(): Promise<Round[]> {
   try {
@@ -34,8 +36,13 @@ async function getRounds(): Promise<Round[]> {
 }
 
 export default async function RoundsPage() {
-  const rounds = await getRounds();
+  const session = await auth();
+  const isAdmin = session?.user.roles.includes('admin');
 
+  const rounds = await getRounds();
+  if (!isAdmin) {
+    return <AdminAccessDenied />;
+  }
   return (
     <div className="container mx-auto px-4 py-8 md:px-6">
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -47,7 +54,7 @@ export default async function RoundsPage() {
             Explore active and upcoming funding rounds.
           </p>
         </div>
-        <Link href="/rounds/create" passHref>
+        <Link href="/admin/rounds/create" passHref>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Create Round
@@ -57,7 +64,10 @@ export default async function RoundsPage() {
       {rounds.length === 0 ? (
         <div className="py-10 text-center text-muted-foreground">
           No funding rounds found.
-          <Link href="/rounds/create" className="ml-2 text-primary underline">
+          <Link
+            href="/admin/rounds/create"
+            className="ml-2 text-primary underline"
+          >
             Create the first one!
           </Link>
         </div>

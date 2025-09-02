@@ -34,9 +34,6 @@ export const PageSidebar = () => {
             <div className="grow">
               <PageNavMenuItems />
             </div>
-            <div className="grow-0">
-              <PageNavMenuFeatures />
-            </div>
             <div className="grow-0 border-t">
               <PageNavMenuSettings />
             </div>

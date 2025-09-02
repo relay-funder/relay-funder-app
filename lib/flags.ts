@@ -3,9 +3,7 @@
 import { useEffect, useState } from 'react';
 
 // Simple feature flags implementation
-const FLAGS = {
-  ENABLE_ROUNDS: process.env.NEXT_PUBLIC_ENABLE_ROUNDS === 'true',
-};
+const FLAGS = {};
 
 export type FeatureFlag = keyof typeof FLAGS;
 
