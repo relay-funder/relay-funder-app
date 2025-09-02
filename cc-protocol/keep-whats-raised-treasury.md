@@ -1,131 +1,132 @@
 # KeepWhatsRaised Treasury Contract Documentation
 
-This document outlines the usage flow and technical specifications for the KeepWhatsRaised treasury smart contract.
+This document outlines the usage flow and technical specifications for the `KeepWhatsRaised` treasury smart contract in the CCP. It reflects the current on-chain behavior of `src/treasuries/KeepWhatsRaised.sol` and related factories.
 
 ## Main Function Flow
 
 1. `enlistPlatform` → Platform registered in protocol
 2. `registerTreasuryImplementation` → KeepWhatsRaised implementation registered
 3. `approveTreasuryImplementation` → Implementation approved for use
-4. `addPlatformData` → Fee structure keys added
-5. `createCampaign` → emits `CampaignCreated` → extract `campaignAddress`
-6. `deploy` → emits `TreasuryDeployed` → extract `treasuryAddress`
-7. `configureTreasury` → Treasury operational parameters set
+4. `addPlatformData` → Fee structure keys added (made valid in protocol)
+5. `createCampaign` → emits `CampaignInfoFactoryCampaignCreated` → extract `campaignAddress`
+6. `deploy` → emits `TreasuryFactoryTreasuryDeployed` → extract `treasuryAddress`
+7. `configureTreasury` → Treasury operational parameters, fee keys, and fee values set
 8. `addRewards` → Reward tiers created for backers
-9. `approveWithdrawal` → Withdrawal functionality enabled
-10. `setPaymentGatewayFee` → Gateway fee set for specific pledge
-11. `pledgeForAReward` / `pledgeWithoutAReward` → Backer makes pledge → NFT minted
-12. `withdraw` → Creator withdraws funds with fees applied
-13. `claimRefund` → Backer claims refund → NFT burned
-14. `claimTip` → Platform admin collects tips
-15. `claimFund` → Platform admin claims remaining funds
-16. `disburseFees` → Platform and protocol fees distributed
+9. `approveWithdrawal` → One-time enablement of withdrawal for this treasury
+10. `setPaymentGatewayFee` (optional per pledge) → Gateway fee set for a specific `pledgeId`
+11. `pledgeForAReward` / `pledgeWithoutAReward` or `setFeeAndPledge` → Backer makes pledge → NFT minted
+12. `withdraw(amount)` → Campaign owner or platform admin withdraws funds (time-bound), fees applied
+13. `claimRefund(tokenId)` → Backer claims refund → NFT burned
+14. `claimTip` → Platform admin collects tips (post-deadline or post-cancel)
+15. `claimFund` → Platform admin claims remaining funds after grace period
+16. `disburseFees` → Accumulated platform/protocol fees distributed
 
 ## 1. Deployment Flow
 
 ### A. Core Contract Deployment
 
-The following contracts must be deployed in order:
+The following contracts are required in the system:
 
-- **TestToken** - ERC20 token for the platform
-- **GlobalParams** - Protocol-wide parameters and admin management
-- **CampaignInfo** - Individual campaign information contract (implementation)
-- **TreasuryFactory** - Factory for deploying treasury instances
-- **CampaignInfoFactory** - Factory for creating campaign information contracts
-- **KeepWhatsRaised** - Treasury implementation contract
+- TestToken (ERC20) — platform token
+- GlobalParams — protocol parameters, admin addresses, platform registry
+- CampaignInfo (implementation) — campaign information contract
+- TreasuryFactory — deploys treasury clones and initializes them
+- CampaignInfoFactory — creates campaign info clones and wires them to treasury factory
+- KeepWhatsRaised — treasury implementation contract (cloned by `TreasuryFactory`)
 
-```javascript
-// Example deployment sequence
-testToken = new TestToken('TestToken', 'TST');
-globalParams = new GlobalParams(protocolAdmin, testToken, protocolFeePercent);
-campaignInfo = new CampaignInfo(address(this));
-treasuryFactory = new TreasuryFactory(GlobalParams(globalParams));
+Example deployment (pseudo, test-style):
+
+```solidity
+// Example deployment sequence (tests)
+testToken = new TestToken("TestToken", "TST");
+globalParams = new GlobalParams(protocolAdmin, address(testToken), protocolFeePercent);
+campaignInfoImpl = new CampaignInfo(address(this));
+treasuryFactory = new TreasuryFactory(IGlobalParams(address(globalParams)));
 campaignInfoFactory = new CampaignInfoFactory(
-  GlobalParams(globalParams),
-  campaignInfo,
+  IGlobalParams(address(globalParams)),
+  address(campaignInfoImpl)
 );
-keepWhatsRaisedImplementation = new KeepWhatsRaised();
+KeepWhatsRaised keepWhatsRaisedImplementation = new KeepWhatsRaised();
 ```
 
 ### B. System Setup and Configuration
 
-After deployment, the following setup steps must be performed by the Protocol Admin:
+After deployment, the following setup steps must be performed:
 
-- **Enlist Platform**: Register the platform in the global parameters
+- Enlist Platform (protocol admin):
 
-  ```javascript
+  ```solidity
   GlobalParams(globalParams).enlistPlatform(
     platformHash,
     platformAdminAddress,
-    platformFeePercent,
+    platformFeePercent
   );
   ```
 
-- **Register Treasury Implementation**: Register the KeepWhatsRaised implementation with the factory.
+- Register Treasury Implementation (platform admin):
 
-  ```javascript
+  ```solidity
   TreasuryFactory(treasuryFactory).registerTreasuryImplementation(
     platformHash,
     0,
-    keepWhatsRaisedImplementation,
+    address(keepWhatsRaisedImplementation)
   );
   ```
 
-- **Approve Treasury Implementation**: Approve the implementation for use
+- Approve Treasury Implementation (protocol admin):
 
-  ```javascript
+  ```solidity
   TreasuryFactory(treasuryFactory).approveTreasuryImplementation(
     platformHash,
-    0,
+    0
   );
   ```
 
-- **Add Platform Data Keys**: Register the fee structure keys for the platform
+- Add Platform Data Keys (protocol admin): register valid keys so campaigns can reference them
 
-  ```javascript
+  ```solidity
   GlobalParams(globalParams).addPlatformData(platformHash, PLATFORM_FEE_KEY);
   GlobalParams(globalParams).addPlatformData(platformHash, FLAT_FEE_KEY);
-  GlobalParams(globalParams).addPlatformData(
-    platformHash,
-    CUMULATIVE_FLAT_FEE_KEY,
-  );
+  GlobalParams(globalParams).addPlatformData(platformHash, CUMULATIVE_FLAT_FEE_KEY);
   ```
 
-- **Transfer Admin Rights**: Transfer control to the designated administrators
-  ```javascript
+- Transfer Admin Rights (if needed):
+
+  ```solidity
   GlobalParams(globalParams).updateProtocolAdminAddress(finalProtocolAdmin);
-  GlobalParams(globalParams).updatePlatformAdminAddress(
-    platformHash,
-    finalPlatformAdmin,
-  );
+  GlobalParams(globalParams).updatePlatformAdminAddress(platformHash, finalPlatformAdmin);
   ```
 
 ## 2. Campaign Creation and Treasury Setup
 
 ### A. Campaign Creation
 
-The Campaign Owner creates a new campaign through the CampaignInfoFactory:
+The Campaign Owner creates a new campaign through the `CampaignInfoFactory`:
 
-```javascript
+```solidity
 // Campaign creation example
-bytes32 platformHash = 0x0000000000000000000000000000000000000000000000000000000000000000; // Akashic platform
+bytes32 platformHash = 0x0000000000000000000000000000000000000000000000000000000000000000; // Example platform
 bytes32 identifierHash = keccak256(abi.encodePacked("My Campaign"));
-bytes32[] memory selectedPlatformHash = [platformHash];
 
-// Platform data keys and values for fee configuration
-bytes32[] memory platformDataKeys = [
-    0x0000000000000000000000000000000000000000000000000000000000000000, // Platform Fee Key
-    0x0000000000000000000000000000000000000000000000000000000000000000, // Flat Fee Key
-    0x0000000000000000000000000000000000000000000000000000000000000000  // Cumulative Fee Key
-];
+bytes32[] memory selectedPlatformHash = new bytes32[](1);
+selectedPlatformHash[0] = platformHash;
 
-bytes32[] memory platformDataValues = [
-    bytes32(1000),   // 10% platform fee
-    bytes32(100e18), // 100 token flat fee
-    bytes32(200e18)  // 200 token cumulative fee
-];
+// Platform data keys and values for fee configuration (keys must be pre-registered)
+bytes32[] memory platformDataKeys = new bytes32[](3);
+bytes32[] memory platformDataValues = new bytes32[](3);
+platformDataKeys[0] = 0x0000000000000000000000000000000000000000000000000000000000000000; // Platform Fee Key
+platformDataKeys[1] = 0x0000000000000000000000000000000000000000000000000000000000000001; // Flat Fee Key
+platformDataKeys[2] = 0x0000000000000000000000000000000000000000000000000000000000000002; // Cumulative Fee Key
+platformDataValues[0] = bytes32(uint256(1000));   // 10% platform fee (PERCENT_DIVIDER=10000)
+platformDataValues[1] = bytes32(uint256(100e18)); // 100 token flat fee
+platformDataValues[2] = bytes32(uint256(200e18)); // 200 token cumulative fee
 
-// Create the campaign
+ICampaignData.CampaignData memory campaignData = ICampaignData.CampaignData({
+    launchTime: block.timestamp + 1 days,
+    deadline: block.timestamp + 31 days,
+    goalAmount: 1_000_000e18
+});
+
 campaignInfoFactory.createCampaign(
     campaignOwnerAddress,
     identifierHash,
@@ -138,26 +139,27 @@ campaignInfoFactory.createCampaign(
 
 ### B. Treasury Deployment
 
-The Platform Admin deploys a treasury instance for the campaign:
+The Platform Admin deploys a treasury clone for the campaign via `TreasuryFactory`:
 
-```javascript
+```solidity
 // Treasury deployment example
 treasuryFactory.deploy(
-  0x0000000000000000000000000000000000000000000000000000000000000000, // Akashic platform hash
+  platformHash,
   campaignAddress, // Address of the CampaignInfo contract
-  0, // Treasury implementation ID (KeepWhatsRaised)
-  'NAME', // ERC721 Name
-  'SYMBOL', // ERC721 Symbol
+  0,               // Implementation ID (KeepWhatsRaised)
+  "NAME",          // ERC721 Name
+  "SYMBOL"         // ERC721 Symbol
 );
+// Emits: TreasuryFactoryTreasuryDeployed(platformHash, implementationId, campaignAddress, clone)
 ```
 
 ### C. Treasury Configuration
 
-The Platform Admin configures the deployed treasury with operational parameters:
+The Platform Admin configures the deployed treasury with operational parameters, fee keys, and the actual fee values to use:
 
-```javascript
+```solidity
 // Treasury configuration example
-KeepWhatsRaised.Config memory _config = KeepWhatsRaised.Config({
+KeepWhatsRaised.Config memory cfg = KeepWhatsRaised.Config({
     minimumWithdrawalForFeeExemption: 50_000e18,
     withdrawalDelay: 7 days,
     refundDelay: 14 days,
@@ -165,140 +167,161 @@ KeepWhatsRaised.Config memory _config = KeepWhatsRaised.Config({
     isColombianCreator: false
 });
 
-// Fee keys configuration
 KeepWhatsRaised.FeeKeys memory feeKeys = KeepWhatsRaised.FeeKeys({
-    flatFeeKey: 0x0000000000000000000000000000000000000000000000000000000000000000,
-    cumulativeFlatFeeKey: 0x0000000000000000000000000000000000000000000000000000000000000000,
-    grossPercentageFeeKeys: [0x0000000000000000000000000000000000000000000000000000000000000000]
+    flatFeeKey: 0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,
+    cumulativeFlatFeeKey: 0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB,
+    grossPercentageFeeKeys: new bytes32[](2)
 });
+feeKeys.grossPercentageFeeKeys[0] = 0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC;
+feeKeys.grossPercentageFeeKeys[1] = 0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD;
 
-// Finalize treasury setup
-keepWhatsRaised.configureTreasury(_config, CAMPAIGN_DATA, feeKeys);
+KeepWhatsRaised.FeeValues memory feeValues = KeepWhatsRaised.FeeValues({
+    flatFeeValue: 100e18,
+    cumulativeFlatFeeValue: 200e18,
+    grossPercentageFeeValues: new uint256[](2)
+});
+feeValues.grossPercentageFeeValues[0] = 1000; // 10.00%
+feeValues.grossPercentageFeeValues[1] = 600;  // 6.00%
+
+keepWhatsRaised.configureTreasury(cfg, campaignData, feeKeys, feeValues);
 ```
+
+Notes:
+- The treasury stores `feeValues` internally and reads them via `getFeeValue(feeKey)` during pledges and withdrawal fee logic.
+- Protocol fee percent comes from GlobalParams and is applied at pledge time.
 
 ## 3. Campaign Lifecycle and Usage
 
 ### A. Active Campaign (Funding Period)
 
-During the active funding period, between the `launchTime` and `deadline`, the contract can accept pledges.
+During the active funding period, between `launchTime` and `deadline`, the treasury accepts pledges.
 
-- **Reward Management**: The Campaign Owner can add or remove reward tiers using `addRewards` and `removeReward`. Rewards can be primary pledge tiers (`isRewardTier: true`) or add-ons (`isRewardTier: false`). Each reward has a value and can contain multiple items with their own values and quantities.
+- Reward management: The Campaign Owner can `addRewards` and `removeReward`. Rewards can be primary tiers (`isRewardTier: true`) or add-ons (`isRewardTier: false`). The first reward in `pledgeForAReward` must be a primary tier.
 
-- **Withdrawal Approval**: The Platform Admin must call `approveWithdrawal` to enable withdrawal functionality for the campaign owner.
+- Withdrawal approval: The Platform Admin must call `approveWithdrawal()` once to enable any withdrawal. This is irreversible.
 
-- **Pledging**: A backer makes a pledge, transferring funds to the treasury and receiving an NFT receipt.
+- Duplicate pledge protection: Each pledge uses an `internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))`. Re-using the same `pledgeId` from the same caller reverts.
 
-  1. `pledgeForAReward`: The backer pledges for one or more predefined rewards. The total pledge amount is derived from the sum of the rewards' values. An optional tip can be included. The first reward selected must be a primary reward tier.
-  2. `pledgeWithoutAReward`: The backer contributes a custom `pledgeAmount` without selecting a reward, and can also add a tip.
+- Facilitating pledges (Platform Admin):
+  - `setPaymentGatewayFee(pledgeId, fee)` sets the fee for a unique pledge ID before pledge.
+  - `setFeeAndPledge(...)` sets the fee and executes a pledge in one tx. Tokens are transferred from the admin (`msg.sender`) as the source; the NFT is minted to `backer`.
 
-- **Facilitating Pledges (Platform Admin)**:
+- Pledging flow (direct backer):
+  1) Approve tokens on the ERC20 token; 2) Call the pledge function.
 
-  1. The admin can call `setPaymentGatewayFee` to assign a specific gateway fee to a unique `pledgeId` before the pledge occurs.
-  2. The `setFeeAndPledge` function allows the admin to set this fee and execute a pledge on behalf of a backer in a single transaction.
-
-- **Pledging Flow**: A pledge is a two-step process for the backer:
-  1. **Approve Tokens**: The backer must first call `approve()` on the ERC20 token contract.
-  2. **Call Pledge Function**: After approval, the backer (or an admin) calls the pledge function.
-
-```javascript
-// Example of a backer pledging 1000 tokens without a reward
+```solidity
+// Example: backer pledges 1000 tokens without a reward
 uint256 pledgeAmount = 1000e18;
 uint256 tipAmount = 10e18;
 bytes32 pledgeId = keccak256("NEW_PLEDGE");
 
-// Step 1: Backer approves the token transfer
+// Step 1: Backer approves
 vm.startPrank(backerAddress);
 testToken.approve(address(keepWhatsRaised), pledgeAmount + tipAmount);
 vm.stopPrank();
 
-// Step 2: Pledge function is called
+// Step 2: Pledge
 keepWhatsRaised.pledgeWithoutAReward(pledgeId, backerAddress, pledgeAmount, tipAmount);
+```
+
+```solidity
+// Example: admin-assisted pledge with setFeeAndPledge (admin provides tokens)
+bytes32 pledgeId2 = keccak256("ADMIN_PLEDGE");
+uint256 tip2 = 0;
+uint256 adminProvidedAmount = 500e18;
+bytes32[] memory rewards = new bytes32[](1);
+rewards[0] = bytes32("TIER_A");
+
+// Admin funds and approves their own balance to treasury beforehand if needed
+testToken.approve(address(keepWhatsRaised), adminProvidedAmount + tip2);
+
+// One-shot fee set and pledge
+keepWhatsRaised.setFeeAndPledge(
+  pledgeId2,
+  backerAddress,
+  adminProvidedAmount,
+  tip2,
+  40e18,      // gateway fee
+  rewards,
+  true        // isPledgeForAReward
+);
 ```
 
 ### B. Post-Campaign (After Deadline or Cancellation)
 
-Once the campaign ends, the contract's functions shift to fund distribution.
+Once the campaign ends, functions shift to fund distribution.
 
-- **Withdrawing Funds (Campaign Owner)**:
+- Withdrawing Funds (Campaign Owner or Platform Admin):
+  - `approveWithdrawal()` must have been called earlier by the Platform Admin.
+  - `withdraw(uint256 amount)` is allowed only up to `deadline + withdrawalDelay`.
+  - Partial withdrawal (before deadline): `amount > 0` and `amount + fees <= s_availablePledgedAmount`.
+  - Final withdrawal (after deadline within the allowed window): ignores `amount` and withdraws all available; fee may be waived based on threshold (see details below).
+  - Note: For partial withdrawals, the creator receives `amount` and the fee is deducted from the remaining available balance. For final withdrawal, the creator receives `available - totalFee`.
 
-  - The Campaign Owner can call `withdraw(uint256 amount)`.
-  - **Partial Withdrawal**: If called before the deadline, the owner can withdraw a specified amount.
-  - **Full Withdrawal**: If called after the deadline with `amount = 0`, the owner withdraws the entire remaining available balance.
+- Refunding Pledges (Backers):
+  - `claimRefund(uint256 tokenId)` burns the pledge NFT and returns `grossPledge - totalPledgeTimeFees` (percentage + gateway + protocol). Tips are non-refundable.
+  - Refund window: active after deadline or cancellation until `refundDelay` elapses.
 
-- **Refunding Pledges (Backers)**:
+- Claiming Funds (Platform Admin):
+  - `claimTip`: After deadline or cancellation (post-cutoff), collects all tips.
+  - `claimFund`: If no withdrawal was made within the grace period, claim all remaining `s_availablePledgedAmount` after:
+    - Cancelled: `block.timestamp > cancellationTime + refundDelay`
+    - Not cancelled: `block.timestamp > deadline + withdrawalDelay`
 
-  - Backers can claim a refund by calling `claimRefund(uint256 tokenId)`. This burns their pledge NFT.
-  - The refund window is active after the campaign deadline or cancellation, but before the `refundDelay` period ends.
-
-- **Claiming Funds (Platform Admin)**:
-
-  - `claimTip`: After the deadline or cancellation, the Platform Admin can collect all tips contributed by backers.
-  - `claimFund`: If the Campaign Owner does not withdraw funds after the `withdrawalDelay` (or `refundDelay` if cancelled) has passed, the Platform Admin can claim the remaining available funds in the treasury.
-
-- **Fee Disbursement**:
-  - The `disburseFees` function sends the accumulated platform and protocol fees to their respective admin wallets.
+- Fee Disbursement:
+  - `disburseFees` sends the accumulated `s_protocolFee` and `s_platformFee` to protocol and platform administrators, respectively.
 
 ## 4. Fee Structure and Calculations
 
 ### A. Fees at Pledge Time
 
-When a pledge is made, several fees are calculated upfront and deducted from the gross pledge amount to determine the net amount available for the creator.
+When a pledge is made, fees are calculated upfront and deducted from the gross pledge to determine the net available amount:
 
-- **Percentage-Based Fees**: The system calculates a series of percentage-based fees (e.g., platform fee, commission) based on the gross pledge amount using the keys specified in `grossPercentageFeeKeys`.
+- Percentage-based fees: Derived from `getFeeValue(feeKey)` for each key in `grossPercentageFeeKeys` and applied to the gross pledge. Accumulated into `s_platformFee`.
+- Payment gateway fee: Fixed per-transaction fee set per `pledgeId` via `setPaymentGatewayFee`. Added to `s_platformFee`.
+- Protocol fee: Percentage applied to the gross pledge using `INFO.getProtocolFeePercent()`. Accumulated into `s_protocolFee`.
+- Net calculation: `net = pledgeAmount - (platformPercentFees + gatewayFee + protocolFee)`. The total pledge-time fee is stored per token for refund logic.
 
-```javascript
-// Inside _calculateNetAvailable function
-for (uint256 i = 0; i < len; i++) {
-    uint256 fee = (pledgeAmount * uint256(INFO.getPlatformData(s_feeKeys.grossPercentageFeeKeys[i]))) / PERCENT_DIVIDER;
-    s_platformFee += fee;
-    totalFee += fee;
-}
-```
-
-- **Payment Gateway Fee**: A fixed, per-transaction fee, which is set by the platform admin for the specific pledge using `setPaymentGatewayFee`.
-
-- **Net Calculation**: The sum of these fees is subtracted from the original pledge. This net amount is what becomes available for withdrawal, and the total fee is stored against the backer's NFT for potential refunds.
-
-- **Example**: A backer pledges 1,000 tokens with a 40-token gateway fee and configured percentage fees of 10% (platform) and 6% (commission).
-  - Percentage Fees = (1000 _ 10%) + (1000 _ 6%) = 160 tokens.
-  - Gateway Fee = 40 tokens.
-  - Total Fee Deducted = 160 + 40 = 200 tokens.
-  - Net Amount Added to `s_availablePledgedAmount` = 1000 - 200 = 800 tokens.
+Example (with protocol fee): A backer pledges 1,000 tokens; gateway fee 40; percentage fees 10% and 6%; protocol fee 2%.
+- Percentage fees = 1000*(10%+6%) = 160
+- Protocol fee = 1000*2% = 20
+- Gateway fee = 40
+- Total fees = 160 + 20 + 40 = 220
+- Net added to `s_availablePledgedAmount` = 1000 − 220 = 780
 
 ### B. Fees at Withdrawal Time
 
-When the creator withdraws funds, a separate set of fees is applied to the amount being withdrawn.
+When funds are withdrawn via `withdraw(amount)`, flat fees and a regional tax may apply:
 
-- **Flat Fees**: These fees depend on the withdrawal amount relative to the `minimumWithdrawalForFeeExemption` threshold.
+- Flat fees (using `getFeeValue`):
+  - Partial (before deadline): if `amount < minimumWithdrawalForFeeExemption`, apply `cumulativeFlatFeeKey`; else apply `flatFeeKey`.
+  - Final (after deadline): if `available < minimumWithdrawalForFeeExemption`, apply `flatFeeKey`; else the flat fee is waived.
 
-  - **Partial Withdrawal (before deadline)**: Withdrawing an amount less than the exemption threshold incurs the `cumulativeFlatFeeKey` fee. Withdrawing an amount above the threshold incurs the standard `flatFeeKey` fee.
-  - **Full Withdrawal (after deadline)**: If the total available fund is less than the exemption threshold, the `flatFeeKey` fee is charged. If the fund is larger, this flat fee is waived entirely.
+- Protocol fee is NOT applied at withdrawal (already applied at pledge time).
 
-- **Protocol Fee**: A percentage-based fee is always deducted from the withdrawal amount for the underlying protocol.
+- Colombian Creator Tax: If `isColombianCreator` is true, an additional ~0.4% tax is computed on the withdrawal amount and added to `s_platformFee`:
 
-- **Colombian Creator Tax**: If the creator is marked as Colombian (`isColombianCreator: true`), an additional tax is deducted from the withdrawal amount after other fees have been accounted for. The calculation, `(availableBeforeTax * 40) / 10040`, approximates a 0.4% effective tax rate.
-
-```javascript
-// Simplified logic inside the withdraw function
+```solidity
+// Inside withdraw
+uint256 availableBeforeTax = withdrawalAmount;
 if (s_config.isColombianCreator) {
-    // This calculation approximates a 0.4% effective tax rate
-    uint256 colombianCreatorTax = (availableBeforeTax * 40) / 10040;
+    // ≈ 0.4% effective tax
+    uint256 scaled = availableBeforeTax * 10000;
+    uint256 numerator = scaled * 40;
+    uint256 denominator = 10040;
+    uint256 colombianCreatorTax = numerator / (denominator * 10000);
     totalFee += colombianCreatorTax;
 }
 ```
 
 ### C. Fees during Refund
 
-If a backer claims a refund, they do not receive their full pledge amount.
+If a backer claims a refund, they receive their gross pledge minus all pledge-time fees (platform percentage + gateway + protocol). Tips are not refundable.
 
-- **Refund Amount**: The backer receives their original gross pledge amount minus the sum of all fees (percentage and gateway) that were calculated when they first made the pledge. The backer effectively absorbs the cost of the initial transaction fees. Tips are not refundable.
-
-```javascript
-// Calculation from claimRefund function
-// Original gross pledge
+```solidity
+// Calculation from claimRefund
 uint256 amountToRefund = s_tokenToPledgedAmount[tokenId];
-// Total fees from pledge time
-uint256 paymentFee = s_tokenToPaymentFee[tokenId];
+uint256 paymentFee = s_tokenToPaymentFee[tokenId]; // includes platform %, gateway, protocol
 uint256 netRefundAmount = amountToRefund - paymentFee;
 ```
 
@@ -306,52 +329,76 @@ uint256 netRefundAmount = amountToRefund - paymentFee;
 
 ### A. Campaign Parameter Updates
 
-- **`updateDeadline(newDeadline)`**
+- `updateDeadline(newDeadline)`
+  - Caller: Platform Admin OR Campaign Owner
+  - Timing: Only before `deadline - configLockPeriod`
+  - Purpose: Extends or modifies the campaign deadline
+  - Validation: New deadline must be after launch time and in the future
 
-  - **Caller**: Platform Admin OR Campaign Owner
-  - **Timing Restriction**: Only allowed before `deadline - configLockPeriod`
-  - **Purpose**: Extends or modifies the campaign deadline
-  - **Validation**: New deadline must be after the launch time
-
-- **`updateGoalAmount(newAmount)`**
-  - **Caller**: Platform Admin OR Campaign Owner
-  - **Timing Restriction**: Only allowed before `deadline - configLockPeriod`
-  - **Purpose**: Modifies the funding goal amount
-  - **Validation**: New goal amount must be greater than zero
+- `updateGoalAmount(newAmount)`
+  - Caller: Platform Admin OR Campaign Owner
+  - Timing: Only before `deadline - configLockPeriod`
+  - Purpose: Modifies the funding goal amount
+  - Validation: `newAmount > 0`
 
 ### B. Reward Management Updates
 
-- **`addRewards(rewardNames, rewards)`**
+- `addRewards(rewardNames, rewards)`
+  - Caller: Campaign Owner only
+  - Timing: During active campaign (not paused/cancelled)
+  - Purpose: Adds new primary tiers or add-ons
+  - Validation: Non-zero values, consistent item arrays, no duplicates
 
-  - **Caller**: Campaign Owner only
-  - **Timing**: Can be called throughout the campaign period
-  - **Purpose**: Adds new reward tiers or add-ons for backers to select
-  - **Validation**: Rewards must have non-zero values, no duplicate names allowed
-
-- **`removeReward(rewardName)`**
-  - **Caller**: Campaign Owner only
-  - **Timing**: Can be called throughout the campaign period
-  - **Purpose**: Removes reward options (typically unused rewards)
-  - **Note**: Does not affect existing pledges that selected the removed reward
+- `removeReward(rewardName)`
+  - Caller: Campaign Owner only
+  - Timing: During active campaign (not paused/cancelled)
+  - Purpose: Removes a reward option; existing pledges unaffected
 
 ### C. Administrative Updates
 
-- **`approveWithdrawal()`**
+- `approveWithdrawal()`
+  - Caller: Platform Admin only
+  - Timing: Any time after configuration
+  - Purpose: One-time activation of withdrawal functionality
+  - Effect: Irreversible
 
-  - **Caller**: Platform Admin only
-  - **Timing**: Can be called at any time after treasury configuration
-  - **Purpose**: One-time activation of withdrawal functionality
-  - **Effect**: Irreversible - once approved, cannot be revoked
-
-- **Treasury State Management**:
-  - `pauseTreasury(message)`: Platform Admin can pause all treasury operations
-  - `unpauseTreasury(message)`: Platform Admin can resume treasury operations
-  - `cancelTreasury(message)`: Platform Admin OR Campaign Owner can cancel the campaign
+- Treasury State Management:
+  - `pauseTreasury(message)`: Platform Admin pauses operations
+  - `unpauseTreasury(message)`: Platform Admin resumes operations
+  - `cancelTreasury(message)`: Platform Admin OR Campaign Owner cancels campaign (overridden to allow both)
 
 ### D. Fee Configuration Updates
 
-- **`setPaymentGatewayFee(pledgeId, fee)`**
-  - **Caller**: Platform Admin only
-  - **Timing**: Must be called before the corresponding pledge is made
-  - **Purpose**: Sets or updates the gateway fee for a specific pledge
-  - **Scope**: Fee applies only to the specified pledge ID
+- `setPaymentGatewayFee(pledgeId, fee)`
+  - Caller: Platform Admin only
+  - Timing: Should be set before the corresponding pledge; setting after has no effect for past pledges
+  - Purpose: Sets the gateway fee for a specific `pledgeId`
+  - Scope: Applies only to that `pledgeId` (combined with caller address when processed)
+
+## 6. Getters and Views
+
+- `getWithdrawalApprovalStatus() -> bool`
+- `getReward(bytes32 rewardName) -> Reward`
+- `getRaisedAmount() -> uint256`
+- `getAvailableRaisedAmount() -> uint256`
+- `getLaunchTime() -> uint256`
+- `getDeadline() -> uint256`
+- `getGoalAmount() -> uint256`
+- `getPaymentGatewayFee(bytes32 pledgeId) -> uint256`
+- `getFeeValue(bytes32 feeKey) -> uint256`
+
+Note: The interface-mandated `withdraw()` (no args) reverts in `KeepWhatsRaised`. Use `withdraw(uint256 amount)` according to the rules above.
+
+## 7. Events and IDs
+
+- Campaign creation: `CampaignInfoFactoryCampaignCreated(bytes32 identifierHash, address campaign)`
+- Treasury deployment: `TreasuryFactoryTreasuryDeployed(bytes32 platformHash, uint256 implementationId, address info, address clone)`
+- Treasury configuration: `TreasuryConfigured(Config, CampaignData, FeeKeys, FeeValues)`
+- Pledge receipt: `Receipt(backer, reward, pledgeAmountNet, tip, tokenId, rewards)`
+- Rewards added/removed: `RewardsAdded`, `RewardRemoved`
+- Withdrawal: `WithdrawalWithFeeSuccessful(to, amountTransferred, totalFee)`
+- Tips/funds claimed: `TipClaimed`, `FundClaimed`
+- Gateway fee set: `KeepWhatsRaisedPaymentGatewayFeeSet(pledgeId, fee)`
+- Deadline/goal updated: `KeepWhatsRaisedDeadlineUpdated`, `KeepWhatsRaisedGoalAmountUpdated`
+
+Pledge ID scope: Internally, `internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))` prevents re-use by the same caller. Different callers may reuse the same `pledgeId` without conflict.

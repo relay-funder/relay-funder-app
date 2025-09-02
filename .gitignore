@@ -54,3 +54,4 @@ dev_modules
 
 .generated
 cc-protocol/.env.foundry
+!cc-protocol/.env.foundry.template
