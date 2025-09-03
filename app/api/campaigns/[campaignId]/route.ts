@@ -9,6 +9,7 @@ import {
 import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams, GetCampaignResponse } from '@/lib/api/types';
 
+
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const { campaignId: campaignIdOrSlug } = await params;

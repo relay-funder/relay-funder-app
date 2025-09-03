@@ -4,6 +4,7 @@ import type {
 } from '@/lib/api/types';
 import { formatUSD } from '@/lib/format-usd';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
+import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
 import { DbCampaign } from '@/types/campaign';
 import { useMemo } from 'react';
 
@@ -11,17 +12,26 @@ export function useCampaignStats({ slug }: { slug: string }) {
   const { data, isPending } = useCampaign(slug);
   const { campaign } = data ?? ({} as GetCampaignResponse);
 
+  // Fetch treasury balance separately if available
+  const { data: treasuryBalance, isLoading: isTreasuryBalanceLoading } = useTreasuryBalance(
+    campaign?.treasuryAddress || null
+  );
+
   return {
     ...useCampaignStatsFromInstance({
       campaign,
+      treasuryBalance: treasuryBalance || campaign?.treasuryBalance,
     }),
     isPending,
+    isTreasuryBalanceLoading,
   };
 }
 export function useCampaignStatsFromInstance({
   campaign,
+  treasuryBalance,
 }: {
   campaign?: DbCampaign;
+  treasuryBalance?: { available: string; totalPledged: string; currency: string } | null;
 }) {
   const paymentSummary = campaign?.paymentSummary;
   const contributorPendingCount = paymentSummary?.countPending ?? 0;
@@ -94,5 +104,6 @@ export function useCampaignStatsFromInstance({
     progress,
     contributorCount,
     contributorPendingCount,
+    treasuryBalance,
   };
 }

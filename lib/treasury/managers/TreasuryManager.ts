@@ -66,8 +66,8 @@ export class TreasuryManager extends TreasuryInterface {
         params.platformBytes, // platformHash
         params.campaignAddress, // infoAddress (must be CampaignInfo contract)
         0, // implementationId (0 = KeepWhatsRaised)
-        `Campaign ${params.campaignId} Crypto`, // name
-        `C${params.campaignId}CRYPTO`, // symbol
+        'Demo', // name - as per shell script
+        'DMO', // symbol - as per shell script
         { gasLimit: 2000000 }, // Increased gas limit
       );
 
@@ -84,12 +84,11 @@ export class TreasuryManager extends TreasuryInterface {
 
       const treasuryAddress = deployEvent.args.treasuryAddress;
 
-      // Update database with crypto treasury address
+      // Update database with treasury address
       await db.campaign.update({
         where: { id: params.campaignId },
         data: {
-          cryptoTreasuryAddress: treasuryAddress,
-          treasuryAddress: treasuryAddress, // Keep as primary for backwards compatibility
+          treasuryAddress: treasuryAddress,
         },
       });
 
@@ -124,6 +123,80 @@ export class TreasuryManager extends TreasuryInterface {
     } catch (error) {
       console.error('Error getting treasury address:', error);
       return null;
+    }
+  }
+
+  /**
+   * Configure treasury with parameters from kwr_flow_test.sh
+   */
+  async configureTreasury(
+    treasuryAddress: string,
+    campaignId: number,
+    signer: ethers.Signer,
+  ): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
+    try {
+      // Get campaign details for configuration
+      const campaign = await db.campaign.findUnique({
+        where: { id: campaignId },
+        select: {
+          startTime: true,
+          endTime: true,
+          fundingGoal: true,
+        },
+      });
+
+      if (!campaign) {
+        throw new Error('Campaign not found');
+      }
+
+      const treasuryABI = [
+        'function configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[])) external',
+      ];
+
+      const treasuryContract = new ethers.Contract(
+        treasuryAddress,
+        treasuryABI,
+        signer,
+      );
+
+      // Configuration parameters from kwr_flow_test.sh
+      const WITHDRAWAL_DELAY = 3600; // 1 hour
+      const REFUND_DELAY = 7200; // 2 hours
+      const CONFIG_LOCK_PERIOD = 1800; // 30 minutes
+      const IS_COLOMBIAN = false;
+
+      // Minimum withdrawal for fee exemption (set to 0 since flat fees are 0)
+      const MIN_WITHDRAWAL_FEE_EXEMPTION = 0; // No minimum since fees are 0
+
+      // Fee keys as per shell script
+      const FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('flatFee'));
+      const CUM_FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('cumulativeFlatFee'));
+      const PLATFORM_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('platformFee'));
+      const VAKI_COMMISSION_KEY = ethers.keccak256(ethers.toUtf8Bytes('vakiCommission'));
+
+      const launchTime = Math.floor(new Date(campaign.startTime).getTime() / 1000);
+      const deadline = Math.floor(new Date(campaign.endTime).getTime() / 1000);
+      const goalAmount = ethers.parseUnits(campaign.fundingGoal, 6); // USDC has 6 decimals
+
+      const tx = await treasuryContract.configureTreasury(
+        [MIN_WITHDRAWAL_FEE_EXEMPTION, WITHDRAWAL_DELAY, REFUND_DELAY, CONFIG_LOCK_PERIOD, IS_COLOMBIAN],
+        [launchTime, deadline, goalAmount],
+        [FLAT_FEE_KEY, CUM_FLAT_FEE_KEY, [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY]],
+        { gasLimit: 1000000 },
+      );
+
+      const receipt = await tx.wait();
+
+      return {
+        success: true,
+        transactionHash: tx.hash,
+      };
+    } catch (error) {
+      console.error('Error configuring treasury:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown configuration error',
+      };
     }
   }
 
@@ -204,8 +277,8 @@ export class TreasuryManager extends TreasuryInterface {
     try {
       const provider = new ethers.JsonRpcProvider(this.rpcUrl);
       const treasuryABI = [
-        'function getBalance() external view returns (uint256)',
-        'function getTotalPledged() external view returns (uint256)',
+        'function getRaisedAmount() external view returns (uint256)',
+        'function getAvailableRaisedAmount() external view returns (uint256)',
       ];
 
       const treasuryContract = new ethers.Contract(
@@ -214,14 +287,14 @@ export class TreasuryManager extends TreasuryInterface {
         provider,
       );
 
-      const [balance, totalPledged] = await Promise.all([
-        treasuryContract.getBalance(),
-        treasuryContract.getTotalPledged(),
+      const [totalRaised, availableAmount] = await Promise.all([
+        treasuryContract.getRaisedAmount(),
+        treasuryContract.getAvailableRaisedAmount(),
       ]);
 
       return {
-        available: ethers.formatUnits(balance, 6), // USDC has 6 decimals
-        totalPledged: ethers.formatUnits(totalPledged, 6),
+        available: ethers.formatUnits(availableAmount, 6), // USDC has 6 decimals
+        totalPledged: ethers.formatUnits(totalRaised, 6),
         currency: 'USDC',
       };
     } catch (error) {

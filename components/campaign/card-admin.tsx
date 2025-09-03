@@ -7,6 +7,7 @@ import { CampaignAdminStatus } from './admin-status';
 import { UserInlineName } from '@/components/user/inline-name';
 import { CopyText } from '@/components/copy-text';
 import { CampaignProgress } from './progress';
+import { TreasuryBalanceCompact } from './treasury-balance';
 
 import { CampaignCardAdminActions } from './card-admin-actions';
 import { CampaignLocation } from './location';
@@ -79,6 +80,13 @@ export function CampaignCardAdmin({ campaign }: CampaignItemProps) {
             </p>
           )}
           <CampaignProgress campaign={campaign} />
+
+          {/* Treasury Balance for Admin View */}
+          {campaign?.treasuryAddress && (
+            <div className="mt-2">
+              <TreasuryBalanceCompact treasuryAddress={campaign.treasuryAddress} />
+            </div>
+          )}
         </div>
         <CampaignCardAdminActions campaign={campaign} />
       </CardFooter>

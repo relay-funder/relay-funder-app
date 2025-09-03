@@ -13,6 +13,9 @@ import {
 } from '@/lib/api/types';
 import { CampaignStatus } from '@/types/campaign';
 import { getCampaign } from '@/lib/api/campaigns';
+import { createTreasuryManager } from '@/lib/treasury/interface';
+import { ethers } from 'ethers';
+import { chainConfig } from '@/lib/web3';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -50,6 +53,35 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         treasuryAddress,
       },
     });
+
+    // Configure treasury with parameters from kwr_flow_test.sh
+    try {
+      const treasuryManager = await createTreasuryManager();
+
+      // Create platform admin signer for treasury configuration
+      const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+      if (!platformAdminKey) {
+        console.warn('PLATFORM_ADMIN_PRIVATE_KEY not found, skipping treasury configuration');
+      } else {
+        const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
+        const platformAdminSigner = new ethers.Wallet(platformAdminKey, provider);
+
+        const configResult = await treasuryManager.configureTreasury(
+          treasuryAddress,
+          campaignId,
+          platformAdminSigner,
+        );
+
+        if (!configResult.success) {
+          console.error('Treasury configuration failed:', configResult.error);
+        } else {
+          console.log('Treasury configured successfully:', configResult.transactionHash);
+        }
+      }
+    } catch (configError) {
+      console.error('Error during treasury configuration:', configError);
+      // Don't fail the approval if configuration fails - treasury can be configured later
+    }
 
     return response({
       campaign: await getCampaign(campaignId),

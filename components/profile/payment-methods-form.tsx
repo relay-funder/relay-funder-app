@@ -49,36 +49,36 @@
 //         toast({
 //           title: 'Error',
 //           description:
-            error instanceof Error
-              ? error.message
-              : 'Failed to delete payment method',
-          variant: 'destructive',
-        });
-        throw error;
-      }
-    },
-    [toast, deletePaymentMethod, onSuccess],
-  );
+//             error instanceof Error
+//               ? error.message
+//               : 'Failed to delete payment method',
+//           variant: 'destructive',
+//         });
+//         throw error;
+//       }
+//     },
+//     [toast, deletePaymentMethod, onSuccess],
+//   );
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardDescription>
-            Add or manage your payment methods for donations.
-          </CardDescription>
-        </div>
-        <ProfileAddPaymentMethodDialog open={showAddDialog} />
-      </CardHeader>
-      <CardContent>
-        <ProfilePaymentMethodsTable
-          paymentMethods={paymentMethods ?? []}
-          onAdd={onCreateNewPaymentMethod}
-          onDelete={onDeletePaymentMethod}
-        />
-      </CardContent>
-    </Card>
-  );
+//   return (
+//     <Card>
+//       <CardHeader className="flex flex-row items-center justify-between">
+//         <div>
+//           <CardDescription>
+//             Add or manage your payment methods for donations.
+//           </CardDescription>
+//         </div>
+//         <ProfileAddPaymentMethodDialog open={showAddDialog} />
+//       </CardHeader>
+//       <CardContent>
+//         <ProfilePaymentMethodsTable
+//           paymentMethods={paymentMethods ?? []}
+//           onAdd={onCreateNewPaymentMethod}
+//           onDelete={onDeletePaymentMethod}
+//         />
+//       </CardContent>
+//     </Card>
+//   );
 // }
 
 // Placeholder component for single treasury mode
