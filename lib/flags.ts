@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 
 // Simple feature flags implementation
-const FLAGS = {};
+const FLAGS = {
+  DEBUG: false,
+};
 
 export type FeatureFlag = keyof typeof FLAGS;
 

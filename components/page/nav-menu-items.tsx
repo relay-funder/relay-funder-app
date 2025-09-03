@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
-import { useSidebar, useFeatureFlag, useAuth } from '@/contexts';
+import { useSidebar, useAuth } from '@/contexts';
 import { usePathname } from 'next/navigation';
 import { Grid, Home, Star, BookCheck } from 'lucide-react';
 import { transition } from './sidebar-constants';

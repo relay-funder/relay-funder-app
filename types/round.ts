@@ -41,6 +41,7 @@ export interface Round extends Omit<RoundPayload, 'matchingPool'> {
 }
 
 import type { Round as PrismaRound } from '@/.generated/prisma/client';
+import { GetRoundResponseInstance } from '@/lib/api/types';
 
 // Define and export the status map
 export const ROUND_STATUS_MAP = {
@@ -80,3 +81,41 @@ export enum RecipientStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
 }
+
+export interface RoundItemProps {
+  round: GetRoundResponseInstance;
+  onSelect?: (arg0: GetRoundResponseInstance) => Promise<void>;
+  onCreate?: () => Promise<void>;
+}
+
+/**
+ * Defines the various states a round pool create process can be in.
+ * Each state represents a step in the user's interaction with the wallet and blockchain.
+ */
+export const CreateProcessStates = {
+  /**
+   * The deploy process is starting
+   */
+  setup: 'setup',
+
+  /**
+   * Create the round in the database
+   */
+  create: 'create',
+
+  /**
+   * The initial idle state of the create process, before any steps have begun.
+   */
+  idle: 'idle',
+
+  /**
+   * Round created successfully.
+   */
+  done: 'done',
+
+  /**
+   * The creation process has failed at some point.
+   * An error message should be displayed to the user.
+   */
+  failed: 'failed',
+};

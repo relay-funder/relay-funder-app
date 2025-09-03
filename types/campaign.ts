@@ -312,7 +312,7 @@ export const CreateProcessStates = {
   done: 'done',
 
   /**
-   * The donation process has failed at some point.
+   * The creation process has failed at some point.
    * An error message should be displayed to the user.
    */
   failed: 'failed',
@@ -344,7 +344,7 @@ export const UpdateProcessStates = {
   done: 'done',
 
   /**
-   * The donation process has failed at some point.
+   * The update process has failed at some point.
    * An error message should be displayed to the user.
    */
   failed: 'failed',

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "RoundCampaigns" ADD COLUMN     "approvedAt" TIMESTAMP(3),
+ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

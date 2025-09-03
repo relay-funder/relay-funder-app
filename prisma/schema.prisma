@@ -171,17 +171,14 @@ model Round {
   createdAt        DateTime         @default(now())
   managerAddress   String
   poolId           BigInt?          @unique
-  profileId        String
-  strategyAddress  String
-  tokenAddress     String
-  tokenDecimals    Int
-  transactionHash  String?          @unique
   updatedAt        DateTime         @updatedAt
   roundCampaigns   RoundCampaigns[]
 }
 
 model RoundCampaigns {
   id                       Int             @id @default(autoincrement())
+  createdAt                DateTime        @default(now())
+  approvedAt               DateTime?
   roundId                  Int
   campaignId               Int
   reviewedAt               DateTime?

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth, useSidebar } from '@/contexts';
 import { usePathname } from 'next/navigation';
-import { Settings, Wrench } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { transition } from './sidebar-constants';
 
 export function PageNavMenuSettings() {

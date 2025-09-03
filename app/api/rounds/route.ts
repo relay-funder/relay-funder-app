@@ -4,37 +4,50 @@ import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
   ApiParameterError,
+  ApiUpstreamError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
+import { listRounds } from '@/lib/api/rounds';
+import { uploadFile } from '@/lib/storage/upload-file';
+import { PatchRoundResponse, PostRoundsResponse } from '@/lib/api/types';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const rounds = await db.round.findMany(); // Fetch all rounds from the database
-    return response(rounds);
+    await checkAuth(['admin']);
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const skip = (page - 1) * pageSize;
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
+    }
+
+    return response(await listRounds({ page, pageSize, skip }));
   } catch (error: unknown) {
     return handleError(error);
   }
 }
 
-// New POST handler
 export async function POST(req: Request) {
   try {
-    const session = await checkAuth(['user']);
-    const body = await req.json();
+    const session = await checkAuth(['admin']);
+    const creatorAddress = session.user.address;
+    const formData = await req.formData();
+    // Extract form fields
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const matchingPool = parseInt(formData.get('matchingPool') as string);
+    const startTime = formData.get('startTime') as string;
+    const endTime = formData.get('endTime') as string;
+    const applicationStartTime = formData.get('applicationStartTime') as string;
+    const applicationEndTime = formData.get('applicationEndTime') as string;
+    const tags =
+      (formData.get('tags') as string)
+        ?.split(',')
+        .map((tag) => decodeURIComponent(tag)) ?? [];
+    const status = formData.get('status') as string;
 
-    const {
-      title,
-      description,
-      tags,
-      matchingPool,
-      applicationStart,
-      applicationClose,
-      startDate,
-      endDate,
-      status,
-      blockchain,
-      logoUrl,
-    } = body;
+    const logo = formData.get('logo') as File | null;
 
     // Check if any required fields are missing
     if (
@@ -42,12 +55,10 @@ export async function POST(req: Request) {
       !description ||
       !tags ||
       !matchingPool ||
-      !applicationStart ||
-      !applicationClose ||
-      !startDate ||
-      !endDate ||
-      !blockchain ||
-      !logoUrl
+      !applicationStartTime ||
+      !applicationEndTime ||
+      !startTime ||
+      !endTime
     ) {
       throw new ApiParameterError('Missing required parameters');
     }
@@ -57,58 +68,90 @@ export async function POST(req: Request) {
     if (status && !validStatuses.includes(status)) {
       throw new ApiParameterError('Invalid status value');
     }
-
+    let logoUrl = null;
+    if (logo) {
+      try {
+        logoUrl = await uploadFile(logo);
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
+      }
+    }
     const newRound = await db.round.create({
       data: {
         title: title,
         description: description,
-        tags: tags as string[],
-        matchingPool: parseInt(matchingPool),
-        applicationStart: new Date(applicationStart),
-        applicationClose: new Date(applicationClose),
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        blockchain,
+        tags,
+        matchingPool: matchingPool,
+        applicationStart: new Date(applicationStartTime),
+        applicationClose: new Date(applicationEndTime),
+        startDate: new Date(startTime),
+        endDate: new Date(endTime),
+        blockchain: 'CELO',
         logoUrl,
-        strategyAddress: body.strategyAddress || '0x0',
-        profileId: body.profileId || 'default-profile',
-        managerAddress: session.user.address,
-        tokenAddress: body.tokenAddress || '0x0',
-        tokenDecimals: body.tokenDecimals || 18,
+        managerAddress: creatorAddress,
       },
     });
-    return response(newRound);
+    const responseData: PostRoundsResponse = { roundId: newRound.id, logoUrl };
+    return response(responseData);
   } catch (error: unknown) {
     return handleError(error);
   }
 }
 
-export async function PUT(req: Request) {
+export async function PATCH(req: Request) {
   try {
-    const session = await checkAuth(['user']);
-    const { id, title, description, tags, matchingPool, startDate, endDate } =
-      await req.json();
+    const session = await checkAuth(['admin']);
+    const formData = await req.formData();
+    // Extract form fields
+    const id = parseInt(formData.get('roundId') as string);
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const matchingPool = parseInt(formData.get('matchingPool') as string);
+    const startTime = formData.get('startTime') as string;
+    const endTime = formData.get('endTime') as string;
+    const applicationStartTime = formData.get('applicationStartTime') as string;
+    const applicationEndTime = formData.get('applicationEndTime') as string;
+    const tags = formData.get('tags') as string;
+
+    const logo = formData.get('logo') as File | null;
     const instance = await db.round.findUnique({ where: { id } });
     if (!instance) {
-      throw new ApiNotFoundError('User not found');
+      throw new ApiNotFoundError('Round not found');
     }
     if (instance.managerAddress !== session.user.address) {
       throw new ApiAuthNotAllowed(
         'Only the creator of the round may modify it',
       );
     }
+    let logoUrl = undefined;
+    if (logo) {
+      try {
+        logoUrl = await uploadFile(logo);
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
+      }
+    }
     const updatedRound = await db.round.update({
       where: { id },
       data: {
         title,
         description,
-        tags,
-        matchingPool: parseInt(matchingPool, 10),
-        applicationStart: new Date(startDate),
-        applicationClose: new Date(endDate),
+        tags: tags.split(','),
+        matchingPool: matchingPool,
+        startDate: new Date(startTime),
+        endDate: new Date(endTime),
+        applicationStart: new Date(applicationStartTime),
+        applicationClose: new Date(applicationEndTime),
+        logoUrl,
       },
     });
-    return response(updatedRound);
+    const responseData: PatchRoundResponse = {
+      roundId: updatedRound.id,
+      logoUrl: updatedRound.logoUrl,
+    };
+    return response(responseData);
   } catch (error: unknown) {
     return handleError(error);
   }
