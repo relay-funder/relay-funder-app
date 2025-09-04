@@ -47,7 +47,8 @@ export default function PaymentMethodsPage() {
     >
       <PageDefaultContent title="Payment Methods">
         {customerId ? (
-          <PaymentMethodsForm paymentMethods={paymentMethods ?? []} />
+          // <PaymentMethodsForm paymentMethods={paymentMethods ?? []} />
+          <PaymentMethodsForm />
         ) : (
           <ProfileNotComplete>
             You need to complete your personal information and create a customer
