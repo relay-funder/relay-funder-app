@@ -61,7 +61,9 @@ export async function ensurePlatformSetup(): Promise<{
 
       // If the contract call fails due to revert, assume platform needs enlistment
       // This can happen if the platform was never enlisted or if there's a contract issue
-      if (error.code === 'CALL_EXCEPTION' || error.shortMessage === 'missing revert data') {
+      if (error && typeof error === 'object' &&
+          (('code' in error && error.code === 'CALL_EXCEPTION') ||
+           ('shortMessage' in error && error.shortMessage === 'missing revert data'))) {
         console.log('Platform validation function reverted - proceeding with enlistment');
         isListed = false; // Force enlistment
       } else {
@@ -182,7 +184,9 @@ export async function validatePlatformSetup(): Promise<{
 
       // If the contract call fails due to revert, assume platform needs enlistment
       // This can happen if the platform was never enlisted or if there's a contract issue
-      if (error.code === 'CALL_EXCEPTION' || error.shortMessage === 'missing revert data') {
+      if (error && typeof error === 'object' &&
+          (('code' in error && error.code === 'CALL_EXCEPTION') ||
+           ('shortMessage' in error && error.shortMessage === 'missing revert data'))) {
         console.log('Platform validation function reverted - assuming platform needs to be enlisted');
         isListed = false;
         platformCheckFailed = true;
