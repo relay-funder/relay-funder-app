@@ -68,7 +68,10 @@ export function useAdminApproveCampaign() {
         platformConfig.globalParamsAddress,
         GlobalParamsABI,
         ethersProvider,
-      );
+      ) as ethers.Contract & {
+        getPlatformAdminAddress: (platformHash: string) => Promise<string>;
+        checkIfPlatformDataKeyValid: (dataKey: string) => Promise<boolean>;
+      };
       onStateChanged('requestAdminAddress');
       let platformAdmin;
       try {
@@ -135,7 +138,10 @@ export function useAdminApproveCampaign() {
           platformConfig.treasuryFactoryAddress,
           TreasuryFactoryABI,
           ethersProvider,
-        ).connect(signer);
+        ).connect(signer) as ethers.Contract & {
+          interface: { getFunction: (name: string) => ethers.FunctionFragment | null };
+          deploy: (platformHash: string, infoAddress: string, implementationId: number, name: string, symbol: string) => Promise<ethers.ContractTransactionResponse>;
+        };
       } catch (contractCreationError) {
         console.error(
           '❌ [AdminApproval] TreasuryFactory contract creation failed:',

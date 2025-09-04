@@ -50,7 +50,12 @@ export async function ensurePlatformSetup(): Promise<{
 
     // 1. Check if platform is enlisted
     console.log('Checking platform enlistment...');
-    const globalParams = new ethers.Contract(globalParamsAddress, GlobalParamsABI, provider);
+    const globalParams = new ethers.Contract(globalParamsAddress, GlobalParamsABI, provider) as ethers.Contract & {
+      checkIfplatformIsListed: (platformHash: string) => Promise<boolean>;
+      enlistPlatform: (platformHash: string, adminAddress: string, feePercent: number) => Promise<ethers.ContractTransactionResponse>;
+      addPlatformData: (platformHash: string, dataKey: string) => Promise<ethers.ContractTransactionResponse>;
+      checkIfPlatformDataKeyValid: (dataKey: string) => Promise<boolean>;
+    };
 
     let isListed: boolean;
     try {
@@ -110,7 +115,10 @@ export async function ensurePlatformSetup(): Promise<{
     // 3. Register KeepWhatsRaised implementation
     if (keepWhatsRaisedImpl) {
       console.log('Registering KeepWhatsRaised implementation...');
-      const treasuryFactory = new ethers.Contract(treasuryFactoryAddress, TreasuryFactoryABI, provider);
+      const treasuryFactory = new ethers.Contract(treasuryFactoryAddress, TreasuryFactoryABI, provider) as ethers.Contract & {
+        registerTreasuryImplementation: (platformHash: string, implementationId: number, implementation: string) => Promise<ethers.ContractTransactionResponse>;
+        approveTreasuryImplementation: (platformHash: string, implementationId: number) => Promise<ethers.ContractTransactionResponse>;
+      };
       const treasuryFactoryWithSigner = treasuryFactory.connect(platformAdminSigner);
 
       const registerTx = await treasuryFactoryWithSigner.registerTreasuryImplementation(
@@ -170,7 +178,11 @@ export async function validatePlatformSetup(): Promise<{
     }
 
     // Check GlobalParams contract
-    const globalParams = new ethers.Contract(globalParamsAddress, GlobalParamsABI, provider);
+    const globalParams = new ethers.Contract(globalParamsAddress, GlobalParamsABI, provider) as ethers.Contract & {
+      checkIfplatformIsListed: (platformHash: string) => Promise<boolean>;
+      getPlatformAdminAddress: (platformHash: string) => Promise<string>;
+      checkIfPlatformDataKeyValid: (dataKey: string) => Promise<boolean>;
+    };
 
     // Verify platform is listed
     let isListed: boolean;
