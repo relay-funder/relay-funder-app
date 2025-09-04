@@ -102,9 +102,10 @@ export function useAdminApproveCampaign() {
         } else if (
           platformAdmin &&
           typeof platformAdmin === 'object' &&
-          platformAdmin.account
+          'account' in platformAdmin &&
+          typeof (platformAdmin as { account: unknown }).account === 'string'
         ) {
-          adminAddress = platformAdmin.account;
+          adminAddress = (platformAdmin as { account: string }).account;
         } else {
           console.error(
             '❌ [AdminApproval] Invalid platform admin response format:',
