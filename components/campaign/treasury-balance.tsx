@@ -115,7 +115,6 @@ export function TreasuryBalanceCompact({
   const currency = treasuryBalance.balance?.currency || 'USDC';
 
   // Parse as numbers with fallback to 0
-  const availableNum = parseFloat(available) || 0;
   const totalPledgedNum = parseFloat(totalPledged) || 0;
 
   // For end users, just show total raised amount (totalPledged)

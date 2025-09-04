@@ -113,10 +113,10 @@ export async function POST(
     const minDuration = platformConfig.minCampaignDurationSec; // Default: 24 hours minimum
 
     // Ensure campaign can launch with proper buffer time
-    let launchTime = Math.max(providedLaunch, blockchainNow + launchBuffer);
+    const launchTime = Math.max(providedLaunch, blockchainNow + launchBuffer);
 
     // Ensure minimum campaign duration from launch time
-    let deadline = Math.max(providedDeadline, launchTime + minDuration);
+    const deadline = Math.max(providedDeadline, launchTime + minDuration);
 
     // Validate timing makes sense for a crowdfunding campaign
     const campaignDuration = deadline - launchTime;

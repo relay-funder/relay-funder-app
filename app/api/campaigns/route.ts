@@ -172,7 +172,7 @@ export async function PATCH(req: Request) {
           where: { id: instance.id },
           data,
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
         // Swallow unique constraint error on campaignAddress to prevent duplicate failures
         // Client can refetch; backend create-onchain already persisted values
         console.error('PATCH /api/campaigns update error', e);

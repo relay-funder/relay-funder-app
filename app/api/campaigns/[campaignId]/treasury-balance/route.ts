@@ -1,6 +1,6 @@
 import { createTreasuryManager } from '@/lib/treasury/interface';
 import { response, handleError } from '@/lib/api/response';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import { ApiParameterError } from '@/lib/api/error';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 
 export async function GET(
