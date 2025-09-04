@@ -11,7 +11,7 @@ import { ProfileNotComplete } from '@/components/profile/not-complete';
 
 import { useAuth } from '@/contexts';
 import { useUserProfile } from '@/lib/hooks/useProfile';
-import { useCrowdsplitPaymentMethods } from '@/lib/crowdsplit/hooks/useCrowdsplit';
+// import { useCrowdsplitPaymentMethods } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 
 export default function PaymentMethodsPage() {
   const { isReady, authenticated } = useAuth();
@@ -20,8 +20,8 @@ export default function PaymentMethodsPage() {
     () => profile?.crowdsplitCustomerId ?? null,
     [profile],
   );
-  const { data: paymentMethods, isPending: isPaymentMethodsPending } =
-    useCrowdsplitPaymentMethods();
+  // const { data: paymentMethods, isPending: isPaymentMethodsPending } =
+  //   useCrowdsplitPaymentMethods();
 
   if (!authenticated) {
     return (
@@ -31,7 +31,7 @@ export default function PaymentMethodsPage() {
     );
   }
 
-  if (!isReady || isProfilePending || isPaymentMethodsPending) {
+  if (!isReady || isProfilePending) {
     return (
       <PageLoading>
         Please wait while we fetch your payment methods.
