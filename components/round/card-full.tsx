@@ -73,7 +73,7 @@ export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
       await updateRoundCampaign({
         roundId: roundCampaign.roundId,
         campaignId: roundCampaign.campaignId,
-        status: 'APPROVED',
+        status: 'REJECTED',
       });
     },
     [updateRoundCampaign],
