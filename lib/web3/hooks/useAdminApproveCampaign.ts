@@ -82,8 +82,8 @@ export function useAdminApproveCampaign() {
         );
         console.error('❌ [AdminApproval] Error details:', {
           message: error instanceof Error ? error.message : 'Unknown error',
-          code: (error as any)?.code,
-          data: (error as any)?.data,
+          code: error && typeof error === 'object' && 'code' in error ? (error as { code: unknown }).code : undefined,
+          data: error && typeof error === 'object' && 'data' in error ? (error as { data: unknown }).data : undefined,
         });
         throw new Error(
           `Failed to retrieve platform admin address: ${error instanceof Error ? error.message : 'Unknown error'}`,

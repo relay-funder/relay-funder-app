@@ -23,7 +23,7 @@ export function useCreateCampaignContract({
   const isConfirming = false;
   const isSuccess = false;
   const receipt = undefined as unknown as
-    | { status: string; logs: any[] }
+    | { status: string; logs: unknown[] }
     | undefined;
 
   const createCampaignContract = useCallback(
@@ -116,7 +116,7 @@ export function useCreateCampaignContract({
       // -> useEffect: hash + state:success,
       // then the receipt has the address in the event-logs
     },
-    [authenticated],
+    [authenticated, onConfirmed],
   );
 
   // No client-side confirmation loop; server returns final status

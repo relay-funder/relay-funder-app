@@ -56,7 +56,7 @@ export async function ensurePlatformSetup(): Promise<{
     try {
       isListed = await globalParams.checkIfplatformIsListed(platformHash);
       console.log(`Platform enlistment status: ${isListed}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error calling checkIfplatformIsListed:', error);
 
       // If the contract call fails due to revert, assume platform needs enlistment
@@ -74,7 +74,7 @@ export async function ensurePlatformSetup(): Promise<{
 
     if (!isListed) {
       console.log('Enlisting platform...');
-      const enlistTx = await (globalParams.connect(protocolAdminSigner) as any).enlistPlatform(
+      const enlistTx = await globalParams.connect(protocolAdminSigner).enlistPlatform(
         platformHash,
         process.env.NEXT_PUBLIC_PLATFORM_ADMIN!,
         1000 // platform fee percent
@@ -100,7 +100,7 @@ export async function ensurePlatformSetup(): Promise<{
 
       if (!isValid) {
         console.log(`Adding platform data key: ${keyName}`);
-        const addKeyTx = await (globalParamsWithSigner as any).addPlatformData(platformHash, keyHash);
+        const addKeyTx = await globalParamsWithSigner.addPlatformData(platformHash, keyHash);
         await addKeyTx.wait();
       }
     }
@@ -111,7 +111,7 @@ export async function ensurePlatformSetup(): Promise<{
       const treasuryFactory = new ethers.Contract(treasuryFactoryAddress, TreasuryFactoryABI, provider);
       const treasuryFactoryWithSigner = treasuryFactory.connect(platformAdminSigner);
 
-      const registerTx = await (treasuryFactoryWithSigner as any).registerTreasuryImplementation(
+      const registerTx = await treasuryFactoryWithSigner.registerTreasuryImplementation(
         platformHash,
         0, // implementation ID for KeepWhatsRaised
         keepWhatsRaisedImpl
@@ -121,7 +121,7 @@ export async function ensurePlatformSetup(): Promise<{
       // 4. Approve implementation
       console.log('Approving KeepWhatsRaised implementation...');
       const treasuryFactoryWithProtocol = treasuryFactory.connect(protocolAdminSigner);
-      const approveTx = await (treasuryFactoryWithProtocol as any).approveTreasuryImplementation(platformHash, 0);
+      const approveTx = await treasuryFactoryWithProtocol.approveTreasuryImplementation(platformHash, 0);
       await approveTx.wait();
     }
 
@@ -177,7 +177,7 @@ export async function validatePlatformSetup(): Promise<{
     try {
       isListed = await globalParams.checkIfplatformIsListed(platformHash);
       console.log(`Platform enlistment status: ${isListed}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error calling checkIfplatformIsListed:', error);
 
       // If the contract call fails due to revert, assume platform needs enlistment
@@ -211,8 +211,6 @@ export async function validatePlatformSetup(): Promise<{
     }
 
     // Check TreasuryFactory
-    const treasuryFactory = new ethers.Contract(treasuryFactoryAddress, TreasuryFactoryABI, provider);
-
     // Note: We can't easily check implementation registration without admin keys
     // This would require additional setup logic
 

@@ -233,7 +233,7 @@ export class TreasuryManager extends TreasuryInterface {
         { gasLimit: 1000000 },
       );
 
-      const receipt = await tx.wait();
+      await tx.wait();
 
       return {
         success: true,
