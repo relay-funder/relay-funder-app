@@ -12,6 +12,7 @@
 // import { useToast } from '@/hooks/use-toast';
 
 // import { PaymentMethod } from '@/types/payment';
+import { CrowdsplitPaymentMethodGetResponse } from '@/lib/crowdsplit/api/types';
 // import { useCrowdsplitDeletePaymentMethod } from '@/lib/crowdsplit/hooks/useCrowdsplit';
 // import { ProfileAddPaymentMethodDialog } from './add-payment-method-dialog';
 // import { ProfilePaymentMethodsTable } from './payment-methods-table';
@@ -83,9 +84,8 @@
 
 // Placeholder component for single treasury mode
 export function PaymentMethodsForm({
-  paymentMethods,
-  onSuccess,
-}: { paymentMethods: any[]; onSuccess?: () => void }) {
+  paymentMethods: _paymentMethods,
+}: { paymentMethods: CrowdsplitPaymentMethodGetResponse[] }) {
   return (
     <div className="p-4 text-center text-gray-500">
       <p>Credit card payment methods are currently disabled.</p>

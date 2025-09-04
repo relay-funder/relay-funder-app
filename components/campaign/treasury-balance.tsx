@@ -110,7 +110,6 @@ export function TreasuryBalanceCompact({
   }
 
   // Safely parse balance values with fallbacks
-  const available = treasuryBalance.balance?.available || '0';
   const totalPledged = treasuryBalance.balance?.totalPledged || '0';
   const currency = treasuryBalance.balance?.currency || 'USDC';
 
