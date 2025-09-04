@@ -81,7 +81,7 @@ export async function ensurePlatformSetup(): Promise<{
 
     if (!isListed) {
       console.log('Enlisting platform...');
-      const enlistTx = await globalParams.connect(protocolAdminSigner).enlistPlatform(
+      const enlistTx = await (globalParams.connect(protocolAdminSigner) as typeof globalParams).enlistPlatform(
         platformHash,
         process.env.NEXT_PUBLIC_PLATFORM_ADMIN!,
         1000 // platform fee percent
@@ -92,7 +92,7 @@ export async function ensurePlatformSetup(): Promise<{
 
     // 2. Add platform data keys
     console.log('Setting up platform data keys...');
-    const globalParamsWithSigner = globalParams.connect(platformAdminSigner);
+    const globalParamsWithSigner = globalParams.connect(platformAdminSigner) as typeof globalParams;
 
     const feeKeys = [
       'flatFee',
@@ -119,7 +119,7 @@ export async function ensurePlatformSetup(): Promise<{
         registerTreasuryImplementation: (platformHash: string, implementationId: number, implementation: string) => Promise<ethers.ContractTransactionResponse>;
         approveTreasuryImplementation: (platformHash: string, implementationId: number) => Promise<ethers.ContractTransactionResponse>;
       };
-      const treasuryFactoryWithSigner = treasuryFactory.connect(platformAdminSigner);
+      const treasuryFactoryWithSigner = treasuryFactory.connect(platformAdminSigner) as typeof treasuryFactory;
 
       const registerTx = await treasuryFactoryWithSigner.registerTreasuryImplementation(
         platformHash,
@@ -130,7 +130,7 @@ export async function ensurePlatformSetup(): Promise<{
 
       // 4. Approve implementation
       console.log('Approving KeepWhatsRaised implementation...');
-      const treasuryFactoryWithProtocol = treasuryFactory.connect(protocolAdminSigner);
+      const treasuryFactoryWithProtocol = treasuryFactory.connect(protocolAdminSigner) as typeof treasuryFactory;
       const approveTx = await treasuryFactoryWithProtocol.approveTreasuryImplementation(platformHash, 0);
       await approveTx.wait();
     }
