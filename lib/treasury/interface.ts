@@ -72,6 +72,15 @@ export interface WithdrawalParams {
 }
 
 /**
+ * Treasury configuration result
+ */
+export interface TreasuryConfigurationResult {
+  success: boolean;
+  transactionHash?: string;
+  error?: string;
+}
+
+/**
  * Abstract interface for treasury management
  * Single treasury implementation focused on KeepWhat'sRaised
  */
@@ -109,6 +118,15 @@ export abstract class TreasuryInterface {
    * Validate treasury deployment status
    */
   abstract validateDeployment(treasuryAddress: string): Promise<boolean>;
+
+  /**
+   * Configure treasury with campaign parameters
+   */
+  abstract configureTreasury(
+    treasuryAddress: string,
+    campaignId: number,
+    signer: ethers.Signer,
+  ): Promise<TreasuryConfigurationResult>;
 }
 
 /**

@@ -81,12 +81,70 @@ export function CampaignCardAdmin({ campaign }: CampaignItemProps) {
           )}
           <CampaignProgress campaign={campaign} />
 
-          {/* Treasury Balance for Admin View */}
+          {/* Treasury Balance for Admin View - Only show if different from main progress */}
           {campaign?.treasuryAddress && (
             <div className="mt-2">
-              <TreasuryBalanceCompact treasuryAddress={campaign.treasuryAddress} />
+              <div className="text-xs text-gray-500">
+                On-chain Treasury:{' '}
+                <TreasuryBalanceCompact
+                  treasuryAddress={campaign.treasuryAddress}
+                />
+              </div>
             </div>
           )}
+
+          {/* Admin Contract Addresses */}
+          <div className="mt-4 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs">
+            <div className="space-y-2">
+              <div>
+                <div className="mb-1 font-medium text-gray-600">
+                  Campaign Contract:
+                </div>
+                {campaign?.campaignAddress ? (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded border bg-white px-2 py-1 font-mono text-xs text-blue-700">
+                      {campaign.campaignAddress.slice(0, 10)}...
+                      {campaign.campaignAddress.slice(-8)}
+                    </code>
+                    <CopyText
+                      text={campaign.campaignAddress}
+                      tooltip="Copy Campaign Address"
+                      title="Address Copied"
+                      description="Campaign address copied to clipboard"
+                    />
+                  </div>
+                ) : (
+                  <div className="font-medium text-red-600">
+                    Contract not deployed
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="mb-1 font-medium text-gray-600">
+                  Treasury Contract:
+                </div>
+                {campaign?.treasuryAddress ? (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded border bg-white px-2 py-1 font-mono text-xs text-green-700">
+                      {campaign.treasuryAddress.slice(0, 10)}...
+                      {campaign.treasuryAddress.slice(-8)}
+                    </code>
+                    <CopyText
+                      text={campaign.treasuryAddress}
+                      tooltip="Copy Treasury Address"
+                      title="Address Copied"
+                      description="Treasury address copied to clipboard"
+                    />
+                  </div>
+                ) : (
+                  <div className="font-medium text-orange-600">
+                    Treasury not deployed
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
         <CampaignCardAdminActions campaign={campaign} />
       </CardFooter>

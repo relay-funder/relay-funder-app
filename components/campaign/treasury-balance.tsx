@@ -12,10 +12,14 @@ interface TreasuryBalanceProps {
 
 export function TreasuryBalance({
   treasuryAddress,
-  title = "Treasury Balance",
-  className = ""
+  title = 'Treasury Balance',
+  className = '',
 }: TreasuryBalanceProps) {
-  const { data: treasuryBalance, isLoading, error } = useTreasuryBalance(treasuryAddress);
+  const {
+    data: treasuryBalance,
+    isLoading,
+    error,
+  } = useTreasuryBalance(treasuryAddress);
 
   if (isLoading) {
     return (
@@ -52,23 +56,24 @@ export function TreasuryBalance({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Badge variant="outline" className="text-xs">
-          {treasuryBalance.currency}
+          {treasuryBalance.balance?.currency ||
+            treasuryBalance.currency ||
+            'USDC'}
         </Badge>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           <div>
             <div className="text-2xl font-bold">
-              {formatUSD(parseFloat(treasuryBalance.available))}
+              {formatUSD(
+                parseFloat(
+                  treasuryBalance.balance?.totalPledged ||
+                    treasuryBalance.totalPledged ||
+                    '0',
+                ) || 0,
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">Available</p>
-          </div>
-
-          <div className="pt-2 border-t">
-            <div className="text-sm font-medium">
-              {formatUSD(parseFloat(treasuryBalance.totalPledged))}
-            </div>
-            <p className="text-xs text-muted-foreground">Total Pledged</p>
+            <p className="text-xs text-muted-foreground">Total Raised</p>
           </div>
         </div>
       </CardContent>
@@ -79,9 +84,10 @@ export function TreasuryBalance({
 // Compact version for use in progress bars or small spaces
 export function TreasuryBalanceCompact({
   treasuryAddress,
-  className = ""
+  className = '',
 }: Omit<TreasuryBalanceProps, 'title'>) {
-  const { data: treasuryBalance, isLoading } = useTreasuryBalance(treasuryAddress);
+  const { data: treasuryBalance, isLoading } =
+    useTreasuryBalance(treasuryAddress);
 
   if (isLoading) {
     return (
@@ -92,23 +98,33 @@ export function TreasuryBalanceCompact({
     );
   }
 
-  if (!treasuryBalance) {
+  if (!treasuryBalance || !treasuryBalance.balance) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
         <Wallet className="h-3 w-3 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Balance unavailable</span>
+        <span className="text-sm text-muted-foreground">
+          Balance unavailable
+        </span>
       </div>
     );
   }
 
+  // Safely parse balance values with fallbacks
+  const available = treasuryBalance.balance?.available || '0';
+  const totalPledged = treasuryBalance.balance?.totalPledged || '0';
+  const currency = treasuryBalance.balance?.currency || 'USDC';
+
+  // Parse as numbers with fallback to 0
+  const availableNum = parseFloat(available) || 0;
+  const totalPledgedNum = parseFloat(totalPledged) || 0;
+
+  // For end users, just show total raised amount (totalPledged)
+  // Available balance is only relevant for creators doing withdrawals
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <Wallet className="h-3 w-3" />
       <span className="text-sm font-medium">
-        {formatUSD(parseFloat(treasuryBalance.available))} {treasuryBalance.currency}
-      </span>
-      <span className="text-xs text-muted-foreground">
-        (of {formatUSD(parseFloat(treasuryBalance.totalPledged))} pledged)
+        {formatUSD(totalPledgedNum)} {currency} raised
       </span>
     </div>
   );

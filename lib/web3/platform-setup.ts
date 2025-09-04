@@ -5,7 +5,6 @@ import { chainConfig } from '@/lib/web3';
 
 /**
  * Platform setup utilities to ensure proper configuration before campaign creation
- * Based on kwr_flow_test.sh setup requirements
  */
 
 export async function ensurePlatformSetup(): Promise<{

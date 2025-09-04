@@ -11,6 +11,7 @@ import {
   WithdrawalResult,
   WithdrawalParams,
   TreasuryBalance,
+  TreasuryConfigurationResult,
 } from '../interface';
 
 /**
@@ -58,7 +59,9 @@ export class TreasuryManager extends TreasuryInterface {
 
       // CRITICAL: Validate that campaignAddress is a deployed CampaignInfo contract
       if (!params.campaignAddress) {
-        throw new Error('CampaignInfo address is required for treasury deployment');
+        throw new Error(
+          'CampaignInfo address is required for treasury deployment',
+        );
       }
 
       // Deploy treasury using correct TreasuryFactory interface with CampaignInfo address
@@ -66,23 +69,46 @@ export class TreasuryManager extends TreasuryInterface {
         params.platformBytes, // platformHash
         params.campaignAddress, // infoAddress (must be CampaignInfo contract)
         0, // implementationId (0 = KeepWhatsRaised)
-        'Demo', // name - as per shell script
-        'DMO', // symbol - as per shell script
+        'RelayTreasury', // TODO: pass through campaign name
+        'RLY', // TODO: pass through campaign symbol
         { gasLimit: 2000000 }, // Increased gas limit
       );
 
       const receipt = await tx.wait();
 
-      // Find deployment event
-      const deployEvent = receipt.events?.find(
-        (e: { event: string }) => e.event === 'TreasuryFactoryTreasuryDeployed',
-      );
-
-      if (!deployEvent) {
-        throw new Error('Treasury deployment event not found');
+      if (receipt.status !== 1) {
+        throw new Error(
+          `Treasury deployment transaction failed with status: ${receipt.status}`,
+        );
       }
 
-      const treasuryAddress = deployEvent.args.treasuryAddress;
+      // Extract treasury address from event logs using topic signature
+      let treasuryAddress = null;
+      // Compute the topic hash from the event signature instead of hardcoding
+      const expectedTopic = ethers.id(
+        'TreasuryFactoryTreasuryDeployed(bytes32,uint256,address,address)',
+      );
+
+      for (const log of receipt.logs || []) {
+        if (log.topics && log.topics[0] === expectedTopic) {
+          // Extract address from data
+          if (log.data) {
+            // Remove zero padding from the beginning to get clean address
+            const cleanData = log.data.replace(/^0x0{24}/, '0x');
+            if (cleanData.length === 42 && cleanData.startsWith('0x')) {
+              // Valid address format
+              treasuryAddress = cleanData;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!treasuryAddress) {
+        throw new Error(
+          'Treasury deployment event not found or could not extract treasury address',
+        );
+      }
 
       // Update database with treasury address
       await db.campaign.update({
@@ -127,13 +153,13 @@ export class TreasuryManager extends TreasuryInterface {
   }
 
   /**
-   * Configure treasury with parameters from kwr_flow_test.sh
+   * Configure treasury with campaign timing and fee parameters
    */
   async configureTreasury(
     treasuryAddress: string,
     campaignId: number,
     signer: ethers.Signer,
-  ): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
+  ): Promise<TreasuryConfigurationResult> {
     try {
       // Get campaign details for configuration
       const campaign = await db.campaign.findUnique({
@@ -159,29 +185,51 @@ export class TreasuryManager extends TreasuryInterface {
         signer,
       );
 
-      // Configuration parameters from kwr_flow_test.sh
+      // Treasury configuration parameters
       const WITHDRAWAL_DELAY = 3600; // 1 hour
       const REFUND_DELAY = 7200; // 2 hours
       const CONFIG_LOCK_PERIOD = 1800; // 30 minutes
       const IS_COLOMBIAN = false;
 
-      // Minimum withdrawal for fee exemption (set to 0 since flat fees are 0)
-      const MIN_WITHDRAWAL_FEE_EXEMPTION = 0; // No minimum since fees are 0
+      // Minimum withdrawal for fee exemption (0.5 USDC)
+      const usdcDecimals = 6; // USDC has 6 decimals
+      const MIN_WITHDRAWAL_FEE_EXEMPTION = ethers.parseUnits(
+        '0.5',
+        usdcDecimals,
+      ); // 0.5 USDC threshold
 
       // Fee keys as per shell script
       const FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('flatFee'));
-      const CUM_FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('cumulativeFlatFee'));
-      const PLATFORM_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('platformFee'));
-      const VAKI_COMMISSION_KEY = ethers.keccak256(ethers.toUtf8Bytes('vakiCommission'));
+      const CUM_FLAT_FEE_KEY = ethers.keccak256(
+        ethers.toUtf8Bytes('cumulativeFlatFee'),
+      );
+      const PLATFORM_FEE_KEY = ethers.keccak256(
+        ethers.toUtf8Bytes('platformFee'),
+      );
+      const VAKI_COMMISSION_KEY = ethers.keccak256(
+        ethers.toUtf8Bytes('vakiCommission'),
+      );
 
-      const launchTime = Math.floor(new Date(campaign.startTime).getTime() / 1000);
+      const launchTime = Math.floor(
+        new Date(campaign.startTime).getTime() / 1000,
+      );
       const deadline = Math.floor(new Date(campaign.endTime).getTime() / 1000);
       const goalAmount = ethers.parseUnits(campaign.fundingGoal, 6); // USDC has 6 decimals
 
       const tx = await treasuryContract.configureTreasury(
-        [MIN_WITHDRAWAL_FEE_EXEMPTION, WITHDRAWAL_DELAY, REFUND_DELAY, CONFIG_LOCK_PERIOD, IS_COLOMBIAN],
+        [
+          MIN_WITHDRAWAL_FEE_EXEMPTION,
+          WITHDRAWAL_DELAY,
+          REFUND_DELAY,
+          CONFIG_LOCK_PERIOD,
+          IS_COLOMBIAN,
+        ],
         [launchTime, deadline, goalAmount],
-        [FLAT_FEE_KEY, CUM_FLAT_FEE_KEY, [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY]],
+        [
+          FLAT_FEE_KEY,
+          CUM_FLAT_FEE_KEY,
+          [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
+        ],
         { gasLimit: 1000000 },
       );
 
@@ -195,7 +243,10 @@ export class TreasuryManager extends TreasuryInterface {
       console.error('Error configuring treasury:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown configuration error',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unknown configuration error',
       };
     }
   }
