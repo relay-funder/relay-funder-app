@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui';
 import type { CampaignItemProps } from '@/types/campaign';
 import { FormattedDate } from '@/components/formatted-date';
 import { CampaignMainImage } from './main-image';
-import { CampaignAdminStatus } from './admin-status';
+import { CampaignStatus } from './status';
 import { UserInlineName } from '@/components/user/inline-name';
 import { CopyText } from '@/components/copy-text';
 import { CampaignProgress } from './progress';
@@ -17,7 +17,7 @@ export function CampaignCardAdmin({ campaign }: CampaignItemProps) {
       <CardHeader className="relative p-0">
         <CampaignMainImage campaign={campaign} />
         <div className="absolute pl-1">
-          <CampaignAdminStatus campaign={campaign} />
+          <CampaignStatus campaign={campaign} />
         </div>
       </CardHeader>
       <CardContent className="p-6">

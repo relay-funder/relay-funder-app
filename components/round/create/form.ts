@@ -93,6 +93,7 @@ export const RoundFormSchema = z
         message: 'Invalid date format',
       }),
     logo: z.instanceof(File).or(z.null()).optional(),
+    tags: z.array(z.string()),
   })
   .refine((data) => data.startTime < data.endTime, {
     message: 'startTime must be less than endTime',
@@ -124,4 +125,10 @@ export const roundFormDefaultValues: RoundFormSchemaType = {
     .toISOString()
     .slice(0, 10),
   logo: null,
+  tags: [
+    'REQUIRE_OPEN_SOURCE',
+    'REQUIRE_TEAM_CAPABILITY',
+    'RULE_MATCHING_QF',
+    'RULE_DISTRIBUTION_AFTER',
+  ],
 };

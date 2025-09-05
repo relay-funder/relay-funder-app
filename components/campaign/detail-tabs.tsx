@@ -7,6 +7,7 @@ import { CampaignDetailTabUpdates } from './detail-tab-updates';
 import { CampaignDetailTabComments } from './detail-tab-comments';
 import { CampaignDetailTabTransactions } from './detail-tab-transactions';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { CampaignDetailTabRounds } from './detail-tab-rounds';
 const TAB_TRIGGER_CLASS_NAMES =
   'rounded-none data-[state=active]:border-b-2 data-[state=active]:border-green-600';
 export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
@@ -31,6 +32,9 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
           <TabsTrigger value="transactions" className={TAB_TRIGGER_CLASS_NAMES}>
             Transactions ({contributorCount - contributorPendingCount})
           </TabsTrigger>
+          <TabsTrigger value="rounds" className={TAB_TRIGGER_CLASS_NAMES}>
+            Rounds
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaign" className="mt-6">
@@ -51,6 +55,9 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
 
         <TabsContent value="transactions" className="space-y-4">
           <CampaignDetailTabTransactions campaign={campaign} />
+        </TabsContent>
+        <TabsContent value="rounds" className="space-y-4">
+          <CampaignDetailTabRounds campaign={campaign} />
         </TabsContent>
       </Tabs>
     </div>

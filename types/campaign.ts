@@ -1,4 +1,7 @@
-import { GetCampaignPaymentSummary } from '@/lib/api/types';
+import {
+  GetCampaignPaymentSummary,
+  GetRoundResponseInstance,
+} from '@/lib/api/types';
 import { DisplayUserWithStates } from '@/lib/api/types/user';
 
 export interface DbCampaign {
@@ -9,33 +12,27 @@ export interface DbCampaign {
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: string;
+  status: 'DRAFT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
   transactionHash: string | null;
-  campaignAddress: string | null;
-  treasuryAddress?: string | null;
-  category?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  images?: CampaignImage[];
+  campaignAddress: string | null;
   slug: string;
   location: string | null;
-  updates?: {
-    id: number;
-    title: string;
-    content: string;
-    createdAt: Date;
-    updatedAt: Date;
-    campaignId: number;
-    creatorAddress: string;
-  }[];
-  RoundCampaigns?: { Round: { id: number; title: string } }[];
-  rounds?: { id: number; title: string }[];
-  payments?: DbPayment[];
+  treasuryAddress?: string | null;
+  category?: string | null;
+  // collections, // hidden in api
+  images?: CampaignImage[];
+  updates?: CampaignUpdate[];
   comments?: DbComment[];
+  // favorites, // hidden in api
+  payments?: DbPayment[];
+  // RoundCampaigns: // hidden in api
   // transient from server
+  rounds?: GetRoundResponseInstance[];
   paymentSummary?: GetCampaignPaymentSummary;
   creator?: DisplayUserWithStates;
-  _count?: { comments: number; updates: number };
+  _count?: { comments: number; updates: number; rounds: number };
 }
 
 export type CampaignDisplay = {
@@ -96,6 +93,15 @@ export type CampaignImage = {
   isMainImage: boolean;
   campaignId: number;
   campaign?: Campaign;
+};
+export type CampaignUpdate = {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  campaignId: number;
+  creatorAddress: string;
 };
 
 export type DbPayment = {

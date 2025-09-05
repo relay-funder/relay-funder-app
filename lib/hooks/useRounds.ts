@@ -13,6 +13,7 @@ import type {
 } from '@/lib/api/types';
 
 export const ROUNDS_QUERY_KEY = 'rounds';
+export const ROUND_QUERY_KEY = 'round';
 export const ROUND_STATS_QUERY_KEY = 'round_stats';
 export const ROUND_PAYMENTS_QUERY_KEY = 'round_payments';
 
@@ -265,7 +266,7 @@ export function useRounds(status?: string) {
 }
 export function useRound(id: number) {
   return useQuery({
-    queryKey: [ROUNDS_QUERY_KEY, id],
+    queryKey: [ROUND_QUERY_KEY, id],
     queryFn: () => fetchRound(id),
     enabled: true,
   });
@@ -367,7 +368,7 @@ export function useUpdateRoundCampaign() {
     mutationFn: updateRoundCampaign,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, variables.roundId],
+        queryKey: [ROUND_QUERY_KEY, variables.roundId],
       });
       queryClient.invalidateQueries({
         queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 10],
@@ -387,7 +388,7 @@ export function useRemoveRoundCampaign() {
     mutationFn: removeRoundCampaign,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, variables.roundId],
+        queryKey: [ROUND_QUERY_KEY, variables.roundId],
       });
       queryClient.invalidateQueries({
         queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 10],

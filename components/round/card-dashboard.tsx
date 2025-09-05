@@ -14,12 +14,14 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useMemo } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
+import { useAuth } from '@/contexts';
 
 export function RoundCardDashboard({
   round,
 }: {
   round: GetRoundResponseInstance;
 }) {
+  const { isAdmin } = useAuth();
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
 
@@ -38,7 +40,7 @@ export function RoundCardDashboard({
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md">
       <Link
-        href={`/admin/rounds/${round.id}`}
+        href={isAdmin ? `/admin/rounds/${round.id}` : `/rounds/${round.id}`}
         className="flex flex-grow flex-col"
         passHref
       >

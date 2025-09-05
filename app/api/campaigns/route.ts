@@ -180,12 +180,10 @@ export async function GET(req: Request) {
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const rounds =
       (searchParams.get('rounds') || 'false') === 'true' ? true : false;
-    const syncChain = searchParams.get('sync-chain') || 'false';
     const skip = (page - 1) * pageSize;
     if (pageSize > 10) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
-    const forceEvents = syncChain === 'true' ? true : false;
     // status active should be enforced if access-token is not admin
     const admin = await isAdmin();
     return response(
@@ -196,7 +194,6 @@ export async function GET(req: Request) {
         pageSize,
         rounds,
         skip,
-        forceEvents,
       }),
     );
   } catch (error: unknown) {

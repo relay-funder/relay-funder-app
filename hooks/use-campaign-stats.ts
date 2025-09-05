@@ -1,7 +1,4 @@
-import type {
-  GetCampaignPaymentSummary,
-  GetCampaignResponse,
-} from '@/lib/api/types';
+import type { GetCampaignResponse } from '@/lib/api/types';
 import { formatUSD } from '@/lib/format-usd';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { DbCampaign } from '@/types/campaign';

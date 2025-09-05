@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { ReadMoreOrLess } from './read-more-or-less';
 
 interface TimelineItemProps {
   date: Date;
@@ -38,10 +39,13 @@ export function TimelineItem({
           <h3 className="text-xl font-bold text-gray-900 transition-colors duration-500 group-hover:text-blue-600">
             {title}
           </h3>
-          <div className="prose max-w-none">
-            <p className="whitespace-pre-wrap leading-relaxed text-gray-600">
+          <div className="prose max-w-none overflow-hidden">
+            <ReadMoreOrLess
+              className="whitespace-pre-wrap leading-relaxed text-gray-600"
+              collapsedClassName="line-clamp-4"
+            >
               {content}
-            </p>
+            </ReadMoreOrLess>
           </div>
         </div>
       </div>
