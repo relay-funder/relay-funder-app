@@ -151,8 +151,9 @@ export async function listCampaigns({
         return mapCampaign({
           ...dbCampaign,
           rounds:
-            dbCampaign.RoundCampaigns?.map(({ Round }) => mapRound(Round)) ??
-            [],
+            dbCampaign.RoundCampaigns?.map(({ Round, status }) =>
+              mapRound(Round, status),
+            ) ?? [],
         });
       }
       return mapCampaign(dbCampaign);
@@ -175,7 +176,7 @@ export async function prefetchCampaigns(queryClient: QueryClient) {
   return queryClient.prefetchInfiniteQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10],
     initialPageParam: 1,
-    queryFn: () => listCampaigns({}),
+    queryFn: () => listCampaigns({ rounds: true }),
   });
 }
 // Prefetching campaign
@@ -383,7 +384,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
     ...instance,
     RoundCampaigns: undefined,
     rounds: instance.RoundCampaigns.map((roundCampaign) =>
-      mapRound(roundCampaign.Round),
+      mapRound(roundCampaign.Round, roundCampaign.status),
     ),
     _count: {
       ...instance._count,
@@ -566,9 +567,13 @@ export async function getStats({
   }
   return stats;
 }
-
-export function mapCampaign(dbCampaign: DbCampaign): DbCampaign {
-  return {
-    ...dbCampaign,
-  };
+interface MapCampaignInput extends DbCampaign {
+  RoundCampaigns?: unknown;
+}
+export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
+  const { RoundCampaigns, ...dbCampaignWithoutDbData } = dbCampaign;
+  if (RoundCampaigns) {
+    // pass
+  }
+  return dbCampaignWithoutDbData;
 }

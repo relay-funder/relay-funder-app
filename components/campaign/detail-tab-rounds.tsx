@@ -1,7 +1,8 @@
 import { type DbCampaign } from '@/types/campaign';
-import { RoundCardDashboard } from '../round/card-dashboard';
 import { Button } from '../ui';
 import { useAuth } from '@/contexts';
+import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
+import { Rocket } from 'lucide-react';
 
 export function CampaignDetailTabRounds({
   campaign,
@@ -9,7 +10,11 @@ export function CampaignDetailTabRounds({
   campaign: DbCampaign;
 }) {
   const { address } = useAuth();
-  const hasRounds = campaign.rounds?.length ?? false;
+  const {
+    hasRounds,
+    listingSummary: roundsListingSummary,
+    listing: roundsListing,
+  } = useCampaignRounds({ campaign });
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -18,23 +23,29 @@ export function CampaignDetailTabRounds({
       </div>
       {hasRounds ? (
         <>
-          <p>This Campaign is part of</p>
-          {campaign.rounds?.map((round) => (
-            <RoundCardDashboard key={round.id} round={round} />
-          ))}
+          <div className="flex items-center gap-3 text-gray-600">
+            <Rocket className="h-5 w-5" />
+
+            {roundsListingSummary}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {roundsListing.activeRounds.length > 0 &&
+              roundsListing.activeRounds}
+            {roundsListing.futureRounds.length > 0 &&
+              roundsListing.futureRounds}
+            {roundsListing.pastRounds.length > 0 && roundsListing.pastRounds}
+          </div>
         </>
       ) : (
+        <p>This Campaign is not part of any round</p>
+      )}
+      {campaign.creatorAddress === address && (
         <>
-          <p>This Campaign is not part of any round</p>
-          {campaign.creatorAddress === address && (
-            <>
-              <p>
-                You can apply this campaign to a round. Choose a compatible
-                round
-              </p>
-              <Button>Apply Campaign to Round</Button>
-            </>
-          )}
+          <p>
+            As creator of this campaign, you can apply this campaign to a round.
+            Choose a compatible round
+          </p>
+          <Button>Apply Campaign to Round</Button>
         </>
       )}
     </div>

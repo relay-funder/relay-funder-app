@@ -4,7 +4,7 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock, MapPin, Target, Mail } from 'lucide-react';
+import { Users, Clock, MapPin, Target, Mail, Rocket } from 'lucide-react';
 
 import { CampaignShareDialog } from '@/components/campaign/share-dialog';
 import { FavoriteButton } from '@/components/favorite-button';
@@ -12,6 +12,7 @@ import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { useAuth } from '@/contexts';
+import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 
 export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
   const { address } = useAuth();
@@ -20,6 +21,11 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
       campaign,
     });
   const isOwner = campaign.creatorAddress === address;
+  const {
+    hasRounds,
+    listingSummary: roundsListingSummary,
+    title: roundsTitle,
+  } = useCampaignRounds({ campaign });
 
   return (
     <Card className="sticky top-8">
@@ -86,6 +92,18 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
               {new Date(campaign.endTime).toLocaleDateString()}
             </span>
           </div>
+          {hasRounds && (
+            <>
+              <div
+                className="flex items-center gap-3 text-gray-600"
+                title={roundsTitle}
+              >
+                <Rocket className="h-5 w-5" />
+
+                {roundsListingSummary}
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

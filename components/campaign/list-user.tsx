@@ -23,7 +23,7 @@ export function CampaignUserList({
   categoryFilter,
   statusFilter = undefined,
   pageSize = 10,
-  withRounds = false,
+  withRounds = true,
   item: ItemComponent = CampaignItem,
   onCreate,
 }: CampaignListProps) {

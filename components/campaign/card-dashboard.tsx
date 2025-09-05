@@ -17,6 +17,7 @@ import { CampaignLocation } from './location';
 import Link from 'next/link';
 import { CampaignRemoveButton } from './remove-button';
 import { CampaignCardFallback } from './card-fallback';
+import { CampaignRoundsIndicator } from './rounds-indicator';
 
 export function CampaignCardDashboard({
   campaign,
@@ -27,6 +28,7 @@ export function CampaignCardDashboard({
   const categoryDetails = campaign?.category
     ? categories.find((category) => category.id === campaign.category)
     : null;
+
   if (!campaign) {
     return <CampaignCardFallback onCreate={onCreate} />;
   }
@@ -74,6 +76,7 @@ export function CampaignCardDashboard({
               <UserInlineName user={campaign?.creator} />
             </div>
             <CampaignLocation campaign={campaign} />
+            <CampaignRoundsIndicator campaign={campaign} />
           </div>
           <p className="line-clamp-3 text-[12px] text-gray-600">
             {campaign?.description}
@@ -81,9 +84,7 @@ export function CampaignCardDashboard({
           <div className="flex items-center justify-between">
             <div className="mb-4 cursor-pointer items-center gap-2 text-[14px] text-black underline decoration-black hover:text-gray-600">
               {campaign?.id !== 0 ? (
-                <Link href={`/campaigns/${campaign?.slug}`} target="_blank">
-                  Read More
-                </Link>
+                <Link href={`/campaigns/${campaign?.slug}`}>Read More</Link>
               ) : (
                 <>Read More</>
               )}

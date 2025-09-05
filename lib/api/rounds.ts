@@ -9,6 +9,7 @@ export function mapRound(
   round: Round & {
     roundCampaigns?: (RoundCampaigns & { Campaign: Campaign })[];
   },
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED',
 ): GetRoundResponseInstance {
   const {
     startDate,
@@ -34,6 +35,8 @@ export function mapRound(
         reviewedAt: roundCampaign.reviewedAt?.toISOString() ?? null,
         campaign: mapCampaign(roundCampaign.Campaign),
       })) ?? [],
+    // transient
+    recipientStatus: status,
   };
 }
 export async function listRounds({
@@ -65,7 +68,7 @@ export async function listRounds({
   ]);
 
   return {
-    rounds: rounds.map(mapRound),
+    rounds: rounds.map((round) => mapRound(round, 'APPROVED')),
     pagination: {
       currentPage: page,
       pageSize,
