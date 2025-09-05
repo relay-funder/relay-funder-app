@@ -1,6 +1,6 @@
 import type { DbCampaign } from '@/types/campaign';
 import { cn } from '@/lib/utils';
-import { useCampaignStatus } from './use-campaign-status';
+import { useCampaignStatus } from '@/hooks/use-campaign-status';
 
 export function CampaignStatus({ campaign }: { campaign?: DbCampaign }) {
   const status = useCampaignStatus(campaign);
