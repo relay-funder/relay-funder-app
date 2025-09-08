@@ -68,7 +68,7 @@ export function PageNavMenuItems() {
           <div className="flex items-center">{item.icon}</div>
           <span
             className={cn(
-              'ml-3 overflow-hidden',
+              'ml-3 overflow-hidden whitespace-nowrap',
               transition,
               isOpen ? 'w-auto opacity-100' : 'w-0 opacity-0',
             )}
