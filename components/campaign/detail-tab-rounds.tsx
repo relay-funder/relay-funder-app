@@ -1,8 +1,10 @@
 import { type DbCampaign } from '@/types/campaign';
-import { Button } from '../ui';
+import { Button } from '@/components/ui';
 import { useAuth } from '@/contexts';
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 import { Rocket } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { CampaignAddRoundDialog } from './round/add-dialog';
 
 export function CampaignDetailTabRounds({
   campaign,
@@ -15,7 +17,14 @@ export function CampaignDetailTabRounds({
     listingSummary: roundsListingSummary,
     listing: roundsListing,
   } = useCampaignRounds({ campaign });
-
+  const [showApplyCampaignToRoundDialog, setShowApplyCampaignToRoundDialog] =
+    useState(false);
+  const onApplyCampaignToRound = useCallback(() => {
+    setShowApplyCampaignToRoundDialog(true);
+  }, []);
+  const onApplyCampaignToRoundClosed = useCallback(() => {
+    setShowApplyCampaignToRoundDialog(false);
+  }, []);
   return (
     <div className="max-w-3xl space-y-4">
       <div className="prose prose-lg">
@@ -45,7 +54,15 @@ export function CampaignDetailTabRounds({
             As creator of this campaign, you can apply this campaign to a round.
             Choose a compatible round
           </p>
-          <Button>Apply Campaign to Round</Button>
+          <Button onClick={onApplyCampaignToRound}>
+            Apply Campaign to Round
+          </Button>
+          {showApplyCampaignToRoundDialog && (
+            <CampaignAddRoundDialog
+              campaign={campaign}
+              onClosed={onApplyCampaignToRoundClosed}
+            />
+          )}
         </>
       )}
     </div>
