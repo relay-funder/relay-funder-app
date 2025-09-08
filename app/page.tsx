@@ -3,13 +3,16 @@ import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { ExploreStories } from '@/components/explore-stories';
 import { prefetchCampaigns } from '@/lib/api/campaigns';
 import { getQueryClient } from '@/lib/query-client';
+import { Suspense } from 'react';
 
 export default async function HomePage() {
   const queryClient = getQueryClient();
   await prefetchCampaigns(queryClient);
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ExploreStories />
+      <Suspense>
+        <ExploreStories />
+      </Suspense>
     </HydrationBoundary>
   );
 }
