@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  ReactEventHandler,
+} from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { AdminRemoveProcessStates } from '@/types/admin';
@@ -13,9 +19,11 @@ import { useAuth } from '@/contexts';
 export function RoundCardCampaignRemoveButton({
   campaign,
   round,
+  children,
 }: {
-  campaign: DbCampaign;
+  campaign?: DbCampaign;
   round: GetRoundResponseInstance;
+  children?: React.ReactNode;
 }) {
   const { isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -53,11 +61,18 @@ export function RoundCardCampaignRemoveButton({
     },
     [removeRoundCampaign, onStateChanged],
   );
-  const onRemove = useCallback(async () => {
-    setIsLoading(true);
-    await removeCampaign(campaign, round);
-    setIsLoading(false);
-  }, [removeCampaign, campaign, round]);
+  const onRemove = useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      if (!campaign) {
+        return;
+      }
+      setIsLoading(true);
+      await removeCampaign(campaign, round);
+      setIsLoading(false);
+    },
+    [removeCampaign, campaign, round],
+  );
 
   useEffect(() => {
     if (processState === 'done') {
@@ -74,15 +89,38 @@ export function RoundCardCampaignRemoveButton({
       });
     }
   }, [toast, processState, error]);
-  const roundCampaign = round.roundCampaigns?.find(
-    (roundCampaign) => roundCampaign.campaignId === campaign.id,
-  );
+  const roundCampaign = useMemo(() => {
+    return round.roundCampaigns?.find(
+      (roundCampaign) =>
+        roundCampaign.campaignId && roundCampaign.campaignId === campaign?.id,
+    );
+  }, [campaign, round]);
+  if (!campaign) {
+    console.warn('remove button without campaign');
+    return null;
+  }
   if (
     !isAdmin &&
     roundCampaign?.status !== 'PENDING' &&
     roundCampaign?.status !== 'REJECTED'
   ) {
+    console.warn(
+      'remove button without campaign in correct state',
+      roundCampaign,
+    );
     return null;
+  }
+  if (children) {
+    return (
+      <Button
+        variant="destructive"
+        className={cn(isLoading && 'opacity-50')}
+        disabled={isLoading}
+        onClick={onRemove}
+      >
+        {children}
+      </Button>
+    );
   }
   return (
     <Button
@@ -97,7 +135,18 @@ export function RoundCardCampaignRemoveButton({
       disabled={isLoading}
       title="Remove this Campaign from the Round"
     >
-      {isLoading ? <Loader2 /> : <Link />}
+      {children ? (
+        isLoading && (
+          <>
+            <Loader2 />
+            {children}
+          </>
+        )
+      ) : isLoading ? (
+        <Loader2 />
+      ) : (
+        <Link />
+      )}
     </Button>
   );
 }
