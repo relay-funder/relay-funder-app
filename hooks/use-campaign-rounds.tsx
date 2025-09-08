@@ -1,5 +1,8 @@
 import { RoundCardMinimal } from '@/components/round/card-minimal';
-import { GetRoundResponseInstance } from '@/lib/api/types';
+import {
+  GetRoundCampaignResponseInstance,
+  GetRoundResponseInstance,
+} from '@/lib/api/types';
 import { DbCampaign } from '@/types/campaign';
 import { useMemo } from 'react';
 
@@ -12,15 +15,22 @@ export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
       // api does not recursively populate round-campaign-route. as some
       // components rely on round.roundCampaigns.campaign, populate at least
       // the current campaign into the round here
-      const roundCampaigns = round.roundCampaigns?.length
+      const roundCampaigns: GetRoundCampaignResponseInstance[] = round
+        .roundCampaigns?.length
         ? round.roundCampaigns
         : [
             {
-              id: round.id,
+              ...round,
+              roundId: round.id,
               campaignId: campaign.id,
               campaign,
               status: round.recipientStatus,
-            },
+              onchainRecipientId: null,
+              recipientAddress: null,
+              submittedByWalletAddress: null,
+              txHash: null,
+              reviewedAt: new Date().toISOString(),
+            } as GetRoundCampaignResponseInstance,
           ];
       return { ...round, roundCampaigns };
     });

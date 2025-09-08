@@ -11,7 +11,7 @@ import type {
   PatchRoundResponse,
   GetRoundsStatsResponse,
 } from '@/lib/api/types';
-import { CAMPAIGNS_QUERY_KEY, resetCampaign } from './useCampaigns';
+import { resetCampaign } from './useCampaigns';
 
 export const ROUNDS_QUERY_KEY = 'rounds';
 export const ROUND_QUERY_KEY = 'round';

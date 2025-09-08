@@ -1,12 +1,6 @@
 'use client';
 
-import React, {
-  useState,
-  useCallback,
-  useEffect,
-  useMemo,
-  ReactEventHandler,
-} from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { AdminRemoveProcessStates } from '@/types/admin';
