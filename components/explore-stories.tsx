@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
 import { CampaignList } from '@/components/campaign/list';
@@ -8,12 +8,18 @@ import { HomeExplore } from '@/components/home/explore';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
+import { useSearchParams } from 'next/navigation';
 
 export function ExploreStories() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('create')) {
+      setShowCampaignCreate(true);
+    }
+  }, [searchParams]);
   return (
     <PageHome
       header={
