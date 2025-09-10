@@ -5,7 +5,6 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { CampaignItemProps } from '@/types/campaign';
-import { categories } from '@/lib/constant';
 import { Badge } from '@/components/ui/badge';
 import { FormattedDate } from '../formatted-date';
 import { CampaignMainImage } from './main-image';
@@ -17,6 +16,7 @@ import { GetRoundResponseInstance } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts';
 import { useCallback } from 'react';
+import { useCampaignCategory } from '@/hooks/use-campaign-category';
 
 export function CampaignCardRoundMinimal({
   campaign,
@@ -24,9 +24,8 @@ export function CampaignCardRoundMinimal({
   onSelect,
 }: CampaignItemProps & { round: GetRoundResponseInstance }) {
   const { isAdmin } = useAuth();
-  const categoryDetails = campaign?.category
-    ? categories.find((category) => category.id === campaign.category)
-    : null;
+  const { details: categoryDetails } = useCampaignCategory({ campaign });
+
   const roundCampaign = round.roundCampaigns?.find(
     (roundCampaign) => roundCampaign.campaignId === campaign?.id,
   );

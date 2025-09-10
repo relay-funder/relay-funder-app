@@ -12,7 +12,6 @@ import {
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { categories } from '@/lib/constant';
 
 import { CampaignMainImage } from '@/components/campaign/main-image';
 
@@ -22,11 +21,10 @@ import { UserInlineName } from '@/components/user/inline-name';
 import { CampaignLocation } from './location';
 import { CampaignProgress } from './progress';
 import { CampaignRoundsIndicator } from './rounds-indicator';
+import { useCampaignCategory } from '@/hooks/use-campaign-category';
 
 export function CampaignItem({ campaign }: CampaignItemProps) {
-  const categoryDetails = campaign?.category
-    ? categories.find((category) => category.id === campaign.category)
-    : null;
+  const { details: categoryDetails } = useCampaignCategory({ campaign });
 
   if (!campaign) {
     return (

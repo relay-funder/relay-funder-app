@@ -5,7 +5,6 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { CampaignItemProps } from '@/types/campaign';
-import { categories } from '@/lib/constant';
 import { Badge } from '@/components/ui/badge';
 import { FormattedDate } from '../formatted-date';
 import { CampaignMainImage } from './main-image';
@@ -22,15 +21,14 @@ import { cn } from '@/lib/utils';
 import { RoundCardCampaignAdminApproveButton } from '@/components/round/card-campaign-admin-approve-button';
 import { RoundCardCampaignAdminRejectButton } from '@/components/round/card-campaign-admin-reject-button';
 import { useAuth } from '@/contexts';
+import { useCampaignCategory } from '@/hooks/use-campaign-category';
 
 export function CampaignCardRound({
   campaign,
   round,
 }: CampaignItemProps & { round: GetRoundResponseInstance }) {
   const { isAdmin } = useAuth();
-  const categoryDetails = campaign?.category
-    ? categories.find((category) => category.id === campaign.category)
-    : null;
+  const { details: categoryDetails } = useCampaignCategory({ campaign });
   const roundCampaign = round.roundCampaigns?.find(
     (roundCampaign) => roundCampaign.campaignId === campaign?.id,
   );
