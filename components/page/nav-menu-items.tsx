@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
 import { useSidebar, useAuth } from '@/contexts';
 import { usePathname } from 'next/navigation';
-import { Grid, Home, Star, CircleChevronUp } from 'lucide-react';
+import { Grid, Home, CircleChevronUp } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
 interface NavItem {
@@ -25,11 +25,6 @@ export function PageNavMenuItems() {
         icon: <Grid className="h-6 w-6" />,
         label: 'Dashboard',
         href: '/dashboard',
-      });
-      items.push({
-        icon: <Star className="h-6 w-6" />,
-        label: 'Collections',
-        href: '/collections',
       });
       items.push({
         icon: <CircleChevronUp className="h-6 w-6" />,
