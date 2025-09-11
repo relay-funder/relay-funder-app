@@ -6,7 +6,6 @@ import {
 } from '@/components/ui/card';
 import { CampaignItemProps } from '@/types/campaign';
 import { FavoriteButton } from '@/components/favorite-button';
-import { categories } from '@/lib/constant';
 import { Badge } from '@/components/ui/badge';
 import { FormattedDate } from '../formatted-date';
 import { CampaignMainImage } from './main-image';
@@ -18,6 +17,7 @@ import Link from 'next/link';
 import { CampaignRemoveButton } from './remove-button';
 import { CampaignCardFallback } from './card-fallback';
 import { CampaignRoundsIndicator } from './rounds-indicator';
+import { useCampaignCategory } from '@/hooks/use-campaign-category';
 
 export function CampaignCardDashboard({
   campaign,
@@ -25,9 +25,7 @@ export function CampaignCardDashboard({
   onFavoriteToggle,
   onCreate,
 }: CampaignItemProps) {
-  const categoryDetails = campaign?.category
-    ? categories.find((category) => category.id === campaign.category)
-    : null;
+  const { details: categoryDetails } = useCampaignCategory({ campaign });
 
   if (!campaign) {
     return <CampaignCardFallback onCreate={onCreate} />;

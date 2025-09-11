@@ -12,10 +12,14 @@ import { CampaignLoading } from './loading';
 import { useAuth } from '@/contexts';
 import { CampaignStatus } from './status';
 import { CampaignError } from './error';
+import { useCampaignCategory } from '@/hooks/use-campaign-category';
 
 export function CampaignFull({ slug }: { slug: string }) {
   const { address, isAdmin, isReady } = useAuth();
   const { data: campaignInstance, isPending } = useCampaign(slug);
+  const { details } = useCampaignCategory({
+    campaign: campaignInstance?.campaign,
+  });
   if (isPending || !isReady) {
     return <CampaignLoading />;
   }
@@ -40,7 +44,7 @@ export function CampaignFull({ slug }: { slug: string }) {
   const header = (
     <PageHeader
       featured={true}
-      tags={[campaign.category ?? 'Technology']}
+      tags={[details?.name ?? 'Technology']}
       title={campaign.title}
     >
       <div className="mb-2 flex items-center justify-between gap-1">
