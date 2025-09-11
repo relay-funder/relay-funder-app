@@ -1,5 +1,5 @@
 import { Campaign, db, Round, RoundCampaigns } from '@/server/db';
-import { GetRoundResponseInstance, GetRoundsStatsResponse } from './types';
+import { GetRoundResponseInstance, GetRoundsStatsResponse } from './types/rounds';
 import { ROUND_QUERY_KEY, ROUNDS_QUERY_KEY } from '../hooks/useRounds';
 import { QueryClient } from '@tanstack/react-query';
 import { ApiNotFoundError } from './error';
@@ -16,12 +16,14 @@ export function mapRound(
     endDate,
     applicationStart,
     applicationClose,
+    poolId,
     ...roundWithoutDeprecated
   } = round;
   return {
     ...roundWithoutDeprecated,
-    // hydration conversion Decimal->Number
+    // hydration conversion Decimal->Number and BigInt->Number
     matchingPool: Number(round.matchingPool),
+    poolId: round.poolId ? Number(round.poolId) : null,
     // map future field names
     startTime: startDate.toISOString(),
     endTime: endDate.toISOString(),
