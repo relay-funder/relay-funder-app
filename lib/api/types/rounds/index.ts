@@ -34,7 +34,7 @@ export interface GetRoundResponseInstance {
   description: string;
   tags: string[];
   matchingPool: number;
-  poolId: number | null;
+  poolId?: number | null;
   applicationStartTime: string;
   applicationEndTime: string;
   startTime: string;
