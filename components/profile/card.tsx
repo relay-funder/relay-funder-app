@@ -7,6 +7,7 @@ import {
   AvatarFallback,
   CardContent,
   Button,
+  Badge,
 } from '@/components/ui';
 import { UserRound, Pencil, LogOut } from 'lucide-react';
 import { FormattedDate } from '@/components/formatted-date';
@@ -18,7 +19,7 @@ export function ProfileCard({
   profile?: Profile;
   onEdit?: () => void;
 }) {
-  const { address, logout } = useAuth();
+  const { address, logout, isAdmin } = useAuth();
   const router = useRouter();
   const onLogout = useCallback(async () => {
     await logout();
@@ -35,10 +36,17 @@ export function ProfileCard({
           </Avatar>
 
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold">
-              {profile?.firstName || 'Anonymous User'}
-              {profile?.lastName && ` ${profile?.lastName}`}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold">
+                {profile?.firstName || 'Anonymous User'}
+                {profile?.lastName && ` ${profile?.lastName}`}
+              </h2>
+              {isAdmin && (
+                <Badge variant="success" className="text-xs">
+                  Admin
+                </Badge>
+              )}
+            </div>
             <p className="break-all text-sm text-muted-foreground">
               Wallet: {address}
             </p>

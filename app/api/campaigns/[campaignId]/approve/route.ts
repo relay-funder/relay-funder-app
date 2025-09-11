@@ -13,6 +13,9 @@ import {
 } from '@/lib/api/types';
 import { CampaignStatus } from '@/types/campaign';
 import { getCampaign } from '@/lib/api/campaigns';
+import { createTreasuryManager } from '@/lib/treasury/interface';
+import { ethers } from 'ethers';
+import { chainConfig } from '@/lib/web3';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -50,6 +53,34 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         treasuryAddress,
       },
     });
+
+    // Configure treasury with campaign parameters
+    try {
+      const treasuryManager = await createTreasuryManager();
+      const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+
+      if (platformAdminKey) {
+        const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
+        const platformAdminSigner = new ethers.Wallet(
+          platformAdminKey,
+          provider,
+        );
+
+        const configResult = await treasuryManager.configureTreasury(
+          treasuryAddress,
+          campaignId,
+          platformAdminSigner,
+        );
+
+        if (!configResult.success) {
+          console.error('Treasury configuration failed:', configResult.error);
+          // Continue with approval even if configuration fails
+        }
+      }
+    } catch (configError) {
+      console.error('Error during treasury configuration:', configError);
+      // Don't fail the approval if configuration fails - treasury can be configured later
+    }
 
     return response({
       campaign: await getCampaign(campaignId),

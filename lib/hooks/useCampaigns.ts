@@ -214,6 +214,10 @@ async function createCampaign({
 interface IApproveCampaign {
   campaignId: number;
   treasuryAddress: string;
+  cryptoTreasuryAddress?: string;
+  paymentTreasuryAddress?: string;
+  cryptoTreasuryTx?: string;
+  paymentTreasuryTx?: string;
 }
 async function approveCampaign(variables: IApproveCampaign) {
   const response = await fetch(

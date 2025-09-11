@@ -1,5 +1,6 @@
 import { DbCampaign } from '@/types/campaign';
 import { DisplayUser, DisplayUserWithStates } from '../user';
+import { TreasuryBalance } from '@/lib/treasury/interface';
 export * from './comments';
 export interface CampaignsWithIdParams {
   params: Promise<{
@@ -49,6 +50,7 @@ export interface GetCampaignPaymentSummary {
 export interface GetCampaignResponseInstance extends DbCampaign {
   creator: DisplayUserWithStates;
   paymentSummary: GetCampaignPaymentSummary;
+  treasuryBalance?: TreasuryBalance | null;
 }
 export interface GetCampaignResponse {
   campaign: GetCampaignResponseInstance;

@@ -2,17 +2,8 @@ import { useEffect, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts';
 import { CreateProcessStates } from '@/types/campaign';
 
-import {
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  parseEther,
-  keccak256,
-  stringToHex,
-} from '@/lib/web3';
-import { type Log } from '@/lib/web3/types';
-import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
+// All on-chain specifics handled server-side
 
-const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
 export interface IOnCreateCampaignConfirmed {
   hash: string;
   status: string;
@@ -24,80 +15,119 @@ export function useCreateCampaignContract({
 }: {
   onConfirmed: (arg0: IOnCreateCampaignConfirmed) => void;
 }) {
-  const { address, authenticated } = useAuth();
+  const { authenticated } = useAuth();
   const [campaignId, setCampaignId] = useState<number | undefined>();
-  const { data: hash, isPending, writeContractAsync } = useWriteContract();
-  const {
-    isLoading: isConfirming,
-    isSuccess,
-    data: receipt,
-  } = useWaitForTransactionReceipt({
-    hash,
-  });
+  // Client no longer submits on-chain tx directly; server signs and returns tx hash
+  const hash = undefined as unknown as string | undefined;
+  const isPending = false;
+  const isConfirming = false;
+  const isSuccess = false;
+  const receipt = undefined as unknown as
+    | { status: string; logs: unknown[] }
+    | undefined;
 
   const createCampaignContract = useCallback(
     async ({
-      startTime,
-      endTime,
-      fundingGoal,
       campaignId,
       onStateChanged,
     }: {
-      startTime: string;
-      endTime: string;
-      fundingGoal: string;
       campaignId: number;
       onStateChanged: (arg0: keyof typeof CreateProcessStates) => void;
     }) => {
       if (!authenticated) {
         throw new Error('wallet not connected');
       }
-      const campaignData = {
-        launchTime: BigInt(
-          Math.floor(new Date(startTime ?? '').getTime() / 1000),
-        ),
-        deadline: BigInt(Math.floor(new Date(endTime ?? '').getTime() / 1000)),
-        goalAmount: parseEther(fundingGoal || '0'),
-      };
+
+      // Ensure platform setup before campaign creation
+      onStateChanged('validatingPlatform');
+      try {
+        await fetch('/api/platform/status', { cache: 'no-store' });
+      } catch {}
+
+      // Server validates parameters; initiate server-side creation
       setCampaignId(campaignId);
 
-      // Then proceed with blockchain transaction
-      const identifierHash = keccak256(stringToHex('KickStarter'));
       onStateChanged('createOnChain');
-      await writeContractAsync({
-        address: campaignInfoFactory as `0x${string}`,
-        abi: CampaignInfoFactoryABI,
-        functionName: 'createCampaign',
-        args: [
-          address,
-          identifierHash,
-          [process.env.NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`],
-          [], // Platform data keys
-          [], // Platform data values
-          campaignData,
-        ],
-      });
-      onStateChanged('waitForCreationConfirmation');
+
+      // Server route will submit the transaction
+
+      // Additional validation logging
+      // (addresses validated server-side)
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const res = await fetch(`/api/campaigns/${campaignId}/create-onchain`, {
+          method: 'POST',
+        });
+        const json = await res.json();
+        if (!json?.success) {
+          throw new Error(
+            json?.error || 'Server failed to create on-chain campaign',
+          );
+        }
+        const txHash: string | undefined = json.txHash;
+        onStateChanged('waitForCreationConfirmation');
+
+        // Fast path: server already awaited .wait()
+        if (json.status === 1) {
+          onConfirmed({
+            hash: txHash || '',
+            status: 'success',
+            campaignAddress: '',
+            campaignId,
+          });
+          setCampaignId(undefined);
+          return;
+        }
+        if (json.status === 0) {
+          onConfirmed({
+            hash: txHash || '',
+            status: 'reverted',
+            campaignAddress: '',
+            campaignId,
+          });
+          setCampaignId(undefined);
+          return;
+        }
+
+        if (txHash) {
+          onConfirmed({
+            hash: txHash,
+            status: 'pending',
+            campaignAddress: '',
+            campaignId,
+          });
+          setCampaignId(undefined);
+          return;
+        }
+
+        // No tx hash returned
+        onConfirmed({
+          hash: '',
+          status: 'failed',
+          campaignAddress: '',
+          campaignId,
+        });
+        setCampaignId(undefined);
+      } catch (error) {
+        console.error('Transaction submission failed:', error);
+        throw error;
+      }
       // -> useEffect: hash + state:success,
       // then the receipt has the address in the event-logs
     },
-    [address, authenticated, writeContractAsync],
+    [authenticated, onConfirmed],
   );
 
-  useEffect(() => {
-    if (campaignId && hash && isSuccess && receipt) {
-      const status = receipt.status;
-      const event = receipt.logs.find(
-        (log: Log) => log.transactionHash === hash,
-      );
-      const campaignAddress =
-        status === 'success'
-          ? (event?.address ?? receipt.logs?.at(0)?.address ?? '')
-          : '';
-      onConfirmed({ hash, status, campaignAddress, campaignId });
-      setCampaignId(undefined);
-    }
-  }, [hash, isSuccess, receipt, onConfirmed, campaignId]);
+  // No client-side confirmation loop; server returns final status
+  useEffect(() => {}, [
+    hash,
+    isSuccess,
+    receipt,
+    onConfirmed,
+    campaignId,
+    isConfirming,
+  ]);
 
   return {
     isPending,

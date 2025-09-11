@@ -281,6 +281,11 @@ export const CreateProcessStates = {
   setup: 'setup',
 
   /**
+   * Validate platform setup and configuration
+   */
+  validatingPlatform: 'validatingPlatform',
+
+  /**
    * Create the campaign in the database
    */
   create: 'create',
