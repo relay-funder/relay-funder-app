@@ -26,7 +26,12 @@ const nextConfig: NextConfig = {
     ],
   },
 };
-if (process.env.SENTRY === 'true' || process.env.NODE_ENV === 'production') {
+
+const sentryEnvironments = ['production', 'staging'];
+const currentEnv = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV;
+const shouldInitSentry = process.env.SENTRY === 'true' || sentryEnvironments.includes(currentEnv as string);
+
+if (shouldInitSentry) {
   console.log(' ▲ sentry initialization');
   // this import decreases the developer experience in next dev
   // for that reason it is executed conditionally.
