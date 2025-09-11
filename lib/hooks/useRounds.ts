@@ -11,6 +11,7 @@ import type {
   PatchRoundResponse,
   GetRoundsStatsResponse,
 } from '@/lib/api/types';
+import { resetCampaign } from './useCampaigns';
 
 export const ROUNDS_QUERY_KEY = 'rounds';
 export const ROUND_QUERY_KEY = 'round';
@@ -182,12 +183,14 @@ async function removeRound(variables: IRemoveRound) {
 interface ICreateRoundCampaign {
   roundId: number;
   campaignId: number;
+  applicationReason: string;
   status?: 'PENDING' | 'REJECTED' | 'APPROVED';
 }
 async function createRoundCampaign(variables: ICreateRoundCampaign) {
   const formDataToSend = new FormData();
   formDataToSend.append('roundId', `${variables.roundId}`);
   formDataToSend.append('campaignId', `${variables.campaignId}`);
+  formDataToSend.append('applicationReason', `${variables.applicationReason}`);
   if (variables.status) {
     formDataToSend.append('status', variables.status);
   }
@@ -298,8 +301,17 @@ export function useUpdateRound() {
 
   return useMutation({
     mutationFn: updateRound,
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: [ROUNDS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ROUND_QUERY_KEY, variables.roundId],
+      });
     },
   });
 }
@@ -311,10 +323,10 @@ export function useCreateRound() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [ROUNDS_QUERY_KEY] });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 10],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 3],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3],
       });
       queryClient.invalidateQueries({ queryKey: [ROUND_STATS_QUERY_KEY] });
     },
@@ -326,7 +338,16 @@ export function useRemoveRound() {
 
   return useMutation({
     mutationFn: removeRound,
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ROUND_QUERY_KEY, variables.roundId],
+      });
       queryClient.invalidateQueries({ queryKey: [ROUNDS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ROUND_STATS_QUERY_KEY] });
     },
@@ -347,14 +368,15 @@ export function useCreateRoundCampaign() {
   return useMutation({
     mutationFn: createRoundCampaign,
     onSuccess: (_data, variables) => {
+      resetCampaign(variables.campaignId, queryClient);
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, variables.roundId],
+        queryKey: [ROUND_QUERY_KEY, variables.roundId],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 10],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 3],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3],
       });
       queryClient.invalidateQueries({ queryKey: [ROUND_STATS_QUERY_KEY] });
     },
@@ -371,10 +393,10 @@ export function useUpdateRoundCampaign() {
         queryKey: [ROUND_QUERY_KEY, variables.roundId],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 10],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 3],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3],
       });
       queryClient.invalidateQueries({ queryKey: [ROUND_STATS_QUERY_KEY] });
     },
@@ -387,14 +409,15 @@ export function useRemoveRoundCampaign() {
   return useMutation({
     mutationFn: removeRoundCampaign,
     onSuccess: (_data, variables) => {
+      resetCampaign(variables.campaignId, queryClient);
       queryClient.invalidateQueries({
         queryKey: [ROUND_QUERY_KEY, variables.roundId],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 10],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10],
       });
       queryClient.invalidateQueries({
-        queryKey: [ROUNDS_QUERY_KEY, 'user', 'infinite', 3],
+        queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3],
       });
       queryClient.invalidateQueries({ queryKey: [ROUND_STATS_QUERY_KEY] });
     },

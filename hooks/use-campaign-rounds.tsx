@@ -1,5 +1,8 @@
 import { RoundCardMinimal } from '@/components/round/card-minimal';
-import { GetRoundResponseInstance } from '@/lib/api/types';
+import {
+  GetRoundCampaignResponseInstance,
+  GetRoundResponseInstance,
+} from '@/lib/api/types';
 import { DbCampaign } from '@/types/campaign';
 import { useMemo } from 'react';
 
@@ -8,8 +11,30 @@ export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
     if (!Array.isArray(campaign?.rounds) || campaign.rounds.length === 0) {
       return [] as GetRoundResponseInstance[];
     }
-    return campaign.rounds;
-  }, [campaign?.rounds]);
+    return campaign.rounds.map((round) => {
+      // api does not recursively populate round-campaign-route. as some
+      // components rely on round.roundCampaigns.campaign, populate at least
+      // the current campaign into the round here
+      const roundCampaigns: GetRoundCampaignResponseInstance[] = round
+        .roundCampaigns?.length
+        ? round.roundCampaigns
+        : [
+            {
+              ...round,
+              roundId: round.id,
+              campaignId: campaign.id,
+              campaign,
+              status: round.recipientStatus,
+              onchainRecipientId: null,
+              recipientAddress: null,
+              submittedByWalletAddress: null,
+              txHash: null,
+              reviewedAt: new Date().toISOString(),
+            } as GetRoundCampaignResponseInstance,
+          ];
+      return { ...round, roundCampaigns };
+    });
+  }, [campaign]);
   const activeRounds = useMemo(() => {
     const now = new Date();
     return rounds.filter((round) => {
@@ -101,7 +126,9 @@ export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
   }, [pastRounds, activeRounds, futureRounds]);
   const listing = useMemo(() => {
     function mapRounds(round: GetRoundResponseInstance) {
-      return <RoundCardMinimal key={round.id} round={round} />;
+      return (
+        <RoundCardMinimal key={round.id} round={round} campaign={campaign} />
+      );
     }
 
     return {
@@ -109,7 +136,7 @@ export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
       activeRounds: activeRounds.map(mapRounds),
       futureRounds: futureRounds.map(mapRounds),
     };
-  }, [pastRounds, activeRounds, futureRounds]);
+  }, [pastRounds, activeRounds, futureRounds, campaign]);
   const hasRounds = useMemo(() => {
     return rounds.length > 0;
   }, [rounds]);

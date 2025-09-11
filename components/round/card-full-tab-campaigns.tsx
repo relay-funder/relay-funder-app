@@ -10,8 +10,8 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts';
 
-import { RoundAddDialog } from './add-dialog';
-import { CampaignCardRound } from '../campaign/card-round';
+import { RoundAddDialog } from './campaign/add-dialog';
+import { CampaignCardRound } from '@/components/campaign/card-round';
 
 export function RoundCardTabCampaigns({
   round,

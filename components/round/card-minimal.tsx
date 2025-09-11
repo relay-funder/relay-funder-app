@@ -14,16 +14,35 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
+import { useMemo } from 'react';
+import { DbCampaign } from '@/types/campaign';
+import { RoundCardCampaignRemoveButton } from './card-campaign-remove-button';
 
 export function RoundCardMinimal({
   round,
+  campaign,
 }: {
   round: GetRoundResponseInstance;
+  campaign?: DbCampaign;
 }) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, address } = useAuth();
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
-
+  const canWithdraw = useMemo(() => {
+    if (!campaign) {
+      return false;
+    }
+    const roundCampaign = round.roundCampaigns?.find(
+      (roundCampaign) => roundCampaign.campaignId === campaign.id,
+    );
+    if (!roundCampaign) {
+      return false;
+    }
+    if (!isAdmin && roundCampaign.campaign?.creatorAddress !== address) {
+      return false;
+    }
+    return true;
+  }, [round, campaign, address, isAdmin]);
   if (!round || !round.id) {
     return (
       <Card className="flex h-full flex-col overflow-hidden rounded-lg border p-4 shadow-sm">
@@ -111,6 +130,11 @@ export function RoundCardMinimal({
               {status.text === 'Ended' ? 'View Results' : 'View Round'}
             </span>
           </Button>
+          {canWithdraw && (
+            <RoundCardCampaignRemoveButton campaign={campaign} round={round}>
+              Withdraw Application
+            </RoundCardCampaignRemoveButton>
+          )}
         </CardFooter>
       </Link>
     </Card>
