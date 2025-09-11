@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { db } from '@/server/db';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { chainConfig } from '@/lib/web3';
+import { TREASURY_DELAYS, TREASURY_CONFIG, TREASURY_GAS_LIMITS, USDC_CONFIG, TREASURY_IMPLEMENTATIONS, FEE_KEYS } from '@/lib/constant/treasury';
 import {
   TreasuryInterface,
   TreasuryDeploymentResult,
@@ -68,10 +69,10 @@ export class TreasuryManager extends TreasuryInterface {
       const tx = await treasuryFactory.deploy(
         params.platformBytes, // platformHash
         params.campaignAddress, // infoAddress (must be CampaignInfo contract)
-        0, // implementationId (0 = KeepWhatsRaised)
+        TREASURY_IMPLEMENTATIONS.KEEP_WHATS_RAISED, // implementationId
         'RelayTreasury', // TODO: pass through campaign name
         'RLY', // TODO: pass through campaign symbol
-        { gasLimit: 2000000 }, // Increased gas limit
+        { gasLimit: TREASURY_GAS_LIMITS.DEPLOY },
       );
 
       const receipt = await tx.wait();
@@ -90,17 +91,20 @@ export class TreasuryManager extends TreasuryInterface {
       );
 
       for (const log of receipt.logs || []) {
-        if (log.topics && log.topics[0] === expectedTopic) {
-          // Extract address from data
-          if (log.data) {
-            // Remove zero padding from the beginning to get clean address
-            const cleanData = log.data.replace(/^0x0{24}/, '0x');
-            if (cleanData.length === 42 && cleanData.startsWith('0x')) {
-              // Valid address format
-              treasuryAddress = cleanData;
-              break;
-            }
-          }
+        if (!log.topics || log.topics[0] !== expectedTopic) {
+          continue;
+        }
+        
+        if (!log.data) {
+          continue;
+        }
+        
+        // Remove zero padding from the beginning to get clean address
+        const cleanData = log.data.replace(/^0x0{24}/, '0x');
+        if (cleanData.length === 42 && cleanData.startsWith('0x')) {
+          // Valid address format
+          treasuryAddress = cleanData;
+          break;
         }
       }
 
@@ -185,44 +189,37 @@ export class TreasuryManager extends TreasuryInterface {
         signer,
       );
 
-      // Treasury configuration parameters
-      const WITHDRAWAL_DELAY = 3600; // 1 hour
-      const REFUND_DELAY = 7200; // 2 hours
-      const CONFIG_LOCK_PERIOD = 1800; // 30 minutes
-      const IS_COLOMBIAN = false;
-
-      // Minimum withdrawal for fee exemption (0.5 USDC)
-      const usdcDecimals = 6; // USDC has 6 decimals
+      // Minimum withdrawal for fee exemption
       const MIN_WITHDRAWAL_FEE_EXEMPTION = ethers.parseUnits(
-        '0.5',
-        usdcDecimals,
-      ); // 0.5 USDC threshold
+        USDC_CONFIG.MIN_WITHDRAWAL_FEE_EXEMPTION,
+        USDC_CONFIG.DECIMALS,
+      );
 
       // Fee keys as per shell script
-      const FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes('flatFee'));
+      const FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes(FEE_KEYS.FLAT_FEE));
       const CUM_FLAT_FEE_KEY = ethers.keccak256(
-        ethers.toUtf8Bytes('cumulativeFlatFee'),
+        ethers.toUtf8Bytes(FEE_KEYS.CUMULATIVE_FLAT_FEE),
       );
       const PLATFORM_FEE_KEY = ethers.keccak256(
-        ethers.toUtf8Bytes('platformFee'),
+        ethers.toUtf8Bytes(FEE_KEYS.PLATFORM_FEE),
       );
       const VAKI_COMMISSION_KEY = ethers.keccak256(
-        ethers.toUtf8Bytes('vakiCommission'),
+        ethers.toUtf8Bytes(FEE_KEYS.VAKI_COMMISSION),
       );
 
       const launchTime = Math.floor(
         new Date(campaign.startTime).getTime() / 1000,
       );
       const deadline = Math.floor(new Date(campaign.endTime).getTime() / 1000);
-      const goalAmount = ethers.parseUnits(campaign.fundingGoal, 6); // USDC has 6 decimals
+      const goalAmount = ethers.parseUnits(campaign.fundingGoal, USDC_CONFIG.DECIMALS);
 
       const tx = await treasuryContract.configureTreasury(
         [
           MIN_WITHDRAWAL_FEE_EXEMPTION,
-          WITHDRAWAL_DELAY,
-          REFUND_DELAY,
-          CONFIG_LOCK_PERIOD,
-          IS_COLOMBIAN,
+          TREASURY_DELAYS.WITHDRAWAL_DELAY,
+          TREASURY_DELAYS.REFUND_DELAY,
+          TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
+          TREASURY_CONFIG.IS_COLOMBIAN,
         ],
         [launchTime, deadline, goalAmount],
         [
@@ -230,7 +227,7 @@ export class TreasuryManager extends TreasuryInterface {
           CUM_FLAT_FEE_KEY,
           [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
         ],
-        { gasLimit: 1000000 },
+        { gasLimit: TREASURY_GAS_LIMITS.CONFIGURE },
       );
 
       await tx.wait();
@@ -299,7 +296,7 @@ export class TreasuryManager extends TreasuryInterface {
         params.signer,
       );
 
-      const amountWei = ethers.parseUnits(params.amount, 6); // USDC has 6 decimals
+      const amountWei = ethers.parseUnits(params.amount, USDC_CONFIG.DECIMALS);
       const tx = await treasuryContract.withdraw(amountWei);
       await tx.wait();
 
@@ -344,8 +341,8 @@ export class TreasuryManager extends TreasuryInterface {
       ]);
 
       return {
-        available: ethers.formatUnits(availableAmount, 6), // USDC has 6 decimals
-        totalPledged: ethers.formatUnits(totalRaised, 6),
+        available: ethers.formatUnits(availableAmount, USDC_CONFIG.DECIMALS),
+        totalPledged: ethers.formatUnits(totalRaised, USDC_CONFIG.DECIMALS),
         currency: 'USDC',
       };
     } catch (error) {

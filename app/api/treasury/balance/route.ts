@@ -1,6 +1,7 @@
 import { createTreasuryManager } from '@/lib/treasury/interface';
 import { response, handleError } from '@/lib/api/response';
 import { ApiParameterError } from '@/lib/api/error';
+import { ethers } from 'ethers';
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
     }
 
     // Validate Ethereum address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(treasuryAddress)) {
+    if (!ethers.isAddress(treasuryAddress)) {
       throw new ApiParameterError('Invalid treasury address format');
     }
 

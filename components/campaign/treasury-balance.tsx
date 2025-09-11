@@ -56,8 +56,8 @@ export function TreasuryBalance({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Badge variant="outline" className="text-xs">
-          {treasuryBalance.balance?.currency ||
-            treasuryBalance.currency ||
+          {treasuryBalance.balance?.currency ??
+            treasuryBalance.currency ??
             'USDC'}
         </Badge>
       </CardHeader>
@@ -67,8 +67,8 @@ export function TreasuryBalance({
             <div className="text-2xl font-bold">
               {formatUSD(
                 parseFloat(
-                  treasuryBalance.balance?.totalPledged ||
-                    treasuryBalance.totalPledged ||
+                  treasuryBalance.balance?.totalPledged ??
+                    treasuryBalance.totalPledged ??
                     '0',
                 ) || 0,
               )}
@@ -110,8 +110,8 @@ export function TreasuryBalanceCompact({
   }
 
   // Safely parse balance values with fallbacks
-  const totalPledged = treasuryBalance.balance?.totalPledged || '0';
-  const currency = treasuryBalance.balance?.currency || 'USDC';
+  const totalPledged = treasuryBalance.balance?.totalPledged ?? '0';
+  const currency = treasuryBalance.balance?.currency ?? 'USDC';
 
   // Parse as numbers with fallback to 0
   const totalPledgedNum = parseFloat(totalPledged) || 0;

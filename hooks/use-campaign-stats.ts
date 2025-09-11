@@ -14,13 +14,13 @@ export function useCampaignStats({ slug }: { slug: string }) {
 
   // Fetch treasury balance separately if available
   const { data: treasuryBalance, isLoading: isTreasuryBalanceLoading } = useTreasuryBalance(
-    campaign?.treasuryAddress || null
+    campaign?.treasuryAddress ?? null
   );
 
   return {
     ...useCampaignStatsFromInstance({
       campaign,
-      treasuryBalance: treasuryBalance || campaign?.treasuryBalance,
+      treasuryBalance: treasuryBalance ?? campaign?.treasuryBalance,
     }),
     isPending,
     isTreasuryBalanceLoading,

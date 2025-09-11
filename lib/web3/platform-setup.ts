@@ -84,7 +84,7 @@ export async function ensurePlatformSetup(): Promise<{
       const enlistTx = await (globalParams.connect(protocolAdminSigner) as typeof globalParams).enlistPlatform(
         platformHash,
         process.env.NEXT_PUBLIC_PLATFORM_ADMIN!,
-        1000 // platform fee percent
+        1000 // 10.00% platform fee (in basis points: 1000 = 10%)
       );
       await enlistTx.wait();
       console.log('Platform enlisted successfully');
