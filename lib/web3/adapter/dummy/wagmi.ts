@@ -62,7 +62,7 @@ export function useWriteContract() {
         await new Promise((resolve) => setTimeout(resolve, contractTime));
         const doneData = `0xdummy-write-contract-async-hash-done${Math.round(Math.random() * 1000000000).toString(16)}`;
         setData(doneData);
-        return doneData;
+        return doneData as `0x${string}`;
       },
     };
   }, [data]);

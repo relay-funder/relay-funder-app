@@ -19,7 +19,7 @@ export function CollectionAddDialog({
   onClosed,
 }: {
   campaign: DbCampaign;
-  onClosed: () => void;
+  onClosed?: () => void;
 }) {
   const [open, setOpen] = useState<boolean>(true);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
@@ -38,7 +38,7 @@ export function CollectionAddDialog({
     setSelectedCollectionId('');
     setNewCollectionName('');
     setIsCreatingCollection(false);
-    onClosed();
+    typeof onClosed === 'function' && onClosed();
   }, [onClosed]);
 
   const onAddToCollection = useCallback(

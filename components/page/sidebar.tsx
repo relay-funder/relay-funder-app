@@ -5,7 +5,6 @@ import { useSidebar } from '@/contexts';
 import { PageNavMenuIcon } from './nav-menu-icon';
 import { PageNavMenuItems } from './nav-menu-items';
 import { PageNavMenuSettings } from './nav-menu-settings';
-import { PageNavMenuFeatures } from './nav-menu-features';
 import { PageNavMenuUser } from './nav-menu-user';
 import { transition } from './sidebar-constants';
 export const PageSidebar = () => {
@@ -33,9 +32,6 @@ export const PageSidebar = () => {
           >
             <div className="grow">
               <PageNavMenuItems />
-            </div>
-            <div className="grow-0">
-              <PageNavMenuFeatures />
             </div>
             <div className="grow-0 border-t">
               <PageNavMenuSettings />

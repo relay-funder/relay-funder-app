@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
-import { useSidebar, useFeatureFlag } from '@/contexts';
+import { useSidebar, useAuth } from '@/contexts';
 import { usePathname } from 'next/navigation';
 import { Grid, Home, Star, BookCheck } from 'lucide-react';
 import { transition } from './sidebar-constants';
@@ -13,32 +13,39 @@ interface NavItem {
 
 export function PageNavMenuItems() {
   const { isOpen } = useSidebar();
-  const showRounds = useFeatureFlag('ENABLE_ROUNDS');
+  const { authenticated, isAdmin } = useAuth();
 
   const pathname = usePathname();
   const navItems = useMemo<NavItem[]>(() => {
     const items = [
       { icon: <Home className="h-6 w-6" />, label: 'Home', href: '/' },
-      {
+    ];
+    if (!isAdmin) {
+      items.push({
         icon: <Grid className="h-6 w-6" />,
         label: 'Dashboard',
         href: '/dashboard',
-      },
-      {
+      });
+      items.push({
         icon: <Star className="h-6 w-6" />,
         label: 'Collections',
         href: '/collections',
-      },
-    ];
-    if (showRounds) {
+      });
+    }
+    if (authenticated && isAdmin) {
+      items.push({
+        icon: <Grid className="h-6 w-6" />,
+        label: 'Admin Dashboard',
+        href: '/admin',
+      });
       items.push({
         icon: <BookCheck className="h-6 w-6" />,
-        label: 'Rounds',
-        href: '/rounds',
+        label: 'Admin Rounds',
+        href: '/admin/rounds',
       });
     }
     return items;
-  }, [showRounds]);
+  }, [authenticated, isAdmin]);
 
   return (
     <nav className="flex-1 space-y-1 p-3">
