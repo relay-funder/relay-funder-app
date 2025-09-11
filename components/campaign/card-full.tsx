@@ -4,9 +4,9 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock, MapPin, Target, Mail, Rocket } from 'lucide-react';
+import { Users, Clock, MapPin, Target, Rocket } from 'lucide-react';
 
-import { CampaignShareDialog } from '@/components/campaign/share-dialog';
+import { ShareDialog } from '@/components/share-dialog';
 import { FavoriteButton } from '@/components/favorite-button';
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
@@ -76,13 +76,7 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
 
         <div className="flex justify-center gap-2">
           <FavoriteButton campaignId={campaign.id} />
-          <CampaignShareDialog
-            campaignTitle={campaign.title}
-            campaignSlug={campaign.slug}
-          />
-          <Button variant="outline" size="icon" className="rounded-full">
-            <Mail className="h-4 w-4" />
-          </Button>
+          <ShareDialog campaign={campaign} />
         </div>
 
         <div className="space-y-4 border-t pt-4">
