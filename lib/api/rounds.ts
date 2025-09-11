@@ -23,7 +23,7 @@ export function mapRound(
     ...roundWithoutDeprecated,
     // hydration conversion Decimal->Number and BigInt->Number
     matchingPool: Number(round.matchingPool),
-    poolId: round.poolId ? Number(round.poolId) : null,
+    poolId: poolId ? Number(poolId) : null,
     // map future field names
     startTime: startDate.toISOString(),
     endTime: endDate.toISOString(),
