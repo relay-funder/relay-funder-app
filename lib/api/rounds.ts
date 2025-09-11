@@ -1,33 +1,54 @@
 import { Campaign, db, Round, RoundCampaigns } from '@/server/db';
-import { GetRoundsStatsResponse } from './types';
+import { GetRoundResponseInstance, GetRoundsStatsResponse } from './types';
+import { ROUND_QUERY_KEY, ROUNDS_QUERY_KEY } from '../hooks/useRounds';
+import { QueryClient } from '@tanstack/react-query';
+import { ApiNotFoundError } from './error';
+import { mapCampaign } from './campaigns';
 
 export function mapRound(
   round: Round & {
-    roundCampaigns: (RoundCampaigns & { Campaign: Campaign })[];
+    roundCampaigns?: (RoundCampaigns & { Campaign: Campaign })[];
   },
-) {
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED',
+): GetRoundResponseInstance {
+  const {
+    startDate,
+    endDate,
+    applicationStart,
+    applicationClose,
+    ...roundWithoutDeprecated
+  } = round;
   return {
-    ...round,
+    ...roundWithoutDeprecated,
+    // hydration conversion Decimal->Number
+    matchingPool: Number(round.matchingPool),
     // map future field names
-    startTime: round.startDate,
-    endTime: round.endDate,
-    applicationStartTime: round.applicationStart,
-    applicationEndTime: round.applicationClose,
+    startTime: startDate.toISOString(),
+    endTime: endDate.toISOString(),
+    applicationStartTime: applicationStart.toISOString(),
+    applicationEndTime: applicationClose.toISOString(),
+    updatedAt: round.updatedAt.toISOString(),
+    createdAt: round.createdAt.toISOString(),
     roundCampaigns:
       round.roundCampaigns?.map((roundCampaign) => ({
         ...roundCampaign,
-        campaign: roundCampaign.Campaign,
+        reviewedAt: roundCampaign.reviewedAt?.toISOString() ?? null,
+        campaign: mapCampaign(roundCampaign.Campaign),
       })) ?? [],
+    // transient
+    recipientStatus: status,
   };
 }
 export async function listRounds({
   page = 1,
   pageSize = 10,
   skip = 0,
+  admin = false,
 }: {
   page?: number;
   pageSize?: number;
   skip?: number;
+  admin?: boolean;
 }) {
   const [rounds, totalCount] = await Promise.all([
     db.round.findMany({
@@ -35,6 +56,7 @@ export async function listRounds({
       include: {
         roundCampaigns: {
           include: { Campaign: true },
+          where: admin ? {} : { status: 'APPROVED' },
         },
       },
       take: pageSize,
@@ -46,7 +68,7 @@ export async function listRounds({
   ]);
 
   return {
-    rounds: rounds.map(mapRound),
+    rounds: rounds.map((round) => mapRound(round, 'APPROVED')),
     pagination: {
       currentPage: page,
       pageSize,
@@ -57,6 +79,32 @@ export async function listRounds({
   };
 }
 
+export async function getRound(
+  id: number,
+  admin: boolean | undefined = false,
+  sessionAddress: string | null | undefined = null,
+) {
+  const round = await db.round.findUnique({
+    where: { id },
+    include: {
+      roundCampaigns: {
+        include: { Campaign: { include: { images: true } } },
+        where: admin
+          ? {}
+          : {
+              OR: [
+                { status: 'APPROVED' },
+                { Campaign: { creatorAddress: sessionAddress ?? undefined } },
+              ],
+            },
+      },
+    },
+  });
+  if (!round) {
+    throw new ApiNotFoundError(`Round with id ${id} does not exist`);
+  }
+  return mapRound(round);
+}
 export async function getStats() {
   const stats: GetRoundsStatsResponse = {
     totalRounds: 0,
@@ -70,4 +118,32 @@ export async function getStats() {
     where: { endDate: { gt: new Date() } },
   });
   return stats;
+}
+
+// Prefetching homepage rounds
+// sets the default query key and requests the db-data
+export async function prefetchRounds(
+  queryClient: QueryClient,
+  admin: boolean = false,
+) {
+  return queryClient.prefetchInfiniteQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'infinite', 'active', 10],
+    initialPageParam: 1,
+    queryFn: () => listRounds({ admin }),
+  });
+}
+// Prefetching round
+// sets the default query key and requests the db-data
+export async function prefetchRound(
+  queryClient: QueryClient,
+  id: number,
+  admin: boolean = false,
+  sessionAddress: string | null = null,
+) {
+  return queryClient.prefetchQuery({
+    queryKey: [ROUND_QUERY_KEY, id],
+    queryFn: async () => ({
+      round: await getRound(id, admin, sessionAddress),
+    }),
+  });
 }

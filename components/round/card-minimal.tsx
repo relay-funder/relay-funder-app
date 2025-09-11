@@ -8,15 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Clock, Calendar, Users, DollarSign } from 'lucide-react';
+import { Clock, Calendar, DollarSign } from 'lucide-react';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { FormattedDate } from '@/components/formatted-date';
-import { useMemo } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
 
-export function RoundCardDashboard({
+export function RoundCardMinimal({
   round,
 }: {
   round: GetRoundResponseInstance;
@@ -24,10 +23,6 @@ export function RoundCardDashboard({
   const { isAdmin } = useAuth();
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
-
-  const numberOfProjects = useMemo(() => {
-    return round.roundCampaigns?.length ?? 0;
-  }, [round]);
 
   if (!round || !round.id) {
     return (
@@ -87,34 +82,12 @@ export function RoundCardDashboard({
 
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              <span>Projects</span>
-            </div>
-            <span className="font-medium text-foreground">
-              {numberOfProjects !== undefined
-                ? numberOfProjects?.toString()
-                : '0'}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
               <span>Timeline</span>
             </div>
             <span className="font-medium text-foreground">
               <FormattedDate date={new Date(round.startTime)} /> -{' '}
               <FormattedDate date={new Date(round.endTime)} />
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-4 w-4" />
-              <span>Application Timeline</span>
-            </div>
-            <span className="font-medium text-foreground">
-              <FormattedDate date={new Date(round.applicationStartTime)} /> -{' '}
-              <FormattedDate date={new Date(round.applicationEndTime)} />
             </span>
           </div>
 
@@ -130,7 +103,7 @@ export function RoundCardDashboard({
         <CardFooter className="mt-auto p-4 pt-0">
           <Button
             className="w-full"
-            variant={status.text === 'Active' ? 'default' : 'outline'}
+            variant={status.text === 'Ended' ? 'default' : 'ghost'}
             size="sm"
             asChild
           >

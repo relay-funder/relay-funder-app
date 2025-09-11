@@ -1,8 +1,7 @@
-import Link from 'next/link';
-import { Clock, Calendar, Users, DollarSign, Info } from 'lucide-react';
+import { Clock, Calendar, Users, DollarSign } from 'lucide-react';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { FormattedDate } from '../formatted-date';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import {
@@ -16,77 +15,23 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-  Button,
   Badge,
   TabsTrigger,
-  CardTitle,
-  CardDescription,
 } from '@/components/ui';
-import { useAuth } from '@/contexts';
-import {
-  useRemoveRoundCampaign,
-  useUpdateRoundCampaign,
-} from '@/lib/hooks/useRounds';
-import { RoundAddDialog } from './add-dialog';
+import { RoundCardTabOverview } from './card-full-tab-overview';
+import { RoundCardTabCriteria } from './card-full-tab-criteria';
+import { RoundCardTabCampaigns } from './card-full-tab-campaigns';
+import { RoundCardTabRules } from './card-full-tab-rules';
 
 export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
-  const { mutateAsync: updateRoundCampaign, isPending: isUpdatePending } =
-    useUpdateRoundCampaign();
-  const { mutateAsync: removeRoundCampaign, isPending: isRemovePending } =
-    useRemoveRoundCampaign();
-  const { isAdmin, address } = useAuth();
-  const [addCampaignOpen, setAddCampaignOpen] = useState(false);
   const roundCampaigns = useMemo(() => {
-    return (
-      round.roundCampaigns?.filter((roundCampaign) => {
-        if (isAdmin) {
-          return true;
-        }
-        if (roundCampaign.status === 'APPROVED') {
-          return true;
-        }
-        return false;
-      }) ?? []
-    );
-  }, [round, isAdmin]);
+    return round.roundCampaigns ?? [];
+  }, [round]);
   const numberOfCampaigns = useMemo(() => {
     return roundCampaigns.length;
   }, [roundCampaigns]);
-  const onAddCampaign = useCallback(() => {
-    setAddCampaignOpen(true);
-  }, []);
-
-  const onApproveRoundCampaign = useCallback(
-    async (roundCampaign: { campaignId: number; roundId: number }) => {
-      await updateRoundCampaign({
-        roundId: roundCampaign.roundId,
-        campaignId: roundCampaign.campaignId,
-        status: 'APPROVED',
-      });
-    },
-    [updateRoundCampaign],
-  );
-  const onRejectRoundCampaign = useCallback(
-    async (roundCampaign: { campaignId: number; roundId: number }) => {
-      await updateRoundCampaign({
-        roundId: roundCampaign.roundId,
-        campaignId: roundCampaign.campaignId,
-        status: 'REJECTED',
-      });
-    },
-    [updateRoundCampaign],
-  );
-  const onRemoveRoundCampaign = useCallback(
-    async (roundCampaign: { campaignId: number; roundId: number }) => {
-      await removeRoundCampaign({
-        roundId: roundCampaign.roundId,
-        campaignId: roundCampaign.campaignId,
-      });
-    },
-    [removeRoundCampaign],
-  );
 
   if (!round || !round.id) {
     return (
@@ -185,160 +130,33 @@ export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
         <CardFooter className="mt-auto p-4 pt-0">
           <div className="w-full">
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+                <TabsTrigger value="criteria">Criteria</TabsTrigger>
+                <TabsTrigger value="campaigns">
+                  Campaigns{numberOfCampaigns > 0 && ` (${numberOfCampaigns})`}
+                </TabsTrigger>
                 <TabsTrigger value="rules">Rules</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>About this Round</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{round.description}</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Eligibility Criteria</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                      <div>
-                        <h4 className="font-medium">Project Requirements</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Your campaign must be open source and align with the
-                          round&apos;s goals. Specific requirements may apply.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Users className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                      <div>
-                        <h4 className="font-medium">Team Requirements</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Teams should demonstrate capability and commitment to
-                          their campaign.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RoundCardTabOverview round={round} />
+              </TabsContent>
+              <TabsContent value="criteria" className="mt-6 space-y-6">
+                <RoundCardTabCriteria round={round} />
               </TabsContent>
 
               <TabsContent value="campaigns" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Participating Campaigns</CardTitle>
-                    <CardDescription>
-                      Campaigns approved to participate in this funding round.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {numberOfCampaigns > 0 ? (
-                      <div className="space-y-3">
-                        {roundCampaigns.map((roundCampaign) => (
-                          <>
-                            <Link
-                              key={roundCampaign.campaign.id}
-                              href={`/campaigns/${roundCampaign.campaign.slug ?? roundCampaign.campaign.id}`}
-                              target="_blank"
-                              className="block rounded-lg border p-4 transition-colors hover:bg-muted"
-                            >
-                              <h4 className="font-medium">
-                                {roundCampaign.campaign.title}
-                              </h4>
-                              <h4 className="font-medium">
-                                {roundCampaign.status}
-                              </h4>
-                            </Link>
-                            {isAdmin && roundCampaign.status === 'PENDING' && (
-                              <>
-                                <Button
-                                  onClick={() =>
-                                    onApproveRoundCampaign(roundCampaign)
-                                  }
-                                  disabled={isUpdatePending}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  onClick={() =>
-                                    onRejectRoundCampaign(roundCampaign)
-                                  }
-                                  disabled={isUpdatePending}
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            )}
-                            {(isAdmin ||
-                              (roundCampaign.status !== 'APPROVED' &&
-                                roundCampaign.campaign.creatorAddress ===
-                                  address)) && (
-                              <Button
-                                onClick={() =>
-                                  onRemoveRoundCampaign(roundCampaign)
-                                }
-                                disabled={isRemovePending}
-                              >
-                                Remove
-                              </Button>
-                            )}
-                          </>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No campaigns have been approved for this round yet.
-                      </p>
-                    )}
-                    <Button className="w-full" onClick={onAddCampaign}>
-                      Add Campaign
-                    </Button>
-                  </CardContent>
-                </Card>
+                <RoundCardTabCampaigns round={round} />
               </TabsContent>
 
               <TabsContent value="rules" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Round Rules</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-1">
-                      <h4 className="font-medium">Matching Formula</h4>
-                      <p className="text-sm text-muted-foreground">
-                        This round utilizes a specific matching algorithm (e.g.,
-                        Quadratic Funding) to allocate pool funds based on
-                        community contributions.
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="font-medium">Distribution Schedule</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Matched funds are typically distributed to campaigns
-                        within a set timeframe following the round&apos;s
-                        conclusion.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RoundCardTabRules round={round} />
               </TabsContent>
             </Tabs>
           </div>
         </CardFooter>
       </Card>
-      {addCampaignOpen && (
-        <RoundAddDialog
-          round={round}
-          onClosed={() => setAddCampaignOpen(false)}
-        />
-      )}
     </>
   );
 }

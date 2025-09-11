@@ -21,7 +21,7 @@ export function CampaignCreateFormSummary() {
         startTime: new Date(values.startTime),
         endTime: new Date(values.endTime),
         creatorAddress: session?.data?.user.address,
-        status: 'CREATING',
+        status: 'DRAFT',
         transactionHash: null,
         campaignAddress: null,
         treasuryAddress: null,

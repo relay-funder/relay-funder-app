@@ -46,6 +46,7 @@ export function ExploreStories() {
           <CampaignList
             searchTerm={searchTerm}
             categoryFilter={selectedCategory}
+            withRounds={true}
           />
         </>
       )}

@@ -16,6 +16,18 @@ export interface GetRoundsStatsResponse {
   activeRounds: number;
   averageProgress: number;
 }
+export interface GetRoundCampaignResponseInstance {
+  id: number;
+  roundId: number;
+  campaignId: number;
+  reviewedAt: string | null;
+  onchainRecipientId: string | null;
+  recipientAddress: string | null;
+  submittedByWalletAddress: string | null;
+  txHash: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  campaign?: DbCampaign;
+}
 export interface GetRoundResponseInstance {
   id: number;
   title: string;
@@ -31,18 +43,8 @@ export interface GetRoundResponseInstance {
   createdAt: string;
   managerAddress: string;
   updatedAt: string;
-  roundCampaigns?: {
-    id: number;
-    roundId: number;
-    campaignId: number;
-    reviewedAt: string;
-    onchainRecipientId: string | null;
-    recipientAddress: string | null;
-    submittedByWalletAddress: string | null;
-    txHash: string | null;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    campaign: DbCampaign;
-  }[];
+  roundCampaigns?: GetRoundCampaignResponseInstance[];
+  recipientStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 export interface GetRoundResponse {
   round: GetRoundResponseInstance;

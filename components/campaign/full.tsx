@@ -10,13 +10,13 @@ import { CampaignLocation } from '@/components/campaign/location';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from './loading';
 import { useAuth } from '@/contexts';
-import { CampaignDashboardStatus } from './dashboard-status';
+import { CampaignStatus } from './status';
 import { CampaignError } from './error';
 
 export function CampaignFull({ slug }: { slug: string }) {
-  const { address, isAdmin } = useAuth();
+  const { address, isAdmin, isReady } = useAuth();
   const { data: campaignInstance, isPending } = useCampaign(slug);
-  if (isPending) {
+  if (isPending || !isReady) {
     return <CampaignLoading />;
   }
   const campaign = campaignInstance?.campaign;
@@ -55,7 +55,7 @@ export function CampaignFull({ slug }: { slug: string }) {
         <div className="relative flex flex-col p-0 lg:col-span-8">
           <CampaignMainImage campaign={campaign} />
           <div className="absolute pl-1 pt-1">
-            <CampaignDashboardStatus campaign={campaign} />
+            <CampaignStatus campaign={campaign} />
           </div>
         </div>
         <div className="lg:col-span-4">

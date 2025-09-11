@@ -5,16 +5,17 @@ import { Button } from '@/components/ui';
 import { RoundList } from '@/components/round/list';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
+import { useAuth } from '@/contexts';
 
 export function RoundExplore() {
   const [showRoundCreate, setShowRoundCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-
+  const { isAdmin } = useAuth();
   return (
     <PageHome
       header={
         <PageHeaderSearch
-          onCreate={() => setShowRoundCreate(true)}
+          onCreate={isAdmin ? () => setShowRoundCreate(true) : undefined}
           createTitle="Create Round"
           placeholder="Search Rounds"
           onSearchChanged={(search: string) => setSearchTerm(search)}

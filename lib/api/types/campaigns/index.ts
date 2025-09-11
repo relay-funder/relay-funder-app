@@ -27,7 +27,7 @@ export interface PostCampaignsRouteBody {
 
 export interface PaymentSummaryContribution {
   id: number;
-  status?: string | null;
+  status: string;
   amount: number;
   token?: string | null;
   user?: DisplayUser;

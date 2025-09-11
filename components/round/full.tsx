@@ -7,6 +7,7 @@ import { useRound } from '@/lib/hooks/useRounds';
 import { RoundLoading } from './loading';
 
 import { RoundCardFull } from './card-full';
+import { RoundMainImage } from './main-image';
 
 export function RoundFull({ id }: { id: number }) {
   const { data: roundInstance, isPending } = useRound(id);
@@ -22,10 +23,10 @@ export function RoundFull({ id }: { id: number }) {
   return (
     <PageHome header={header}>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <div className="relative flex flex-col p-0 lg:col-span-8">
-          {/*<RoundMainImage round={round} />*/}
+        <div className="relative flex flex-col p-0 lg:col-span-6">
+          <RoundMainImage round={round} />
         </div>
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-6">
           <RoundCardFull round={round} />
         </div>
       </div>

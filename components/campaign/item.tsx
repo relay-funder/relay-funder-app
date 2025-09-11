@@ -31,6 +31,7 @@ import ContractLink from '../page/contract-link';
 import { chainConfig } from '@/lib/web3';
 import { CampaignLocation } from './location';
 import { CampaignProgress } from './progress';
+import { CampaignRoundsIndicator } from './rounds-indicator';
 
 export function CampaignItem({ campaign, onSelect }: CampaignItemProps) {
   const categoryDetails = campaign?.category
@@ -117,6 +118,9 @@ export function CampaignItem({ campaign, onSelect }: CampaignItemProps) {
                 <UserInlineName user={campaign?.creator} />
               </div>
               <CampaignLocation campaign={campaign} />
+            </div>
+            <div className="mb-2 flex items-end justify-end gap-1">
+              <CampaignRoundsIndicator campaign={campaign} />
             </div>
             <p className="line-clamp-3 text-[12px] text-gray-600">
               {campaign?.description}

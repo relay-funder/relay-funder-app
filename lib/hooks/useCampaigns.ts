@@ -350,7 +350,7 @@ export function useInfiniteCampaigns(
 export function useInfiniteUserCampaigns(
   status = 'active',
   pageSize = 10,
-  rounds = false,
+  rounds = true,
 ) {
   return useInfiniteQuery<PaginatedResponse, Error>({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', status, pageSize],

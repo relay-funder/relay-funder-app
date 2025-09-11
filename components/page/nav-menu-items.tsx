@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
 import { useSidebar, useAuth } from '@/contexts';
 import { usePathname } from 'next/navigation';
-import { Grid, Home, Star, BookCheck } from 'lucide-react';
+import { Grid, Home, Star, CircleChevronUp } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
 interface NavItem {
@@ -31,6 +31,11 @@ export function PageNavMenuItems() {
         label: 'Collections',
         href: '/collections',
       });
+      items.push({
+        icon: <CircleChevronUp className="h-6 w-6" />,
+        label: 'Rounds',
+        href: '/rounds',
+      });
     }
     if (authenticated && isAdmin) {
       items.push({
@@ -39,7 +44,7 @@ export function PageNavMenuItems() {
         href: '/admin',
       });
       items.push({
-        icon: <BookCheck className="h-6 w-6" />,
+        icon: <CircleChevronUp className="h-6 w-6" />,
         label: 'Admin Rounds',
         href: '/admin/rounds',
       });

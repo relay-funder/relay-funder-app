@@ -13,7 +13,6 @@ import { PatchRoundResponse, PostRoundsResponse } from '@/lib/api/types';
 
 export async function GET(req: Request) {
   try {
-    await checkAuth(['admin']);
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');

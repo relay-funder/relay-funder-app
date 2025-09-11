@@ -9,7 +9,7 @@ import { CampaignProgress } from './campaign/progress';
 import { CampaignDaysLeftBlock } from './campaign/days-left-block';
 import { CampaignMainImage } from './campaign/main-image';
 import { CampaignLoading } from './campaign/loading';
-import { CampaignDashboardStatus } from './campaign/dashboard-status';
+import { CampaignStatus } from './campaign/status';
 import type { DbCampaign } from '@/types/campaign';
 
 export default function ProjectInfo({ campaign }: { campaign?: DbCampaign }) {
@@ -30,7 +30,7 @@ export default function ProjectInfo({ campaign }: { campaign?: DbCampaign }) {
         <CardHeader className="relative p-0">
           <CampaignMainImage campaign={campaign} />
           <div className="absolute pl-1">
-            <CampaignDashboardStatus campaign={campaign} />
+            <CampaignStatus campaign={campaign} />
           </div>
         </CardHeader>
         <CardContent>

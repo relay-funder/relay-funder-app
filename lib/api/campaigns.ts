@@ -1,8 +1,7 @@
 import { db, Prisma } from '@/server/db';
 import type { Campaign, CampaignImage, Payment, User } from '@/server/db';
 import { DbCampaign } from '@/types/campaign';
-import { CampaignStatus, CampaignCreatedEvent } from '@/types/campaign';
-import { chainConfig, createPublicClient, http } from '@/lib/web3';
+import { CampaignStatus } from '@/types/campaign';
 import { QueryClient } from '@tanstack/react-query';
 import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
 import {
@@ -12,6 +11,7 @@ import {
 } from './types';
 import { getPaymentUser, getUserWithStates } from './user';
 import { ApiConflictError } from './error';
+import { mapRound } from './rounds';
 
 export type PaymentWithUser = Payment & {
   user: User;
@@ -49,97 +49,6 @@ export async function getCampaignBySlug(
   }
 }
 
-const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-interface IPublicClient {
-  getLogs: (arg0: unknown) => Promise<unknown>;
-}
-async function getPublicClient(): Promise<IPublicClient> {
-  const RPC_URL = chainConfig.rpcUrl;
-  if (!FACTORY_ADDRESS || !RPC_URL) {
-    throw new Error('Campaign factory address or RPC URL not configured');
-  }
-
-  return createPublicClient({
-    chain: {
-      ...chainConfig.defaultChain,
-      contracts: {
-        multicall3: {
-          address: '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
-          blockCreated: 14353601,
-        },
-      },
-    },
-    transport: http(RPC_URL),
-    batch: {
-      multicall: {
-        batchSize: 1024,
-        wait: 16,
-      },
-    },
-  }) as IPublicClient;
-}
-
-async function getCampaignCreatedEvents(client: IPublicClient) {
-  return client.getLogs({
-    address: FACTORY_ADDRESS as `0x${string}`,
-    event: {
-      type: 'event',
-      name: 'CampaignInfoFactoryCampaignCreated',
-      inputs: [
-        { type: 'bytes32', name: 'identifierHash', indexed: true },
-        { type: 'address', name: 'campaignInfoAddress', indexed: true },
-      ],
-    },
-    fromBlock: 0n,
-    toBlock: 'latest',
-  });
-}
-
-function formatCampaignData(
-  dbCampaign: DbCampaign,
-  event: CampaignCreatedEvent | undefined,
-  forceEvent = true,
-) {
-  if (forceEvent && (!event || !event.args)) {
-    console.error('No matching event found for campaign:', {
-      campaignId: dbCampaign.id,
-      campaignAddress: dbCampaign.campaignAddress,
-    });
-    return null;
-  }
-
-  return {
-    id: dbCampaign.id,
-    campaignAddress: dbCampaign.campaignAddress,
-    creatorAddress: dbCampaign.creatorAddress,
-    title: dbCampaign.title,
-    description: dbCampaign.description,
-    status: dbCampaign.status,
-    startTime: dbCampaign.startTime,
-    endTime: dbCampaign.endTime,
-    fundingGoal: dbCampaign.fundingGoal,
-    // deprecated, remove:  8<
-    address: dbCampaign.campaignAddress,
-    owner: dbCampaign.creatorAddress,
-    launchTime: Math.floor(
-      new Date(dbCampaign.startTime).getTime() / 1000,
-    ).toString(),
-    deadline: Math.floor(
-      new Date(dbCampaign.endTime).getTime() / 1000,
-    ).toString(),
-    goalAmount: dbCampaign.fundingGoal,
-    // >8
-
-    images: dbCampaign.images,
-    slug: dbCampaign.slug,
-    location: dbCampaign.location,
-    category: dbCampaign.category,
-    treasuryAddress: dbCampaign.treasuryAddress,
-    paymentSummary: dbCampaign.paymentSummary,
-    creator: dbCampaign.creator,
-  };
-}
-
 export async function listCampaigns({
   admin = false,
   status = 'active',
@@ -147,7 +56,6 @@ export async function listCampaigns({
   pageSize = 10,
   rounds = false,
   skip = 0,
-  forceEvents = false,
   creatorAddress,
 }: {
   admin?: boolean;
@@ -156,7 +64,6 @@ export async function listCampaigns({
   pageSize?: number;
   rounds?: boolean;
   skip?: number;
-  forceEvents?: boolean;
   creatorAddress?: string;
 }) {
   const statusList = [CampaignStatus.ACTIVE];
@@ -195,7 +102,6 @@ export async function listCampaigns({
     transactionHash: { not: null },
     creatorAddress,
   };
-  console.log(where);
   const [dbCampaigns, totalCount] = await Promise.all([
     db.campaign.findMany({
       where,
@@ -230,11 +136,6 @@ export async function listCampaigns({
     ),
   );
 
-  let events: CampaignCreatedEvent[] = [];
-  if (forceEvents) {
-    const client = await getPublicClient();
-    events = (await getCampaignCreatedEvents(client)) as CampaignCreatedEvent[];
-  }
   const combinedCampaigns = filteredDbCampaigns
     .map((dbCampaign) => {
       return {
@@ -245,28 +146,17 @@ export async function listCampaigns({
         ),
       };
     })
-    .map((dbCampaign: DbCampaign) => {
-      const event = events.find(
-        (onChainCampaign) =>
-          onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
-          dbCampaign.campaignAddress?.toLowerCase(),
-      ) as CampaignCreatedEvent | undefined;
+    .map((dbCampaign) => {
       if (rounds) {
-        return formatCampaignData(
-          {
-            ...dbCampaign,
-            status: dbCampaign.status,
-            rounds:
-              dbCampaign.RoundCampaigns?.map(({ Round }) => ({
-                id: Round.id,
-                title: Round.title,
-              })) ?? [],
-          },
-          event,
-          forceEvents,
-        );
+        return mapCampaign({
+          ...dbCampaign,
+          rounds:
+            dbCampaign.RoundCampaigns?.map(({ Round, status }) =>
+              mapRound(Round, status),
+            ) ?? [],
+        });
       }
-      return formatCampaignData(dbCampaign, event, forceEvents);
+      return mapCampaign(dbCampaign);
     })
     .filter(Boolean);
   return {
@@ -286,7 +176,7 @@ export async function prefetchCampaigns(queryClient: QueryClient) {
   return queryClient.prefetchInfiniteQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10],
     initialPageParam: 1,
-    queryFn: () => listCampaigns({}),
+    queryFn: () => listCampaigns({ rounds: true }),
   });
 }
 // Prefetching campaign
@@ -469,10 +359,16 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
         orderBy: { createdAt: 'desc' },
         take: 10,
       },
+      RoundCampaigns: {
+        include: {
+          Round: true,
+        },
+      },
       _count: {
         select: {
           comments: true, // { where: { deleted: false, reportCount: { lt: 5 } } },
           updates: true,
+          RoundCampaigns: true,
         },
       },
     },
@@ -486,6 +382,15 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
 
   return {
     ...instance,
+    RoundCampaigns: undefined,
+    rounds: instance.RoundCampaigns.map((roundCampaign) =>
+      mapRound(roundCampaign.Round, roundCampaign.status),
+    ),
+    _count: {
+      ...instance._count,
+      RoundCampaign: undefined,
+      rounds: instance._count.RoundCampaigns,
+    },
     creator,
     paymentSummary,
   } as GetCampaignResponseInstance;
@@ -661,4 +566,14 @@ export async function getStats({
     stats.averageProgress = 0;
   }
   return stats;
+}
+interface MapCampaignInput extends DbCampaign {
+  RoundCampaigns?: unknown;
+}
+export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
+  const { RoundCampaigns, ...dbCampaignWithoutDbData } = dbCampaign;
+  if (RoundCampaigns) {
+    // pass
+  }
+  return dbCampaignWithoutDbData;
 }
