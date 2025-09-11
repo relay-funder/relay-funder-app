@@ -69,9 +69,6 @@ export function CampaignAdminDeployButton({
       try {
         onStateChanged('setup');
         await createCampaignContract({
-          startTime: campaign.startTime as unknown as string,
-          endTime: campaign.endTime as unknown as string,
-          fundingGoal: campaign.fundingGoal,
           campaignId: campaign.id,
           onStateChanged,
         });

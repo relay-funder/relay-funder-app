@@ -88,9 +88,6 @@ export function useCampaignFormCreate({
           throw new Error('Create campaign contract failure');
         }
         await createCampaignContract({
-          startTime: data.startTime,
-          endTime: data.endTime,
-          fundingGoal: data.fundingGoal,
           onStateChanged: onStateChanged,
           campaignId: newCampaign.campaignId,
         });

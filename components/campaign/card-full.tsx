@@ -11,6 +11,7 @@ import { FavoriteButton } from '@/components/favorite-button';
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { TreasuryBalanceCompact } from './treasury-balance';
 import { useAuth } from '@/contexts';
 
 export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
@@ -25,6 +26,10 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
     <Card className="sticky top-8">
       <CardContent className="space-y-6 p-6">
         <CampaignProgress campaign={campaign} />
+
+        {campaign.treasuryAddress && (
+          <TreasuryBalanceCompact treasuryAddress={campaign.treasuryAddress} />
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-1">

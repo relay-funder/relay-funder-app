@@ -21,6 +21,10 @@ const PROCESS_STEP_INFO: Record<
     title: 'Setup Transaction',
     description: 'We are setting up the transaction that creates the campaign.',
   },
+  validatingPlatform: {
+    title: 'Validating Platform',
+    description: 'We are validating the platform setup and configuration.',
+  },
   create: {
     title: 'Create Campaign in Draft',
     description: 'We store your inputs as campaign in draft mode.',
@@ -66,6 +70,7 @@ export function CampaignCreateProcessDisplay({
   const orderedStates: (keyof typeof CreateProcessStates)[] = useMemo(() => {
     return [
       'setup',
+      'validatingPlatform',
       'create',
       'createOnChain',
       'waitForCreationConfirmation',

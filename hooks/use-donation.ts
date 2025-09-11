@@ -13,6 +13,7 @@ const debug = process.env.NODE_ENV !== 'production';
 export function useDonationCallback({
   campaign,
   amount,
+  tipAmount = '0',
   poolAmount,
   selectedToken,
   isAnonymous = false,
@@ -20,6 +21,7 @@ export function useDonationCallback({
 }: {
   campaign: DbCampaign;
   amount: string;
+  tipAmount?: string;
   poolAmount: number;
   selectedToken: string;
   isAnonymous?: boolean;
@@ -69,6 +71,7 @@ export function useDonationCallback({
       const tx = await requestTransaction({
         address: campaign.treasuryAddress,
         amount,
+        tipAmount,
         wallet,
         onStateChanged,
       });
@@ -116,6 +119,7 @@ export function useDonationCallback({
     createPayment,
     updatePaymentStatus,
     amount,
+    tipAmount,
     poolAmount,
     campaign?.id,
     campaign?.treasuryAddress,

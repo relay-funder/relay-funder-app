@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletBalance } from './balance';
 import { CampaignDonationWalletAmount } from './amount';
+import { CampaignDonationWalletTip } from './tip';
 import { CampaignDonationWalletProcess } from './process';
 import { CampaignDonationAkashic } from '../akashic';
 import { CampaignDonationAnonymous } from '../anonymous';
@@ -17,6 +18,7 @@ export function CampaignDonationWalletDetails({
 }) {
   const [selectedToken, setSelectedToken] = useState('USDC');
   const [amount, setAmount] = useState('0');
+  const [tipAmount, setTipAmount] = useState('0');
   const [donationToAkashic, setDonationToAkashic] = useState(0);
   const [donationAnonymous, setDonationAnonymous] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -29,6 +31,11 @@ export function CampaignDonationWalletDetails({
           amount={amount}
           selectedToken={selectedToken}
         />
+        <CampaignDonationWalletTip
+          tipAmount={tipAmount}
+          selectedToken={selectedToken}
+          onTipAmountChanged={setTipAmount}
+        />
         <CampaignDonationWalletBalance selectedToken={selectedToken} />
         <CampaignDonationAkashic onChange={setDonationToAkashic} />
         <CampaignDonationAnonymous
@@ -39,6 +46,7 @@ export function CampaignDonationWalletDetails({
       <CampaignDonationWalletProcess
         campaign={campaign}
         amount={amount}
+        tipAmount={tipAmount}
         donationToAkashic={donationToAkashic}
         selectedToken={selectedToken}
         anonymous={donationAnonymous}

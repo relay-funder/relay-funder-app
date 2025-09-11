@@ -8,11 +8,13 @@ export async function requestTransaction({
   wallet,
   address,
   amount,
+  tipAmount = '0',
   onStateChanged,
 }: {
   wallet: ConnectedWallet;
   address: string;
   amount: string;
+  tipAmount?: string;
   onStateChanged: (arg0: keyof typeof DonationProcessStates) => void;
 }) {
   if (!wallet || !(await wallet.isConnected())) {
@@ -54,32 +56,42 @@ export async function requestTransaction({
         ? parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)
         : 6;
   }
-  const amountInUSDC = ethers.parseUnits(amount || '0', unit);
-  debug && console.log('Amount in USDC:', amountInUSDC.toString());
+  const pledgeAmountInUSDC = ethers.parseUnits(amount || '0', unit);
+  const tipAmountInUSDC = ethers.parseUnits(tipAmount || '0', unit);
+  const totalAmount = pledgeAmountInUSDC + tipAmountInUSDC;
 
-  // First approve the treasury to spend USDC
+  debug && console.log('Pledge amount in USDC:', pledgeAmountInUSDC.toString());
+  debug && console.log('Tip amount in USDC:', tipAmountInUSDC.toString());
+  debug && console.log('Total amount in USDC:', totalAmount.toString());
+
+  // First approve the treasury to spend USDC (pledge + tip)
   debug && console.log('Treasury address:', address);
   debug && console.log('Approving USDC spend...');
   onStateChanged('approveUsdcContract');
-  const approveTx = await usdcContract.approve(address, amountInUSDC);
+  const approveTx = await usdcContract.approve(address, totalAmount);
   debug && console.log('Approval transaction hash:', approveTx.hash);
   onStateChanged('waitForUsdcContractConfirmation');
   await approveTx.wait();
   debug && console.log('USDC approval confirmed');
 
-  // Make the pledge transaction
+  // Make the pledge transaction using parameters from kwr_flow_test.sh
   debug && console.log('Initializing treasury contract...');
   const treasuryABI = [
-    'function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)',
+    'function pledgeWithoutAReward(bytes32 pledgeId, address backer, uint256 pledgeAmount, uint256 tipAmount) external',
   ];
   const treasuryContract = new ethers.Contract(address!, treasuryABI, signer);
+
+  // Generate pledge ID as per shell script pattern
+  const pledgeId = ethers.keccak256(ethers.toUtf8Bytes(`pledge-${Date.now()}-${userAddress}`));
 
   debug && console.log('Estimating gas for pledge transaction...');
   let estimatedGas = 220000n;
   try {
     estimatedGas = await treasuryContract.pledgeWithoutAReward.estimateGas(
+      pledgeId,
       userAddress,
-      amountInUSDC,
+      pledgeAmountInUSDC,
+      tipAmountInUSDC,
     );
   } catch {}
   debug && console.log('Estimated gas:', estimatedGas.toString());
@@ -87,8 +99,10 @@ export async function requestTransaction({
   debug && console.log('Sending pledge transaction...');
   onStateChanged('pledgeContract');
   const tx = await treasuryContract.pledgeWithoutAReward(
+    pledgeId,
     userAddress,
-    amountInUSDC,
+    pledgeAmountInUSDC,
+    tipAmountInUSDC,
     {
       gasLimit: (estimatedGas * 120n) / 100n,
     },

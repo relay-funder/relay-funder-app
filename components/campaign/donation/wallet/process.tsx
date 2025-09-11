@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 export function CampaignDonationWalletProcess({
   campaign,
   amount,
+  tipAmount = '0',
   selectedToken,
   donationToAkashic,
   anonymous,
@@ -18,6 +19,7 @@ export function CampaignDonationWalletProcess({
 }: {
   campaign: DbCampaign;
   amount: string;
+  tipAmount?: string;
   selectedToken: string;
   donationToAkashic: number;
   anonymous: boolean;
@@ -44,6 +46,7 @@ export function CampaignDonationWalletProcess({
   } = useDonationCallback({
     campaign,
     amount,
+    tipAmount,
     poolAmount,
     isAnonymous: anonymous,
     selectedToken,

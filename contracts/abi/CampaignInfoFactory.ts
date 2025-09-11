@@ -85,6 +85,57 @@ export const CampaignInfoFactoryABI = [
   },
   {
     type: 'function',
+    name: 'identifierToCampaignInfo',
+    inputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'isValidCampaignInfo',
+    inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'updateImplementation',
+    inputs: [
+      {
+        name: 'newImplementation',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'owner',
     inputs: [],
     outputs: [
@@ -137,6 +188,12 @@ export const CampaignInfoFactoryABI = [
   },
   {
     type: 'event',
+    name: 'CampaignInfoFactoryCampaignInitialized',
+    inputs: [],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'OwnershipTransferred',
     inputs: [
       {
@@ -166,7 +223,34 @@ export const CampaignInfoFactoryABI = [
   },
   {
     type: 'error',
+    name: 'CampaignInfoFactoryCampaignWithSameIdentifierExists',
+    inputs: [
+      {
+        name: 'identifierHash',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'cloneExists',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+  },
+  {
+    type: 'error',
     name: 'CampaignInfoFactoryInvalidInput',
     inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'CampaignInfoFactoryPlatformNotListed',
+    inputs: [
+      {
+        name: 'platformHash',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
   },
 ];

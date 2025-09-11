@@ -22,6 +22,8 @@ enum PaymentType {
   SELL
 }
 
+
+
 enum RecipientStatus {
   PENDING
   APPROVED
@@ -33,6 +35,8 @@ enum Status {
   ACTIVE
   CLOSED
 }
+
+
 
 model Campaign {
   id              Int                  @id @default(autoincrement())
@@ -48,9 +52,9 @@ model Campaign {
   updatedAt       DateTime             @updatedAt
   campaignAddress String?              @unique
   slug            String               @unique
-  location        String?
-  treasuryAddress String?
-  category        String?
+  location              String?
+  treasuryAddress       String?
+  category              String?
   collections     CampaignCollection[]
   images          CampaignImage[]
   updates         CampaignUpdate[]

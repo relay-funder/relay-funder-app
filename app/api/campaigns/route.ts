@@ -153,16 +153,31 @@ export async function PATCH(req: Request) {
     if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
       throw new ApiAuthNotAllowed('User cannot modify this campaign');
     }
-    await db.campaign.update({
-      where: {
-        id: instance.id,
-      },
-      data: {
-        status,
-        transactionHash,
-        campaignAddress,
-      },
-    });
+    // Only update fields that changed; avoid unique constraint conflicts
+    const data: Record<string, unknown> = {};
+    if (typeof status !== 'undefined') data.status = status;
+    if (transactionHash) data.transactionHash = transactionHash;
+    // Only set campaignAddress if it's not already set or matches current
+    if (
+      campaignAddress &&
+      (!instance.campaignAddress ||
+        instance.campaignAddress === campaignAddress)
+    ) {
+      data.campaignAddress = campaignAddress;
+    }
+
+    if (Object.keys(data).length > 0) {
+      try {
+        await db.campaign.update({
+          where: { id: instance.id },
+          data,
+        });
+      } catch (e: unknown) {
+        // Swallow unique constraint error on campaignAddress to prevent duplicate failures
+        // Client can refetch; backend create-onchain already persisted values
+        console.error('PATCH /api/campaigns update error', e);
+      }
+    }
 
     return response({
       campaign: await getCampaign(instance.id),

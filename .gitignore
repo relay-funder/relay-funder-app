@@ -33,6 +33,7 @@ npm-debug.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.template
 
 # vercel
 .vercel
@@ -53,3 +54,5 @@ dev_modules
 # Prisma (and possibly other) build-generated files
 
 .generated
+cc-protocol/.env.foundry
+!cc-protocol/.env.foundry.template

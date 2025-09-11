@@ -16,7 +16,7 @@ export const config: CreateConfigParameters = {
   transports: {
     [defaultChain.id]: http(chainConfig.rpcUrl),
     [sepolia.id]: http(),
-    [celo.id]: http(),
+    [celo.id]: http(chainConfig.rpcUrl), // Use same RPC for all Celo chains
     [mainnet.id]: http(),
   },
   ssr: true,
