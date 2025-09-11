@@ -193,7 +193,7 @@ type PaymentTokenList = {
   campaignId: number;
   token: string;
   amount: number;
-  count: bigint;
+  count: number;
 }[];
 
 export async function getPaymentMap(idList: number[], confirmed: boolean) {
@@ -218,7 +218,18 @@ export async function getPaymentMap(idList: number[], confirmed: boolean) {
           "campaignId"
       ;
         `;
-  return db.$queryRaw(query) as Promise<PaymentTokenList>;
+  const results = await db.$queryRaw(query) as Array<{
+    campaignId: number;
+    token: string;
+    amount: number;
+    count: bigint;
+  }>;
+  
+  // Convert BigInt count values to numbers to avoid JSON serialization errors
+  return results.map(result => ({
+    ...result,
+    count: Number(result.count)
+  })) as PaymentTokenList;
 }
 export function getEmptyPaymentSummary(): GetCampaignPaymentSummary {
   return {
@@ -249,11 +260,9 @@ export function summarizePaymentMap(
   }
 }
 export function countPaymentMap(id: number, paymentMap: PaymentTokenList) {
-  return Number(
-    paymentMap
-      .filter(({ campaignId }) => campaignId === id)
-      .reduce((accumulator, { count }) => accumulator + count, 0n),
-  );
+  return paymentMap
+    .filter(({ campaignId }) => campaignId === id)
+    .reduce((accumulator, { count }) => accumulator + count, 0);
 }
 export async function getPaymentSummaryList(idList: number[]) {
   const paymentSummaryList: Record<number, GetCampaignPaymentSummary> = {};
