@@ -3,6 +3,7 @@ import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { formatAddress } from '@/lib/format-address';
 import { cn } from '@/lib/utils';
 import { DbCampaign } from '@/types/campaign';
+import { CampaignInfoDialog } from './info';
 export function CampaignProgress({
   campaign,
   className,
@@ -25,6 +26,7 @@ export function CampaignProgress({
         title={`Treasury Address ${campaign?.treasuryAddress ?? 'No Treasury Deployed'}`}
       >
         {formatAddress(campaign?.treasuryAddress ?? '')} Raised
+        <CampaignInfoDialog campaign={campaign} />
       </div>{' '}
       <div className="flex flex-row justify-between text-3xl font-bold text-green-600">
         <span>{amountRaised}</span>
