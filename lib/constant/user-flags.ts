@@ -1,0 +1,14 @@
+export const USER_FLAGS = [
+  // admin
+  'ROUND_MANAGER',
+  'CAMPAIGN_APPROVER',
+  'CAMPAIGN_MODERATOR',
+  'USER_MODERATOR',
+  'CONTENT_MODERATOR',
+  'SUPPORT',
+  // creator
+  'CREATOR_PROXY',
+  // user
+  'SERVER_GAS',
+  'BYPASS_HUMANITY_SCORE',
+];
