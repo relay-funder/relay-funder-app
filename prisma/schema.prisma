@@ -17,6 +17,14 @@ enum CampaignStatus {
   FAILED
 }
 
+enum RoundStatus {
+  CREATED
+  OPEN
+  ACTIVE
+  ENDED
+  CLOSED
+}
+
 enum PaymentType {
   BUY
   SELL
@@ -233,6 +241,7 @@ model Round {
   media             Media[]
   mediaOrder        Int[]
   approvedResult    Json?
+  status            RoundStatus      @default(CREATED)
 }
 
 model RoundCampaigns {
