@@ -2,24 +2,13 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import { ApiAuthNotAllowed, ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
-import { z } from 'zod';
 import { getUser } from '@/lib/api/user';
 import { getCampaign } from '@/lib/api/campaigns';
 import { roundIsActive } from '@/lib/api/rounds';
-
-export const PostPaymentBodyRouteSchema = z.object({
-  amount: z.string(),
-  token: z.string(),
-  isAnonymous: z.boolean(),
-  type: z.enum(['SELL', 'BUY']),
-  status: z.enum(['confirming']),
-  transactionHash: z.string(),
-  campaignId: z.number(),
-});
-export const PatchPaymentBodyRouteSchema = z.object({
-  status: z.enum(['confirmed', 'failed']),
-  transactionHash: z.string(),
-});
+import {
+  PatchPaymentBodyRouteSchema,
+  PostPaymentBodyRouteSchema,
+} from '@/lib/api/types/campaigns/payments';
 
 export async function POST(req: Request) {
   try {
@@ -73,7 +62,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const session = await checkAuth(['user']);
-    const data = await req.json();
+    const data = PatchPaymentBodyRouteSchema.parse(await req.json());
 
     const instance = await db.payment.findUnique({
       where: { id: data.paymentId },
