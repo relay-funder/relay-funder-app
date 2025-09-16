@@ -146,10 +146,18 @@ interface IUpdateCampaignData {
   bannerImage?: File | null;
 }
 async function updateCampaignData(variables: IUpdateCampaignData) {
+  const formDataToSend = new FormData();
+  formDataToSend.append('campaignId', `${variables.campaignId}`);
+  formDataToSend.append('title', variables.title);
+  formDataToSend.append('description', variables.description);
+  formDataToSend.append('location', variables.location);
+  formDataToSend.append('category', variables.category);
+  if (variables.bannerImage) {
+    formDataToSend.append('bannerImage', variables.bannerImage);
+  }
   const response = await fetch('/api/campaigns/user', {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(variables),
+    body: formDataToSend,
   });
 
   if (!response.ok) {
