@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { useMemo, useEffect, useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui';
 
-export function RoundMainImage({
+export function RoundMainImageAvatar({
   round,
 }: {
   round?: {
@@ -60,24 +60,19 @@ export function RoundMainImage({
     }
   }, [imageUrl]);
   return (
-    <div className="lg:col-span-8">
-      <div className="space-y-6">
-        <div className="relative aspect-video overflow-hidden rounded-xl shadow-lg">
-          {(typeof imageUrl === 'string' || mainImageObject !== null) && (
-            <Image
-              src={
-                mainImageObject
-                  ? mainImageObject
-                  : (imageUrl as unknown as string)
-              }
-              alt={alt}
-              fill
-              className="object-cover"
-              priority
-            />
-          )}
-        </div>
-      </div>
-    </div>
+    <Avatar className="h-12 w-12 border">
+      {imageUrl ? (
+        <AvatarImage
+          src={
+            mainImageObject ? mainImageObject : (imageUrl as unknown as string)
+          }
+          alt={alt}
+          className="object-cover"
+        />
+      ) : null}
+      <AvatarFallback className="text-lg font-semibold">
+        {alt.charAt(0).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
   );
 }

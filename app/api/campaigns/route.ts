@@ -101,17 +101,6 @@ export async function POST(req: Request) {
         location: location || undefined,
         category: category || undefined,
         slug,
-        images: imageUrl
-          ? {
-              create: {
-                imageUrl,
-                isMainImage: true,
-              },
-            }
-          : undefined,
-      },
-      include: {
-        images: true,
       },
     });
     if (imageUrl) {

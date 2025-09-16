@@ -5,7 +5,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Clock, Calendar, DollarSign } from 'lucide-react';
@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts';
 import { useMemo } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { RoundCardCampaignRemoveButton } from './card-campaign-remove-button';
+import { RoundMainImageAvatar } from './main-image-avatar';
 
 export function RoundCardMinimal({
   round,
@@ -60,18 +61,7 @@ export function RoundCardMinimal({
       >
         <CardHeader className="border-b p-4">
           <div className="flex items-start gap-4">
-            <Avatar className="h-12 w-12 border">
-              {round.logoUrl ? (
-                <AvatarImage
-                  src={round.logoUrl}
-                  alt={`${round.title} logo`}
-                  className="object-cover"
-                />
-              ) : null}
-              <AvatarFallback className="text-lg font-semibold">
-                {round.title ? round.title.charAt(0).toUpperCase() : 'R'}
-              </AvatarFallback>
-            </Avatar>
+            <RoundMainImageAvatar round={round} />
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">

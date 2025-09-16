@@ -47,7 +47,15 @@ export function RoundCreateFormSummary() {
         tags: [],
         blockchain: '',
         managerAddress: session?.data?.user.address,
-        logoUrl,
+        media: [
+          {
+            id: 'unsaved',
+            url: logoUrl,
+            mimeType: 'image/unknown',
+            caption: null,
+          },
+        ],
+        mediaOrder: ['unsaved'],
       } as GetRoundResponseInstance;
     } catch {
       return undefined;

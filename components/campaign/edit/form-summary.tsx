@@ -30,14 +30,14 @@ export function CampaignEditFormSummary({
         category: values.category,
         createdAt: campaign.createdAt,
         updatedAt: new Date(),
-        images: [
+        media: [
           {
-            id: 0,
-            imageUrl: values.bannerImage,
-            isMainImage: true,
-            campaignId: 0,
+            id: 'unsaved',
+            url: values.bannerImage,
+            mimeType: 'image/unknown',
           },
         ],
+        mediaOrder: ['unsaved'],
         slug: campaign.slug,
         location: values.location,
         paymentSummary: campaign.paymentSummary ?? {},

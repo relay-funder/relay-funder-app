@@ -1,4 +1,4 @@
-import { Campaign, db, Round, RoundCampaigns } from '@/server/db';
+import { Campaign, db, Media, Round, RoundCampaigns } from '@/server/db';
 import {
   GetRoundResponseInstance,
   GetRoundsStatsResponse,
@@ -12,6 +12,7 @@ import { isFuture, isPast } from 'date-fns';
 export function mapRound(
   round: Round & {
     roundCampaigns?: (RoundCampaigns & { Campaign: Campaign })[];
+    media?: Media[];
   },
   status?: 'PENDING' | 'APPROVED' | 'REJECTED',
   roundCampaignId?: number,
@@ -22,6 +23,7 @@ export function mapRound(
     applicationStart,
     applicationClose,
     poolId,
+    imageUrl,
     ...roundWithoutDeprecated
   } = round;
   return {
@@ -42,6 +44,18 @@ export function mapRound(
         reviewedAt: roundCampaign.reviewedAt?.toISOString() ?? null,
         campaign: mapCampaign(roundCampaign.Campaign),
       })) ?? [],
+    media:
+      Array.isArray(round.media) && round.media.length
+        ? round.media
+        : [
+            {
+              id: 'unknown',
+              url: imageUrl as string,
+              mimeType: 'image/unknown',
+              caption: null,
+            },
+          ],
+    mediaOrder: round.mediaOrder ? (round.mediaOrder as string[]) : [],
     // transient
     recipientStatus: status,
     roundCampaignId: roundCampaignId,

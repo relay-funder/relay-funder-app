@@ -12,9 +12,6 @@ import {
   CardContent,
   CardHeader,
   CardFooter,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   Badge,
   TabsTrigger,
 } from '@/components/ui';
@@ -22,6 +19,7 @@ import { RoundCardTabOverview } from './card-full-tab-overview';
 import { RoundCardTabCriteria } from './card-full-tab-criteria';
 import { RoundCardTabCampaigns } from './card-full-tab-campaigns';
 import { RoundCardTabRules } from './card-full-tab-rules';
+import { RoundMainImageAvatar } from './main-image-avatar';
 
 export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
   const status = useRoundStatus(round);
@@ -46,18 +44,7 @@ export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
       <Card className="flex h-full flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md">
         <CardHeader className="border-b p-4">
           <div className="flex items-start gap-4">
-            <Avatar className="h-12 w-12 border">
-              {round.logoUrl ? (
-                <AvatarImage
-                  src={round.logoUrl}
-                  alt={`${round.title} logo`}
-                  className="object-cover"
-                />
-              ) : null}
-              <AvatarFallback className="text-lg font-semibold">
-                {round.title ? round.title.charAt(0).toUpperCase() : 'R'}
-              </AvatarFallback>
-            </Avatar>
+            <RoundMainImageAvatar round={round} />
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">
