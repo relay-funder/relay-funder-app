@@ -318,8 +318,8 @@ model Withdrawal {
   createdAt       DateTime @default(now())
   createdBy       User     @relation(name: "WithdrawalCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
   createdById     Int
-  approvedBy      User     @relation(name: "WithdrawalApprovedBy", fields: [approvedById], references: [id])
-  approvedById    Int
+  approvedBy      User?    @relation(name: "WithdrawalApprovedBy", fields: [approvedById], references: [id])
+  approvedById    Int?
   amount          String
   token           String
   notes           String?
