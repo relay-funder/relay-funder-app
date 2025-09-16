@@ -70,8 +70,8 @@ export function CampaignCreateProcessDisplay({
   const orderedStates: (keyof typeof CreateProcessStates)[] = useMemo(() => {
     return [
       'setup',
-      'validatingPlatform',
       'create',
+      'validatingPlatform',
       'createOnChain',
       'waitForCreationConfirmation',
       'updateDbCampaign',
