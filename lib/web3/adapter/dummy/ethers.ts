@@ -10,6 +10,7 @@ interface IContractReturn {
       event: string;
       args: { treasuryAddress: string; campaignInfo: string };
     }[];
+    logs: { topics: string[]; address: string }[];
   }>;
   hash: string;
 }
@@ -42,6 +43,13 @@ async function getMockContractReturn() {
             },
           },
         ],
+        // CampaignInfoFactoryCampaignCreated
+        logs: [
+          {
+            topics: ['CampaignInfoFactoryCampaignCreated(bytes32,address)'],
+            adhress: `0x${Math.round(Math.random() * 100000).toString(16)}`,
+          },
+        ],
       };
     },
     hash: `0x${Math.round(Math.random() * 100000).toString(16)}`,
@@ -68,10 +76,22 @@ async function getMockContractSimpleNumberReturn() {
 }
 
 interface IContractBase {
-  estimateGas: (address: string, usdc: bigint) => Promise<bigint>; // Method type
+  estimateGas: (
+    arg0: string | bigint,
+    arg1: string | bigint,
+    arg2?: bigint,
+    arg3?: bigint,
+    options?: { gasLimit: bigint },
+  ) => Promise<bigint>; // Method type
 }
 interface IPledgeWithoutAReward extends IContractBase {
-  (address: string, usdc: bigint, options: unknown): Promise<IContractReturn>; // Callable function type
+  (
+    id: string,
+    address: string,
+    usdc: bigint,
+    tip: bigint,
+    options: unknown,
+  ): Promise<IContractReturn>; // Callable function type
 }
 interface IGetPlatformAdminAddress extends IContractBase {
   (bytes: string, options?: unknown): Promise<IContractReturn>; // Callable function type
@@ -94,6 +114,17 @@ interface IContractStringString extends IContractBase {
 interface IContractIContractBigintStringNumber extends IContractBase {
   (arg0: bigint, arg1: string): Promise<IContractSimpleNumberReturn>;
 }
+interface IContractCreateCampaign extends IContractBase {
+  (
+    address: string,
+    identifierHash: string,
+    hashes: string[],
+    dataKeys: string[],
+    dataValues: string[],
+    data: readonly [number, number, bigint],
+  ): Promise<IContractReturn>; // Callable function type
+}
+
 export class Provider {
   constructor(rpcUrl?: string) {
     console.log('new ethers.Provider', rpcUrl);
@@ -120,10 +151,23 @@ export class BrowserProvider {
   async send(message: string, data: unknown) {
     console.log('dummy BrowserProvider.send', message, data);
   }
+  async getCode(address: string) {
+    console.log('dummy BrowserProvider.getCode', address);
+    return address;
+  }
 }
 export class JsonRpcProvider {
   constructor(rpcUrl?: string) {
     console.log('new ethers.JsonRpcProvider', rpcUrl);
+  }
+  async getBlock(address: string) {
+    console.log('dummy BrowserProvider.getBlock', address);
+    return { timestamp: Math.floor(Date.now() / 1000) };
+  }
+}
+export class Wallet {
+  constructor(pk: string, provider: JsonRpcProvider) {
+    console.log('new ethers.Wallet', pk, provider);
   }
 }
 export class Contract {
@@ -132,6 +176,7 @@ export class Contract {
   campaignName: IContractSimpleString;
   defaultTokenURI: IContractSimpleString;
   owner: IContractSimpleString;
+  createCampaign: IContractCreateCampaign;
   campaignTreasury: IContractSimpleString;
 
   getCampaignNFT: IContractStringString;
@@ -245,6 +290,14 @@ export class Contract {
       return 100000n;
     };
     this.getRecipientStatus = getRecipientStatus;
+    const createCampaign: IContractCreateCampaign = (async () => {
+      console.log('createCampaign');
+      return getMockContractReturn();
+    }) as unknown as IContractCreateCampaign;
+    createCampaign.estimateGas = async () => {
+      return 100000n;
+    };
+    this.createCampaign = createCampaign;
     console.log('new ethers.Contract', address, abi, signer);
   }
   async balanceOf() {
@@ -254,6 +307,13 @@ export class Contract {
   async approve(address: string, usdc: bigint, options?: unknown) {
     console.log('approve', { address, usdc, options });
     return getMockContractReturn();
+  }
+  connect(signer: { address: `0x${string}` }) {
+    console.log('connect', { signer });
+    return this;
+  }
+  interface() {
+    return null;
   }
 }
 export function formatUnits(value: number | bigint, decimals: number | string) {
@@ -299,4 +359,53 @@ export function toUtf8Bytes(str: string) {
   console.log('dummy ethers toUtf8Bytes', str);
   const result: Array<number> = [];
   return result;
+}
+export function keccak256(data: string | Uint8Array | number[]) {
+  console.log('dummy ethers keccak256', data);
+  return '0x' + 'a'.repeat(64);
+}
+export function id(data: string) {
+  console.log('dummy ethers id', data);
+  return data;
+}
+export interface ParamType {
+  name: string; // Name of the parameter
+  type: string; // Type of the parameter (e.g., 'address', 'uint256', etc.)
+  indexed?: boolean; // Indicates if the parameter is indexed (optional)
+}
+export interface FunctionFragment {
+  name: string; // Name of the function
+  inputs: ParamType[]; // Array of input parameter types
+  outputs: ParamType[]; // Array of output parameter types
+  format: (format?: string) => string; // Method to format the function fragment
+}
+export interface ContractTransactionResponse {
+  hash: string; // Transaction hash
+  to: string; // Recipient address
+  from: string; // Sender address
+  nonce: number; // Nonce of the transaction
+  gasLimit: number; // Gas limit for the transaction
+  gasPrice: number; // Gas price for the transaction
+  data: string; // Transaction data
+  value: string; // Value sent with the transaction
+  chainId: number; // Chain ID of the transaction
+  wait: (confirmations?: number) => Promise<MockTransactionReceipt>; // Method to wait for transaction confirmations
+}
+
+interface MockTransactionReceipt {
+  blockNumber: number; // Block number where the transaction was included
+  transactionHash: string; // Hash of the transaction
+  from: string; // Address of the sender
+  to: string; // Address of the recipient
+  contractAddress?: string; // Address of the contract (if applicable)
+  logs: Array<MockLog>; // Array of logs generated by the transaction
+  status: number; // Status of the transaction (1 for success, 0 for failure)
+}
+interface MockLog {
+  address: string; // Address of the contract that generated the log
+  data: string; // Log data
+  topics: string[]; // Array of topics associated with the log
+  blockNumber: number; // Block number where the log was created
+  transactionHash: string; // Hash of the transaction that generated the log
+  logIndex: number; // Index of the log in the block
 }

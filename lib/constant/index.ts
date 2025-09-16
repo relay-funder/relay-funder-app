@@ -34,3 +34,11 @@ export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
 export const DEFAULT_USER_EMAIL = 'test.donor@akashic.org';
 export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [25, 50, 100, 250, 500];
+
+export const FILE_STORAGE_PROVIDER =
+  process.env.FILE_STORAGE_PROVIDER ?? 'LOCAL';
+
+export const PINATA_API_JWT_ACCESS_TOKEN =
+  process.env.PINATA_API_JWT_ACCESS_TOKEN;
+export const NEXT_PUBLIC_PINATA_GATEWAY_URL =
+  process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL ?? '';

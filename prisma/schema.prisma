@@ -90,7 +90,7 @@ model Campaign {
   roundContributions RoundContribution[]
   withdrawals        Withdrawal[]
   media              Media[]
-  mediaOrder         Int[]
+  mediaOrder         Json?
 
   @@index([creatorAddress])
   @@index([category])
@@ -121,6 +121,10 @@ model Media {
   update     CampaignUpdate? @relation(fields: [updateId], references: [id], onDelete: Cascade)
   roundId    Int?
   round      Round?          @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([updateId])
+  @@index([roundId])
 }
 
 model User {
@@ -214,7 +218,7 @@ model CampaignUpdate {
   creatorAddress String
   campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   media          Media[]
-  mediaOrder     Int[]
+  mediaOrder     Json?
 
   @@index([campaignId])
 }
@@ -239,7 +243,7 @@ model Round {
   updatedAt         DateTime         @updatedAt
   roundCampaigns    RoundCampaigns[]
   media             Media[]
-  mediaOrder        Int[]
+  mediaOrder        Json?
   approvedResult    Json?
   status            RoundStatus      @default(CREATED)
 }

@@ -1,4 +1,15 @@
-export async function uploadFile(file: File): Promise<string> {
+import { FILE_STORAGE_PROVIDER } from '@/lib/constant';
+
+if (
+  FILE_STORAGE_PROVIDER === 'CLOUDINARY' &&
+  (typeof process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET !== 'string' ||
+    typeof process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME !== 'string')
+) {
+  throw new Error(
+    'Environment not configured correctly, need NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET and NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME',
+  );
+}
+export async function fileToUrl(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append(

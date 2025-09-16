@@ -1,9 +1,10 @@
-import { ethers } from 'ethers';
+import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
 import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
+import { checkAuth } from '@/lib/api/auth';
 
 /**
  * # Platform Fee Configuration
@@ -22,6 +23,7 @@ export async function POST(
   context: { params: Promise<{ campaignId: string }> },
 ) {
   try {
+    await checkAuth(['user']);
     const { campaignId } = await context.params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env
@@ -85,7 +87,23 @@ export async function POST(
     ) {
       throw new ApiParameterError('Fee percentages cannot exceed 100%');
     }
+    const { isDummy } = await require('@/lib/web3');
+    if (isDummy) {
+      const updatedCampaign = await db.campaign.update({
+        where: { id },
+        data: {
+          transactionHash: `0x${Math.round(Math.random() * 100000).toString(16)}`,
+          campaignAddress: `0x${Math.round(Math.random() * 100000).toString(16)}`,
+        },
+      });
 
+      return response({
+        success: true,
+        txHash: updatedCampaign.transactionHash,
+        status: 1,
+        campaignAddress: updatedCampaign.campaignAddress,
+      });
+    }
     // Build inputs aligned to shell script
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const signer = new ethers.Wallet(adminPk, provider);

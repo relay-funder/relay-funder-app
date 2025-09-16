@@ -11,7 +11,9 @@ import { response, handleError } from '@/lib/api/response';
 import { CampaignStatus } from '@/types/campaign';
 import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
 import { PatchCampaignResponse, PostCampaignsResponse } from '@/lib/api/types';
-import { uploadFile } from '@/lib/storage/upload-file';
+import { fileToUrl } from '@/lib/storage';
+import { debug } from '@/lib/debug';
+import { getUser } from '@/lib/api/user';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -25,7 +27,10 @@ export async function POST(req: Request) {
   try {
     const session = await checkAuth(['user']);
     const creatorAddress = session.user.address;
-
+    const user = await getUser(creatorAddress);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
     const formData = await req.formData();
 
     // Extract form fields
@@ -41,16 +46,17 @@ export async function POST(req: Request) {
     const category = formData.get('category') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
 
-    console.log('Creating campaign with data:', {
-      title,
-      description,
-      fundingGoal,
-      startTime,
-      endTime,
-      creatorAddress,
-      status,
-      location,
-    });
+    debug &&
+      console.log('Creating campaign with data:', {
+        title,
+        description,
+        fundingGoal,
+        startTime,
+        endTime,
+        creatorAddress,
+        status,
+        location,
+      });
 
     if (
       !title ||
@@ -72,9 +78,11 @@ export async function POST(req: Request) {
     const slug = `${baseSlug}-${uniqueSuffix}`;
 
     let imageUrl = null;
+    let mimeType = 'application/octet-stream';
     if (bannerImage) {
       try {
-        imageUrl = await uploadFile(bannerImage);
+        imageUrl = await fileToUrl(bannerImage);
+        mimeType = bannerImage.type;
       } catch (imageError) {
         console.error('Error uploading image:', imageError);
         throw new ApiUpstreamError('Image upload failed');
@@ -106,7 +114,23 @@ export async function POST(req: Request) {
         images: true,
       },
     });
-
+    if (imageUrl) {
+      const media = await db.media.create({
+        data: {
+          url: imageUrl,
+          mimeType,
+          state: 'UPLOADED',
+          campaign: { connect: { id: campaign.id } },
+          createdBy: { connect: { id: user.id } },
+        },
+      });
+      await db.campaign.update({
+        where: { id: campaign.id },
+        data: {
+          mediaOrder: [media.id],
+        },
+      });
+    }
     console.log('Campaign created successfully:', campaign);
 
     return response({ campaignId: campaign.id } as PostCampaignsResponse);

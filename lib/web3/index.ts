@@ -38,5 +38,7 @@ export {
   ConnectorAlreadyConnectedError,
   // ethers
   ethers,
+  // dummy indicator for bypassing complex contract code
+  isDummy,
 } from './adapter';
 export { useCurrentChain } from './use-current-chain';

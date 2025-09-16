@@ -9,7 +9,8 @@ import {
   ApiUpstreamError,
 } from '@/lib/api/error';
 import { PatchUserCampaignResponse } from '@/lib/api/types';
-import { uploadFile } from '@/lib/storage/upload-file';
+import { fileToUrl } from '@/lib/storage';
+import { getUser } from '@/lib/api/user';
 
 export async function GET(req: Request) {
   try {
@@ -63,7 +64,10 @@ export async function PATCH(req: Request) {
     if (!title || !description) {
       throw new ApiParameterError('missing required fields');
     }
-
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
     const instance = await db.campaign.findUnique({
       where: {
         id: parseInt(campaignId),
@@ -77,9 +81,12 @@ export async function PATCH(req: Request) {
     }
 
     let imageUrl = null;
+    let mimeType = 'application/octet-stream';
+
     if (bannerImage) {
       try {
-        imageUrl = await uploadFile(bannerImage);
+        imageUrl = await fileToUrl(bannerImage);
+        mimeType = bannerImage.type;
       } catch (imageError) {
         console.error('Error uploading image:', imageError);
         throw new ApiUpstreamError('Image upload failed');
@@ -99,6 +106,26 @@ export async function PATCH(req: Request) {
           : undefined,
       },
     });
+    if (imageUrl) {
+      const campaignMedia = await db.media.findMany({
+        where: { campaignId: instance.id },
+      });
+      const media = await db.media.create({
+        data: {
+          url: imageUrl,
+          mimeType,
+          state: 'UPLOADED',
+          campaign: { connect: { id: instance.id } },
+          createdBy: { connect: { id: user.id } },
+        },
+      });
+      await db.campaign.update({
+        where: { id: instance.id },
+        data: {
+          mediaOrder: [media.id, ...campaignMedia.map(({ id }) => id)],
+        },
+      });
+    }
 
     return response({
       campaign: await getCampaign(instance.id),

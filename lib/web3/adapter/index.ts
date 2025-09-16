@@ -52,4 +52,5 @@ export {
   ConnectorAlreadyConnectedError,
   // ethers
   ethers,
+  isDummy,
 } from './silk';

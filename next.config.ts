@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { NEXT_PUBLIC_PINATA_GATEWAY_URL } from './lib/constant';
 
 const nextConfig: NextConfig = {
   images: {
@@ -23,13 +24,17 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'dia-cdn.numbersprotocol.io',
       },
+      { protocol: 'https', hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL },
     ],
   },
 };
 
 const sentryEnvironments = ['production', 'staging'];
-const currentEnv = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV;
-const shouldInitSentry = process.env.SENTRY === 'true' || sentryEnvironments.includes(currentEnv as string);
+const currentEnv =
+  process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV;
+const shouldInitSentry =
+  process.env.SENTRY === 'true' ||
+  sentryEnvironments.includes(currentEnv as string);
 
 if (shouldInitSentry) {
   console.log(' ▲ sentry initialization');
