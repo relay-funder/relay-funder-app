@@ -2,6 +2,8 @@ import { PrismaClient } from '../.generated/prisma/client';
 import { CampaignStatus } from '../types/campaign';
 import shortUUID from 'short-uuid';
 import crypto from 'crypto';
+import { subDays, addDays } from 'date-fns';
+import { uniqueName, uniqueDescription } from '@/lib/generate-strings';
 
 const db = new PrismaClient({
   log: ['error'],
@@ -165,29 +167,38 @@ function generatePaymentAmount(): string {
   const amounts = [5, 10, 15, 20, 25, 50, 75, 100, 150, 200, 250, 300, 500];
   return selectRandom(amounts).toString();
 }
+const imageFiles = [
+  'c318ab6059374812-ethereum-main.jpg',
+  'ffeeccde2afa88f6-UN0345662.jpg.jpeg',
+  '63b6dfc5b215fa92-whole-child-education-920x513.jpg',
+  'a41bb1ae87c99ce0-celo-camp.webp',
+  '345351662ea35292-ethereum-main.jpg',
+  '47e747dce8507cc6-celo-camp.webp',
+  '53b6b5c0a25e3f55-clown-girls.jpg',
+  '5f9a0d7156c725ef-water.jpg',
+  'c1.png',
+  'c2.png',
+  'c3.png',
+];
 
 async function main() {
-  const imageFiles = [
-    'c318ab6059374812-ethereum-main.jpg',
-    'ffeeccde2afa88f6-UN0345662.jpg.jpeg',
-    '63b6dfc5b215fa92-whole-child-education-920x513.jpg',
-    'a41bb1ae87c99ce0-celo-camp.webp',
-    '345351662ea35292-ethereum-main.jpg',
-    '47e747dce8507cc6-celo-camp.webp',
-    '53b6b5c0a25e3f55-clown-girls.jpg',
-    '5f9a0d7156c725ef-water.jpg',
-    'c1.png',
-    'c2.png',
-    'c3.png',
-  ];
+  // Clear existing data
+  await db.user.deleteMany();
+  await db.campaign.deleteMany();
+  await db.round.deleteMany();
+  // Create 25 users instead of 100 (more realistic for debugging)
+  const creatorUsers = await createUsers(25, ['user']);
+  const donorUsers = await createUsers(25, ['user']);
+  const adminUsers = await createUsers(2, ['user', 'admin']);
 
   const campaigns = Array.from({ length: 10 }, (_, i) => ({
+    id: 0,
     title: campaignTitles[i],
     description: generateDescription(campaignTitles[i]),
     fundingGoal: generateFundingGoal(),
     startTime: new Date(),
     endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    creatorAddress: '0x1234567890123456789012345678901234567890',
+    creatorAddress: selectRandom(creatorUsers),
     status:
       i < 7
         ? CampaignStatus.ACTIVE
@@ -199,33 +210,71 @@ async function main() {
     category: campaignCategories[i % campaignCategories.length].id,
     location: locations[i % locations.length],
   }));
-
-  // Clear existing data
-  await db.campaignImage.deleteMany();
-  await db.campaignCollection.deleteMany();
-  await db.payment.deleteMany();
-  await db.comment.deleteMany();
-  await db.campaign.deleteMany();
-
-  // Create 25 users instead of 100 (more realistic for debugging)
-  const donorUsers = await createUsers(25, ['user']);
+  const rounds = Array.from({ length: 10 }, (_, i) => {
+    // default in past
+    let startDate = subDays(new Date(), Math.round(Math.random() * 100) + 1);
+    // active
+    if (i > 3 && i <= 7) {
+      startDate = subDays(new Date(), Math.round(Math.random() * 7) + 1);
+    }
+    // future
+    if (i > 7) {
+      startDate = addDays(new Date(), Math.round(Math.random() * 7) + 1);
+    }
+    const endDate = addDays(startDate, 14);
+    return {
+      title: uniqueName(),
+      description: uniqueDescription(),
+      descriptionUrl: 'https://relayfunder.com',
+      matchingPool: parseInt(generateFundingGoal()),
+      startDate,
+      endDate,
+      applicationStart: addDays(startDate, 1),
+      applicationClose: addDays(startDate, 2),
+      blockchain: 'CELO',
+      managerAddress: selectRandom(adminUsers),
+      fundWalletAddress: `0xdeadbeef${(i + 1).toString().padStart(2, '0')}`,
+    };
+  });
 
   let totalPayments = 0;
 
   for (let i = 0; i < campaigns.length; i++) {
+    const creator = selectRandom(creatorUsers);
     const campaign = await db.campaign.create({
-      data: campaigns[i],
+      data: { ...campaigns[i], id: undefined, creatorAddress: creator.address },
     });
+    campaigns[i].id = campaign.id;
 
     // Assign an image from the local file system
-    const imageFile = imageFiles[i % imageFiles.length];
     await db.campaignImage.create({
       data: {
-        imageUrl: `/campaign-images/${imageFile}`,
+        imageUrl: `/campaign-images/${selectRandom(imageFiles)}`,
         isMainImage: true,
         campaignId: campaign.id,
       },
     });
+    await db.media.create({
+      data: {
+        url: `/campaign-images/${selectRandom(imageFiles)}`,
+        mimeType: '',
+        createdBy: {
+          connect: { id: selectRandom(creatorUsers.map(({ id }) => id)) },
+        },
+        campaign: { connect: { id: campaign.id } },
+      },
+    });
+    for (let updateIndex = 1; updateIndex < 10; updateIndex++) {
+      await db.campaignUpdate.create({
+        data: {
+          title: `Update ${updateIndex}`,
+          content: `Update Content`,
+          creatorAddress: creator.address,
+          createdAt: subDays(new Date(), 10 - updateIndex),
+          campaign: { connect: { id: campaign.id } },
+        },
+      });
+    }
 
     // Generate 2-15 payments per campaign (randomized)
     const paymentCount = generatePaymentCount();
@@ -264,10 +313,48 @@ async function main() {
       });
     }
   }
+  for (let i = 0; i < rounds.length; i++) {
+    const admin = selectRandom(creatorUsers);
+    const round = await db.round.create({
+      data: { ...rounds[i], managerAddress: admin.address },
+    });
+    const roundCampaignCount = Math.round(Math.random() * campaigns.length);
+    for (
+      let roundCampaignIndex = 0;
+      roundCampaignIndex < roundCampaignCount;
+      roundCampaignIndex++
+    ) {
+      await db.roundCampaigns.create({
+        data: {
+          Round: { connect: { id: round.id } },
+          Campaign: { connect: { id: campaigns[roundCampaignIndex].id } },
+          status: selectRandom(['APPROVED', 'PENDING', 'REJECTED']),
+        },
+      });
+    }
+    await db.media.create({
+      data: {
+        url: `/campaign-images/${selectRandom(imageFiles)}`,
+        mimeType: '',
+        createdBy: {
+          connect: { id: admin.id },
+        },
+        round: { connect: { id: round.id } },
+      },
+    });
+  }
 
   console.log(
-    `Seeded ${campaigns.length} campaigns with images and ${totalPayments} total payments`,
+    `Seeded ${campaigns.length} campaigns, ${rounds.length} rounds with images and ${totalPayments} total payments`,
   );
+  console.log(
+    'We created different users, use the dummy-web3 connector to sign in as one of them',
+  );
+  adminUsers.map(({ address }) => console.log(`admin ${address}`));
+  creatorUsers
+    .slice(0, 3)
+    .map(({ address }) => console.log(`creator ${address}`));
+  donorUsers.slice(0, 3).map(({ address }) => console.log(`donor ${address}`));
 }
 
 main()

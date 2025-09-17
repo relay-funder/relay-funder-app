@@ -1,15 +1,20 @@
 import { Campaign, db, Round, RoundCampaigns } from '@/server/db';
-import { GetRoundResponseInstance, GetRoundsStatsResponse } from './types/rounds';
+import {
+  GetRoundResponseInstance,
+  GetRoundsStatsResponse,
+} from './types/rounds';
 import { ROUND_QUERY_KEY, ROUNDS_QUERY_KEY } from '../hooks/useRounds';
 import { QueryClient } from '@tanstack/react-query';
 import { ApiNotFoundError } from './error';
 import { mapCampaign } from './campaigns';
+import { isFuture, isPast } from 'date-fns';
 
 export function mapRound(
   round: Round & {
     roundCampaigns?: (RoundCampaigns & { Campaign: Campaign })[];
   },
   status?: 'PENDING' | 'APPROVED' | 'REJECTED',
+  roundCampaignId?: number,
 ): GetRoundResponseInstance {
   const {
     startDate,
@@ -39,6 +44,7 @@ export function mapRound(
       })) ?? [],
     // transient
     recipientStatus: status,
+    roundCampaignId: roundCampaignId,
   };
 }
 export async function listRounds({
@@ -148,4 +154,21 @@ export async function prefetchRound(
       round: await getRound(id, admin, sessionAddress),
     }),
   });
+}
+
+export function roundIsActive(round: GetRoundResponseInstance) {
+  if (typeof round.recipientStatus !== 'number') {
+    return false;
+  }
+  if (round.recipientStatus !== 'APPROVED') {
+    return false;
+  }
+  if (!round.startTime || !round.endTime) return false;
+  if (isFuture(new Date(round.startTime))) {
+    return false;
+  }
+  if (isPast(new Date(round.endTime))) {
+    return false;
+  }
+  return true;
 }

@@ -2,16 +2,25 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import { ApiAuthNotAllowed, ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
+import { getUser } from '@/lib/api/user';
+import { getCampaign } from '@/lib/api/campaigns';
+import { roundIsActive } from '@/lib/api/rounds';
+import {
+  PatchPaymentBodyRouteSchema,
+  PostPaymentBodyRouteSchema,
+} from '@/lib/api/types/campaigns/payments';
 
 export async function POST(req: Request) {
   try {
     const session = await checkAuth(['user']);
-    const data = await req.json();
-    const user = await db.user.findUnique({
-      where: { address: session.user.address },
-    });
+    const data = PostPaymentBodyRouteSchema.parse(await req.json());
+    const user = await getUser(session.user.address);
     if (!user) {
       throw new ApiNotFoundError('User not found');
+    }
+    const campaign = await getCampaign(data.campaignId);
+    if (!campaign) {
+      throw new ApiNotFoundError('Campaign not found');
     }
     const payment = await db.payment.create({
       data: {
@@ -22,10 +31,28 @@ export async function POST(req: Request) {
         transactionHash: data.transactionHash,
         type: data.type ?? 'BUY',
         user: { connect: { id: user.id } },
-        campaign: { connect: { id: data.campaignId } },
+        campaign: { connect: { id: campaign.id } },
       },
     });
-
+    // create roundContribution
+    if (Array.isArray(campaign.rounds)) {
+      for (const round of campaign.rounds) {
+        if (typeof round.roundCampaignId !== 'number') {
+          continue;
+        }
+        if (!roundIsActive(round)) {
+          continue;
+        }
+        await db.roundContribution.create({
+          data: {
+            campaign: { connect: { id: campaign.id } },
+            roundCampaign: { connect: { id: round.roundCampaignId } },
+            payment: { connect: { id: payment.id } },
+            humanityScore: user.humanityScore,
+          },
+        });
+      }
+    }
     return response({ paymentId: payment.id });
   } catch (error: unknown) {
     return handleError(error);
@@ -35,7 +62,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const session = await checkAuth(['user']);
-    const data = await req.json();
+    const data = PatchPaymentBodyRouteSchema.parse(await req.json());
 
     const instance = await db.payment.findUnique({
       where: { id: data.paymentId },

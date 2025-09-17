@@ -151,8 +151,8 @@ export async function listCampaigns({
         return mapCampaign({
           ...dbCampaign,
           rounds:
-            dbCampaign.RoundCampaigns?.map(({ Round, status }) =>
-              mapRound(Round, status),
+            dbCampaign.RoundCampaigns?.map(({ Round, status, id }) =>
+              mapRound(Round, status, id),
             ) ?? [],
         });
       }
@@ -218,17 +218,17 @@ export async function getPaymentMap(idList: number[], confirmed: boolean) {
           "campaignId"
       ;
         `;
-  const results = await db.$queryRaw(query) as Array<{
+  const results = (await db.$queryRaw(query)) as Array<{
     campaignId: number;
     token: string;
     amount: number;
     count: bigint;
   }>;
-  
+
   // Convert BigInt count values to numbers to avoid JSON serialization errors
-  return results.map(result => ({
+  return results.map((result) => ({
     ...result,
-    count: Number(result.count)
+    count: Number(result.count),
   })) as PaymentTokenList;
 }
 export function getEmptyPaymentSummary(): GetCampaignPaymentSummary {
@@ -393,7 +393,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
     ...instance,
     RoundCampaigns: undefined,
     rounds: instance.RoundCampaigns.map((roundCampaign) =>
-      mapRound(roundCampaign.Round, roundCampaign.status),
+      mapRound(roundCampaign.Round, roundCampaign.status, roundCampaign.id),
     ),
     _count: {
       ...instance._count,
