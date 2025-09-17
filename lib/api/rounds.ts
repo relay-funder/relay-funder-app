@@ -23,7 +23,7 @@ export function mapRound(
     applicationStart,
     applicationClose,
     poolId,
-    imageUrl,
+    logoUrl,
     ...roundWithoutDeprecated
   } = round;
   return {
@@ -50,7 +50,7 @@ export function mapRound(
         : [
             {
               id: 'unknown',
-              url: imageUrl as string,
+              url: logoUrl as string,
               mimeType: 'image/unknown',
               caption: null,
             },
