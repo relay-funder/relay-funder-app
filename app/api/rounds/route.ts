@@ -8,8 +8,9 @@ import {
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { listRounds } from '@/lib/api/rounds';
-import { uploadFile } from '@/lib/storage/upload-file';
+import { fileToUrl } from '@/lib/storage';
 import { PatchRoundResponse, PostRoundsResponse } from '@/lib/api/types';
+import { getUser } from '@/lib/api/user';
 
 export async function GET(req: Request) {
   try {
@@ -67,10 +68,16 @@ export async function POST(req: Request) {
     if (status && !validStatuses.includes(status)) {
       throw new ApiParameterError('Invalid status value');
     }
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
     let logoUrl = null;
+    let mimeType = 'application/octet-stream';
     if (logo) {
       try {
-        logoUrl = await uploadFile(logo);
+        logoUrl = await fileToUrl(logo);
+        mimeType = logo.type;
       } catch (imageError) {
         console.error('Error uploading image:', imageError);
         throw new ApiUpstreamError('Image upload failed');
@@ -91,6 +98,23 @@ export async function POST(req: Request) {
         managerAddress: creatorAddress,
       },
     });
+    if (logoUrl) {
+      const media = await db.media.create({
+        data: {
+          url: logoUrl,
+          mimeType,
+          state: 'UPLOADED',
+          round: { connect: { id: newRound.id } },
+          createdBy: { connect: { id: user.id } },
+        },
+      });
+      await db.round.update({
+        where: { id: newRound.id },
+        data: {
+          mediaOrder: [media.id],
+        },
+      });
+    }
     const responseData: PostRoundsResponse = { roundId: newRound.id, logoUrl };
     return response(responseData);
   } catch (error: unknown) {
@@ -124,9 +148,11 @@ export async function PATCH(req: Request) {
       );
     }
     let logoUrl = undefined;
+    let mimeType = 'application/octet-stream';
     if (logo) {
       try {
-        logoUrl = await uploadFile(logo);
+        logoUrl = await fileToUrl(logo);
+        mimeType = logo.type;
       } catch (imageError) {
         console.error('Error uploading image:', imageError);
         throw new ApiUpstreamError('Image upload failed');
@@ -146,6 +172,23 @@ export async function PATCH(req: Request) {
         logoUrl,
       },
     });
+    if (logoUrl) {
+      const roundMedia = await db.media.findMany({ where: { roundId: id } });
+      const media = await db.media.create({
+        data: {
+          url: logoUrl,
+          mimeType,
+          state: 'UPLOADED',
+          round: { connect: { id } },
+        },
+      });
+      await db.round.update({
+        where: { id },
+        data: {
+          mediaOrder: [media.id, ...roundMedia.map(({ id }) => id)],
+        },
+      });
+    }
     const responseData: PatchRoundResponse = {
       roundId: updatedRound.id,
       logoUrl: updatedRound.logoUrl,

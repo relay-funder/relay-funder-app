@@ -10,7 +10,7 @@ Akashic is a Next.js 15 fundraising platform for open source projects built with
 - **Authentication**: NextAuth.js with SIWE (Sign-In with Ethereum)
 - **Web3**: Wagmi, Viem, Ethers.js with multiple wallet adapters
 - **Payments**: Stripe integration with Crowdsplit for crypto payments
-- **File Storage**: Cloudinary for image uploads with preset configurations
+- **File Storage**: IPFS (Pinata) or local storage for file uploads
 - **Monitoring**: Sentry for error tracking and performance monitoring
 - **Testing**: Vitest with React Testing Library
 - **Code Quality**: ESLint, Prettier with Tailwind plugin, Husky for git hooks
@@ -33,7 +33,7 @@ Akashic is a Next.js 15 fundraising platform for open source projects built with
 4. **Admin Dashboard**: Administrative functionality for campaign approval and management
 5. **Collections & Rounds**: Curated campaign collections and quadratic funding rounds
 6. **Real-time Notifications**: In-app notification system for user actions
-7. **Image Upload**: Cloudinary integration for campaign and profile images
+7. **File Storage**: Decentralized IPFS storage with Pinata integration
 
 ### Key Directories
 ```
@@ -111,9 +111,11 @@ NEXT_PUBLIC_USDC_ADDRESS=0x...
 # External Services
 STRIPE_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+
+# File Storage (choose one)
+FILE_STORAGE_PROVIDER=LOCAL  # or PINATA for IPFS storage
+PINATA_API_JWT_ACCESS_TOKEN=your_pinata_jwt_token
+NEXT_PUBLIC_PINATA_GATEWAY_URL=your_gateway.pinata.cloud
 
 # Monitoring
 SENTRY_DSN=your-sentry-dsn

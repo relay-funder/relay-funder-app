@@ -1,0 +1,5 @@
+# development upload only
+# ignore all files uploaded here
+# consider mounting a tmpfs
+
+*

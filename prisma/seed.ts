@@ -247,13 +247,6 @@ async function main() {
     campaigns[i].id = campaign.id;
 
     // Assign an image from the local file system
-    await db.campaignImage.create({
-      data: {
-        imageUrl: `/campaign-images/${selectRandom(imageFiles)}`,
-        isMainImage: true,
-        campaignId: campaign.id,
-      },
-    });
     await db.media.create({
       data: {
         url: `/campaign-images/${selectRandom(imageFiles)}`,

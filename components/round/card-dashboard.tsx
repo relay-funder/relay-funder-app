@@ -5,7 +5,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Clock, Calendar, Users, DollarSign } from 'lucide-react';
@@ -15,6 +15,7 @@ import { useMemo } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
+import { RoundMainImageAvatar } from './main-image-avatar';
 
 export function RoundCardDashboard({
   round,
@@ -46,18 +47,8 @@ export function RoundCardDashboard({
       >
         <CardHeader className="border-b p-4">
           <div className="flex items-start gap-4">
-            <Avatar className="h-12 w-12 border">
-              {round.logoUrl ? (
-                <AvatarImage
-                  src={round.logoUrl}
-                  alt={`${round.title} logo`}
-                  className="object-cover"
-                />
-              ) : null}
-              <AvatarFallback className="text-lg font-semibold">
-                {round.title ? round.title.charAt(0).toUpperCase() : 'R'}
-              </AvatarFallback>
-            </Avatar>
+            <RoundMainImageAvatar round={round} />
+
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">

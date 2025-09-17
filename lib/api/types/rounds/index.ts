@@ -40,13 +40,19 @@ export interface GetRoundResponseInstance {
   startTime: string;
   endTime: string;
   blockchain: string;
-  logoUrl: string | null;
   createdAt: string;
   managerAddress: string;
   updatedAt: string;
   roundCampaigns?: GetRoundCampaignResponseInstance[];
   recipientStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   roundCampaignId?: number;
+  media: {
+    id: string;
+    url: string;
+    mimeType: string;
+    caption: string | null;
+  }[];
+  mediaOrder: string[] | null;
 }
 export interface GetRoundResponse {
   round: GetRoundResponseInstance;

@@ -23,12 +23,14 @@ export function CampaignCardDashboardCreate({ onCreate }: CampaignItemProps) {
         <CampaignMainImage
           campaign={{
             title: 'Create Campaign',
-            images: [
+            media: [
               {
-                isMainImage: true,
-                imageUrl: '/images/campaign-create-card.jpg',
+                id: 'create-card',
+                url: '/images/campaign-create-card.jpg',
+                mimeType: 'image/jpg',
               },
             ],
+            mediaOrder: ['create-card'],
           }}
         />
       </CardHeader>

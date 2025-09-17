@@ -1,1 +1,1 @@
-export { uploadFile } from './upload-file';
+export { fileToUrl } from './file-to-url';

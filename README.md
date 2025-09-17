@@ -33,6 +33,21 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 
    Edit `.env.local` and populate the required variables. Refer to `env.template` for all available options and their descriptions.
 
+### Pinata Setup (IPFS File Storage)
+
+To use Pinata for decentralized file storage:
+
+1. **Create Account**: Sign up at [Pinata Cloud](https://app.pinata.cloud/)
+2. **Get API Key**: Generate a JWT token in the API Keys section with `pinFileToIPFS` and `pinList` permissions
+3. **Create Gateway**: Set up a gateway in your Pinata dashboard
+4. **Configure Environment**: Set these variables in your `.env.local`:
+
+   ```bash
+   FILE_STORAGE_PROVIDER="PINATA"
+   PINATA_API_JWT_ACCESS_TOKEN="your_jwt_token"
+   NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
+   ```
+
 3. **Start Development Environment:**
 
    ```bash
