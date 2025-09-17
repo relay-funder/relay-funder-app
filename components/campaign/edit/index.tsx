@@ -38,7 +38,7 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
         ...campaign,
         location: campaign.location ?? '',
         category:
-          categories.find((category) => category.name === campaign.category)
+          categories.find((category) => category.id === campaign.category)
             ?.id ?? '',
       };
     },
