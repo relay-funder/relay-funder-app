@@ -11,8 +11,6 @@ import {
   PutCollectionsWithIdBody,
 } from '@/lib/api/types';
 
-import { CampaignImage } from '@/types/campaign';
-
 // Get a specific collection
 export async function GET(req: Request, { params }: CollectionsWithIdParams) {
   try {
@@ -26,7 +24,7 @@ export async function GET(req: Request, { params }: CollectionsWithIdParams) {
           include: {
             campaign: {
               include: {
-                images: true,
+                media: { where: { state: 'UPLOADED' } },
               },
             },
           },
@@ -45,33 +43,32 @@ export async function GET(req: Request, { params }: CollectionsWithIdParams) {
     const collectionWithDetails = {
       ...collection,
       isOwner,
-      items: collection.campaigns.map(
-        (campaignCollection: {
-          campaign: {
-            id: number;
-            title: string;
-            description: string;
-            slug: string;
-            campaignAddress: string | null;
-            images: Array<CampaignImage>;
-          };
-        }) => {
-          const campaign = campaignCollection.campaign;
-          return {
-            itemId: campaign.campaignAddress || String(campaign.id),
-            itemType: 'campaign',
-            details: {
-              id: campaign.id,
-              title: campaign.title,
-              description: campaign.description,
-              slug: campaign.slug,
-              image:
-                campaign.images.find((img: CampaignImage) => img.isMainImage)
-                  ?.imageUrl || '/images/placeholder.svg',
-            },
-          };
-        },
-      ),
+      items: collection.campaigns.map((campaignCollection) => {
+        const campaign = campaignCollection.campaign;
+        return {
+          itemId: campaign.campaignAddress || String(campaign.id),
+          itemType: 'campaign',
+          details: {
+            id: campaign.id,
+            title: campaign.title,
+            description: campaign.description,
+            slug: campaign.slug,
+            media: campaign.media.length
+              ? campaign.media
+              : [
+                  {
+                    id: 'placeholder',
+                    url: '/images/placeholder',
+                    mimeType: 'image/svg',
+                  },
+                ],
+            mediaOrder:
+              campaign.media.length && campaign.mediaOrder
+                ? campaign.mediaOrder
+                : ['placeholder'],
+          },
+        };
+      }),
     };
 
     return response({ collection: collectionWithDetails });

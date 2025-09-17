@@ -3,7 +3,14 @@ import {
   GetRoundResponseInstance,
 } from '@/lib/api/types';
 import { DisplayUserWithStates } from '@/lib/api/types/user';
-
+export interface Media {
+  id: string;
+  createdAt: Date;
+  state: 'CREATED' | 'UPLOADED' | 'BLOCKED';
+  url: string | File | null;
+  caption?: string | null;
+  mimeType: string;
+}
 export interface DbCampaign {
   id: number;
   title: string;
@@ -23,6 +30,8 @@ export interface DbCampaign {
   category?: string | null;
   // collections, // hidden in api
   images?: CampaignImage[];
+  media?: Media[];
+  mediaOrder?: string[] | null;
   updates?: CampaignUpdate[];
   comments?: DbComment[];
   // favorites, // hidden in api

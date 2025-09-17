@@ -12,6 +12,7 @@ import {
 import { getPaymentUser, getUserWithStates } from './user';
 import { ApiConflictError } from './error';
 import { mapRound } from './rounds';
+import { JsonValue } from '@/.generated/prisma/client/runtime/library';
 
 export type PaymentWithUser = Payment & {
   user: User;
@@ -106,7 +107,7 @@ export async function listCampaigns({
     db.campaign.findMany({
       where,
       include: {
-        images: true,
+        media: { where: { state: 'UPLOADED' } },
         RoundCampaigns: {
           include: {
             Round: true,
@@ -360,10 +361,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
   const instance = await db.campaign.findUnique({
     where,
     include: {
-      images: {
-        where: { isMainImage: true },
-        take: 1,
-      },
+      media: { where: { state: 'UPLOADED' } },
       updates: {
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -576,13 +574,19 @@ export async function getStats({
   }
   return stats;
 }
-interface MapCampaignInput extends DbCampaign {
+interface MapCampaignInput extends Omit<DbCampaign, 'mediaOrder'> {
   RoundCampaigns?: unknown;
+  mediaOrder?: JsonValue | string[] | null;
 }
 export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
   const { RoundCampaigns, ...dbCampaignWithoutDbData } = dbCampaign;
   if (RoundCampaigns) {
     // pass
   }
-  return dbCampaignWithoutDbData;
+  return {
+    ...dbCampaignWithoutDbData,
+    mediaOrder: Array.isArray(dbCampaign.mediaOrder)
+      ? (dbCampaign.mediaOrder as string[])
+      : [],
+  };
 }

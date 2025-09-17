@@ -101,9 +101,6 @@ export async function PATCH(req: Request) {
         description,
         location,
         category,
-        images: imageUrl
-          ? { create: { imageUrl, isMainImage: true } }
-          : undefined,
       },
     });
     if (imageUrl) {

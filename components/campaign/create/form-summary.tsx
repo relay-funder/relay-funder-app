@@ -28,14 +28,14 @@ export function CampaignCreateFormSummary() {
         category: values.category,
         createdAt: new Date(),
         updatedAt: new Date(),
-        images: [
+        media: [
           {
-            id: 0,
-            imageUrl: values.bannerImage,
-            isMainImage: true,
-            campaignId: 0,
+            id: 'unsaved',
+            url: values.bannerImage,
+            mimeType: 'image/unknown',
           },
         ],
+        mediaOrder: ['unsaved'],
         slug: 'summary-campaign',
         location: values.location,
 
