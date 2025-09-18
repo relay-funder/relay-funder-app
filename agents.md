@@ -324,6 +324,7 @@ docker compose exec app pnpm prisma db pull
 - **Forward Ref Pattern**: Use `React.forwardRef` for components that need refs
 - **Display Name**: Set `Component.displayName` for debugging
 - **Radix UI Integration**: Extensive use of Radix UI primitives for accessibility
+- **Toast State Management**: Avoid direct toast calls in catch/business logic. Set state instead and use useEffect to trigger toasts
 
 #### Data Fetching Best Practices (MANDATORY)
 
