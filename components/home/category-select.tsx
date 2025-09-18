@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { categories } from '@/lib/constant';
+import { useActiveCategories } from '@/lib/hooks/useCategories';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
 
@@ -9,6 +9,8 @@ export function HomeCategorySelect({
   onSelected: (category: string | null) => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { data: categoriesData, isLoading, error } = useActiveCategories();
+
   const onSelect = useCallback(
     (categoryId: string | null) => {
       setSelectedCategory(categoryId ?? null);
@@ -16,6 +18,29 @@ export function HomeCategorySelect({
     },
     [onSelected, setSelectedCategory],
   );
+
+  // Show error state or loading fallback (fallback to no categories)
+  if (error || isLoading) {
+    return (
+      <div className="mb-8 flex flex-wrap justify-center gap-2">
+        <Button
+          key="all"
+          variant="outline"
+          className={cn(
+            'flex items-center gap-2 rounded-full',
+            'bg-purple-100 text-purple-600',
+          )}
+          onClick={() => onSelect(null)}
+        >
+          <div className="text-2xl">🌟</div>
+          All Categories
+        </Button>
+      </div>
+    );
+  }
+
+  const categories = categoriesData?.categories || [];
+
   return (
     <div className="mb-8 flex flex-wrap justify-center gap-2">
       <Button
