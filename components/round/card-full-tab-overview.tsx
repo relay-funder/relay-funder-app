@@ -1,6 +1,5 @@
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { ReadMoreOrLess } from '../read-more-or-less';
 
 export function RoundCardTabOverview({
   round,
