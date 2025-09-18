@@ -5,7 +5,7 @@ export function useRoundTimeInfo(round?: GetRoundResponseInstance) {
   if (!round) {
     return 'Loading...';
   }
-  
+
   const startDate = new Date(round.startTime);
   const endDate = new Date(round.endTime);
   if (

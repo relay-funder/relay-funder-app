@@ -42,29 +42,6 @@ export function RoundCardTabOverview({
           </CardContent>
         </Card>
       )}
-
-      {/* Technical Details */}
-      {(round.poolId || round.blockchain) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Technical Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Blockchain</span>
-              <span className="font-semibold capitalize">
-                {round.blockchain}
-              </span>
-            </div>
-            {round.poolId && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Pool ID</span>
-                <span className="font-mono text-sm">{round.poolId}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
