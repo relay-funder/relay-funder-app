@@ -290,6 +290,39 @@ async function removeCampaign(variables: IDisableCampaign) {
   return response.json();
 }
 
+interface IDeployContract {
+  campaignId: number;
+}
+
+async function deployContract(variables: IDeployContract) {
+  const response = await fetch(
+    `/api/admin/campaigns/${variables.campaignId}/deploy-campaign-contract`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      `Contract deployment failed: ${errorData.error || 'Unknown server error'}`,
+    );
+  }
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(
+      `Contract deployment failed: ${result.error || 'Unknown error'}`,
+    );
+  }
+
+  return result;
+}
+
 export function resetCampaign(id: number, queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
   queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY, id] });
