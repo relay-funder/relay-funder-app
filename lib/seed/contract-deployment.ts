@@ -12,40 +12,60 @@ import { createTreasuryManager } from '@/lib/treasury/interface';
 /**
  * Categorize deployment errors for better reporting
  */
-function categorizeError(error: unknown): { errorType: string; friendlyMessage: string } {
-  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  
+function categorizeError(error: unknown): {
+  errorType: string;
+  friendlyMessage: string;
+} {
+  const errorMessage =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error).toLowerCase();
+
   if (errorMessage.includes('insufficient funds')) {
     return {
       errorType: 'INSUFFICIENT_FUNDS',
-      friendlyMessage: 'Wallet has insufficient funds to cover gas costs. Please add more funds to the platform admin wallet.'
+      friendlyMessage:
+        'Wallet has insufficient funds to cover gas costs. Please add more funds to the platform admin wallet.',
     };
   }
-  
-  if (errorMessage.includes('gas') && (errorMessage.includes('limit') || errorMessage.includes('exceeded'))) {
+
+  if (
+    errorMessage.includes('gas') &&
+    (errorMessage.includes('limit') || errorMessage.includes('exceeded'))
+  ) {
     return {
       errorType: 'GAS_LIMIT',
-      friendlyMessage: 'Transaction exceeded gas limit. The contract deployment requires more gas than allowed.'
+      friendlyMessage:
+        'Transaction exceeded gas limit. The contract deployment requires more gas than allowed.',
     };
   }
-  
-  if (errorMessage.includes('network') || errorMessage.includes('connection') || errorMessage.includes('timeout')) {
+
+  if (
+    errorMessage.includes('network') ||
+    errorMessage.includes('connection') ||
+    errorMessage.includes('timeout')
+  ) {
     return {
-      errorType: 'NETWORK_ERROR', 
-      friendlyMessage: 'Network connection issue. Please check your RPC endpoint and internet connection.'
+      errorType: 'NETWORK_ERROR',
+      friendlyMessage:
+        'Network connection issue. Please check your RPC endpoint and internet connection.',
     };
   }
-  
-  if (errorMessage.includes('revert') || errorMessage.includes('execution reverted')) {
+
+  if (
+    errorMessage.includes('revert') ||
+    errorMessage.includes('execution reverted')
+  ) {
     return {
       errorType: 'CONTRACT_ERROR',
-      friendlyMessage: 'Contract execution failed. Check contract parameters and blockchain state.'
+      friendlyMessage:
+        'Contract execution failed. Check contract parameters and blockchain state.',
     };
   }
-  
+
   return {
     errorType: 'UNKNOWN',
-    friendlyMessage: 'Unknown deployment error occurred.'
+    friendlyMessage: 'Unknown deployment error occurred.',
   };
 }
 
@@ -57,7 +77,12 @@ interface CampaignContractDeployment {
   transactionHash: string;
   success: boolean;
   error?: string;
-  errorType?: 'INSUFFICIENT_FUNDS' | 'GAS_LIMIT' | 'NETWORK_ERROR' | 'CONTRACT_ERROR' | 'UNKNOWN';
+  errorType?:
+    | 'INSUFFICIENT_FUNDS'
+    | 'GAS_LIMIT'
+    | 'NETWORK_ERROR'
+    | 'CONTRACT_ERROR'
+    | 'UNKNOWN';
 }
 
 interface TreasuryContractDeployment {
@@ -65,7 +90,12 @@ interface TreasuryContractDeployment {
   transactionHash: string;
   success: boolean;
   error?: string;
-  errorType?: 'INSUFFICIENT_FUNDS' | 'GAS_LIMIT' | 'NETWORK_ERROR' | 'CONTRACT_ERROR' | 'UNKNOWN';
+  errorType?:
+    | 'INSUFFICIENT_FUNDS'
+    | 'GAS_LIMIT'
+    | 'NETWORK_ERROR'
+    | 'CONTRACT_ERROR'
+    | 'UNKNOWN';
 }
 
 interface CampaignData {
@@ -269,22 +299,27 @@ export async function deployCampaignContract(
       transactionHash: receipt.hash,
       success: true,
     };
-    } catch (error) {
-      const { errorType, friendlyMessage } = categorizeError(error);
-      console.error(
-        `  Failed to deploy campaign contract for ${campaignData.title}:`,
-      );
-      console.error(`  Error Type: ${errorType}`);
-      console.error(`  Details: ${friendlyMessage}`);
-      
-      return {
-        campaignAddress: '',
-        transactionHash: '',
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        errorType: errorType as any,
-      };
-    }
+  } catch (error) {
+    const { errorType, friendlyMessage } = categorizeError(error);
+    console.error(
+      `  Failed to deploy campaign contract for ${campaignData.title}:`,
+    );
+    console.error(`  Error Type: ${errorType}`);
+    console.error(`  Details: ${friendlyMessage}`);
+
+    return {
+      campaignAddress: '',
+      transactionHash: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      errorType: errorType as
+        | 'INSUFFICIENT_FUNDS'
+        | 'GAS_LIMIT'
+        | 'NETWORK_ERROR'
+        | 'CONTRACT_ERROR'
+        | 'UNKNOWN',
+    };
+  }
 }
 
 /**
@@ -379,22 +414,27 @@ export async function deployTreasuryContract(
       transactionHash: deployResult.transactionHash,
       success: true,
     };
-    } catch (error) {
-      const { errorType, friendlyMessage } = categorizeError(error);
-      console.error(
-        `  Failed to deploy treasury contract for campaign ${campaignId}:`,
-      );
-      console.error(`  Error Type: ${errorType}`);
-      console.error(`  Details: ${friendlyMessage}`);
-      
-      return {
-        treasuryAddress: '',
-        transactionHash: '',
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        errorType: errorType as any,
-      };
-    }
+  } catch (error) {
+    const { errorType, friendlyMessage } = categorizeError(error);
+    console.error(
+      `  Failed to deploy treasury contract for campaign ${campaignId}:`,
+    );
+    console.error(`  Error Type: ${errorType}`);
+    console.error(`  Details: ${friendlyMessage}`);
+
+    return {
+      treasuryAddress: '',
+      transactionHash: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      errorType: errorType as
+        | 'INSUFFICIENT_FUNDS'
+        | 'GAS_LIMIT'
+        | 'NETWORK_ERROR'
+        | 'CONTRACT_ERROR'
+        | 'UNKNOWN',
+    };
+  }
 }
 
 /**

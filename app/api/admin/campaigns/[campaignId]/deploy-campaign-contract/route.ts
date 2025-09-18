@@ -7,7 +7,10 @@ import {
   ApiUpstreamError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
-import { CampaignsWithIdParams } from '@/lib/api/types';
+import {
+  CampaignsWithIdParams,
+  GetCampaignResponseInstance,
+} from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';
 import { ethers } from 'ethers';
 import { chainConfig } from '@/lib/web3';
@@ -18,7 +21,7 @@ interface DeployCampaignContractResponse {
   txHash?: string;
   status?: number;
   campaignAddress?: string;
-  campaign?: any;
+  campaign?: GetCampaignResponseInstance | null;
 }
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
