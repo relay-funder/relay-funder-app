@@ -5,10 +5,17 @@ import shortUUID from 'short-uuid';
 import crypto from 'crypto';
 import { subDays, addDays } from 'date-fns';
 import { uniqueName, uniqueDescription } from '../lib/generate-strings';
-import { deployCampaignContract, deployAllContracts } from '../lib/seed/contract-deployment';
+import {
+  deployCampaignContract,
+  deployAllContracts,
+} from '../lib/seed/contract-deployment';
 
 // Load environment variables
 config({ path: '.env.local' });
+
+// Check for dummy mode via environment variable or command line argument
+const isDummyMode =
+  process.env.SEED_DUMMY_MODE === 'true' || process.argv.includes('--dummy');
 
 const db = new PrismaClient({
   log: ['error'],
@@ -28,7 +35,7 @@ const campaignTitles = [
   'Cooperative Banking for Small Holders',
   'Mobile Money Access Points - Rural Kenya',
   'Artisan Craft Export Program - Mombasa',
-  // Climate Resilience campaigns  
+  // Climate Resilience campaigns
   'Solar Water Pumping Systems - Turkana',
   'Drought-Resistant Crops Training',
   'Reforestation Project - Mount Elgon',
@@ -123,18 +130,39 @@ async function createUsers(amount: number, roles: string[]) {
 // Generate realistic grassroots funding goals ($200 - $2,000)
 function generateFundingGoal(): string {
   const goals = [
-    200, 300, 450, 500, 650, 750, 850, 1000, 1200, 1500, 1800, 2000
+    200, 300, 450, 500, 650, 750, 850, 1000, 1200, 1500, 1800, 2000,
   ];
   return selectRandom(goals).toString();
 }
 
 // Generate realistic campaign descriptions based on campaign type
 function generateDescription(title: string): string {
-  const isEducation = title.toLowerCase().includes('education') || title.toLowerCase().includes('school') || title.toLowerCase().includes('learning') || title.toLowerCase().includes('teacher') || title.toLowerCase().includes('child');
-  const isEconomic = title.toLowerCase().includes('microfinance') || title.toLowerCase().includes('entrepreneur') || title.toLowerCase().includes('cooperative') || title.toLowerCase().includes('mobile money') || title.toLowerCase().includes('artisan');
-  const isClimate = title.toLowerCase().includes('solar') || title.toLowerCase().includes('drought') || title.toLowerCase().includes('reforestation') || title.toLowerCase().includes('climate') || title.toLowerCase().includes('rainwater');
-  const isHealth = title.toLowerCase().includes('medical') || title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('clinic');
-  const isWater = title.toLowerCase().includes('water') || title.toLowerCase().includes('wells');
+  const isEducation =
+    title.toLowerCase().includes('education') ||
+    title.toLowerCase().includes('school') ||
+    title.toLowerCase().includes('learning') ||
+    title.toLowerCase().includes('teacher') ||
+    title.toLowerCase().includes('child');
+  const isEconomic =
+    title.toLowerCase().includes('microfinance') ||
+    title.toLowerCase().includes('entrepreneur') ||
+    title.toLowerCase().includes('cooperative') ||
+    title.toLowerCase().includes('mobile money') ||
+    title.toLowerCase().includes('artisan');
+  const isClimate =
+    title.toLowerCase().includes('solar') ||
+    title.toLowerCase().includes('drought') ||
+    title.toLowerCase().includes('reforestation') ||
+    title.toLowerCase().includes('climate') ||
+    title.toLowerCase().includes('rainwater');
+  const isHealth =
+    title.toLowerCase().includes('medical') ||
+    title.toLowerCase().includes('health') ||
+    title.toLowerCase().includes('nutrition') ||
+    title.toLowerCase().includes('clinic');
+  const isWater =
+    title.toLowerCase().includes('water') ||
+    title.toLowerCase().includes('wells');
 
   let descriptions: string[] = [];
 
@@ -212,10 +240,29 @@ const remoteImageFiles = {
 
 // Function to select appropriate remote image based on campaign title/type
 function selectCampaignImage(title: string): string {
-  const isEducation = title.toLowerCase().includes('education') || title.toLowerCase().includes('school') || title.toLowerCase().includes('learning') || title.toLowerCase().includes('teacher') || title.toLowerCase().includes('child');
-  const isEconomic = title.toLowerCase().includes('microfinance') || title.toLowerCase().includes('entrepreneur') || title.toLowerCase().includes('cooperative') || title.toLowerCase().includes('mobile money') || title.toLowerCase().includes('artisan');
-  const isClimate = title.toLowerCase().includes('solar') || title.toLowerCase().includes('drought') || title.toLowerCase().includes('reforestation') || title.toLowerCase().includes('climate') || title.toLowerCase().includes('rainwater');
-  const isHealth = title.toLowerCase().includes('medical') || title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('clinic');
+  const isEducation =
+    title.toLowerCase().includes('education') ||
+    title.toLowerCase().includes('school') ||
+    title.toLowerCase().includes('learning') ||
+    title.toLowerCase().includes('teacher') ||
+    title.toLowerCase().includes('child');
+  const isEconomic =
+    title.toLowerCase().includes('microfinance') ||
+    title.toLowerCase().includes('entrepreneur') ||
+    title.toLowerCase().includes('cooperative') ||
+    title.toLowerCase().includes('mobile money') ||
+    title.toLowerCase().includes('artisan');
+  const isClimate =
+    title.toLowerCase().includes('solar') ||
+    title.toLowerCase().includes('drought') ||
+    title.toLowerCase().includes('reforestation') ||
+    title.toLowerCase().includes('climate') ||
+    title.toLowerCase().includes('rainwater');
+  const isHealth =
+    title.toLowerCase().includes('medical') ||
+    title.toLowerCase().includes('health') ||
+    title.toLowerCase().includes('nutrition') ||
+    title.toLowerCase().includes('clinic');
 
   if (isEducation && remoteImageFiles.education.length > 0) {
     return selectRandom(remoteImageFiles.education);
@@ -232,14 +279,41 @@ function selectCampaignImage(title: string): string {
 
 // Function to select appropriate category based on campaign title
 function selectCampaignCategory(title: string): string {
-  const isEducation = title.toLowerCase().includes('education') || title.toLowerCase().includes('school') || title.toLowerCase().includes('learning') || title.toLowerCase().includes('teacher');
-  const isEconomic = title.toLowerCase().includes('microfinance') || title.toLowerCase().includes('entrepreneur') || title.toLowerCase().includes('cooperative') || title.toLowerCase().includes('mobile money') || title.toLowerCase().includes('artisan');
-  const isClimate = title.toLowerCase().includes('solar') || title.toLowerCase().includes('drought') || title.toLowerCase().includes('reforestation') || title.toLowerCase().includes('climate') || title.toLowerCase().includes('rainwater');
-  const isHealth = title.toLowerCase().includes('medical') || title.toLowerCase().includes('health') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('clinic');
-  const isWater = title.toLowerCase().includes('water') || title.toLowerCase().includes('wells');
-  const isAgriculture = title.toLowerCase().includes('crops') || title.toLowerCase().includes('farming');
-  const isEmergency = title.toLowerCase().includes('emergency') || title.toLowerCase().includes('distribution');
-  const isChild = title.toLowerCase().includes('child') || title.toLowerCase().includes('nutrition') || title.toLowerCase().includes('feeding');
+  const isEducation =
+    title.toLowerCase().includes('education') ||
+    title.toLowerCase().includes('school') ||
+    title.toLowerCase().includes('learning') ||
+    title.toLowerCase().includes('teacher');
+  const isEconomic =
+    title.toLowerCase().includes('microfinance') ||
+    title.toLowerCase().includes('entrepreneur') ||
+    title.toLowerCase().includes('cooperative') ||
+    title.toLowerCase().includes('mobile money') ||
+    title.toLowerCase().includes('artisan');
+  const isClimate =
+    title.toLowerCase().includes('solar') ||
+    title.toLowerCase().includes('drought') ||
+    title.toLowerCase().includes('reforestation') ||
+    title.toLowerCase().includes('climate') ||
+    title.toLowerCase().includes('rainwater');
+  const isHealth =
+    title.toLowerCase().includes('medical') ||
+    title.toLowerCase().includes('health') ||
+    title.toLowerCase().includes('nutrition') ||
+    title.toLowerCase().includes('clinic');
+  const isWater =
+    title.toLowerCase().includes('water') ||
+    title.toLowerCase().includes('wells');
+  const isAgriculture =
+    title.toLowerCase().includes('crops') ||
+    title.toLowerCase().includes('farming');
+  const isEmergency =
+    title.toLowerCase().includes('emergency') ||
+    title.toLowerCase().includes('distribution');
+  const isChild =
+    title.toLowerCase().includes('child') ||
+    title.toLowerCase().includes('nutrition') ||
+    title.toLowerCase().includes('feeding');
 
   if (isEducation) return 'education';
   if (isEconomic) return 'economic-development';
@@ -249,11 +323,28 @@ function selectCampaignCategory(title: string): string {
   if (isAgriculture) return 'agriculture';
   if (isEmergency) return 'emergency-relief';
   if (isChild) return 'general-aid';
-  
+
   return 'general-aid'; // default fallback
 }
 
 async function main() {
+  // Log dummy mode status
+  if (isDummyMode) {
+    console.log(
+      'Running seed script in DUMMY MODE - no blockchain interactions will occur',
+    );
+    console.log(
+      '   All contract addresses and transaction hashes will be simulated',
+    );
+  } else {
+    console.log(
+      'Running seed script in STAGING MODE - real blockchain interactions will occur',
+    );
+    console.log(
+      '   Ensure all required environment variables are set for contract deployment',
+    );
+  }
+
   // Clear existing data
   await db.user.deleteMany();
   await db.campaign.deleteMany();
@@ -281,7 +372,9 @@ async function main() {
       description: generateDescription(title),
       fundingGoal: generateFundingGoal(),
       startTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random start within last week
-      endTime: new Date(Date.now() + (15 + Math.random() * 45) * 24 * 60 * 60 * 1000), // 15-60 days from now
+      endTime: new Date(
+        Date.now() + (15 + Math.random() * 45) * 24 * 60 * 60 * 1000,
+      ), // 15-60 days from now
       creatorAddress: selectRandom(creatorUsers),
       status: campaignStatus,
       slug: generateSlug(title),
@@ -297,11 +390,12 @@ async function main() {
   const rounds = [
     {
       title: 'Kenya Education & Development Round',
-      description: 'Supporting educational initiatives and community development projects across Kenya. This matching round focuses on sustainable impact through education, economic empowerment, and infrastructure development.',
+      description:
+        'Supporting educational initiatives and community development projects across Kenya. This matching round focuses on sustainable impact through education, economic empowerment, and infrastructure development.',
       descriptionUrl: 'https://relayfunder.com',
       matchingPool: 50000,
       startDate: subDays(new Date(), 5), // Started 5 days ago (active)
-      endDate: addDays(new Date(), 25), // Ends in 25 days  
+      endDate: addDays(new Date(), 25), // Ends in 25 days
       applicationStart: subDays(new Date(), 15),
       applicationClose: subDays(new Date(), 1),
       blockchain: 'CELO',
@@ -310,8 +404,9 @@ async function main() {
     },
     {
       title: 'East Africa Climate Resilience Round',
-      description: 'Addressing climate challenges across East Africa through renewable energy, water conservation, and sustainable agriculture projects. This round emphasizes community-led climate adaptation solutions.',
-      descriptionUrl: 'https://relayfunder.com', 
+      description:
+        'Addressing climate challenges across East Africa through renewable energy, water conservation, and sustainable agriculture projects. This round emphasizes community-led climate adaptation solutions.',
+      descriptionUrl: 'https://relayfunder.com',
       matchingPool: 75000,
       startDate: addDays(new Date(), 10), // Starts in 10 days (upcoming)
       endDate: addDays(new Date(), 40), // Ends in 40 days
@@ -320,17 +415,23 @@ async function main() {
       blockchain: 'CELO',
       managerAddress: selectRandom(adminUsers),
       fundWalletAddress: `0xround2matchingpool000000000000000000000000`,
-    }
+    },
   ];
 
   // Create campaigns with automatic contract deployment based on status
   for (let i = 0; i < campaigns.length; i++) {
     const creator = selectRandom(creatorUsers);
-    const campaignData = { ...campaigns[i], id: undefined, creatorAddress: creator.address };
-    
-    console.log(`\n📝 Creating campaign ${i + 1}/${campaigns.length}: ${campaignData.title}`);
+    const campaignData = {
+      ...campaigns[i],
+      id: undefined,
+      creatorAddress: creator.address,
+    };
+
+    console.log(
+      `\nCreating campaign ${i + 1}/${campaigns.length}: ${campaignData.title}`,
+    );
     console.log(`   Status: ${campaignData.status}`);
-    
+
     // Create campaign in database first
     const campaign = await db.campaign.create({
       data: campaignData,
@@ -344,52 +445,64 @@ async function main() {
 
     if (campaignData.status === CampaignStatus.PENDING_APPROVAL) {
       // PENDING_APPROVAL campaigns should have campaign contract deployed
-      console.log(`   🚀 Deploying campaign contract (status: PENDING_APPROVAL)`);
-      const deployResult = await deployCampaignContract({
-        id: campaign.id,
-        title: campaign.title,
-        creatorAddress: campaign.creatorAddress,
-        fundingGoal: campaign.fundingGoal,
-        startTime: campaign.startTime,
-        endTime: campaign.endTime,
-      });
+      console.log(`   Deploying campaign contract (status: PENDING_APPROVAL)`);
+      const deployResult = await deployCampaignContract(
+        {
+          id: campaign.id,
+          title: campaign.title,
+          creatorAddress: campaign.creatorAddress,
+          fundingGoal: campaign.fundingGoal,
+          startTime: campaign.startTime,
+          endTime: campaign.endTime,
+        },
+        isDummyMode,
+      );
 
       if (deployResult.success) {
         campaignAddress = deployResult.campaignAddress;
         transactionHash = deployResult.transactionHash;
-        console.log(`   ✅ Campaign contract deployed successfully`);
+        console.log(`   Campaign contract deployed successfully`);
       } else {
-        console.log(`   ❌ Campaign contract deployment failed: ${deployResult.error}`);
+        console.log(
+          `   Campaign contract deployment failed: ${deployResult.error}`,
+        );
       }
     } else if (campaignData.status === CampaignStatus.ACTIVE) {
       // ACTIVE campaigns should have both contracts deployed
-      console.log(`   🚀 Deploying both contracts (status: ACTIVE)`);
-      const deployResult = await deployAllContracts({
-        id: campaign.id,
-        title: campaign.title,
-        creatorAddress: campaign.creatorAddress,
-        fundingGoal: campaign.fundingGoal,
-        startTime: campaign.startTime,
-        endTime: campaign.endTime,
-      });
+      console.log(`   Deploying both contracts (status: ACTIVE)`);
+      const deployResult = await deployAllContracts(
+        {
+          id: campaign.id,
+          title: campaign.title,
+          creatorAddress: campaign.creatorAddress,
+          fundingGoal: campaign.fundingGoal,
+          startTime: campaign.startTime,
+          endTime: campaign.endTime,
+        },
+        isDummyMode,
+      );
 
       if (deployResult.campaignContract.success) {
         campaignAddress = deployResult.campaignContract.campaignAddress;
         transactionHash = deployResult.campaignContract.transactionHash;
-        console.log(`   ✅ Campaign contract deployed successfully`);
+        console.log(`   Campaign contract deployed successfully`);
 
         if (deployResult.treasuryContract?.success) {
           treasuryAddress = deployResult.treasuryContract.treasuryAddress;
-          console.log(`   ✅ Treasury contract deployed successfully`);
+          console.log(`   Treasury contract deployed successfully`);
         } else {
-          console.log(`   ❌ Treasury deployment failed: ${deployResult.treasuryContract?.error}`);
+          console.log(
+            `   Treasury deployment failed: ${deployResult.treasuryContract?.error}`,
+          );
         }
       } else {
-        console.log(`   ❌ Campaign contract deployment failed: ${deployResult.campaignContract.error}`);
+        console.log(
+          `   Campaign contract deployment failed: ${deployResult.campaignContract.error}`,
+        );
       }
     } else {
       // DRAFT campaigns have no contracts deployed
-      console.log(`   📋 No contracts deployed (status: DRAFT)`);
+      console.log(`   No contracts deployed (status: DRAFT)`);
     }
 
     // Update campaign with contract addresses
@@ -402,7 +515,7 @@ async function main() {
       },
     });
 
-    console.log(`   💾 Campaign saved with contract addresses`);
+    console.log(`   Campaign saved with contract addresses`);
 
     // Assign remote IPFS image based on campaign type and link properly to campaign
     const media = await db.media.create({
@@ -424,7 +537,7 @@ async function main() {
         mediaOrder: [media.id],
       },
     });
-    
+
     // Add a few campaign updates for realism
     for (let updateIndex = 1; updateIndex < 4; updateIndex++) {
       await db.campaignUpdate.create({
@@ -447,23 +560,29 @@ async function main() {
 
     // Assign campaigns to rounds based on their category
     let assignedCampaigns = [];
-    
+
     if (i === 0) {
       // Kenya Education & Development Round - assign education, economic, and general aid campaigns
-      assignedCampaigns = campaigns.filter(c => 
-        c.category === 'education' || 
-        c.category === 'economic-development' || 
-        c.category === 'general-aid' ||
-        c.category === 'health'
-      ).slice(0, 8); // First 8 matching campaigns
+      assignedCampaigns = campaigns
+        .filter(
+          (c) =>
+            c.category === 'education' ||
+            c.category === 'economic-development' ||
+            c.category === 'general-aid' ||
+            c.category === 'health',
+        )
+        .slice(0, 8); // First 8 matching campaigns
     } else {
-      // East Africa Climate Resilience Round - assign climate, agriculture, and water campaigns  
-      assignedCampaigns = campaigns.filter(c => 
-        c.category === 'climate-resilience' || 
-        c.category === 'agriculture' || 
-        c.category === 'water-sanitation' ||
-        c.category === 'infrastructure'
-      ).slice(0, 6); // First 6 matching campaigns
+      // East Africa Climate Resilience Round - assign climate, agriculture, and water campaigns
+      assignedCampaigns = campaigns
+        .filter(
+          (c) =>
+            c.category === 'climate-resilience' ||
+            c.category === 'agriculture' ||
+            c.category === 'water-sanitation' ||
+            c.category === 'infrastructure',
+        )
+        .slice(0, 6); // First 6 matching campaigns
     }
 
     // Create round-campaign associations
@@ -500,25 +619,39 @@ async function main() {
   }
 
   console.log(
-    `\n🎉 Seeded ${campaigns.length} campaigns with ZERO balances, ${rounds.length} matching rounds with remote IPFS images`,
+    `\nSeeded ${campaigns.length} campaigns with ZERO balances, ${rounds.length} matching rounds with remote IPFS images`,
   );
   console.log(
-    '💰 All campaigns start at $0 - ready for end-to-end testing with real pledges',
+    'All campaigns start at $0 - ready for end-to-end testing with real pledges',
   );
   console.log(
-    '🚀 Contract deployment status:',
+    `Contract deployment status (${isDummyMode ? 'DUMMY MODE' : 'STAGING MODE'}):`,
   );
   console.log(
     '   - DRAFT campaigns: No contracts deployed (use admin tooling)',
   );
   console.log(
-    '   - PENDING_APPROVAL campaigns: Campaign contracts deployed automatically',
+    `   - PENDING_APPROVAL campaigns: Campaign contracts deployed ${isDummyMode ? '(simulated)' : 'automatically'}`,
   );
   console.log(
-    '   - ACTIVE campaigns: Both campaign and treasury contracts deployed automatically',
+    `   - ACTIVE campaigns: Both campaign and treasury contracts deployed ${isDummyMode ? '(simulated)' : 'automatically'}`,
   );
+
+  if (isDummyMode) {
+    console.log(
+      '\nDUMMY MODE: All contract addresses and transaction hashes are simulated',
+    );
+    console.log(
+      '   To run with real blockchain interactions, use: pnpm dev:db:seed (without --dummy flag)',
+    );
+  } else {
+    console.log('\nSTAGING MODE: Real blockchain interactions occurred');
+    console.log(
+      '   To run in dummy mode for faster development, use: pnpm dev:db:seed:dummy',
+    );
+  }
   console.log(
-    '\n👤 Use the dummy-web3 connector to sign in as one of these users:',
+    '\nUse the dummy-web3 connector to sign in as one of these users:',
   );
   adminUsers.map(({ address }) => console.log(`admin ${address}`));
   creatorUsers

@@ -14,6 +14,7 @@
     "migrate:check": "prisma migrate status",
     "dev:db": "prisma format && prisma migrate dev",
     "dev:db:seed": "prisma db seed",
+    "dev:db:seed:dummy": "SEED_DUMMY_MODE=true prisma db seed",
     "staging:reseed": "prisma db seed",
     "staging:clear-and-seed": "node prisma/clear-and-seed.js",
     "start": "next start",

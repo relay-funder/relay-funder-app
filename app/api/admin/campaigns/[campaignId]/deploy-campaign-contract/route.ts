@@ -71,11 +71,20 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     // Platform configuration (matching working create-onchain endpoint)
     const platformConfig = {
       flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001', // 0.001 USDC per pledge
-      cumulativeFlatFee: process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
-      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400'), // 4% platform fee
-      vakiCommissionBps: parseInt(process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100'), // 1% commission
-      launchOffsetSec: parseInt(process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600'), // 1 hour buffer
-      minCampaignDurationSec: parseInt(process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400'), // 24 hours minimum
+      cumulativeFlatFee:
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
+      platformFeeBps: parseInt(
+        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
+      ), // 4% platform fee
+      vakiCommissionBps: parseInt(
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
+      ), // 1% commission
+      launchOffsetSec: parseInt(
+        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
+      ), // 1 hour buffer
+      minCampaignDurationSec: parseInt(
+        process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
+      ), // 24 hours minimum
     };
 
     // Prepare campaign data for contract deployment
@@ -83,29 +92,53 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     const providedDeadline = Math.floor(campaign.endTime.getTime() / 1000);
 
     const latestBlock = await provider.getBlock('latest');
-    const blockchainNow = Number(latestBlock?.timestamp ?? Math.floor(Date.now() / 1000));
+    const blockchainNow = Number(
+      latestBlock?.timestamp ?? Math.floor(Date.now() / 1000),
+    );
 
     // Use configurable timing with reasonable defaults
-    const launchTime = Math.max(providedLaunchTime, blockchainNow + platformConfig.launchOffsetSec);
-    const deadline = Math.max(providedDeadline, launchTime + platformConfig.minCampaignDurationSec);
+    const launchTime = Math.max(
+      providedLaunchTime,
+      blockchainNow + platformConfig.launchOffsetSec,
+    );
+    const deadline = Math.max(
+      providedDeadline,
+      launchTime + platformConfig.minCampaignDurationSec,
+    );
 
-    const goalAmount = ethers.parseUnits(String(campaign.fundingGoal || '0'), usdcDecimals);
+    const goalAmount = ethers.parseUnits(
+      String(campaign.fundingGoal || '0'),
+      usdcDecimals,
+    );
 
     // Generate meaningful campaign identifier
     const uniqueSuffix = `${campaign.creatorAddress.slice(2, 8)}-${campaign.id}-${Date.now()}`;
-    const identifierHash = ethers.keccak256(ethers.toUtf8Bytes(`AKASHIC-${uniqueSuffix}`));
+    const identifierHash = ethers.keccak256(
+      ethers.toUtf8Bytes(`AKASHIC-${uniqueSuffix}`),
+    );
 
     // Use configurable fee structure (same as working implementation)
-    const feeKeys = ['flatFee', 'cumulativeFlatFee', 'platformFee', 'vakiCommission'];
-    const platformDataKeys = feeKeys.map((n) => ethers.keccak256(ethers.toUtf8Bytes(n)));
+    const feeKeys = [
+      'flatFee',
+      'cumulativeFlatFee',
+      'platformFee',
+      'vakiCommission',
+    ];
+    const platformDataKeys = feeKeys.map((n) =>
+      ethers.keccak256(ethers.toUtf8Bytes(n)),
+    );
 
     // Parse fee values from configuration
     const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(platformConfig.cumulativeFlatFee, usdcDecimals);
+    const cumulativeFlatFee = ethers.parseUnits(
+      platformConfig.cumulativeFlatFee,
+      usdcDecimals,
+    );
     const platformFeeBps = platformConfig.platformFeeBps;
     const vakiCommissionBps = platformConfig.vakiCommissionBps;
 
-    const toBytes32 = (n: bigint | number) => `0x${BigInt(n).toString(16).padStart(64, '0')}`;
+    const toBytes32 = (n: bigint | number) =>
+      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
     const platformDataValues = [
       toBytes32(flatFee),
       toBytes32(cumulativeFlatFee),
@@ -166,7 +199,9 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         '[admin/deploy-campaign-contract] Failed to persist contract info',
         persistErr,
       );
-      throw new ApiUpstreamError('Failed to update campaign with contract info');
+      throw new ApiUpstreamError(
+        'Failed to update campaign with contract info',
+      );
     }
 
     return response({

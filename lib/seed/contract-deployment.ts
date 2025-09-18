@@ -37,12 +37,38 @@ interface CampaignData {
 
 /**
  * Deploy a campaign contract using CampaignInfoFactory
+ * @param campaignData Campaign data for deployment
+ * @param isDummy If true, bypasses blockchain interactions and returns mock data
  */
 export async function deployCampaignContract(
   campaignData: CampaignData,
+  isDummy: boolean = false,
 ): Promise<CampaignContractDeployment> {
   try {
-    console.log(`🚀 Deploying campaign contract for: ${campaignData.title}`);
+    console.log(`Deploying campaign contract for: ${campaignData.title}`);
+
+    // Dummy mode: simulate contract deployment without blockchain interaction
+    if (isDummy) {
+      console.log('  Running in dummy mode - simulating deployment...');
+
+      // Generate realistic mock contract address
+      const timestamp = Date.now();
+      const campaignAddress = `0x${timestamp.toString(16).padStart(8, '0')}${'0'.repeat(32)}`;
+
+      // Generate realistic mock transaction hash
+      const transactionHash = `0x${BigInt(timestamp).toString(16)}${'0'.repeat(56)}`;
+
+      console.log(
+        `  Campaign contract deployed (dummy) at: ${campaignAddress}`,
+      );
+      console.log(`  Transaction hash (dummy): ${transactionHash}`);
+
+      return {
+        campaignAddress,
+        transactionHash,
+        success: true,
+      };
+    }
 
     // Get required environment variables
     const factoryAddr = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
@@ -53,9 +79,11 @@ export async function deployCampaignContract(
     if (!factoryAddr || !globalPlatformHash || !platformAdminKey) {
       const missingVars = [];
       if (!factoryAddr) missingVars.push('NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY');
-      if (!globalPlatformHash) missingVars.push('NEXT_PUBLIC_PLATFORM_HASH'); 
+      if (!globalPlatformHash) missingVars.push('NEXT_PUBLIC_PLATFORM_HASH');
       if (!platformAdminKey) missingVars.push('PLATFORM_ADMIN_PRIVATE_KEY');
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+      throw new Error(
+        `Missing required environment variables: ${missingVars.join(', ')}`,
+      );
     }
 
     // Set up provider and signer
@@ -72,37 +100,72 @@ export async function deployCampaignContract(
     // Platform configuration
     const platformConfig = {
       flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001',
-      cumulativeFlatFee: process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002',
-      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400'),
-      vakiCommissionBps: parseInt(process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100'),
-      launchOffsetSec: parseInt(process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600'),
-      minCampaignDurationSec: parseInt(process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400'),
+      cumulativeFlatFee:
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002',
+      platformFeeBps: parseInt(
+        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
+      ),
+      vakiCommissionBps: parseInt(
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
+      ),
+      launchOffsetSec: parseInt(
+        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
+      ),
+      minCampaignDurationSec: parseInt(
+        process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
+      ),
     };
 
     // Prepare campaign timing
-    const providedLaunchTime = Math.floor(campaignData.startTime.getTime() / 1000);
+    const providedLaunchTime = Math.floor(
+      campaignData.startTime.getTime() / 1000,
+    );
     const providedDeadline = Math.floor(campaignData.endTime.getTime() / 1000);
 
     const latestBlock = await provider.getBlock('latest');
-    const blockchainNow = Number(latestBlock?.timestamp ?? Math.floor(Date.now() / 1000));
+    const blockchainNow = Number(
+      latestBlock?.timestamp ?? Math.floor(Date.now() / 1000),
+    );
 
-    const launchTime = Math.max(providedLaunchTime, blockchainNow + platformConfig.launchOffsetSec);
-    const deadline = Math.max(providedDeadline, launchTime + platformConfig.minCampaignDurationSec);
+    const launchTime = Math.max(
+      providedLaunchTime,
+      blockchainNow + platformConfig.launchOffsetSec,
+    );
+    const deadline = Math.max(
+      providedDeadline,
+      launchTime + platformConfig.minCampaignDurationSec,
+    );
 
-    const goalAmount = ethers.parseUnits(String(campaignData.fundingGoal || '0'), usdcDecimals);
+    const goalAmount = ethers.parseUnits(
+      String(campaignData.fundingGoal || '0'),
+      usdcDecimals,
+    );
 
     // Generate unique campaign identifier
     const uniqueSuffix = `${campaignData.creatorAddress.slice(2, 8)}-${campaignData.id}-${Date.now()}`;
-    const identifierHash = ethers.keccak256(ethers.toUtf8Bytes(`AKASHIC-SEED-${uniqueSuffix}`));
+    const identifierHash = ethers.keccak256(
+      ethers.toUtf8Bytes(`AKASHIC-SEED-${uniqueSuffix}`),
+    );
 
     // Configure fee structure
-    const feeKeys = ['flatFee', 'cumulativeFlatFee', 'platformFee', 'vakiCommission'];
-    const platformDataKeys = feeKeys.map((n) => ethers.keccak256(ethers.toUtf8Bytes(n)));
+    const feeKeys = [
+      'flatFee',
+      'cumulativeFlatFee',
+      'platformFee',
+      'vakiCommission',
+    ];
+    const platformDataKeys = feeKeys.map((n) =>
+      ethers.keccak256(ethers.toUtf8Bytes(n)),
+    );
 
     const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(platformConfig.cumulativeFlatFee, usdcDecimals);
+    const cumulativeFlatFee = ethers.parseUnits(
+      platformConfig.cumulativeFlatFee,
+      usdcDecimals,
+    );
 
-    const toBytes32 = (n: bigint | number) => `0x${BigInt(n).toString(16).padStart(64, '0')}`;
+    const toBytes32 = (n: bigint | number) =>
+      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
     const platformDataValues = [
       toBytes32(flatFee),
       toBytes32(cumulativeFlatFee),
@@ -113,7 +176,7 @@ export async function deployCampaignContract(
     const campaignDataArray = [launchTime, deadline, goalAmount] as const;
 
     // Deploy campaign contract
-    console.log('  📋 Submitting contract deployment transaction...');
+    console.log('  Submitting contract deployment transaction...');
     const tx = await factory.createCampaign(
       campaignData.creatorAddress,
       identifierHash,
@@ -123,13 +186,15 @@ export async function deployCampaignContract(
       campaignDataArray,
     );
 
-    console.log('  ⏳ Waiting for transaction confirmation...');
+    console.log('  Waiting for transaction confirmation...');
     const receipt = await tx.wait();
 
     // Extract campaign address from factory event logs (using same logic as working admin endpoint)
     let campaignAddress: string | null = null;
     try {
-      const eventTopic = ethers.id('CampaignInfoFactoryCampaignCreated(bytes32,address)');
+      const eventTopic = ethers.id(
+        'CampaignInfoFactoryCampaignCreated(bytes32,address)',
+      );
       for (const log of receipt?.logs || []) {
         if (
           log?.topics?.[0] === eventTopic &&
@@ -145,24 +210,28 @@ export async function deployCampaignContract(
         }
       }
     } catch (parseError) {
-      console.warn('  ⚠️ Could not parse event logs:', parseError);
+      console.warn('  Could not parse event logs:', parseError);
     }
 
     if (!campaignAddress) {
-      throw new Error('Failed to extract campaign address from transaction receipt');
+      throw new Error(
+        'Failed to extract campaign address from transaction receipt',
+      );
     }
 
-    console.log(`  ✅ Campaign contract deployed at: ${campaignAddress}`);
-    console.log(`  📋 Transaction hash: ${receipt.hash}`);
+    console.log(`  Campaign contract deployed at: ${campaignAddress}`);
+    console.log(`  Transaction hash: ${receipt.hash}`);
 
     return {
       campaignAddress,
       transactionHash: receipt.hash,
       success: true,
     };
-
   } catch (error) {
-    console.error(`  ❌ Failed to deploy campaign contract for ${campaignData.title}:`, error);
+    console.error(
+      `  Failed to deploy campaign contract for ${campaignData.title}:`,
+      error,
+    );
     return {
       campaignAddress: '',
       transactionHash: '',
@@ -174,13 +243,43 @@ export async function deployCampaignContract(
 
 /**
  * Deploy a treasury contract using TreasuryManager
+ * @param campaignId Campaign ID for treasury deployment
+ * @param campaignAddress Address of the associated campaign contract
+ * @param isDummy If true, bypasses blockchain interactions and returns mock data
  */
 export async function deployTreasuryContract(
   campaignId: number,
   campaignAddress: string,
+  isDummy: boolean = false,
 ): Promise<TreasuryContractDeployment> {
   try {
-    console.log(`🏦 Deploying treasury contract for campaign ${campaignId}`);
+    console.log(`Deploying treasury contract for campaign ${campaignId}`);
+
+    // Dummy mode: simulate treasury deployment without blockchain interaction
+    if (isDummy) {
+      console.log(
+        '  Running in dummy mode - simulating treasury deployment...',
+      );
+
+      // Generate realistic mock treasury address (different prefix from campaign)
+      const timestamp = Date.now() + campaignId;
+      const treasuryAddress = `0x${(timestamp + 0x7000000).toString(16).padStart(8, '7')}${'0'.repeat(32)}`;
+
+      // Generate realistic mock transaction hash
+      const transactionHash = `0x${BigInt(timestamp + 1000).toString(16)}${'0'.repeat(56)}`;
+
+      console.log(
+        `  Treasury contract deployed (dummy) at: ${treasuryAddress}`,
+      );
+      console.log(`  Transaction hash (dummy): ${transactionHash}`);
+      console.log('  Treasury configured successfully (dummy)');
+
+      return {
+        treasuryAddress,
+        transactionHash,
+        success: true,
+      };
+    }
 
     const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
     const platformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH;
@@ -189,7 +288,9 @@ export async function deployTreasuryContract(
       const missingVars = [];
       if (!platformAdminKey) missingVars.push('PLATFORM_ADMIN_PRIVATE_KEY');
       if (!platformHash) missingVars.push('NEXT_PUBLIC_PLATFORM_HASH');
-      throw new Error(`Missing required environment variables for treasury deployment: ${missingVars.join(', ')}`);
+      throw new Error(
+        `Missing required environment variables for treasury deployment: ${missingVars.join(', ')}`,
+      );
     }
 
     const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
@@ -197,7 +298,7 @@ export async function deployTreasuryContract(
 
     const treasuryManager = await createTreasuryManager();
 
-    console.log('  📋 Deploying treasury via TreasuryManager...');
+    console.log('  Deploying treasury via TreasuryManager...');
     const deployResult = await treasuryManager.deploy({
       campaignId,
       platformBytes: platformHash,
@@ -209,11 +310,11 @@ export async function deployTreasuryContract(
       throw new Error(`Treasury deployment failed: ${deployResult.error}`);
     }
 
-    console.log(`  ✅ Treasury contract deployed at: ${deployResult.address}`);
-    console.log(`  📋 Transaction hash: ${deployResult.transactionHash}`);
+    console.log(`  Treasury contract deployed at: ${deployResult.address}`);
+    console.log(`  Transaction hash: ${deployResult.transactionHash}`);
 
     // Configure treasury with campaign parameters
-    console.log('  ⚙️ Configuring treasury...');
+    console.log('  Configuring treasury...');
     const configResult = await treasuryManager.configureTreasury(
       deployResult.address,
       campaignId,
@@ -221,10 +322,10 @@ export async function deployTreasuryContract(
     );
 
     if (!configResult.success) {
-      console.warn('  ⚠️ Treasury configuration failed:', configResult.error);
+      console.warn('  Treasury configuration failed:', configResult.error);
       // Continue anyway - treasury can be configured later
     } else {
-      console.log('  ✅ Treasury configured successfully');
+      console.log('  Treasury configured successfully');
     }
 
     return {
@@ -232,9 +333,11 @@ export async function deployTreasuryContract(
       transactionHash: deployResult.transactionHash,
       success: true,
     };
-
   } catch (error) {
-    console.error(`  ❌ Failed to deploy treasury contract for campaign ${campaignId}:`, error);
+    console.error(
+      `  Failed to deploy treasury contract for campaign ${campaignId}:`,
+      error,
+    );
     return {
       treasuryAddress: '',
       transactionHash: '',
@@ -246,20 +349,25 @@ export async function deployTreasuryContract(
 
 /**
  * Deploy both campaign and treasury contracts for a campaign
+ * @param campaignData Campaign data for deployment
+ * @param isDummy If true, bypasses blockchain interactions and returns mock data
  */
 export async function deployAllContracts(
   campaignData: CampaignData,
+  isDummy: boolean = false,
 ): Promise<{
   campaignContract: CampaignContractDeployment;
   treasuryContract?: TreasuryContractDeployment;
 }> {
-  console.log(`🚀 Deploying all contracts for: ${campaignData.title}`);
+  console.log(`Deploying all contracts for: ${campaignData.title}`);
 
   // Deploy campaign contract first
-  const campaignContract = await deployCampaignContract(campaignData);
-  
+  const campaignContract = await deployCampaignContract(campaignData, isDummy);
+
   if (!campaignContract.success) {
-    console.log(`  ❌ Skipping treasury deployment due to campaign contract failure`);
+    console.log(
+      `  Skipping treasury deployment due to campaign contract failure`,
+    );
     return { campaignContract };
   }
 
@@ -267,6 +375,7 @@ export async function deployAllContracts(
   const treasuryContract = await deployTreasuryContract(
     campaignData.id,
     campaignContract.campaignAddress,
+    isDummy,
   );
 
   return {
