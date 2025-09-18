@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getActiveCategories, CategoriesResponse } from '@/lib/api/categories';
+import { CategoriesResponse } from '@/lib/api/categories';
 
 async function fetchActiveCategories(): Promise<CategoriesResponse> {
   // Try to fetch from API route (client-side) if server-side data is not available
