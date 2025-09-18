@@ -599,3 +599,24 @@ export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
       : [],
   };
 }
+
+/**
+ * Update campaign with transaction hash and campaign address
+ */
+export async function updateCampaignTransaction({
+  id,
+  transactionHash,
+  campaignAddress,
+}: {
+  id: number;
+  transactionHash: string;
+  campaignAddress?: string;
+}) {
+  return await db.campaign.update({
+    where: { id },
+    data: {
+      transactionHash,
+      campaignAddress: campaignAddress ?? undefined,
+    },
+  });
+}

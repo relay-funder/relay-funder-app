@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DbCampaign } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
+import { useAdminDeployContract } from '@/lib/hooks/useCampaigns';
+import { cn } from '@/lib/utils';
 
 export function CampaignAdminDeployContractButton({
   campaign,
@@ -14,72 +14,58 @@ export function CampaignAdminDeployContractButton({
   campaign: DbCampaign;
   onUpdate?: () => void;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const deployContract = useCallback(async () => {
+  const deployMutation = useAdminDeployContract();
+
+  const handleDeploy = async () => {
+    setSuccessMessage(null);
+    setErrorMessage(null);
+
     try {
-      setIsLoading(true);
-      setError(null);
+      const result = await deployMutation.mutateAsync({
+        campaignId: campaign.id,
+      });
 
-      const response = await fetch(
-        `/api/admin/campaigns/${campaign.id}/deploy-campaign-contract`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
+      setSuccessMessage(
+        `Campaign contract deployed successfully. Transaction: ${result.txHash}`,
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Contract deployment failed: ${errorData.error || 'Unknown server error'}`,
-        );
-      }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(
-          `Contract deployment failed: ${result.error || 'Unknown error'}`,
-        );
-      }
-
-      toast({
-        title: 'Success',
-        description: `Campaign contract deployed successfully. Transaction: ${result.txHash}`,
-      });
-
-      // Invalidate React Query cache to refresh campaign data
-      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
-      queryClient.invalidateQueries({
-        queryKey: [CAMPAIGNS_QUERY_KEY, campaign.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [CAMPAIGNS_QUERY_KEY, campaign.slug],
-      });
 
       // Trigger parent component update if callback provided
       if (onUpdate) {
         onUpdate();
       }
     } catch (err) {
-      const errorMessage =
+      const message =
         err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
+      setErrorMessage(message);
+    }
+  };
+
+  // Handle success toast with useEffect
+  useEffect(() => {
+    if (successMessage) {
+      toast({
+        title: 'Success',
+        description: successMessage,
+      });
+      setSuccessMessage(null);
+    }
+  }, [successMessage, toast]);
+
+  // Handle error toast with useEffect
+  useEffect(() => {
+    if (errorMessage) {
       toast({
         title: 'Error',
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
+      setErrorMessage(null);
     }
-  }, [campaign.id, campaign.slug, onUpdate, toast, queryClient]);
+  }, [errorMessage, toast]);
 
   // Only show button if campaign doesn't have a contract address yet
   if (campaign.campaignAddress) {
@@ -96,16 +82,17 @@ export function CampaignAdminDeployContractButton({
   return (
     <div className="space-y-2">
       <Button
-        onClick={deployContract}
-        className={
+        onClick={handleDeploy}
+        className={cn(
+          'w-full',
           needsContractDeployment
             ? 'bg-blue-700 hover:bg-blue-800'
-            : 'bg-blue-600 hover:bg-blue-700'
-        }
-        disabled={isLoading}
+            : 'bg-blue-600 hover:bg-blue-700',
+        )}
+        disabled={deployMutation.isPending}
         title="Deploy the campaign info factory contract for this campaign on-chain."
       >
-        {isLoading
+        {deployMutation.isPending
           ? 'Deploying Contract...'
           : needsContractDeployment
             ? 'Deploy Contract (Required)'
@@ -121,12 +108,6 @@ export function CampaignAdminDeployContractButton({
       {campaign.campaignAddress && (
         <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
           Contract deployed: {campaign.campaignAddress}
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
-          Error: {error}
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import { getActiveCategories } from '@/lib/api/categories';
  */
 export async function GET() {
   try {
+    // public endpoint, no auth needed
     const categoriesData = await getActiveCategories();
     return response(categoriesData);
   } catch (error: unknown) {

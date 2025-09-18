@@ -258,6 +258,56 @@ docker compose exec app pnpm prisma db pull
 - **Path Mapping**: Use `@/` for absolute imports (configured in tsconfig.json)
 - **Font Loading**: Uses Geist Sans and Geist Mono fonts loaded locally
 
+#### Type Assertion Best Practices (CRITICAL)
+
+> **NEVER USE `as any`**: The `as any` assertion completely disables TypeScript's type safety and should be avoided at all costs.
+
+**Safe Alternatives:**
+
+1. **Use `unknown` and Type Guards**
+   ```typescript
+   function processData(data: unknown) {
+     if (typeof data === 'object' && data !== null && 'id' in data) {
+       return (data as { id: string }).id;
+     }
+     throw new Error('Invalid data structure');
+   }
+   ```
+
+2. **Use Zod for Runtime Validation**
+   ```typescript
+   const CampaignSchema = z.object({
+     id: z.string(),
+     title: z.string(),
+     targetAmount: z.number(),
+   });
+   
+   type Campaign = z.infer<typeof CampaignSchema>;
+   const campaign = CampaignSchema.parse(unknownData);
+   ```
+
+3. **Type Narrowing with Conditionals**
+   ```typescript
+   function handleError(error: unknown) {
+     if (error instanceof Error) {
+       console.error(error.message);
+     } else if (typeof error === 'string') {
+       console.error(error);
+     }
+   }
+   ```
+
+**Acceptable Use Cases (Sparingly):**
+- DOM elements: `document.getElementById('id') as HTMLButtonElement`
+- After validation: `validatedData as Campaign` (only after Zod parsing)
+- Well-known library types: `prismaResult as Campaign[]`
+
+**Migration Strategy:**
+1. Search for `as any` usage
+2. Replace with appropriate pattern above
+3. Add runtime validation where needed
+4. Test thoroughly
+
 ### Logging Standards
 - **Clean Logging**: Avoid excessive emoji use in console logging - keep logs professional and readable
 - **Consistent Format**: Use consistent indentation and formatting for log messages
@@ -274,6 +324,54 @@ docker compose exec app pnpm prisma db pull
 - **Forward Ref Pattern**: Use `React.forwardRef` for components that need refs
 - **Display Name**: Set `Component.displayName` for debugging
 - **Radix UI Integration**: Extensive use of Radix UI primitives for accessibility
+- **Toast State Management**: Avoid direct toast calls in catch/business logic. Set state instead and use useEffect to trigger toasts
+
+#### Data Fetching Best Practices (MANDATORY)
+
+> **NEVER USE DIRECT FETCH IN COMPONENTS**: Always use TanStack Query hooks for data fetching instead of implementing fetch directly in components.
+
+**Recommended Pattern:**
+```typescript
+// ✅ Use TanStack Query hooks
+import { useQuery } from '@tanstack/react-query';
+
+function CampaignList() {
+  const { data: campaigns, isLoading, error } = useQuery({
+    queryKey: ['campaigns'],
+    queryFn: () => fetch('/api/campaigns').then(res => res.json()),
+  });
+
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorMessage error={error} />;
+  return <div>{campaigns?.map(campaign => <CampaignCard key={campaign.id} campaign={campaign} />)}</div>;
+}
+```
+
+**Custom Hook Pattern (PREFERRED):**
+```typescript
+// ✅ Create reusable custom hooks in lib/hooks/
+export function useCampaigns() {
+  return useQuery({
+    queryKey: ['campaigns'],
+    queryFn: async () => {
+      const response = await fetch('/api/campaigns');
+      if (!response.ok) throw new Error('Failed to fetch campaigns');
+      return response.json();
+    },
+  });
+}
+```
+
+**For Mutations:**
+```typescript
+// ✅ Use useMutation for POST/PUT/DELETE
+const createMutation = useMutation({
+  mutationFn: (data) => fetch('/api/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
+});
+```
+
+**Benefits:** Automatic caching, background refetching, loading states, request deduplication, offline support
 
 ### File Organization
 - **Absolute Imports**: Use `@/` prefix for internal module imports
