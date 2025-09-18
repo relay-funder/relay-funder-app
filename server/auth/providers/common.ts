@@ -7,9 +7,13 @@ export async function setupUser(address: string) {
   });
 
   // Determine roles based on platform admin address and mock auth
-  const platformAdminAddress = process.env.NEXT_PUBLIC_PLATFORM_ADMIN?.toLowerCase();
-  const isPlatformAdmin = platformAdminAddress && normalizedAddress === platformAdminAddress;
-  const isMockAdmin = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' && normalizedAddress.startsWith('0xadadad');
+  const platformAdminAddress =
+    process.env.NEXT_PUBLIC_PLATFORM_ADMIN?.toLowerCase();
+  const isPlatformAdmin =
+    platformAdminAddress && normalizedAddress === platformAdminAddress;
+  const isMockAdmin =
+    process.env.NEXT_PUBLIC_MOCK_AUTH === 'true' &&
+    normalizedAddress.startsWith('0xadadad');
   const userRoles = ['user'];
 
   if (isPlatformAdmin || isMockAdmin) {
@@ -27,8 +31,11 @@ export async function setupUser(address: string) {
     });
   } else {
     // Check if user needs role updates
-    const needsAdminRole = (isPlatformAdmin || isMockAdmin) && !dbUser.roles.includes('admin');
-    const hasExtraRoles = dbUser.roles.some(role => !userRoles.includes(role));
+    const needsAdminRole =
+      (isPlatformAdmin || isMockAdmin) && !dbUser.roles.includes('admin');
+    const hasExtraRoles = dbUser.roles.some(
+      (role) => !userRoles.includes(role),
+    );
 
     if (needsAdminRole || hasExtraRoles) {
       const updatedRoles = [...new Set([...dbUser.roles, ...userRoles])];
@@ -41,7 +48,7 @@ export async function setupUser(address: string) {
       });
     }
   }
-  
+
   if (dbUser) {
     return { ...dbUser, dbId: dbUser.id, id: `${dbUser.id}` };
   }

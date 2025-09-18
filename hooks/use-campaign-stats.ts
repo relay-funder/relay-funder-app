@@ -10,9 +10,8 @@ export function useCampaignStats({ slug }: { slug: string }) {
   const { campaign } = data ?? ({} as GetCampaignResponse);
 
   // Fetch treasury balance separately if available
-  const { data: treasuryBalance, isLoading: isTreasuryBalanceLoading } = useTreasuryBalance(
-    campaign?.treasuryAddress ?? null
-  );
+  const { data: treasuryBalance, isLoading: isTreasuryBalanceLoading } =
+    useTreasuryBalance(campaign?.treasuryAddress ?? null);
 
   return {
     ...useCampaignStatsFromInstance({
@@ -28,7 +27,11 @@ export function useCampaignStatsFromInstance({
   treasuryBalance,
 }: {
   campaign?: DbCampaign;
-  treasuryBalance?: { available: string; totalPledged: string; currency: string } | null;
+  treasuryBalance?: {
+    available: string;
+    totalPledged: string;
+    currency: string;
+  } | null;
 }) {
   const paymentSummary = campaign?.paymentSummary;
   const contributorPendingCount = paymentSummary?.countPending ?? 0;

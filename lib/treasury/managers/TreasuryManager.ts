@@ -2,7 +2,14 @@ import { ethers } from 'ethers';
 import { db } from '@/server/db';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { chainConfig } from '@/lib/web3';
-import { TREASURY_DELAYS, TREASURY_CONFIG, TREASURY_GAS_LIMITS, USDC_CONFIG, TREASURY_IMPLEMENTATIONS, FEE_KEYS } from '@/lib/constant/treasury';
+import {
+  TREASURY_DELAYS,
+  TREASURY_CONFIG,
+  TREASURY_GAS_LIMITS,
+  USDC_CONFIG,
+  TREASURY_IMPLEMENTATIONS,
+  FEE_KEYS,
+} from '@/lib/constant/treasury';
 import {
   TreasuryInterface,
   TreasuryDeploymentResult,
@@ -94,11 +101,11 @@ export class TreasuryManager extends TreasuryInterface {
         if (!log.topics || log.topics[0] !== expectedTopic) {
           continue;
         }
-        
+
         if (!log.data) {
           continue;
         }
-        
+
         // Remove zero padding from the beginning to get clean address
         const cleanData = log.data.replace(/^0x0{24}/, '0x');
         if (cleanData.length === 42 && cleanData.startsWith('0x')) {
@@ -196,7 +203,9 @@ export class TreasuryManager extends TreasuryInterface {
       );
 
       // Fee keys as per shell script
-      const FLAT_FEE_KEY = ethers.keccak256(ethers.toUtf8Bytes(FEE_KEYS.FLAT_FEE));
+      const FLAT_FEE_KEY = ethers.keccak256(
+        ethers.toUtf8Bytes(FEE_KEYS.FLAT_FEE),
+      );
       const CUM_FLAT_FEE_KEY = ethers.keccak256(
         ethers.toUtf8Bytes(FEE_KEYS.CUMULATIVE_FLAT_FEE),
       );
@@ -211,7 +220,10 @@ export class TreasuryManager extends TreasuryInterface {
         new Date(campaign.startTime).getTime() / 1000,
       );
       const deadline = Math.floor(new Date(campaign.endTime).getTime() / 1000);
-      const goalAmount = ethers.parseUnits(campaign.fundingGoal, USDC_CONFIG.DECIMALS);
+      const goalAmount = ethers.parseUnits(
+        campaign.fundingGoal,
+        USDC_CONFIG.DECIMALS,
+      );
 
       const tx = await treasuryContract.configureTreasury(
         [

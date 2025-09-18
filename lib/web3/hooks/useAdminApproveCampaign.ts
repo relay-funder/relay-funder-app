@@ -85,8 +85,14 @@ export function useAdminApproveCampaign() {
         );
         console.error('❌ [AdminApproval] Error details:', {
           message: error instanceof Error ? error.message : 'Unknown error',
-          code: error && typeof error === 'object' && 'code' in error ? (error as { code: unknown }).code : undefined,
-          data: error && typeof error === 'object' && 'data' in error ? (error as { data: unknown }).data : undefined,
+          code:
+            error && typeof error === 'object' && 'code' in error
+              ? (error as { code: unknown }).code
+              : undefined,
+          data:
+            error && typeof error === 'object' && 'data' in error
+              ? (error as { data: unknown }).data
+              : undefined,
         });
         throw new Error(
           `Failed to retrieve platform admin address: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -140,8 +146,16 @@ export function useAdminApproveCampaign() {
           TreasuryFactoryABI,
           ethersProvider,
         ).connect(signer) as ethers.Contract & {
-          interface: { getFunction: (name: string) => ethers.FunctionFragment | null };
-          deploy: (platformHash: string, infoAddress: string, implementationId: number, name: string, symbol: string) => Promise<ethers.ContractTransactionResponse>;
+          interface: {
+            getFunction: (name: string) => ethers.FunctionFragment | null;
+          };
+          deploy: (
+            platformHash: string,
+            infoAddress: string,
+            implementationId: number,
+            name: string,
+            symbol: string,
+          ) => Promise<ethers.ContractTransactionResponse>;
         };
       } catch (contractCreationError) {
         console.error(

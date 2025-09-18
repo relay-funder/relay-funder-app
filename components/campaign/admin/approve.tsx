@@ -88,14 +88,30 @@ export function CampaignAdminApproveButton({
   if (campaign.status !== 'PENDING_APPROVAL') {
     return null;
   }
+
+  // Show dependency requirements
+  const canApprove = campaign.campaignAddress !== null && campaign.campaignAddress !== undefined;
+
   return (
-    <Button
-      onClick={onApprove}
-      className="mt-4 bg-green-600 hover:bg-green-700"
-      disabled={isLoading}
-      title="Mark this Campaign as approved and make it visible to everyone."
-    >
-      {isLoading ? 'Processing...' : 'Approve'}
-    </Button>
+    <div className="space-y-2">
+      <Button
+        onClick={onApprove}
+        className="mt-4 bg-green-600 hover:bg-green-700"
+        disabled={isLoading || !canApprove}
+        title={
+          !canApprove 
+            ? "Campaign contract must be deployed before approval. Use 'Deploy Contract' first."
+            : "Mark this Campaign as approved and deploy treasury contract."
+        }
+      >
+        {isLoading ? 'Processing...' : 'Approve & Deploy Treasury'}
+      </Button>
+      
+      {!canApprove && (
+        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+          Campaign contract must be deployed first
+        </div>
+      )}
+    </div>
   );
 }
