@@ -130,7 +130,7 @@ NODE_ENV=development
 
 ### Development
 ```bash
-# Start development server
+# Start development environment (ALWAYS use this first)
 docker compose up
 
 # Start in detached mode
@@ -138,57 +138,114 @@ docker compose up -d
 
 # View logs
 docker compose logs -f
+docker compose logs -f app  # App-specific logs
 
 # Stop development environment
 docker compose down
 ```
 
-### Database Operations
+### 🐳 Docker Container Operations (MANDATORY APPROACH)
+
+> **CRITICAL**: ALL development operations MUST be performed within Docker containers. NEVER run pnpm or Node.js commands directly on the host system.
+
+#### Package Management (ALWAYS use Docker)
 ```bash
-# Generate Prisma client
-pnpm prisma generate
+# Install dependencies (NEVER run 'pnpm install' on host)
+docker compose exec app pnpm install
 
-# Run database migrations
-pnpm dev:db
+# Add new dependencies
+docker compose exec app pnpm add <package-name>
+docker compose exec app pnpm add -D <dev-package-name>
 
-# Run migrations in development
-pnpm prisma migrate dev
+# Remove dependencies  
+docker compose exec app pnpm remove <package-name>
 
-# Check migration status
-pnpm migrate:check
-
-# Seed database
-pnpm dev:db:seed
-
-# Reset database (development only)
-pnpm prisma migrate reset
+# Update dependencies
+docker compose exec app pnpm update
 ```
 
-### Build and Deployment
+#### Development Commands (Docker Only)
 ```bash
-# Build for production
-pnpm build
+# Run development server
+docker compose exec app pnpm dev
 
-# Build for production with migrations
-pnpm build:production
+# Build application
+docker compose exec app pnpm build
 
 # Start production server
-pnpm start
+docker compose exec app pnpm start
 
-# Type checking and linting
-pnpm lint
+# Run tests
+docker compose exec app pnpm test
+
+# Type checking
+docker compose exec app pnpm type-check
+
+# Linting
+docker compose exec app pnpm lint
 
 # Format code
-pnpm format:write
+docker compose exec app pnpm format:write
 ```
 
-### Testing
+#### Shell Access for Development Tasks
 ```bash
-# Run all tests with Vitest
-pnpm test
+# Primary development shell (most common)
+docker compose exec app bash
 
-# Format checking
-pnpm format:write
+# Alternative shell for advanced tasks
+docker compose exec app-shell bash
+
+# Run single commands without entering shell
+docker compose exec app <command>
+```
+
+#### Container Status and Debugging
+```bash
+# Check container status
+docker compose ps
+
+# View container logs
+docker compose logs app
+docker compose logs database
+docker compose logs pgadmin
+
+# Follow logs in real-time
+docker compose logs -f app
+
+# Restart specific service
+docker compose restart app
+docker compose restart database
+
+# Stop and restart environment
+docker compose down
+docker compose up
+```
+
+### Database Operations (Docker Required)
+```bash
+# Generate Prisma client (ALWAYS use Docker)
+docker compose exec app pnpm prisma generate
+
+# Run database migrations  
+docker compose exec app pnpm dev:db
+
+# Run migrations in development
+docker compose exec app pnpm prisma migrate dev
+
+# Check migration status
+docker compose exec app pnpm migrate:check
+
+# Seed database
+docker compose exec app pnpm dev:db:seed
+
+# Reset database (development only)
+docker compose exec app pnpm prisma migrate reset
+
+# Database inspection and debugging
+docker compose exec app pnpm prisma studio
+docker compose exec app pnpm prisma db push
+docker compose exec app pnpm prisma db pull
 ```
 
 ## Coding Conventions
@@ -224,6 +281,216 @@ pnpm format:write
 - **UPPER_SNAKE_CASE**: Constants, environment variables
 - **Descriptive Names**: Use explicit, descriptive variable names
 
+## 🚨 CRITICAL API DESIGN PATTERNS (MANDATORY)
+
+> **ESSENTIAL RULE**: All API development MUST follow these patterns exactly. No exceptions.
+
+### 🔐 Authentication & Authorization (ABSOLUTELY REQUIRED)
+
+#### Role-Based Access Control
+- **ALWAYS** use `checkAuth(['role'])` as the FIRST line in protected API routes
+- **ALWAYS** validate user sessions before any business logic
+- **NEVER** bypass authentication checks, even for internal routes
+
+```typescript
+// MANDATORY pattern for all protected routes
+export async function GET/POST/PUT/DELETE(req: Request) {
+  try {
+    const session = await checkAuth(['user']); // or ['admin'] for admin-only
+    // ... rest of your logic
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+```
+
+#### Supported Roles
+- `'user'`: Standard authenticated user
+- `'admin'`: Administrative privileges
+- Use `isAdmin()` for additional admin-specific checks
+- Use `checkContractAdmin()` for blockchain admin operations
+
+#### Authentication Error Handling
+- **ALWAYS** use `ApiAuthError` for authentication failures
+- **ALWAYS** use `ApiAuthNotAllowed` for authorization failures
+- **ALWAYS** handle errors with `handleError(error)` function
+
+### 🎭 Dummy Wallet Provider (TESTING CRITICAL)
+
+> **ESSENTIAL**: Every Web3 feature MUST have a corresponding dummy implementation for testing
+
+#### Dummy Implementation Requirements
+- **ALWAYS** create dummy actions that simulate real blockchain behavior
+- **ALWAYS** maintain realistic response times (use setTimeout for delays)
+- **ALWAYS** return properly formatted mock data that matches real responses
+- **ALWAYS** implement state management for dummy wallet connections
+
+#### Dummy Response Patterns
+```typescript
+// Example: Dummy transaction simulation
+const simulateTransaction = async (params: TransactionParams) => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Return realistic mock transaction hash
+  return {
+    hash: `0x${BigInt(Date.now()).toString(16)}...`,
+    status: 'pending',
+    blockNumber: Math.floor(Math.random() * 1000000),
+  };
+};
+```
+
+#### Dummy Wallet Features That MUST Be Maintained
+1. **Wallet Connection**: Mock connection states and switching
+2. **Transaction Signing**: Return dummy signatures
+3. **Contract Interactions**: Simulate contract calls and responses
+4. **Chain Switching**: Handle network change events
+5. **Address Generation**: Generate realistic test addresses
+6. **Balance Queries**: Return mock balances for testing
+7. **Gas Estimation**: Provide realistic gas estimates
+
+#### Admin Mode in Dummy Wallet
+- **ALWAYS** implement admin testing mode (addresses starting with `0xadadad`)
+- **ALWAYS** allow testing of admin-only contract functions
+- **ALWAYS** bypass contract admin checks when in development mode
+
+### 📋 API Route Structure (REQUIRED TEMPLATE)
+
+#### Mandatory Template Pattern
+Follow the exact pattern from `app/api/_template/route.ts`:
+
+```typescript
+import { db } from '@/server/db';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { 
+  ApiAuthNotAllowed,
+  ApiIntegrityError,
+  ApiNotFoundError,
+  ApiParameterError,
+} from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+
+export async function POST/GET/PUT/DELETE(req: Request) {
+  try {
+    // 1. ALWAYS start with authentication
+    const session = await checkAuth(['user']);
+    
+    // 2. Extract and validate parameters
+    const { searchParams } = new URL(req.url);
+    // or: const data = await req.json();
+    
+    // 3. Validate user exists and has permissions
+    const user = await db.user.findUnique({
+      where: { address: session.user.address },
+    });
+    
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
+    
+    // 4. Additional role checks if needed
+    if (requiresAdmin && !await isAdmin()) {
+      throw new ApiAuthNotAllowed('Admin privileges required');
+    }
+    
+    // 5. Business logic here
+    
+    // 6. Return response
+    return response(result);
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+```
+
+#### Required Imports for All API Routes
+```typescript
+import { db } from '@/server/db';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { response, handleError } from '@/lib/api/response';
+import { ApiAuthNotAllowed, ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
+```
+
+### 🛡️ Input Validation (MANDATORY)
+
+#### Zod Schema Validation
+- **ALWAYS** define Zod schemas for request bodies and parameters
+- **ALWAYS** validate input data before processing
+- **ALWAYS** use TypeScript inference from Zod schemas
+
+```typescript
+import { z } from 'zod';
+
+const CreateCampaignSchema = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string().min(10),
+  targetAmount: z.number().positive(),
+});
+
+export async function POST(req: Request) {
+  try {
+    const session = await checkAuth(['user']);
+    const body = await req.json();
+    const validatedData = CreateCampaignSchema.parse(body);
+    // ... proceed with validated data
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+```
+
+### 🔒 Security Requirements (NON-NEGOTIABLE)
+
+#### Database Security
+- **ALWAYS** use Prisma's parameterized queries (automatic with Prisma)
+- **NEVER** construct raw SQL queries with user input
+- **ALWAYS** validate foreign key relationships
+
+#### Resource Ownership
+- **ALWAYS** verify users can only access/modify their own resources
+- **ALWAYS** check ownership before UPDATE/DELETE operations
+
+```typescript
+// Example ownership check
+const campaign = await db.campaign.findUnique({
+  where: { id: campaignId },
+});
+
+if (campaign?.creatorAddress !== session.user.address && !await isAdmin()) {
+  throw new ApiAuthNotAllowed('Cannot modify campaign owned by another user');
+}
+```
+
+### 📝 Error Handling Patterns (REQUIRED)
+
+#### Standardized Error Types
+- `ApiAuthError`: Authentication failed
+- `ApiAuthNotAllowed`: User lacks required permissions  
+- `ApiNotFoundError`: Requested resource doesn't exist
+- `ApiParameterError`: Invalid or missing parameters
+- `ApiIntegrityError`: Data consistency violation
+- `ApiUpstreamError`: External service failure
+
+#### Error Response Format
+- **ALWAYS** use `handleError(error)` to ensure consistent error responses
+- **ALWAYS** return appropriate HTTP status codes
+- **NEVER** expose sensitive information in error messages
+
+### 🧪 Testing Requirements for APIs
+
+#### Authentication Testing
+- **ALWAYS** test unauthenticated access (should fail)
+- **ALWAYS** test insufficient permissions (should fail)  
+- **ALWAYS** test valid user access (should succeed)
+- **ALWAYS** test admin-only endpoints with both user and admin roles
+
+#### Dummy Wallet Testing
+- **ALWAYS** verify dummy wallet provides equivalent functionality
+- **ALWAYS** test complete user workflows in dummy mode
+- **ALWAYS** ensure dummy responses match expected formats
+- **ALWAYS** test error scenarios in dummy mode
+
 ## API Patterns
 
 ### Route Structure
@@ -231,18 +498,6 @@ pnpm format:write
 - **HTTP Methods**: Implement proper GET, POST, PUT, DELETE methods
 - **Route Groups**: Use route groups for logical organization
 - **Dynamic Routes**: Use `[param]` for dynamic route segments
-
-### Authentication & Authorization
-- **Server-Side Auth**: Use `checkAuth(['role'])` for protected routes
-- **Role-Based Access**: Support multiple roles (user, admin)
-- **Session Validation**: Validate sessions on protected endpoints
-- **Resource Ownership**: Check resource ownership before allowing access
-
-### Error Handling
-- **Centralized Errors**: Use predefined error types from `@/lib/api/error`
-- **Consistent Format**: Return consistent error response format
-- **HTTP Status Codes**: Use appropriate HTTP status codes
-- **Validation Errors**: Handle Zod validation errors gracefully
 
 ### Data Validation
 - **Zod Schemas**: Use Zod for input validation and type safety
@@ -274,14 +529,134 @@ pnpm format:write
 - **Atomic Changes**: Keep migrations atomic and reversible
 - **Testing**: Test migrations on staging before production
 
-## Web3 Integration
+## 🌐 Web3 Integration (CRITICAL FOR ALL BLOCKCHAIN FEATURES)
 
-### Wallet Adapters
-- **Multi-Adapter Pattern**: Support Privy, Silk, and Dummy wallet providers
-- **Consistent Interface**: Use unified interface across adapters
-- **Error Handling**: Handle wallet connection and transaction errors
-- **State Management**: Manage wallet connection state properly
-- **Admin Approval**: Special handling for contract admin permissions
+> **MANDATORY**: All Web3 features must support Privy, Silk, AND Dummy wallet adapters
+
+### 🎭 Multi-Wallet Adapter Requirements (ESSENTIAL)
+
+#### Adapter Support Matrix
+- **Privy**: Production wallet adapter for real users
+- **Silk**: Alternative production wallet adapter  
+- **Dummy**: **CRITICAL** testing adapter that MUST mirror all functionality
+
+#### Unified Interface Pattern
+```typescript
+// All adapters must implement this interface
+interface WalletAdapter {
+  useWeb3Auth(): IWeb3UseAuthHook;
+  getProvider(): EthereumProvider;
+  ethers: typeof import('ethers');
+  // ... other required methods
+}
+```
+
+### 🎯 Dummy Wallet Adapter (ABSOLUTELY ESSENTIAL)
+
+#### Critical Dummy Features
+1. **Authentication Simulation**
+   ```typescript
+   // Must simulate SIWE (Sign-In with Ethereum) flow
+   await nextAuthSignIn('siwe', {
+     redirect: false,
+     message: userAddress,
+     signature: userAddress, // Dummy signature
+   });
+   ```
+
+2. **Transaction Simulation**
+   ```typescript
+   // Must return realistic transaction objects
+   const mockTransaction = {
+     hash: `0x${BigInt(Date.now()).toString(16)}`,
+     wait: async () => ({
+       status: 1,
+       blockNumber: Math.floor(Math.random() * 1000000),
+       transactionHash: `0x${BigInt(Date.now()).toString(16)}`,
+     }),
+   };
+   ```
+
+3. **Contract Interaction Mocking**
+   ```typescript
+   // Must simulate contract calls with realistic delays
+   export async function readContract(config: unknown, contract: unknown) {
+     await new Promise(resolve => setTimeout(resolve, 500));
+     return '1000000000000000000'; // Mock result
+   }
+   ```
+
+4. **Admin Mode Testing**
+   - Addresses starting with `0xadadad` automatically get admin privileges
+   - Must allow testing of admin-only contract functions
+   - Should redirect admin users to `/admin` after login
+
+5. **State Management**
+   - Must track connection states (connecting, connected, disconnected)
+   - Must handle chain switching events
+   - Must persist dummy auth state in localStorage
+
+#### Dummy Wallet Implementation Checklist
+- ✅ Mock wallet connection/disconnection
+- ✅ Simulate transaction signing with delays
+- ✅ Handle contract read/write operations
+- ✅ Provide realistic gas estimates
+- ✅ Support chain switching simulation
+- ✅ Generate valid-looking addresses and transaction hashes
+- ✅ Implement admin testing mode
+- ✅ Provide equivalent error scenarios for testing
+
+### 🔗 Smart Contract Integration
+
+#### ABI Organization
+- **ALWAYS** store contract ABIs in `/contracts/abi/` directory
+- **ALWAYS** use TypeScript interfaces generated from ABIs
+- **ALWAYS** implement dummy equivalents for contract interactions
+
+#### Contract Interaction Pattern
+```typescript
+// Real implementation
+import { readContract } from 'wagmi';
+import { contractABI } from '@/contracts/abi/MyContract';
+
+// Dummy implementation must provide equivalent
+import { readContract } from '@/lib/web3/adapter/dummy/wagmi';
+```
+
+### 📊 Transaction State Management
+
+#### Required Transaction States
+- `idle`: No transaction in progress
+- `pending`: Transaction submitted, waiting for confirmation
+- `confirmed`: Transaction confirmed on blockchain
+- `failed`: Transaction failed or reverted
+
+#### State Tracking Pattern
+```typescript
+const [transactionState, setTransactionState] = useState<{
+  status: 'idle' | 'pending' | 'confirmed' | 'failed';
+  hash?: string;
+  error?: string;
+}>({ status: 'idle' });
+```
+
+### 🛡️ Web3 Security Requirements
+
+#### Address Validation
+- **ALWAYS** validate Ethereum addresses using proper checksum validation
+- **ALWAYS** sanitize addresses before database storage
+- **NEVER** trust client-provided addresses without validation
+
+#### Contract Parameter Validation
+- **ALWAYS** validate contract function parameters
+- **ALWAYS** check allowances before token transfers
+- **ALWAYS** estimate gas before transaction submission
+- **ALWAYS** handle contract revert errors gracefully
+
+#### Private Key Security
+- **NEVER** handle private keys in client-side code
+- **NEVER** log sensitive wallet information
+- **ALWAYS** use wallet provider's signing methods
 
 ### Smart Contracts
 - **ABI Organization**: Store contract ABIs in `/contracts` directory
