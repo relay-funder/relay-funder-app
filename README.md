@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/akashic-logo.png" alt="Akashic Logo" />
+  <img src="public/relay-funder-logo.png" alt="RelayFunder Logo" />
 </div>
 
 # 🌍 Akashic
