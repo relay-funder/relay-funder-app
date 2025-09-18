@@ -82,7 +82,9 @@ export async function requestTransaction({
   const treasuryContract = new ethers.Contract(address!, treasuryABI, signer);
 
   // Generate pledge ID as per shell script pattern
-  const pledgeId = ethers.keccak256(ethers.toUtf8Bytes(`pledge-${Date.now()}-${userAddress}`));
+  const pledgeId = ethers.keccak256(
+    ethers.toUtf8Bytes(`pledge-${Date.now()}-${userAddress}`),
+  );
 
   debug && console.log('Estimating gas for pledge transaction...');
   let estimatedGas = 220000n;

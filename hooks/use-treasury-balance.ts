@@ -4,7 +4,9 @@ const TREASURY_BALANCE_QUERY_KEY = 'treasury_balance';
 
 // Fetch treasury balance via API instead of direct blockchain calls
 async function fetchTreasuryBalance(treasuryAddress: string): Promise<any> {
-  const response = await fetch(`/api/treasury/balance?address=${treasuryAddress}`);
+  const response = await fetch(
+    `/api/treasury/balance?address=${treasuryAddress}`,
+  );
   if (!response.ok) {
     throw new Error('Failed to fetch treasury balance');
   }

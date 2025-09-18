@@ -3,10 +3,7 @@ import { response, handleError } from '@/lib/api/response';
 import { ApiParameterError } from '@/lib/api/error';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 
-export async function GET(
-  request: Request,
-  { params }: CampaignsWithIdParams
-) {
+export async function GET(request: Request, { params }: CampaignsWithIdParams) {
   try {
     const { campaignId: campaignIdOrSlug } = await params;
 
@@ -26,7 +23,7 @@ export async function GET(
     if (!treasuryAddress) {
       return response({
         balance: null,
-        message: 'No treasury found for this campaign'
+        message: 'No treasury found for this campaign',
       });
     }
 

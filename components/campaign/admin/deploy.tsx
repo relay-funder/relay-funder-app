@@ -31,7 +31,7 @@ export function CampaignAdminDeployButton({
   );
   const { mutateAsync: updateCampaign } = useUpdateCampaign();
 
-  const onDeployCampaignConfirmed = useCallback(
+  const onUpdateCampaingToPendingApproval = useCallback(
     async ({
       hash,
       status,
@@ -55,14 +55,14 @@ export function CampaignAdminDeployButton({
       } catch (error) {
         onStateChanged('failed');
         setError(
-          `Failed to deploy campaign: ${error instanceof Error ? error.message : 'Unknown Error'}`,
+          `Failed to update campaign to pending approval: ${error instanceof Error ? error.message : 'Unknown Error'}`,
         );
       }
     },
     [updateCampaign, onStateChanged],
   );
   const { createCampaignContract } = useCreateCampaignContract({
-    onConfirmed: onDeployCampaignConfirmed,
+    onConfirmed: onUpdateCampaingToPendingApproval,
   });
   const deployCampaign = useCallback(
     async (campaign: DbCampaign) => {
@@ -115,9 +115,9 @@ export function CampaignAdminDeployButton({
       onClick={onDeploy}
       className="mt-4 bg-gray-600 hover:bg-gray-700"
       disabled={isLoading}
-      title="Deploy this Campaign from the database"
+      title="Update this Campaign from draft to pending approval"
     >
-      {isLoading ? 'Processing...' : 'Deploy'}
+      {isLoading ? 'Processing...' : 'Promote to Pending Approval'}
     </Button>
   );
 }

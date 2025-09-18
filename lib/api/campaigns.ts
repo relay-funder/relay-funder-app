@@ -100,7 +100,10 @@ export async function listCampaigns({
     status: {
       in: statusList,
     },
-    transactionHash: { not: null },
+    // Admin can see all campaigns, regular users only see deployed campaigns in production
+    ...(admin || process.env.NODE_ENV === 'development'
+      ? {}
+      : { transactionHash: { not: null } }),
     creatorAddress,
   };
   const [dbCampaigns, totalCount] = await Promise.all([
@@ -124,9 +127,11 @@ export async function listCampaigns({
       where,
     }),
   ]);
-  const filteredDbCampaigns = dbCampaigns.filter(
-    (campaign) => campaign.transactionHash,
-  );
+  // Admin can see all campaigns, regular users only see deployed campaigns in production
+  const filteredDbCampaigns =
+    admin || process.env.NODE_ENV === 'development'
+      ? dbCampaigns
+      : dbCampaigns.filter((campaign) => campaign.transactionHash);
 
   const paymentSummaryList = await getPaymentSummaryList(
     filteredDbCampaigns.map(({ id }) => id),
@@ -368,7 +373,11 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
       },
       RoundCampaigns: {
         include: {
-          Round: true,
+          Round: {
+            include: {
+              media: { where: { state: 'UPLOADED' } },
+            },
+          },
         },
       },
       _count: {
@@ -589,4 +598,25 @@ export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
       ? (dbCampaign.mediaOrder as string[])
       : [],
   };
+}
+
+/**
+ * Update campaign with transaction hash and campaign address
+ */
+export async function updateCampaignTransaction({
+  id,
+  transactionHash,
+  campaignAddress,
+}: {
+  id: number;
+  transactionHash: string;
+  campaignAddress?: string;
+}) {
+  return await db.campaign.update({
+    where: { id },
+    data: {
+      transactionHash,
+      campaignAddress: campaignAddress ?? undefined,
+    },
+  });
 }

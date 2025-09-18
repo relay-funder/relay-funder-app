@@ -39,7 +39,7 @@ export function CampaignDonationWalletTip({
           min="0"
           step="0.01"
         />
-        <div className="flex items-center px-3 text-sm text-muted-foreground bg-muted border-l rounded-r-md">
+        <div className="flex items-center rounded-r-md border-l bg-muted px-3 text-sm text-muted-foreground">
           {formatCrypto(numericTipAmount, selectedToken)}
         </div>
       </div>
