@@ -70,7 +70,7 @@ export default async function AdminPage() {
   // Main content
   return (
     <div className="mx-auto max-w-7xl p-5">
-      <div className="mb-8 pt-5 text-3xl font-bold">Admin Dashboard</div>
+      <div className="mb-8 pt-5 text-3xl font-bold">Control Center</div>
       <AdminDashboard />
     </div>
   );

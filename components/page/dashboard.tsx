@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 export function PageDashboard({
   children,
-  title = 'Dashboard',
+  title = 'My Campaigns',
   actions,
 }: {
   children: ReactNode;

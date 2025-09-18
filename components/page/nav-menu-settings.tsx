@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth, useSidebar } from '@/contexts';
 import { usePathname } from 'next/navigation';
-import { Settings } from 'lucide-react';
+import { User } from 'lucide-react';
 import { transition } from './sidebar-constants';
 
 export function PageNavMenuSettings() {
@@ -24,7 +24,7 @@ export function PageNavMenuSettings() {
         )}
       >
         <div className="flex items-center">
-          <Settings className="h-6 w-6" />
+          <User className="h-6 w-6" />
         </div>
         <span
           className={cn(
@@ -33,7 +33,7 @@ export function PageNavMenuSettings() {
             isOpen ? 'w-auto opacity-100' : 'w-0 opacity-0',
           )}
         >
-          Settings
+          Profile
         </span>
       </Link>
     </nav>
