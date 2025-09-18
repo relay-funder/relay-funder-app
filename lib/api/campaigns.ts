@@ -373,7 +373,11 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
       },
       RoundCampaigns: {
         include: {
-          Round: true,
+          Round: {
+            include: {
+              media: { where: { state: 'UPLOADED' } },
+            },
+          },
         },
       },
       _count: {
