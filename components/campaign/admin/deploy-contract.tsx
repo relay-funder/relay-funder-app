@@ -31,13 +31,13 @@ export function CampaignAdminDeployContractButton({
           headers: {
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          `Contract deployment failed: ${errorData.error || 'Unknown server error'}`
+          `Contract deployment failed: ${errorData.error || 'Unknown server error'}`,
         );
       }
 
@@ -45,7 +45,7 @@ export function CampaignAdminDeployContractButton({
 
       if (!result.success) {
         throw new Error(
-          `Contract deployment failed: ${result.error || 'Unknown error'}`
+          `Contract deployment failed: ${result.error || 'Unknown error'}`,
         );
       }
 
@@ -56,15 +56,20 @@ export function CampaignAdminDeployContractButton({
 
       // Invalidate React Query cache to refresh campaign data
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY, campaign.id] });
-      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY, campaign.slug] });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, campaign.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, campaign.slug],
+      });
 
       // Trigger parent component update if callback provided
       if (onUpdate) {
         onUpdate();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       toast({
         title: 'Error',
@@ -85,36 +90,42 @@ export function CampaignAdminDeployContractButton({
 
   // Check if this is a critical next step
   const isPendingApproval = campaign.status === 'PENDING_APPROVAL';
-  const needsContractDeployment = !campaign.campaignAddress && isPendingApproval;
+  const needsContractDeployment =
+    !campaign.campaignAddress && isPendingApproval;
 
   return (
     <div className="space-y-2">
       <Button
         onClick={deployContract}
-        className={needsContractDeployment 
-          ? "bg-blue-700 hover:bg-blue-800" 
-          : "bg-blue-600 hover:bg-blue-700"
+        className={
+          needsContractDeployment
+            ? 'bg-blue-700 hover:bg-blue-800'
+            : 'bg-blue-600 hover:bg-blue-700'
         }
         disabled={isLoading}
         title="Deploy the campaign info factory contract for this campaign on-chain."
       >
-        {isLoading ? 'Deploying Contract...' : needsContractDeployment ? 'Deploy Contract (Required)' : 'Deploy Contract'}
+        {isLoading
+          ? 'Deploying Contract...'
+          : needsContractDeployment
+            ? 'Deploy Contract (Required)'
+            : 'Deploy Contract'}
       </Button>
-      
+
       {needsContractDeployment && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
           Required: Deploy campaign contract before approval
         </div>
       )}
-      
+
       {campaign.campaignAddress && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
           Contract deployed: {campaign.campaignAddress}
         </div>
       )}
-      
+
       {error && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
           Error: {error}
         </div>
       )}

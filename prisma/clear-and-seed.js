@@ -1,9 +1,9 @@
 /**
  * Clear and Seed Database Script
- * 
+ *
  * This script completely clears the database and reseeds it with fresh data.
  * Useful for staging environments and testing.
- * 
+ *
  * Usage:
  * - Via npm script: pnpm run staging:clear-and-seed
  * - Via docker: docker compose exec app pnpm run staging:clear-and-seed
@@ -18,7 +18,7 @@ const db = new PrismaClient({
 
 async function clearDatabase() {
   console.log('🧹 Clearing existing database data...');
-  
+
   try {
     // Clear in dependency order (foreign key constraints)
     await db.roundContribution.deleteMany();
@@ -36,7 +36,7 @@ async function clearDatabase() {
     await db.campaign.deleteMany();
     await db.round.deleteMany();
     await db.user.deleteMany();
-    
+
     console.log('✅ Database cleared successfully');
   } catch (error) {
     console.error('❌ Error clearing database:', error);
@@ -46,12 +46,12 @@ async function clearDatabase() {
 
 async function resetSequences() {
   console.log('🔄 Resetting auto-increment sequences...');
-  
+
   try {
     // Reset sequences for auto-increment fields
     const resetQueries = [
       'ALTER SEQUENCE "User_id_seq" RESTART WITH 1;',
-      'ALTER SEQUENCE "Campaign_id_seq" RESTART WITH 1;', 
+      'ALTER SEQUENCE "Campaign_id_seq" RESTART WITH 1;',
       'ALTER SEQUENCE "Round_id_seq" RESTART WITH 1;',
       'ALTER SEQUENCE "Payment_id_seq" RESTART WITH 1;',
       'ALTER SEQUENCE "PaymentMethod_id_seq" RESTART WITH 1;',
@@ -63,7 +63,7 @@ async function resetSequences() {
       'ALTER SEQUENCE "RoundContribution_id_seq" RESTART WITH 1;',
       'ALTER SEQUENCE "Withdrawal_id_seq" RESTART WITH 1;',
     ];
-    
+
     for (const query of resetQueries) {
       try {
         await db.$executeRawUnsafe(query);
@@ -72,7 +72,7 @@ async function resetSequences() {
         console.warn(`⚠️  Sequence reset warning: ${err.message}`);
       }
     }
-    
+
     console.log('✅ Sequences reset successfully');
   } catch (error) {
     console.error('❌ Error resetting sequences:', error);
@@ -82,7 +82,7 @@ async function resetSequences() {
 
 async function runSeedScript() {
   console.log('🌱 Running seed script...');
-  
+
   try {
     // Run the existing seed script using pnpm
     execSync('pnpm prisma db seed', { stdio: 'inherit' });
@@ -95,23 +95,27 @@ async function runSeedScript() {
 
 async function main() {
   const startTime = Date.now();
-  
+
   console.log('🚀 Starting database clear and reseed process...');
-  console.log('📊 Target database:', process.env.DATABASE_URL ? 'Remote staging database' : 'Local database');
-  
+  console.log(
+    '📊 Target database:',
+    process.env.DATABASE_URL ? 'Remote staging database' : 'Local database',
+  );
+
   try {
     // Step 1: Clear all data
     await clearDatabase();
-    
+
     // Step 2: Reset sequences
     await resetSequences();
-    
+
     // Step 3: Run seed script
     await runSeedScript();
-    
+
     const duration = (Date.now() - startTime) / 1000;
-    console.log(`🎉 Database clear and reseed completed successfully in ${duration.toFixed(2)}s`);
-    
+    console.log(
+      `🎉 Database clear and reseed completed successfully in ${duration.toFixed(2)}s`,
+    );
   } catch (error) {
     console.error('💥 Clear and reseed process failed:', error);
     process.exit(1);

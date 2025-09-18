@@ -45,10 +45,10 @@ export function CampaignCardAdminActions({
 
       {/* Management actions - Context-dependent */}
       {(isActive || isDraft) && (
-        <div className="flex flex-col space-y-2 pt-2 border-t border-gray-200">
+        <div className="flex flex-col space-y-2 border-t border-gray-200 pt-2">
           {/* Disable only for ACTIVE campaigns */}
           {isActive && <CampaignAdminDisableButton campaign={campaign} />}
-          
+
           {/* Remove only for DRAFT campaigns */}
           {isDraft && <CampaignAdminRemoveButton campaign={campaign} />}
         </div>

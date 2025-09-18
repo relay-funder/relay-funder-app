@@ -90,7 +90,8 @@ export function CampaignAdminApproveButton({
   }
 
   // Show dependency requirements
-  const canApprove = campaign.campaignAddress !== null && campaign.campaignAddress !== undefined;
+  const canApprove =
+    campaign.campaignAddress !== null && campaign.campaignAddress !== undefined;
 
   return (
     <div className="space-y-2">
@@ -99,16 +100,16 @@ export function CampaignAdminApproveButton({
         className="mt-4 bg-green-600 hover:bg-green-700"
         disabled={isLoading || !canApprove}
         title={
-          !canApprove 
+          !canApprove
             ? "Campaign contract must be deployed before approval. Use 'Deploy Contract' first."
-            : "Mark this Campaign as approved and deploy treasury contract."
+            : 'Mark this Campaign as approved and deploy treasury contract.'
         }
       >
         {isLoading ? 'Processing...' : 'Approve & Deploy Treasury'}
       </Button>
-      
+
       {!canApprove && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
           Campaign contract must be deployed first
         </div>
       )}

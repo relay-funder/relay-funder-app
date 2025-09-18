@@ -101,7 +101,9 @@ export async function listCampaigns({
       in: statusList,
     },
     // Admin can see all campaigns, regular users only see deployed campaigns in production
-    ...(admin || process.env.NODE_ENV === 'development' ? {} : { transactionHash: { not: null } }),
+    ...(admin || process.env.NODE_ENV === 'development'
+      ? {}
+      : { transactionHash: { not: null } }),
     creatorAddress,
   };
   const [dbCampaigns, totalCount] = await Promise.all([
@@ -126,9 +128,10 @@ export async function listCampaigns({
     }),
   ]);
   // Admin can see all campaigns, regular users only see deployed campaigns in production
-  const filteredDbCampaigns = (admin || process.env.NODE_ENV === 'development')
-    ? dbCampaigns
-    : dbCampaigns.filter((campaign) => campaign.transactionHash);
+  const filteredDbCampaigns =
+    admin || process.env.NODE_ENV === 'development'
+      ? dbCampaigns
+      : dbCampaigns.filter((campaign) => campaign.transactionHash);
 
   const paymentSummaryList = await getPaymentSummaryList(
     filteredDbCampaigns.map(({ id }) => id),
