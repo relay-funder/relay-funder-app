@@ -2,14 +2,13 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { Clock, Calendar, Users, DollarSign } from 'lucide-react';
+import { Calendar, Users, DollarSign } from 'lucide-react';
 import {
   Tabs,
   TabsContent,
   TabsList,
   Card,
   CardContent,
-  CardHeader,
   Badge,
   TabsTrigger,
 } from '@/components/ui';
@@ -41,8 +40,9 @@ export function RoundDetailEnhanced({ id }: { id: number }) {
     notFound();
   }
 
+  // All hooks must be called before any conditional logic
   const status = useRoundStatus(round);
-  const timeInfo = useRoundTimeInfo(round);
+  useRoundTimeInfo(round); // Hook call moved but result not needed
   const numberOfCampaigns = useMemo(() => {
     return round.roundCampaigns?.length ?? 0;
   }, [round]);
@@ -191,7 +191,7 @@ export function RoundDetailEnhanced({ id }: { id: number }) {
                   No Active Campaigns Yet
                 </p>
                 <p>
-                  Active campaigns will appear here once they're approved to
+                  Active campaigns will appear here once they&apos;re approved to
                   participate in this round.
                 </p>
               </div>
@@ -208,7 +208,13 @@ function RoundCampaignsList({
   round,
   isAdmin = false,
 }: {
-  round: any;
+  round: {
+    roundCampaigns?: Array<{
+      campaign: any;
+      status: string;
+      id: string;
+    }>;
+  };
   isAdmin?: boolean;
 }) {
   const campaigns = useMemo(() => {
