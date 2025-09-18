@@ -258,6 +258,12 @@ docker compose exec app pnpm prisma db pull
 - **Path Mapping**: Use `@/` for absolute imports (configured in tsconfig.json)
 - **Font Loading**: Uses Geist Sans and Geist Mono fonts loaded locally
 
+### Logging Standards
+- **Clean Logging**: Avoid excessive emoji use in console logging - keep logs professional and readable
+- **Consistent Format**: Use consistent indentation and formatting for log messages
+- **Error Logging**: Use appropriate log levels (console.error, console.warn, console.log)
+- **Context Information**: Include relevant context in log messages without overwhelming output
+
 ### React Component Patterns
 - **Function Components**: Use function components with TypeScript
 - **Props Interface**: Define component props with explicit interfaces
