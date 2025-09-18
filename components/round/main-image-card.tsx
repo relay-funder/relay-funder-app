@@ -1,11 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import { useMemo, useEffect, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui';
 
-export function RoundMainImageAvatar({
+export function RoundMainImageCard({
   round,
-  size = 'default',
 }: {
   round?: {
     title?: string;
@@ -18,9 +17,25 @@ export function RoundMainImageAvatar({
     }[];
     mediaOrder: string[] | null;
   };
-  size?: 'default' | 'large';
 }) {
   const [mainImageObject, setMainImageObject] = useState<string | null>(null);
+
+  // Debug logging to help troubleshoot IPFS media loading
+  useEffect(() => {
+    if (round) {
+      console.log('RoundMainImageCard - Round data:', {
+        title: round.title,
+        hasMedia: Array.isArray(round.media),
+        mediaCount: round.media?.length,
+        hasMediaOrder: Array.isArray(round.mediaOrder),
+        mediaOrderCount: round.mediaOrder?.length,
+        logoUrl: round.logoUrl,
+        firstMediaId: round.media?.[0]?.id,
+        firstMediaUrl: round.media?.[0]?.url,
+      });
+    }
+  }, [round]);
+
   const mainImage = useMemo(() => {
     if (
       Array.isArray(round?.media) &&
@@ -61,30 +76,19 @@ export function RoundMainImageAvatar({
       };
     }
   }, [imageUrl]);
-  const sizeClasses = {
-    default: 'h-12 w-12 border',
-    large: 'h-36 w-36 border-2 shadow-lg',
-  };
-
-  const fallbackTextClasses = {
-    default: 'text-lg font-semibold',
-    large: 'text-3xl font-bold',
-  };
-
   return (
-    <Avatar className={sizeClasses[size]}>
-      {imageUrl ? (
-        <AvatarImage
+    <>
+      {(typeof imageUrl === 'string' || mainImageObject !== null) && (
+        <Image
           src={
             mainImageObject ? mainImageObject : (imageUrl as unknown as string)
           }
           alt={alt}
+          fill
           className="object-cover"
+          priority
         />
-      ) : null}
-      <AvatarFallback className={fallbackTextClasses[size]}>
-        {alt.charAt(0).toUpperCase()}
-      </AvatarFallback>
-    </Avatar>
+      )}
+    </>
   );
 }

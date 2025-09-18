@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { RoundCreate } from '@/components/round/create';
 import { Button } from '@/components/ui';
 import { RoundList } from '@/components/round/list';
+import { RoundCardEnhanced } from '@/components/round/card-enhanced';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
 import { useAuth } from '@/contexts';
@@ -35,7 +36,7 @@ export function RoundExplore() {
         </div>
       ) : (
         <>
-          <RoundList searchTerm={searchTerm} />
+          <RoundList searchTerm={searchTerm} item={RoundCardEnhanced} />
         </>
       )}
     </PageHome>

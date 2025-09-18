@@ -57,7 +57,7 @@ export function RoundList({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 p-4 md:grid-cols-2">
         {filteredRounds?.map((page) =>
           page.rounds.map((round) => (
             <ItemComponent key={round.id} round={round} />

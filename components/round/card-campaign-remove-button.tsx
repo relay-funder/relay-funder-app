@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { AdminRemoveProcessStates } from '@/types/admin';
 import type { DbCampaign } from '@/types/campaign';
-import { Link, Loader2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
@@ -120,11 +120,11 @@ export function RoundCardCampaignRemoveButton({
     <Button
       onClick={onRemove}
       variant="outline"
-      size="icon"
+      size="sm"
       className={cn(
-        'rounded-full',
+        'h-8 w-8 rounded-full border-0 shadow-md',
         isLoading && 'opacity-50',
-        'mt-4 bg-red-600 hover:bg-red-700',
+        'bg-red-600 text-white hover:bg-red-700',
       )}
       disabled={isLoading}
       title="Remove this Campaign from the Round"
@@ -137,9 +137,9 @@ export function RoundCardCampaignRemoveButton({
           </>
         )
       ) : isLoading ? (
-        <Loader2 />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <Link />
+        <Trash2 className="h-4 w-4" />
       )}
     </Button>
   );
