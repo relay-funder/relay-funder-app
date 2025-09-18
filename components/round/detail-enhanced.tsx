@@ -12,7 +12,7 @@ import {
   Badge,
   TabsTrigger,
 } from '@/components/ui';
-import type { GetCampaignResponseInstance } from '@/lib/api/types/campaigns';
+import type { GetRoundResponseInstance } from '@/lib/api/types';
 
 import { useRound } from '@/lib/hooks/useRounds';
 import { RoundLoading } from './loading';
@@ -213,17 +213,11 @@ function RoundCampaignsList({
   round,
   isAdmin = false,
 }: {
-  round: {
-    roundCampaigns?: Array<{
-      campaign: GetCampaignResponseInstance;
-      status: string;
-      id: string;
-    }>;
-  };
+  round: GetRoundResponseInstance;
   isAdmin?: boolean;
 }) {
   const campaigns = useMemo(() => {
-    return round.roundCampaigns?.map((rc) => rc.campaign) ?? [];
+    return round.roundCampaigns?.map((rc) => rc.campaign).filter((campaign): campaign is NonNullable<typeof campaign> => Boolean(campaign)) ?? [];
   }, [round.roundCampaigns]);
 
   // Debug logging to help troubleshoot campaign data
