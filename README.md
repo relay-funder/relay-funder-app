@@ -2,11 +2,11 @@
   <img src="public/relay-funder-logo.png" alt="RelayFunder Logo" />
 </div>
 
-# 🌍 Akashic
+# 🌍 Relay Funder
 
-**Akashic** is an open-source platform that helps displaced communities preserve their cultural heritage and fund creative work using Web3 technologies. Refugee creators can upload stories, art, and multimedia—then launch funding campaigns powered by NFTs and smart contracts.
+**Relay Funder** is an open-source platform that helps displaced communities preserve their cultural heritage and fund creative work using Web3 technologies. Refugee creators can upload stories, art, and multimedia—then launch funding campaigns powered by NFTs and smart contracts.
 
-By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-driven funding protocols, Akashic ensures these cultural narratives are owned by the people who create them—and remain accessible across borders and generations.
+By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-driven funding protocols, Relay Funder ensures these cultural narratives are owned by the people who create them—and remain accessible across borders and generations.
 
 > Refugees are not just survivors—they are custodians of culture.
 

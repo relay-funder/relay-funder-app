@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Profile | Akashic',
+  title: 'Profile | Relay Funder',
   description:
-    'Manage your Akashic profile, payment methods, and KYC information',
+    'Manage your Relay Funder profile, payment methods, and KYC information',
 };
 
 export default function ProfileLayout({

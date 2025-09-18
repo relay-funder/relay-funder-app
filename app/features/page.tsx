@@ -97,7 +97,7 @@ export default function Features() {
         </h1>
         <div className="flex justify-center">
           <p className="max-w-4xl px-4 text-center text-xl text-muted-foreground">
-            Akashic allows creators to create campaigns and receive donations
+            Relay Funder allows creators to create campaigns and receive donations
             from their community.
           </p>
         </div>

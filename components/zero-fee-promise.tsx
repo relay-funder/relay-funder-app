@@ -21,7 +21,7 @@ export function ZeroFeePromise() {
         </DialogTrigger>
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
-            <DialogTitle>Akashic&apos;s Zero-Fee Policy</DialogTitle>
+            <DialogTitle>Relay Funder&apos;s Zero-Fee Policy</DialogTitle>
           </DialogHeader>
           <ZeroFeePolicyContent />
         </DialogContent>
