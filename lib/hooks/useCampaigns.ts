@@ -485,3 +485,20 @@ export function useCampaignStats() {
     enabled: true,
   });
 }
+
+export function useAdminDeployContract() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deployContract,
+    onSuccess: (data, variables) => {
+      // Invalidate all campaign-related queries
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [CAMPAIGNS_QUERY_KEY, variables.campaignId],
+      });
+      // Reset campaign to get fresh data
+      resetCampaign(variables.campaignId, queryClient);
+    },
+  });
+}

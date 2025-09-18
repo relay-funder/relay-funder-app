@@ -9,7 +9,7 @@
  * - Via docker: docker compose exec app pnpm run staging:clear-and-seed
  */
 
-import { PrismaClient } from '../.generated/prisma/client/index.js';
+import { PrismaClient, Prisma } from '../.generated/prisma/client/index.js';
 import { execSync } from 'child_process';
 
 const db = new PrismaClient({
@@ -20,22 +20,10 @@ async function clearDatabase() {
   console.log('🧹 Clearing existing database data...');
 
   try {
-    // Clear in dependency order (foreign key constraints)
-    await db.roundContribution.deleteMany();
-    await db.roundCampaigns.deleteMany();
-    await db.campaignCollection.deleteMany();
-    await db.collection.deleteMany();
-    await db.favorite.deleteMany();
-    await db.payment.deleteMany();
-    await db.paymentMethod.deleteMany();
-    await db.comment.deleteMany();
-    await db.withdrawal.deleteMany();
-    await db.media.deleteMany();
-    await db.campaignUpdate.deleteMany();
-    await db.campaignImage.deleteMany();
+    // Clear main tables only - cascade deletes will handle the rest
+    await db.user.deleteMany();
     await db.campaign.deleteMany();
     await db.round.deleteMany();
-    await db.user.deleteMany();
 
     console.log('✅ Database cleared successfully');
   } catch (error) {
@@ -66,7 +54,7 @@ async function resetSequences() {
 
     for (const query of resetQueries) {
       try {
-        await db.$executeRawUnsafe(query);
+        await db.$executeRaw(Prisma.sql([query]));
       } catch (err) {
         // Ignore errors for sequences that don't exist
         console.warn(`⚠️  Sequence reset warning: ${err.message}`);

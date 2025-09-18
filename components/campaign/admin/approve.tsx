@@ -97,7 +97,7 @@ export function CampaignAdminApproveButton({
     <div className="space-y-2">
       <Button
         onClick={onApprove}
-        className="mt-4 bg-green-600 hover:bg-green-700"
+        className="mt-4 w-full bg-green-600 hover:bg-green-700"
         disabled={isLoading || !canApprove}
         title={
           !canApprove
