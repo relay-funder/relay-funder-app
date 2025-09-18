@@ -312,7 +312,12 @@ export async function deployCampaignContract(
       transactionHash: '',
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      errorType: errorType as any,
+      errorType: errorType as
+        | 'INSUFFICIENT_FUNDS'
+        | 'GAS_LIMIT'
+        | 'NETWORK_ERROR'
+        | 'CONTRACT_ERROR'
+        | 'UNKNOWN',
     };
   }
 }
@@ -422,7 +427,12 @@ export async function deployTreasuryContract(
       transactionHash: '',
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      errorType: errorType as any,
+      errorType: errorType as
+        | 'INSUFFICIENT_FUNDS'
+        | 'GAS_LIMIT'
+        | 'NETWORK_ERROR'
+        | 'CONTRACT_ERROR'
+        | 'UNKNOWN',
     };
   }
 }

@@ -17,7 +17,6 @@ export function CampaignCardAdminActions({
   const isDraft = campaign.status === 'DRAFT';
   const isPendingApproval = campaign.status === 'PENDING_APPROVAL';
   const isActive = campaign.status === 'ACTIVE';
-  const isCompleted = campaign.status === 'COMPLETED';
 
   // Show different controls based on campaign lifecycle stage
   return (

@@ -614,6 +614,22 @@ async function main() {
       });
     }
   }
+  // Define specific sponsor logos for each round
+  const roundSponsorLogos = [
+    {
+      // Kenya Education & Development Round - Ethereum Main logo
+      url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/345351662ea35292-ethereum-main.jpg',
+      mimeType: 'image/jpeg',
+      caption: 'Ethereum Foundation Sponsor Logo',
+    },
+    {
+      // East Africa Climate Resilience Round - Celo Camp logo
+      url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/a41bb1ae87c99ce0-celo-camp.webp',
+      mimeType: 'image/webp',
+      caption: 'Celo Camp Sponsor Logo',
+    },
+  ];
+
   // Create the 2 rounds and assign campaigns strategically
   for (let i = 0; i < rounds.length; i++) {
     const admin = selectRandom(adminUsers);
@@ -659,11 +675,13 @@ async function main() {
       });
     }
 
-    // Add remote image for round
+    // Add specific sponsor logo for each round
+    const sponsorLogo = roundSponsorLogos[i];
     const roundMedia = await db.media.create({
       data: {
-        url: selectRandom(remoteImageFiles.general),
-        mimeType: 'image/jpeg',
+        url: sponsorLogo.url,
+        mimeType: sponsorLogo.mimeType,
+        caption: sponsorLogo.caption,
         state: 'UPLOADED',
         createdBy: {
           connect: { id: admin.id },
@@ -682,7 +700,7 @@ async function main() {
   }
 
   console.log(
-    `\nSeeded ${campaigns.length} campaigns with ZERO balances, ${rounds.length} matching rounds with remote IPFS images`,
+    `\nSeeded ${campaigns.length} campaigns with ZERO balances, ${rounds.length} matching rounds with specific sponsor logos`,
   );
   console.log(
     'All campaigns start at $0 - ready for end-to-end testing with real pledges',

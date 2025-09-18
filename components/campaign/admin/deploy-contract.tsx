@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { DbCampaign } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';

@@ -76,6 +76,7 @@ export async function listRounds({
     db.round.findMany({
       skip,
       include: {
+        media: { where: { state: 'UPLOADED' } },
         roundCampaigns: {
           include: { Campaign: true },
           where: admin ? {} : { status: 'APPROVED' },
@@ -109,6 +110,7 @@ export async function getRound(
   const round = await db.round.findUnique({
     where: { id },
     include: {
+      media: { where: { state: 'UPLOADED' } },
       roundCampaigns: {
         include: { Campaign: { include: { images: true } } },
         where: admin
