@@ -43,9 +43,29 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     const deploymentConfig = getDeploymentConfig();
 
     // Deploy campaign contract using dedicated lib method
-    // Note: We pass the campaign data that matches the expected type
+    // Convert the enriched campaign data to match the expected Campaign type
+    const campaignForDeployment = {
+      id: campaignData.id,
+      startTime: campaignData.startTime,
+      endTime: campaignData.endTime,
+      fundingGoal: campaignData.fundingGoal || '0',
+      creatorAddress: campaignData.creatorAddress,
+      title: campaignData.title,
+      description: campaignData.description,
+      status: campaignData.status,
+      transactionHash: campaignData.transactionHash,
+      createdAt: campaignData.createdAt,
+      updatedAt: campaignData.updatedAt,
+      campaignAddress: campaignData.campaignAddress,
+      slug: campaignData.slug,
+      location: campaignData.location,
+      treasuryAddress: campaignData.treasuryAddress || null,
+      category: campaignData.category || null,
+      mediaOrder: null, // Default value for mediaOrder
+    };
+
     const { txHash, campaignAddress, receipt } = await deployCampaignContract(
-      campaignData as any, // Type assertion needed due to getCampaign returning enriched type
+      campaignForDeployment,
       deploymentConfig,
     );
 
