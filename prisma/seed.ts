@@ -20,6 +20,40 @@ const isDummyMode =
 const db = new PrismaClient({
   log: ['error'],
 });
+
+// Deployment statistics tracking
+interface DeploymentStats {
+  totalCampaigns: number;
+  successfulCampaignDeployments: number;
+  successfulTreasuryDeployments: number;
+  failedCampaignDeployments: number;
+  failedTreasuryDeployments: number;
+  errorsByType: Record<string, number>;
+  errorDetails: Array<{
+    campaignTitle: string;
+    errorType: string;
+    errorMessage: string;
+  }>;
+}
+
+const deploymentStats: DeploymentStats = {
+  totalCampaigns: 0,
+  successfulCampaignDeployments: 0,
+  successfulTreasuryDeployments: 0,
+  failedCampaignDeployments: 0,
+  failedTreasuryDeployments: 0,
+  errorsByType: {},
+  errorDetails: [],
+};
+
+function trackError(campaignTitle: string, errorType: string, errorMessage: string) {
+  deploymentStats.errorsByType[errorType] = (deploymentStats.errorsByType[errorType] || 0) + 1;
+  deploymentStats.errorDetails.push({
+    campaignTitle,
+    errorType,
+    errorMessage,
+  });
+}
 // NOTE: Campaign addresses removed - all campaigns start with null addresses for admin deployment testing
 
 const campaignTitles = [
@@ -437,6 +471,9 @@ async function main() {
       data: campaignData,
     });
     campaigns[i].id = campaign.id;
+    
+    // Track total campaigns for statistics
+    deploymentStats.totalCampaigns++;
 
     // Deploy contracts based on campaign status
     let campaignAddress: string | null = null;
@@ -458,15 +495,19 @@ async function main() {
         isDummyMode,
       );
 
-      if (deployResult.success) {
-        campaignAddress = deployResult.campaignAddress;
-        transactionHash = deployResult.transactionHash;
-        console.log(`   Campaign contract deployed successfully`);
-      } else {
-        console.log(
-          `   Campaign contract deployment failed: ${deployResult.error}`,
-        );
-      }
+        if (deployResult.success) {
+          campaignAddress = deployResult.campaignAddress;
+          transactionHash = deployResult.transactionHash;
+          deploymentStats.successfulCampaignDeployments++;
+          console.log(`   Campaign contract deployed successfully`);
+        } else {
+          deploymentStats.failedCampaignDeployments++;
+          const errorType = deployResult.errorType || 'UNKNOWN';
+          trackError(campaignData.title, errorType, deployResult.error || '');
+          console.log(
+            `   Campaign contract deployment failed: ${deployResult.error}`,
+          );
+        }
     } else if (campaignData.status === CampaignStatus.ACTIVE) {
       // ACTIVE campaigns should have both contracts deployed
       console.log(`   Deploying both contracts (status: ACTIVE)`);
@@ -482,24 +523,32 @@ async function main() {
         isDummyMode,
       );
 
-      if (deployResult.campaignContract.success) {
-        campaignAddress = deployResult.campaignContract.campaignAddress;
-        transactionHash = deployResult.campaignContract.transactionHash;
-        console.log(`   Campaign contract deployed successfully`);
+        if (deployResult.campaignContract.success) {
+          campaignAddress = deployResult.campaignContract.campaignAddress;
+          transactionHash = deployResult.campaignContract.transactionHash;
+          deploymentStats.successfulCampaignDeployments++;
+          console.log(`   Campaign contract deployed successfully`);
 
-        if (deployResult.treasuryContract?.success) {
-          treasuryAddress = deployResult.treasuryContract.treasuryAddress;
-          console.log(`   Treasury contract deployed successfully`);
+          if (deployResult.treasuryContract?.success) {
+            treasuryAddress = deployResult.treasuryContract.treasuryAddress;
+            deploymentStats.successfulTreasuryDeployments++;
+            console.log(`   Treasury contract deployed successfully`);
+          } else {
+            deploymentStats.failedTreasuryDeployments++;
+            const errorType = deployResult.treasuryContract?.errorType || 'UNKNOWN';
+            trackError(`${campaignData.title} (Treasury)`, errorType, deployResult.treasuryContract?.error || '');
+            console.log(
+              `   Treasury deployment failed: ${deployResult.treasuryContract?.error}`,
+            );
+          }
         } else {
+          deploymentStats.failedCampaignDeployments++;
+          const errorType = deployResult.campaignContract.errorType || 'UNKNOWN';
+          trackError(campaignData.title, errorType, deployResult.campaignContract.error || '');
           console.log(
-            `   Treasury deployment failed: ${deployResult.treasuryContract?.error}`,
+            `   Campaign contract deployment failed: ${deployResult.campaignContract.error}`,
           );
         }
-      } else {
-        console.log(
-          `   Campaign contract deployment failed: ${deployResult.campaignContract.error}`,
-        );
-      }
     } else {
       // DRAFT campaigns have no contracts deployed
       console.log(`   No contracts deployed (status: DRAFT)`);
@@ -624,8 +673,93 @@ async function main() {
   console.log(
     'All campaigns start at $0 - ready for end-to-end testing with real pledges',
   );
+
+  // Comprehensive deployment report
+  console.log('\n=== DEPLOYMENT REPORT ===');
+  console.log(`Mode: ${isDummyMode ? 'DUMMY MODE' : 'STAGING MODE'}`);
+  console.log(`Total Campaigns: ${deploymentStats.totalCampaigns}`);
+  
+  if (!isDummyMode) {
+    // Only show deployment statistics for real blockchain interactions
+    const totalAttemptedDeployments = deploymentStats.successfulCampaignDeployments + deploymentStats.failedCampaignDeployments;
+    const totalAttemptedTreasuryDeployments = deploymentStats.successfulTreasuryDeployments + deploymentStats.failedTreasuryDeployments;
+    
+    console.log(`\nContract Deployment Results:`);
+    console.log(`  Campaign Contracts: ${deploymentStats.successfulCampaignDeployments}/${totalAttemptedDeployments} successful`);
+    if (totalAttemptedTreasuryDeployments > 0) {
+      console.log(`  Treasury Contracts: ${deploymentStats.successfulTreasuryDeployments}/${totalAttemptedTreasuryDeployments} successful`);
+    }
+    
+    // Error analysis and recommendations
+    if (Object.keys(deploymentStats.errorsByType).length > 0) {
+      console.log(`\nErrors Encountered:`);
+      Object.entries(deploymentStats.errorsByType).forEach(([errorType, count]) => {
+        console.log(`  ${errorType}: ${count} occurrences`);
+      });
+      
+      console.log(`\nRecommendations:`);
+      
+      if (deploymentStats.errorsByType.INSUFFICIENT_FUNDS) {
+        console.log(`  - INSUFFICIENT_FUNDS (${deploymentStats.errorsByType.INSUFFICIENT_FUNDS} errors):`);
+        console.log(`    * Add more funds to your platform admin wallet`);
+        console.log(`    * Required: ~0.023 CELO per transaction (you need CELO tokens, not ETH)`);
+        console.log(`    * Current balance appears insufficient for deployment costs`);
+        console.log(`    * For testnet: Use https://faucet.celo.org/ to get free CELO`);
+        console.log(`    * For mainnet: Buy CELO on Coinbase, Binance, or other exchanges`);
+      }
+      
+      if (deploymentStats.errorsByType.GAS_LIMIT) {
+        console.log(`  - GAS_LIMIT (${deploymentStats.errorsByType.GAS_LIMIT} errors):`);
+        console.log(`    * Increase gas limit in your deployment configuration`);
+        console.log(`    * Check if the network is congested and try again later`);
+      }
+      
+      if (deploymentStats.errorsByType.NETWORK_ERROR) {
+        console.log(`  - NETWORK_ERROR (${deploymentStats.errorsByType.NETWORK_ERROR} errors):`);
+        console.log(`    * Check your internet connection and RPC endpoint`);
+        console.log(`    * Verify the RPC URL in your environment configuration`);
+        console.log(`    * Consider using a different RPC provider if issues persist`);
+      }
+      
+      if (deploymentStats.errorsByType.CONTRACT_ERROR) {
+        console.log(`  - CONTRACT_ERROR (${deploymentStats.errorsByType.CONTRACT_ERROR} errors):`);
+        console.log(`    * Review contract parameters and blockchain state`);
+        console.log(`    * Ensure factory contracts are properly deployed`);
+        console.log(`    * Verify platform configuration parameters`);
+      }
+      
+      console.log(`\nFailed Deployments Details:`);
+      deploymentStats.errorDetails.slice(0, 5).forEach(detail => {
+        console.log(`  - ${detail.campaignTitle}: ${detail.errorType}`);
+      });
+      if (deploymentStats.errorDetails.length > 5) {
+        console.log(`  ... and ${deploymentStats.errorDetails.length - 5} more`);
+      }
+    }
+    
+    // Success rate calculation
+    const successRate = totalAttemptedDeployments > 0 ? 
+      Math.round((deploymentStats.successfulCampaignDeployments / totalAttemptedDeployments) * 100) : 0;
+    
+    if (successRate === 100) {
+      console.log(`\n✅ SUCCESS: All deployments completed successfully!`);
+    } else if (successRate >= 50) {
+      console.log(`\n⚠️  PARTIAL SUCCESS: ${successRate}% success rate`);
+      console.log(`   Most deployments succeeded, but some issues encountered.`);
+    } else if (successRate > 0) {
+      console.log(`\n❌ MAJOR ISSUES: Only ${successRate}% success rate`);
+      console.log(`   Significant deployment problems detected. Review recommendations above.`);
+    } else {
+      console.log(`\n❌ COMPLETE FAILURE: No deployments succeeded`);
+      console.log(`   All deployment attempts failed. Check wallet funds and network connectivity.`);
+    }
+  } else {
+    console.log('\nDUMMY MODE: All contract addresses and transaction hashes are simulated');
+    console.log('   To run with real blockchain interactions, use: pnpm dev:db:seed (without --dummy flag)');
+  }
+
   console.log(
-    `Contract deployment status (${isDummyMode ? 'DUMMY MODE' : 'STAGING MODE'}):`,
+    `\nContract deployment status:`
   );
   console.log(
     '   - DRAFT campaigns: No contracts deployed (use admin tooling)',
@@ -639,25 +773,20 @@ async function main() {
 
   if (isDummyMode) {
     console.log(
-      '\nDUMMY MODE: All contract addresses and transaction hashes are simulated',
+      '\nUse the dummy-web3 connector to sign in as one of these users:',
     );
-    console.log(
-      '   To run with real blockchain interactions, use: pnpm dev:db:seed (without --dummy flag)',
-    );
+    adminUsers.map(({ address }) => console.log(`admin ${address}`));
+    creatorUsers
+      .slice(0, 3)
+      .map(({ address }) => console.log(`creator ${address}`));
+    donorUsers.slice(0, 3).map(({ address }) => console.log(`donor ${address}`));
   } else {
-    console.log('\nSTAGING MODE: Real blockchain interactions occurred');
-    console.log(
-      '   To run in dummy mode for faster development, use: pnpm dev:db:seed:dummy',
-    );
+    console.log('\nCreated users for testing:');
+    console.log(`  ${adminUsers.length} admin users`);
+    console.log(`  ${creatorUsers.length} creator users`);
+    console.log(`  ${donorUsers.length} donor users`);
+    console.log('  Use real wallet connections or authentication for these users');
   }
-  console.log(
-    '\nUse the dummy-web3 connector to sign in as one of these users:',
-  );
-  adminUsers.map(({ address }) => console.log(`admin ${address}`));
-  creatorUsers
-    .slice(0, 3)
-    .map(({ address }) => console.log(`creator ${address}`));
-  donorUsers.slice(0, 3).map(({ address }) => console.log(`donor ${address}`));
 }
 
 main()
