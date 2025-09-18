@@ -29,8 +29,8 @@ export function PageNavMenuIcon() {
             )}
           >
             <Image
-              src="/logo-full.png"
-              alt="Logo"
+              src="/relay-funder-logo.png"
+              alt="RelayFunder Logo"
               width={474}
               height={128}
               className={cn('rounded-full')}
@@ -44,8 +44,8 @@ export function PageNavMenuIcon() {
             )}
           >
             <Image
-              src="/logo-icon.png"
-              alt="logo-icon"
+              src="/relay-funder-logo-mark.png"
+              alt="RelayFunder Mark"
               width={129}
               height={128}
               className={cn('rounded')}

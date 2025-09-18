@@ -2,7 +2,13 @@ import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
 import { useSidebar, useAuth } from '@/contexts';
 import { usePathname } from 'next/navigation';
-import { Grid, Home, CircleChevronUp } from 'lucide-react';
+import {
+  Home,
+  LayoutDashboard,
+  Target,
+  Shield,
+  ShieldCheck,
+} from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
 interface NavItem {
@@ -22,25 +28,25 @@ export function PageNavMenuItems() {
     ];
     if (!isAdmin) {
       items.push({
-        icon: <Grid className="h-6 w-6" />,
-        label: 'Dashboard',
+        icon: <LayoutDashboard className="h-6 w-6" />,
+        label: 'My Campaigns',
         href: '/dashboard',
       });
       items.push({
-        icon: <CircleChevronUp className="h-6 w-6" />,
-        label: 'Rounds',
+        icon: <Target className="h-6 w-6" />,
+        label: 'Funding Rounds',
         href: '/rounds',
       });
     }
     if (authenticated && isAdmin) {
       items.push({
-        icon: <Grid className="h-6 w-6" />,
-        label: 'Admin Dashboard',
+        icon: <Shield className="h-6 w-6" />,
+        label: 'Control Center',
         href: '/admin',
       });
       items.push({
-        icon: <CircleChevronUp className="h-6 w-6" />,
-        label: 'Admin Rounds',
+        icon: <ShieldCheck className="h-6 w-6" />,
+        label: 'Round Management',
         href: '/admin/rounds',
       });
     }

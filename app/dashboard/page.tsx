@@ -90,7 +90,7 @@ export default function DashboardPage() {
             onClick={() => setShowCampaignCreate(false)}
             className="ml-2"
           >
-            ← Back to Dashboard
+            ← Back to My Campaigns
           </Button>
         }
       >

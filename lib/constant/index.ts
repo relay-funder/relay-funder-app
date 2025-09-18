@@ -2,7 +2,7 @@ export { countries } from './countries';
 export { categories } from './categories';
 export { fundingModels } from './funding-models';
 
-export const PROJECT_NAME = 'Akashic';
+export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
 
