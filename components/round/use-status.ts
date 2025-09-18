@@ -1,10 +1,13 @@
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { isFuture, isPast } from 'date-fns';
 
-export function useRoundStatus(round: GetRoundResponseInstance): {
+export function useRoundStatus(round?: GetRoundResponseInstance): {
   text: string;
   variant: 'default' | 'secondary' | 'destructive' | 'outline';
 } {
+  if (!round) {
+    return { text: 'Loading...', variant: 'outline' };
+  }
   if (round.recipientStatus && round.recipientStatus === 'PENDING') {
     return { text: 'Pending Approval', variant: 'destructive' };
   }

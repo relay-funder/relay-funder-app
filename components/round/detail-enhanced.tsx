@@ -12,6 +12,7 @@ import {
   Badge,
   TabsTrigger,
 } from '@/components/ui';
+import type { GetRoundResponseInstance } from '@/lib/api/types';
 
 import { useRound } from '@/lib/hooks/useRounds';
 import { RoundLoading } from './loading';
@@ -28,27 +29,22 @@ import { useAuth } from '@/contexts';
 import { ReadMoreDescription } from '@/components/ui/read-more-description';
 
 export function RoundDetailEnhanced({ id }: { id: number }) {
+  // ALL HOOKS MUST BE CALLED FIRST - before any conditional logic or early returns
   const { data: roundInstance, isPending } = useRound(id);
   const { isAdmin } = useAuth();
-
-  if (isPending) {
-    return <RoundLoading />;
-  }
-
+  
+  // Call hooks with safe defaults for when round might be undefined
   const round = roundInstance?.round;
-  if (!round) {
-    notFound();
-  }
-
-  // All hooks must be called before any conditional logic
   const status = useRoundStatus(round);
-  useRoundTimeInfo(round); // Hook call moved but result not needed
+  useRoundTimeInfo(round);
   const numberOfCampaigns = useMemo(() => {
-    return round.roundCampaigns?.length ?? 0;
+    return round?.roundCampaigns?.length ?? 0;
   }, [round]);
 
-  // Debug logging for admin round data
+  // Debug logging for admin round data - only when round exists
   useEffect(() => {
+    if (!round) return;
+    
     console.log('RoundDetailEnhanced - Round data:', {
       roundId: round.id,
       roundTitle: round.title,
@@ -63,6 +59,15 @@ export function RoundDetailEnhanced({ id }: { id: number }) {
       })),
     });
   }, [round, isAdmin]);
+
+  // NOW handle conditional rendering after all hooks are called
+  if (isPending) {
+    return <RoundLoading />;
+  }
+
+  if (!round) {
+    notFound();
+  }
 
   const header = <PageHeader title={round.title} />;
 
@@ -208,17 +213,11 @@ function RoundCampaignsList({
   round,
   isAdmin = false,
 }: {
-  round: {
-    roundCampaigns?: Array<{
-      campaign: any;
-      status: string;
-      id: string;
-    }>;
-  };
+  round: GetRoundResponseInstance;
   isAdmin?: boolean;
 }) {
   const campaigns = useMemo(() => {
-    return round.roundCampaigns?.map((rc) => rc.campaign) ?? [];
+    return round.roundCampaigns?.map((rc) => rc.campaign).filter((campaign): campaign is NonNullable<typeof campaign> => Boolean(campaign)) ?? [];
   }, [round.roundCampaigns]);
 
   // Debug logging to help troubleshoot campaign data
