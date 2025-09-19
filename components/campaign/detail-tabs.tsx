@@ -2,7 +2,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { type DbCampaign } from '@/types/campaign';
 import { CampaignDetailTabAbout } from './detail-tab-about';
-import { CampaignDetailTabRewards } from './detail-tab-rewards';
 import { CampaignDetailTabUpdates } from './detail-tab-updates';
 import { CampaignDetailTabComments } from './detail-tab-comments';
 import { CampaignDetailTabTransactions } from './detail-tab-transactions';
@@ -20,9 +19,6 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
           <TabsTrigger value="campaign" className={TAB_TRIGGER_CLASS_NAMES}>
             Campaign
           </TabsTrigger>
-          <TabsTrigger value="rewards" className={TAB_TRIGGER_CLASS_NAMES}>
-            Rewards
-          </TabsTrigger>
           <TabsTrigger value="updates" className={TAB_TRIGGER_CLASS_NAMES}>
             Updates ({campaign._count?.updates ?? 0})
           </TabsTrigger>
@@ -39,10 +35,6 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
 
         <TabsContent value="campaign" className="mt-6">
           <CampaignDetailTabAbout campaign={campaign} />
-        </TabsContent>
-
-        <TabsContent value="rewards">
-          <CampaignDetailTabRewards campaign={campaign} />
         </TabsContent>
 
         <TabsContent value="updates">

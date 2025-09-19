@@ -342,8 +342,7 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
             campaign visually.
           </li>
           <li>
-            <b>Funding Model</b>: The chosen funding model (flexible or
-            all-or-nothing) and any quadratic funding options.
+            <b>Funding Model</b>: The chosen funding model for your campaign.
           </li>
           <li>
             <b>Timeline</b>: The start and end dates you set for your campaign.

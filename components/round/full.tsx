@@ -3,27 +3,17 @@ import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { Calendar, Users, DollarSign } from 'lucide-react';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  Card,
-  CardContent,
-  Badge,
-  TabsTrigger,
-} from '@/components/ui';
+import { Card, Badge } from '@/components/ui';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 
 import { useRound } from '@/lib/hooks/useRounds';
 import { RoundLoading } from './loading';
 import { RoundMainImageAvatar } from './main-image-avatar';
-import { RoundCardTabOverview } from './card-full-tab-overview';
-import { RoundCardTabCriteria } from './card-full-tab-criteria';
 import { FormattedDate } from '../formatted-date';
 import { useMemo, useEffect } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
-import { CampaignItemCard } from '@/components/campaign/item-card';
+import { CampaignCardItem } from '@/components/campaign/campaign-card';
 import { CampaignCardRoundAdmin } from '@/components/campaign/card-round-admin';
 import { useAuth } from '@/contexts';
 import { ReadMoreDescription } from '@/components/ui/read-more-description';
@@ -150,25 +140,6 @@ export function RoundFull({ id }: { id: number }) {
               </p>
             </Card>
           </div>
-
-          {/* Optional Tabs for Additional Info */}
-          <Card>
-            <CardContent className="p-6">
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="mb-6 grid w-full grid-cols-2">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="criteria">Criteria</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="overview" className="space-y-6">
-                  <RoundCardTabOverview round={round} />
-                </TabsContent>
-                <TabsContent value="criteria" className="space-y-6">
-                  <RoundCardTabCriteria round={round} />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Participating Campaigns Section - Prominent Display */}
@@ -268,7 +239,7 @@ function RoundCampaignsList({
             />
           );
         }
-        return <CampaignItemCard key={campaign.id} campaign={campaign} />;
+        return <CampaignCardItem key={campaign.id} campaign={campaign} />;
       })}
     </div>
   );

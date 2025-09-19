@@ -1,6 +1,5 @@
 import { AdminDashboard } from '@/components/admin/dashboard';
 import { auth } from '@/server/auth';
-
 import { AdminAccessDenied } from '@/components/admin/access-denied';
 
 export default async function AdminPage() {
@@ -67,11 +66,6 @@ export default async function AdminPage() {
     return <AdminAccessDenied />;
   }
 
-  // Main content
-  return (
-    <div className="mx-auto max-w-7xl p-5">
-      <div className="mb-8 pt-5 text-3xl font-bold">Control Center</div>
-      <AdminDashboard />
-    </div>
-  );
+  // Main content - AdminDashboard already includes PageHome layout
+  return <AdminDashboard />;
 }

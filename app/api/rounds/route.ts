@@ -1,5 +1,5 @@
 import { db } from '@/server/db';
-import { checkAuth } from '@/lib/api/auth';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
@@ -22,7 +22,10 @@ export async function GET(req: Request) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
 
-    return response(await listRounds({ page, pageSize, skip }));
+    // Check if user is admin to determine campaign filtering
+    const admin = await isAdmin();
+
+    return response(await listRounds({ page, pageSize, skip, admin }));
   } catch (error: unknown) {
     return handleError(error);
   }
