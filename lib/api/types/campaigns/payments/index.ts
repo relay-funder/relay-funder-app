@@ -10,7 +10,7 @@ export const PostPaymentBodyRouteSchema = z.object({
   amount: z.string(),
   token: z.string(),
   isAnonymous: z.boolean(),
-  type: z.enum(['SELL', 'BUY']),
+  type: z.enum(['SELL', 'BUY']).optional().default('BUY'),
   status: z.enum(['confirming']),
   transactionHash: z.string(),
   campaignId: z.number(),
