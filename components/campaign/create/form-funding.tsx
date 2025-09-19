@@ -1,18 +1,12 @@
 import { useFormContext } from 'react-hook-form';
 import {
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
 } from '@/components/ui';
-import { fundingModels } from '@/lib/constant';
 
 export function CampaignCreateFormFunding() {
   const form = useFormContext();
@@ -31,33 +25,24 @@ export function CampaignCreateFormFunding() {
           </FormItem>
         )}
       />
+
+      {/* Hidden field to maintain form structure */}
       <FormField
         control={form.control}
         name="fundingModel"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Model</FormLabel>
-            <FormControl>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a Funding Model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fundingModels.map((fundingModel) => (
-                    <SelectItem key={fundingModel.id} value={fundingModel.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{fundingModel.icon}</span>
-                        <span>{fundingModel.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
+          <input type="hidden" {...field} value="flexible" />
         )}
       />
+
+      {/* Information about funding model */}
+      <div className="rounded-lg bg-blue-50 p-4">
+        <h3 className="font-semibold text-blue-900">🎨 Flexible Funding</h3>
+        <p className="mt-1 text-sm text-blue-700">
+          You&apos;ll receive all funds raised at the end of your campaign,
+          regardless of whether you reach your funding goal.
+        </p>
+      </div>
     </>
   );
 }

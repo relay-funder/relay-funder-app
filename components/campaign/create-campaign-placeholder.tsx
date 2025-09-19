@@ -33,7 +33,7 @@ export function CreateCampaignPlaceholder({
           </h3>
 
           <p className="text-sm leading-relaxed text-gray-600">
-            Share your project with the world and raise funds from supporters
+            Share your campaign with the world and raise funds from supporters
             who believe in your vision.
           </p>
         </div>
