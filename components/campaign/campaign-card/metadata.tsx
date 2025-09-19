@@ -25,14 +25,6 @@ export function CampaignCardMetadata({
         <div className="flex items-center gap-2">
           <span>by</span>
           <UserInlineName user={campaign?.creator} />
-          {adminMode && (
-            <CopyText
-              title="Address Copied"
-              description="Address copied to your clipboard"
-              text={campaign?.creatorAddress ?? ''}
-              tooltip="Copy Creator Address"
-            />
-          )}
         </div>
         <CampaignLocation campaign={campaign} />
       </div>

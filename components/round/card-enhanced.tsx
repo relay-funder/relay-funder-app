@@ -85,7 +85,7 @@ export function RoundCardEnhanced({
             <div className="rounded-lg bg-muted/50 p-4">
               <div className="mb-2 flex items-center gap-2 text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span className="text-sm font-medium">Projects</span>
+                <span className="text-sm font-medium">Campaigns</span>
               </div>
               <p className="text-xl font-bold text-foreground">
                 {numberOfProjects}

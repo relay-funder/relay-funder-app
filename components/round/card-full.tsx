@@ -16,7 +16,6 @@ import {
   TabsTrigger,
 } from '@/components/ui';
 import { RoundCardTabOverview } from './card-full-tab-overview';
-import { RoundCardTabCriteria } from './card-full-tab-criteria';
 import { RoundCardTabCampaigns } from './card-full-tab-campaigns';
 import { RoundCardTabRules } from './card-full-tab-rules';
 import { RoundMainImageAvatar } from './main-image-avatar';
@@ -117,9 +116,8 @@ export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
         <CardFooter className="mt-auto p-4 pt-0">
           <div className="w-full">
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="criteria">Criteria</TabsTrigger>
                 <TabsTrigger value="campaigns">
                   Campaigns{numberOfCampaigns > 0 && ` (${numberOfCampaigns})`}
                 </TabsTrigger>
@@ -128,9 +126,6 @@ export function RoundCardFull({ round }: { round: GetRoundResponseInstance }) {
 
               <TabsContent value="overview" className="mt-6 space-y-6">
                 <RoundCardTabOverview round={round} />
-              </TabsContent>
-              <TabsContent value="criteria" className="mt-6 space-y-6">
-                <RoundCardTabCriteria round={round} />
               </TabsContent>
 
               <TabsContent value="campaigns" className="mt-6">

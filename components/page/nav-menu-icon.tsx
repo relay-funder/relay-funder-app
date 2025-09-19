@@ -1,6 +1,7 @@
 import { useSidebar } from '@/contexts';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 import { transition } from './sidebar-constants';
 
 export function PageNavMenuIcon() {
@@ -13,7 +14,13 @@ export function PageNavMenuIcon() {
         isOpen ? 'pt-6' : 'pt-8',
       )}
     >
-      <div className={cn('justify-left flex w-full items-center', '')}>
+      <Link
+        href="/"
+        className={cn(
+          'justify-left flex w-full cursor-pointer items-center',
+          '',
+        )}
+      >
         <div
           className={cn(
             'relative h-[56px] overflow-hidden',
@@ -52,7 +59,7 @@ export function PageNavMenuIcon() {
             />
           </div>
         </div>
-      </div>
+      </Link>
     </div>
   );
 }

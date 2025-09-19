@@ -333,56 +333,22 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div>
         <p>
-          In this step, you will define the <b>funding</b> details for your
-          campaign. This includes specifying the desired amount you want to
-          receive and choosing the funding model that best suits your project.
-          Understanding these options is crucial for setting clear expectations
-          for both you and your potential backers.
-        </p>
-
-        <h3>Desired Amount</h3>
-        <p>
-          First, input the <b>desired amount</b> you wish to raise through your
-          campaign. This figure should reflect the total funding needed to
-          successfully complete your project. Be realistic and consider all
-          costs involved, including production, marketing, and any rewards you
-          plan to offer backers.
-        </p>
-
-        <h3>Funding Models</h3>
-        <p>You have two primary options for how you want to receive funding:</p>
-        <ul>
-          <li>
-            <b>Flexible Funding</b>: If you choose this option, you will receive
-            the funds raised at the end of the campaign, regardless of whether
-            you reach your funding goal. This model allows you to keep whatever
-            amount you raise, which can be beneficial if you have a project that
-            can progress with partial funding.
-          </li>
-          <li>
-            <b>All-or-Nothing Funding</b>: Selecting this option means that you
-            will only receive the funds if you meet or exceed your funding goal
-            by the end of the campaign. If the goal is not reached, all
-            contributions will be returned to the backers. This model can create
-            a sense of urgency and encourage backers to contribute more to help
-            you reach your target.
-          </li>
-        </ul>
-
-        <h3>Quadratic Funding</h3>
-        <p>
-          Additionally, you may choose to apply for <b>quadratic funding</b>.
-          This innovative funding model allows for a more equitable distribution
-          of funds by matching contributions based on the number of unique
-          backers rather than the total amount contributed. This means that
-          projects with more backers, even if the individual contributions are
-          smaller, can receive a boost in funding.
+          In this step, you will define the <b>funding goal</b> for your
+          campaign. This should reflect the total funding needed to successfully
+          complete your campaign.
         </p>
 
         <p>
-          By carefully considering your desired amount and funding model, you
-          can set your campaign up for success and align it with your
-          project&apos;s needs.
+          Be realistic and consider all costs involved, including production,
+          marketing, and any rewards you plan to offer backers.
+        </p>
+
+        <h3>Flexible Funding</h3>
+        <p>
+          Your campaign uses <b>flexible funding</b>, which means you'll receive
+          all funds raised at the end of your campaign, regardless of whether
+          you reach your funding goal. This allows your campaign to benefit from
+          any amount of support you receive.
         </p>
       </div>
     ),
@@ -490,8 +456,7 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
             campaign visually.
           </li>
           <li>
-            <b>Funding Model</b>: The chosen funding model (flexible or
-            all-or-nothing) and any quadratic funding options.
+            <b>Funding Model</b>: The chosen funding model for your campaign.
           </li>
           <li>
             <b>Timeline</b>: The start and end dates you set for your campaign.

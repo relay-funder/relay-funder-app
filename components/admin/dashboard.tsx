@@ -13,7 +13,7 @@ export function AdminDashboard() {
     <PageHome
       header={
         <PageHeaderSearch
-          placeholder="Search Stories"
+          placeholder="Search Campaigns"
           onSearchChanged={(search: string) => setSearchTerm(search)}
         />
       }
