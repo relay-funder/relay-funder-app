@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { Calendar, Users, DollarSign } from 'lucide-react';
-import { Card, CardContent, Badge } from '@/components/ui';
+import { Card, Badge } from '@/components/ui';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 
 import { useRound } from '@/lib/hooks/useRounds';
