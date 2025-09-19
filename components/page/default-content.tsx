@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { ContentArea } from '@/components/layout';
 
 export function PageDefaultContent({
   title,
@@ -8,13 +9,8 @@ export function PageDefaultContent({
   children: ReactNode;
 }) {
   return (
-    <>
-      <div className="text-center">
-        <div className="mb-4 text-3xl font-bold">{title}</div>
-      </div>
-      <div className="space-y-4">
-        <div className="gap-4 p-4">{children}</div>
-      </div>
-    </>
+    <ContentArea title={title} spacing="normal" className="text-center">
+      {children}
+    </ContentArea>
   );
 }

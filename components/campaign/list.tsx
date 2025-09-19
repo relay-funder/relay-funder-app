@@ -7,6 +7,7 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignCardStandard } from '@/components/campaign/campaign-card';
 import { CollectionAddDialog } from '@/components/collection/add-dialog';
+import { ResponsiveGrid } from '@/components/layout';
 import type { DbCampaign, CampaignItemProps } from '@/types/campaign';
 interface CampaignListProps {
   searchTerm: string;
@@ -75,8 +76,8 @@ export function CampaignList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6">
+      <ResponsiveGrid variant="cards" gap="md">
         {filteredCampaigns?.map((page) =>
           page.campaigns.map((campaign) => (
             <ItemComponent
@@ -86,7 +87,7 @@ export function CampaignList({
             />
           )),
         )}
-      </div>
+      </ResponsiveGrid>
       {selectedCampaign ? (
         <CollectionAddDialog
           campaign={selectedCampaign}
