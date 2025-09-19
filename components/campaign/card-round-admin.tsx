@@ -15,7 +15,7 @@ import { FormattedDate } from '../formatted-date';
 import { CampaignProgress } from './progress';
 import { UserInlineName } from '../user/inline-name';
 import { CampaignLocation } from './location';
-import { CampaignRoundsIndicator } from './rounds-indicator';
+import { CampaignRoundBadge } from './round-badge';
 import { useCampaignCategory } from '@/hooks/use-campaign-category';
 import {
   isCampaignDonatable,
@@ -129,7 +129,7 @@ export function CampaignCardRoundAdmin({
             <CampaignLocation campaign={campaign} />
           </div>
           <div className="mb-2 flex items-end justify-end gap-1">
-            <CampaignRoundsIndicator campaign={campaign} />
+            <CampaignRoundBadge campaign={campaign} variant="compact" />
           </div>
           <p className="line-clamp-3 text-[12px] text-gray-600">
             {campaign?.description}

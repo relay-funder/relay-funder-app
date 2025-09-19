@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
 import { CampaignList } from '@/components/campaign/list';
-import { CampaignCardAdmin } from '@/components/campaign/card-admin';
+import { CampaignCardAdmin } from '@/components/campaign/campaign-card';
 import { DashboardOverview } from '../dashboard/overview';
 
 export function AdminDashboard() {

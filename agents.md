@@ -314,12 +314,53 @@ docker compose exec app pnpm prisma db pull
 - **Error Logging**: Use appropriate log levels (console.error, console.warn, console.log)
 - **Context Information**: Include relevant context in log messages without overwhelming output
 
+### Shared Component Naming and Architecture (MANDATORY)
+
+#### Domain-Meaningful Component Names (CRITICAL REQUIREMENT)
+- **NEVER** name shared UI components using implementation or refactoring-oriented terms
+- **FORBIDDEN TERMS**: "unified", "unified-card", "generic", "shared", "common", "base", "wrapper"
+- **REQUIRED**: Use domain-meaningful names that reflect the component's actual purpose and usage
+- **EXAMPLES**: 
+  - ✅ `CampaignCard` - clearly indicates it's for displaying campaigns
+  - ✅ `UserProfileSection` - describes the specific domain functionality
+  - ❌ `UnifiedCard` - implementation detail, not domain meaning
+  - ❌ `GenericDisplay` - too abstract, no domain context
+
+#### Component Size Limits (ENFORCED)
+- **MAXIMUM**: 200-300 lines of code per component file
+- **REQUIRED**: Break down large components into smaller, focused sub-components
+- **STRUCTURE**: Use folder structure with index.ts for complex components
+- **EXAMPLE**: Split a 800+ line component into:
+  - `campaign-card/campaign-card.tsx` (main component, ~170 LOC)
+  - `campaign-card/header.tsx` (header logic, ~120 LOC)
+  - `campaign-card/content.tsx` (content logic, ~250 LOC)
+  - `campaign-card/footer.tsx` (footer logic, ~180 LOC)
+  - `campaign-card/index.ts` (exports and documentation)
+
+#### Shared Component Documentation (REQUIRED)
+- **API DOCUMENTATION**: All shared components must have comprehensive props documentation
+- **USAGE EXAMPLES**: Include clear usage examples in component comments
+- **VARIANT EXPLANATION**: Document all supported variants and their use cases
+- **DOMAIN CONTEXT**: Explain the business/domain purpose of the component
+
+#### Automated Enforcement (IMPLEMENTATION REQUIRED)
+- **LINTING RULES**: Implement ESLint rules to prevent generic naming patterns
+- **CODE REVIEW**: Add automated checks for component size limits
+- **PR REQUIREMENTS**: Require domain-meaningful names in pull request descriptions
+- **COMMIT MESSAGES**: Use domain context in commit messages (e.g., "extract campaign card for reuse" not "create unified component")
+
+#### Migration and Legacy Support
+- **BACKWARD COMPATIBILITY**: Maintain legacy exports during transition periods
+- **DEPRECATION NOTICES**: Add clear deprecation warnings for old generic names
+- **MIGRATION GUIDES**: Document how to migrate from legacy components
+- **TRACEABILITY**: Keep internal documentation of refactoring rationale separate from public component names
+
 ### React Component Patterns
 - **Function Components**: Use function components with TypeScript
 - **Props Interface**: Define component props with explicit interfaces
 - **UI Components**: Import from single barrel export (`@/components/ui`)
 - **Custom Hooks**: Extract complex logic into reusable hooks (`lib/hooks/`)
-- **Component Size**: Keep components under 150 lines of code
+- **Component Size**: Keep components under 200-300 lines of code (see Shared Component Naming section for detailed guidelines)
 - **Single Responsibility**: Each component should have one clear purpose
 - **Forward Ref Pattern**: Use `React.forwardRef` for components that need refs
 - **Display Name**: Set `Component.displayName` for debugging

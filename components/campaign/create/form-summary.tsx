@@ -3,7 +3,7 @@ import { useFormContext } from 'react-hook-form';
 import { useMemo } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useSession } from 'next-auth/react';
-import { CampaignCardDashboard } from '../card-dashboard';
+import { CampaignCardDashboard } from '../campaign-card';
 import { CampaignFormSchema } from './form';
 import { cn } from '@/lib/utils';
 export function CampaignCreateFormSummary() {

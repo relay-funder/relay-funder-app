@@ -23,7 +23,7 @@ import { FormattedDate } from '../formatted-date';
 import { useMemo, useEffect } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
-import { CampaignItemCard } from '@/components/campaign/item-card';
+import { CampaignCardItem } from '@/components/campaign/campaign-card';
 import { CampaignCardRoundAdmin } from '@/components/campaign/card-round-admin';
 import { useAuth } from '@/contexts';
 import { ReadMoreDescription } from '@/components/ui/read-more-description';
@@ -268,7 +268,7 @@ function RoundCampaignsList({
             />
           );
         }
-        return <CampaignItemCard key={campaign.id} campaign={campaign} />;
+        return <CampaignCardItem key={campaign.id} campaign={campaign} />;
       })}
     </div>
   );

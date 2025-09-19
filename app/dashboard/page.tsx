@@ -9,7 +9,7 @@ import {
 import { useAuth } from '@/contexts';
 import { Heart, Search } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
-import { CampaignCardDashboard } from '@/components/campaign/card-dashboard';
+import { CampaignCardDashboard } from '@/components/campaign/campaign-card';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignEmpty } from '@/components/campaign/empty';

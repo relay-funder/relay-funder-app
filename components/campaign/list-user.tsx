@@ -5,9 +5,9 @@ import { useInView } from 'react-intersection-observer';
 import { useEffect } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { CampaignItem } from '@/components/campaign/item';
+import { CampaignCardStandard } from '@/components/campaign/campaign-card';
 import type { CampaignItemProps } from '@/types/campaign';
-import { CampaignCardDashboardCreate } from './card-create';
+import { CreateCampaignPlaceholder } from './create-campaign-placeholder';
 interface CampaignListProps {
   searchTerm: string;
   categoryFilter?: string | null;
@@ -24,7 +24,7 @@ export function CampaignUserList({
   statusFilter = undefined,
   pageSize = 10,
   withRounds = true,
-  item: ItemComponent = CampaignItem,
+  item: ItemComponent = CampaignCardStandard,
   onCreate,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
@@ -73,7 +73,7 @@ export function CampaignUserList({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
         {typeof onCreate === 'function' && (
-          <CampaignCardDashboardCreate onCreate={onCreate} />
+          <CreateCampaignPlaceholder onCreate={onCreate} />
         )}
         {filteredCampaigns?.map((page) =>
           page.campaigns.map((campaign) => (
