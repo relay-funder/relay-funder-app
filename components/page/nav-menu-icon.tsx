@@ -16,10 +16,7 @@ export function PageNavMenuIcon() {
     >
       <Link
         href="/"
-        className={cn(
-          'justify-left flex w-full cursor-pointer items-center',
-          '',
-        )}
+        className="justify-left flex w-full cursor-pointer items-center"
       >
         <div
           className={cn(
