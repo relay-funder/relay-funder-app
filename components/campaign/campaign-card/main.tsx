@@ -131,7 +131,7 @@ export function CampaignCard({
         dashboardMode={isDashboardType}
         canDonate={canDonate}
         campaignStatusInfo={campaignStatusInfo}
-        categoryDetails={categoryDetails}
+        categoryDetails={categoryDetails ?? null}
       >
         {children}
       </CampaignCardContent>
