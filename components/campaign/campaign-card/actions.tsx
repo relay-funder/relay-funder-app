@@ -5,6 +5,13 @@ import { DbCampaign } from '@/types/campaign';
 import { CampaignCardAdminActions } from '../card-admin-actions';
 import { CampaignCardDisplayOptions } from './types';
 
+interface CampaignStatusInfo {
+  status: string;
+  variant: 'default' | 'secondary' | 'outline' | 'destructive';
+  description: string;
+  canDonate: boolean;
+}
+
 interface CampaignCardActionsProps {
   campaign: DbCampaign;
   showButtons: boolean;
@@ -12,7 +19,7 @@ interface CampaignCardActionsProps {
   adminMode: boolean;
   displayOptions: CampaignCardDisplayOptions;
   canDonate: boolean;
-  campaignStatusInfo: any;
+  campaignStatusInfo: CampaignStatusInfo;
 }
 
 export function CampaignCardActions({

@@ -62,7 +62,6 @@ export function CampaignCardContent({
         <CampaignCardMetadata
           campaign={campaign}
           displayOptions={displayOptions}
-          adminMode={adminMode}
         />
       </div>
 

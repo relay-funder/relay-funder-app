@@ -2,19 +2,16 @@ import { DbCampaign } from '@/types/campaign';
 import { UserInlineName } from '../../user/inline-name';
 import { CampaignLocation } from '../location';
 import { CampaignRoundBadge } from '../round-badge';
-import { CopyText } from '@/components/copy-text';
 import { CampaignCardDisplayOptions } from './types';
 
 interface CampaignCardMetadataProps {
   campaign: DbCampaign;
   displayOptions: CampaignCardDisplayOptions;
-  adminMode: boolean;
 }
 
 export function CampaignCardMetadata({
   campaign,
   displayOptions,
-  adminMode,
 }: CampaignCardMetadataProps) {
   return (
     <div className="space-y-3">
