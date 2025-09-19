@@ -68,34 +68,28 @@ export async function listCampaigns({
   creatorAddress?: string;
 }) {
   const statusList = [CampaignStatus.ACTIVE];
-  if (!admin) {
-    if (creatorAddress) {
-      // users may request all states for their own campaigns
-      if (status === 'all') {
+  
+  // Only add additional statuses when explicitly requesting 'all'
+  if (status === 'all') {
+    if (!admin) {
+      if (creatorAddress) {
+        // users may request all states for their own campaigns
         statusList.push(
           CampaignStatus.DRAFT,
           CampaignStatus.PENDING_APPROVAL,
           CampaignStatus.COMPLETED,
-          CampaignStatus.ACTIVE,
         );
       }
-    }
-  } else {
-    if (status === 'all') {
+    } else {
+      // Admin requesting all statuses (for admin dashboard)
       statusList.push(
         CampaignStatus.DRAFT,
         CampaignStatus.PENDING_APPROVAL,
         CampaignStatus.COMPLETED,
-        CampaignStatus.ACTIVE,
-      );
-    } else {
-      statusList.push(
-        CampaignStatus.PENDING_APPROVAL,
-        CampaignStatus.COMPLETED,
-        CampaignStatus.ACTIVE,
       );
     }
   }
+  // For status='active' (homepage), everyone sees only ACTIVE campaigns
   const where = {
     status: {
       in: statusList,
