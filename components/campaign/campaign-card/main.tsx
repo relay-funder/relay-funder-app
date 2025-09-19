@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, Button } from '@/components/ui';
+import { Card, CardContent, Button } from '@/components/ui';
 import { useCampaignCategory } from '@/hooks/use-campaign-category';
 import {
   isCampaignDonatable,
   getCampaignStatusInfo,
 } from '@/lib/utils/campaign-status';
-import { CampaignMainImage } from '../main-image';
 import { CampaignCardHeader } from './header';
 import { CampaignCardContent } from './content';
 import { CampaignCardFooter } from './footer';

@@ -1,11 +1,19 @@
 import { CardFooter } from '@/components/ui/card';
 import { DbCampaign } from '@/types/campaign';
+import { GetRoundResponseInstance } from '@/lib/api/types';
 import { FormattedDate } from '../../formatted-date';
 import { CampaignProgress } from '../progress';
 import { TreasuryBalanceCompact } from '../treasury-balance';
 import { CopyText } from '@/components/copy-text';
 import { CampaignCardDisplayOptions } from './types';
 import { CampaignCardActions } from './actions';
+
+interface CampaignStatusInfo {
+  status: string;
+  variant: 'default' | 'secondary' | 'outline' | 'destructive';
+  description: string;
+  canDonate: boolean;
+}
 
 interface CampaignCardFooterProps {
   campaign: DbCampaign;
@@ -14,7 +22,7 @@ interface CampaignCardFooterProps {
   showButtons: boolean;
   customButtons?: React.ReactNode;
   canDonate: boolean;
-  campaignStatusInfo: any;
+  campaignStatusInfo: CampaignStatusInfo;
 }
 
 export function CampaignCardFooter({
@@ -36,7 +44,7 @@ export function CampaignCardFooter({
               Active Rounds:
             </h4>
             <ul className="space-y-1">
-              {campaign.rounds.map((round: any) => (
+              {campaign.rounds.map((round: GetRoundResponseInstance) => (
                 <li
                   key={round.id}
                   className="border-l-2 border-blue-200 pl-2 text-sm text-gray-600"

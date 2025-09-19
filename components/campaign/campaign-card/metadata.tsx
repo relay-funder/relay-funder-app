@@ -9,14 +9,12 @@ interface CampaignCardMetadataProps {
   campaign: DbCampaign;
   displayOptions: CampaignCardDisplayOptions;
   adminMode: boolean;
-  dashboardMode: boolean;
 }
 
 export function CampaignCardMetadata({
   campaign,
   displayOptions,
   adminMode,
-  dashboardMode,
 }: CampaignCardMetadataProps) {
   return (
     <div className="space-y-3">
