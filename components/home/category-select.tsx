@@ -22,12 +22,12 @@ export function HomeCategorySelect({
   // Show error state or loading fallback (fallback to no categories)
   if (error || isLoading) {
     return (
-      <div className="mb-8 flex flex-wrap justify-center gap-2">
+      <div className="mb-8 flex flex-wrap justify-center gap-3">
         <Button
           key="all"
           variant="outline"
           className={cn(
-            'flex items-center gap-2 rounded-full',
+            'flex items-center gap-2 rounded-full px-4 py-2',
             'bg-purple-100 text-purple-600',
           )}
           onClick={() => onSelect(null)}
@@ -42,12 +42,12 @@ export function HomeCategorySelect({
   const categories = categoriesData?.categories || [];
 
   return (
-    <div className="mb-8 flex flex-wrap justify-center gap-2">
+    <div className="mb-8 flex flex-wrap justify-center gap-3">
       <Button
         key="all"
         variant="outline"
         className={cn(
-          'flex items-center gap-2 rounded-full',
+          'flex items-center gap-2 rounded-full px-4 py-2',
           !selectedCategory ? 'bg-purple-100 text-purple-600' : 'bg-white',
         )}
         onClick={() => onSelect(null)}
@@ -60,7 +60,7 @@ export function HomeCategorySelect({
           key={category.id}
           variant="outline"
           className={cn(
-            'flex items-center gap-2 rounded-full',
+            'flex items-center gap-2 rounded-full px-4 py-2',
             selectedCategory === category.id
               ? 'bg-purple-100 text-purple-600'
               : 'bg-white',

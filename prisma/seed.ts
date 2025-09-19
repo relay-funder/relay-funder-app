@@ -430,7 +430,7 @@ async function main() {
     {
       title: 'Kenya Education & Development Round',
       description:
-        'Supporting educational initiatives and community development projects across Kenya. This matching round focuses on sustainable impact through education, economic empowerment, and infrastructure development.',
+        'Supporting educational initiatives and community development projects across Kenya. This comprehensive matching round focuses on creating sustainable impact through quality education, economic empowerment, and essential infrastructure development. We believe that education is the cornerstone of lasting change, and our funding approach prioritizes projects that demonstrate measurable outcomes, community ownership, and innovative approaches to addressing educational gaps. From rural schools lacking basic resources to vocational training programs that equip youth with market-relevant skills, this round aims to transform communities by investing in their most valuable asset - human potential. Our selection criteria emphasize collaborative partnerships, environmental sustainability, and gender inclusivity to ensure that funded projects create ripple effects of positive change throughout Kenya.',
       descriptionUrl: 'https://relayfunder.com',
       matchingPool: 50000,
       startDate: subDays(new Date(), 5), // Started 5 days ago (active)
@@ -444,7 +444,7 @@ async function main() {
     {
       title: 'East Africa Climate Resilience Round',
       description:
-        'Addressing climate challenges across East Africa through renewable energy, water conservation, and sustainable agriculture projects. This round emphasizes community-led climate adaptation solutions.',
+        'Addressing urgent climate challenges across East Africa through innovative renewable energy solutions, comprehensive water conservation initiatives, and sustainable agriculture projects that enhance food security. This specialized funding round emphasizes community-led climate adaptation solutions that combine traditional knowledge with modern technology. We prioritize projects that demonstrate clear environmental impact, economic viability, and social equity. From solar-powered irrigation systems that transform arid landscapes into productive farmland to community-based forest restoration programs that sequester carbon while creating livelihoods, this round supports holistic approaches to climate resilience. Our funding strategy recognizes that climate adaptation requires long-term thinking, cross-sector collaboration, and deep community engagement to build truly sustainable solutions that can withstand future environmental challenges while improving current living conditions.',
       descriptionUrl: 'https://relayfunder.com',
       matchingPool: 75000,
       startDate: addDays(new Date(), 10), // Starts in 10 days (upcoming)

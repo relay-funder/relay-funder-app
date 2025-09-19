@@ -9,7 +9,7 @@ import {
 import { useAuth } from '@/contexts';
 import { Heart, Search } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
-import { CampaignCardDashboard } from '@/components/campaign/card-dashboard';
+import { CampaignCardDashboard } from '@/components/campaign/campaign-card';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignEmpty } from '@/components/campaign/empty';
@@ -90,7 +90,7 @@ export default function DashboardPage() {
             onClick={() => setShowCampaignCreate(false)}
             className="ml-2"
           >
-            ← Back to Dashboard
+            ← Back to My Campaigns
           </Button>
         }
       >
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                   />
                   <Input
                     className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
-                    placeholder={'Search Your Stories'}
+                    placeholder={'Search Your Campaigns'}
                     type="search"
                     value={searchTerm}
                     onChange={onSearchInputChanged}

@@ -78,8 +78,24 @@ export async function listRounds({
       include: {
         media: { where: { state: 'UPLOADED' } },
         roundCampaigns: {
-          include: { Campaign: true },
-          where: admin ? {} : { status: 'APPROVED' },
+          include: {
+            Campaign: {
+              include: {
+                images: true,
+                media: { where: { state: 'UPLOADED' } },
+              },
+            },
+          },
+          where: admin
+            ? {}
+            : {
+                status: 'APPROVED',
+                Campaign: {
+                  status: {
+                    in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                  },
+                },
+              },
         },
       },
       take: pageSize,
@@ -112,12 +128,26 @@ export async function getRound(
     include: {
       media: { where: { state: 'UPLOADED' } },
       roundCampaigns: {
-        include: { Campaign: { include: { images: true } } },
+        include: {
+          Campaign: {
+            include: {
+              images: true,
+              media: { where: { state: 'UPLOADED' } },
+            },
+          },
+        },
         where: admin
           ? {}
           : {
               OR: [
-                { status: 'APPROVED' },
+                {
+                  status: 'APPROVED',
+                  Campaign: {
+                    status: {
+                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                    },
+                  },
+                },
                 { Campaign: { creatorAddress: sessionAddress ?? undefined } },
               ],
             },

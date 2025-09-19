@@ -63,13 +63,13 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
         {isOwner ? (
           <Link href={`/campaigns/${campaign.slug}/edit`}>
             <Button className="mt-4 h-12 w-full text-lg" size="lg">
-              Edit this project
+              Edit this campaign
             </Button>
           </Link>
         ) : (
           <Link href={`/campaigns/${campaign.slug}/donation`}>
             <Button className="mt-4 h-12 w-full text-lg" size="lg">
-              Back this project
+              Back this campaign
             </Button>
           </Link>
         )}
@@ -87,7 +87,7 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
           <div className="flex items-center gap-3 text-gray-600">
             <Target className="h-5 w-5" />
             <span>
-              Project will be funded on{' '}
+              Campaign will be funded on{' '}
               {new Date(campaign.endTime).toLocaleDateString()}
             </span>
           </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
 import { CampaignList } from '@/components/campaign/list';
-import { CampaignCardAdmin } from '@/components/campaign/card-admin';
+import { CampaignCardAdmin } from '@/components/campaign/campaign-card';
 import { DashboardOverview } from '../dashboard/overview';
 
 export function AdminDashboard() {
@@ -13,12 +13,19 @@ export function AdminDashboard() {
     <PageHome
       header={
         <PageHeaderSearch
-          placeholder="Search Stories"
+          placeholder="Search Campaigns"
           onSearchChanged={(search: string) => setSearchTerm(search)}
         />
       }
     >
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+          Control Center
+        </h1>
+      </div>
+
       <DashboardOverview />
+
       <CampaignList
         searchTerm={searchTerm}
         statusFilter="all"

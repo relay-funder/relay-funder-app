@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 import type { DbCampaign } from '@/types/campaign';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useCallback } from 'react';
 import { useUpdateRoundCampaign } from '@/lib/hooks/useRounds';
@@ -35,16 +35,20 @@ export function RoundCardCampaignAdminApproveButton({
     <Button
       onClick={onApproveRoundCampaign}
       variant="outline"
-      size="icon"
+      size="sm"
       className={cn(
-        'rounded-full',
+        'h-8 w-8 rounded-full border-0 shadow-md',
         isPending && 'opacity-50',
-        'mt-4 bg-green-600 hover:bg-red-700',
+        'bg-green-600 text-white hover:bg-green-700',
       )}
       disabled={isPending}
       title="Approve this Campaign for the Round"
     >
-      {isPending ? <Loader2 /> : <CheckCircle />}
+      {isPending ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Check className="h-4 w-4" />
+      )}
     </Button>
   );
 }

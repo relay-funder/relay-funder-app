@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 import type { DbCampaign } from '@/types/campaign';
-import { Loader2, XCircle } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useCallback } from 'react';
 import { useUpdateRoundCampaign } from '@/lib/hooks/useRounds';
@@ -35,16 +35,20 @@ export function RoundCardCampaignAdminRejectButton({
     <Button
       onClick={onRejectRoundCampaign}
       variant="outline"
-      size="icon"
+      size="sm"
       className={cn(
-        'rounded-full',
+        'h-8 w-8 rounded-full border-0 shadow-md',
         isPending && 'opacity-50',
-        'mt-4 bg-orange-500 hover:bg-red-700',
+        'bg-orange-500 text-white hover:bg-orange-600',
       )}
       disabled={isPending}
       title="Reject this Campaign from the Round"
     >
-      {isPending ? <Loader2 /> : <XCircle />}
+      {isPending ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <X className="h-4 w-4" />
+      )}
     </Button>
   );
 }

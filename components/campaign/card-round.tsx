@@ -13,7 +13,7 @@ import { CampaignProgress } from './progress';
 import { UserInlineName } from '../user/inline-name';
 import { CampaignLocation } from './location';
 import Link from 'next/link';
-import { CampaignCardFallback } from './card-fallback';
+import { CampaignCardFallback } from './campaign-card';
 import { RoundCardCampaignRemoveButton } from '@/components/round/card-campaign-remove-button';
 import { RoundCardCampaignStatus } from '@/components/round/card-campaign-status';
 import { GetRoundResponseInstance } from '@/lib/api/types';
@@ -44,19 +44,16 @@ export function CampaignCardRound({
     >
       <CardHeader className="relative p-0">
         <CampaignMainImage campaign={campaign} />
-        <div className="absolute right-4 top-0 z-10">
+        {/* Admin Controls - positioned as a horizontal row at top right */}
+        <div className="absolute right-2 top-2 z-10 flex gap-1 rounded-md bg-black/20 p-1 backdrop-blur-sm">
           <RoundCardCampaignAdminApproveButton
             campaign={campaign}
             round={round}
           />
-        </div>
-        <div className="absolute right-4 top-10 z-10">
           <RoundCardCampaignAdminRejectButton
             campaign={campaign}
             round={round}
           />
-        </div>
-        <div className="absolute right-4 top-20 z-10">
           <RoundCardCampaignRemoveButton campaign={campaign} round={round} />
         </div>
         <div className="absolute left-4 top-4 z-10">

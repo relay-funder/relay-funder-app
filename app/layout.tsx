@@ -18,7 +18,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Akashic',
+  title: 'Relay Funder',
   description: 'Fundraising platform for open source projects',
 };
 

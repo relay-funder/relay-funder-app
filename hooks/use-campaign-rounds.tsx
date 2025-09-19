@@ -140,5 +140,14 @@ export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
   const hasRounds = useMemo(() => {
     return rounds.length > 0;
   }, [rounds]);
-  return { title, listing, listingSummary, hasRounds };
+  return {
+    title,
+    listing,
+    listingSummary,
+    hasRounds,
+    activeRounds,
+    pastRounds,
+    futureRounds,
+    rounds,
+  };
 }

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui';
 
 export function RoundMainImageAvatar({
   round,
+  size = 'default',
 }: {
   round?: {
     title?: string;
@@ -17,6 +18,7 @@ export function RoundMainImageAvatar({
     }[];
     mediaOrder: string[] | null;
   };
+  size?: 'default' | 'large';
 }) {
   const [mainImageObject, setMainImageObject] = useState<string | null>(null);
   const mainImage = useMemo(() => {
@@ -59,8 +61,18 @@ export function RoundMainImageAvatar({
       };
     }
   }, [imageUrl]);
+  const sizeClasses = {
+    default: 'h-12 w-12 border',
+    large: 'h-36 w-36 border-2 shadow-lg',
+  };
+
+  const fallbackTextClasses = {
+    default: 'text-lg font-semibold',
+    large: 'text-3xl font-bold',
+  };
+
   return (
-    <Avatar className="h-12 w-12 border">
+    <Avatar className={sizeClasses[size]}>
       {imageUrl ? (
         <AvatarImage
           src={
@@ -70,7 +82,7 @@ export function RoundMainImageAvatar({
           className="object-cover"
         />
       ) : null}
-      <AvatarFallback className="text-lg font-semibold">
+      <AvatarFallback className={fallbackTextClasses[size]}>
         {alt.charAt(0).toUpperCase()}
       </AvatarFallback>
     </Avatar>

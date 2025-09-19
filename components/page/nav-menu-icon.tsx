@@ -1,6 +1,7 @@
 import { useSidebar } from '@/contexts';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 import { transition } from './sidebar-constants';
 
 export function PageNavMenuIcon() {
@@ -13,7 +14,10 @@ export function PageNavMenuIcon() {
         isOpen ? 'pt-6' : 'pt-8',
       )}
     >
-      <div className={cn('justify-left flex w-full items-center', '')}>
+      <Link
+        href="/"
+        className="justify-left flex w-full cursor-pointer items-center"
+      >
         <div
           className={cn(
             'relative h-[56px] overflow-hidden',
@@ -29,8 +33,8 @@ export function PageNavMenuIcon() {
             )}
           >
             <Image
-              src="/logo-full.png"
-              alt="Logo"
+              src="/relay-funder-logo.png"
+              alt="RelayFunder Logo"
               width={474}
               height={128}
               className={cn('rounded-full')}
@@ -44,15 +48,15 @@ export function PageNavMenuIcon() {
             )}
           >
             <Image
-              src="/logo-icon.png"
-              alt="logo-icon"
+              src="/relay-funder-logo-mark.png"
+              alt="RelayFunder Mark"
               width={129}
               height={128}
               className={cn('rounded')}
             />
           </div>
         </div>
-      </div>
+      </Link>
     </div>
   );
 }
