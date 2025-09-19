@@ -6,6 +6,7 @@ import { RoundLoading } from '@/components/round/loading';
 import { RoundError } from '@/components/round/error';
 import { RoundCardDashboard } from '@/components/round/card-dashboard';
 import { useInfiniteRounds } from '@/lib/hooks/useRounds';
+import { ResponsiveGrid } from '@/components/layout';
 import { RoundItemProps } from '@/types/round';
 interface RoundListProps {
   searchTerm: string;
@@ -56,14 +57,14 @@ export function RoundList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-6 p-4 md:grid-cols-2">
+    <div className="space-y-6">
+      <ResponsiveGrid variant="wide-cards" gap="lg">
         {filteredRounds?.map((page) =>
           page.rounds.map((round) => (
             <ItemComponent key={round.id} round={round} />
           )),
         )}
-      </div>
+      </ResponsiveGrid>
 
       {/* Loading indicator */}
       {isFetchingNextPage && <RoundLoading minimal={true} />}

@@ -2,21 +2,16 @@ import { DbCampaign } from '@/types/campaign';
 import { UserInlineName } from '../../user/inline-name';
 import { CampaignLocation } from '../location';
 import { CampaignRoundBadge } from '../round-badge';
-import { CopyText } from '@/components/copy-text';
 import { CampaignCardDisplayOptions } from './types';
 
 interface CampaignCardMetadataProps {
   campaign: DbCampaign;
   displayOptions: CampaignCardDisplayOptions;
-  adminMode: boolean;
-  dashboardMode: boolean;
 }
 
 export function CampaignCardMetadata({
   campaign,
   displayOptions,
-  adminMode,
-  dashboardMode,
 }: CampaignCardMetadataProps) {
   return (
     <div className="space-y-3">
@@ -25,14 +20,6 @@ export function CampaignCardMetadata({
         <div className="flex items-center gap-2">
           <span>by</span>
           <UserInlineName user={campaign?.creator} />
-          {adminMode && (
-            <CopyText
-              title="Address Copied"
-              description="Address copied to your clipboard"
-              text={campaign?.creatorAddress ?? ''}
-              tooltip="Copy Creator Address"
-            />
-          )}
         </div>
         <CampaignLocation campaign={campaign} />
       </div>

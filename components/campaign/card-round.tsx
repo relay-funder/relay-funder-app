@@ -13,7 +13,7 @@ import { CampaignProgress } from './progress';
 import { UserInlineName } from '../user/inline-name';
 import { CampaignLocation } from './location';
 import Link from 'next/link';
-import { CampaignCardFallback } from './card-fallback';
+import { CampaignCardFallback } from './campaign-card';
 import { RoundCardCampaignRemoveButton } from '@/components/round/card-campaign-remove-button';
 import { RoundCardCampaignStatus } from '@/components/round/card-campaign-status';
 import { GetRoundResponseInstance } from '@/lib/api/types';

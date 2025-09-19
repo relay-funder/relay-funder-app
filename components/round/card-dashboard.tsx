@@ -79,7 +79,7 @@ export function RoundCardDashboard({
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              <span>Projects</span>
+              <span>Campaigns</span>
             </div>
             <span className="font-medium text-foreground">
               {numberOfProjects !== undefined

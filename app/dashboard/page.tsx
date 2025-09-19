@@ -127,7 +127,7 @@ export default function DashboardPage() {
                   />
                   <Input
                     className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
-                    placeholder={'Search Your Stories'}
+                    placeholder={'Search Your Campaigns'}
                     type="search"
                     value={searchTerm}
                     onChange={onSearchInputChanged}

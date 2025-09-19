@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Form } from '@/components/ui';
-import { countries, categories, fundingModels } from '@/lib/constant';
+import { countries, categories } from '@/lib/constant';
 import { enableFormDefault } from '@/lib/develop';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -77,10 +77,7 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
       form.setValue('title', uniqueName());
       form.setValue('description', uniqueDescription());
       form.setValue('fundingGoal', `${(Math.random() * 1000).toFixed(2)}`);
-      form.setValue(
-        'fundingModel',
-        fundingModels[Math.floor(Math.random() * fundingModels.length)].id,
-      );
+      form.setValue('fundingModel', 'flexible');
       form.setValue('startTime', new Date().toISOString().slice(0, 16));
       form.setValue(
         'endTime',

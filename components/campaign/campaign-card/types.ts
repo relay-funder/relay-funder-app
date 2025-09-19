@@ -1,4 +1,5 @@
 import { DbCampaign } from '@/types/campaign';
+import { GetRoundResponseInstance } from '@/lib/api/types';
 
 /**
  * Campaign Card Action Handlers
@@ -137,7 +138,7 @@ export interface CampaignCardData {
   category?: string | null;
   treasuryAddress?: string | null;
   campaignAddress?: string | null;
-  rounds?: Array<any>;
+  rounds?: Array<GetRoundResponseInstance>;
 }
 
 /**
@@ -149,7 +150,7 @@ export function validateCampaignCardData(
 ): campaign is CampaignCardData {
   if (!campaign || typeof campaign !== 'object') return false;
 
-  const c = campaign as any;
+  const c = campaign as Record<string, unknown>;
 
   // Required fields validation
   return (

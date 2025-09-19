@@ -11,7 +11,7 @@ import { CampaignMainImage } from './main-image';
 
 import { UserInlineName } from '../user/inline-name';
 import { CampaignLocation } from './location';
-import { CampaignCardFallback } from './card-fallback';
+import { CampaignCardFallback } from './campaign-card';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts';
