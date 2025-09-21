@@ -12,21 +12,15 @@ import type {
   GetRoundsStatsResponse,
 } from '@/lib/api/types';
 import { resetCampaign } from './useCampaigns';
+import type { PaginatedResponse } from '@/lib/api/types/common';
 
 export const ROUNDS_QUERY_KEY = 'rounds';
 export const ROUND_QUERY_KEY = 'round';
 export const ROUND_STATS_QUERY_KEY = 'round_stats';
 export const ROUND_PAYMENTS_QUERY_KEY = 'round_payments';
 
-interface PaginatedResponse {
+interface PaginatedRoundsResponse extends PaginatedResponse {
   rounds: GetRoundResponseInstance[];
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalPages: number;
-    totalItems: number;
-    hasMore: boolean;
-  };
 }
 
 async function fetchRounds(status?: string) {
@@ -58,7 +52,7 @@ async function fetchRoundPage({ pageParam = 1, pageSize = 10 }) {
     throw new Error(error.error || 'Failed to fetch rounds');
   }
   const data = await response.json();
-  return data as PaginatedResponse;
+  return data as PaginatedRoundsResponse;
 }
 
 async function fetchRoundStats() {
@@ -276,19 +270,19 @@ export function useRound(id: number) {
 }
 
 export function useInfiniteRounds(pageSize = 10) {
-  return useInfiniteQuery<PaginatedResponse, Error>({
+  return useInfiniteQuery<PaginatedRoundsResponse, Error>({
     queryKey: [ROUNDS_QUERY_KEY, 'infinite', pageSize],
     queryFn: ({ pageParam = 1 }) =>
       fetchRoundPage({
         pageParam: pageParam as number,
         pageSize,
       }),
-    getNextPageParam: (lastPage: PaginatedResponse) => {
+    getNextPageParam: (lastPage: PaginatedRoundsResponse) => {
       return lastPage.pagination.hasMore
         ? lastPage.pagination.currentPage + 1
         : undefined;
     },
-    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+    getPreviousPageParam: (firstPage: PaginatedRoundsResponse) =>
       firstPage.pagination.currentPage > 1
         ? firstPage.pagination.currentPage - 1
         : undefined,

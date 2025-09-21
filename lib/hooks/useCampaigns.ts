@@ -16,20 +16,14 @@ import type {
   GetCampaignsStatsResponse,
 } from '@/lib/api/types';
 import { DbCampaign } from '@/types/campaign';
+import { PaginatedResponse } from '@/lib/api/types/common';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
 export const CAMPAIGN_STATS_QUERY_KEY = 'campaign_stats';
 export const CAMPAIGN_PAYMENTS_QUERY_KEY = 'campaign_payments';
 
-interface PaginatedResponse {
+interface PaginatedCampaignResponse extends PaginatedResponse {
   campaigns: GetCampaignResponseInstance[];
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalPages: number;
-    totalItems: number;
-    hasMore: boolean;
-  };
 }
 
 async function fetchCampaigns(status?: string) {
@@ -87,7 +81,7 @@ async function fetchCampaignPage({
     throw new Error(error.error || 'Failed to fetch campaigns');
   }
   const data = await response.json();
-  return data as PaginatedResponse;
+  return data as PaginatedCampaignResponse;
 }
 
 async function fetchUserCampaignPage({
@@ -103,7 +97,7 @@ async function fetchUserCampaignPage({
     throw new Error(error.error || 'Failed to fetch campaigns');
   }
   const data = await response.json();
-  return data as PaginatedResponse;
+  return data as PaginatedCampaignResponse;
 }
 async function fetchCampaignStats() {
   const url = `/api/campaigns/stats`;
@@ -366,7 +360,7 @@ export function useInfiniteCampaigns(
   pageSize = 10,
   rounds = false,
 ) {
-  return useInfiniteQuery<PaginatedResponse, Error>({
+  return useInfiniteQuery<PaginatedCampaignResponse, Error>({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize],
     queryFn: ({ pageParam = 1 }) =>
       fetchCampaignPage({
@@ -375,12 +369,12 @@ export function useInfiniteCampaigns(
         pageSize,
         rounds,
       }),
-    getNextPageParam: (lastPage: PaginatedResponse) => {
+    getNextPageParam: (lastPage: PaginatedCampaignResponse) => {
       return lastPage.pagination.hasMore
         ? lastPage.pagination.currentPage + 1
         : undefined;
     },
-    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+    getPreviousPageParam: (firstPage: PaginatedCampaignResponse) =>
       firstPage.pagination.currentPage > 1
         ? firstPage.pagination.currentPage - 1
         : undefined,
@@ -393,7 +387,7 @@ export function useInfiniteUserCampaigns(
   pageSize = 10,
   rounds = true,
 ) {
-  return useInfiniteQuery<PaginatedResponse, Error>({
+  return useInfiniteQuery<PaginatedCampaignResponse, Error>({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', status, pageSize],
     queryFn: ({ pageParam = 1 }) =>
       fetchUserCampaignPage({
@@ -402,12 +396,12 @@ export function useInfiniteUserCampaigns(
         pageSize,
         rounds,
       }),
-    getNextPageParam: (lastPage: PaginatedResponse) => {
+    getNextPageParam: (lastPage: PaginatedCampaignResponse) => {
       return lastPage.pagination.hasMore
         ? lastPage.pagination.currentPage + 1
         : undefined;
     },
-    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+    getPreviousPageParam: (firstPage: PaginatedCampaignResponse) =>
       firstPage.pagination.currentPage > 1
         ? firstPage.pagination.currentPage - 1
         : undefined,

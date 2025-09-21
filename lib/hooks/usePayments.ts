@@ -11,6 +11,7 @@ import {
   CAMPAIGN_STATS_QUERY_KEY,
   CAMPAIGN_PAYMENTS_QUERY_KEY,
 } from './useCampaigns';
+import { PaginatedResponse } from '@/lib/api/types/common';
 interface ICreatePaymentApi {
   amount: string;
   poolAmount: number;
@@ -73,15 +74,8 @@ async function removePayment(variables: IRemovePayment) {
 
   return response.json();
 }
-interface PaginatedResponse {
+interface PaginatedPaymentResponse extends PaginatedResponse {
   payments: GetCampaignPaymentResponseInstance[];
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalPages: number;
-    totalItems: number;
-    hasMore: boolean;
-  };
 }
 async function fetchPaymentPage({
   campaignId,
@@ -99,11 +93,11 @@ async function fetchPaymentPage({
     throw new Error(error.error || 'Failed to fetch payments');
   }
   const data = await response.json();
-  return data as PaginatedResponse;
+  return data as PaginatedPaymentResponse;
 }
 
 export function useInfinitePayments(campaignId: number, pageSize = 10) {
-  return useInfiniteQuery<PaginatedResponse, Error>({
+  return useInfiniteQuery<PaginatedPaymentResponse, Error>({
     queryKey: [CAMPAIGN_PAYMENTS_QUERY_KEY, 'infinite', campaignId],
     queryFn: ({ pageParam = 1 }) =>
       fetchPaymentPage({
@@ -111,12 +105,12 @@ export function useInfinitePayments(campaignId: number, pageSize = 10) {
         pageParam: pageParam as number,
         pageSize,
       }),
-    getNextPageParam: (lastPage: PaginatedResponse) => {
+    getNextPageParam: (lastPage: PaginatedPaymentResponse) => {
       return lastPage.pagination.hasMore
         ? lastPage.pagination.currentPage + 1
         : undefined;
     },
-    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+    getPreviousPageParam: (firstPage: PaginatedPaymentResponse) =>
       firstPage.pagination.currentPage > 1
         ? firstPage.pagination.currentPage - 1
         : undefined,
