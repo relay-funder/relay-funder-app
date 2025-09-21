@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import type {
   GetUserResponse,
+  GetUserResponseInstance,
   PatchUserRouteBody,
 } from '@/lib/api/types/admin';
 import { PaginatedResponse } from '@/lib/api/types';
@@ -14,7 +15,7 @@ export const ADMIN_USERS_QUERY_KEY = 'admin_users';
 export const ADMIN_USER_QUERY_KEY = 'admin_user';
 
 interface PaginatedUsersResponse extends PaginatedResponse {
-  users: GetUserResponse[];
+  users: GetUserResponseInstance[];
 }
 
 /**

@@ -1,21 +1,10 @@
 import type { Prisma } from '@/.generated/prisma/client';
 import { z } from 'zod';
-export type UserWithCount = Prisma.UserGetPayload<
-  Prisma.UserDefaultArgs & {
-    include: {
-      _count: {
-        select: {
-          collections: true;
-          payments: true;
-          paymentMethods: true;
-          createdMedia: true;
-          withdrawals: true;
-          approvals: true;
-        };
-      };
-    };
-  }
->;
+export type UserWithCount = Prisma.UserGetPayload<{
+  include: {
+    _count: true;
+  };
+}>;
 
 export interface UserWithAddressParams {
   params: Promise<{

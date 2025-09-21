@@ -8,6 +8,7 @@ import {
   Target,
   Shield,
   ShieldCheck,
+  User,
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
@@ -48,6 +49,11 @@ export function PageNavMenuItems() {
         icon: <ShieldCheck className="h-6 w-6" />,
         label: 'Round Management',
         href: '/admin/rounds',
+      });
+      items.push({
+        icon: <User className="h-6 w-6" />,
+        label: 'User Management',
+        href: '/admin/users',
       });
     }
     return items;

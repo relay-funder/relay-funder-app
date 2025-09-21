@@ -1,0 +1,132 @@
+import { checkAuth } from '@/lib/api/auth';
+import { ApiNotFoundError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { getUser } from '@/lib/api/user';
+import { db } from '@/server/db';
+import type { UserWithAddressParams } from '@/lib/api/types/admin';
+
+export async function GET(_req: Request, { params }: UserWithAddressParams) {
+  try {
+    await checkAuth(['admin']);
+
+    const { address } = await params;
+
+    // Base user with counts
+    const user = await getUser(address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
+
+    const userId = user.id;
+
+    const [
+      latestPayments,
+      latestPaymentMethods,
+      latestMedia,
+      latestWithdrawalsCreated,
+      latestApprovals,
+      latestComments,
+      latestFavorites,
+      latestRoundContributions,
+      totalComments,
+      totalFavorites,
+      totalRoundContributions,
+    ] = await Promise.all([
+      db.payment.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          campaign: { select: { id: true, title: true, slug: true } },
+        },
+        take: 5,
+      }),
+      db.paymentMethod.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+      db.media.findMany({
+        where: { createdById: userId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          url: true,
+          caption: true,
+          mimeType: true,
+          state: true,
+          createdAt: true,
+          campaignId: true,
+          roundId: true,
+          updateId: true,
+        },
+        take: 6,
+      }),
+      db.withdrawal.findMany({
+        where: { createdById: userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          campaign: { select: { id: true, title: true, slug: true } },
+        },
+        take: 5,
+      }),
+      db.withdrawal.findMany({
+        where: { approvedById: userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          campaign: { select: { id: true, title: true, slug: true } },
+        },
+        take: 5,
+      }),
+      db.comment.findMany({
+        where: { userAddress: address },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          campaign: { select: { id: true, title: true, slug: true } },
+        },
+        take: 6,
+      }),
+      db.favorite.findMany({
+        where: { userAddress: address },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          campaign: { select: { id: true, title: true, slug: true } },
+        },
+        take: 6,
+      }),
+      db.roundContribution.findMany({
+        where: { payment: { userId } },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          roundCampaign: {
+            include: {
+              Round: { select: { id: true, title: true, status: true } },
+              Campaign: { select: { id: true, title: true, slug: true } },
+            },
+          },
+          payment: { select: { amount: true, token: true } },
+        },
+        take: 6,
+      }),
+      db.comment.count({ where: { userAddress: address } }),
+      db.favorite.count({ where: { userAddress: address } }),
+      db.roundContribution.count({ where: { payment: { userId } } }),
+    ]);
+
+    return response({
+      user,
+      latestPayments,
+      latestPaymentMethods,
+      latestMedia,
+      latestWithdrawalsCreated,
+      latestApprovals,
+      latestComments,
+      latestFavorites,
+      latestRoundContributions,
+      totalComments,
+      totalFavorites,
+      totalRoundContributions,
+    });
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
