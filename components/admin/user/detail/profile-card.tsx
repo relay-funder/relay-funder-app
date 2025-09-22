@@ -1,6 +1,13 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, Badge, Separator } from '@/components/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Separator,
+} from '@/components/ui';
 import type { GetUserResponseInstance } from '@/lib/api/types';
 
 export interface ProfileCardProps {
@@ -58,8 +65,12 @@ export function ProfileCard({
             <div className="text-base">{safe(user.bio)}</div>
           </div>
           <div className="md:col-span-2">
-            <div className="text-xs text-muted-foreground">Recipient wallet</div>
-            <div className="break-all text-base">{safe(user.recipientWallet)}</div>
+            <div className="text-xs text-muted-foreground">
+              Recipient wallet
+            </div>
+            <div className="break-all text-base">
+              {safe(user.recipientWallet)}
+            </div>
           </div>
         </div>
 
@@ -67,9 +78,13 @@ export function ProfileCard({
 
         <div className="flex flex-wrap items-center gap-2">
           {user.isKycCompleted ? (
-            <Badge className="bg-emerald-500/15 text-emerald-700">KYC Completed</Badge>
+            <Badge className="bg-emerald-500/15 text-emerald-700">
+              KYC Completed
+            </Badge>
           ) : (
-            <Badge className="bg-amber-500/15 text-amber-700">KYC Pending</Badge>
+            <Badge className="bg-amber-500/15 text-amber-700">
+              KYC Pending
+            </Badge>
           )}
           <Badge variant="secondary" className="bg-slate-100 text-slate-700">
             Payments: {counts.payments ?? 0}
@@ -103,7 +118,11 @@ export function ProfileCard({
             <div className="flex flex-wrap gap-2">
               {(user.roles || []).length > 0 ? (
                 user.roles.map((r) => (
-                  <Badge key={r} variant="outline" className="border-slate-300 text-slate-700">
+                  <Badge
+                    key={r}
+                    variant="outline"
+                    className="border-slate-300 text-slate-700"
+                  >
                     {r}
                   </Badge>
                 ))
@@ -118,7 +137,11 @@ export function ProfileCard({
             <div className="flex flex-wrap gap-2">
               {(user.featureFlags || []).length > 0 ? (
                 user.featureFlags.map((f) => (
-                  <Badge key={f} variant="outline" className="border-slate-300 text-slate-700">
+                  <Badge
+                    key={f}
+                    variant="outline"
+                    className="border-slate-300 text-slate-700"
+                  >
                     {f}
                   </Badge>
                 ))

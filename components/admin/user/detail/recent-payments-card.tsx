@@ -26,7 +26,10 @@ export function RecentPaymentsCard({
         ) : (
           <div className="divide-y">
             {payments.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-3">
+              <div
+                key={p.id}
+                className="flex items-center justify-between py-3"
+              >
                 <div className="min-w-0">
                   <div className="text-sm">
                     {p.amount} {p.token}{' '}

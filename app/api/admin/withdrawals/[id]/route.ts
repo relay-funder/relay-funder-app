@@ -58,7 +58,10 @@ export async function PATCH(req: Request, { params }: WithdrawalWithIdParams) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: WithdrawalWithIdParams) {
+export async function DELETE(
+  _req: Request,
+  { params }: WithdrawalWithIdParams,
+) {
   try {
     await checkAuth(['admin']);
     const { id } = await params;

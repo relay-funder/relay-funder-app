@@ -68,7 +68,7 @@ export async function listCampaigns({
   creatorAddress?: string;
 }) {
   const statusList = [CampaignStatus.ACTIVE];
-  
+
   // Only add additional statuses when explicitly requesting 'all'
   if (status === 'all') {
     if (!admin) {

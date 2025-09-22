@@ -345,10 +345,10 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
 
         <h3>Flexible Funding</h3>
         <p>
-          Your campaign uses <b>flexible funding</b>, which means you&apos;ll receive
-          all funds raised at the end of your campaign, regardless of whether
-          you reach your funding goal. This allows your campaign to benefit from
-          any amount of support you receive.
+          Your campaign uses <b>flexible funding</b>, which means you&apos;ll
+          receive all funds raised at the end of your campaign, regardless of
+          whether you reach your funding goal. This allows your campaign to
+          benefit from any amount of support you receive.
         </p>
       </div>
     ),

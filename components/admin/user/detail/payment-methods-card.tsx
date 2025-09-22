@@ -24,7 +24,9 @@ export function PaymentMethodsCard({
       </CardHeader>
       <CardContent>
         {paymentMethods.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No payment methods</div>
+          <div className="text-sm text-muted-foreground">
+            No payment methods
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {paymentMethods.map((pm) => (

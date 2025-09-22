@@ -37,7 +37,10 @@ export function WithdrawalsCreatedCard({
         ) : (
           <div className="divide-y">
             {withdrawals.map((w) => (
-              <div key={w.id} className="flex items-center justify-between py-3">
+              <div
+                key={w.id}
+                className="flex items-center justify-between py-3"
+              >
                 <div className="min-w-0">
                   <div className="text-sm">
                     {w.amount} {w.token}

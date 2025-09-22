@@ -1,6 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/components/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+} from '@/components/ui';
 import type { MediaLite } from '@/lib/api/types';
 
 export interface RecentMediaCardProps {
@@ -28,14 +34,22 @@ export function RecentMediaCard({
               <div key={m.id} className="rounded-md border p-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{m.mimeType}</div>
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                  <Badge
+                    variant="secondary"
+                    className="bg-slate-100 text-slate-700"
+                  >
                     {m.state}
                   </Badge>
                 </div>
-                <div className="truncate text-xs text-muted-foreground" title={m.url}>
+                <div
+                  className="truncate text-xs text-muted-foreground"
+                  title={m.url}
+                >
                   {m.url}
                 </div>
-                {m.caption && <div className="mt-1 line-clamp-2 text-xs">{m.caption}</div>}
+                {m.caption && (
+                  <div className="mt-1 line-clamp-2 text-xs">{m.caption}</div>
+                )}
                 <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                   <div>Campaign: {m.campaignId ?? '—'}</div>
                   <div>Round: {m.roundId ?? '—'}</div>
