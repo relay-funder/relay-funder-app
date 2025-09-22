@@ -64,7 +64,7 @@ export function PageNavMenuItems() {
       });
       items.push({
         icon: <Coins className="h-6 w-6" />,
-        label: 'Withdraw Management',
+        label: 'Withdrawals',
         href: '/admin/withdrawals',
       });
     }
