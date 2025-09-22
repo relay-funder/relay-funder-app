@@ -17,23 +17,19 @@ async function prefetchAdminUser(
   });
 }
 
-type PageParams = {
-  params: Promise<{ id: string }> | { id: string };
-};
-
-export default async function AdminUserEditPage(props: PageParams) {
+export default async function AdminUserEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const session = await auth();
   const isAdmin = session?.user.roles.includes('admin');
   if (!isAdmin) {
     return <AdminAccessDenied />;
   }
+  const { id: paramsId } = await params;
 
-  const awaitedParams =
-    'then' in (props.params as Promise<unknown>)
-      ? await (props.params as Promise<{ id: string }>)
-      : (props.params as { id: string });
-
-  const address = decodeURIComponent(awaitedParams.id);
+  const address = decodeURIComponent(paramsId);
 
   const queryClient = getQueryClient();
   await prefetchAdminUser(queryClient, address);
