@@ -28,8 +28,6 @@ export interface DbCampaign {
   location: string | null;
   treasuryAddress?: string | null;
   category?: string | null;
-  featuredStart?: Date | null;
-  featuredEnd?: Date | null;
   // collections, // hidden in api
   images?: CampaignImage[];
   media?: Media[];

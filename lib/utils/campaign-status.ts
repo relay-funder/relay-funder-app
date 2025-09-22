@@ -21,22 +21,6 @@ export function isCampaignDonatable(campaign?: DbCampaign): boolean {
 }
 
 /**
- * Check if a campaign is currently featured
- */
-export function isCampaignFeatured(campaign?: DbCampaign): boolean {
-  if (!campaign) {
-    return false;
-  }
-  const now = new Date();
-  return (
-    (campaign.featuredStart &&
-      new Date(campaign.featuredStart) <= now &&
-      (!campaign.featuredEnd || new Date(campaign.featuredEnd) >= now)) ||
-    false
-  );
-}
-
-/**
  * Get campaign status display info
  */
 export function getCampaignStatusInfo(campaign?: DbCampaign) {

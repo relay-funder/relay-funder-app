@@ -86,8 +86,6 @@ model Campaign {
   favorites       Favorite[]
   payments        Payment[]
   RoundCampaigns  RoundCampaigns[]
-  featuredStart   DateTime?
-  featuredEnd     DateTime?
 
   roundContributions RoundContribution[]
   withdrawals        Withdrawal[]
@@ -96,7 +94,6 @@ model Campaign {
 
   @@index([creatorAddress])
   @@index([category])
-  @@index([featuredStart, createdAt])
 }
 
 // deprecated

@@ -13,11 +13,7 @@ export const ADMIN_PAYMENTS_QUERY_KEY = 'admin_payments';
 /**
  * Enums aligned with Prisma schema
  */
-export type PaymentRefundState =
-  | 'NONE'
-  | 'REQUESTED'
-  | 'PROCESSED'
-  | 'APPROVED';
+export type PaymentRefundState = 'NONE' | 'REQUESTED' | 'PROCESSED' | 'APPROVED';
 export type PaymentTypeEnum = 'BUY' | 'SELL';
 
 /**

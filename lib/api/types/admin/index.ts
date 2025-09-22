@@ -1,6 +1,5 @@
 import type { Prisma } from '@/.generated/prisma/client';
 import { z } from 'zod';
-import type { GetCampaignResponse } from '../campaigns';
 export type UserWithCount = Prisma.UserGetPayload<{
   include: {
     _count: true;
@@ -43,14 +42,3 @@ export const PatchUserRouteBodySchema = z.object({
   isKycCompleted: z.boolean().optional().or(z.null()),
 });
 export type PatchUserRouteBody = z.infer<typeof PatchUserRouteBodySchema>;
-
-export const PatchAdminCampaignFeaturedRouteBodySchema = z.object({
-  mode: z.enum(['toggle', 'set']).optional(),
-  featuredStart: z.string().datetime().nullable().optional(),
-  featuredEnd: z.string().datetime().nullable().optional(),
-});
-export type PatchAdminCampaignFeaturedRouteBody = z.infer<
-  typeof PatchAdminCampaignFeaturedRouteBodySchema
->;
-
-export type PatchAdminCampaignFeaturedRouteResponse = GetCampaignResponse;

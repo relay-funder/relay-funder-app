@@ -1,25 +1,22 @@
-'use client';
-
 import { DbCampaign } from '@/types/campaign';
 import { CampaignAdminApproveButton } from './admin/approve';
 import { CampaignAdminRemoveButton } from './admin/remove';
 import { CampaignAdminDeployButton } from './admin/deploy';
 import { CampaignAdminDisableButton } from './admin/disable';
 import { CampaignAdminDeployContractButton } from './admin/deploy-contract';
-import { CampaignAdminFeaturedDialog } from './admin/featured-dialog';
 
 export function CampaignCardAdminActions({
   campaign,
 }: {
   campaign?: DbCampaign;
 }) {
-  const isDraft = campaign?.status === 'DRAFT';
-  const isPendingApproval = campaign?.status === 'PENDING_APPROVAL';
-  const isActive = campaign?.status === 'ACTIVE';
-
   if (!campaign) {
     return null;
   }
+
+  const isDraft = campaign.status === 'DRAFT';
+  const isPendingApproval = campaign.status === 'PENDING_APPROVAL';
+  const isActive = campaign.status === 'ACTIVE';
 
   // Show different controls based on campaign lifecycle stage
   return (
@@ -44,14 +41,6 @@ export function CampaignCardAdminActions({
           <CampaignAdminDeployButton campaign={campaign} />
         </div>
       )}
-
-      {/* Featured controls */}
-      <div className="flex flex-col space-y-2 border-t border-gray-200 pt-2">
-        <CampaignAdminFeaturedDialog
-          campaign={campaign}
-          buttonClassName="w-full"
-        />
-      </div>
 
       {/* Management actions - Context-dependent */}
       {(isActive || isDraft) && (
