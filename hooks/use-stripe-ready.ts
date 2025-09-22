@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { debugHook as debug } from '@/lib/debug';
 
 /**
  * Hook to check if Stripe Elements are ready for use

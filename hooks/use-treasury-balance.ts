@@ -1,9 +1,12 @@
+import { TreasuryBalance } from '@/lib/treasury/interface';
 import { useQuery } from '@tanstack/react-query';
 
 const TREASURY_BALANCE_QUERY_KEY = 'treasury_balance';
 
 // Fetch treasury balance via API instead of direct blockchain calls
-async function fetchTreasuryBalance(treasuryAddress: string): Promise<any> {
+async function fetchTreasuryBalance(
+  treasuryAddress: string,
+): Promise<{ balance: TreasuryBalance }> {
   const response = await fetch(
     `/api/treasury/balance?address=${treasuryAddress}`,
   );
@@ -14,7 +17,9 @@ async function fetchTreasuryBalance(treasuryAddress: string): Promise<any> {
 }
 
 // Fetch campaign treasury address and balance
-async function fetchCampaignTreasuryBalance(campaignId: number): Promise<any> {
+async function fetchCampaignTreasuryBalance(
+  campaignId: number,
+): Promise<{ balance: TreasuryBalance }> {
   const response = await fetch(`/api/campaigns/${campaignId}/treasury-balance`);
   if (!response.ok) {
     throw new Error('Failed to fetch campaign treasury balance');
@@ -25,7 +30,7 @@ async function fetchCampaignTreasuryBalance(campaignId: number): Promise<any> {
 export function useTreasuryBalance(treasuryAddress?: string | null) {
   return useQuery({
     queryKey: [TREASURY_BALANCE_QUERY_KEY, treasuryAddress],
-    queryFn: async (): Promise<any | null> => {
+    queryFn: async (): Promise<{ balance: TreasuryBalance } | null> => {
       if (!treasuryAddress) {
         return null;
       }
@@ -46,7 +51,7 @@ export function useTreasuryBalance(treasuryAddress?: string | null) {
 export function useCampaignTreasuryBalance(campaignId?: number) {
   return useQuery({
     queryKey: [TREASURY_BALANCE_QUERY_KEY, 'campaign', campaignId],
-    queryFn: async (): Promise<any | null> => {
+    queryFn: async (): Promise<{ balance: TreasuryBalance } | null> => {
       if (!campaignId) {
         return null;
       }

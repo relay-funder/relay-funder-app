@@ -7,6 +7,7 @@ import { enableBypassContractAdmin } from '@/lib/develop';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '../switch-network';
 import { AdminApproveProcessStates } from '@/types/admin';
+import { debugHook as debug } from '@/lib/debug';
 
 // Add platform config
 const platformConfig = {
@@ -169,9 +170,10 @@ export function useAdminApproveCampaign() {
 
       // Implementation registration/approval should be done once during platform setup, not per deployment
       // We just deploy using the pre-registered implementation ID 0 (KeepWhat'sRaised)
-      console.log(
-        'ℹ️ [AdminApproval] Using pre-registered KeepWhatRaised implementation (ID 0)',
-      );
+      debug &&
+        console.log(
+          'ℹ️ [AdminApproval] Using pre-registered KeepWhatRaised implementation (ID 0)',
+        );
 
       // Verify TreasuryFactory contract exists
       try {

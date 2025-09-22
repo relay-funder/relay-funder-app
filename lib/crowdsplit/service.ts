@@ -35,7 +35,7 @@ import {
   CrowdsplitTransactionSellInterface,
 } from './types';
 import crypto from 'crypto';
-const debug = false;
+import { debugApi as debug } from '@/lib/debug';
 
 if (!CROWDSPLIT_API_URL) {
   throw new Error('CROWDSPLIT_API_URL is not defined in environment variables');

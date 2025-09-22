@@ -1,7 +1,6 @@
 import { chainConfig } from '@/lib/web3';
 import { ConnectedWallet } from '@/lib/web3/types';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 export async function switchNetwork({ wallet }: { wallet: ConnectedWallet }) {
   if (!wallet || !(await wallet.isConnected())) {

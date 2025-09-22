@@ -4,8 +4,7 @@ import { response, handleError } from '@/lib/api/response';
 import { crowdsplitService } from '@/lib/crowdsplit/service';
 import { CrowdsplitDonationCustomerPostRequest } from '@/lib/crowdsplit/api/types';
 import { db } from '@/server/db';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(req: Request) {
   try {

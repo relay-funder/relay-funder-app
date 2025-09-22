@@ -7,6 +7,7 @@ import type { Address } from '@/lib/web3/types';
 // import { ReviewRecipients } from "@/components/review-recipients"
 import { ApplicationStatus } from '@/lib/qf/types';
 // import { RecipientStatus } from '@/.generated/prisma/client'
+import { debugComponentData as debug } from '@/lib/debug';
 
 interface Campaign {
   id: number;
@@ -47,15 +48,16 @@ export function CheckWalletServer({
   const [userCampaigns, setUserCampaigns] = useState<Campaign[]>([]);
   const [pendingRecipients, setPendingRecipients] = useState<Recipient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  console.log({
-    poolId,
-    roundId,
-    strategyAddress,
-    pendingRecipients,
-  });
+  debug &&
+    console.log({
+      poolId,
+      roundId,
+      strategyAddress,
+      pendingRecipients,
+    });
 
   const isAdmin = authenticated && address === roundAdminAddress;
-  console.log('userCampaigns', userCampaigns);
+  debug && console.log('userCampaigns', userCampaigns);
 
   useEffect(() => {
     async function loadData() {

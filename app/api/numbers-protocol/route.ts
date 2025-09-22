@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as crypto from 'crypto';
+import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
-    console.log('Received upload request:', {
-      fileName: file?.name,
-      fileType: file?.type,
-      fileSize: file?.size,
-    });
+    debug &&
+      console.log('Received upload request:', {
+        fileName: file?.name,
+        fileType: file?.type,
+        fileSize: file?.size,
+      });
 
     if (!file) {
       console.error('No file provided in request');
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('Local signature generated:', formattedResponse);
+    debug && console.log('Local signature generated:', formattedResponse);
     return NextResponse.json(formattedResponse);
   } catch (error) {
     console.error('Error processing file:', error);

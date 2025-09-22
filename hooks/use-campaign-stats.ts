@@ -16,7 +16,7 @@ export function useCampaignStats({ slug }: { slug: string }) {
   return {
     ...useCampaignStatsFromInstance({
       campaign,
-      treasuryBalance: treasuryBalance ?? campaign?.treasuryBalance,
+      treasuryBalance: treasuryBalance?.balance ?? campaign?.treasuryBalance,
     }),
     isPending,
     isTreasuryBalanceLoading,

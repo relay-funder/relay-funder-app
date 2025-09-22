@@ -33,6 +33,7 @@ import {
 import { AlloABI } from '../contracts/abi/qf/Allo';
 import { KickStarterQFABI } from '../contracts/abi/qf/KickStarterQF';
 import { ERC20ABI } from '../contracts/abi/qf/ERC20';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 const alloAbi = AlloABI as Abi;
 const kickstarterQfAbi = KickStarterQFABI.abi as Abi;
@@ -50,7 +51,8 @@ export function prepareCreatePoolArgs({
   metadata,
   managers,
 }: CreatePoolArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log('Encoding strategy initialization data for createPool...');
+  debug &&
+    console.log('Encoding strategy initialization data for createPool...');
 
   // Encode the strategy's initialization data structure
   // Ensure this matches EXACTLY what your KickstarterQF._initializeStrategy expects
@@ -74,7 +76,7 @@ export function prepareCreatePoolArgs({
     ],
   );
 
-  console.log('Preparing createPool transaction arguments...');
+  debug && console.log('Preparing createPool transaction arguments...');
   // Arguments for Allo's `createPool` function
   const args = [
     profileId, // _profileId (bytes32)
@@ -121,20 +123,21 @@ export function prepareRegisterRecipientArgs({
   metadata,
   proposalBid,
 }: RegisterRecipientArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log('--- Inside prepareRegisterRecipientArgs ---');
-  console.log('Received Pool ID:', poolId?.toString());
-  console.log('Received Recipient Addresses Array:', recipientAddresses);
-  console.log('Received Recipient Address:', recipientAddress);
-  console.log('Received Payout Address:', recipientPayoutAddress);
-  console.log('Received Metadata:', metadata);
-  console.log('Received Proposal Bid:', proposalBid?.toString());
+  debug && console.log('--- Inside prepareRegisterRecipientArgs ---');
+  debug && console.log('Received Pool ID:', poolId?.toString());
+  debug &&
+    console.log('Received Recipient Addresses Array:', recipientAddresses);
+  debug && console.log('Received Recipient Address:', recipientAddress);
+  debug && console.log('Received Payout Address:', recipientPayoutAddress);
+  debug && console.log('Received Metadata:', metadata);
+  debug && console.log('Received Proposal Bid:', proposalBid?.toString());
 
   // Use provided addresses array or default to single address
   const addresses = recipientAddresses?.length
     ? recipientAddresses
     : [recipientAddress];
 
-  console.log('Using Addresses Array:', addresses);
+  debug && console.log('Using Addresses Array:', addresses);
 
   // Step 1: Encode the recipient-specific data (inner encoding)
   const encodedProposalBid =
@@ -142,7 +145,7 @@ export function prepareRegisterRecipientArgs({
       ? encodeAbiParameters(parseAbiParameters(['uint256']), [proposalBid])
       : '0x'; // Default to empty bytes if no bid
 
-  console.log('Encoded Proposal Bid:', encodedProposalBid);
+  debug && console.log('Encoded Proposal Bid:', encodedProposalBid);
 
   const singleRecipientData = encodeAbiParameters(
     parseAbiParameters([
@@ -152,17 +155,20 @@ export function prepareRegisterRecipientArgs({
     ]),
     [recipientPayoutAddress, metadata, encodedProposalBid],
   );
-  console.log('Step 1 Result (singleRecipientData):', singleRecipientData);
+  debug &&
+    console.log('Step 1 Result (singleRecipientData):', singleRecipientData);
 
   // Step 2: Create an array of encoded recipient data (even if just one)
   const recipientDataArray = [singleRecipientData];
-  console.log('Step 2 Result (recipientDataArray):', recipientDataArray);
+  debug &&
+    console.log('Step 2 Result (recipientDataArray):', recipientDataArray);
 
   // Step 3: Encode the entire array as bytes[] (outer encoding)
   const encodedData = encodeAbiParameters(parseAbiParameters(['bytes[]']), [
     recipientDataArray,
   ]);
-  console.log('Step 3 Result (final encodedData for contract):', encodedData);
+  debug &&
+    console.log('Step 3 Result (final encodedData for contract):', encodedData);
 
   // Prepare the contract call arguments
   const requestArgs = {
@@ -175,12 +181,13 @@ export function prepareRegisterRecipientArgs({
       encodedData, // The properly nested encoded data
     ],
   };
-  console.log(
-    'Final Request Args:',
-    requestArgs.address,
-    requestArgs.functionName,
-    requestArgs.args,
-  );
+  debug &&
+    console.log(
+      'Final Request Args:',
+      requestArgs.address,
+      requestArgs.functionName,
+      requestArgs.args,
+    );
 
   // Return a clean object with proper typing
   const finalArgs: Omit<WriteContractParameters, 'account' | 'chain'> = {
@@ -190,10 +197,11 @@ export function prepareRegisterRecipientArgs({
     args: requestArgs.args,
   };
 
-  console.log(
-    `Args prepared for registering recipient(s): ${addresses.join(', ')}`,
-  );
-  console.log('--- Exiting prepareRegisterRecipientArgs ---');
+  debug &&
+    console.log(
+      `Args prepared for registering recipient(s): ${addresses.join(', ')}`,
+    );
+  debug && console.log('--- Exiting prepareRegisterRecipientArgs ---');
   return finalArgs;
 }
 
@@ -216,7 +224,7 @@ export function prepareReviewRecipientsArgs({
     throw new Error('No recipients provided for review.');
   }
 
-  console.log('Preparing reviewRecipients transaction arguments...');
+  debug && console.log('Preparing reviewRecipients transaction arguments...');
 
   // Format the data as expected by the contract
   const applicationStatusStruct = {
@@ -240,9 +248,10 @@ export function prepareReviewRecipientsArgs({
     args: requestArgs.args,
   };
 
-  console.log(
-    `Args prepared for reviewing ${recipientIds.length} recipients...`,
-  );
+  debug &&
+    console.log(
+      `Args prepared for reviewing ${recipientIds.length} recipients...`,
+    );
   return finalArgs;
 }
 
@@ -255,9 +264,10 @@ export async function checkErc20Allowance({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   chainId,
 }: CheckAllowanceArgs): Promise<bigint> {
-  console.log(
-    `Checking ERC20 allowance for token ${tokenAddress}, owner ${ownerAddress}, spender ${spenderAddress}...`,
-  );
+  debug &&
+    console.log(
+      `Checking ERC20 allowance for token ${tokenAddress}, owner ${ownerAddress}, spender ${spenderAddress}...`,
+    );
   try {
     // chainId is not needed in readContract as wagmi handles chain management
     const allowance = (await readContract(createConfig(config), {
@@ -266,7 +276,7 @@ export async function checkErc20Allowance({
       functionName: 'allowance',
       args: [ownerAddress, spenderAddress],
     })) as unknown as bigint;
-    console.log(`Current allowance: ${allowance}`);
+    debug && console.log(`Current allowance: ${allowance}`);
     return allowance;
   } catch (error) {
     console.error('Failed to read allowance:', error);
@@ -283,9 +293,10 @@ export async function checkDirectTransferFlag({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   chainId,
 }: ReadDirectTransferArgs): Promise<boolean> {
-  console.log(
-    `Checking DIRECT_TRANSFER flag for strategy ${strategyAddress}...`,
-  );
+  debug &&
+    console.log(
+      `Checking DIRECT_TRANSFER flag for strategy ${strategyAddress}...`,
+    );
   try {
     // chainId is not needed in readContract as wagmi handles chain management
     const isDirectTransfer = (await readContract(createConfig(config), {
@@ -293,7 +304,7 @@ export async function checkDirectTransferFlag({
       abi: kickstarterQfAbi,
       functionName: 'directTransfers',
     })) as unknown as boolean;
-    console.log(`DIRECT_TRANSFER flag: ${isDirectTransfer}`);
+    debug && console.log(`DIRECT_TRANSFER flag: ${isDirectTransfer}`);
     return isDirectTransfer;
   } catch (error) {
     console.error('Failed to read DIRECT_TRANSFER flag:', error);
@@ -310,9 +321,10 @@ export function prepareApproveErc20Args({
   spenderAddress,
   amount,
 }: ApproveErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log(
-    `Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`,
-  );
+  debug &&
+    console.log(
+      `Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`,
+    );
   const requestArgs = {
     address: tokenAddress,
     abi: erc20Abi,
@@ -328,9 +340,10 @@ export function prepareApproveErc20Args({
     args: requestArgs.args,
   };
 
-  console.log(
-    `Args prepared for approving spender ${spenderAddress} for amount ${amount}...`,
-  );
+  debug &&
+    console.log(
+      `Args prepared for approving spender ${spenderAddress} for amount ${amount}...`,
+    );
   return finalArgs;
 }
 
@@ -346,9 +359,10 @@ export function prepareAllocateNativeArgs({
   recipientId,
   amount,
 }: AllocateNativeArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log(
-    `Preparing native allocate transaction arguments for pool ${poolId}, recipient ${recipientId}...`,
-  );
+  debug &&
+    console.log(
+      `Preparing native allocate transaction arguments for pool ${poolId}, recipient ${recipientId}...`,
+    );
 
   // Encode the recipient data (empty bytes for native allocation)
   const encodedRecipientData = '0x';
@@ -370,7 +384,8 @@ export function prepareAllocateNativeArgs({
     value: requestArgs.value,
   };
 
-  console.log(`Args prepared for native allocation of ${amount} wei...`);
+  debug &&
+    console.log(`Args prepared for native allocation of ${amount} wei...`);
   return finalArgs;
 }
 
@@ -383,9 +398,10 @@ export function prepareAllocateErc20Args({
   amount,
   tokenAddress,
 }: AllocateErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log(
-    `Preparing ERC20 allocate transaction arguments for pool ${poolId}, recipient ${recipientId}, token ${tokenAddress}...`,
-  );
+  debug &&
+    console.log(
+      `Preparing ERC20 allocate transaction arguments for pool ${poolId}, recipient ${recipientId}, token ${tokenAddress}...`,
+    );
 
   // Encode the recipient data for ERC20 allocation
   const encodedRecipientData = encodeAbiParameters(
@@ -413,7 +429,8 @@ export function prepareAllocateErc20Args({
     args: requestArgs.args,
   };
 
-  console.log(`Args prepared for ERC20 allocation of ${amount} tokens...`);
+  debug &&
+    console.log(`Args prepared for ERC20 allocation of ${amount} tokens...`);
   return finalArgs;
 }
 
@@ -427,9 +444,10 @@ export function prepareDistributeArgs({
   recipientIds,
   data = '0x',
 }: DistributeArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log(
-    `Preparing distribute transaction arguments for pool ${poolId}...`,
-  );
+  debug &&
+    console.log(
+      `Preparing distribute transaction arguments for pool ${poolId}...`,
+    );
 
   const requestArgs = {
     address: ALLO_ADDRESS,
@@ -446,9 +464,10 @@ export function prepareDistributeArgs({
     args: requestArgs.args,
   };
 
-  console.log(
-    `Args prepared for distributing funds to ${recipientIds.length} recipients...`,
-  );
+  debug &&
+    console.log(
+      `Args prepared for distributing funds to ${recipientIds.length} recipients...`,
+    );
   return finalArgs;
 }
 
@@ -462,9 +481,10 @@ export function prepareWithdrawArgs({
   recipientId,
   tokenAddress,
 }: WithdrawArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log(
-    `Preparing withdraw transaction arguments for strategy ${strategyAddress}, recipient ${recipientId}, token ${tokenAddress}...`,
-  );
+  debug &&
+    console.log(
+      `Preparing withdraw transaction arguments for strategy ${strategyAddress}, recipient ${recipientId}, token ${tokenAddress}...`,
+    );
 
   const requestArgs = {
     address: strategyAddress,
@@ -481,7 +501,8 @@ export function prepareWithdrawArgs({
     args: requestArgs.args,
   };
 
-  console.log(`Args prepared for withdrawing token ${tokenAddress}...`);
+  debug &&
+    console.log(`Args prepared for withdrawing token ${tokenAddress}...`);
   return finalArgs;
 }
 
@@ -495,9 +516,10 @@ export function prepareClaimAllocationsArgs({
   strategyAddress,
   claims,
 }: ClaimAllocationArgs): Omit<WriteContractParameters, 'account' | 'chain'> {
-  console.log(
-    `Preparing claimAllocations transaction arguments for strategy ${strategyAddress}...`,
-  );
+  debug &&
+    console.log(
+      `Preparing claimAllocations transaction arguments for strategy ${strategyAddress}...`,
+    );
 
   const requestArgs = {
     address: strategyAddress,
@@ -514,7 +536,8 @@ export function prepareClaimAllocationsArgs({
     args: requestArgs.args,
   };
 
-  console.log(`Args prepared for claiming ${claims.length} allocations...`);
+  debug &&
+    console.log(`Args prepared for claiming ${claims.length} allocations...`);
   return finalArgs;
 }
 
@@ -529,7 +552,7 @@ export function prepareClaimAllocationsArgs({
 // }
 
 // export function prepareApproveErc20Args({ tokenAddress, spenderAddress, amount }: ApproveErc20Args): Omit<WriteContractParameters, 'account' | 'chain'> {
-//     console.log(`Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`)
+//     debug && console.log(`Preparing ERC20 approve transaction arguments for token ${tokenAddress}...`)
 //     const requestArgs = {
 //         address: tokenAddress,
 //         abi: erc20Abi,
@@ -545,7 +568,7 @@ export function prepareClaimAllocationsArgs({
 //         args: requestArgs.args,
 //     };
 
-//     console.log(`Args prepared for approving spender ${spenderAddress} for amount ${amount}...`)
+//     debug && console.log(`Args prepared for approving spender ${spenderAddress} for amount ${amount}...`)
 //     return finalArgs;
 // }
 
@@ -569,9 +592,10 @@ export function prepareDeployKickstarterQFArgs({
 } {
   const uniqueName = name || `KickstarterQF-${Date.now()}`;
 
-  console.log(
-    `Preparing to deploy KickstarterQF contract with name: ${uniqueName}`,
-  );
+  debug &&
+    console.log(
+      `Preparing to deploy KickstarterQF contract with name: ${uniqueName}`,
+    );
 
   // Ensure we get the correct bytecode format and type
   const bytecode =

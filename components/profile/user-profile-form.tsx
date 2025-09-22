@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useUpdateUserProfile } from '@/lib/hooks/useProfile';
 import { type Profile } from '@/types/profile';
+import { debugComponentData as debug } from '@/lib/debug';
 
 const profileFormSchema = z.object({
   firstName: z
@@ -91,7 +92,7 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   });
 
   // You can also log after setting up the form
-  console.log('Form values:', form.getValues());
+  debug && console.log('Form values:', form.getValues());
 
   const onSubmit = useCallback(
     async (data: ProfileFormValues) => {

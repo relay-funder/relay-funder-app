@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import crypto from 'crypto';
+import { debugApi as debug } from '@/lib/debug';
 
 const CROWDSPLIT_WEBHOOK_SECRET = process.env.CROWDSPLIT_WEBHOOK_SECRET;
-const debug = process.env.NODE_ENV !== 'production';
 
 export interface WebhookAuthResult {
   isValid: boolean;

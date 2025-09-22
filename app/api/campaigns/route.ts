@@ -12,7 +12,7 @@ import { CampaignStatus } from '@/types/campaign';
 import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
 import { PatchCampaignResponse, PostCampaignsResponse } from '@/lib/api/types';
 import { fileToUrl } from '@/lib/storage';
-import { debug } from '@/lib/debug';
+import { debugApi as debug } from '@/lib/debug';
 import { getUser } from '@/lib/api/user';
 
 const statusMap: Record<string, CampaignStatus> = {
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
         },
       });
     }
-    console.log('Campaign created successfully:', campaign);
+    debug && console.log('Campaign created successfully:', campaign);
 
     return response({ campaignId: campaign.id } as PostCampaignsResponse);
   } catch (error: unknown) {

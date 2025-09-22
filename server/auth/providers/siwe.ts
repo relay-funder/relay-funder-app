@@ -8,7 +8,7 @@ import { type User } from 'next-auth';
 const nextAuthUrl =
   process.env.NEXTAUTH_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
-const debug = false;
+import { debugAuth as debug } from '@/lib/debug';
 
 export function SiweProvider() {
   return CredentialsProvider({

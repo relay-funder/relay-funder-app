@@ -4,6 +4,7 @@ import { ApiParameterError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { PostCollectionsBody } from '@/lib/api/types';
 import { CampaignImage, CampaignStatus } from '@/types/campaign';
+import { debugApi as debug } from '@/lib/debug';
 
 // Get all collections for the current user
 export async function GET() {
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log('Collection created:', collection);
+    debug && console.log('Collection created:', collection);
     return response({ collection });
   } catch (error: unknown) {
     return handleError(error);

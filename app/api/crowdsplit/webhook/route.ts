@@ -10,8 +10,7 @@ import {
   type EventTypeType,
 } from '@/lib/crowdsplit/webhook-auth';
 import { InputJsonValue } from '@/.generated/prisma/client/runtime/library';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { debugApi as debug } from '@/lib/debug';
 
 /**
  * CrowdSplit Unified Webhook Handler

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useMemo, useEffect, useState } from 'react';
+import { debugComponentData as debug } from '@/lib/debug';
 
 export function CampaignMainImageCard({
   campaign,
@@ -23,18 +24,19 @@ export function CampaignMainImageCard({
   // Debug logging to help troubleshoot IPFS media loading
   useEffect(() => {
     if (campaign) {
-      console.log('CampaignMainImageCard - Campaign data:', {
-        title: campaign.title,
-        hasMedia: Array.isArray(campaign.media),
-        mediaCount: campaign.media?.length,
-        hasMediaOrder: Array.isArray(campaign.mediaOrder),
-        mediaOrderCount: campaign.mediaOrder?.length,
-        hasImages: Array.isArray(campaign.images),
-        imagesCount: campaign.images?.length,
-        firstMediaId: campaign.media?.[0]?.id,
-        firstMediaUrl: campaign.media?.[0]?.url,
-        firstImageUrl: campaign.images?.[0]?.imageUrl,
-      });
+      debug &&
+        console.log('CampaignMainImageCard - Campaign data:', {
+          title: campaign.title,
+          hasMedia: Array.isArray(campaign.media),
+          mediaCount: campaign.media?.length,
+          hasMediaOrder: Array.isArray(campaign.mediaOrder),
+          mediaOrderCount: campaign.mediaOrder?.length,
+          hasImages: Array.isArray(campaign.images),
+          imagesCount: campaign.images?.length,
+          firstMediaId: campaign.media?.[0]?.id,
+          firstMediaUrl: campaign.media?.[0]?.url,
+          firstImageUrl: campaign.images?.[0]?.imageUrl,
+        });
     }
   }, [campaign]);
 

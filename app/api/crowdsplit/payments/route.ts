@@ -8,8 +8,7 @@ import {
   ApiParameterError,
   ApiUpstreamError,
 } from '@/lib/api/error';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { debugApi as debug } from '@/lib/debug';
 
 // Extended interface to include our additional fields
 interface ExtendedPaymentRequest extends CrowdsplitCreatePaymentPostRequest {

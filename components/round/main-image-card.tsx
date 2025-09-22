@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useMemo, useEffect, useState } from 'react';
+import { debugComponentData as debug } from '@/lib/debug';
 
 export function RoundMainImageCard({
   round,
@@ -22,7 +23,10 @@ export function RoundMainImageCard({
 
   // Debug logging to help troubleshoot IPFS media loading
   useEffect(() => {
-    if (round) {
+    if (!round) {
+      return;
+    }
+    debug &&
       console.log('RoundMainImageCard - Round data:', {
         title: round.title,
         hasMedia: Array.isArray(round.media),
@@ -33,7 +37,6 @@ export function RoundMainImageCard({
         firstMediaId: round.media?.[0]?.id,
         firstMediaUrl: round.media?.[0]?.url,
       });
-    }
   }, [round]);
 
   const mainImage = useMemo(() => {
