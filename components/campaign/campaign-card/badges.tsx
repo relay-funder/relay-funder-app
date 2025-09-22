@@ -20,6 +20,7 @@ interface CampaignCardBadgesProps {
 }
 
 export function CampaignCardBadges({
+  campaign,
   displayOptions,
   canDonate,
   campaignStatusInfo,
@@ -28,6 +29,20 @@ export function CampaignCardBadges({
 }: CampaignCardBadgesProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {/* Featured badge - highlighted when within featured window */}
+      {(() => {
+        const now = new Date();
+        const featured =
+          campaign?.featuredStart &&
+          new Date(campaign.featuredStart) <= now &&
+          (!campaign.featuredEnd || new Date(campaign.featuredEnd) >= now);
+        return featured ? (
+          <Badge variant="default" className="text-xs font-medium">
+            Featured
+          </Badge>
+        ) : null;
+      })()}
+
       {/* Category badge - Clean and prominent */}
       {displayOptions.showCategoryBadge && categoryDetails && (
         <Badge variant="secondary" className="text-xs font-medium">
