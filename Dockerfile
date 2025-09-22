@@ -13,7 +13,7 @@ RUN npm install -g tsx
 RUN git config --global --add safe.directory /app
 
 RUN touch /root/.bashrc \
-    && echo 'PS1="aka-app \w # "' \
+    && echo 'PS1="rf-app \w # "' \
     >> /root/.bashrc
 
 VOLUME /app
