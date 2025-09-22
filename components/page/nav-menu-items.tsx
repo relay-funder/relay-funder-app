@@ -8,7 +8,8 @@ import {
   Target,
   Shield,
   ShieldCheck,
-  User,
+  Users,
+  Coins,
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
@@ -51,9 +52,14 @@ export function PageNavMenuItems() {
         href: '/admin/rounds',
       });
       items.push({
-        icon: <User className="h-6 w-6" />,
+        icon: <Users className="h-6 w-6" />,
         label: 'User Management',
         href: '/admin/users',
+      });
+      items.push({
+        icon: <Coins className="h-6 w-6" />,
+        label: 'Withdraw Management',
+        href: '/admin/withdrawals',
       });
     }
     return items;
