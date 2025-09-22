@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts';
 import { CampaignStatus } from './status';
 import { CampaignError } from './error';
 import { useCampaignCategory } from '@/hooks/use-campaign-category';
+import { isCampaignFeatured } from '@/lib/utils/campaign-status';
 
 export function CampaignFull({ slug }: { slug: string }) {
   const { address, isAdmin, isReady } = useAuth();
@@ -43,7 +44,7 @@ export function CampaignFull({ slug }: { slug: string }) {
 
   const header = (
     <PageHeader
-      featured={true}
+      featured={isCampaignFeatured(campaign)}
       tags={[details?.name ?? 'Technology']}
       title={campaign.title}
     >

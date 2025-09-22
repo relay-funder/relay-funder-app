@@ -9,6 +9,7 @@ import {
   Shield,
   ShieldCheck,
   Users,
+  CreditCard,
   Coins,
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
@@ -55,6 +56,11 @@ export function PageNavMenuItems() {
         icon: <Users className="h-6 w-6" />,
         label: 'User Management',
         href: '/admin/users',
+      });
+      items.push({
+        icon: <CreditCard className="h-6 w-6" />,
+        label: 'Payments',
+        href: '/admin/payments',
       });
       items.push({
         icon: <Coins className="h-6 w-6" />,
