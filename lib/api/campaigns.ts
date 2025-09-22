@@ -1,7 +1,12 @@
 import { db, Prisma } from '@/server/db';
-import type { Campaign, CampaignImage, Payment, User } from '@/server/db';
-import { DbCampaign } from '@/types/campaign';
-import { CampaignStatus } from '@/types/campaign';
+import type {
+  Campaign,
+  CampaignImage,
+  Payment,
+  RoundCampaigns,
+  User,
+} from '@/server/db';
+import { DbCampaign, CampaignStatus } from '@/types/campaign';
 import { QueryClient } from '@tanstack/react-query';
 import { CAMPAIGNS_QUERY_KEY } from '@/lib/hooks/useCampaigns';
 import {
@@ -14,6 +19,9 @@ import { ApiConflictError } from './error';
 import { mapRound } from './rounds';
 import { JsonValue } from '@/.generated/prisma/client/runtime/library';
 
+/**
+ * Local types
+ */
 export type PaymentWithUser = Payment & {
   user: User;
 };
@@ -21,8 +29,236 @@ export type PaymentWithUser = Payment & {
 export type CampaignWithRelations = Campaign & {
   images: CampaignImage[];
   payments: PaymentWithUser[];
+  RoundCampaigns?: RoundCampaigns[];
 };
+export type CampaignWithRoundCampaigns = Prisma.CampaignGetPayload<{
+  include: {
+    media: { where: { state: 'UPLOADED' } };
+    RoundCampaigns: { include: { Round: true } };
+  };
+}>;
 
+/**
+ * Shared helpers (DRY)
+ */
+
+// Build the list of statuses to query for based on status param and role
+function buildStatusList({
+  admin,
+  status,
+  creatorAddress,
+}: {
+  admin: boolean;
+  status: string;
+  creatorAddress?: string;
+}) {
+  const list: CampaignStatus[] = [CampaignStatus.ACTIVE];
+  if (status === 'all') {
+    if (!admin) {
+      if (creatorAddress) {
+        list.push(
+          CampaignStatus.DRAFT,
+          CampaignStatus.PENDING_APPROVAL,
+          CampaignStatus.COMPLETED,
+        );
+      }
+    } else {
+      list.push(
+        CampaignStatus.DRAFT,
+        CampaignStatus.PENDING_APPROVAL,
+        CampaignStatus.COMPLETED,
+      );
+    }
+  }
+  return list;
+}
+
+// Build base where clause for campaign listing
+function buildCampaignWhere({
+  admin,
+  status,
+  creatorAddress,
+}: {
+  admin: boolean;
+  status: string;
+  creatorAddress?: string;
+}): Prisma.CampaignWhereInput {
+  const statusList = buildStatusList({ admin, status, creatorAddress });
+
+  return {
+    status: { in: statusList },
+    ...(admin || process.env.NODE_ENV === 'development'
+      ? {}
+      : { transactionHash: { not: null } }),
+    creatorAddress,
+  };
+}
+
+// Base include for campaigns list queries
+function buildCampaignInclude(rounds: boolean) {
+  const base: Prisma.CampaignInclude = {
+    media: { where: { state: 'UPLOADED' } },
+    RoundCampaigns: {
+      include: { Round: true },
+    },
+  };
+  if (!rounds) {
+    return base;
+  }
+  // when rounds is required, the mapping happens later, but we need the round relation
+  return base;
+}
+
+// Execute DB query (findMany + count) with custom order
+async function queryCampaigns({
+  where,
+  skip,
+  take,
+  orderBy,
+  rounds,
+}: {
+  where: Prisma.CampaignWhereInput;
+  skip: number;
+  take: number;
+  orderBy:
+    | Prisma.CampaignOrderByWithRelationInput
+    | Prisma.CampaignOrderByWithRelationInput[];
+  rounds: boolean;
+}): Promise<{ rows: CampaignWithRoundCampaigns[]; totalCount: number }> {
+  const [rows, totalCount] = await Promise.all([
+    db.campaign.findMany({
+      where,
+      include: buildCampaignInclude(rounds),
+      skip,
+      take,
+      orderBy,
+    }),
+    db.campaign.count({ where }),
+  ]);
+  return { rows: rows as unknown as CampaignWithRoundCampaigns[], totalCount };
+}
+
+// Enrich campaigns with creator and payment summaries and map to DbCampaign
+async function combineCampaigns({
+  dbCampaigns,
+  rounds,
+}: {
+  dbCampaigns: CampaignWithRoundCampaigns[];
+  rounds: boolean;
+}) {
+  // Compute payment summaries for listed IDs
+  const paymentSummaryList = await getPaymentSummaryList(
+    dbCampaigns.map(({ id }) => id),
+  );
+  // Fetch creators
+  const creators = await Promise.all(
+    dbCampaigns.map(({ creatorAddress }) => getUserWithStates(creatorAddress)),
+  );
+
+  // Combine and map
+  const combined = dbCampaigns
+    .map((campaign) => {
+      return {
+        ...campaign,
+        paymentSummary: paymentSummaryList[campaign.id] ?? {},
+        creator: creators.find(
+          ({ address }) => address === campaign.creatorAddress,
+        ),
+      };
+    })
+    .map((campaign) => {
+      if (rounds) {
+        return mapCampaign({
+          ...campaign,
+          rounds:
+            campaign.RoundCampaigns?.map(({ Round, status, id }) =>
+              mapRound(Round, status, id),
+            ) ?? [],
+        });
+      }
+      return mapCampaign(campaign);
+    })
+    .filter(Boolean) as DbCampaign[];
+
+  return combined;
+}
+
+/**
+ * Public query surfaces
+ */
+
+// Homepage ordering: feature-first (by featuredStart asc so NOT NULL first), then newest
+const HOMEPAGE_ORDER: Prisma.CampaignOrderByWithRelationInput[] = [
+  { featuredStart: 'asc' },
+  { createdAt: 'desc' },
+];
+
+// Admin ordering: plain recency, do NOT use the featured index
+const ADMIN_ORDER: Prisma.CampaignOrderByWithRelationInput[] = [
+  { createdAt: 'desc' },
+];
+
+// Generalized list that chooses ordering based on admin flag
+export async function listCampaigns({
+  admin = false,
+  status = 'active',
+  page = 1,
+  pageSize = 10,
+  rounds = false,
+  skip = 0,
+  creatorAddress,
+}: {
+  admin?: boolean;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+  rounds?: boolean;
+  skip?: number;
+  creatorAddress?: string;
+}) {
+  const where = buildCampaignWhere({ admin, status, creatorAddress });
+  const orderBy = admin ? ADMIN_ORDER : HOMEPAGE_ORDER;
+
+  const { rows, totalCount } = await queryCampaigns({
+    where,
+    skip,
+    take: pageSize,
+    orderBy,
+    rounds,
+  });
+
+  const combinedCampaigns = await combineCampaigns({
+    dbCampaigns: rows,
+    rounds,
+  });
+
+  return {
+    campaigns: combinedCampaigns,
+    pagination: {
+      currentPage: page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+      totalItems: totalCount,
+      hasMore: skip + pageSize < totalCount,
+    },
+  };
+}
+
+// Explicit surfaces if you want to call them separately elsewhere
+export async function listHomepageCampaigns(
+  args: Omit<Parameters<typeof listCampaigns>[0], 'admin'>,
+) {
+  return listCampaigns({ ...args, admin: false });
+}
+export async function listAdminCampaigns(
+  args: Omit<Parameters<typeof listCampaigns>[0], 'admin'>,
+) {
+  return listCampaigns({ ...args, admin: true });
+}
+
+/**
+ * Single campaign lookups and helpers
+ */
 export async function getCampaignBySlug(
   slug: string,
 ): Promise<CampaignWithRelations | null> {
@@ -42,7 +278,6 @@ export async function getCampaignBySlug(
     if (!campaign) {
       return null;
     }
-
     return campaign;
   } catch (error) {
     console.error('Error fetching campaign:', error);
@@ -50,128 +285,7 @@ export async function getCampaignBySlug(
   }
 }
 
-export async function listCampaigns({
-  admin = false,
-  status = 'active',
-  page = 1,
-  pageSize = 10,
-  rounds = false,
-  skip = 0,
-  creatorAddress,
-}: {
-  admin?: boolean;
-  status?: string;
-  page?: number;
-  pageSize?: number;
-  rounds?: boolean;
-  skip?: number;
-  creatorAddress?: string;
-}) {
-  const statusList = [CampaignStatus.ACTIVE];
-
-  // Only add additional statuses when explicitly requesting 'all'
-  if (status === 'all') {
-    if (!admin) {
-      if (creatorAddress) {
-        // users may request all states for their own campaigns
-        statusList.push(
-          CampaignStatus.DRAFT,
-          CampaignStatus.PENDING_APPROVAL,
-          CampaignStatus.COMPLETED,
-        );
-      }
-    } else {
-      // Admin requesting all statuses (for admin dashboard)
-      statusList.push(
-        CampaignStatus.DRAFT,
-        CampaignStatus.PENDING_APPROVAL,
-        CampaignStatus.COMPLETED,
-      );
-    }
-  }
-  // For status='active' (homepage), everyone sees only ACTIVE campaigns
-  const where = {
-    status: {
-      in: statusList,
-    },
-    // Admin can see all campaigns, regular users only see deployed campaigns in production
-    ...(admin || process.env.NODE_ENV === 'development'
-      ? {}
-      : { transactionHash: { not: null } }),
-    creatorAddress,
-  };
-  const [dbCampaigns, totalCount] = await Promise.all([
-    db.campaign.findMany({
-      where,
-      include: {
-        media: { where: { state: 'UPLOADED' } },
-        RoundCampaigns: {
-          include: {
-            Round: true,
-          },
-        },
-      },
-      skip,
-      take: pageSize,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    }),
-    db.campaign.count({
-      where,
-    }),
-  ]);
-  // Admin can see all campaigns, regular users only see deployed campaigns in production
-  const filteredDbCampaigns =
-    admin || process.env.NODE_ENV === 'development'
-      ? dbCampaigns
-      : dbCampaigns.filter((campaign) => campaign.transactionHash);
-
-  const paymentSummaryList = await getPaymentSummaryList(
-    filteredDbCampaigns.map(({ id }) => id),
-  );
-  const creatorList = await Promise.all(
-    filteredDbCampaigns.map(({ creatorAddress }) =>
-      getUserWithStates(creatorAddress),
-    ),
-  );
-
-  const combinedCampaigns = filteredDbCampaigns
-    .map((dbCampaign) => {
-      return {
-        ...dbCampaign,
-        paymentSummary: paymentSummaryList[dbCampaign.id] ?? {},
-        creator: creatorList.find(
-          ({ address }) => address === dbCampaign.creatorAddress,
-        ),
-      };
-    })
-    .map((dbCampaign) => {
-      if (rounds) {
-        return mapCampaign({
-          ...dbCampaign,
-          rounds:
-            dbCampaign.RoundCampaigns?.map(({ Round, status, id }) =>
-              mapRound(Round, status, id),
-            ) ?? [],
-        });
-      }
-      return mapCampaign(dbCampaign);
-    })
-    .filter(Boolean);
-  return {
-    campaigns: combinedCampaigns,
-    pagination: {
-      currentPage: page,
-      pageSize,
-      totalPages: Math.ceil(totalCount / pageSize),
-      totalItems: totalCount,
-      hasMore: skip + pageSize < totalCount,
-    },
-  };
-}
-// Prefetching homepage campaigns
-// sets the default query key and requests the db-data
+// Prefetching homepage campaigns (infinite)
 export async function prefetchCampaigns(queryClient: QueryClient) {
   return queryClient.prefetchInfiniteQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10],
@@ -179,8 +293,8 @@ export async function prefetchCampaigns(queryClient: QueryClient) {
     queryFn: () => listCampaigns({ rounds: true }),
   });
 }
-// Prefetching campaign
-// sets the default query key and requests the db-data
+
+// Prefetching single campaign
 export async function prefetchCampaign(queryClient: QueryClient, slug: string) {
   return queryClient.prefetchQuery({
     queryKey: [CAMPAIGNS_QUERY_KEY, slug],
@@ -189,6 +303,7 @@ export async function prefetchCampaign(queryClient: QueryClient, slug: string) {
     }),
   });
 }
+
 type PaymentTokenList = {
   campaignId: number;
   token: string;
@@ -231,6 +346,7 @@ export async function getPaymentMap(idList: number[], confirmed: boolean) {
     count: Number(result.count),
   })) as PaymentTokenList;
 }
+
 export function getEmptyPaymentSummary(): GetCampaignPaymentSummary {
   return {
     lastConfirmed: null,
@@ -239,6 +355,7 @@ export function getEmptyPaymentSummary(): GetCampaignPaymentSummary {
     countPending: 0,
   };
 }
+
 type PaymentTokenMap = Record<string, { pending: number; confirmed: number }>;
 
 export function summarizePaymentMap(
@@ -259,11 +376,13 @@ export function summarizePaymentMap(
     }
   }
 }
+
 export function countPaymentMap(id: number, paymentMap: PaymentTokenList) {
   return paymentMap
     .filter(({ campaignId }) => campaignId === id)
     .reduce((accumulator, { count }) => accumulator + count, 0);
 }
+
 export async function getPaymentSummaryList(idList: number[]) {
   const paymentSummaryList: Record<number, GetCampaignPaymentSummary> = {};
   try {
@@ -275,7 +394,7 @@ export async function getPaymentSummaryList(idList: number[]) {
       if (typeof paymentSummaryList[id] === 'undefined') {
         paymentSummaryList[id] = getEmptyPaymentSummary();
       }
-      const token = {};
+      const token: PaymentTokenMap = {};
       summarizePaymentMap(id, token, pending, 'pending');
       summarizePaymentMap(id, token, confirmed, 'confirmed');
       paymentSummaryList[id].token = token;
@@ -285,6 +404,7 @@ export async function getPaymentSummaryList(idList: number[]) {
   } catch {}
   return paymentSummaryList;
 }
+
 export async function getPaymentSummary(id: number) {
   const paymentSummaryList = await getPaymentSummaryList([id]);
   const paymentSummary = paymentSummaryList[id];
@@ -350,8 +470,9 @@ export async function getPaymentSummary(id: number) {
   } catch {}
   return paymentSummary;
 }
+
 export async function getCampaign(campaignIdOrSlug: string | number) {
-  let where = undefined;
+  let where = undefined as Prisma.CampaignWhereUniqueInput | undefined;
   if (!isNaN(Number(campaignIdOrSlug))) {
     where = { id: Number(campaignIdOrSlug) };
   } else {
@@ -376,7 +497,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
       },
       _count: {
         select: {
-          comments: true, // { where: { deleted: false, reportCount: { lt: 5 } } },
+          comments: true,
           updates: true,
           RoundCampaigns: true,
         },
@@ -387,7 +508,6 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
     return null;
   }
   const creator = await getUserWithStates(instance.creatorAddress);
-
   const paymentSummary = await getPaymentSummary(instance.id);
 
   return {
@@ -420,15 +540,16 @@ export async function addCampaignUpdate(
   await db.$transaction([
     db.campaignUpdate.create({
       data: {
-        title: title,
-        content: content,
+        title,
+        content,
         campaignId: campaign.id,
-        creatorAddress: campaign?.creatorAddress,
+        creatorAddress: campaign.creatorAddress,
       },
     }),
     db.campaign.update({ where: { id }, data: { updatedAt: new Date() } }),
   ]);
 }
+
 export async function addCampaignComment(
   id: number,
   content: string,
@@ -445,6 +566,7 @@ export async function addCampaignComment(
     db.campaign.update({ where: { id }, data: { updatedAt: new Date() } }),
   ]);
 }
+
 export async function getStats({
   creatorAddress,
   admin,
@@ -577,6 +699,7 @@ export async function getStats({
   }
   return stats;
 }
+
 interface MapCampaignInput extends Omit<DbCampaign, 'mediaOrder'> {
   RoundCampaigns?: unknown;
   mediaOrder?: JsonValue | string[] | null;
