@@ -5,11 +5,11 @@ import { auth } from '@/server/auth';
 import { getQueryClient } from '@/lib/query-client';
 import { prefetchAdminUserOverview } from '@/lib/hooks/useAdminUserOverview';
 
-type PageParams =
-  | { params: Promise<{ id: string }> }
-  | { params: { id: string } };
-
-export default async function AdminUserDetailPage(props: PageParams) {
+export default async function AdminUserDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const session = await auth();
   const isAdmin = session?.user.roles.includes('admin');
   if (!isAdmin) {
@@ -17,12 +17,9 @@ export default async function AdminUserDetailPage(props: PageParams) {
   }
 
   // Handle potential Promise in params for compatibility with various Next setups
-  const awaitedParams =
-    'params' in props && 'then' in (props.params as Promise<unknown>)
-      ? await (props.params as Promise<{ id: string }>)
-      : ((props as { params: { id: string } }).params as { id: string });
+  const { id: paramsId } = await params;
 
-  const address = decodeURIComponent(awaitedParams.id);
+  const address = decodeURIComponent(paramsId);
 
   const queryClient = getQueryClient();
   let ok = true;
