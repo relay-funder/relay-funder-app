@@ -7,7 +7,7 @@ import { RoundFormSchema } from './form';
 import { cn } from '@/lib/utils';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 
-import { debug } from '@/lib/debug';
+import { debugComponentData as debug } from '@/lib/debug';
 
 export function RoundCreateFormSummary() {
   const form = useFormContext();

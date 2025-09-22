@@ -7,8 +7,7 @@ import type {
 } from '@stripe/stripe-js';
 import { useStripeFormSubmission } from '@/hooks/use-stripe-form-submission';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { debugComponentData as debug } from '@/lib/debug';
 
 interface PaymentStripeFormProps {
   publicKey: string;

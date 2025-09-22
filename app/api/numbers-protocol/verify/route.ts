@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as crypto from 'crypto';
+import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Verifying signature:', {
-      integritySha,
-      signature,
-      publicKey,
-    });
+    debug &&
+      console.log('Verifying signature:', {
+        integritySha,
+        signature,
+        publicKey,
+      });
 
     // In a real implementation, you would verify the signature against the public key
     // For now, we'll verify that the signature matches our local signing method

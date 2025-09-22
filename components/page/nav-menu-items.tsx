@@ -8,6 +8,9 @@ import {
   Target,
   Shield,
   ShieldCheck,
+  Users,
+  CreditCard,
+  Coins,
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
@@ -48,6 +51,21 @@ export function PageNavMenuItems() {
         icon: <ShieldCheck className="h-6 w-6" />,
         label: 'Round Management',
         href: '/admin/rounds',
+      });
+      items.push({
+        icon: <Users className="h-6 w-6" />,
+        label: 'User Management',
+        href: '/admin/users',
+      });
+      items.push({
+        icon: <CreditCard className="h-6 w-6" />,
+        label: 'Payments',
+        href: '/admin/payments',
+      });
+      items.push({
+        icon: <Coins className="h-6 w-6" />,
+        label: 'Withdrawals',
+        href: '/admin/withdrawals',
       });
     }
     return items;

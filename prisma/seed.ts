@@ -2,14 +2,12 @@ import { config } from 'dotenv';
 import { PrismaClient } from '../.generated/prisma/client';
 import { CampaignStatus } from '../types/campaign';
 import shortUUID from 'short-uuid';
-import crypto from 'crypto';
 import { subDays, addDays } from 'date-fns';
-import { uniqueName, uniqueDescription } from '../lib/generate-strings';
 import {
   deployCampaignContract,
   deployAllContracts,
 } from '../lib/seed/contract-deployment';
-
+import { USER_FLAGS } from '../lib/constant/user-flags';
 // Load environment variables
 config({ path: '.env.local' });
 
@@ -88,19 +86,6 @@ const campaignTitles = [
   'Child Nutrition Initiative - Kibera',
 ];
 
-const campaignCategories = [
-  { id: 'education', name: 'Education', icon: '🎓' },
-  { id: 'economic-development', name: 'Economic Development', icon: '💼' },
-  { id: 'climate-resilience', name: 'Climate Resilience', icon: '🌱' },
-  { id: 'general-aid', name: 'General Aid', icon: '🤝' },
-  { id: 'health', name: 'Health & Medical', icon: '🏥' },
-  { id: 'water-sanitation', name: 'Water & Sanitation', icon: '💧' },
-  { id: 'agriculture', name: 'Agriculture & Food', icon: '🌾' },
-  { id: 'technology', name: 'Technology Access', icon: '💻' },
-  { id: 'infrastructure', name: 'Infrastructure', icon: '🏗️' },
-  { id: 'emergency-relief', name: 'Emergency Relief', icon: '🚨' },
-];
-
 const locations = [
   'Nairobi, Kenya',
   'Kampala, Uganda',
@@ -121,8 +106,6 @@ const locations = [
   'Juba, South Sudan',
   'Mogadishu, Somalia',
 ];
-
-const campaignStatuses = Object.values(CampaignStatus);
 
 // Helper function to generate slug from title
 function generateSlug(title: string): string {
@@ -151,7 +134,11 @@ function randomAddress(): string {
   // Prefix with '0x' to resemble an Ethereum address
   return '0x' + randomHexString;
 }
-async function createUsers(amount: number, roles: string[]) {
+async function createUsers(
+  amount: number,
+  roles: string[],
+  featureFlags: string[] = [],
+) {
   const userPromises = [];
   for (let i = 0; i < amount; i++) {
     userPromises.push(
@@ -159,6 +146,7 @@ async function createUsers(amount: number, roles: string[]) {
         data: {
           address: randomAddress(),
           roles,
+          featureFlags,
         },
       }),
     );
@@ -391,7 +379,11 @@ async function main() {
   // Create 25 users instead of 100 (more realistic for debugging)
   const creatorUsers = await createUsers(25, ['user']);
   const donorUsers = await createUsers(25, ['user']);
-  const adminUsers = await createUsers(2, ['user', 'admin']);
+  const adminUsers = await createUsers(
+    2,
+    ['user', 'admin'],
+    USER_FLAGS as string[],
+  );
 
   const campaigns = Array.from({ length: 20 }, (_, i) => {
     const title = campaignTitles[i % campaignTitles.length];

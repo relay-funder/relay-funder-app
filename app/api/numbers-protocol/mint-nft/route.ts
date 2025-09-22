@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { debugApi as debug } from '@/lib/debug';
 
 const NUMBERS_API_URL = 'https://api.numbersprotocol.io/api/v3/assets/';
 const CAPTURE_TOKEN = process.env.NUMBERS_PROTOCOL_TOKEN;
@@ -20,12 +21,13 @@ export async function POST(request: NextRequest) {
     const headline = (formData.get('headline') as string) || '';
     const signatureDataStr = formData.get('signature_data') as string;
 
-    console.log('Received minting request:', {
-      fileName: file?.name,
-      caption,
-      headline,
-      hasSignatureData: !!signatureDataStr,
-    });
+    debug &&
+      console.log('Received minting request:', {
+        fileName: file?.name,
+        caption,
+        headline,
+        hasSignatureData: !!signatureDataStr,
+      });
 
     if (!file) {
       console.error('No file provided in request');
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Parse signature data
     const signatureData = JSON.parse(signatureDataStr);
-    console.log('Parsed signature data:', signatureData);
+    debug && console.log('Parsed signature data:', signatureData);
 
     // Verify that we have all required signature fields
     if (
@@ -77,13 +79,14 @@ export async function POST(request: NextRequest) {
     numbersFormData.append('product_quantity', '3');
     numbersFormData.append('product_show_on_explorer', 'false');
 
-    console.log('Sending request to Numbers Protocol API with params:', {
-      caption,
-      headline,
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-    });
+    debug &&
+      console.log('Sending request to Numbers Protocol API with params:', {
+        caption,
+        headline,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+      });
 
     const response = await fetch(NUMBERS_API_URL, {
       method: 'POST',
@@ -95,10 +98,11 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    console.log(
-      'Numbers Protocol API response:',
-      JSON.stringify(data, null, 2),
-    );
+    debug &&
+      console.log(
+        'Numbers Protocol API response:',
+        JSON.stringify(data, null, 2),
+      );
 
     if (!response.ok) {
       console.error('Numbers Protocol API error:', data);
@@ -158,10 +162,11 @@ export async function POST(request: NextRequest) {
       rawResponse: data, // Include raw response for debugging
     };
 
-    console.log(
-      'Formatted response:',
-      JSON.stringify(formattedResponse, null, 2),
-    );
+    debug &&
+      console.log(
+        'Formatted response:',
+        JSON.stringify(formattedResponse, null, 2),
+      );
     return NextResponse.json(formattedResponse);
   } catch (error) {
     console.error('Error minting NFT:', error);

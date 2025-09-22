@@ -155,7 +155,7 @@ export default function Login() {
   useEffect(() => {
     if (web3error && isLoading && !isFallback) {
       // handle when user cancels signature in metamask
-      console.log({ web3error, isLoading });
+      console.error('signature canceled', { web3error, isLoading });
       onError(web3error?.message);
     }
   }, [web3error, isLoading, isFallback, onError]);

@@ -10,6 +10,7 @@ import {
   useCurrentChain,
   getProvider,
 } from '@/lib/web3';
+import { debugHook as debug } from '@/lib/debug';
 
 export function useNetworkCheck() {
   const { address } = useWeb3Context();
@@ -20,13 +21,14 @@ export function useNetworkCheck() {
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
   const checkNetwork = useCallback(async () => {
-    console.log('use-network::checkNetwork');
+    debug && console.log('use-network::checkNetwork');
     const provider = getProvider();
     if (!provider) {
       return;
     }
     try {
-      console.log('use-network::checkNetwork', chainId, chainConfig.chainId);
+      debug &&
+        console.log('use-network::checkNetwork', chainId, chainConfig.chainId);
       const correctNetwork = chainId === chainConfig.chainId;
       setIsCorrectNetwork(correctNetwork);
       return correctNetwork;
@@ -65,7 +67,7 @@ export function useNetworkCheck() {
           switchError === 'wallet_switchEthereumChain failed. Invalid chain ID'
         ) {
           try {
-            console.log('trying to add chain', chainId);
+            debug && console.log('trying to add chain', chainId);
             await provider.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
@@ -96,7 +98,7 @@ export function useNetworkCheck() {
 
   useEffect(() => {
     if (!address) {
-      console.log('use-network:effect: no wallet');
+      debug && console.log('use-network:effect: no wallet');
       return;
     }
 
@@ -105,13 +107,13 @@ export function useNetworkCheck() {
     const initializeNetwork = async () => {
       try {
         if (!address) {
-          console.log('use-network:effect: wallet not connected');
+          debug && console.log('use-network:effect: wallet not connected');
           setIsCorrectNetwork(false);
           return;
         }
         const provider = getProvider();
         if (!provider) {
-          console.log('use-network:effect: provider not available');
+          debug && console.log('use-network:effect: provider not available');
           setIsCorrectNetwork(false);
           return;
         }
@@ -121,7 +123,11 @@ export function useNetworkCheck() {
 
         // Listen for network changes
         const handleChainChanged = async (newChainIdHex: string) => {
-          console.log('use-network:effect: handleChainChanged', newChainIdHex);
+          debug &&
+            console.log(
+              'use-network:effect: handleChainChanged',
+              newChainIdHex,
+            );
           const isCorrect =
             newChainIdHex === `0x${chainConfig.chainId.toString(16)}`;
           setIsCorrectNetwork(isCorrect);

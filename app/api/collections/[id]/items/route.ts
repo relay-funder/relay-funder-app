@@ -10,6 +10,7 @@ import {
   CollectionsWithIdParams,
   DeleteCollectionsWithIdBody,
 } from '@/lib/api/types';
+import { debugApi as debug } from '@/lib/debug';
 // Add an item to a collection
 export async function POST(req: Request, { params }: CollectionsWithIdParams) {
   try {
@@ -19,13 +20,14 @@ export async function POST(req: Request, { params }: CollectionsWithIdParams) {
     const { itemId, itemType } = body;
     const userAddress = session.user.address;
 
-    console.log('Adding item to collection:', {
-      collectionId: id,
-      itemId,
-      itemType,
-      userAddress,
-      paramsReceived: params,
-    });
+    debug &&
+      console.log('Adding item to collection:', {
+        collectionId: id,
+        itemId,
+        itemType,
+        userAddress,
+        paramsReceived: params,
+      });
 
     if (!itemId || !itemType) {
       throw new ApiParameterError('missing required fields');
@@ -82,7 +84,7 @@ export async function POST(req: Request, { params }: CollectionsWithIdParams) {
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
     }
-    console.log('Found campaign:', campaign);
+    debug && console.log('Found campaign:', campaign);
 
     // Check if campaign already exists in the collection
     const existingItem = await db.campaignCollection.findUnique({
@@ -106,7 +108,7 @@ export async function POST(req: Request, { params }: CollectionsWithIdParams) {
       },
     });
 
-    console.log('Item added to collection:', campaignCollection);
+    debug && console.log('Item added to collection:', campaignCollection);
     return response({ item: campaignCollection });
   } catch (error: unknown) {
     return handleError(error);

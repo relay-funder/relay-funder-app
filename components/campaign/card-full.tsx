@@ -12,6 +12,7 @@ import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { TreasuryBalanceCompact } from './treasury-balance';
+import { WithdrawalDialog } from './withdrawal-dialog';
 import { useAuth } from '@/contexts';
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 
@@ -61,11 +62,14 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
           </div>
         </div>
         {isOwner ? (
-          <Link href={`/campaigns/${campaign.slug}/edit`}>
-            <Button className="mt-4 h-12 w-full text-lg" size="lg">
-              Edit this campaign
-            </Button>
-          </Link>
+          <div className="mt-4 space-y-3">
+            <Link href={`/campaigns/${campaign.slug}/edit`}>
+              <Button className="h-12 w-full text-lg" size="lg">
+                Edit this campaign
+              </Button>
+            </Link>
+            <WithdrawalDialog campaign={campaign} />
+          </div>
         ) : (
           <Link href={`/campaigns/${campaign.slug}/donation`}>
             <Button className="mt-4 h-12 w-full text-lg" size="lg">

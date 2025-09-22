@@ -10,6 +10,7 @@ import { response, handleError } from '@/lib/api/response';
 
 import { z } from 'zod';
 import { RecipientStatus } from '@/server/db';
+import { debugApi as debug } from '@/lib/debug';
 
 // Define Zod schema for input validation
 const registerSchema = z.object({
@@ -104,9 +105,10 @@ export async function POST(req: Request) {
         },
       });
 
-      console.log(
-        `Updated RoundCampaigns ${updatedRegistration.id} to APPROVED for Round ${roundId}, Campaign ${campaignId}`,
-      );
+      debug &&
+        console.log(
+          `Updated RoundCampaigns ${updatedRegistration.id} to APPROVED for Round ${roundId}, Campaign ${campaignId}`,
+        );
       return response({ success: true, data: updatedRegistration });
     }
 
@@ -135,9 +137,10 @@ export async function POST(req: Request) {
         },
       });
 
-      console.log(
-        `Created new PENDING RoundCampaigns for Round ${roundId}, Campaign ${campaignId}`,
-      );
+      debug &&
+        console.log(
+          `Created new PENDING RoundCampaigns for Round ${roundId}, Campaign ${campaignId}`,
+        );
       return response({ success: true, data: newRegistration });
     }
   } catch (error: unknown) {

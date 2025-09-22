@@ -11,7 +11,16 @@ export async function GET(request: Request) {
     if (!treasuryAddress) {
       throw new ApiParameterError('Treasury address is required');
     }
-
+    const { isDummy } = await require('@/lib/web3');
+    if (isDummy) {
+      return response({
+        balance: {
+          available: '100',
+          totalPledged: '200',
+          currency: 'USDC',
+        },
+      });
+    }
     // Validate Ethereum address format
     if (!ethers.isAddress(treasuryAddress)) {
       throw new ApiParameterError('Invalid treasury address format');

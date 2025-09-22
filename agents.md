@@ -157,7 +157,7 @@ docker compose exec app pnpm install
 docker compose exec app pnpm add <package-name>
 docker compose exec app pnpm add -D <dev-package-name>
 
-# Remove dependencies  
+# Remove dependencies
 docker compose exec app pnpm remove <package-name>
 
 # Update dependencies
@@ -227,7 +227,7 @@ docker compose up
 # Generate Prisma client (ALWAYS use Docker)
 docker compose exec app pnpm prisma generate
 
-# Run database migrations  
+# Run database migrations
 docker compose exec app pnpm dev:db
 
 # Run migrations in development
@@ -281,7 +281,7 @@ docker compose exec app pnpm prisma db pull
      title: z.string(),
      targetAmount: z.number(),
    });
-   
+
    type Campaign = z.infer<typeof CampaignSchema>;
    const campaign = CampaignSchema.parse(unknownData);
    ```
@@ -320,7 +320,7 @@ docker compose exec app pnpm prisma db pull
 - **NEVER** name shared UI components using implementation or refactoring-oriented terms
 - **FORBIDDEN TERMS**: "unified", "unified-card", "generic", "shared", "common", "base", "wrapper"
 - **REQUIRED**: Use domain-meaningful names that reflect the component's actual purpose and usage
-- **EXAMPLES**: 
+- **EXAMPLES**:
   - ✅ `CampaignCard` - clearly indicates it's for displaying campaigns
   - ✅ `UserProfileSection` - describes the specific domain functionality
   - ❌ `UnifiedCard` - implementation detail, not domain meaning
@@ -414,6 +414,241 @@ const createMutation = useMutation({
 
 **Benefits:** Automatic caching, background refetching, loading states, request deduplication, offline support
 
+## API Integration Playbook: Add Hooks and Routes (mirroring useRounds/useAdminUsers)
+
+This playbook standardizes how to add a new API + client hook set. It mirrors the established patterns in:
+- `app/api/**` (server routes)
+- `lib/hooks/useRounds.ts` and `lib/hooks/useAdminUsers.ts` (client hooks)
+- `lib/api/types/**` (shared types and zod schemas)
+
+Follow these steps for any new entity (e.g., “users”, “rounds”, “campaigns”, etc.).
+
+1) Server route design (App Router)
+- Pathing: place routes under `app/api/<feature>` with nested dynamic segments as needed (e.g., `[id]`, `[address]`, `flags`, `roles`).
+- Auth: require appropriate roles; call `checkAuth([...])`.
+- Responses: always `return response(data)` for success and `return handleError(error)` for errors.
+- Validation: use Zod schemas in `lib/api/types/<feature>` for body parsing/validation.
+- Pagination: return a paginated envelope with this exact shape:
+  - For lists: `{ <plural>: T[], pagination: { currentPage, pageSize, totalPages, totalItems, hasMore } }`
+  - Enforce server-side limits (e.g., `pageSize <= 10`) and throw `ApiParameterError` when exceeded.
+
+
+
+Specialized admin sub-resources (e.g., flags/roles) should:
+- Live under `app/api/admin/<plural>/[address]/flags` or `/roles`.
+- Validate payload arrays; enforce specific feature flags if needed (e.g., `USER_MODERATOR`).
+- Return `{ user: ... }` or `{ item: ... }` to match the rest of admin endpoints.
+
+2) Types and validation
+- Add Zod schemas and response interfaces to `lib/api/types/<feature>`.
+- Export via the local index and `lib/api/types/index.ts`.
+- Reuse existing types where possible (e.g., admin user types).
+
+3) Client hooks (TanStack Query)
+- Create a dedicated hook file in `lib/hooks/` (e.g., `use<Feature>.ts`).
+- Define stable query keys:
+  - `const <FEATURE>_QUERY_KEY = '<feature_plural>'`
+  - `const <FEATURE>_ITEM_QUERY_KEY = '<feature_singular>'`
+- Define a file-local paginated interface mirroring server responses:
+```/dev/null/hooks-playbook.ts#L1-22
+interface PaginatedResponse {
+  items: any[]; // (use a specific type!)
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+}
+```
+- Build URLs using `URLSearchParams` and clamp client-side pageSize to the server max (e.g., 10).
+- Error handling: if `!response.ok`, try `await response.json()` and throw `error.error` or a sensible fallback.
+
+Fetch helpers:
+```/dev/null/hooks-playbook.ts#L24-92
+const FEATURE_QUERY_KEY = 'features';
+const FEATURE_ITEM_QUERY_KEY = 'feature';
+
+function buildUrl(base: string, q: Record<string, string | number | undefined>) {
+  const params = new URLSearchParams();
+  Object.entries(q).forEach(([k, v]) => {
+    if (typeof v !== 'undefined' && v !== '') params.set(k, String(v));
+  });
+  return `${base}?${params.toString()}`;
+}
+
+async function fetchPage({ pageParam = 1, pageSize = 10, name }: { pageParam?: number; pageSize?: number; name?: string; }) {
+  const safePageSize = Math.min(pageSize ?? 10, 10);
+  const url = buildUrl('/api/<feature>', { page: pageParam as number, pageSize: safePageSize, name });
+  const res = await fetch(url);
+  if (!res.ok) {
+    let msg = 'Failed to fetch <feature>';
+    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return (await res.json()) as PaginatedResponse;
+}
+
+async function fetchItem(idOrAddress: string | number) {
+  const url = `/api/<feature>/${idOrAddress}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    let msg = 'Failed to fetch <feature> item';
+    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return data.item; // or data.user, depending on API
+}
+```
+
+Hook exports:
+```/dev/null/hooks-playbook.ts#L94-176
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export function use<FeaturePlural>({ name, page = 1, pageSize = 10 }: { name?: string; page?: number; pageSize?: number } = {}) {
+  const safePage = page > 0 ? page : 1;
+  const safePageSize = Math.min(pageSize ?? 10, 10);
+  return useQuery({
+    queryKey: [FEATURE_QUERY_KEY, 'page', { name: name ?? '', page: safePage, pageSize: safePageSize }],
+    queryFn: async () => (await fetchPage({ pageParam: safePage, pageSize: safePageSize, name })).items,
+    enabled: true,
+  });
+}
+
+export function useInfinite<FeaturePlural>({ name, pageSize = 10 }: { name?: string; pageSize?: number } = {}) {
+  const safePageSize = Math.min(pageSize ?? 10, 10);
+  return useInfiniteQuery<PaginatedResponse, Error>({
+    queryKey: [FEATURE_QUERY_KEY, 'infinite', safePageSize, name ?? ''],
+    queryFn: ({ pageParam = 1 }) => fetchPage({ pageParam: pageParam as number, pageSize: safePageSize, name }),
+    getNextPageParam: (lastPage) => lastPage.pagination.hasMore ? lastPage.pagination.currentPage + 1 : undefined,
+    getPreviousPageParam: (firstPage) => firstPage.pagination.currentPage > 1 ? firstPage.pagination.currentPage - 1 : undefined,
+    initialPageParam: 1,
+  });
+}
+
+export function use<FeatureSingular>(idOrAddress: string | number) {
+  return useQuery({
+    queryKey: [FEATURE_ITEM_QUERY_KEY, idOrAddress],
+    queryFn: () => fetchItem(idOrAddress),
+    enabled: !!idOrAddress,
+  });
+}
+
+type UpdateVars = { idOrAddress: string | number; data: Record<string, unknown> };
+async function patchItem({ idOrAddress, data }: UpdateVars) {
+  const res = await fetch(`/api/<feature>/${idOrAddress}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  if (!res.ok) {
+    let msg = 'Failed to update <feature>';
+    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export function useUpdate<FeatureSingular>() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: patchItem,
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [FEATURE_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [FEATURE_ITEM_QUERY_KEY, vars.idOrAddress] });
+    },
+  });
+}
+```
+
+Feature-specific sub-resources (e.g., flags/roles)
+- Routes: add nested routes like `/api/admin/users/[address]/flags` and `/api/admin/users/[address]/roles` with `PATCH` semantics that validate arrays and return updated entity.
+- Hooks: add mutations mirroring `useUpdateAdminUserFlags` and `useUpdateAdminUserRoles`. Always invalidate both the list key and the single-item key for the affected id/address.
+
+Example (roles route: server):
+```/dev/null/admin-roles-route.ts#L1-70
+import { checkAuth } from '@/lib/api/auth';
+import { ApiAuthNotAllowed, ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { getUser, updateUserRoles } from '@/lib/api/user';
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ address: string }> }) {
+  try {
+    await checkAuth(['admin']);
+    const { address } = await params;
+    const { roles } = await req.json();
+
+    const instance = await getUser(address);
+    if (!instance) throw new ApiNotFoundError('User not found');
+    if (!instance.featureFlags.includes('USER_MODERATOR')) throw new ApiAuthNotAllowed('Admin needs USER_MODERATOR flag');
+
+    if (!Array.isArray(roles)) throw new ApiParameterError('Roles needs to be an array');
+    for (const role of roles) {
+      if (typeof role !== 'string' || role.trim().length === 0) throw new ApiParameterError('Role must be a nonempty string');
+    }
+
+    await updateUserRoles(address, roles);
+    const updated = await getUser(address);
+    return response({ user: updated! });
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+```
+
+Example (roles hook: client):
+```/dev/null/admin-roles-hook.ts#L1-70
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+const ADMIN_USERS_QUERY_KEY = 'admin_users';
+const ADMIN_USER_QUERY_KEY = 'admin_user';
+
+async function patchRoles({ address, roles }: { address: string; roles: string[] }) {
+  const res = await fetch(`/api/admin/users/${address}/roles`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roles }) });
+  if (!res.ok) {
+    let msg = 'Failed to update user roles';
+    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export function useUpdateAdminUserRoles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: patchRoles,
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [ADMIN_USERS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [ADMIN_USER_QUERY_KEY, vars.address] });
+    },
+  });
+}
+```
+
+4) Query invalidation strategy
+- List queries: invalidate `[<FEATURE>_QUERY_KEY]` and any infinite variants (if you use multiple pageSize presets, invalidate each).
+- Detail queries: invalidate `[<FEATURE>_ITEM_QUERY_KEY, idOrAddress]`.
+- Cross-feature: if updates affect other features (e.g., rounds stats), invalidate their keys too.
+
+5) Client-side constraints
+- Mirror server constraints client-side (e.g., clamp `pageSize` to `<= 10`).
+- Gate queries behind auth context when appropriate (see `useUserProfile` usage of `useAuth`).
+- Encode arrays as comma-separated strings if your API expects that (as done for tags in `useRounds.ts`).
+
+6) Error handling
+- Always try to display API-provided `{ error, details? }` when present; otherwise fall back to a generic error message.
+- Keep mutation error messages actionable but concise.
+
+Checklist
+- [ ] Create/extend Zod schemas and types in `lib/api/types/<feature>`
+- [ ] Implement `app/api/<feature>` routes (GET list, GET item, PATCH, POST/DELETE as needed)
+- [ ] Use `response(...)` and `handleError(...)` consistently
+- [ ] Add client hooks in `lib/hooks/use<Feature>.ts`
+- [ ] Define `PaginatedResponse` locally in the hook file to match server envelope
+- [ ] Implement `use<FeaturePlural>`, `useInfinite<FeaturePlural>`, `use<FeatureSingular>`
+- [ ] Implement mutations and invalidate list + detail queries
+- [ ] Clamp `pageSize` to server max and use `URLSearchParams` for query strings
+- [ ] Test: verify pagination, infinite scrolling, mutations, and cache invalidation
+
+
 ### File Organization
 - **Absolute Imports**: Use `@/` prefix for internal module imports
 - **Feature Grouping**: Group related components in feature-specific folders
@@ -476,7 +711,7 @@ export async function GET/POST/PUT/DELETE(req: Request) {
 const simulateTransaction = async (params: TransactionParams) => {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   // Return realistic mock transaction hash
   return {
     hash: `0x${BigInt(Date.now()).toString(16)}...`,
@@ -508,7 +743,7 @@ Follow the exact pattern from `app/api/_template/route.ts`:
 ```typescript
 import { db } from '@/server/db';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
-import { 
+import {
   ApiAuthNotAllowed,
   ApiIntegrityError,
   ApiNotFoundError,
@@ -520,27 +755,27 @@ export async function POST/GET/PUT/DELETE(req: Request) {
   try {
     // 1. ALWAYS start with authentication
     const session = await checkAuth(['user']);
-    
+
     // 2. Extract and validate parameters
     const { searchParams } = new URL(req.url);
     // or: const data = await req.json();
-    
+
     // 3. Validate user exists and has permissions
     const user = await db.user.findUnique({
       where: { address: session.user.address },
     });
-    
+
     if (!user) {
       throw new ApiNotFoundError('User not found');
     }
-    
+
     // 4. Additional role checks if needed
     if (requiresAdmin && !await isAdmin()) {
       throw new ApiAuthNotAllowed('Admin privileges required');
     }
-    
+
     // 5. Business logic here
-    
+
     // 6. Return response
     return response(result);
   } catch (error: unknown) {
@@ -611,7 +846,7 @@ if (campaign?.creatorAddress !== session.user.address && !await isAdmin()) {
 
 #### Standardized Error Types
 - `ApiAuthError`: Authentication failed
-- `ApiAuthNotAllowed`: User lacks required permissions  
+- `ApiAuthNotAllowed`: User lacks required permissions
 - `ApiNotFoundError`: Requested resource doesn't exist
 - `ApiParameterError`: Invalid or missing parameters
 - `ApiIntegrityError`: Data consistency violation
@@ -626,7 +861,7 @@ if (campaign?.creatorAddress !== session.user.address && !await isAdmin()) {
 
 #### Authentication Testing
 - **ALWAYS** test unauthenticated access (should fail)
-- **ALWAYS** test insufficient permissions (should fail)  
+- **ALWAYS** test insufficient permissions (should fail)
 - **ALWAYS** test valid user access (should succeed)
 - **ALWAYS** test admin-only endpoints with both user and admin roles
 
@@ -682,7 +917,7 @@ if (campaign?.creatorAddress !== session.user.address && !await isAdmin()) {
 
 #### Adapter Support Matrix
 - **Privy**: Production wallet adapter for real users
-- **Silk**: Alternative production wallet adapter  
+- **Silk**: Alternative production wallet adapter
 - **Dummy**: **CRITICAL** testing adapter that MUST mirror all functionality
 
 #### Unified Interface Pattern

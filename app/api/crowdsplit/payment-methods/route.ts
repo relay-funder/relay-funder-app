@@ -7,6 +7,7 @@ import {
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { crowdsplitService } from '@/lib/crowdsplit/service';
+import { debugApi as debug } from '@/lib/debug';
 
 import { CrowdsplitPaymentMethodsPostRequest } from '@/lib/crowdsplit/api/types';
 
@@ -79,10 +80,11 @@ export async function POST(req: Request) {
     const { type, provider, bankDetails }: CrowdsplitPaymentMethodsPostRequest =
       await req.json();
 
-    console.log('Received payment method request:', {
-      type,
-      provider,
-    });
+    debug &&
+      console.log('Received payment method request:', {
+        type,
+        provider,
+      });
 
     if (!!type || !provider || !bankDetails) {
       throw new ApiParameterError('missing required fields');

@@ -4,6 +4,7 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { GetCampaignCommentResponseInstance } from '@/lib/api/types';
+import { PaginatedResponse } from '@/lib/api/types/common';
 export const CAMPAIGNS_COMMENTS_QUERY_KEY = 'campaigns_comments';
 
 interface ICreateComment {
@@ -70,15 +71,8 @@ async function reportComment(variables: IReportComment) {
   return response.json();
 }
 
-interface PaginatedResponse {
+interface PaginatedCommentResponse extends PaginatedResponse {
   comments: GetCampaignCommentResponseInstance[];
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalPages: number;
-    totalItems: number;
-    hasMore: boolean;
-  };
 }
 
 async function fetchCommentPage({
@@ -97,11 +91,11 @@ async function fetchCommentPage({
     throw new Error(error.error || 'Failed to fetch comments');
   }
   const data = await response.json();
-  return data as PaginatedResponse;
+  return data as PaginatedCommentResponse;
 }
 
 export function useInfiniteComments(campaignId: number, pageSize = 10) {
-  return useInfiniteQuery<PaginatedResponse, Error>({
+  return useInfiniteQuery<PaginatedCommentResponse, Error>({
     queryKey: [CAMPAIGNS_COMMENTS_QUERY_KEY, 'infinite', campaignId],
     queryFn: ({ pageParam = 1 }) =>
       fetchCommentPage({
@@ -109,12 +103,12 @@ export function useInfiniteComments(campaignId: number, pageSize = 10) {
         pageParam: pageParam as number,
         pageSize,
       }),
-    getNextPageParam: (lastPage: PaginatedResponse) => {
+    getNextPageParam: (lastPage: PaginatedCommentResponse) => {
       return lastPage.pagination.hasMore
         ? lastPage.pagination.currentPage + 1
         : undefined;
     },
-    getPreviousPageParam: (firstPage: PaginatedResponse) =>
+    getPreviousPageParam: (firstPage: PaginatedCommentResponse) =>
       firstPage.pagination.currentPage > 1
         ? firstPage.pagination.currentPage - 1
         : undefined,

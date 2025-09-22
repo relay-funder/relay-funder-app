@@ -6,7 +6,7 @@ volumes:
   pgdata:
 
 x-app-environment: &app-environment
-  DATABASE_URL: postgres://${POSTGRES_USER:-akashic}:${POSTGRES_PASSWORD:-akashic}@database:5432/${POSTGRES_DB:-akashic_dev}
+  DATABASE_URL: postgres://${POSTGRES_USER:-relayfunder}:${POSTGRES_PASSWORD:-relayfunder}@database:5432/${POSTGRES_DB:-relayfunder_dev}
   NODE_ENV: development
 
 services:
@@ -14,14 +14,14 @@ services:
     image: postgres:latest
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-akashic}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-akashic}
-      POSTGRES_DB: ${POSTGRES_DB:-akashic_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-relayfunder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-relayfunder}
+      POSTGRES_DB: ${POSTGRES_DB:-relayfunder_dev}
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-akashic} -d ${POSTGRES_DB:-akashic_dev}",
+          "pg_isready -U ${POSTGRES_USER:-relayfunder} -d ${POSTGRES_DB:-relayfunder_dev}",
         ]
       interval: 10s
       timeout: 5s

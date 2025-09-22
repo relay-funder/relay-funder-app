@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { type DbCampaign } from '@/types/campaign';
 import { useStripeIsReady } from '@/hooks/use-stripe-ready';
 
-const debug = process.env.NODE_ENV !== 'production';
+import { debugHook as debug } from '@/lib/debug';
 
 interface UseStripeFormSubmissionProps {
   publicKey: string;

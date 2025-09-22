@@ -13,6 +13,7 @@ import { useCollection } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { type DbCampaign } from '@/types/campaign';
+import { debugComponentData as debug } from '@/lib/debug';
 
 export function CollectionAddDialog({
   campaign,
@@ -45,20 +46,24 @@ export function CollectionAddDialog({
     async (collectionId: string, isNewCollection = false) => {
       try {
         if (isNewCollection) {
-          console.log(
-            `Creating new collection with name: ${newCollectionName}`,
-          );
+          debug &&
+            console.log(
+              `Creating new collection with name: ${newCollectionName}`,
+            );
           const newCollection = await createCollection({
             name: newCollectionName,
           });
-          console.log({ newCollection });
+          debug && console.log({ newCollection });
           await createItemInCollection({
             collectionId: newCollection.id,
             itemId: `${campaign.id}`,
             itemType: 'campaign',
           });
         } else {
-          console.log(`Adding to existing collection with ID: ${collectionId}`);
+          debug &&
+            console.log(
+              `Adding to existing collection with ID: ${collectionId}`,
+            );
           await createItemInCollection({
             collectionId,
             itemId: `${campaign.id}`,

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ALLO_ADDRESS } from '@/lib/constant';
+import { debugComponentData as debug } from '@/lib/debug';
 
 // Helper function to convert wagmi client to ethers v5 signer
 async function clientToSigner(
@@ -46,7 +47,7 @@ async function clientToSigner(
   };
   // Use Web3Provider for ethers v5
   const provider = new ethers.BrowserProvider(transport, network);
-  console.log('account address:', account?.address);
+  debug && console.log('account address:', account?.address);
   const signer = await provider.getSigner(account?.address); // Get signer by address
   return signer;
 }
@@ -100,14 +101,15 @@ export function RegisterCampaignRecipient({
 
       // Check the recipient status using the Allo contract's view function
       const status = await alloContract.getRecipientStatus(poolId, recipientId);
-      console.log(
-        'recipient status:',
-        status,
-        'poolId:',
-        poolId,
-        'recipientId:',
-        recipientId,
-      );
+      debug &&
+        console.log(
+          'recipient status:',
+          status,
+          'poolId:',
+          poolId,
+          'recipientId:',
+          recipientId,
+        );
 
       // Status 1 = Accepted, 2 = Rejected, 3 = Pending, 0 = None
       // Any value other than 0 means they've been registered before
@@ -118,14 +120,15 @@ export function RegisterCampaignRecipient({
     }
   }
 
-  console.log(
-    'roundId:',
-    roundId,
-    'router:',
-    router,
-    'isRecipientRegistered:',
-    isRecipientRegistered,
-  );
+  debug &&
+    console.log(
+      'roundId:',
+      roundId,
+      'router:',
+      router,
+      'isRecipientRegistered:',
+      isRecipientRegistered,
+    );
   // function logTransactionData(tx: ethers.TransactionRequest) {
   //     console.log("=== TRANSACTION DATA DETAILS ===");
   //     console.log("To:", tx.to);
@@ -193,7 +196,7 @@ export function RegisterCampaignRecipient({
 
     try {
       // --- Step 1: Initial Database Registration (PENDING status) ---
-      console.log('Attempting initial database registration...');
+      debug && console.log('Attempting initial database registration...');
       const initialRegisterResponse = await fetch(
         '/api/rounds/recipients/register',
         {
@@ -226,7 +229,7 @@ export function RegisterCampaignRecipient({
             campaignWalletAddress,
           );
           if (alreadyRegisteredOnChain) {
-            console.log('Confirmed already registered on-chain.');
+            debug && console.log('Confirmed already registered on-chain.');
             // Optionally trigger a DB update here if needed, or just refresh
             if (onComplete) onComplete();
             else router.refresh();
@@ -250,7 +253,8 @@ export function RegisterCampaignRecipient({
       }
 
       pendingRecordCreated = true;
-      console.log('Initial database registration successful (PENDING).');
+      debug &&
+        console.log('Initial database registration successful (PENDING).');
       toast({
         title: 'Registration Initiated',
         description: 'Submitting transaction to the blockchain...',
@@ -264,7 +268,7 @@ export function RegisterCampaignRecipient({
       }
 
       // --- Step 2: Blockchain Transaction ---
-      console.log('Preparing registration data for blockchain...');
+      debug && console.log('Preparing registration data for blockchain...');
 
       const alloContract = new ethers.Contract(ALLO_ADDRESS, AlloABI, signer);
 
@@ -284,12 +288,13 @@ export function RegisterCampaignRecipient({
         registrationParams as RecipientRegistrationParams,
       );
 
-      console.log('Registration data prepared:', {
-        poolId: poolId.toString(),
-        recipientAddresses,
-        outerData,
-        alloContract,
-      });
+      debug &&
+        console.log('Registration data prepared:', {
+          poolId: poolId.toString(),
+          recipientAddresses,
+          outerData,
+          alloContract,
+        });
 
       // Estimate gas to detect potential failures early
       // let gasEstimate
@@ -307,7 +312,7 @@ export function RegisterCampaignRecipient({
       //     throw new Error("Gas estimation failed, transaction likely to fail. Check arguments and permissions.")
       // }
 
-      console.log('Preparing to send transaction...');
+      debug && console.log('Preparing to send transaction...');
 
       // make transaction
       // const tx = await alloContract.registerRecipient(
@@ -324,16 +329,17 @@ export function RegisterCampaignRecipient({
       // console.log(`Transaction sent for alloContract.registerRecipient: ${txHash}. Waiting for confirmation...`)
 
       txHash = '0x0000 '; //tx.hash
-      console.log(
-        `Transaction sent with hash: ${txHash}. Waiting for confirmation...`,
-      );
+      debug &&
+        console.log(
+          `Transaction sent with hash: ${txHash}. Waiting for confirmation...`,
+        );
 
       toast({
         title: 'Registration submitted',
         description: 'Waiting for transaction confirmation...',
       });
 
-      console.log('Waiting for transaction receipt...');
+      debug && console.log('Waiting for transaction receipt...');
       // const receipt = await tx.wait()
       // console.log("Transaction Receipt:", receipt)
 
@@ -442,7 +448,8 @@ export function RegisterCampaignRecipient({
       // If the initial DB record was created but the blockchain part failed,
       // the record remains PENDING in the DB.
       if (pendingRecordCreated && !txHash) {
-        console.log('Blockchain step failed after initial DB registration.');
+        debug &&
+          console.log('Blockchain step failed after initial DB registration.');
         // Optionally inform the user their application is pending but needs transaction completion.
       }
     } finally {

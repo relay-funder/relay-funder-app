@@ -5,6 +5,7 @@ import {
 } from '@/types/campaign';
 import { db } from '@/server/db';
 import { notFound } from 'next/navigation';
+import { debugApi as debug } from '@/lib/debug';
 
 export type CampaignUpdate = {
   id: number;
@@ -39,7 +40,7 @@ export async function getCampaign(
   slug: string,
 ): Promise<CampaignType & CampaignDisplay> {
   // only pages/campaign/slug/donate uses this, needs refactor to prefetch&tanstack
-  console.log('getCampaign', slug);
+  debug && console.log('getCampaign', slug);
   console.warn(
     'database::getCampaign is deprecated, use @/lib/api/getCampaign',
   );

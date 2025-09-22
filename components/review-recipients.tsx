@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { debugComponentData as debug } from '@/lib/debug';
 
 interface Recipient {
   id: number;
@@ -76,16 +77,17 @@ export function ReviewRecipients({
   const { authenticated } = useAuth();
   const [updatesToSend, setUpdatesToSend] = useState<RecipientUpdate[]>([]);
 
-  console.log(
-    'initialRecipients',
-    initialRecipients,
-    'strategyAddress',
-    strategyAddress,
-    'poolId',
-    poolId,
-    'roundId',
-    roundId,
-  );
+  debug &&
+    console.log(
+      'initialRecipients',
+      initialRecipients,
+      'strategyAddress',
+      strategyAddress,
+      'poolId',
+      poolId,
+      'roundId',
+      roundId,
+    );
   useEffect(() => {
     setRecipients(initialRecipients);
     const initialStatuses = initialRecipients.reduce(

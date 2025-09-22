@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { chainConfig } from '@/lib/web3';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 /**
  * Platform setup utilities to ensure proper configuration before campaign creation
@@ -56,7 +57,7 @@ export async function ensurePlatformSetup(): Promise<{
     const protocolAdminSigner = new ethers.Wallet(protocolAdminKey, provider);
 
     // 1. Check if platform is enlisted
-    console.log('Checking platform enlistment...');
+    debug && console.log('Checking platform enlistment...');
     const globalParams = new ethers.Contract(
       globalParamsAddress,
       GlobalParamsABI,
@@ -78,7 +79,7 @@ export async function ensurePlatformSetup(): Promise<{
     let isListed: boolean;
     try {
       isListed = await globalParams.checkIfplatformIsListed(platformHash);
-      console.log(`Platform enlistment status: ${isListed}`);
+      debug && console.log(`Platform enlistment status: ${isListed}`);
     } catch (error: unknown) {
       console.error('Error calling checkIfplatformIsListed:', error);
 
@@ -91,9 +92,10 @@ export async function ensurePlatformSetup(): Promise<{
           ('shortMessage' in error &&
             error.shortMessage === 'missing revert data'))
       ) {
-        console.log(
-          'Platform validation function reverted - proceeding with enlistment',
-        );
+        debug &&
+          console.log(
+            'Platform validation function reverted - proceeding with enlistment',
+          );
         isListed = false; // Force enlistment
       } else {
         return {
@@ -104,7 +106,7 @@ export async function ensurePlatformSetup(): Promise<{
     }
 
     if (!isListed) {
-      console.log('Enlisting platform...');
+      debug && console.log('Enlisting platform...');
       const enlistTx = await (
         globalParams.connect(protocolAdminSigner) as typeof globalParams
       ).enlistPlatform(
@@ -113,11 +115,11 @@ export async function ensurePlatformSetup(): Promise<{
         1000, // 10.00% platform fee (in basis points: 1000 = 10%)
       );
       await enlistTx.wait();
-      console.log('Platform enlisted successfully');
+      debug && console.log('Platform enlisted successfully');
     }
 
     // 2. Add platform data keys
-    console.log('Setting up platform data keys...');
+    debug && console.log('Setting up platform data keys...');
     const globalParamsWithSigner = globalParams.connect(
       platformAdminSigner,
     ) as typeof globalParams;
@@ -134,7 +136,7 @@ export async function ensurePlatformSetup(): Promise<{
       const isValid = await globalParams.checkIfPlatformDataKeyValid(keyHash);
 
       if (!isValid) {
-        console.log(`Adding platform data key: ${keyName}`);
+        debug && console.log(`Adding platform data key: ${keyName}`);
         const addKeyTx = await globalParamsWithSigner.addPlatformData(
           platformHash,
           keyHash,
@@ -145,7 +147,7 @@ export async function ensurePlatformSetup(): Promise<{
 
     // 3. Register KeepWhatsRaised implementation
     if (keepWhatsRaisedImpl) {
-      console.log('Registering KeepWhatsRaised implementation...');
+      debug && console.log('Registering KeepWhatsRaised implementation...');
       const treasuryFactory = new ethers.Contract(
         treasuryFactoryAddress,
         TreasuryFactoryABI,
@@ -174,7 +176,7 @@ export async function ensurePlatformSetup(): Promise<{
       await registerTx.wait();
 
       // 4. Approve implementation
-      console.log('Approving KeepWhatsRaised implementation...');
+      debug && console.log('Approving KeepWhatsRaised implementation...');
       const treasuryFactoryWithProtocol = treasuryFactory.connect(
         protocolAdminSigner,
       ) as typeof treasuryFactory;
@@ -186,7 +188,7 @@ export async function ensurePlatformSetup(): Promise<{
       await approveTx.wait();
     }
 
-    console.log('Platform setup completed successfully');
+    debug && console.log('Platform setup completed successfully');
     return { success: true };
   } catch (error) {
     console.error('Platform setup failed:', error);
@@ -249,7 +251,7 @@ export async function validatePlatformSetup(): Promise<{
 
     try {
       isListed = await globalParams.checkIfplatformIsListed(platformHash);
-      console.log(`Platform enlistment status: ${isListed}`);
+      debug && console.log(`Platform enlistment status: ${isListed}`);
     } catch (error: unknown) {
       console.error('Error calling checkIfplatformIsListed:', error);
 
@@ -262,9 +264,10 @@ export async function validatePlatformSetup(): Promise<{
           ('shortMessage' in error &&
             error.shortMessage === 'missing revert data'))
       ) {
-        console.log(
-          'Platform validation function reverted - assuming platform needs to be enlisted',
-        );
+        debug &&
+          console.log(
+            'Platform validation function reverted - assuming platform needs to be enlisted',
+          );
         isListed = false;
         platformCheckFailed = true;
       } else {

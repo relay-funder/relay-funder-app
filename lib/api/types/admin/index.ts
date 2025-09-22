@@ -1,21 +1,11 @@
 import type { Prisma } from '@/.generated/prisma/client';
 import { z } from 'zod';
-export type UserWithCount = Prisma.UserGetPayload<
-  Prisma.UserDefaultArgs & {
-    include: {
-      _count: {
-        select: {
-          collections: true;
-          payments: true;
-          paymentMethods: true;
-          createdMedia: true;
-          withdrawals: true;
-          approvals: true;
-        };
-      };
-    };
-  }
->;
+import type { GetCampaignResponse } from '../campaigns';
+export type UserWithCount = Prisma.UserGetPayload<{
+  include: {
+    _count: true;
+  };
+}>;
 
 export interface UserWithAddressParams {
   params: Promise<{
@@ -53,3 +43,14 @@ export const PatchUserRouteBodySchema = z.object({
   isKycCompleted: z.boolean().optional().or(z.null()),
 });
 export type PatchUserRouteBody = z.infer<typeof PatchUserRouteBodySchema>;
+
+export const PatchAdminCampaignFeaturedRouteBodySchema = z.object({
+  mode: z.enum(['toggle', 'set']).optional(),
+  featuredStart: z.string().datetime().nullable().optional(),
+  featuredEnd: z.string().datetime().nullable().optional(),
+});
+export type PatchAdminCampaignFeaturedRouteBody = z.infer<
+  typeof PatchAdminCampaignFeaturedRouteBodySchema
+>;
+
+export type PatchAdminCampaignFeaturedRouteResponse = GetCampaignResponse;

@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { chainConfig } from '@/lib/web3';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { ApiIntegrityError } from '@/lib/api/error';
-import type { Campaign } from '@/server/db';
+import type { DbCampaign } from '@/types/campaign';
 
 export interface DeploymentConfig {
   factoryAddr: string;
@@ -29,7 +29,7 @@ export interface DeploymentResult {
  * Deploy a campaign contract using the factory
  */
 export async function deployCampaignContract(
-  campaign: Campaign,
+  campaign: DbCampaign,
   config: DeploymentConfig,
 ): Promise<DeploymentResult> {
   // Set up provider and signer
