@@ -1,4 +1,6 @@
 import { ethers } from '@/lib/web3';
+import { debugWeb3 as debug } from '@/lib/debug';
+
 export interface Metadata {
   protocol: number;
   pointer: string;
@@ -228,7 +230,7 @@ export function prepareRegistrationData(params: RecipientRegistrationParams) {
     // Process each recipient
     const innerDataArray: string[] = [];
     for (const recipientAddress of validatedRecipientAddresses) {
-      console.log('recipientAddress:', recipientAddress);
+      debug && console.log('recipientAddress:', recipientAddress);
       const innerData = encodeRecipientData(
         anchorAddress,
         params.metadata,
@@ -237,11 +239,12 @@ export function prepareRegistrationData(params: RecipientRegistrationParams) {
       innerDataArray.push(innerData);
     }
 
-    console.log('innerDataArray:', innerDataArray);
-    console.log('validatedRecipientAddresses:', validatedRecipientAddresses);
-    console.log('params.metadata:', params.metadata);
-    console.log('extraData:', extraData);
-    console.log('anchorAddress:', anchorAddress);
+    debug && console.log('innerDataArray:', innerDataArray);
+    debug &&
+      console.log('validatedRecipientAddresses:', validatedRecipientAddresses);
+    debug && console.log('params.metadata:', params.metadata);
+    debug && console.log('extraData:', extraData);
+    debug && console.log('anchorAddress:', anchorAddress);
 
     // Encode the outer data array
     const outerData = encodeOuterData(innerDataArray);

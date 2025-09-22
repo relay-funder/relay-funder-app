@@ -8,7 +8,7 @@ import {
   useUpdatePaymentStatus,
 } from '@/lib/hooks/usePayments';
 import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
-const debug = process.env.NODE_ENV !== 'production';
+import { debugHook as debug } from '@/lib/debug';
 
 export function useDonationCallback({
   campaign,

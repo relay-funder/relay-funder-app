@@ -2,7 +2,7 @@ import { ethers, erc20Abi } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
 import { type ConnectedWallet } from '@/lib/web3/types';
 import { DonationProcessStates } from '@/types/campaign';
-const debug = process.env.NODE_ENV !== 'production';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 export async function requestTransaction({
   wallet,

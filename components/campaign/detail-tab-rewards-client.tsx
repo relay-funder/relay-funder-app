@@ -21,6 +21,7 @@ import {
   useWriteContract,
 } from '@/lib/web3';
 import { CopyText } from '../copy-text';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 interface CampaignDetailTabRewardsClientProps {
   campaignId: string;
@@ -96,7 +97,7 @@ export function CampaignDetailTabRewardsClient({
     campaignDefaultTokenURI: string;
   } | null>(null);
 
-  console.log(campaignId, campaignSlug, address, authenticated);
+  debug && console.log(campaignId, campaignSlug, address, authenticated);
 
   const {
     writeContract,
@@ -107,7 +108,8 @@ export function CampaignDetailTabRewardsClient({
     error,
   } = useWriteContract();
 
-  console.log('useWriteContract hash', hash, isSuccess, isError, error);
+  debug &&
+    console.log('useWriteContract hash', hash, isSuccess, isError, error);
 
   // const campaignDetailsResult = useCampaignDetails(campaignId);
   // console.log("campaignDetailsResult", campaignDetailsResult);
@@ -117,7 +119,8 @@ export function CampaignDetailTabRewardsClient({
       hash: hash,
     });
 
-  console.log('useWaitForTransactionReceipt', isConfirming, isConfirmed);
+  debug &&
+    console.log('useWaitForTransactionReceipt', isConfirming, isConfirmed);
 
   // Handle file selection
   const handleFileChange = useCallback(
@@ -160,7 +163,7 @@ export function CampaignDetailTabRewardsClient({
       });
 
       const data = await response.json();
-      console.log('upload data', data);
+      debug && console.log('upload data', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to verify image');
@@ -173,13 +176,14 @@ export function CampaignDetailTabRewardsClient({
 
       setSignatureData(data.signatureData);
 
-      console.log('signatureData', data.signatureData);
+      debug && console.log('signatureData', data.signatureData);
 
       if (data.isValid) {
-        console.log('Upload and signature successful:', {
-          signatureData: data.signatureData,
-          rawResponse: data.data,
-        });
+        debug &&
+          console.log('Upload and signature successful:', {
+            signatureData: data.signatureData,
+            rawResponse: data.data,
+          });
         toast({
           title: 'Success',
           description: 'Image uploaded and signature created successfully!',
@@ -222,7 +226,7 @@ export function CampaignDetailTabRewardsClient({
 
     try {
       setIsMinting(true);
-      console.log('Starting NFT minting process...');
+      debug && console.log('Starting NFT minting process...');
 
       // Set up NFT options
       const nftOptions = {
@@ -242,13 +246,14 @@ export function CampaignDetailTabRewardsClient({
       formData.append('product_show_on_explorer', 'false');
       formData.append('signature_data', JSON.stringify(signatureData));
 
-      console.log('Minting request data:', {
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        caption: nftOptions.caption,
-        headline: nftOptions.headline,
-      });
+      debug &&
+        console.log('Minting request data:', {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          caption: nftOptions.caption,
+          headline: nftOptions.headline,
+        });
 
       const response = await fetch('/api/numbers-protocol/mint-nft', {
         method: 'POST',
@@ -256,7 +261,7 @@ export function CampaignDetailTabRewardsClient({
       });
 
       const data = await response.json();
-      console.log('Minting response:', data);
+      debug && console.log('Minting response:', data);
 
       if (!response.ok) {
         throw new Error(
@@ -272,7 +277,7 @@ export function CampaignDetailTabRewardsClient({
 
       setNftData(data.nft);
 
-      console.log('nftData ipfs', data.nid);
+      debug && console.log('nftData ipfs', data.nid);
       setIPFSNid(data.nid);
 
       // Store the IPFS URI in localStorage for use with campaign NFT
@@ -282,7 +287,7 @@ export function CampaignDetailTabRewardsClient({
       setNumbersProtocolUri(ipfsUri);
       setIPFSNid(data.nid);
 
-      console.log('NFT minted successfully:', data.nft);
+      debug && console.log('NFT minted successfully:', data.nft);
       toast({
         title: 'Success',
         description: 'Asset successfully stored on Numbers Protocol!',
@@ -292,7 +297,7 @@ export function CampaignDetailTabRewardsClient({
       // Move to step 4
       setStep(4);
     } catch (error) {
-      console.error('Error minting NFT:', error);
+      debug && console.error('Error minting NFT:', error);
       toast({
         title: 'Error',
         description:
@@ -346,7 +351,7 @@ export function CampaignDetailTabRewardsClient({
         ],
       });
 
-      console.log('campaignNFT deployed', result);
+      debug && console.log('campaignNFT deployed', result);
 
       // Wait for transaction to be mined
       toast({
@@ -485,12 +490,13 @@ export function CampaignDetailTabRewardsClient({
         );
 
         const nftAddress = await factoryContract.getCampaignNFT(campaignId);
-        console.log(
-          'NFT contract address for campaign',
-          campaignId,
-          ':',
-          nftAddress,
-        );
+        debug &&
+          console.log(
+            'NFT contract address for campaign',
+            campaignId,
+            ':',
+            nftAddress,
+          );
 
         // Check if the address is valid (not zero address)
         if (
@@ -569,7 +575,7 @@ export function CampaignDetailTabRewardsClient({
   useEffect(() => {
     const uri = localStorage.getItem('numbersProtocolNftUri');
     const ipfs = localStorage.getItem('ipfsNid');
-    console.log('ipfs', ipfs, 'uri', uri);
+    debug && console.log('ipfs', ipfs, 'uri', uri);
     if (ipfs) {
       setIPFSNid(ipfs);
       setNumbersProtocolUri(uri);

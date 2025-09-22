@@ -17,9 +17,9 @@ import { CampaignCardItem } from '@/components/campaign/campaign-card';
 import { CampaignCardRoundAdmin } from '@/components/campaign/card-round-admin';
 import { useAuth } from '@/contexts';
 import { ReadMoreDescription } from '@/components/ui/read-more-description';
+import { debugComponentData as debug } from '@/lib/debug';
 
 export function RoundFull({ id }: { id: number }) {
-  // ALL HOOKS MUST BE CALLED FIRST - before any conditional logic or early returns
   const { data: roundInstance, isPending } = useRound(id);
   const { isAdmin } = useAuth();
 
@@ -35,19 +35,20 @@ export function RoundFull({ id }: { id: number }) {
   useEffect(() => {
     if (!round) return;
 
-    console.log('RoundFull - Round data:', {
-      roundId: round.id,
-      roundTitle: round.title,
-      isAdminView: isAdmin,
-      roundCampaignsCount: round.roundCampaigns?.length,
-      roundCampaignStatuses: round.roundCampaigns?.slice(0, 3).map((rc) => ({
-        id: rc.id,
-        status: rc.status,
-        campaignId: rc.campaign?.id,
-        campaignStatus: rc.campaign?.status,
-        campaignTitle: rc.campaign?.title?.substring(0, 30),
-      })),
-    });
+    debug &&
+      console.log('RoundFull - Round data:', {
+        roundId: round.id,
+        roundTitle: round.title,
+        isAdminView: isAdmin,
+        roundCampaignsCount: round.roundCampaigns?.length,
+        roundCampaignStatuses: round.roundCampaigns?.slice(0, 3).map((rc) => ({
+          id: rc.id,
+          status: rc.status,
+          campaignId: rc.campaign?.id,
+          campaignStatus: rc.campaign?.status,
+          campaignTitle: rc.campaign?.title?.substring(0, 30),
+        })),
+      });
   }, [round, isAdmin]);
 
   // NOW handle conditional rendering after all hooks are called
@@ -199,28 +200,29 @@ function RoundCampaignsList({
 
   // Debug logging to help troubleshoot campaign data
   useEffect(() => {
-    console.log('RoundCampaignsList - Round campaigns data:', {
-      roundCampaignsCount: round.roundCampaigns?.length,
-      campaignsCount: campaigns.length,
-      isAdminView: isAdmin,
-      roundCampaignStatuses: round.roundCampaigns?.map((rc) => ({
-        campaignId: rc.campaign?.id,
-        campaignTitle: rc.campaign?.title,
-        campaignStatus: rc.campaign?.status,
-        roundCampaignStatus: rc.status,
-      })),
-      firstCampaign: campaigns[0]
-        ? {
-            id: campaigns[0].id,
-            title: campaigns[0].title,
-            status: campaigns[0].status,
-            hasMedia: Array.isArray(campaigns[0].media),
-            mediaCount: campaigns[0].media?.length,
-            hasImages: Array.isArray(campaigns[0].images),
-            imagesCount: campaigns[0].images?.length,
-          }
-        : null,
-    });
+    debug &&
+      console.log('RoundCampaignsList - Round campaigns data:', {
+        roundCampaignsCount: round.roundCampaigns?.length,
+        campaignsCount: campaigns.length,
+        isAdminView: isAdmin,
+        roundCampaignStatuses: round.roundCampaigns?.map((rc) => ({
+          campaignId: rc.campaign?.id,
+          campaignTitle: rc.campaign?.title,
+          campaignStatus: rc.campaign?.status,
+          roundCampaignStatus: rc.status,
+        })),
+        firstCampaign: campaigns[0]
+          ? {
+              id: campaigns[0].id,
+              title: campaigns[0].title,
+              status: campaigns[0].status,
+              hasMedia: Array.isArray(campaigns[0].media),
+              mediaCount: campaigns[0].media?.length,
+              hasImages: Array.isArray(campaigns[0].images),
+              imagesCount: campaigns[0].images?.length,
+            }
+          : null,
+      });
   }, [campaigns, round.roundCampaigns, isAdmin]);
 
   if (campaigns.length === 0) {

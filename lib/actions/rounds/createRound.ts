@@ -5,6 +5,7 @@ import { type Address, type Hash } from '@/lib/web3/types';
 import { db, PrismaClientKnownRequestError } from '@/server/db';
 import { type ActionResponse } from '@/types/actions';
 import { checkAuth } from '@/lib/api/auth';
+import { debugApi as debug } from '@/lib/debug';
 
 // Schema for the data coming *from the form*
 const roundFormSchema = z.object({
@@ -89,7 +90,7 @@ export async function saveRoundAction(
     }
 
     const data = validationResult.data;
-    console.log('Server Action: Saving round data to DB:', data);
+    debug && console.log('Server Action: Saving round data to DB:', data);
 
     // Prepare data for Prisma
     const prismaData = {
@@ -118,10 +119,11 @@ export async function saveRoundAction(
       data: prismaData,
     });
 
-    console.log(
-      'Server Action: Round saved successfully with ID:',
-      newRound.id,
-    );
+    debug &&
+      console.log(
+        'Server Action: Round saved successfully with ID:',
+        newRound.id,
+      );
     return {
       success: true,
       data: { roundId: newRound.id },

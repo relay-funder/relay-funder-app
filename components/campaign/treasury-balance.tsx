@@ -56,9 +56,7 @@ export function TreasuryBalance({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Badge variant="outline" className="text-xs">
-          {treasuryBalance.balance?.currency ??
-            treasuryBalance.currency ??
-            'USDC'}
+          {treasuryBalance.balance?.currency ?? 'USDC'}
         </Badge>
       </CardHeader>
       <CardContent>
@@ -66,11 +64,7 @@ export function TreasuryBalance({
           <div>
             <div className="text-2xl font-bold">
               {formatUSD(
-                parseFloat(
-                  treasuryBalance.balance?.totalPledged ??
-                    treasuryBalance.totalPledged ??
-                    '0',
-                ) || 0,
+                parseFloat(treasuryBalance.balance?.totalPledged ?? '0') || 0,
               )}
             </div>
             <p className="text-xs text-muted-foreground">Total Raised</p>

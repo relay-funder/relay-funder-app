@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCallback, useState, useEffect } from 'react';
 import { z } from 'zod';
 import { enableFormDefault } from '@/lib/develop';
+import { debugComponentData as debug } from '@/lib/debug';
 
 const bankAccountSchema = z.object({
   type: z.literal('BANK'),
@@ -101,13 +102,14 @@ export function ProfileAddPaymentMethodDialog({
   const onSubmit = useCallback(
     async (data: BankAccountFormValues) => {
       try {
-        console.log('Submitting payment method:', {
-          type: data.type,
-          bankDetails: {
-            ...data.bankDetails,
-            accountNumber: '****' + data.bankDetails.accountNumber.slice(-4),
-          },
-        });
+        debug &&
+          console.log('Submitting payment method:', {
+            type: data.type,
+            bankDetails: {
+              ...data.bankDetails,
+              accountNumber: '****' + data.bankDetails.accountNumber.slice(-4),
+            },
+          });
         await createPaymentMethod(data);
 
         if (typeof onSuccess === 'function') {

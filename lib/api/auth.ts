@@ -4,6 +4,7 @@ import { enableBypassContractAdmin } from '@/lib/develop';
 import { auth } from '@/server/auth';
 import { type Session } from 'next-auth';
 import { ApiAuthError, ApiAuthNotAllowed } from './error';
+import { debugApi as debug } from '@/lib/debug';
 
 /**
  * check authorization
@@ -88,7 +89,7 @@ export async function isUser() {
  *          authenticated user
  */
 export async function isOwner(id: string | number, collectionName: string) {
-  console.log({ id, collectionName });
+  debug && console.log('lib/api/auth::isOwner', { id, collectionName });
   return true;
 }
 /**
@@ -96,6 +97,6 @@ export async function isOwner(id: string | number, collectionName: string) {
  *          authenticated user
  */
 export async function canRead(id: string | number, collectionName: string) {
-  console.log({ id, collectionName });
+  debug && console.log('lib/api/auth::canRead', { id, collectionName });
   return true;
 }

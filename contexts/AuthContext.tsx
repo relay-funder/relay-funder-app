@@ -7,8 +7,8 @@ import React, {
   useState,
   useEffect,
 } from 'react';
+import { debugAuth as debug } from '@/lib/debug';
 
-const debug = process.env.NODE_ENV !== 'production';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
 interface AuthContextType {

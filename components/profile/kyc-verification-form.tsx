@@ -16,6 +16,7 @@ import { ProfileKYCVerificationStatePending } from './kyc-verification-state-pen
 import { ProfileKYCVerificationStateFailed } from './kyc-verification-state-failed';
 import { ProfileKYCVerificationStateDefault } from './kyc-verification-state-default';
 import { useUserProfile } from '@/lib/hooks/useProfile';
+import { debugComponentData as debug } from '@/lib/debug';
 
 interface KycVerificationFormProps {
   isCompleted: boolean;
@@ -35,7 +36,7 @@ export function KycVerificationForm({
 
   const onInitiateKYC = useCallback(async () => {
     try {
-      console.log('Initiating KYC for customer:');
+      debug && console.log('Initiating KYC for customer:');
       const { redirectUrl } = await kycInitiate({});
 
       if (redirectUrl) {

@@ -13,7 +13,7 @@ import { mockStripeInstance } from '@/lib/test/mock-stripe';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
 import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
 
-const debug = process.env.NODE_ENV !== 'production';
+import { debugHook as debug } from '@/lib/debug';
 
 interface UseStripeLazyProps {
   amount: string;
