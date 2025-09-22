@@ -21,8 +21,11 @@ export interface AdminUserDetailContentProps {
   address: string;
 }
 
-export function AdminUserDetailContent({ address }: AdminUserDetailContentProps) {
-  const { data, isLoading, isFetching, error, refetch } = useAdminUserOverview(address);
+export function AdminUserDetailContent({
+  address,
+}: AdminUserDetailContentProps) {
+  const { data, isLoading, isFetching, error, refetch } =
+    useAdminUserOverview(address);
 
   const displayName = useMemo(() => {
     if (!data?.user) return '—';
@@ -51,7 +54,12 @@ export function AdminUserDetailContent({ address }: AdminUserDetailContentProps)
           <Link href={`/admin/users/${encodedAddress}/edit`}>
             <Button size="lg">Edit User</Button>
           </Link>
-          <Button variant="outline" size="lg" onClick={() => refetch()} disabled={isFetching}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
             {isFetching ? 'Refreshing…' : 'Refresh'}
           </Button>
         </div>
@@ -61,7 +69,8 @@ export function AdminUserDetailContent({ address }: AdminUserDetailContentProps)
         <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <div className="mb-2 font-medium">Failed to load user overview</div>
           <div className="mb-3 opacity-90">
-            {(error as Error)?.message || 'An unexpected error occurred while fetching data.'}
+            {(error as Error)?.message ||
+              'An unexpected error occurred while fetching data.'}
           </div>
           <Button variant="destructive" onClick={() => refetch()}>
             Try again

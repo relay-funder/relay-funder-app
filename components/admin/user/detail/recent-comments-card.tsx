@@ -40,7 +40,9 @@ export function RecentCommentsCard({
                     <span>—</span>
                   )}
                   <span>
-                    {new Date(c.createdAt as unknown as string).toLocaleString()}
+                    {new Date(
+                      c.createdAt as unknown as string,
+                    ).toLocaleString()}
                   </span>
                 </div>
               </div>

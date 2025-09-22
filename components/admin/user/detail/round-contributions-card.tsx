@@ -22,7 +22,9 @@ export function RoundContributionsCard({
       </CardHeader>
       <CardContent>
         {contributions.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No round contributions</div>
+          <div className="text-sm text-muted-foreground">
+            No round contributions
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {contributions.map((rc) => (
@@ -32,13 +34,17 @@ export function RoundContributionsCard({
                     {rc.payment?.amount} {rc.payment?.token}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(rc.createdAt as unknown as string).toLocaleDateString()}
+                    {new Date(
+                      rc.createdAt as unknown as string,
+                    ).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   Round:{' '}
                   {rc.roundCampaign?.Round ? (
-                    <span className="font-medium">{rc.roundCampaign.Round.title}</span>
+                    <span className="font-medium">
+                      {rc.roundCampaign.Round.title}
+                    </span>
                   ) : (
                     '—'
                   )}
