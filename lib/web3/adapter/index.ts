@@ -53,4 +53,4 @@ export {
   // ethers
   ethers,
   isDummy,
-} from './silk';
+} from './dummy';

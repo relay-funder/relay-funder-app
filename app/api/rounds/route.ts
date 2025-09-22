@@ -139,16 +139,23 @@ export async function PATCH(req: Request) {
     const applicationStartTime = formData.get('applicationStartTime') as string;
     const applicationEndTime = formData.get('applicationEndTime') as string;
     const tags = formData.get('tags') as string;
+    const descriptionUrl = (formData.get('descriptionUrl') as string) || null;
 
     const logo = formData.get('logo') as File | null;
     const instance = await db.round.findUnique({ where: { id } });
     if (!instance) {
       throw new ApiNotFoundError('Round not found');
     }
-    if (instance.managerAddress !== session.user.address) {
-      throw new ApiAuthNotAllowed(
-        'Only the creator of the round may modify it',
-      );
+    if (!session.user.id) {
+      throw new ApiNotFoundError('Invalid session user');
+    }
+    const user = await getUser(session.user.id);
+    if (!user?.featureFlags.includes('ROUND_MANAGER')) {
+      if (instance.managerAddress !== session.user.address) {
+        throw new ApiAuthNotAllowed(
+          'Only the creator of the round may modify it',
+        );
+      }
     }
     let logoUrl = undefined;
     let mimeType = 'application/octet-stream';
@@ -166,6 +173,7 @@ export async function PATCH(req: Request) {
       data: {
         title,
         description,
+        descriptionUrl,
         tags: tags.split(','),
         matchingPool: matchingPool,
         startDate: new Date(startTime),

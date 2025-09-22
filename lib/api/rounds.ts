@@ -28,6 +28,7 @@ export function mapRound(
   } = round;
   return {
     ...roundWithoutDeprecated,
+    descriptionUrl: round.descriptionUrl ?? null,
     // hydration conversion Decimal->Number and BigInt->Number
     matchingPool: Number(round.matchingPool),
     poolId: poolId ? Number(poolId) : null,
