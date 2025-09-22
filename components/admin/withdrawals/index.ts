@@ -5,4 +5,4 @@
  *  - import WithdrawalsExplore from '@/components/admin/withdrawals'
  */
 export * from './explore';
-export { default, default as WithdrawalsExplore } from './explore';
+export { WithdrawalsExplore } from './explore';

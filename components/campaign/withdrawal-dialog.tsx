@@ -77,22 +77,17 @@ export function WithdrawalDialog({
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
-    const c1 = treasuryBalance?.balance?.currency;
-    const c2 = (treasuryBalance as any)?.currency; // fallback shape
-    return c1 ?? c2 ?? 'USDC';
+    return treasuryBalance?.balance?.currency ?? 'USDC';
   }, [treasuryBalance]);
 
   const availableFloat = useMemo<number>(() => {
-    const available =
-      treasuryBalance?.balance?.available ??
-      (treasuryBalance as any)?.available ??
-      '0';
+    const available = treasuryBalance?.balance?.available ?? '0';
     const parsed = parseFloat(available || '0');
     return Number.isFinite(parsed) ? parsed : 0;
   }, [treasuryBalance]);
-
   const token = currency; // use API token the same as currency string (ex. 'USDC')
 
+  const enabled = availableFloat > 0;
   const recipientAddress = useMemo<string | null>(() => {
     // If user set a recipientWallet in profile, prefer that; else use profile.address
     return profile?.recipientWallet?.trim()
@@ -104,12 +99,6 @@ export function WithdrawalDialog({
     if (!connectedAddress || !recipientAddress) return false;
     return connectedAddress.toLowerCase() !== recipientAddress.toLowerCase();
   }, [connectedAddress, recipientAddress]);
-
-  const shorten = (addr?: string | null) => {
-    if (!addr) return '—';
-    if (addr.length <= 10) return addr;
-    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-  };
 
   // Form validation
   const amountNumber = useMemo(() => {
@@ -186,6 +175,9 @@ export function WithdrawalDialog({
       Withdraw funds
     </Button>
   );
+  if (!enabled) {
+    return null;
+  }
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -283,7 +275,7 @@ export function WithdrawalDialog({
                 </span>
                 <div className="flex items-center gap-2">
                   <code className="rounded bg-gray-50 px-2 py-1 text-sm">
-                    {shorten(recipientAddress)}
+                    {recipientAddress}
                   </code>
                 </div>
               </div>
@@ -303,7 +295,7 @@ export function WithdrawalDialog({
                           Connected
                         </span>
                         <code className="rounded bg-white px-2 py-0.5">
-                          {shorten(connectedAddress || '')}
+                          {connectedAddress || ''}
                         </code>
                       </div>
                       <div className="flex items-center gap-2">
@@ -311,7 +303,7 @@ export function WithdrawalDialog({
                           Recipient
                         </span>
                         <code className="rounded bg-white px-2 py-0.5">
-                          {shorten(recipientAddress)}
+                          {recipientAddress}
                         </code>
                       </div>
                     </div>
