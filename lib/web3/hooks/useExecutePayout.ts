@@ -48,7 +48,7 @@ export function buildSetPayoutCalldata({
     return Number.isFinite(n) ? n : 6;
   })();
 
-  const recipients: string[] = [];
+  const recipients: `0x${string}`[] = [];
   const amounts: bigint[] = [];
 
   for (const c of campaigns || []) {
