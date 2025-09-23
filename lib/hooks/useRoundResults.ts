@@ -17,7 +17,11 @@ interface GenerateArgs {
  */
 export function useGenerateRoundResults() {
   return useMutation({
-    mutationFn: async ({ roundId, minHumanityScore = 50, fmt = 'json' }: GenerateArgs) => {
+    mutationFn: async ({
+      roundId,
+      minHumanityScore = 50,
+      fmt = 'json',
+    }: GenerateArgs) => {
       if (!roundId || roundId <= 0) {
         throw new Error('Invalid roundId');
       }
@@ -119,7 +123,9 @@ export function useApproveRoundResults() {
       return await res.json();
     },
     onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: [ROUND_RESULTS_QUERY_KEY, variables.roundId] });
+      qc.invalidateQueries({
+        queryKey: [ROUND_RESULTS_QUERY_KEY, variables.roundId],
+      });
     },
   });
 }
