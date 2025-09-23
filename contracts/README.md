@@ -74,7 +74,7 @@ Using the CC Protocol deployment script available in the `cc-protocol/` director
 ```bash
 # Set environment variables
 export PRIVATE_KEY="your-private-key"
-export PLATFORM_NAME="Akashic"
+export PLATFORM_NAME="RELAYFUNDER"
 export PROTOCOL_FEE_PERCENT=100    # 1%
 export PLATFORM_FEE_PERCENT=400    # 4%
 

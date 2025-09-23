@@ -1,7 +1,7 @@
-# Akashic - AI Agent Guide
+# Relay Funder App - AI Agent Guide
 
 ## Overview
-Akashic is a Next.js 15 fundraising platform for open source projects built with TypeScript, Prisma, PostgreSQL, and Web3 integration. The project uses Docker for development, pnpm as the package manager, and features a comprehensive Web3 integration with multiple wallet adapters (Privy, Silk, and Dummy for testing).
+Relay Funder App is a Next.js 15 fundraising platform for open source projects built with TypeScript, Prisma, PostgreSQL, and Web3 integration. The project uses Docker for development, pnpm as the package manager, and features a comprehensive Web3 integration with multiple wallet adapters (Privy, Silk, and Dummy for testing).
 
 ### Technology Stack
 - **Frontend**: Next.js 15 with App Router, React 18, TypeScript 5.7
@@ -64,7 +64,7 @@ Akashic is a Next.js 15 fundraising platform for open source projects built with
 ```bash
 # Clone repository
 git clone <repository-url>
-cd akashic
+cd relay-funder-app
 
 # Copy environment template
 cp env.template .env.local
@@ -119,8 +119,8 @@ NEXT_PUBLIC_PINATA_GATEWAY_URL=your_gateway.pinata.cloud
 
 # Monitoring
 SENTRY_DSN=your-sentry-dsn
-SENTRY_ORG=akashic-yj
-SENTRY_PROJECT=akashic-app
+SENTRY_ORG=relay-funder-yj
+SENTRY_PROJECT=relay-funder-app
 
 # Development
 NODE_ENV=development
@@ -1314,4 +1314,4 @@ pnpm test
 4. Validate contract addresses and parameters
 5. Consider gas costs and network conditions
 
-This guide provides the essential information needed to work effectively with the Akashic codebase. Follow these patterns and conventions to maintain code quality and consistency across the project.
+This guide provides the essential information needed to work effectively with the Relay Funder App codebase. Follow these patterns and conventions to maintain code quality and consistency across the project.

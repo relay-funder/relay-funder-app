@@ -216,7 +216,7 @@ export async function deployCampaignContract(
     // Generate unique campaign identifier
     const uniqueSuffix = `${campaignData.creatorAddress.slice(2, 8)}-${campaignData.id}-${Date.now()}`;
     const identifierHash = ethers.keccak256(
-      ethers.toUtf8Bytes(`AKASHIC-SEED-${uniqueSuffix}`),
+      ethers.toUtf8Bytes(`RELAYFUNDER-SEED-${uniqueSuffix}`),
     );
 
     // Configure fee structure

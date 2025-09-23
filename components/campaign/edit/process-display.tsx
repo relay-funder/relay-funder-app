@@ -32,7 +32,7 @@ const PROCESS_STEP_INFO: Record<
   done: {
     title: 'Update Complete!',
     description:
-      'Your campaign has been successfully update. Now a akashic admin will manually approve the campaign.',
+      'Your campaign has been successfully update. Now a Relay Funder admin will manually approve the campaign.',
   },
   failed: {
     title: 'Update Failed',

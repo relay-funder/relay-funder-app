@@ -156,7 +156,7 @@ export async function POST(
     // Generate meaningful campaign identifier for production use
     const uniqueSuffix = `${campaign.creatorAddress.slice(2, 8)}-${id}-${Date.now()}`;
     const identifierHash = ethers.keccak256(
-      ethers.toUtf8Bytes(`AKASHIC-${uniqueSuffix}`),
+      ethers.toUtf8Bytes(`RELAYFUNDER-${uniqueSuffix}`),
     );
 
     // Use configurable fee structure
