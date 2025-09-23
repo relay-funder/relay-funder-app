@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
+import { InputJsonValue } from '@/.generated/prisma/client/runtime/library';
+import { ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
+import { handleError, response } from '@/lib/api/response';
 
 type ParamType = { params: Promise<{ id: string }> };
 
@@ -105,25 +107,17 @@ export async function GET(_req: Request, { params }: ParamType) {
     const { id } = await params;
     const roundId = parseInt(id, 10);
     if (!Number.isFinite(roundId) || roundId <= 0) {
-      return NextResponse.json({ error: 'Invalid round id' }, { status: 400 });
+      throw new ApiParameterError('Invalid round id');
     }
 
     const round = await db.round.findUnique({ where: { id: roundId } });
     if (!round) {
-      return NextResponse.json({ error: 'Round not found' }, { status: 404 });
+      throw new ApiNotFoundError('Round not found');
     }
 
-    return NextResponse.json(
-      { approvedResult: round.approvedResult ?? null },
-      { status: 200, headers: { 'Cache-Control': 'no-store' } },
-    );
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : 'Failed to read approved results';
-    return NextResponse.json(
-      { error: 'Internal Error', details: message },
-      { status: 500 },
-    );
+    return response({ approvedResult: round.approvedResult ?? null });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
@@ -135,17 +129,17 @@ export async function POST(req: Request, { params }: ParamType) {
     const { id } = await params;
     const roundId = parseInt(id, 10);
     if (!Number.isFinite(roundId) || roundId <= 0) {
-      return NextResponse.json({ error: 'Invalid round id' }, { status: 400 });
+      throw new ApiParameterError('Invalid round id');
     }
 
     const round = await db.round.findUnique({ where: { id: roundId } });
     if (!round) {
-      return NextResponse.json({ error: 'Round not found' }, { status: 404 });
+      throw new ApiNotFoundError('Round not found');
     }
 
     const contentType = req.headers.get('content-type') ?? '';
 
-    let approvedResult: unknown = null;
+    let approvedResult: InputJsonValue | null = null;
 
     if (contentType.includes('application/json')) {
       // Direct JSON upload
@@ -156,7 +150,7 @@ export async function POST(req: Request, { params }: ParamType) {
       const form = await req.formData();
       const file = form.get('file') as File | null;
       if (!file) {
-        return NextResponse.json({ error: 'file is required' }, { status: 400 });
+        throw new ApiParameterError('File is required');
       }
       const text = await file.text();
       if (
@@ -183,24 +177,19 @@ export async function POST(req: Request, { params }: ParamType) {
         campaigns,
       };
     } else {
-      return NextResponse.json(
-        { error: 'Unsupported content type' },
-        { status: 415 },
-      );
+      throw new ApiParameterError('Unsupported content type');
+    }
+    if (!Array.isArray(approvedResult)) {
+      throw new ApiParameterError('Unsupported content');
     }
 
     await db.round.update({
       where: { id: roundId },
-      data: { approvedResult },
+      data: { approvedResult: approvedResult ?? [] },
     });
 
-    return NextResponse.json({ ok: true, roundId }, { status: 200 });
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : 'Failed to approve results';
-    return NextResponse.json(
-      { error: 'Internal Error', details: message },
-      { status: 500 },
-    );
+    return response({ ok: true, roundId });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

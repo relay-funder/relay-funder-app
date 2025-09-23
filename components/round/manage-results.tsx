@@ -20,14 +20,7 @@ import {
 } from '@/lib/hooks/useRoundResults';
 import { useRoundStatus } from './use-status';
 import { isPast } from 'date-fns';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table';
+import DistributionPreviewTable from './distribution-preview-table';
 import {
   computeResultReportFromJson,
   computeResultReportFromCsv,
@@ -280,42 +273,9 @@ export function RoundManageResults({
                   <CardTitle>Distribution Preview</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Campaign</TableHead>
-                        <TableHead>Recipient</TableHead>
-                        <TableHead className="text-right">Suggested</TableHead>
-                        <TableHead className="text-right">Share %</TableHead>
-                        <TableHead className="text-right">Payout</TableHead>
-                        <TableHead className="text-right">Pool %</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {report.campaigns.map((c, idx) => (
-                        <TableRow key={`${c.campaignId}-${idx}`}>
-                          <TableCell className="max-w-[280px] truncate">
-                            {c.campaignTitle ?? `#${c.campaignId}`}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">
-                            {c.recipientAddress ?? '—'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatUSD(c.suggestedMatch)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {c.suggestedSharePct.toFixed(2)}%
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatUSD(c.payoutScaled)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {c.payoutSharePct.toFixed(2)}%
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <DistributionPreviewTable
+                    campaigns={report?.campaigns ?? []}
+                  />
                 </CardContent>
               </Card>
 
