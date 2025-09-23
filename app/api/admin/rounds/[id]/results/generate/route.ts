@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { checkAuth } from '@/lib/api/auth';
 import { generateRoundResults, resultsToCsv } from '@/lib/api/round-results';
+import { handleError } from '@/lib/api/response';
+import { ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
 
 type ResultsFormat = 'json' | 'csv';
 
@@ -23,22 +25,13 @@ export async function POST(
     const idParam = await params;
     const roundId = parseInt(idParam.id, 10);
     if (Number.isNaN(roundId) || roundId <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid round id' },
-        { status: 400 },
-      );
+      throw new ApiNotFoundError('Invalid round id');
     }
     if (Number.isNaN(minHumanityScore) || minHumanityScore < 0) {
-      return NextResponse.json(
-        { error: 'Invalid minHumanityScore' },
-        { status: 400 },
-      );
+      throw new ApiParameterError('Invalid minHumanityScore');
     }
     if (fmt !== 'json' && fmt !== 'csv') {
-      return NextResponse.json(
-        { error: 'Invalid format; use json or csv' },
-        { status: 400 },
-      );
+      throw new ApiParameterError('Invalid format; use json or csv');
     }
 
     const results = await generateRoundResults(roundId, minHumanityScore);
@@ -60,12 +53,7 @@ export async function POST(
       status: 200,
       headers: { 'Cache-Control': 'no-store' },
     });
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : 'Failed to generate results';
-    return NextResponse.json(
-      { error: 'Internal Error', details: message },
-      { status: 500 },
-    );
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
