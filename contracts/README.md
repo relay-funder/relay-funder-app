@@ -458,6 +458,5 @@ cast send $TREASURY_ADDRESS \
 - **Deployment Test Script**: `cc-protocol/cc-protocol-test.sh`
 - **Environment Template**: `cc-protocol/env.foundry.template`
 - **Contract ABIs**: Available in `contracts/abi/` directory
-- **NFT Contract ABIs**: Available in `contracts/nftABI/` directory
 
 For issues or questions, refer to the CC Protocol documentation in the `cc-protocol/` directory or use the provided test script for deployment verification.

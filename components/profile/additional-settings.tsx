@@ -7,7 +7,7 @@ import {
   Button,
 } from '@/components/ui';
 import Link from 'next/link';
-import { ShieldCheck, Wallet, CreditCard } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 
 export function ProfileAdditionalSettings() {
   return (
@@ -15,24 +15,11 @@ export function ProfileAdditionalSettings() {
       <CardHeader>
         <CardTitle>Additional Settings</CardTitle>
         <CardDescription>
-          Configure your payment methods, complete KYC verification, and manage
-          wallet addresses.
+          Configure your payment methods and manage wallet addresses.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Link href="/profile/payment-methods">
-            <Button variant="outline" className="w-full">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Payment Methods
-            </Button>
-          </Link>
-          <Link href="/profile/kyc">
-            <Button variant="outline" className="w-full">
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              KYC Verification
-            </Button>
-          </Link>
           <Link href="/profile/wallet">
             <Button variant="outline" className="w-full">
               <Wallet className="mr-2 h-4 w-4" />

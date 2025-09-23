@@ -14,38 +14,6 @@ export async function mockFetch(
 ): Promise<Response> {
   console.log('developer mock fetch', { url, options });
   if (typeof url === 'string') {
-    // Handle Crowdsplit API endpoints
-    if (url === '/api/crowdsplit/customers') {
-      return new Response(JSON.stringify({ data: { id: 'mock-customer-id' } }));
-    }
-    if (url === '/api/crowdsplit/payments') {
-      return new Response(
-        JSON.stringify({ data: { id: 'mock-transaction-id' } }),
-      );
-    }
-    if (url.includes('/api/crowdsplit/payments') && url.includes('/confirm')) {
-      return new Response(
-        JSON.stringify({
-          data: {
-            metadata: {
-              public_key: 'mock-public-key',
-              client_secret: 'mock_secret_mocksecret',
-            },
-          },
-        }),
-      );
-    }
-    if (url.startsWith('/api/crowdsplit')) {
-      if (url.startsWith('/api/crowdsplit/kyc/status')) {
-        return new Response(JSON.stringify({ status: 'completed' }));
-        return new Response(JSON.stringify({ status: 'pending' }));
-        return new Response(JSON.stringify({ status: 'failed' }));
-        return new Response(JSON.stringify({ status: '--default--' }));
-      }
-      if (url.startsWith('/api/crowdsplit/kyc/initiate')) {
-        return new Response(JSON.stringify({ redirectUrl: '/' }));
-      }
-    }
   }
   if (
     typeof window !== 'undefined' &&

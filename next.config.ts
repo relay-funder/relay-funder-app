@@ -16,10 +16,6 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'asset.captureapp.xyz',
       },
-      {
-        protocol: 'https',
-        hostname: 'dia-cdn.numbersprotocol.io',
-      },
       { protocol: 'https', hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL },
     ],
   },

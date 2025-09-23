@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Profile | Relay Funder',
   description:
-    'Manage your Relay Funder profile, payment methods, and KYC information',
+    'Manage your Relay Funder profile, payment methods, and Wallet information',
 };
 
 export default function ProfileLayout({

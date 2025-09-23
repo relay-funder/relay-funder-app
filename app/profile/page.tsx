@@ -38,7 +38,7 @@ export default function ProfilePage() {
   return (
     <PageHome
       header={
-        <PageHeader message="Manage your account settings, KYC verification, and payment methods."></PageHeader>
+        <PageHeader message="Manage your account settings, Wallet, and payment methods."></PageHeader>
       }
     >
       <PageDefaultContent title="Profile">

@@ -147,7 +147,6 @@ model User {
   lastName             String?
   bio                  String?
   recipientWallet      String?
-  isKycCompleted       Boolean?        @default(false)
   humanityScore        Int             @default(0)
   collections          Collection[]
   payments             Payment[]

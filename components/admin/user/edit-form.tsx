@@ -16,7 +16,6 @@ import {
   Input,
   Textarea,
   Button,
-  Switch,
   Separator,
   Checkbox,
 } from '@/components/ui';
@@ -115,7 +114,6 @@ export function AdminUserEditForm({ address }: { address: string }) {
       lastName: '',
       bio: '',
       recipientWallet: '',
-      isKycCompleted: false,
       roleUser: false,
       roleAdmin: false,
       selectedFlags: [],
@@ -140,7 +138,6 @@ export function AdminUserEditForm({ address }: { address: string }) {
       lastName: user.lastName ?? '',
       bio: user.bio ?? '',
       recipientWallet: user.recipientWallet ?? '',
-      isKycCompleted: Boolean(user.isKycCompleted ?? false),
       roleUser: Array.isArray(user.roles) ? user.roles.includes('user') : false,
       roleAdmin: Array.isArray(user.roles)
         ? user.roles.includes('admin')
@@ -193,10 +190,6 @@ export function AdminUserEditForm({ address }: { address: string }) {
             : values.recipientWallet?.trim()
               ? values.recipientWallet.trim()
               : null,
-        isKycCompleted:
-          typeof values.isKycCompleted === 'boolean'
-            ? values.isKycCompleted
-            : null,
       };
 
       const flags = Array.from(
@@ -413,23 +406,6 @@ export function AdminUserEditForm({ address }: { address: string }) {
               )}
             />
           </div>
-
-          <FormField
-            control={form.control}
-            name="isKycCompleted"
-            render={({ field }) => (
-              <FormItem className="flex items-center justify-between space-y-0 rounded-md border p-3">
-                <FormLabel className="text-sm">KYC Completed</FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={!!field.value}
-                    onCheckedChange={field.onChange}
-                    aria-label="Toggle KYC completed"
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
         </div>
 
         <Separator />

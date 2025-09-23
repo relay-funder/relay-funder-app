@@ -11,7 +11,6 @@ export function UserInlineName({
   user?: {
     name?: string | null;
     address?: string | null;
-    isKycCompleted?: boolean;
     isVouched?: boolean;
   };
   badges?: boolean;

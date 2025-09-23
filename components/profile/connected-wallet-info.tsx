@@ -26,7 +26,7 @@ export function ConnectedWalletInfo() {
     <div className="flex flex-row">
       <Card className="mx-auto max-w-md">
         <CardHeader>
-          <CardTitle>Wallet Information</CardTitle>
+          <CardTitle>Connected Wallet</CardTitle>
           <CardDescription>
             Manage your connected wallet and chains.
           </CardDescription>

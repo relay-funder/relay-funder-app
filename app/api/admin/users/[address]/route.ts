@@ -10,7 +10,6 @@ import {
   getUser,
   updateUserBio,
   updateUserEmail,
-  updateUserKycStatus,
   updateUserNames,
   updateUserRecipientWallet,
 } from '@/lib/api/user';
@@ -36,15 +35,8 @@ export async function PATCH(req: Request, { params }: UserWithAddressParams) {
   try {
     await checkAuth(['admin']);
     const { address } = await params;
-    const {
-      email,
-      username,
-      firstName,
-      lastName,
-      bio,
-      recipientWallet,
-      isKycCompleted,
-    } = PatchUserRouteBodySchema.parse(await req.json());
+    const { email, username, firstName, lastName, bio, recipientWallet } =
+      PatchUserRouteBodySchema.parse(await req.json());
 
     const instance = await getUser(address);
     if (!instance) {
@@ -69,9 +61,7 @@ export async function PATCH(req: Request, { params }: UserWithAddressParams) {
     if (typeof recipientWallet !== 'undefined') {
       await updateUserRecipientWallet(address, recipientWallet);
     }
-    if (typeof isKycCompleted !== 'undefined') {
-      await updateUserKycStatus(address, isKycCompleted);
-    }
+
     const updatedInstance = await getUser(address);
     return response({
       user: updatedInstance,

@@ -77,15 +77,6 @@ export function ProfileCard({
         <Separator />
 
         <div className="flex flex-wrap items-center gap-2">
-          {user.isKycCompleted ? (
-            <Badge className="bg-emerald-500/15 text-emerald-700">
-              KYC Completed
-            </Badge>
-          ) : (
-            <Badge className="bg-amber-500/15 text-amber-700">
-              KYC Pending
-            </Badge>
-          )}
           <Badge variant="secondary" className="bg-slate-100 text-slate-700">
             Payments: {counts.payments ?? 0}
           </Badge>
