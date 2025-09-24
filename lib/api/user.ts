@@ -65,9 +65,9 @@ export async function getUser(address: string) {
   if (!address) {
     return null;
   }
-  
+
   const normalizedAddress = address.toLowerCase();
-  
+
   const instance = await db.user.findUnique({
     where: { address: normalizedAddress },
     include: {
@@ -83,7 +83,7 @@ export async function getUser(address: string) {
       },
     },
   });
-  
+
   return instance;
 }
 

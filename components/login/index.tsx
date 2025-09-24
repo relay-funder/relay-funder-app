@@ -51,7 +51,7 @@ export default function Login() {
     if (!isClientMounted) {
       return LoginState.Loading;
     }
-    
+
     if (error && error !== '') {
       return LoginState.Error;
     }

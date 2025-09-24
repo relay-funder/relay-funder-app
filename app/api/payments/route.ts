@@ -63,7 +63,7 @@ export async function PATCH(req: Request) {
   try {
     const session = await checkAuth(['user']);
     const data = PatchPaymentBodyRouteSchema.parse(await req.json());
-    
+
     // Get user consistently the same way as in POST route
     const user = await getUser(session.user.address);
     if (!user) {

@@ -57,12 +57,17 @@ export function useDonationCallback({
         if (validationResult.error) {
           throw validationResult.error;
         }
-        debug && console.log('User session validated successfully:', {
-          user: validationResult.data
-        });
+        debug &&
+          console.log('User session validated successfully:', {
+            user: validationResult.data,
+          });
       } catch (validationError) {
         debug && console.error('Session validation failed:', validationError);
-        throw new Error(validationError instanceof Error ? validationError.message : 'Session validation failed');
+        throw new Error(
+          validationError instanceof Error
+            ? validationError.message
+            : 'Session validation failed',
+        );
       }
 
       debug && console.log('Getting wallet provider and signer...');
@@ -70,16 +75,18 @@ export function useDonationCallback({
       if (!walletProvider) {
         throw new Error('Wallet not supported or connected');
       }
-      
+
       // Ensure accounts are properly authorized before creating ethers provider
       debug && console.log('Requesting account authorization...');
       try {
         await walletProvider.request({ method: 'eth_requestAccounts' });
       } catch (error) {
         debug && console.error('Failed to request accounts:', error);
-        throw new Error('Wallet account authorization failed. Please connect your wallet.');
+        throw new Error(
+          'Wallet account authorization failed. Please connect your wallet.',
+        );
       }
-      
+
       const ethersProvider = new ethers.BrowserProvider(walletProvider);
       const signer = await ethersProvider.getSigner();
       const userAddress = signer.address;

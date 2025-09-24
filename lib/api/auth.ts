@@ -32,13 +32,16 @@ export async function checkAuth(roles: string[]) {
   if (session.user.address) {
     let dbUser = await getUser(session.user.address);
     if (!dbUser) {
-      debug && console.warn('Auto-creating missing user:', session.user.address);
+      debug &&
+        console.warn('Auto-creating missing user:', session.user.address);
       try {
         // Auto-create user following Web3 principle: valid wallet = valid user
         const createdUser = await setupUser(session.user.address);
         if (!createdUser) throw new ApiAuthError('Failed to auto-create user');
       } catch (error) {
-        throw new ApiAuthError('User validation failed - unable to auto-create user');
+        throw new ApiAuthError(
+          'User validation failed - unable to auto-create user',
+        );
       }
     }
   }

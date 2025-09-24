@@ -227,28 +227,49 @@ export function useAdminApproveCampaign() {
 
       // Verify campaign address is a valid contract
       const network = await ethersProvider.getNetwork();
-      debug && console.log('Verifying campaign contract:', campaignAddress, 'on chain', network.chainId);
-      
+      debug &&
+        console.log(
+          'Verifying campaign contract:',
+          campaignAddress,
+          'on chain',
+          network.chainId,
+        );
+
       try {
         // handle RPC sync issues
         let campaignCode = await ethersProvider.getCode(campaignAddress);
-        debug && console.log('Campaign contract code:', campaignCode.slice(0, 20), campaignCode.length);
-        
+        debug &&
+          console.log(
+            'Campaign contract code:',
+            campaignCode.slice(0, 20),
+            campaignCode.length,
+          );
+
         // If empty, try with the configured RPC provider as fallback
         if (campaignCode === '0x' || campaignCode === '0x0') {
           debug && console.log('Retrying with configured RPC provider...');
-          const configuredRpcUrl = process.env.NEXT_PUBLIC_RPC_URL || chainConfig.rpcUrl;
+          const configuredRpcUrl =
+            process.env.NEXT_PUBLIC_RPC_URL || chainConfig.rpcUrl;
           const directProvider = new ethers.JsonRpcProvider(configuredRpcUrl);
           campaignCode = await directProvider.getCode(campaignAddress);
-          debug && console.log('Campaign contract code (RPC 2):', campaignCode.slice(0, 20), campaignCode.length);
+          debug &&
+            console.log(
+              'Campaign contract code (RPC 2):',
+              campaignCode.slice(0, 20),
+              campaignCode.length,
+            );
         }
-        
+
         if (campaignCode === '0x' || campaignCode === '0x0') {
-          throw new Error(`Campaign address ${campaignAddress} is not a deployed contract (no bytecode found on chain ${network.chainId}). Contract may be recently deployed and not yet synced across all RPC nodes.`);
+          throw new Error(
+            `Campaign address ${campaignAddress} is not a deployed contract (no bytecode found on chain ${network.chainId}). Contract may be recently deployed and not yet synced across all RPC nodes.`,
+          );
         }
       } catch (error) {
         console.error('Campaign contract verification failed:', error);
-        throw new Error(`Invalid campaign contract address: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Invalid campaign contract address: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
 
       // Deploy treasury server-side
