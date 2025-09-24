@@ -47,6 +47,8 @@ export interface CampaignCardDisplayOptions {
   truncateDescription?: boolean;
   useCardImage?: boolean; // Use CampaignMainImageCard instead of CampaignMainImage
   openLinksInNewTab?: boolean;
+  showDescription?: boolean; // Show custom description prop (hidden by default)
+  showCampaignDescription?: boolean; // Show campaign's built-in description (hidden by default)
   // Round-specific display options
   showRoundStatus?: boolean;
   showRoundAdminControls?: boolean;
@@ -76,9 +78,7 @@ export interface CampaignCardProps {
     | 'standard'
     | 'dashboard'
     | 'admin'
-    | 'compact'
     | 'round'
-    | 'round-admin'
     | 'round-minimal';
 
   /**
@@ -86,6 +86,13 @@ export interface CampaignCardProps {
    * Only relevant for dashboard type
    */
   isFavorite?: boolean;
+
+  /**
+   * Optional description to display on the card
+   * When provided, overrides the campaign's default description
+   * Hidden by default unless explicitly enabled
+   */
+  description?: string;
 
   /**
    * Action handlers for card interactions
@@ -233,9 +240,7 @@ export function getDefaultDisplayOptions(
     | 'standard'
     | 'dashboard'
     | 'admin'
-    | 'compact'
     | 'round'
-    | 'round-admin'
     | 'round-minimal',
 ): CampaignCardDisplayOptions {
   const baseOptions: CampaignCardDisplayOptions = {
@@ -252,6 +257,8 @@ export function getDefaultDisplayOptions(
     truncateDescription: true,
     useCardImage: false,
     openLinksInNewTab: false,
+    showDescription: false, // Hidden by default - only show when explicitly enabled
+    showCampaignDescription: false, // Hide campaign description by default
     // Round-specific defaults
     showRoundStatus: false,
     showRoundAdminControls: false,
@@ -282,41 +289,19 @@ export function getDefaultDisplayOptions(
         layoutVariant: 'admin',
       };
 
-    case 'compact':
-      return {
-        ...baseOptions,
-        useCardImage: true,
-        showRoundsIndicator: true,
-        showCategoryBadge: false,
-        layoutVariant: 'compact',
-      };
-
     case 'round':
       return {
         ...baseOptions,
         showStatusBadge: false, // Hide image-based campaign status to avoid duplication
         showRoundStatus: true,
+        showRoundAdminControls: true, // Always show admin controls when user is admin
         showRoundAdminFooterControls: true, // Show round controls in footer
         showCampaignAdminActions: false, // Hide campaign admin actions in round view
         showEssentialDetailsOnly: true, // Show only essential details for round context
         showDates: true,
         dimNonApproved: false, // Remove default dimming
         openLinksInNewTab: true,
-      };
-
-    case 'round-admin':
-      return {
-        ...baseOptions,
-        showRoundStatus: true,
-        showRoundAdminControls: true,
-        showRoundAdminFooterControls: true, // Show round controls in footer
-        showCampaignAdminActions: false, // Hide campaign admin actions in round view
-        showStatusBadge: false, // Hide image-based campaign status to avoid duplication
-        showEssentialDetailsOnly: true, // Show only essential details for round context
-        showDates: true,
-        dimNonApproved: false, // Remove default dimming
-        openLinksInNewTab: true,
-        layoutVariant: 'admin',
+        layoutVariant: 'admin', // Use admin layout for better space utilization
       };
 
     case 'round-minimal':
@@ -334,6 +319,8 @@ export function getDefaultDisplayOptions(
       return {
         ...baseOptions,
         showRoundsIndicator: true,
+        // Standard type now handles both regular and compact layouts
+        // Use displayOptions to override for compact usage if needed
       };
   }
 }

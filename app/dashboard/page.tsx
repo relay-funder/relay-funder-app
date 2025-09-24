@@ -9,7 +9,7 @@ import {
 import { useAuth } from '@/contexts';
 import { Heart, Search } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
-import { CampaignCardDashboard } from '@/components/campaign/campaign-card';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignEmpty } from '@/components/campaign/empty';
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 statusFilter="all"
                 pageSize={3}
                 withRounds={true}
-                item={CampaignCardDashboard}
+                item={(props) => <CampaignCard {...props} type="dashboard" />}
                 onCreate={onCreate}
               />
             </>
@@ -158,7 +158,8 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {favourites?.map((favourite) => (
-                <CampaignCardDashboard
+                <CampaignCard
+                  type="dashboard"
                   key={`favorite-${favourite.campaign.id}`}
                   campaign={favourite.campaign}
                   isFavorite={true}

@@ -15,6 +15,7 @@ interface CampaignStatusInfo {
 
 interface CampaignCardContentProps {
   campaign: DbCampaign;
+  description?: string;
   displayOptions: CampaignCardDisplayOptions;
   adminMode: boolean;
   dashboardMode: boolean;
@@ -33,6 +34,7 @@ interface CampaignCardContentProps {
 
 export function CampaignCardContent({
   campaign,
+  description,
   displayOptions,
   adminMode,
   dashboardMode,
@@ -71,6 +73,13 @@ export function CampaignCardContent({
           campaign={campaign}
           displayOptions={displayOptions}
         />
+
+        {/* Custom description prop - only when showDescription is enabled */}
+        {displayOptions.showDescription && description && (
+          <div className="text-sm leading-relaxed text-gray-700">
+            {description}
+          </div>
+        )}
       </div>
 
       {/* Custom children content */}

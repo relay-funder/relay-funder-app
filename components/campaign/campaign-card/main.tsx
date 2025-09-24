@@ -59,6 +59,7 @@ export function CampaignCard({
   campaign,
   type = 'standard',
   isFavorite,
+  description,
   actionHandlers = {},
   displayOptions: userDisplayOptions = {},
   customButtons,
@@ -120,7 +121,7 @@ export function CampaignCard({
   // Get campaign status info for donation logic
   const campaignStatusInfo = getCampaignStatusInfo(campaign);
   const canDonate = isCampaignDonatable(campaign);
-  const isAdminType = type === 'admin' || type === 'round-admin';
+  const isAdminType = type === 'admin' || type === 'round';
   const isDashboardType = type === 'dashboard';
   const isRoundMinimalType = type === 'round-minimal';
 
@@ -158,6 +159,7 @@ export function CampaignCard({
 
       <CampaignCardContent
         campaign={campaign}
+        description={description}
         displayOptions={displayOptions}
         adminMode={isAdminType}
         dashboardMode={isDashboardType}

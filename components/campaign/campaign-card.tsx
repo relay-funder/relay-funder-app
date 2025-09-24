@@ -5,11 +5,6 @@
  */
 export {
   CampaignCard,
-  CampaignCardStandard,
-  CampaignCardDashboard,
-  CampaignCardAdmin,
-  CampaignCardItem,
-  CampaignCardFallback,
 } from './campaign-card/index';
 
 // Modern create campaign placeholder

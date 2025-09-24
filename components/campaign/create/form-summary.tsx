@@ -3,7 +3,7 @@ import { useFormContext } from 'react-hook-form';
 import { useMemo } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useSession } from 'next-auth/react';
-import { CampaignCardDashboard } from '../campaign-card';
+import { CampaignCard } from '../campaign-card';
 import { CampaignFormSchema } from './form';
 import { cn } from '@/lib/utils';
 export function CampaignCreateFormSummary() {
@@ -49,7 +49,7 @@ export function CampaignCreateFormSummary() {
     <div className="pb-2">
       <h2 className={cn('flex justify-self-center text-lg')}>Preview</h2>
       <div className="flex max-w-[400px] justify-self-center">
-        <CampaignCardDashboard campaign={campaign} />
+        <CampaignCard campaign={campaign} type="dashboard" />
       </div>
     </div>
   );

@@ -13,7 +13,6 @@ import { FormattedDate } from '../formatted-date';
 import { useMemo, useEffect } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
-import { CampaignCardItem } from '@/components/campaign/campaign-card';
 import { CampaignCard } from '@/components/campaign/campaign-card';
 import { RoundCardCampaignStatus } from '@/components/round/card-campaign-status';
 import { RoundCampaignAdminControls } from '@/components/round/campaign-admin-controls';
@@ -247,7 +246,7 @@ function RoundCampaignsList({
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
-              type="round-admin"
+              type="round"
               round={round}
               statusIndicators={
                 <RoundCardCampaignStatus campaign={campaign} round={round} />
@@ -258,7 +257,18 @@ function RoundCampaignsList({
             />
           );
         }
-        return <CampaignCardItem key={campaign.id} campaign={campaign} />;
+        return (
+          <CampaignCard 
+            key={campaign.id} 
+            campaign={campaign} 
+            type="standard"
+            displayOptions={{
+              useCardImage: true,
+              showCategoryBadge: false,
+              layoutVariant: 'compact',
+            }}
+          />
+        );
       })}
     </div>
   );

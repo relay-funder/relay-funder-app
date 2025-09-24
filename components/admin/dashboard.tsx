@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PageHeaderSearch } from '@/components/page/header-search';
 import { PageHome } from '@/components/page/home';
 import { CampaignList } from '@/components/campaign/list';
-import { CampaignCardAdmin } from '@/components/campaign/campaign-card';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { DashboardOverview } from '../dashboard/overview';
 
 export function AdminDashboard() {
@@ -31,7 +31,7 @@ export function AdminDashboard() {
         statusFilter="all"
         pageSize={3}
         withRounds={true}
-        item={CampaignCardAdmin}
+        item={(props) => <CampaignCard {...props} type="admin" />}
       />
     </PageHome>
   );

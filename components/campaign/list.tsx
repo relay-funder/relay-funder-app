@@ -5,7 +5,7 @@ import { useInView } from 'react-intersection-observer';
 import { useCallback, useEffect, useState } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { CampaignCardStandard } from '@/components/campaign/campaign-card';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CollectionAddDialog } from '@/components/collection/add-dialog';
 import { ResponsiveGrid } from '@/components/layout';
 import type { DbCampaign, CampaignItemProps } from '@/types/campaign';
@@ -24,7 +24,7 @@ export function CampaignList({
   statusFilter = undefined,
   pageSize = 10,
   withRounds = false,
-  item: ItemComponent = CampaignCardStandard,
+  item: ItemComponent = (props) => <CampaignCard {...props} type="standard" />,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
   const {

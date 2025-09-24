@@ -24,14 +24,16 @@ export function CampaignCardMetadata({
         <CampaignLocation campaign={campaign} />
       </div>
 
-      {/* Description - Clean and readable */}
-      <p
-        className={`text-sm leading-relaxed text-gray-700 ${
-          displayOptions.truncateDescription ? 'line-clamp-2' : ''
-        }`}
-      >
-        {campaign?.description}
-      </p>
+      {/* Description - Only show when explicitly enabled */}
+      {displayOptions.showCampaignDescription && (
+        <p
+          className={`text-sm leading-relaxed text-gray-700 ${
+            displayOptions.truncateDescription ? 'line-clamp-2' : ''
+          }`}
+        >
+          {campaign?.description}
+        </p>
+      )}
 
       {/* Round Information - Below description, before progress */}
       {displayOptions.showRoundsIndicator && (

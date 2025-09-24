@@ -5,7 +5,7 @@ import { useInView } from 'react-intersection-observer';
 import { useEffect } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { CampaignCardStandard } from '@/components/campaign/campaign-card';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import type { CampaignItemProps } from '@/types/campaign';
 import { CreateCampaignPlaceholder } from './create-campaign-placeholder';
 interface CampaignListProps {
@@ -24,7 +24,7 @@ export function CampaignUserList({
   statusFilter = undefined,
   pageSize = 10,
   withRounds = true,
-  item: ItemComponent = CampaignCardStandard,
+  item: ItemComponent = (props) => <CampaignCard {...props} type="standard" />,
   onCreate,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
