@@ -27,10 +27,51 @@ async function fetchNonce() {
 }
 export function useSignInToBackend() {
   const params = useSearchParams();
-  const callbackUrl = useMemo(
-    () => params?.get('callbackUrl') || '/dashboard',
-    [params],
-  );
+  const callbackUrl = useMemo(() => {
+    const paramCallbackUrl = params?.get('callbackUrl');
+
+    // Prevent cross-domain callbacks on preview/branch deployments
+    // Check if current domain matches patterns where external callbacks should be blocked
+    if (
+      typeof window !== 'undefined' &&
+      paramCallbackUrl &&
+      !paramCallbackUrl.startsWith('/')
+    ) {
+      try {
+        const callbackDomain = new URL(paramCallbackUrl).hostname;
+        const currentDomain = window.location.hostname;
+
+        // Get domain patterns from environment variable
+        const blockPatterns =
+          process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(
+            ',',
+          ).map((p) => p.trim()) || [];
+
+        if (currentDomain !== callbackDomain) {
+          const shouldBlock = blockPatterns.some((pattern) => {
+            // Support wildcards and exact matches
+            if (pattern.includes('*')) {
+              const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+              return regex.test(currentDomain);
+            }
+            return currentDomain.includes(pattern);
+          });
+
+          if (shouldBlock) {
+            console.warn(
+              `Cross-domain callback prevented: ${currentDomain} → ${callbackDomain} (matched pattern)`,
+            );
+            return '/dashboard';
+          }
+        }
+      } catch {
+        // Invalid URL, use dashboard
+        return '/dashboard';
+      }
+    }
+
+    return paramCallbackUrl || '/dashboard';
+  }, [params]);
   const { signMessageAsync } = useSignMessage();
   const account = useAccount();
 
@@ -44,6 +85,9 @@ export function useSignInToBackend() {
       console.log('web3/hooks/use-signin-to-backend', {
         address,
         chainId,
+        domain: window.location.host,
+        origin: window.location.origin,
+        callbackUrl,
       });
     if (!address || typeof chainId !== 'number') {
       throw new Error(
@@ -131,7 +175,15 @@ export function useSignInToBackend() {
       const errorMessage =
         'web3/hooks/use-signin-to-backend:' +
         ' An error occurred while signin in.' +
-        ` Code: ${authResult.status} - ${authResult.error}`;
+        ` Code: ${authResult.status} - ${authResult.error}` +
+        ` (Domain: ${window.location.host})`;
+      console.error('Authentication failed:', {
+        status: authResult.status,
+        error: authResult.error,
+        domain: window.location.host,
+        callbackUrl,
+        vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV,
+      });
       throw new Error(errorMessage);
     }
     return callbackUrl;
