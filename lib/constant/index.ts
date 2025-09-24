@@ -6,13 +6,6 @@ export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
 
-// Akashic NFT Contract Addresses
-export const NFT_METADATA = '0x73258C5813AB9494473d34eD57869531B2dd6ac2';
-export const CAMPAIGN_NFT_FACTORY =
-  '0x41ab8cf665f931B010d13D46b5178551594EE2DA';
-export const AKASHIC_NFT_REGISTRY =
-  '0x41b40AB343E607e59de62930D726A324B3b7cf63';
-
 // Allo Integration Contract
 export const ALLO_ADDRESS = '0x1133eA7Af70876e64665ecD07C0A0476d09465a1';
 export const KICKSTARTER_QF_ADDRESS =
@@ -32,7 +25,7 @@ export const REOWN_CLOUD_PROJECT_ID =
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
-export const DEFAULT_USER_EMAIL = 'test.donor@akashic.org';
+export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
 export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [25, 50, 100, 250, 500];
 
 export const FILE_STORAGE_PROVIDER =

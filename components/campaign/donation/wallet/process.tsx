@@ -13,7 +13,7 @@ export function CampaignDonationWalletProcess({
   amount,
   tipAmount = '0',
   selectedToken,
-  donationToAkashic,
+  donationToRelayFunder,
   anonymous,
   onProcessing,
 }: {
@@ -21,21 +21,21 @@ export function CampaignDonationWalletProcess({
   amount: string;
   tipAmount?: string;
   selectedToken: string;
-  donationToAkashic: number;
+  donationToRelayFunder: number;
   anonymous: boolean;
   onProcessing?: (processing: boolean) => void;
 }) {
   const router = useRouter();
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const akashicAmount = useMemo(() => {
-    if (donationToAkashic) {
-      return (numericAmount * donationToAkashic) / 100;
+  const relayFundercAmount = useMemo(() => {
+    if (donationToRelayFunder) {
+      return (numericAmount * donationToRelayFunder) / 100;
     }
     return 0;
-  }, [numericAmount, donationToAkashic]);
+  }, [numericAmount, donationToRelayFunder]);
   const poolAmount = useMemo(() => {
-    return numericAmount - akashicAmount;
-  }, [numericAmount, akashicAmount]);
+    return numericAmount - relayFundercAmount;
+  }, [numericAmount, relayFundercAmount]);
   const [state, setState] =
     useState<keyof typeof DonationProcessStates>('idle');
   const [processing, setProcessing] = useState<boolean>(false);

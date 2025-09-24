@@ -73,7 +73,7 @@ export async function deployCampaignContract(
   // Generate meaningful campaign identifier
   const uniqueSuffix = `${campaign.creatorAddress.slice(2, 8)}-${campaign.id}-${Date.now()}`;
   const identifierHash = ethers.keccak256(
-    ethers.toUtf8Bytes(`AKASHIC-${uniqueSuffix}`),
+    ethers.toUtf8Bytes(`RELAYFUNDER-${uniqueSuffix}`),
   );
 
   // Use configurable fee structure

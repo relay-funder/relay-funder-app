@@ -21,7 +21,7 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 
    ```bash
    git clone <repository-url>
-   cd akashic
+   cd relay-funder-app
    pnpm install
    ```
 
@@ -75,7 +75,7 @@ copy your account-address into the form and claim CELO
 
 ## Enhanced Development Setup
 
-In order to efficently and securely develop akashic, there is a app-shell
+In order to efficently and securely develop relay-funder-app, there is a app-shell
 available that uses the same environment as the next-application. While it is
 possible to do things pnpm install in the host and execute some scripts (eg pnpm
 prisma db migrate) directly from the host (`docker compose exec app COMMAND`) it
@@ -159,7 +159,7 @@ To start the pgadmin database tool,
 run `docker compose --profile develop up -d`. after a few seconds navigate to
 https://localhost:3001 (PGADMIN_PORT) and see a login, the default is
 `admin@local.host` with the password `admin`. After you are signed in, connect
-to a server host: `database`, username&password `akashic`. Now you can browse
+to a server host: `database`, username&password `relay-funder-app`. Now you can browse
 the table schema, show and modify the data and execute queries.
 
 ## Database Setup Troubleshooting

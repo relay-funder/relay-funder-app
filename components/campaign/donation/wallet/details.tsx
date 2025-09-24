@@ -7,7 +7,7 @@ import { CampaignDonationWalletBalance } from './balance';
 import { CampaignDonationWalletAmount } from './amount';
 import { CampaignDonationWalletTip } from './tip';
 import { CampaignDonationWalletProcess } from './process';
-import { CampaignDonationAkashic } from '../akashic';
+import { CampaignDonationRelayFunder } from '../relay-funder';
 import { CampaignDonationAnonymous } from '../anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 
@@ -19,7 +19,7 @@ export function CampaignDonationWalletDetails({
   const [selectedToken, setSelectedToken] = useState('USDC');
   const [amount, setAmount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
-  const [donationToAkashic, setDonationToAkashic] = useState(0);
+  const [donationToRelayFunder, setDonationToRelayFunder] = useState(0);
   const [donationAnonymous, setDonationAnonymous] = useState(false);
   const [processing, setProcessing] = useState(false);
   return (
@@ -37,7 +37,7 @@ export function CampaignDonationWalletDetails({
           onTipAmountChanged={setTipAmount}
         />
         <CampaignDonationWalletBalance selectedToken={selectedToken} />
-        <CampaignDonationAkashic onChange={setDonationToAkashic} />
+        <CampaignDonationRelayFunder onChange={setDonationToRelayFunder} />
         <CampaignDonationAnonymous
           anonymous={donationAnonymous}
           onChange={setDonationAnonymous}
@@ -47,7 +47,7 @@ export function CampaignDonationWalletDetails({
         campaign={campaign}
         amount={amount}
         tipAmount={tipAmount}
-        donationToAkashic={donationToAkashic}
+        donationToRelayFunder={donationToRelayFunder}
         selectedToken={selectedToken}
         anonymous={donationAnonymous}
         onProcessing={setProcessing}
