@@ -35,6 +35,7 @@ export function UserExplore({
           createTitle={createTitle}
           placeholder="Search Users"
           onSearchChanged={setSearchTerm}
+          containerWidth="default"
         />
       }
     >

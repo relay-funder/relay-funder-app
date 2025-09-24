@@ -20,6 +20,7 @@ export function RoundExplore() {
           createTitle="Create Round"
           placeholder="Search Rounds"
           onSearchChanged={(search: string) => setSearchTerm(search)}
+          containerWidth="default"
         />
       }
     >

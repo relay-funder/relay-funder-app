@@ -6,7 +6,7 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { useAuth } from '@/contexts';
 import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColumns } from '@/components/page/two-cols';
+import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';
 import ProjectInfo from '@/components/project-info';
 
@@ -36,11 +36,15 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
 
   return (
     <>
-      <PageHeaderSticky message="Donating to" title={campaign.title} />
-      <PageMainTwoColumns>
-        <CampaignDonationForm campaign={campaign} />
-        <ProjectInfo campaign={campaign} />
-      </PageMainTwoColumns>
+      <PageHeaderSticky message="Campaign" title="" />
+      <main className="w-full">
+        <DetailContainer variant="standard" padding="md">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <CampaignDonationForm campaign={campaign} />
+            <ProjectInfo campaign={campaign} />
+          </div>
+        </DetailContainer>
+      </main>
     </>
   );
 }

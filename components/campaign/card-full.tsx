@@ -61,22 +61,14 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
             <p className="text-sm text-gray-600">days left</p>
           </div>
         </div>
-        {isOwner ? (
-          <div className="mt-4 space-y-3">
-            <Link href={`/campaigns/${campaign.slug}/edit`}>
-              <Button className="h-12 w-full text-lg" size="lg">
-                Edit this campaign
-              </Button>
-            </Link>
-            <WithdrawalDialog campaign={campaign} />
-          </div>
-        ) : (
+        <div className="mt-4 space-y-3">
           <Link href={`/campaigns/${campaign.slug}/donation`}>
-            <Button className="mt-4 h-12 w-full text-lg" size="lg">
+            <Button className="h-12 w-full text-lg" size="lg">
               Back this campaign
             </Button>
           </Link>
-        )}
+          {isOwner && <WithdrawalDialog campaign={campaign} />}
+        </div>
 
         <div className="flex justify-center gap-2">
           <FavoriteButton campaignId={campaign.id} />

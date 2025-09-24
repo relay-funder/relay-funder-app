@@ -6,7 +6,7 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { useAuth } from '@/contexts';
 import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColumns } from '@/components/page/two-cols';
+import { DetailContainer } from '@/components/layout';
 import ProjectInfo from '@/components/project-info';
 import { PaymentStatus } from '@/components/payment/status';
 import { PaymentStatusLoading } from '@/components/payment/status-loading';
@@ -38,13 +38,17 @@ export function CampaignDonationSuccessPage({ slug }: { slug: string }) {
 
   return (
     <>
-      <PageHeaderSticky message="Donating to" title={campaign.title} />
-      <PageMainTwoColumns>
-        <Suspense fallback={<PaymentStatusLoading />}>
-          <PaymentStatus />
-        </Suspense>
-        <ProjectInfo campaign={campaign} />
-      </PageMainTwoColumns>
+      <PageHeaderSticky message="Campaign" title="" />
+      <main className="w-full">
+        <DetailContainer variant="standard" padding="md">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <Suspense fallback={<PaymentStatusLoading />}>
+              <PaymentStatus />
+            </Suspense>
+            <ProjectInfo campaign={campaign} />
+          </div>
+        </DetailContainer>
+      </main>
     </>
   );
 }

@@ -258,6 +258,7 @@ export function PaymentsExplore() {
           <PageHeaderSearch
             placeholder="Search by user (0x...), campaign id, or token"
             onSearchChanged={setSearchTerm}
+            containerWidth="default"
           />
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">

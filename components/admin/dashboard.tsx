@@ -15,6 +15,7 @@ export function AdminDashboard() {
         <PageHeaderSearch
           placeholder="Search Campaigns"
           onSearchChanged={(search: string) => setSearchTerm(search)}
+          containerWidth="default"
         />
       }
     >

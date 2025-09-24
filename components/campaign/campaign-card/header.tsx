@@ -55,12 +55,6 @@ export function CampaignCardHeader({
         </div>
       )}
 
-      {displayOptions.showRemoveButton && (
-        <div className="absolute right-4 top-16 z-10">
-          <CampaignRemoveButton campaign={campaign} />
-        </div>
-      )}
-
       {displayOptions.showStatusBadge && adminMode && (
         <div className="absolute bottom-4 left-4 z-10">
           <CampaignStatus campaign={campaign} />

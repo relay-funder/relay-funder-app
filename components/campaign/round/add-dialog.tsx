@@ -35,7 +35,11 @@ export function CampaignAddRoundDialog({
   const [selectedRound, setSelectedRound] = useState<
     GetRoundResponseInstance | undefined
   >();
-  const { data: roundsData, isPending: isRoundsDataPending } = useRounds();
+  const {
+    data: roundsData,
+    isPending: isRoundsDataPending,
+    error: roundsError,
+  } = useRounds();
 
   const canAdd = useMemo(() => {
     if (isRoundsDataPending || !selectedRound) {
@@ -62,23 +66,28 @@ export function CampaignAddRoundDialog({
 
   // Filter out rounds where the application deadline has passed or campaign is already applied
   const availableRounds = useMemo(() => {
-    if (roundsData?.rounds) {
+    if (roundsData && Array.isArray(roundsData)) {
       const now = new Date();
-      return roundsData.rounds.filter((round: GetRoundResponseInstance) => {
+
+      const filtered = roundsData.filter((round: GetRoundResponseInstance) => {
+        const applicationEndTime = new Date(round.applicationEndTime);
+        const deadlinePassed = applicationEndTime < now;
+        const alreadyApplied = campaign.rounds?.find((campaignRound) => {
+          return campaignRound.id === round.id;
+        });
+
         // Check if application deadline has passed
-        if (new Date(round.applicationEndTime) < now) {
+        if (deadlinePassed) {
           return false;
         }
         // Check if campaign is already applied to this round
-        if (
-          campaign.rounds?.find((campaignRound) => {
-            return campaignRound.id === round.id;
-          })
-        ) {
+        if (alreadyApplied) {
           return false;
         }
         return true;
       });
+
+      return filtered;
     }
     return [] as GetRoundResponseInstance[];
   }, [roundsData, campaign]);
@@ -140,7 +149,8 @@ export function CampaignAddRoundDialog({
   );
   const currentlyAppliedMessage = useMemo(() => {
     return (
-      campaign.rounds?.length &&
+      campaign.rounds &&
+      campaign.rounds.length > 0 &&
       `Currently applied to ${campaign.rounds.length} ${campaign.rounds.length === 1 ? 'Round' : 'Rounds'}`
     );
   }, [campaign]);
@@ -247,18 +257,13 @@ export function CampaignAddRoundDialog({
           <div className="mt-6 flex gap-4">
             {page === 0 && hasRounds && (
               <>
-                <Button
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={!canAdd}
-                  onClick={onAdd}
-                >
+                <Button disabled={!canAdd} onClick={onAdd}>
                   {isAdmin ? 'Add' : 'Apply Now'}
                 </Button>
               </>
             )}
             {page === 1 && hasRounds && (
               <Button
-                className="bg-purple-600 hover:bg-purple-700"
                 disabled={!canAdd || isPending}
                 onClick={onCreateApplication}
               >

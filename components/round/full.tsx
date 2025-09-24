@@ -77,11 +77,11 @@ export function RoundFull({ id }: { id: number }) {
     notFound();
   }
 
-  const header = <PageHeader title={round.title} />;
+  const header = <PageHeader />;
 
   return (
     <PageHome header={header}>
-      <DetailContainer variant="wide" padding="md">
+      <DetailContainer variant="standard" padding="md">
         <div className="space-y-6">
           {isAdmin && status.text === 'Ended' && (
             <RoundManageResults round={round} />

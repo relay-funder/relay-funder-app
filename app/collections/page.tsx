@@ -41,6 +41,7 @@ export default function CollectionsPage() {
           onSearchChanged={(search: string) => setSearchTerm(search)}
           placeholder="Search Collections..."
           buttons={<CollectionCreateDialog />}
+          containerWidth="default"
         />
       }
     >

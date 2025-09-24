@@ -36,6 +36,7 @@ export interface CampaignCardActions {
 export interface CampaignCardDisplayOptions {
   showFavoriteButton?: boolean;
   showRemoveButton?: boolean;
+  showEditButton?: boolean;
   showStatusBadge?: boolean;
   showCategoryBadge?: boolean;
   showDates?: boolean;
@@ -236,6 +237,7 @@ export function getDefaultDisplayOptions(
   const baseOptions: CampaignCardDisplayOptions = {
     showFavoriteButton: false,
     showRemoveButton: false,
+    showEditButton: false,
     showStatusBadge: true,
     showCategoryBadge: true,
     showDates: false,
@@ -265,6 +267,7 @@ export function getDefaultDisplayOptions(
         ...baseOptions,
         showFavoriteButton: true,
         showRemoveButton: true,
+        showEditButton: true,
         showRoundsIndicator: true,
       };
 

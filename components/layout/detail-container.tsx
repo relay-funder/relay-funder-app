@@ -31,9 +31,9 @@ export function DetailContainer({
   };
 
   const variantClasses = {
-    standard: 'w-full max-w-5xl mx-auto',
+    standard: 'w-full max-w-6xl mx-auto',
     wide: 'w-full max-w-6xl mx-auto',
-    narrow: 'w-full max-w-4xl mx-auto',
+    narrow: 'w-full max-w-5xl mx-auto',
   };
 
   return (

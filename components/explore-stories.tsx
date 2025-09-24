@@ -26,6 +26,7 @@ export function ExploreStories() {
         <PageHeaderSearch
           placeholder="Search Campaigns"
           onSearchChanged={(search: string) => setSearchTerm(search)}
+          containerWidth="default"
         />
       }
     >

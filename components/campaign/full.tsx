@@ -44,12 +44,7 @@ export function CampaignFull({ slug }: { slug: string }) {
   }
 
   // Navigation header without title
-  const navHeader = (
-    <PageHeader
-      featured={isCampaignFeatured(campaign)}
-      tags={[details?.name ?? 'Technology']}
-    />
-  );
+  const navHeader = <PageHeader featured={isCampaignFeatured(campaign)} />;
 
   return (
     <PageHome header={navHeader}>

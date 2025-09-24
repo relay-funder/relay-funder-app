@@ -83,6 +83,7 @@ export function WithdrawalsExplore() {
           <PageHeaderSearch
             placeholder="Search by creator address (0x...) or token symbol"
             onSearchChanged={setSearchTerm}
+            containerWidth="default"
           />
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Status</span>
