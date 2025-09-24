@@ -39,7 +39,7 @@ export function CampaignCreateFormSummary() {
         slug: 'summary-campaign',
         location: values.location,
 
-        creator: { ...(session?.data?.user ?? {}), isKycCompleted: false },
+        creator: { ...(session?.data?.user ?? {}) },
       } as DbCampaign;
     } catch {
       return undefined;

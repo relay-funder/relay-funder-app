@@ -9,24 +9,24 @@ import { Button } from '@/components/ui';
 export function CampaignDonationCreditCardProcess({
   campaign,
   amount,
-  donationToAkashic,
+  donationToRelayFunder,
   anonymous,
 }: {
   campaign: DbCampaign;
   amount: string;
-  donationToAkashic: number;
+  donationToRelayFunder: number;
   anonymous: boolean;
 }) {
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const akashicAmount = useMemo(() => {
-    if (donationToAkashic) {
-      return (numericAmount * donationToAkashic) / 100;
+  const relayFunderAmount = useMemo(() => {
+    if (donationToRelayFunder) {
+      return (numericAmount * donationToRelayFunder) / 100;
     }
     return 0;
-  }, [numericAmount, donationToAkashic]);
+  }, [numericAmount, donationToRelayFunder]);
   const poolAmount = useMemo(() => {
-    return numericAmount - akashicAmount;
-  }, [numericAmount, akashicAmount]);
+    return numericAmount - relayFunderAmount;
+  }, [numericAmount, relayFunderAmount]);
 
   // Lazy Stripe implementation - no API calls until donate button clicked
   const { isProcessing, stripeData, stripePromise, createPaymentIntent } =

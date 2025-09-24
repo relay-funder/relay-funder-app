@@ -21,7 +21,6 @@ interface IUserProfileApi {
   email: string;
   createdAt: Date;
   updatedAt: Date;
-  isKycCompleted: boolean;
   username: string;
   bio: string;
 }

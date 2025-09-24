@@ -74,7 +74,7 @@ Using the CC Protocol deployment script available in the `cc-protocol/` director
 ```bash
 # Set environment variables
 export PRIVATE_KEY="your-private-key"
-export PLATFORM_NAME="Akashic"
+export PLATFORM_NAME="RELAYFUNDER"
 export PROTOCOL_FEE_PERCENT=100    # 1%
 export PLATFORM_FEE_PERCENT=400    # 4%
 
@@ -458,6 +458,5 @@ cast send $TREASURY_ADDRESS \
 - **Deployment Test Script**: `cc-protocol/cc-protocol-test.sh`
 - **Environment Template**: `cc-protocol/env.foundry.template`
 - **Contract ABIs**: Available in `contracts/abi/` directory
-- **NFT Contract ABIs**: Available in `contracts/nftABI/` directory
 
 For issues or questions, refer to the CC Protocol documentation in the `cc-protocol/` directory or use the provided test script for deployment verification.

@@ -15,16 +15,12 @@ export async function getUserWithStates(address?: string | null) {
   const creator: DisplayUserWithStates = {
     name: null,
     address: null,
-    isKycCompleted: false,
   };
   try {
     if (address) {
       const instance = await db.user.findUnique({
         where: { address },
       });
-      if (instance?.isKycCompleted) {
-        creator.isKycCompleted = true;
-      }
       creator.name = getUserNameFromInstance(instance);
       if (instance?.address) {
         creator.address = instance.address;
@@ -154,12 +150,6 @@ export async function updateUserRecipientWallet(
     where: { address },
     data: { recipientWallet },
   });
-}
-export async function updateUserKycStatus(
-  address: string,
-  isKycCompleted: boolean | null,
-) {
-  return await db.user.update({ where: { address }, data: { isKycCompleted } });
 }
 
 export async function updateHumanityScore(

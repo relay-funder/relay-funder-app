@@ -9,28 +9,28 @@ import {
 import { HelpCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export function CampaignDonationAkashic({
+export function CampaignDonationRelayFunder({
   onChange,
 }: {
   onChange: (percent: number) => void;
 }) {
-  const [isDonatingToAkashic, setIsDonatingToAkashic] = useState(false);
+  const [isDonatingToRelayFunder, setIsDonatingToRelayFunder] = useState(false);
   const [percentage, setPercentage] = useState(10);
   useEffect(() => {
-    if (!isDonatingToAkashic) {
+    if (!isDonatingToRelayFunder) {
       onChange(0);
       return;
     }
     onChange(percentage);
-  }, [percentage, isDonatingToAkashic, onChange]);
+  }, [percentage, isDonatingToRelayFunder, onChange]);
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
         <Switch
-          checked={isDonatingToAkashic}
-          onCheckedChange={setIsDonatingToAkashic}
+          checked={isDonatingToRelayFunder}
+          onCheckedChange={setIsDonatingToRelayFunder}
         />
-        <span className="text-sm">Donate to Akashic</span>
+        <span className="text-sm">Donate to RelayFunder</span>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
@@ -38,14 +38,14 @@ export function CampaignDonationAkashic({
             </TooltipTrigger>
             <TooltipContent>
               <p>
-                Choose a percentage to donate to Akashic (deducted before the
-                amount is sent to the treasury)
+                Choose a percentage to donate to RelayFunder (deducted before
+                the amount is sent to the treasury)
               </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
-      {isDonatingToAkashic && (
+      {isDonatingToRelayFunder && (
         <div className="flex gap-2">
           {[5, 10, 15, 20].map((value) => (
             <Button

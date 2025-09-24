@@ -10,15 +10,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'staging.akashic.xyz',
+        hostname: 'staging.relayfunder.com',
       },
       {
         protocol: 'https',
         hostname: 'asset.captureapp.xyz',
-      },
-      {
-        protocol: 'https',
-        hostname: 'dia-cdn.numbersprotocol.io',
       },
       { protocol: 'https', hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL },
     ],
@@ -45,8 +41,8 @@ if (shouldInitSentry) {
     // For all available options, see:
     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-    org: 'akashic-yj',
-    project: 'akashic-app',
+    org: 'relayfunder-yj',
+    project: 'relayfunder-app',
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,

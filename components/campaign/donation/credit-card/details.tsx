@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationCreditCardAmount } from './amount';
 import { CampaignDonationCreditCardProcess } from './process';
-import { CampaignDonationAkashic } from '../akashic';
+import { CampaignDonationRelayFunder } from '../relay-funder';
 import { CampaignDonationAnonymous } from '../anonymous';
 
 export function CampaignDonationDetails({
@@ -14,7 +14,7 @@ export function CampaignDonationDetails({
   campaign: DbCampaign;
 }) {
   const [amount, setAmount] = useState('0');
-  const [donationToAkashic, setDonationToAkashic] = useState(0);
+  const [donationToRelayFunder, setDonationToRelayFunder] = useState(0);
   const [donationAnonymous, setDonationAnonymous] = useState(false);
   return (
     <div className="relative flex flex-col gap-4">
@@ -22,7 +22,7 @@ export function CampaignDonationDetails({
         onAmountChanged={setAmount}
         amount={amount}
       />
-      <CampaignDonationAkashic onChange={setDonationToAkashic} />
+      <CampaignDonationRelayFunder onChange={setDonationToRelayFunder} />
       <CampaignDonationAnonymous
         anonymous={donationAnonymous}
         onChange={setDonationAnonymous}
@@ -30,7 +30,7 @@ export function CampaignDonationDetails({
       <CampaignDonationCreditCardProcess
         campaign={campaign}
         amount={amount}
-        donationToAkashic={donationToAkashic}
+        donationToRelayFunder={donationToRelayFunder}
         anonymous={donationAnonymous}
       />
     </div>

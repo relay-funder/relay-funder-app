@@ -77,27 +77,14 @@ export function UserCard({
         </div>
 
         <div className="flex flex-wrap justify-end gap-1">
-          {user.isKycCompleted ? (
-            <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20">
-              KYC
-            </Badge>
-          ) : (
+          {visibleRoles.map((role) => (
             <Badge
-              variant="secondary"
-              className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/20"
-            >
-              No KYC
-            </Badge>
-          )}
-
-          {visibleRoles.map((r) => (
-            <Badge
-              key={r}
+              key={role}
               variant="outline"
               className="border-slate-300 text-slate-600"
-              title={r}
+              title={role}
             >
-              {r}
+              {role}
             </Badge>
           ))}
 
