@@ -16,4 +16,3 @@ export type {
 
 // Utility exports
 export { validateCampaignCardData, getDefaultDisplayOptions } from './types';
-

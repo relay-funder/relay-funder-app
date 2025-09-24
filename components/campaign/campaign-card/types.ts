@@ -74,12 +74,7 @@ export interface CampaignCardProps {
    * Card type - determines default display options and behaviors
    * @default 'standard'
    */
-  type?:
-    | 'standard'
-    | 'dashboard'
-    | 'admin'
-    | 'round'
-    | 'round-minimal';
+  type?: 'standard' | 'dashboard' | 'admin' | 'round' | 'round-minimal';
 
   /**
    * Whether this campaign is favorited by current user
@@ -236,12 +231,7 @@ export function validateCampaignCardData(
  * Default display options for different card types
  */
 export function getDefaultDisplayOptions(
-  type:
-    | 'standard'
-    | 'dashboard'
-    | 'admin'
-    | 'round'
-    | 'round-minimal',
+  type: 'standard' | 'dashboard' | 'admin' | 'round' | 'round-minimal',
 ): CampaignCardDisplayOptions {
   const baseOptions: CampaignCardDisplayOptions = {
     showFavoriteButton: false,

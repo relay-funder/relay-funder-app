@@ -83,12 +83,6 @@ export function RoundFull({ id }: { id: number }) {
                 <h1 className="mb-3 text-3xl font-bold leading-tight tracking-tight">
                   {round.title ?? 'Untitled Round'}
                 </h1>
-                {round.description && (
-                  <ReadMoreDescription
-                    text={round.description}
-                    maxLength={350}
-                  />
-                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -258,9 +252,9 @@ function RoundCampaignsList({
           );
         }
         return (
-          <CampaignCard 
-            key={campaign.id} 
-            campaign={campaign} 
+          <CampaignCard
+            key={campaign.id}
+            campaign={campaign}
             type="standard"
             displayOptions={{
               useCardImage: true,

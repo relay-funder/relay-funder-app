@@ -4,7 +4,7 @@ import { useInView } from 'react-intersection-observer';
 import { useEffect } from 'react';
 import { RoundLoading } from '@/components/round/loading';
 import { RoundError } from '@/components/round/error';
-import { RoundCardDashboard } from '@/components/round/card-dashboard';
+import { RoundCard } from '@/components/round/round-card';
 import { useInfiniteRounds } from '@/lib/hooks/useRounds';
 import { ResponsiveGrid } from '@/components/layout';
 import { RoundItemProps } from '@/types/round';
@@ -17,7 +17,7 @@ interface RoundListProps {
 export function RoundList({
   searchTerm,
   pageSize = 10,
-  item: ItemComponent = RoundCardDashboard,
+  item: ItemComponent = (props) => <RoundCard {...props} type="standard" />,
 }: RoundListProps) {
   const { ref, inView } = useInView();
   const {
