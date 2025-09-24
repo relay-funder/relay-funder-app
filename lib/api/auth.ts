@@ -6,7 +6,6 @@ import { type Session } from 'next-auth';
 import { ApiAuthError, ApiAuthNotAllowed } from './error';
 import { debugApi as debug } from '@/lib/debug';
 import { getUser } from './user';
-import { db } from '@/server/db';
 import { setupUser } from '@/server/auth/providers/common';
 
 /**
@@ -30,7 +29,7 @@ export async function checkAuth(roles: string[]) {
 
   // web3 principle: valid session = valid user
   if (session.user.address) {
-    let dbUser = await getUser(session.user.address);
+    const dbUser = await getUser(session.user.address);
     if (!dbUser) {
       debug &&
         console.warn('Auto-creating missing user:', session.user.address);
