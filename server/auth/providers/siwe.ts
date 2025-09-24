@@ -1,14 +1,52 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 import { SiweMessage } from 'siwe';
 import { setupUser, handleError } from './common';
 import { type User } from 'next-auth';
-
-const nextAuthUrl =
-  process.env.NEXTAUTH_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
 import { debugAuth as debug } from '@/lib/debug';
+
+async function getAuthUrl(): Promise<string | null> {
+  try {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    const proto = headersList.get('x-forwarded-proto') || 'https';
+    
+    if (host) {
+      // Check if current domain matches deployment domain patterns (e.g., .vercel.app, .netlify.app)
+      const deploymentPatterns = process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map(p => p.trim()) || [];
+      const isDeploymentDomain = deploymentPatterns.some(pattern => {
+        // Support wildcards and exact matches
+        if (pattern.includes('*')) {
+          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+          return regex.test(host);
+        }
+        return host.includes(pattern);
+      });
+      
+      if (isDeploymentDomain) {
+        debug && console.log('Deployment domain detected, using request headers:', { host, proto, patterns: deploymentPatterns });
+        return `${proto}://${host}`;
+      } else {
+        debug && console.log('Custom domain detected, using NEXTAUTH_URL');
+        return process.env.NEXTAUTH_URL || `${proto}://${host}`;
+      }
+    }
+  } catch (error) {
+    debug && console.warn('Failed to get host from headers:', error);
+  }
+  
+  // Fallback to environment variables
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+  
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  return null;
+}
 
 export function SiweProvider() {
   return CredentialsProvider({
@@ -35,11 +73,13 @@ export function SiweProvider() {
         ) {
           throw new Error('SiweMessage is undefined');
         }
+        const nextAuthUrl = await getAuthUrl();
         if (!nextAuthUrl) {
           throw new Error(
-            'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL) - environment not configured correctly',
+            'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL,host header) - environment not configured correctly',
           );
         }
+
         if (
           // on production, the auth should always be active, the only
           // exception is when we want to deploy with the dummy-web3-context
@@ -61,10 +101,22 @@ export function SiweProvider() {
         const nonce = csrfToken?.value.split('|')[0];
         const { message, signature } = credentials;
         const siwe = new SiweMessage(JSON.parse(message));
+
+        debug &&
+          console.log('SIWE domain verification:', {
+            siweDomain: siwe.domain,
+            nextAuthHost,
+            nextAuthUrl,
+            vercelUrl: process.env.VERCEL_URL,
+            nodeEnv: process.env.NODE_ENV,
+          });
+
         if (siwe.domain !== nextAuthHost) {
           console.error('auth::siwe::siwe-host', {
             siwedomain: siwe.domain,
             nextAuthHost,
+            nextAuthUrl,
+            vercelUrl: process.env.VERCEL_URL,
           });
           throw new Error('siwe.verify succeeded but for a different domain');
         }

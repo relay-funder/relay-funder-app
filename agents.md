@@ -313,6 +313,13 @@ docker compose exec app pnpm prisma db pull
 - **Consistent Format**: Use consistent indentation and formatting for log messages
 - **Error Logging**: Use appropriate log levels (console.error, console.warn, console.log)
 - **Context Information**: Include relevant context in log messages without overwhelming output
+- **Debug Utility**: **ALWAYS** use debug utility (e.g `import { debugApi as debug } from '@/lib/debug';`) in front of console logs: `debug && console.log()` pattern
+
+### Comment Standards
+- **Minimal Comments**: Avoid excessive or verbose comments in code
+- **Self-Documenting Code**: Prefer clear, descriptive variable and function names over explanatory comments
+- **Essential Comments Only**: Only add comments for complex business logic, non-obvious algorithms, or important architectural decisions
+- **No Line-by-Line Comments**: Do not add comments to every line of code or be overly explanatory about obvious operations
 
 ### Shared Component Naming and Architecture (MANDATORY)
 

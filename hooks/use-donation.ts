@@ -7,6 +7,7 @@ import {
   useCreatePayment,
   useUpdatePaymentStatus,
 } from '@/lib/hooks/usePayments';
+import { useUserProfile } from '@/lib/hooks/useProfile';
 import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 import { debugHook as debug } from '@/lib/debug';
 
@@ -34,6 +35,7 @@ export function useDonationCallback({
 
   const { mutateAsync: createPayment } = useCreatePayment();
   const { mutateAsync: updatePaymentStatus } = useUpdatePaymentStatus();
+  const { refetch: validateUserProfile } = useUserProfile();
 
   const onDonate = useCallback(async () => {
     try {
@@ -48,11 +50,43 @@ export function useDonationCallback({
         throw new Error('Wallet not connected');
       }
 
+      // Validate user session BEFORE any blockchain transactions
+      debug && console.log('Validating user session...');
+      try {
+        const validationResult = await validateUserProfile();
+        if (validationResult.error) {
+          throw validationResult.error;
+        }
+        debug &&
+          console.log('User session validated successfully:', {
+            user: validationResult.data,
+          });
+      } catch (validationError) {
+        debug && console.error('Session validation failed:', validationError);
+        throw new Error(
+          validationError instanceof Error
+            ? validationError.message
+            : 'Session validation failed',
+        );
+      }
+
       debug && console.log('Getting wallet provider and signer...');
       const walletProvider = await wallet.getEthereumProvider();
       if (!walletProvider) {
         throw new Error('Wallet not supported or connected');
       }
+
+      // Ensure accounts are properly authorized before creating ethers provider
+      debug && console.log('Requesting account authorization...');
+      try {
+        await walletProvider.request({ method: 'eth_requestAccounts' });
+      } catch (error) {
+        debug && console.error('Failed to request accounts:', error);
+        throw new Error(
+          'Wallet account authorization failed. Please connect your wallet.',
+        );
+      }
+
       const ethersProvider = new ethers.BrowserProvider(walletProvider);
       const signer = await ethersProvider.getSigner();
       const userAddress = signer.address;
@@ -118,6 +152,7 @@ export function useDonationCallback({
     authenticated,
     createPayment,
     updatePaymentStatus,
+    validateUserProfile,
     amount,
     tipAmount,
     poolAmount,

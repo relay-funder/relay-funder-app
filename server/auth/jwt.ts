@@ -12,7 +12,7 @@ export async function jwt({
     return {
       ...token,
       roles: user.roles,
-      address: user.address,
+      address: user.address.toLowerCase(), // Ensure address is normalized in JWT
       dbId: user.dbId,
     };
   }

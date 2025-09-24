@@ -28,6 +28,7 @@ import { useSession } from 'next-auth/react';
 export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isClientMounted, setIsClientMounted] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
   const loginEffectRef = useRef(false);
@@ -45,6 +46,12 @@ export default function Login() {
   const account = useAccount();
 
   const loginState = useMemo(() => {
+    // Ensure consistent server/client rendering by defaulting to Loading state
+    // until client is mounted and Web3 context is initialized
+    if (!isClientMounted) {
+      return LoginState.Loading;
+    }
+
     if (error && error !== '') {
       return LoginState.Error;
     }
@@ -75,6 +82,7 @@ export default function Login() {
     }
     return LoginState.Loading; // Default or catch-all
   }, [
+    isClientMounted,
     ready,
     authenticating,
     connecting,
@@ -148,6 +156,11 @@ export default function Login() {
     loginEffectRef.current = false;
     autoLogin();
   }, [autoLogin]);
+
+  useEffect(() => {
+    // Set client mounted state to prevent hydration mismatch
+    setIsClientMounted(true);
+  }, []);
 
   useEffect(() => {
     autoLogin();

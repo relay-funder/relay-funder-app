@@ -18,5 +18,5 @@ export const PostPaymentBodyRouteSchema = z.object({
 export const PatchPaymentBodyRouteSchema = z.object({
   paymentId: z.number(),
   status: z.enum(['confirmed', 'failed']),
-  transactionHash: z.string(),
+  transactionHash: z.string().optional(),
 });

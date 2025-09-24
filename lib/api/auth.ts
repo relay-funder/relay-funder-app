@@ -5,13 +5,15 @@ import { auth } from '@/server/auth';
 import { type Session } from 'next-auth';
 import { ApiAuthError, ApiAuthNotAllowed } from './error';
 import { debugApi as debug } from '@/lib/debug';
+import { getUser } from './user';
+import { setupUser } from '@/server/auth/providers/common';
 
 /**
  * check authorization
  * use next-auth to acquire session and consider the session-role with the given roles.
+ * ensures user exists in database, auto-creating if missing (Web3 principle: valid session = valid user)
  * returns the session if one of the roles given is in the current session
- * returns null if no role was requested
- * throws if the none of the roles matches
+ * throws ApiAuthError only for genuine authorization failures
  */
 export async function checkAuth(roles: string[]) {
   if (!Array.isArray(roles) || !roles.length) {
@@ -24,6 +26,25 @@ export async function checkAuth(roles: string[]) {
   if (!Array.isArray(session.user?.roles)) {
     throw new ApiAuthError('Invalid session');
   }
+
+  // web3 principle: valid session = valid user
+  if (session.user.address) {
+    const dbUser = await getUser(session.user.address);
+    if (!dbUser) {
+      debug &&
+        console.warn('Auto-creating missing user:', session.user.address);
+      try {
+        // Auto-create user following Web3 principle: valid wallet = valid user
+        const createdUser = await setupUser(session.user.address);
+        if (!createdUser) throw new ApiAuthError('Failed to auto-create user');
+      } catch (error) {
+        throw new ApiAuthError(
+          'User validation failed - unable to auto-create user',
+        );
+      }
+    }
+  }
+
   if (session.user.roles.length) {
     for (const role of roles) {
       if (session.user.roles.includes(role)) {

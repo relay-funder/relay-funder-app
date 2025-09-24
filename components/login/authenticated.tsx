@@ -25,7 +25,7 @@ export default function Authenticated({ message }: AuthenticatedProps) {
     });
   }, [logout, router]);
   const handleProfile = useCallback(async () => {
-    router.push('/settings');
+    router.push('/profile');
   }, [router]);
 
   return (
