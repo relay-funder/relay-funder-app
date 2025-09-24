@@ -63,6 +63,12 @@ export async function PATCH(req: Request) {
   try {
     const session = await checkAuth(['user']);
     const data = PatchPaymentBodyRouteSchema.parse(await req.json());
+    
+    // Get user consistently the same way as in POST route
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
 
     const instance = await db.payment.findUnique({
       where: { id: data.paymentId },
@@ -70,18 +76,18 @@ export async function PATCH(req: Request) {
     if (!instance) {
       throw new ApiNotFoundError('Payment not found');
     }
-    if (instance.userId !== session.user.dbId) {
+    if (instance.userId !== user.id) {
       throw new ApiAuthNotAllowed('Session not allowed to modify this payment');
     }
     const payment = await db.payment.update({
       where: { id: data.paymentId },
       data: {
         status: data.status,
-        transactionHash: data.transactionHash,
+        ...(data.transactionHash && { transactionHash: data.transactionHash }),
       },
     });
 
-    return response({ payment });
+    return response({ payment, campaignId: instance.campaignId });
   } catch (error: unknown) {
     return handleError(error);
   }

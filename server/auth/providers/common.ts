@@ -1,10 +1,15 @@
 import { db } from '@/server/db';
+import { debugAuth as debug } from '@/lib/debug';
 
 export async function setupUser(address: string) {
   const normalizedAddress = address.toLowerCase();
+  debug && console.log('setupUser called with:', { originalAddress: address, normalizedAddress });
+  
   let dbUser = await db.user.findUnique({
     where: { address: normalizedAddress },
   });
+  
+  debug && console.log('Existing user found:', dbUser ? { id: dbUser.id, address: dbUser.address } : null);
 
   // Determine roles based on platform admin address and mock auth
   const platformAdminAddress =
@@ -21,6 +26,7 @@ export async function setupUser(address: string) {
   }
 
   if (!dbUser) {
+    debug && console.log('Creating new user with:', { normalizedAddress, userRoles });
     dbUser = await db.user.create({
       data: {
         address: normalizedAddress,
@@ -29,6 +35,7 @@ export async function setupUser(address: string) {
         roles: userRoles,
       },
     });
+    debug && console.log('New user created:', { id: dbUser.id, address: dbUser.address });
   } else {
     // Check if user needs role updates
     const needsAdminRole =

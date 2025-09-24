@@ -24,6 +24,16 @@ export async function requestTransaction({
   if (!walletProvider) {
     throw new Error('Wallet not supported or connected');
   }
+  
+  // Ensure accounts are properly authorized before creating ethers provider
+  debug && console.log('Requesting account authorization...');
+  try {
+    await walletProvider.request({ method: 'eth_requestAccounts' });
+  } catch (error) {
+    debug && console.error('Failed to request accounts:', error);
+    throw new Error('Wallet account authorization failed. Please connect your wallet.');
+  }
+  
   const ethersProvider = new ethers.BrowserProvider(walletProvider);
   const signer = await ethersProvider.getSigner();
   const userAddress = signer.address;
