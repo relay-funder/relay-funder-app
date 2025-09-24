@@ -11,6 +11,7 @@ import {
   useRemoveRoundCampaign,
 } from '@/lib/hooks/useRounds';
 import { cn } from '@/lib/utils';
+import { debugComponentData as debug } from '@/lib/debug';
 
 interface RoundCampaignAdminControlsProps {
   campaign: DbCampaign;
@@ -62,11 +63,28 @@ export function RoundCampaignAdminControls({
   }, [updateRoundCampaign, campaign.id, round.id]);
 
   const onRemove = useCallback(async () => {
-    await removeRoundCampaign({
-      campaignId: campaign.id,
-      roundId: round.id,
-    });
-  }, [removeRoundCampaign, campaign.id, round.id]);
+    try {
+      const result = await removeRoundCampaign({
+        campaignId: campaign.id,
+        roundId: round.id,
+      });
+
+      // Log successful removal for tracking
+      debug &&
+        console.log('Admin removed campaign from round:', {
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          roundId: round.id,
+          roundTitle: round.title,
+          timestamp: new Date().toISOString(),
+        });
+
+      // The campaign is now available for re-addition since the relationship is deleted
+    } catch (error) {
+      console.error('Failed to remove campaign from round:', error);
+      throw error; // Re-throw to let the UI handle the error
+    }
+  }, [removeRoundCampaign, campaign.id, campaign.title, round.id, round.title]);
 
   if (!isAdmin) {
     return null;

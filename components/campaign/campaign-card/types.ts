@@ -308,7 +308,7 @@ export function getDefaultDisplayOptions(
     default:
       return {
         ...baseOptions,
-        showRoundsIndicator: true,
+        showRoundsIndicator: false, // Hide round indicators on homepage
         // Standard type now handles both regular and compact layouts
         // Use displayOptions to override for compact usage if needed
       };

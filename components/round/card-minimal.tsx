@@ -125,6 +125,30 @@ export function RoundCardMinimal({
             </span>
           </div>
 
+          {/* Application Status - Show for the specific campaign */}
+          {campaign && round.recipientStatus && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <span>Application Status</span>
+              </div>
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                  round.recipientStatus === 'APPROVED'
+                    ? 'bg-green-100 text-green-700'
+                    : round.recipientStatus === 'REJECTED'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                }`}
+              >
+                {round.recipientStatus === 'APPROVED'
+                  ? 'approved'
+                  : round.recipientStatus === 'REJECTED'
+                    ? 'rejected'
+                    : 'pending'}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />

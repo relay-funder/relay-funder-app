@@ -2,7 +2,7 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { Calendar, Users, DollarSign } from 'lucide-react';
+import { Calendar, Users, DollarSign, ExternalLink } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 
@@ -10,7 +10,7 @@ import { useRound } from '@/lib/hooks/useRounds';
 import { RoundLoading } from './loading';
 import { RoundMainImageAvatar } from './main-image-avatar';
 import { FormattedDate } from '../formatted-date';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { CampaignCard } from '@/components/campaign/campaign-card';
@@ -21,18 +21,31 @@ import { ReadMoreDescription } from '@/components/ui/read-more-description';
 import { debugComponentData as debug } from '@/lib/debug';
 import { RoundManageResults } from './manage-results';
 import { RoundAdminInlineEdit } from './admin/inline-edit';
+import { RoundApplyDialog } from './apply-dialog';
+import { Button } from '@/components/ui';
 
 export function RoundFull({ id }: { id: number }) {
   const { data: roundInstance, isPending } = useRound(id);
-  const { isAdmin } = useAuth();
+  const { isAdmin, authenticated, address } = useAuth();
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
 
   // Call hooks with safe defaults for when round might be undefined
   const round = roundInstance?.round;
   const status = useRoundStatus(round);
   useRoundTimeInfo(round);
   const numberOfCampaigns = useMemo(() => {
-    return round?.roundCampaigns?.length ?? 0;
-  }, [round]);
+    if (!round?.roundCampaigns) return 0;
+
+    // For admin users: count all campaigns
+    if (isAdmin) return round.roundCampaigns.length;
+
+    // For regular users: count approved campaigns + their own campaigns (any status)
+    return round.roundCampaigns.filter((rc) => {
+      const isOwnCampaign = rc.campaign?.creatorAddress === address;
+      const isApproved = rc.status === 'APPROVED';
+      return isApproved || (isOwnCampaign && !!address); // Simplified: if address exists, user is authenticated
+    }).length;
+  }, [round, isAdmin, address]);
 
   // Debug logging for admin round data - only when round exists
   useEffect(() => {
@@ -83,6 +96,20 @@ export function RoundFull({ id }: { id: number }) {
                 <h1 className="mb-3 text-3xl font-bold leading-tight tracking-tight">
                   {round.title ?? 'Untitled Round'}
                 </h1>
+                {/* Round URL - displayed below title with clickable icon */}
+                {round.descriptionUrl && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <a
+                      href={round.descriptionUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm hover:text-foreground hover:underline transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="truncate">{round.descriptionUrl}</span>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -146,6 +173,14 @@ export function RoundFull({ id }: { id: number }) {
           </div>
         </div>
 
+        {/* Round Description Section - Only on detail page */}
+        {round.description && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">About This Round</h2>
+            <ReadMoreDescription text={round.description} maxLength={350} />
+          </div>
+        )}
+
         {/* Participating Campaigns Section - Prominent Display */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -159,6 +194,16 @@ export function RoundFull({ id }: { id: number }) {
                   : 'No active campaigns have been approved for this round yet'}
               </p>
             </div>
+            {/* Apply to Round Button - Only for authenticated non-admin users */}
+            {authenticated && !isAdmin && (
+              <Button
+                onClick={() => setShowApplyDialog(true)}
+                variant="default"
+                className="shrink-0"
+              >
+                Apply Campaign
+              </Button>
+            )}
           </div>
 
           {numberOfCampaigns > 0 ? (
@@ -179,6 +224,14 @@ export function RoundFull({ id }: { id: number }) {
           )}
         </div>
       </div>
+
+      {/* Apply Dialog */}
+      {showApplyDialog && (
+        <RoundApplyDialog
+          round={round}
+          onClosed={() => setShowApplyDialog(false)}
+        />
+      )}
     </PageHome>
   );
 }
@@ -191,15 +244,28 @@ function RoundCampaignsList({
   round: GetRoundResponseInstance;
   isAdmin?: boolean;
 }) {
+  const { address } = useAuth();
+
   const campaigns = useMemo(() => {
     return (
       round.roundCampaigns
         ?.map((rc) => rc.campaign)
-        .filter((campaign): campaign is NonNullable<typeof campaign> =>
-          Boolean(campaign),
-        ) ?? []
+        .filter((campaign): campaign is NonNullable<typeof campaign> => {
+          if (!campaign) return false;
+
+          // For admin users: show all campaigns
+          if (isAdmin) return true;
+
+          // For regular users: show approved campaigns + their own campaigns (any status)
+          const isOwnCampaign = campaign.creatorAddress === address;
+          const isApproved =
+            round.roundCampaigns?.find((rc) => rc.campaignId === campaign.id)
+              ?.status === 'APPROVED';
+
+          return isApproved || (isOwnCampaign && !!address);
+        }) ?? []
     );
-  }, [round.roundCampaigns]);
+  }, [round.roundCampaigns, isAdmin, address]);
 
   // Debug logging to help troubleshoot campaign data
   useEffect(() => {
@@ -235,6 +301,8 @@ function RoundCampaignsList({
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {campaigns.map((campaign) => {
+        const isOwnCampaign = campaign.creatorAddress === address;
+
         if (isAdmin) {
           return (
             <CampaignCard
@@ -251,6 +319,27 @@ function RoundCampaignsList({
             />
           );
         }
+
+        // For regular users: show status for their own campaigns
+        if (isOwnCampaign) {
+          return (
+            <CampaignCard
+              key={campaign.id}
+              campaign={campaign}
+              type="round"
+              round={round}
+              statusIndicators={
+                <RoundCardCampaignStatus campaign={campaign} round={round} />
+              }
+              displayOptions={{
+                showRoundAdminControls: false, // No admin controls for regular users
+                showRoundAdminFooterControls: false, // No admin footer controls
+              }}
+            />
+          );
+        }
+
+        // For other users' approved campaigns: standard display without status
         return (
           <CampaignCard
             key={campaign.id}

@@ -30,6 +30,7 @@ interface CampaignCardContentProps {
     id: number;
     campaignId: number;
   };
+  cardType?: 'standard' | 'dashboard' | 'admin' | 'round' | 'round-minimal'; // New prop
 }
 
 export function CampaignCardContent({
@@ -44,6 +45,7 @@ export function CampaignCardContent({
   children,
   round,
   roundCampaign,
+  cardType = 'standard',
 }: CampaignCardContentProps) {
   return (
     <CardContent className="flex-1 p-6">
@@ -72,6 +74,7 @@ export function CampaignCardContent({
         <CampaignCardMetadata
           campaign={campaign}
           displayOptions={displayOptions}
+          cardType={cardType}
         />
 
         {/* Custom description prop - only when showDescription is enabled */}

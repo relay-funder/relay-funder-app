@@ -67,11 +67,13 @@ export async function listRounds({
   pageSize = 10,
   skip = 0,
   admin = false,
+  userAddress = null,
 }: {
   page?: number;
   pageSize?: number;
   skip?: number;
   admin?: boolean;
+  userAddress?: string | null;
 }) {
   const [rounds, totalCount] = await Promise.all([
     db.round.findMany({
@@ -88,15 +90,44 @@ export async function listRounds({
             },
           },
           where: admin
-            ? {}
-            : {
-                status: 'APPROVED',
-                Campaign: {
-                  status: {
-                    in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+            ? {} // Admin sees all campaigns
+            : userAddress
+              ? {
+                  OR: [
+                    // Include approved campaigns
+                    {
+                      status: 'APPROVED',
+                      Campaign: {
+                        status: {
+                          in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                        },
+                      },
+                    },
+                    // Include user's own campaigns (any status)
+                    {
+                      Campaign: {
+                        creatorAddress: userAddress,
+                        status: {
+                          in: [
+                            'ACTIVE',
+                            'COMPLETED',
+                            'FAILED',
+                            'PENDING_APPROVAL',
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                }
+              : {
+                  // Non-authenticated users see only approved campaigns
+                  status: 'APPROVED',
+                  Campaign: {
+                    status: {
+                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                    },
                   },
                 },
-              },
         },
       },
       take: pageSize,
@@ -108,7 +139,7 @@ export async function listRounds({
   ]);
 
   return {
-    rounds: rounds.map((round) => mapRound(round, 'APPROVED')),
+    rounds: rounds.map((round) => mapRound(round)), // Remove hardcoded status
     pagination: {
       currentPage: page,
       pageSize,

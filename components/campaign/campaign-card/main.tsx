@@ -168,6 +168,7 @@ export function CampaignCard({
         categoryDetails={categoryDetails ?? null}
         round={round}
         roundCampaign={roundCampaign}
+        cardType={type}
       >
         {children}
       </CampaignCardContent>
@@ -183,6 +184,7 @@ export function CampaignCard({
         round={round}
         roundCampaign={roundCampaign}
         roundAdminFooterControls={roundAdminFooterControls}
+        cardType={type}
       />
     </Card>
   );

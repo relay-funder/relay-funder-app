@@ -7,6 +7,7 @@ import { TreasuryBalanceCompact } from '../treasury-balance';
 import { CopyText } from '@/components/copy-text';
 import { CampaignCardDisplayOptions } from './types';
 import { CampaignCardActions } from './actions';
+import { useAuth } from '@/contexts';
 
 interface CampaignStatusInfo {
   status: string;
@@ -31,6 +32,8 @@ interface CampaignCardFooterProps {
     campaignId: number;
   };
   roundAdminFooterControls?: React.ReactNode;
+  // Card type for context-aware rendering
+  cardType?: 'standard' | 'dashboard' | 'admin' | 'round' | 'round-minimal';
 }
 
 export function CampaignCardFooter({
@@ -44,28 +47,53 @@ export function CampaignCardFooter({
   round,
   roundCampaign,
   roundAdminFooterControls,
+  cardType = 'standard',
 }: CampaignCardFooterProps) {
+  const { address } = useAuth();
+  const isOwner = campaign?.creatorAddress === address;
   return (
     <CardFooter className="mt-auto p-6 pt-0">
       <div className="w-full space-y-4">
-        {/* Admin-specific info */}
-        {adminMode && campaign?.rounds && campaign?.rounds?.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">
-              Active Rounds:
-            </h4>
-            <ul className="space-y-1">
-              {campaign.rounds.map((round: GetRoundResponseInstance) => (
-                <li
-                  key={round.id}
-                  className="border-l-2 border-blue-200 pl-2 text-sm text-gray-600"
-                >
-                  {round.title}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* Round Applications - Show for campaign owners and admins, but hide on homepage */}
+        {campaign?.rounds &&
+          campaign?.rounds?.length > 0 &&
+          (adminMode || isOwner) &&
+          cardType !== 'standard' && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-gray-700">
+                Round Applications:
+              </h4>
+              <ul className="space-y-1">
+                {campaign.rounds.map((round: GetRoundResponseInstance) => (
+                  <li
+                    key={round.id}
+                    className="border-l-2 border-blue-200 pl-2 text-sm text-gray-600"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{round.title}</span>
+                      {round.recipientStatus && (
+                        <span
+                          className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            round.recipientStatus === 'APPROVED'
+                              ? 'bg-green-100 text-green-700'
+                              : round.recipientStatus === 'REJECTED'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                          }`}
+                        >
+                          {round.recipientStatus === 'APPROVED'
+                            ? 'approved'
+                            : round.recipientStatus === 'REJECTED'
+                              ? 'rejected'
+                              : 'pending'}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
         {/* Date information for admin and round variants */}
         {displayOptions.showDates && (

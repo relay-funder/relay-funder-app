@@ -1,6 +1,4 @@
 'use client';
-import { useInView } from 'react-intersection-observer';
-
 import {
   Button,
   Dialog,
@@ -8,20 +6,22 @@ import {
   DialogHeader,
   DialogTitle,
   Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useCreateRoundCampaign } from '@/lib/hooks/useRounds';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { DbCampaign } from '@/types/campaign';
-import {
-  useInfiniteCampaigns,
-  useInfiniteUserCampaigns,
-} from '@/lib/hooks/useCampaigns';
+import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
 import { useAuth } from '@/contexts';
-import { CampaignCard } from '../../campaign/campaign-card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export function RoundAddDialog({
   round,
@@ -30,8 +30,8 @@ export function RoundAddDialog({
   round: GetRoundResponseInstance;
   onClosed?: () => void;
 }) {
-  const { ref, inView } = useInView();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
   const [applicationReason, setApplicationReason] = useState<string>('');
@@ -39,27 +39,11 @@ export function RoundAddDialog({
     DbCampaign | undefined
   >();
 
-  const {
-    data: campaignData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isPending: isCampaignsDataPending,
-  } = useInfiniteCampaigns('all', 10, false);
-  const {
-    data: userCampaignData,
-    fetchNextPage: userFetchNextPage,
-    hasNextPage: userHasNextPage,
-    isFetchingNextPage: userIsFetchingNextPage,
-    isPending: isUserCampaignsDataPending,
-  } = useInfiniteUserCampaigns('all', 10, false);
+  const { data: campaignData, isPending: isCampaignsDataPending } =
+    useInfiniteCampaigns('all', 10); // Use infinite campaigns with proper page size limit
 
   const canAdd = useMemo(() => {
-    if (
-      isCampaignsDataPending ||
-      isUserCampaignsDataPending ||
-      !selectedCampaign
-    ) {
+    if (isCampaignsDataPending || !selectedCampaign) {
       return false;
     }
     if (page === 1 && applicationReason.trim() === '') {
@@ -79,7 +63,6 @@ export function RoundAddDialog({
     page,
     applicationReason,
     isCampaignsDataPending,
-    isUserCampaignsDataPending,
   ]);
   const { mutateAsync: createRoundCampaign, isPending } =
     useCreateRoundCampaign();
@@ -87,73 +70,71 @@ export function RoundAddDialog({
     setSelectedCampaign(undefined);
     typeof onClosed === 'function' && onClosed();
   }, [onClosed]);
-  const onCampaignSelected = useCallback(
-    async (campaign: DbCampaign) => {
-      setSelectedCampaign(campaign);
-    },
-    [setSelectedCampaign],
-  );
-  const campaignFilter = useCallback(
-    (campaign: DbCampaign) => {
-      if (
-        round.roundCampaigns?.find(
-          (roundCampaign) => campaign.id === roundCampaign.campaignId,
-        )
-      ) {
-        // hide campaigns that are already applied to the round
-        return false;
-      }
-      return true;
-    },
-    [round],
-  );
-  const campaignPagesReducer = useCallback(
-    (accumulator: DbCampaign[], page: { campaigns: DbCampaign[] }) => {
-      return accumulator.concat(page.campaigns.filter(campaignFilter));
-    },
-    [campaignFilter],
-  );
-  const userCampaigns = useMemo(() => {
-    if (isAdmin && campaignData) {
-      return campaignData.pages.reduce(
-        campaignPagesReducer,
-        [] as DbCampaign[],
-      );
-    }
-    if (!isAdmin && userCampaignData) {
-      return userCampaignData.pages.reduce(
-        campaignPagesReducer,
-        [] as DbCampaign[],
-      );
+
+  // Use all campaigns for admin (process infinite query structure)
+  const allCampaigns = useMemo(() => {
+    if (campaignData?.pages) {
+      return campaignData.pages.reduce((acc, page) => {
+        return acc.concat(page.campaigns);
+      }, [] as DbCampaign[]);
     }
     return [] as DbCampaign[];
-  }, [campaignData, userCampaignData, isAdmin, campaignPagesReducer]);
-  const hasCampaigns = useMemo(() => {
-    if (isAdmin) {
-      return true;
-    }
-    if (!userCampaignData) {
-      return false;
-    }
-    return userCampaigns.length > 0;
-  }, [userCampaignData, userCampaigns, isAdmin]);
-  const hasApplicableCampaigns = userCampaigns.length > 0;
+  }, [campaignData]);
+
+  const onCampaignSelected = useCallback(
+    (campaignId: string) => {
+      const campaign = allCampaigns.find(
+        (c: DbCampaign) => c.id.toString() === campaignId,
+      );
+      setSelectedCampaign(campaign);
+    },
+    [allCampaigns],
+  );
+  // Filter out campaigns that are already applied to this round
+  // Note: Campaigns removed by admin are automatically available for re-addition
+  // since the RoundCampaigns relationship is deleted upon removal
+  const availableCampaigns = useMemo(() => {
+    return allCampaigns.filter((campaign: DbCampaign) => {
+      return !round.roundCampaigns?.find(
+        (roundCampaign) => campaign.id === roundCampaign.campaignId,
+      );
+    });
+  }, [allCampaigns, round]);
+
+  const hasCampaigns = allCampaigns.length > 0;
+  const hasApplicableCampaigns = availableCampaigns.length > 0;
   const onCreateApplication = useCallback(async () => {
     if (typeof selectedCampaign === 'undefined') {
       return;
     }
-    await createRoundCampaign({
-      roundId: round.id,
-      campaignId: selectedCampaign.id,
-      applicationReason,
-    });
-    onClose();
+    try {
+      await createRoundCampaign({
+        roundId: round.id,
+        campaignId: selectedCampaign.id,
+        applicationReason,
+      });
+      toast({
+        title: 'Campaign Added',
+        description: `Campaign "${selectedCampaign.title}" has been added to the round.`,
+      });
+      onClose();
+    } catch (error) {
+      toast({
+        title: 'Failed to Add Campaign',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An error occurred while adding the campaign.',
+        variant: 'destructive',
+      });
+    }
   }, [
     createRoundCampaign,
     selectedCampaign,
     round,
     onClose,
     applicationReason,
+    toast,
   ]);
   const onAdd = useCallback(async () => {
     if (isAdmin) {
@@ -171,26 +152,6 @@ export function RoundAddDialog({
       setApplicationReason(event.target.value),
     [],
   );
-  useEffect(() => {
-    if (isAdmin) {
-      if (inView && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    } else {
-      if (inView && userHasNextPage && !userIsFetchingNextPage) {
-        userFetchNextPage();
-      }
-    }
-  }, [
-    isAdmin,
-    inView,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    userHasNextPage,
-    userIsFetchingNextPage,
-    userFetchNextPage,
-  ]);
 
   return (
     <Dialog
@@ -218,50 +179,52 @@ export function RoundAddDialog({
         <div className="py-1 md:py-4">
           {page === 0 && (
             <>
-              {isCampaignsDataPending || isUserCampaignsDataPending ? (
+              {isCampaignsDataPending ? (
                 <p className="mb-1 text-sm text-gray-600 md:mb-4">
                   Loading available campaigns
                 </p>
               ) : !hasApplicableCampaigns ? (
-                <p className="mb-1 text-sm text-gray-600 md:mb-4">
-                  {isAdmin
-                    ? 'All Campaigns applied to this round already!'
-                    : hasCampaigns
-                      ? 'All of your Campaigns applied to this round already'
-                      : 'You do not have any campaigns, create one!'}
-                </p>
-              ) : (
-                <>
-                  <p className="mb-4 text-sm text-gray-600">
-                    Choose from the available{' '}
-                    {userCampaigns.length === 1 ? 'campaign' : 'campaigns'} you
-                    want to apply for this round:
+                <div className="space-y-4 py-8 text-center">
+                  <p className="text-muted-foreground">
+                    No more campaigns to add.
                   </p>
-
-                  <div className="max-h-[60vh] space-y-2 overflow-y-auto md:max-h-[75vh]">
-                    {userCampaigns.map((campaign) => (
-                      <div
-                        key={campaign.id}
-                        className={cn(
-                          'flex cursor-pointer items-center space-x-3 rounded-lg border p-3 hover:bg-green-50',
-                          selectedCampaign?.id === campaign.id &&
-                            'border-emerald-400 bg-green-50',
-                        )}
-                        onClick={() => onCampaignSelected(campaign)}
-                      >
-                        <CampaignCard
-                          key={campaign.id}
-                          campaign={campaign}
-                          type="round-minimal"
-                          round={round}
-                          onSelect={onCampaignSelected}
-                        />
-                      </div>
-                    ))}
-                    {/* Intersection observer target */}
-                    <div ref={ref} className="h-10" />
+                  <Button variant="outline" onClick={onClose}>
+                    Close
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Select Campaign
+                    </label>
+                    <Select
+                      value={selectedCampaign?.id?.toString() || ''}
+                      onValueChange={onCampaignSelected}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a campaign to add..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCampaigns.map((campaign: DbCampaign) => (
+                          <SelectItem
+                            key={campaign.id}
+                            value={campaign.id.toString()}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {campaign.title}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {campaign.category} • {campaign.status}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </>
+                </div>
               )}
             </>
           )}
@@ -286,33 +249,18 @@ export function RoundAddDialog({
               />
             </>
           )}
-          <div className="mt-6 flex gap-4">
-            {page === 0 && (
-              <>
-                {!hasApplicableCampaigns ? (
-                  <>
-                    <Button
-                      className="bg-purple-600 hover:bg-purple-700"
-                      onClick={onCreateCampaign}
-                    >
-                      {isPending ? 'Saving...' : 'Create Campaign'}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      className="bg-purple-600 hover:bg-purple-700"
-                      disabled={!canAdd}
-                      onClick={onAdd}
-                    >
-                      {isPending ? 'Saving...' : isAdmin ? 'Add' : 'Apply Now'}
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
-            {page === 1 && (
-              <>
+          {hasApplicableCampaigns && (
+            <div className="mt-6 flex gap-4">
+              {page === 0 && (
+                <Button
+                  className="bg-purple-600 hover:bg-purple-700"
+                  disabled={!canAdd}
+                  onClick={onAdd}
+                >
+                  {isPending ? 'Saving...' : isAdmin ? 'Add' : 'Apply Now'}
+                </Button>
+              )}
+              {page === 1 && (
                 <Button
                   className="bg-purple-600 hover:bg-purple-700"
                   disabled={!canAdd || isPending}
@@ -320,12 +268,12 @@ export function RoundAddDialog({
                 >
                   {isPending ? 'Saving...' : 'Send Application'}
                 </Button>
-              </>
-            )}
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-          </div>
+              )}
+              <Button variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -7,11 +7,13 @@ import { CampaignCardDisplayOptions } from './types';
 interface CampaignCardMetadataProps {
   campaign: DbCampaign;
   displayOptions: CampaignCardDisplayOptions;
+  cardType?: 'standard' | 'dashboard' | 'admin' | 'round' | 'round-minimal'; // New prop to determine context
 }
 
 export function CampaignCardMetadata({
   campaign,
   displayOptions,
+  cardType = 'standard',
 }: CampaignCardMetadataProps) {
   return (
     <div className="space-y-3">
@@ -42,6 +44,8 @@ export function CampaignCardMetadata({
             campaign={campaign}
             variant="detailed"
             className="w-full justify-center"
+            showUpcomingRounds={cardType === 'dashboard'} // Only show upcoming on dashboard
+            showPendingStatus={cardType === 'dashboard'} // Only show pending on dashboard
           />
         </div>
       )}

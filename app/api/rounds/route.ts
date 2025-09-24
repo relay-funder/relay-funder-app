@@ -25,7 +25,18 @@ export async function GET(req: Request) {
     // Check if user is admin to determine campaign filtering
     const admin = await isAdmin();
 
-    return response(await listRounds({ page, pageSize, skip, admin }));
+    // Get current user's address for including their own campaigns
+    let userAddress: string | null = null;
+    try {
+      const session = await checkAuth(['user']);
+      userAddress = session.user.address;
+    } catch {
+      // User not authenticated, continue without user address
+    }
+
+    return response(
+      await listRounds({ page, pageSize, skip, admin, userAddress }),
+    );
   } catch (error: unknown) {
     return handleError(error);
   }

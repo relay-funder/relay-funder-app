@@ -41,7 +41,7 @@ export function RoundCard({
   displayOptions: userDisplayOptions = {},
   className,
 }: RoundCardProps) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, authenticated, address } = useAuth();
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
 
@@ -51,9 +51,19 @@ export function RoundCard({
     ...userDisplayOptions,
   };
 
-  const numberOfProjects = useMemo(() => {
-    return round.roundCampaigns?.length ?? 0;
-  }, [round]);
+  const numberOfCampaigns = useMemo(() => {
+    if (!round.roundCampaigns) return 0;
+
+    // For admin users: count all campaigns
+    if (isAdmin) return round.roundCampaigns.length;
+
+    // For regular users: count approved campaigns + their own campaigns (any status)
+    return round.roundCampaigns.filter((rc) => {
+      const isOwnCampaign = rc.campaign?.creatorAddress === address;
+      const isApproved = rc.status === 'APPROVED';
+      return isApproved || (isOwnCampaign && !!address);
+    }).length;
+  }, [round.roundCampaigns, isAdmin, address]);
 
   const isEnhancedType = type === 'enhanced';
 
@@ -99,9 +109,9 @@ export function RoundCard({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span>Projects</span>
+                <span>Campaigns</span>
               </div>
-              <p className="text-lg font-semibold">{numberOfProjects}</p>
+              <p className="text-lg font-semibold">{numberOfCampaigns}</p>
             </div>
 
             <div className="space-y-2">
@@ -147,7 +157,7 @@ export function RoundCard({
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              <span>{numberOfProjects} projects</span>
+              <span>{numberOfCampaigns} campaigns</span>
             </div>
             <div className="flex items-center gap-1">
               <DollarSign className="h-4 w-4" />

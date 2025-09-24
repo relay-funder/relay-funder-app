@@ -1,6 +1,4 @@
 'use client';
-import { useInView } from 'react-intersection-observer';
-
 import {
   Button,
   Dialog,
@@ -8,18 +6,19 @@ import {
   DialogHeader,
   DialogTitle,
   Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { cn } from '@/lib/utils';
-import {
-  useCreateRoundCampaign,
-  useInfiniteRounds,
-} from '@/lib/hooks/useRounds';
+import { useCallback, useMemo, useState } from 'react';
+import { useCreateRoundCampaign, useRounds } from '@/lib/hooks/useRounds';
 import { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
-import { RoundCardSelect } from '@/components/round/card-select';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export function CampaignAddRoundDialog({
   campaign,
@@ -28,21 +27,15 @@ export function CampaignAddRoundDialog({
   campaign: DbCampaign;
   onClosed?: () => void;
 }) {
-  const { ref, inView } = useInView();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
   const [applicationReason, setApplicationReason] = useState<string>('');
   const [selectedRound, setSelectedRound] = useState<
     GetRoundResponseInstance | undefined
   >();
-  const {
-    data: roundsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isPending: isRoundsDataPending,
-  } = useInfiniteRounds(10);
+  const { data: roundsData, isPending: isRoundsDataPending } = useRounds();
 
   const canAdd = useMemo(() => {
     if (isRoundsDataPending || !selectedRound) {
@@ -66,52 +59,72 @@ export function CampaignAddRoundDialog({
     setSelectedRound(undefined);
     typeof onClosed === 'function' && onClosed();
   }, [onClosed]);
-  const onRoundSelected = useCallback(
-    async (round: GetRoundResponseInstance) => {
-      setSelectedRound(round);
-    },
-    [setSelectedRound],
-  );
-  const rounds = useMemo(() => {
-    if (roundsData) {
+
+  // Filter out rounds where the application deadline has passed or campaign is already applied
+  const availableRounds = useMemo(() => {
+    if (roundsData?.rounds) {
       const now = new Date();
-      return roundsData.pages.reduce((accumulator, page) => {
-        return accumulator.concat(
-          page.rounds.filter((round) => {
-            if (new Date(round.applicationEndTime) < now) {
-              return false;
-            }
-            if (
-              campaign.rounds?.find((campaignRound) => {
-                return campaignRound.id === round.id;
-              })
-            ) {
-              return false;
-            }
-            return true;
-          }),
-        );
-      }, [] as GetRoundResponseInstance[]);
+      return roundsData.rounds.filter((round: GetRoundResponseInstance) => {
+        // Check if application deadline has passed
+        if (new Date(round.applicationEndTime) < now) {
+          return false;
+        }
+        // Check if campaign is already applied to this round
+        if (
+          campaign.rounds?.find((campaignRound) => {
+            return campaignRound.id === round.id;
+          })
+        ) {
+          return false;
+        }
+        return true;
+      });
     }
     return [] as GetRoundResponseInstance[];
   }, [roundsData, campaign]);
-  const hasRounds = rounds.length > 0;
+
+  const onRoundSelected = useCallback(
+    (roundId: string) => {
+      const round = availableRounds.find(
+        (r: GetRoundResponseInstance) => r.id.toString() === roundId,
+      );
+      setSelectedRound(round);
+    },
+    [availableRounds],
+  );
+  const hasRounds = availableRounds.length > 0;
   const onCreateApplication = useCallback(async () => {
     if (!selectedRound) {
       return;
     }
-    await createRoundCampaign({
-      roundId: selectedRound.id,
-      campaignId: campaign.id,
-      applicationReason,
-    });
-    onClose();
+    try {
+      await createRoundCampaign({
+        roundId: selectedRound.id,
+        campaignId: campaign.id,
+        applicationReason,
+      });
+      toast({
+        title: 'Application Submitted',
+        description: `Campaign "${campaign.title}" has been applied to "${selectedRound.title}".`,
+      });
+      onClose();
+    } catch (error) {
+      toast({
+        title: 'Application Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to submit application.',
+        variant: 'destructive',
+      });
+    }
   }, [
     createRoundCampaign,
     selectedRound,
     campaign,
     onClose,
     applicationReason,
+    toast,
   ]);
   const onAdd = useCallback(async () => {
     if (isAdmin) {
@@ -131,11 +144,6 @@ export function CampaignAddRoundDialog({
       `Currently applied to ${campaign.rounds.length} ${campaign.rounds.length === 1 ? 'Round' : 'Rounds'}`
     );
   }, [campaign]);
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <Dialog
@@ -165,39 +173,55 @@ export function CampaignAddRoundDialog({
                   Loading available rounds
                 </p>
               ) : !hasRounds ? (
-                <p className="mb-1 text-sm text-gray-600 md:mb-4">
-                  There are no rounds to apply to. {currentlyAppliedMessage}
-                </p>
-              ) : (
-                <>
-                  <p className="mb-4 text-sm text-gray-600">
-                    {currentlyAppliedMessage}. Choose the round you want to
-                    apply for.
+                <div className="space-y-4 py-8 text-center">
+                  <p className="text-muted-foreground">
+                    No more rounds to add.
                   </p>
-
-                  <div className="max-h-[60vh] space-y-2 overflow-y-auto md:max-h-[75vh]">
-                    {rounds.map((round) => (
-                      <div
-                        key={round.id}
-                        className={cn(
-                          'flex cursor-pointer items-center space-x-3 rounded-lg border p-3 hover:bg-green-50',
-                          selectedRound?.id === round.id &&
-                            'border-emerald-400 bg-green-50',
+                  <Button variant="outline" onClick={onClose}>
+                    Close
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {currentlyAppliedMessage && (
+                    <p className="text-sm text-muted-foreground">
+                      {currentlyAppliedMessage}
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Select Round</label>
+                    <Select
+                      value={selectedRound?.id?.toString() || ''}
+                      onValueChange={onRoundSelected}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a round to apply to..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableRounds.map(
+                          (round: GetRoundResponseInstance) => (
+                            <SelectItem
+                              key={round.id}
+                              value={round.id.toString()}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {round.title}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Deadline:{' '}
+                                  {new Date(
+                                    round.applicationEndTime,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ),
                         )}
-                        onClick={() => onRoundSelected(round)}
-                      >
-                        <RoundCardSelect
-                          key={round.id}
-                          round={round}
-                          onSelect={onRoundSelected}
-                          disabled={selectedRound?.id === round.id}
-                        />
-                      </div>
-                    ))}
-                    {/* Intersection observer target */}
-                    <div ref={ref} className="h-10" />
+                      </SelectContent>
+                    </Select>
                   </div>
-                </>
+                </div>
               )}
             </>
           )}
