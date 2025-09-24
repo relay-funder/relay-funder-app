@@ -3,7 +3,7 @@ import { ContentArea, FullWidthContainer } from '@/components/layout';
 
 export function PageDashboard({
   children,
-  title = 'My Campaigns',
+  title = 'Dashboard',
   actions,
 }: {
   children: ReactNode;

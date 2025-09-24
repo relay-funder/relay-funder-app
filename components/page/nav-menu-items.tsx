@@ -31,7 +31,7 @@ export function PageNavMenuItems() {
     if (!isAdmin) {
       items.push({
         icon: <LayoutDashboard className="h-6 w-6" />,
-        label: 'My Campaigns',
+        label: 'Dashboard',
         href: '/dashboard',
       });
       items.push({
