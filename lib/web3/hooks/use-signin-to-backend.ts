@@ -27,10 +27,51 @@ async function fetchNonce() {
 }
 export function useSignInToBackend() {
   const params = useSearchParams();
-  const callbackUrl = useMemo(
-    () => params?.get('callbackUrl') || '/dashboard',
-    [params],
-  );
+  const callbackUrl = useMemo(() => {
+    const paramCallbackUrl = params?.get('callbackUrl');
+
+    // Prevent cross-domain callbacks on deployment domains
+    // Check if current domain matches patterns where external callbacks should be blocked
+    if (
+      typeof window !== 'undefined' &&
+      paramCallbackUrl &&
+      !paramCallbackUrl.startsWith('/')
+    ) {
+      try {
+        const callbackDomain = new URL(paramCallbackUrl).hostname;
+        const currentDomain = window.location.hostname;
+
+        // Get domain patterns from environment variable
+        const blockPatterns =
+          process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(
+            ',',
+          ).map((p) => p.trim()) || [];
+
+        if (currentDomain !== callbackDomain) {
+          const shouldBlock = blockPatterns.some((pattern) => {
+            // Support wildcards and exact matches
+            if (pattern.includes('*')) {
+              const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+              return regex.test(currentDomain);
+            }
+            return currentDomain.includes(pattern);
+          });
+
+          if (shouldBlock) {
+            console.warn(
+              `Cross-domain callback prevented: ${currentDomain} → ${callbackDomain} (matched pattern)`,
+            );
+            return '/dashboard';
+          }
+        }
+      } catch {
+        // Invalid URL, use dashboard
+        return '/dashboard';
+      }
+    }
+
+    return paramCallbackUrl || '/dashboard';
+  }, [params]);
   const { signMessageAsync } = useSignMessage();
   const account = useAccount();
 
