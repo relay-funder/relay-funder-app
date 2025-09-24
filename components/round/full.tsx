@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
+import { DetailContainer } from '@/components/layout';
 import { Calendar, Users, DollarSign, ExternalLink } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
@@ -80,158 +81,160 @@ export function RoundFull({ id }: { id: number }) {
 
   return (
     <PageHome header={header}>
-      <div className="space-y-6">
-        {isAdmin && status.text === 'Ended' && (
-          <RoundManageResults round={round} />
-        )}
-        {/* Round Info Section - Compact Layout with Large Logo */}
+      <DetailContainer variant="wide" padding="md">
         <div className="space-y-6">
-          {/* Round Header with Large Logo and Status */}
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex items-start gap-6">
-              <div className="shrink-0">
-                <RoundMainImageAvatar round={round} size="large" />
+          {isAdmin && status.text === 'Ended' && (
+            <RoundManageResults round={round} />
+          )}
+          {/* Round Info Section - Compact Layout with Large Logo */}
+          <div className="space-y-6">
+            {/* Round Header with Large Logo and Status */}
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex items-start gap-6">
+                <div className="shrink-0">
+                  <RoundMainImageAvatar round={round} size="large" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="mb-3 text-3xl font-bold leading-tight tracking-tight">
+                    {round.title ?? 'Untitled Round'}
+                  </h1>
+                  {/* Round URL - displayed below title with clickable icon */}
+                  {round.descriptionUrl && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <a
+                        href={round.descriptionUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm transition-colors hover:text-foreground hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="truncate">{round.descriptionUrl}</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="mb-3 text-3xl font-bold leading-tight tracking-tight">
-                  {round.title ?? 'Untitled Round'}
-                </h1>
-                {/* Round URL - displayed below title with clickable icon */}
-                {round.descriptionUrl && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <a
-                      href={round.descriptionUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm hover:text-foreground hover:underline transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      <span className="truncate">{round.descriptionUrl}</span>
-                    </a>
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={status.variant}
+                  className="shrink-0 px-3 py-1 text-sm"
+                >
+                  {status.text}
+                </Badge>
+                {isAdmin && <RoundAdminInlineEdit round={round} />}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={status.variant}
-                className="shrink-0 px-3 py-1 text-sm"
-              >
-                {status.text}
-              </Badge>
-              {isAdmin && <RoundAdminInlineEdit round={round} />}
+
+            {/* Stats and Timeline Grid */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Matching Pool */}
+              <Card className="p-4">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-sm font-medium">Matching Pool</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">
+                  ${round.matchingPool.toLocaleString()}
+                </p>
+              </Card>
+
+              {/* Campaigns Count */}
+              <Card className="p-4">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span className="text-sm font-medium">Campaigns</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">
+                  {numberOfCampaigns}
+                </p>
+              </Card>
+
+              {/* Round Period */}
+              <Card className="p-4">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm font-medium">Round Period</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  <FormattedDate date={new Date(round.startTime)} /> -{' '}
+                  <FormattedDate date={new Date(round.endTime)} />
+                </p>
+              </Card>
+
+              {/* Applications Period */}
+              <Card className="p-4">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm font-medium">Applications</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  <FormattedDate date={new Date(round.applicationStartTime)} />{' '}
+                  - <FormattedDate date={new Date(round.applicationEndTime)} />
+                </p>
+              </Card>
             </div>
           </div>
 
-          {/* Stats and Timeline Grid */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {/* Matching Pool */}
-            <Card className="p-4">
-              <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                <DollarSign className="h-4 w-4" />
-                <span className="text-sm font-medium">Matching Pool</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">
-                ${round.matchingPool.toLocaleString()}
-              </p>
-            </Card>
+          {/* Round Description Section - Only on detail page */}
+          {round.description && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">About This Round</h2>
+              <ReadMoreDescription text={round.description} maxLength={350} />
+            </div>
+          )}
 
-            {/* Campaigns Count */}
-            <Card className="p-4">
-              <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span className="text-sm font-medium">Campaigns</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">
-                {numberOfCampaigns}
-              </p>
-            </Card>
-
-            {/* Round Period */}
-            <Card className="p-4">
-              <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span className="text-sm font-medium">Round Period</span>
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                <FormattedDate date={new Date(round.startTime)} /> -{' '}
-                <FormattedDate date={new Date(round.endTime)} />
-              </p>
-            </Card>
-
-            {/* Applications Period */}
-            <Card className="p-4">
-              <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span className="text-sm font-medium">Applications</span>
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                <FormattedDate date={new Date(round.applicationStartTime)} /> -{' '}
-                <FormattedDate date={new Date(round.applicationEndTime)} />
-              </p>
-            </Card>
-          </div>
-        </div>
-
-        {/* Round Description Section - Only on detail page */}
-        {round.description && (
+          {/* Participating Campaigns Section - Prominent Display */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">About This Round</h2>
-            <ReadMoreDescription text={round.description} maxLength={350} />
-          </div>
-        )}
-
-        {/* Participating Campaigns Section - Prominent Display */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                Participating Campaigns
-              </h2>
-              <p className="text-muted-foreground">
-                {numberOfCampaigns > 0
-                  ? `${numberOfCampaigns} campaigns are participating in this round`
-                  : 'No active campaigns have been approved for this round yet'}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">
+                  Participating Campaigns
+                </h2>
+                <p className="text-muted-foreground">
+                  {numberOfCampaigns > 0
+                    ? `${numberOfCampaigns} campaigns are participating in this round`
+                    : 'No active campaigns have been approved for this round yet'}
+                </p>
+              </div>
+              {/* Apply to Round Button - Only for authenticated non-admin users */}
+              {authenticated && !isAdmin && (
+                <Button
+                  onClick={() => setShowApplyDialog(true)}
+                  variant="default"
+                  className="shrink-0"
+                >
+                  Apply Campaign
+                </Button>
+              )}
             </div>
-            {/* Apply to Round Button - Only for authenticated non-admin users */}
-            {authenticated && !isAdmin && (
-              <Button
-                onClick={() => setShowApplyDialog(true)}
-                variant="default"
-                className="shrink-0"
-              >
-                Apply Campaign
-              </Button>
+
+            {numberOfCampaigns > 0 ? (
+              <RoundCampaignsList round={round} isAdmin={isAdmin} />
+            ) : (
+              <Card className="p-8">
+                <div className="text-center text-muted-foreground">
+                  <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                  <p className="mb-2 text-lg font-medium">
+                    No Active Campaigns Yet
+                  </p>
+                  <p>
+                    Active campaigns will appear here once they&apos;re approved
+                    to participate in this round.
+                  </p>
+                </div>
+              </Card>
             )}
           </div>
-
-          {numberOfCampaigns > 0 ? (
-            <RoundCampaignsList round={round} isAdmin={isAdmin} />
-          ) : (
-            <Card className="p-8">
-              <div className="text-center text-muted-foreground">
-                <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
-                <p className="mb-2 text-lg font-medium">
-                  No Active Campaigns Yet
-                </p>
-                <p>
-                  Active campaigns will appear here once they&apos;re approved
-                  to participate in this round.
-                </p>
-              </div>
-            </Card>
-          )}
         </div>
-      </div>
 
-      {/* Apply Dialog */}
-      {showApplyDialog && (
-        <RoundApplyDialog
-          round={round}
-          onClosed={() => setShowApplyDialog(false)}
-        />
-      )}
+        {/* Apply Dialog */}
+        {showApplyDialog && (
+          <RoundApplyDialog
+            round={round}
+            onClosed={() => setShowApplyDialog(false)}
+          />
+        )}
+      </DetailContainer>
     </PageHome>
   );
 }
@@ -299,7 +302,7 @@ function RoundCampaignsList({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {campaigns.map((campaign) => {
         const isOwnCampaign = campaign.creatorAddress === address;
 

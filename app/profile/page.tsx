@@ -10,7 +10,7 @@ import { PageLoading } from '@/components/page/loading';
 import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { PageDefaultContent } from '@/components/page/default-content';
+import { DetailContainer } from '@/components/layout';
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
   const { authenticated, isReady } = useAuth();
@@ -41,18 +41,24 @@ export default function ProfilePage() {
         <PageHeader message="Manage your account settings, Wallet, and payment methods."></PageHeader>
       }
     >
-      <PageDefaultContent title="Profile">
-        {/* User Profile Card */}
-        <ProfileCard profile={profile} onEdit={onEditProfile} />
+      <DetailContainer variant="standard" padding="md">
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+          </div>
 
-        {/* User Profile Form */}
-        {(editProfile || !profile) && (
-          <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
-        )}
+          {/* User Profile Card */}
+          <ProfileCard profile={profile} onEdit={onEditProfile} />
 
-        {/* Additional Settings Card */}
-        {profile && <ProfileAdditionalSettings />}
-      </PageDefaultContent>
+          {/* User Profile Form */}
+          {(editProfile || !profile) && (
+            <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
+          )}
+
+          {/* Additional Settings Card */}
+          {profile && <ProfileAdditionalSettings />}
+        </div>
+      </DetailContainer>
     </PageHome>
   );
 }

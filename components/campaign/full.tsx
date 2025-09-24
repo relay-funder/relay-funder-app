@@ -5,6 +5,7 @@ import { CampaignMainImage } from '@/components/campaign/main-image';
 import { CampaignCardFull } from '@/components/campaign/card-full';
 import { CampaignDetailTabs } from '@/components/campaign/detail-tabs';
 import { PageHome } from '@/components/page/home';
+import { DetailContainer } from '@/components/layout';
 import { UserInlineName } from '@/components/user/inline-name';
 import { CampaignLocation } from '@/components/campaign/location';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
@@ -42,34 +43,44 @@ export function CampaignFull({ slug }: { slug: string }) {
     );
   }
 
-  const header = (
+  // Navigation header without title
+  const navHeader = (
     <PageHeader
       featured={isCampaignFeatured(campaign)}
       tags={[details?.name ?? 'Technology']}
-      title={campaign.title}
-    >
-      <div className="mb-2 flex items-center justify-between gap-1">
-        <UserInlineName user={campaign.creator} badges={true} />
-        <CampaignLocation campaign={campaign} />
-      </div>
-    </PageHeader>
+    />
   );
+
   return (
-    <PageHome header={header}>
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <div className="relative flex flex-col p-0 lg:col-span-8">
-          <CampaignMainImage campaign={campaign} />
-          <div className="absolute pl-1 pt-1">
-            <CampaignStatus campaign={campaign} />
+    <PageHome header={navHeader}>
+      <DetailContainer variant="standard" padding="md">
+        {/* Title and metadata section within constraints */}
+        <div className="mb-8 space-y-4">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight lg:text-4xl">
+            {campaign.title}
+          </h1>
+          <div className="flex items-center justify-between gap-1">
+            <UserInlineName user={campaign.creator} badges={true} />
+            <CampaignLocation campaign={campaign} />
           </div>
         </div>
-        <div className="lg:col-span-4">
-          <CampaignCardFull campaign={campaign} />
+
+        {/* Main content grid */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className="relative flex flex-col p-0 lg:col-span-8">
+            <CampaignMainImage campaign={campaign} />
+            <div className="absolute pl-1 pt-1">
+              <CampaignStatus campaign={campaign} />
+            </div>
+          </div>
+          <div className="lg:col-span-4">
+            <CampaignCardFull campaign={campaign} />
+          </div>
+          <div className="lg:col-span-8">
+            <CampaignDetailTabs campaign={campaign} />
+          </div>
         </div>
-        <div className="lg:col-span-8">
-          <CampaignDetailTabs campaign={campaign} />
-        </div>
-      </div>
+      </DetailContainer>
     </PageHome>
   );
 }

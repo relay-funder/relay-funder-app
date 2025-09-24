@@ -82,7 +82,7 @@ export function UserList({
     <div className={cn('space-y-4', className)}>
       <div
         className={cn(
-          'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
+          'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4',
           gridClassName,
         )}
       >
