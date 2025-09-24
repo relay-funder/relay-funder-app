@@ -14,9 +14,11 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { DbCampaign } from '@/types/campaign';
-import { RoundCardCampaignRemoveButton } from './card-campaign-remove-button';
+import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Trash2 } from 'lucide-react';
 import { RoundMainImageAvatar } from './main-image-avatar';
 
 export function RoundCardMinimal({
@@ -29,6 +31,9 @@ export function RoundCardMinimal({
   const { isAdmin, address } = useAuth();
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
+  const { toast } = useToast();
+  const { mutateAsync: removeRoundCampaign, isPending: isRemoving } =
+    useRemoveRoundCampaign();
   const canWithdraw = useMemo(() => {
     if (!campaign) {
       return false;
@@ -44,6 +49,29 @@ export function RoundCardMinimal({
     }
     return true;
   }, [round, campaign, address, isAdmin]);
+
+  const handleRemove = useCallback(async () => {
+    if (!campaign) return;
+
+    try {
+      await removeRoundCampaign({
+        campaignId: campaign.id,
+        roundId: round.id,
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Campaign removed from round successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to remove campaign',
+        variant: 'destructive',
+      });
+    }
+  }, [campaign, round.id, removeRoundCampaign, toast]);
   if (!round || !round.id) {
     return (
       <Card className="flex h-full flex-col overflow-hidden rounded-lg border p-4 shadow-sm">
@@ -121,9 +149,29 @@ export function RoundCardMinimal({
             </span>
           </Button>
           {canWithdraw && (
-            <RoundCardCampaignRemoveButton campaign={campaign} round={round}>
-              Withdraw Application
-            </RoundCardCampaignRemoveButton>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleRemove();
+              }}
+              variant="destructive"
+              size="sm"
+              disabled={isRemoving}
+              className="ml-2"
+            >
+              {isRemoving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Removing...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Withdraw Application
+                </>
+              )}
+            </Button>
           )}
         </CardFooter>
       </Link>

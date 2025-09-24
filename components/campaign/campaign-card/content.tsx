@@ -1,5 +1,6 @@
 import { CardContent } from '@/components/ui/card';
 import { DbCampaign } from '@/types/campaign';
+import { GetRoundResponseInstance } from '@/lib/api/types';
 import { Category } from '@/types';
 import { CampaignCardDisplayOptions } from './types';
 import { CampaignCardBadges } from './badges';
@@ -21,6 +22,13 @@ interface CampaignCardContentProps {
   campaignStatusInfo: CampaignStatusInfo;
   categoryDetails: Category | null;
   children?: React.ReactNode;
+  // Round-specific props
+  round?: GetRoundResponseInstance;
+  roundCampaign?: {
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    id: number;
+    campaignId: number;
+  };
 }
 
 export function CampaignCardContent({
@@ -32,11 +40,13 @@ export function CampaignCardContent({
   campaignStatusInfo,
   categoryDetails,
   children,
+  round,
+  roundCampaign,
 }: CampaignCardContentProps) {
   return (
     <CardContent className="flex-1 p-6">
-      <div className="space-y-3">
-        {/* Title - Full width, no truncation */}
+      <div className="space-y-4">
+        {/* Title - Primary hierarchy */}
         <h2
           className={`font-semibold leading-tight ${
             dashboardMode ? 'text-lg' : 'text-xl'
@@ -46,7 +56,7 @@ export function CampaignCardContent({
           {campaign?.title ?? 'Campaign Title'}
         </h2>
 
-        {/* Category and Status Badges */}
+        {/* Key metadata badges - Secondary hierarchy */}
         <CampaignCardBadges
           campaign={campaign}
           displayOptions={displayOptions}
@@ -56,9 +66,7 @@ export function CampaignCardContent({
           adminMode={adminMode}
         />
 
-        {/* Round information moved to below description */}
-
-        {/* Creator and Location Metadata */}
+        {/* Creator and description - Tertiary hierarchy */}
         <CampaignCardMetadata
           campaign={campaign}
           displayOptions={displayOptions}

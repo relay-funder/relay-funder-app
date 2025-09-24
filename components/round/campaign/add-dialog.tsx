@@ -19,7 +19,7 @@ import {
   useInfiniteUserCampaigns,
 } from '@/lib/hooks/useCampaigns';
 import { useAuth } from '@/contexts';
-import { CampaignCardRoundMinimal } from '../../campaign/card-round-minimal';
+import { CampaignCard } from '../../campaign/campaign-card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -249,9 +249,10 @@ export function RoundAddDialog({
                         )}
                         onClick={() => onCampaignSelected(campaign)}
                       >
-                        <CampaignCardRoundMinimal
+                        <CampaignCard
                           key={campaign.id}
                           campaign={campaign}
+                          type="round-minimal"
                           round={round}
                           onSelect={onCampaignSelected}
                         />

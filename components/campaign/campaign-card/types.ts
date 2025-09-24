@@ -14,6 +14,19 @@ export interface CampaignCardActions {
   onFavoriteToggle?: (isFavorite: boolean) => Promise<void>;
   onCreate?: () => Promise<void>;
   onSelect?: (campaign: DbCampaign) => Promise<void>;
+  // Round-specific actions
+  onRoundApprove?: (
+    campaign: DbCampaign,
+    round: GetRoundResponseInstance,
+  ) => Promise<void>;
+  onRoundReject?: (
+    campaign: DbCampaign,
+    round: GetRoundResponseInstance,
+  ) => Promise<void>;
+  onRoundRemove?: (
+    campaign: DbCampaign,
+    round: GetRoundResponseInstance,
+  ) => Promise<void>;
 }
 
 /**
@@ -34,6 +47,14 @@ export interface CampaignCardDisplayOptions {
   truncateDescription?: boolean;
   useCardImage?: boolean; // Use CampaignMainImageCard instead of CampaignMainImage
   openLinksInNewTab?: boolean;
+  // Round-specific display options
+  showRoundStatus?: boolean;
+  showRoundAdminControls?: boolean;
+  showRoundAdminFooterControls?: boolean; // Show round admin controls in footer instead of header
+  showCampaignAdminActions?: boolean; // Show campaign-level admin actions (deploy, approve, etc.)
+  showEssentialDetailsOnly?: boolean; // Show only essential details (for round context)
+  dimNonApproved?: boolean; // Dim cards that aren't approved in round context
+  layoutVariant?: 'standard' | 'minimal' | 'compact' | 'admin';
 }
 
 /**
@@ -51,7 +72,14 @@ export interface CampaignCardProps {
    * Card type - determines default display options and behaviors
    * @default 'standard'
    */
-  type?: 'standard' | 'dashboard' | 'admin' | 'compact';
+  type?:
+    | 'standard'
+    | 'dashboard'
+    | 'admin'
+    | 'compact'
+    | 'round'
+    | 'round-admin'
+    | 'round-minimal';
 
   /**
    * Whether this campaign is favorited by current user
@@ -88,6 +116,37 @@ export interface CampaignCardProps {
    * Custom content to render in card content area
    */
   children?: React.ReactNode;
+
+  // Round-specific props
+  /**
+   * Round context for round-specific features
+   * Required when using round-related types
+   */
+  round?: GetRoundResponseInstance;
+
+  /**
+   * Custom status indicators to render
+   * Can be used to inject round status badges
+   */
+  statusIndicators?: React.ReactNode;
+
+  /**
+   * Custom admin controls to render
+   * Can be used to inject round-specific admin buttons
+   */
+  adminControls?: React.ReactNode;
+
+  /**
+   * Round admin controls to render in footer
+   * Separate from header adminControls for better UX
+   */
+  roundAdminFooterControls?: React.ReactNode;
+
+  /**
+   * Selection handler for round campaign selection
+   * Used in round-minimal variant
+   */
+  onSelect?: (campaign: DbCampaign) => Promise<void>;
 }
 
 /**
@@ -170,7 +229,14 @@ export function validateCampaignCardData(
  * Default display options for different card types
  */
 export function getDefaultDisplayOptions(
-  type: 'standard' | 'dashboard' | 'admin' | 'compact',
+  type:
+    | 'standard'
+    | 'dashboard'
+    | 'admin'
+    | 'compact'
+    | 'round'
+    | 'round-admin'
+    | 'round-minimal',
 ): CampaignCardDisplayOptions {
   const baseOptions: CampaignCardDisplayOptions = {
     showFavoriteButton: false,
@@ -186,6 +252,14 @@ export function getDefaultDisplayOptions(
     truncateDescription: true,
     useCardImage: false,
     openLinksInNewTab: false,
+    // Round-specific defaults
+    showRoundStatus: false,
+    showRoundAdminControls: false,
+    showRoundAdminFooterControls: false,
+    showCampaignAdminActions: true, // Default to showing campaign admin actions
+    showEssentialDetailsOnly: false,
+    dimNonApproved: false,
+    layoutVariant: 'standard',
   };
 
   switch (type) {
@@ -205,6 +279,7 @@ export function getDefaultDisplayOptions(
         showContractAddresses: true,
         truncateDescription: false,
         openLinksInNewTab: true,
+        layoutVariant: 'admin',
       };
 
     case 'compact':
@@ -213,6 +288,45 @@ export function getDefaultDisplayOptions(
         useCardImage: true,
         showRoundsIndicator: true,
         showCategoryBadge: false,
+        layoutVariant: 'compact',
+      };
+
+    case 'round':
+      return {
+        ...baseOptions,
+        showStatusBadge: false, // Hide image-based campaign status to avoid duplication
+        showRoundStatus: true,
+        showRoundAdminFooterControls: true, // Show round controls in footer
+        showCampaignAdminActions: false, // Hide campaign admin actions in round view
+        showEssentialDetailsOnly: true, // Show only essential details for round context
+        showDates: true,
+        dimNonApproved: false, // Remove default dimming
+        openLinksInNewTab: true,
+      };
+
+    case 'round-admin':
+      return {
+        ...baseOptions,
+        showRoundStatus: true,
+        showRoundAdminControls: true,
+        showRoundAdminFooterControls: true, // Show round controls in footer
+        showCampaignAdminActions: false, // Hide campaign admin actions in round view
+        showStatusBadge: false, // Hide image-based campaign status to avoid duplication
+        showEssentialDetailsOnly: true, // Show only essential details for round context
+        showDates: true,
+        dimNonApproved: false, // Remove default dimming
+        openLinksInNewTab: true,
+        layoutVariant: 'admin',
+      };
+
+    case 'round-minimal':
+      return {
+        ...baseOptions,
+        showRoundStatus: false,
+        showCategoryBadge: true,
+        showDates: true,
+        truncateDescription: false,
+        layoutVariant: 'minimal',
       };
 
     case 'standard':

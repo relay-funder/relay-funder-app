@@ -14,7 +14,9 @@ import { useMemo, useEffect } from 'react';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { CampaignCardItem } from '@/components/campaign/campaign-card';
-import { CampaignCardRoundAdmin } from '@/components/campaign/card-round-admin';
+import { CampaignCard } from '@/components/campaign/campaign-card';
+import { RoundCardCampaignStatus } from '@/components/round/card-campaign-status';
+import { RoundCampaignAdminControls } from '@/components/round/campaign-admin-controls';
 import { useAuth } from '@/contexts';
 import { ReadMoreDescription } from '@/components/ui/read-more-description';
 import { debugComponentData as debug } from '@/lib/debug';
@@ -242,10 +244,17 @@ function RoundCampaignsList({
       {campaigns.map((campaign) => {
         if (isAdmin) {
           return (
-            <CampaignCardRoundAdmin
+            <CampaignCard
               key={campaign.id}
               campaign={campaign}
+              type="round-admin"
               round={round}
+              statusIndicators={
+                <RoundCardCampaignStatus campaign={campaign} round={round} />
+              }
+              roundAdminFooterControls={
+                <RoundCampaignAdminControls campaign={campaign} round={round} />
+              }
             />
           );
         }

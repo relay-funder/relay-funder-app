@@ -65,6 +65,12 @@ export function CampaignCard({
   disabled = false,
   className,
   children,
+  // Round-specific props
+  round,
+  statusIndicators,
+  adminControls,
+  roundAdminFooterControls,
+  onSelect,
 }: CampaignCardProps) {
   const { details: categoryDetails } = useCampaignCategory({ campaign });
 
@@ -73,6 +79,12 @@ export function CampaignCard({
     ...getDefaultDisplayOptions(type),
     ...userDisplayOptions,
   };
+
+  // Round-specific logic
+  const isRoundType = type?.startsWith('round');
+  const roundCampaign = round?.roundCampaigns?.find(
+    (rc) => rc.campaignId === campaign?.id,
+  );
 
   // Runtime validation of campaign data
   if (campaign && !validateCampaignCardData(campaign)) {
@@ -108,13 +120,29 @@ export function CampaignCard({
   // Get campaign status info for donation logic
   const campaignStatusInfo = getCampaignStatusInfo(campaign);
   const canDonate = isCampaignDonatable(campaign);
-  const isAdminType = type === 'admin';
+  const isAdminType = type === 'admin' || type === 'round-admin';
   const isDashboardType = type === 'dashboard';
+  const isRoundMinimalType = type === 'round-minimal';
+
+  // Handle round-specific dimming for non-approved campaigns
+  const shouldDimCard =
+    displayOptions.dimNonApproved &&
+    isRoundType &&
+    roundCampaign?.status !== 'APPROVED' &&
+    !actionHandlers.onRoundApprove; // Don't dim if user has admin controls
 
   // Don't make admin cards clickable (they have action buttons)
+  // Round-minimal cards have onSelect behavior instead of navigation
+  const isClickable = !isAdminType && !isRoundMinimalType;
+
   const cardContent = (
     <Card
-      className={`flex h-full flex-col overflow-hidden transition-shadow ${isAdminType ? 'hover:shadow-md' : 'cursor-pointer hover:shadow-lg'} ${className || ''}`}
+      className={`flex h-full flex-col overflow-hidden transition-shadow ${
+        isClickable ? 'cursor-pointer hover:shadow-lg' : 'hover:shadow-md'
+      } ${shouldDimCard ? 'opacity-50' : ''} ${className || ''}`}
+      onClick={
+        isRoundMinimalType && onSelect ? () => onSelect(campaign) : undefined
+      }
     >
       <CampaignCardHeader
         campaign={campaign}
@@ -122,6 +150,10 @@ export function CampaignCard({
         actionHandlers={actionHandlers}
         isFavorite={isFavorite}
         adminMode={isAdminType}
+        round={round}
+        roundCampaign={roundCampaign}
+        statusIndicators={statusIndicators}
+        adminControls={adminControls}
       />
 
       <CampaignCardContent
@@ -132,6 +164,8 @@ export function CampaignCard({
         canDonate={canDonate}
         campaignStatusInfo={campaignStatusInfo}
         categoryDetails={categoryDetails ?? null}
+        round={round}
+        roundCampaign={roundCampaign}
       >
         {children}
       </CampaignCardContent>
@@ -144,14 +178,22 @@ export function CampaignCard({
         customButtons={customButtons}
         canDonate={canDonate}
         campaignStatusInfo={campaignStatusInfo}
+        round={round}
+        roundCampaign={roundCampaign}
+        roundAdminFooterControls={roundAdminFooterControls}
       />
     </Card>
   );
 
-  // Wrap in Link for non-admin cards
-  if (!isAdminType && campaign?.slug) {
+  // Wrap in Link for non-admin and non-round-minimal cards
+  if (isClickable && campaign?.slug && !isRoundMinimalType) {
+    const linkTarget = displayOptions.openLinksInNewTab ? '_blank' : undefined;
     return (
-      <Link href={`/campaigns/${campaign.slug}`} className="block">
+      <Link
+        href={`/campaigns/${campaign.slug}`}
+        className="block"
+        target={linkTarget}
+      >
         {cardContent}
       </Link>
     );

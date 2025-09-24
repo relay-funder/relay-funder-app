@@ -23,6 +23,14 @@ interface CampaignCardFooterProps {
   customButtons?: React.ReactNode;
   canDonate: boolean;
   campaignStatusInfo: CampaignStatusInfo;
+  // Round-specific props
+  round?: GetRoundResponseInstance;
+  roundCampaign?: {
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    id: number;
+    campaignId: number;
+  };
+  roundAdminFooterControls?: React.ReactNode;
 }
 
 export function CampaignCardFooter({
@@ -33,6 +41,9 @@ export function CampaignCardFooter({
   customButtons,
   canDonate,
   campaignStatusInfo,
+  round,
+  roundCampaign,
+  roundAdminFooterControls,
 }: CampaignCardFooterProps) {
   return (
     <CardFooter className="mt-auto p-6 pt-0">
@@ -56,20 +67,26 @@ export function CampaignCardFooter({
           </div>
         )}
 
-        {/* Date information for admin */}
-        {displayOptions.showDates && adminMode && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
+        {/* Date information for admin and round variants */}
+        {displayOptions.showDates && (
+          <div
+            className={`text-sm ${displayOptions.layoutVariant === 'minimal' ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 gap-4'}`}
+          >
             {campaign.startTime && (
               <div>
-                <span className="text-gray-500">Launch:</span>
-                <br />
+                <span className="text-gray-500">
+                  <strong>Launch:</strong>
+                </span>
+                {displayOptions.layoutVariant === 'minimal' ? ' ' : <br />}
                 <FormattedDate date={campaign.startTime} />
               </div>
             )}
             {campaign.endTime && (
               <div>
-                <span className="text-gray-500">Deadline:</span>
-                <br />
+                <span className="text-gray-500">
+                  <strong>Deadline:</strong>
+                </span>
+                {displayOptions.layoutVariant === 'minimal' ? ' ' : <br />}
                 <FormattedDate date={campaign.endTime} />
               </div>
             )}
@@ -148,18 +165,29 @@ export function CampaignCardFooter({
           </div>
         )}
 
-        {/* Admin action buttons only */}
-        {showButtons && adminMode && (
-          <CampaignCardActions
-            campaign={campaign}
-            showButtons={showButtons}
-            customButtons={customButtons}
-            adminMode={adminMode}
-            displayOptions={displayOptions}
-            canDonate={canDonate}
-            campaignStatusInfo={campaignStatusInfo}
-          />
-        )}
+        {/* Round admin controls - only render if controls exist */}
+        {displayOptions.showRoundAdminFooterControls &&
+          roundAdminFooterControls && <div>{roundAdminFooterControls}</div>}
+
+        {/* Campaign admin actions - only when explicitly enabled */}
+        {showButtons &&
+          adminMode &&
+          displayOptions.showCampaignAdminActions && (
+            <div className="space-y-2 border-t border-gray-200 pt-3">
+              <h4 className="text-sm font-medium text-gray-700">
+                Campaign Actions:
+              </h4>
+              <CampaignCardActions
+                campaign={campaign}
+                showButtons={showButtons}
+                customButtons={customButtons}
+                adminMode={adminMode}
+                displayOptions={displayOptions}
+                canDonate={canDonate}
+                campaignStatusInfo={campaignStatusInfo}
+              />
+            </div>
+          )}
       </div>
     </CardFooter>
   );
