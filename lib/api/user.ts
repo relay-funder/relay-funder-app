@@ -97,6 +97,7 @@ export async function listUsers({
     where.OR.push({ username: { contains: name, mode: 'insensitive' } });
     where.OR.push({ firstName: { contains: name, mode: 'insensitive' } });
     where.OR.push({ lastName: { contains: name, mode: 'insensitive' } });
+    where.OR.push({ address: { startsWith: name, mode: 'insensitive' } });
   }
   const [dbUsers, totalCount] = await Promise.all([
     db.user.findMany({

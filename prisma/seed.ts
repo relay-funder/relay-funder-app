@@ -417,7 +417,7 @@ async function main() {
       location: locations[i % locations.length],
     };
   });
-  // Create 2 rounds for matching - one active, one upcoming
+  // Create 3 rounds for matching - one active, one upcoming, one done
   const rounds = [
     {
       title: 'Kenya Education & Development Round',
@@ -443,6 +443,20 @@ async function main() {
       endDate: addDays(new Date(), 40), // Ends in 40 days
       applicationStart: addDays(new Date(), 5),
       applicationClose: addDays(new Date(), 8),
+      blockchain: 'CELO',
+      managerAddress: selectRandom(adminUsers),
+      fundWalletAddress: `0xround2matchingpool000000000000000000000000`,
+    },
+    {
+      title: 'West Africa Climate Resilience Round',
+      description:
+        'Addressing urgent climate challenges across West Africa through innovative renewable energy solutions, comprehensive water conservation initiatives, and sustainable agriculture projects that enhance food security. This specialized funding round emphasizes community-led climate adaptation solutions that combine traditional knowledge with modern technology. We prioritize projects that demonstrate clear environmental impact, economic viability, and social equity. From solar-powered irrigation systems that transform arid landscapes into productive farmland to community-based forest restoration programs that sequester carbon while creating livelihoods, this round supports holistic approaches to climate resilience. Our funding strategy recognizes that climate adaptation requires long-term thinking, cross-sector collaboration, and deep community engagement to build truly sustainable solutions that can withstand future environmental challenges while improving current living conditions.',
+      descriptionUrl: 'https://relayfunder.com',
+      matchingPool: 75000,
+      startDate: subDays(new Date(), 40), // Starts in 40 days ago (done)
+      endDate: subDays(new Date(), 10), // Ends in 40 days
+      applicationStart: subDays(new Date(), 40),
+      applicationClose: subDays(new Date(), 35),
       blockchain: 'CELO',
       managerAddress: selectRandom(adminUsers),
       fundWalletAddress: `0xround2matchingpool000000000000000000000000`,
@@ -616,6 +630,12 @@ async function main() {
     },
     {
       // East Africa Climate Resilience Round - Celo Camp logo
+      url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/a41bb1ae87c99ce0-celo-camp.webp',
+      mimeType: 'image/webp',
+      caption: 'Celo Camp Sponsor Logo',
+    },
+    {
+      // West Africa Climate Resilience Round - Celo Camp logo
       url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/a41bb1ae87c99ce0-celo-camp.webp',
       mimeType: 'image/webp',
       caption: 'Celo Camp Sponsor Logo',

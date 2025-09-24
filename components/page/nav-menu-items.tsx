@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Target,
   Shield,
-  ShieldCheck,
   Users,
   CreditCard,
   Coins,
@@ -48,7 +47,7 @@ export function PageNavMenuItems() {
         href: '/admin',
       });
       items.push({
-        icon: <ShieldCheck className="h-6 w-6" />,
+        icon: <Target className="h-6 w-6" />,
         label: 'Round Management',
         href: '/admin/rounds',
       });

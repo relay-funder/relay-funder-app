@@ -32,6 +32,7 @@ export interface GetRoundResponseInstance {
   id: number;
   title: string;
   description: string;
+  descriptionUrl?: string | null;
   tags: string[];
   matchingPool: number;
   poolId?: number | null;

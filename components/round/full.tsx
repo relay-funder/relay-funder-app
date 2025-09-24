@@ -18,6 +18,8 @@ import { CampaignCardRoundAdmin } from '@/components/campaign/card-round-admin';
 import { useAuth } from '@/contexts';
 import { ReadMoreDescription } from '@/components/ui/read-more-description';
 import { debugComponentData as debug } from '@/lib/debug';
+import { RoundManageResults } from './manage-results';
+import { RoundAdminInlineEdit } from './admin/inline-edit';
 
 export function RoundFull({ id }: { id: number }) {
   const { data: roundInstance, isPending } = useRound(id);
@@ -65,6 +67,9 @@ export function RoundFull({ id }: { id: number }) {
   return (
     <PageHome header={header}>
       <div className="space-y-6">
+        {isAdmin && status.text === 'Ended' && (
+          <RoundManageResults round={round} />
+        )}
         {/* Round Info Section - Compact Layout with Large Logo */}
         <div className="space-y-6">
           {/* Round Header with Large Logo and Status */}
@@ -85,12 +90,15 @@ export function RoundFull({ id }: { id: number }) {
                 )}
               </div>
             </div>
-            <Badge
-              variant={status.variant}
-              className="shrink-0 px-3 py-1 text-sm"
-            >
-              {status.text}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={status.variant}
+                className="shrink-0 px-3 py-1 text-sm"
+              >
+                {status.text}
+              </Badge>
+              {isAdmin && <RoundAdminInlineEdit round={round} />}
+            </div>
           </div>
 
           {/* Stats and Timeline Grid */}
