@@ -6,30 +6,30 @@ import { setupUser, handleError } from './common';
 import { type User } from 'next-auth';
 import { debugAuth as debug } from '@/lib/debug';
 
-function getAuthUrl(): string {
+async function getAuthUrl(): Promise<string | null> {
   // Use NEXTAUTH_URL if explicitly set
   if (process.env.NEXTAUTH_URL) {
     return process.env.NEXTAUTH_URL;
   }
-
+  
   // For dynamic deployments, construct URL from request headers
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const host = headersList.get('host');
     const proto = headersList.get('x-forwarded-proto') || 'https';
-
+    
     if (host) {
       return `${proto}://${host}`;
     }
   } catch (error) {
     debug && console.warn('Failed to get host from headers:', error);
   }
-
+  
   // Fallback to VERCEL_URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-
+  
   return null;
 }
 
@@ -58,7 +58,7 @@ export function SiweProvider() {
         ) {
           throw new Error('SiweMessage is undefined');
         }
-        const nextAuthUrl = getAuthUrl();
+        const nextAuthUrl = await getAuthUrl();
         if (!nextAuthUrl) {
           throw new Error(
             'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL,host header) - environment not configured correctly',
