@@ -24,8 +24,6 @@ export function ExploreStories() {
     <PageHome
       header={
         <PageHeaderSearch
-          onCreate={() => setShowCampaignCreate(true)}
-          createTitle="Create Campaign"
           placeholder="Search Campaigns"
           onSearchChanged={(search: string) => setSearchTerm(search)}
         />
