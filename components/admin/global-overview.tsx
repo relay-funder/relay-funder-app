@@ -3,8 +3,14 @@ import { useCampaignStats } from '@/lib/hooks/useCampaigns';
 import { Users, Coins, Calendar, TrendingUp } from 'lucide-react';
 import { ResponsiveGrid } from '@/components/layout';
 
-export function DashboardOverview() {
-  const { data: stats, isPending } = useCampaignStats('user');
+/**
+ * AdminGlobalOverview Component
+ *
+ * Shows global statistics across all campaigns in the system.
+ * Used in the Admin Control Center for system-wide oversight.
+ */
+export function AdminGlobalOverview() {
+  const { data: stats, isPending } = useCampaignStats('global');
   return (
     <div className="mb-8">
       <ResponsiveGrid variant="compact" gap="md">

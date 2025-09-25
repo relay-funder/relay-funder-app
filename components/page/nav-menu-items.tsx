@@ -28,18 +28,26 @@ export function PageNavMenuItems() {
     const items = [
       { icon: <Home className="h-6 w-6" />, label: 'Home', href: '/' },
     ];
-    if (!isAdmin) {
+
+    // Show Dashboard for all authenticated users (both regular users and admins)
+    if (authenticated) {
       items.push({
         icon: <LayoutDashboard className="h-6 w-6" />,
         label: 'Dashboard',
         href: '/dashboard',
       });
+    }
+
+    // Show Funding Rounds for non-admin users
+    if (authenticated && !isAdmin) {
       items.push({
         icon: <Target className="h-6 w-6" />,
         label: 'Funding Rounds',
         href: '/rounds',
       });
     }
+
+    // Show admin-specific items for admin users
     if (authenticated && isAdmin) {
       items.push({
         icon: <Shield className="h-6 w-6" />,
