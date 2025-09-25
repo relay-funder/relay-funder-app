@@ -4,7 +4,7 @@ import { ReadMoreOrLess } from '@/components/read-more-or-less';
 export function CampaignDetailTabAbout({ campaign }: { campaign: DbCampaign }) {
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold">About this project</h2>
+      <h2 className="text-lg font-semibold">About this campaign</h2>
 
       <div className="max-w-none">
         <ReadMoreOrLess
