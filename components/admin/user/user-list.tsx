@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { useInfiniteAdminUsers } from '@/lib/hooks/useAdminUsers';
 import UserCard from './user-card';
 import UserListLoading from './user-list-loading';
+import { LoadMoreButton } from '@/components/shared/load-more-button';
+import { INFINITE_SCROLL_CONFIG } from '@/lib/constant';
 import { GetUserResponseInstance } from '@/lib/api/types';
 
 export type UserListProps = {
@@ -50,14 +52,33 @@ export function UserList({
     [data],
   );
 
+  // Check if we've reached the auto-scroll limit
+  const currentPageCount = data?.pages.length ?? 0;
+  const shouldAutoFetch =
+    enableAutoFetch && currentPageCount < INFINITE_SCROLL_CONFIG.MAX_AUTO_PAGES;
+  const shouldShowLoadMore = !shouldAutoFetch && hasNextPage;
+
   useEffect(() => {
     if (!enableAutoFetch) {
       return;
     }
-    if (inView && hasNextPage && !isFetchingNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage && shouldAutoFetch) {
       fetchNextPage();
     }
-  }, [enableAutoFetch, inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [
+    enableAutoFetch,
+    inView,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    shouldAutoFetch,
+  ]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleCardClick = useCallback(
     (user: GetUserResponseInstance) => {
@@ -104,8 +125,17 @@ export function UserList({
 
       {isFetchingNextPage && <UserListLoading minimal />}
 
-      {/* Intersection observer anchor */}
-      <div ref={ref} className="h-10" />
+      {/* Load more button when auto-fetch limit reached */}
+      {shouldShowLoadMore && (
+        <LoadMoreButton
+          onLoadMore={handleLoadMore}
+          hasMore={hasNextPage}
+          isLoading={isFetchingNextPage}
+        />
+      )}
+
+      {/* Intersection observer anchor - only active when auto-fetching */}
+      {shouldAutoFetch && <div ref={ref} className="h-10" />}
     </div>
   );
 }
