@@ -19,7 +19,6 @@ export function CampaignDonationWalletTip({
     [onTipAmountChanged],
   );
 
-
   return (
     <div className="space-y-3">
       <Label className="flex items-center gap-2 text-sm font-medium text-gray-900">

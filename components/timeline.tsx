@@ -9,11 +9,7 @@ interface TimelineItemProps {
   isLast?: boolean;
 }
 
-export function TimelineItem({
-  date,
-  title,
-  content,
-}: TimelineItemProps) {
+export function TimelineItem({ date, title, content }: TimelineItemProps) {
   return (
     <Card>
       <CardContent className="p-6">
@@ -29,7 +25,7 @@ export function TimelineItem({
                 })}
               </span>
             </div>
-            <div className="mt-2 prose max-w-none">
+            <div className="prose mt-2 max-w-none">
               <ReadMoreOrLess
                 className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700"
                 collapsedClassName="line-clamp-3"

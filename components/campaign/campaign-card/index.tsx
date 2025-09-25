@@ -1,4 +1,3 @@
-
 // Main component export
 export { CampaignCard } from './main';
 

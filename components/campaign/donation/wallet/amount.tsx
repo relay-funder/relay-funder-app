@@ -2,7 +2,6 @@ import { useCallback, type ChangeEvent } from 'react';
 import { Input } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 
-
 export function CampaignDonationWalletAmount({
   amount,
   selectedToken,

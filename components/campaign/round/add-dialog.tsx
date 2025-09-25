@@ -35,10 +35,7 @@ export function CampaignAddRoundDialog({
   const [selectedRound, setSelectedRound] = useState<
     GetRoundResponseInstance | undefined
   >();
-  const {
-    data: roundsData,
-    isPending: isRoundsDataPending,
-  } = useRounds();
+  const { data: roundsData, isPending: isRoundsDataPending } = useRounds();
 
   const canAdd = useMemo(() => {
     if (isRoundsDataPending || !selectedRound) {

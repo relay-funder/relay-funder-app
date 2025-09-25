@@ -7,7 +7,6 @@ import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { formatCrypto } from '@/lib/format-crypto';
 
-
 export function CampaignDonationWalletStatus() {
   const { isCorrectNetwork } = useNetworkCheck();
   const { usdcBalance, isPending: usdBalanceIsPending } = useUsdcBalance();

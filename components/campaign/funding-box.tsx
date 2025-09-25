@@ -29,25 +29,23 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
       <CardContent className="space-y-4 p-4">
         {/* Funding Progress - Match campaign card format */}
         <div className="space-y-3">
+          {/* Funding Stats - Match card format */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-end gap-2">
+              <span className="text-3xl font-bold">{amountRaised}</span>
+              <span className="pb-[3px] text-gray-500">raised</span>
+            </div>
+            <span className="mt-[6px] text-gray-500">
+              of <span className="text-base font-semibold">{amountGoal}</span>
+            </span>
+          </div>
+
           {/* Progress Bar */}
           <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
             <div
               className="h-full bg-green-600 transition-all duration-300"
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
-          </div>
-
-          {/* Funding Stats - Match card format */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-bold">
-                {amountRaised}
-              </span>
-              <span className="text-gray-500 pb-[3px]">raised</span>
-            </div>
-            <span className="text-gray-500 mt-[6px]">
-              of <span className="text-base font-semibold">{amountGoal}</span>
-            </span>
           </div>
         </div>
 

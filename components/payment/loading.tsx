@@ -1,6 +1,10 @@
 import { Card, CardContent, CardFooter, Skeleton } from '@/components/ui';
 
-export function PaymentLoading({ expectItemCount = 3 }: { expectItemCount?: number }) {
+export function PaymentLoading({
+  expectItemCount = 3,
+}: {
+  expectItemCount?: number;
+}) {
   return (
     <div className="space-y-4">
       {[...Array(expectItemCount)].map((_, index) => (

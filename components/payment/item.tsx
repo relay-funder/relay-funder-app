@@ -42,7 +42,7 @@ export function PaymentItem({
   }, [removePayment, refetchCampaign, campaign, payment, toast]);
 
   const hasExplorerLink = payment.transactionHash;
-  const explorerUrl = hasExplorerLink 
+  const explorerUrl = hasExplorerLink
     ? `${chainConfig.blockExplorerUrl}/tx/${payment.transactionHash}`
     : undefined;
 
@@ -53,10 +53,10 @@ export function PaymentItem({
   }, [explorerUrl]);
 
   return (
-    <Card 
+    <Card
       className={cn(
         hidden && 'hidden',
-        hasExplorerLink && 'cursor-pointer transition-colors hover:bg-gray-50'
+        hasExplorerLink && 'cursor-pointer transition-colors hover:bg-gray-50',
       )}
       onClick={hasExplorerLink ? handleRowClick : undefined}
     >
