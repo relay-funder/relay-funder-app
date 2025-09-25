@@ -56,6 +56,7 @@ export function CampaignInfoDialog({
     [];
   const hasRounds =
     publicRounds.length > 0 || (isOwner && pendingRounds.length > 0);
+
   return (
     <Dialog>
       <DialogTrigger asChild>

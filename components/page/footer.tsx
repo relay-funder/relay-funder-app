@@ -7,10 +7,10 @@ export function PageFooter() {
 
   return (
     <footer className="mt-auto border-t border-gray-200 bg-white">
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          {/* Social Links - Left Side */}
-          <div className="order-2 flex items-center gap-6 text-sm sm:order-1">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row sm:gap-4">
+          {/* Social Links - Left Side on Desktop, Second on Mobile */}
+          <div className="order-2 flex items-center justify-center gap-8 text-sm sm:order-1 sm:justify-start">
             <a
               href={EXTERNAL_LINKS.TWITTER}
               target="_blank"
@@ -51,33 +51,37 @@ export function PageFooter() {
             </a>
           </div>
 
-          {/* Links and Copyright - Right Side */}
-          <div className="order-1 flex items-center gap-4 text-sm text-gray-600 sm:order-2">
-            <a
-              href={EXTERNAL_LINKS.ABOUT}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-600 transition-colors hover:text-gray-900"
-            >
-              About
-            </a>
-            <a
-              href={EXTERNAL_LINKS.PRIVACY}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-600 transition-colors hover:text-gray-900"
-            >
-              Privacy
-            </a>
-            <a
-              href={EXTERNAL_LINKS.TERMS}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-600 transition-colors hover:text-gray-900"
-            >
-              Terms
-            </a>
-            <span>© {currentYear} Relay Funder Inc., PBC</span>
+          {/* Navigation Links - Stacked on Mobile */}
+          <div className="order-1 flex flex-col items-center gap-3 text-center text-sm sm:order-2 sm:flex-row sm:gap-4 sm:text-left">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-4">
+              <a
+                href={EXTERNAL_LINKS.ABOUT}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 transition-colors hover:text-gray-900"
+              >
+                About
+              </a>
+              <a
+                href={EXTERNAL_LINKS.PRIVACY}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 transition-colors hover:text-gray-900"
+              >
+                Privacy
+              </a>
+              <a
+                href={EXTERNAL_LINKS.TERMS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 transition-colors hover:text-gray-900"
+              >
+                Terms
+              </a>
+            </div>
+            <div className="text-gray-600">
+              © {currentYear} Relay Funder Inc., PBC
+            </div>
           </div>
         </div>
       </div>

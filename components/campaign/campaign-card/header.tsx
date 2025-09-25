@@ -74,27 +74,30 @@ export function CampaignCardHeader({
       )}
 
       {/* Info icon - positioned outside main click area with explicit pointer events */}
-      <div
-        className="absolute bottom-2 right-2 z-30"
-        style={{
-          pointerEvents: 'auto',
-        }}
-      >
-        <CampaignInfoDialog campaign={campaign}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 cursor-pointer rounded-full bg-white/90 p-0 text-gray-600 shadow-sm backdrop-blur-sm hover:bg-white hover:text-gray-900 hover:shadow-md"
-            aria-label="View campaign details"
-            tabIndex={0}
-            style={{
-              pointerEvents: 'auto',
-            }}
-          >
-            <Info className="h-4 w-4" style={{ pointerEvents: 'none' }} />
-          </Button>
-        </CampaignInfoDialog>
-      </div>
+      {displayOptions.showInfoIcon && (
+        <div
+          className="absolute bottom-2 right-2 z-30"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            pointerEvents: 'auto',
+          }}
+        >
+          <CampaignInfoDialog campaign={campaign}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 cursor-pointer rounded-full bg-white/90 p-0 text-gray-600 shadow-sm backdrop-blur-sm hover:bg-white hover:text-gray-900 hover:shadow-md"
+              aria-label="View campaign details"
+              tabIndex={0}
+              style={{
+                pointerEvents: 'auto',
+              }}
+            >
+              <Info className="h-4 w-4" style={{ pointerEvents: 'none' }} />
+            </Button>
+          </CampaignInfoDialog>
+        </div>
+      )}
     </CardHeader>
   );
 }

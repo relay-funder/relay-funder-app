@@ -46,6 +46,7 @@ export interface CampaignCardDisplayOptions {
   showDonateButton?: boolean;
   showStatusBasedButton?: boolean;
   showFundingProgress?: boolean; // Control visibility of progress bar and funding stats
+  showInfoIcon?: boolean; // Control visibility of campaign info modal icon
   truncateDescription?: boolean;
   useCardImage?: boolean; // Use CampaignMainImageCard instead of CampaignMainImage
   openLinksInNewTab?: boolean;
@@ -248,6 +249,7 @@ export function getDefaultDisplayOptions(
     showDonateButton: false, // Removed since whole card is clickable
     showStatusBasedButton: false, // Simplified design
     showFundingProgress: true, // Show progress by default
+    showInfoIcon: false, // Hidden by default - only show in admin contexts
     truncateDescription: true,
     useCardImage: false,
     openLinksInNewTab: false,
@@ -271,6 +273,7 @@ export function getDefaultDisplayOptions(
         showRemoveButton: true,
         showEditButton: true,
         showRoundsIndicator: true,
+        showInfoIcon: true, // Show info icon in dashboard for user's own campaigns
       };
 
     case 'admin':
@@ -279,6 +282,7 @@ export function getDefaultDisplayOptions(
         showDates: true,
         showTreasuryBalance: true,
         showContractAddresses: true,
+        showInfoIcon: true, // Show info icon in admin interfaces for metadata access
         truncateDescription: false,
         openLinksInNewTab: true,
         layoutVariant: 'admin',
@@ -293,6 +297,7 @@ export function getDefaultDisplayOptions(
         showRoundAdminFooterControls: true, // Show round controls in footer
         showCampaignAdminActions: false, // Hide campaign admin actions in round view
         showEssentialDetailsOnly: true, // Show only essential details for round context
+        showInfoIcon: true, // Show info icon in round admin contexts
         showDates: true,
         dimNonApproved: false, // Remove default dimming
         openLinksInNewTab: true,
