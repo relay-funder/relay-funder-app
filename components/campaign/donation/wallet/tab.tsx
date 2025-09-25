@@ -6,6 +6,7 @@ import { useNetworkCheck } from '@/hooks/use-network';
 import { useWeb3Auth, chainConfig } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { CampaignDonationWalletDetails } from './details';
+import { CampaignDonationWalletStatus } from './status';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
 import { DbCampaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
@@ -23,18 +24,18 @@ export function CampaignDonationWalletTab({
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-4">
         <div className="mb-4 flex items-center space-x-2">
-          <MessageSquareWarning />
+          <Wallet />
           <span className="text-base font-semibold">
-            You need to be signed in to donate
+            You need to connect your wallet to contribute
           </span>
         </div>
         <p className="mb-4 text-center text-sm text-muted-foreground">
-          To track your payments and the projects you support, it&#39;s crucial
-          to sign in. Signing up with a wallet is free and easy, and no
-          additional personal data is required to donate.
+          To track your payments and the projects you support, connect your
+          wallet. It's free and easy, and no additional personal data is
+          required to contribute.
         </p>
         <div className="flex items-center justify-center">
-          <Button onClick={login}>Login</Button>
+          <Button onClick={login}>Connect Wallet</Button>
         </div>
       </div>
     );
@@ -53,38 +54,14 @@ export function CampaignDonationWalletTab({
     );
   }
   return (
-    <div className="flex flex-col gap-4 rounded-lg border p-4">
-      {isCorrectNetwork ? (
+    <div className="flex flex-col gap-6">
+      <CampaignDonationWalletStatus campaign={campaign} />
+
+      {isCorrectNetwork && (
         <>
-          <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4" />
-            <span className="text-sm">
-              Using {chainConfig.name} network to execute{' '}
-              <ContractLink
-                address={campaign.treasuryAddress}
-                chainConfig={chainConfig}
-              />{' '}
-              treasury.
-            </span>
-          </div>
-          <CampaignDonationDetailsEligible campaign={campaign} />
+          {/* Temporarily hidden until proper rounds integration */}
+          {/* <CampaignDonationDetailsEligible campaign={campaign} /> */}
           <CampaignDonationWalletDetails campaign={campaign} />
-        </>
-      ) : (
-        <>
-          <div className="flex h-24 items-center gap-2">
-            <Wallet className="h-4 w-4" />
-            <span className="text-sm">
-              To donate you need to use the <b>{chainConfig.name}</b> network.
-              This ensures that the treasury{' '}
-              <ContractLink
-                address={campaign.treasuryAddress}
-                chainConfig={chainConfig}
-              />{' '}
-              can be executed.
-            </span>
-          </div>
-          <PaymentSwitchWalletNetwork />
         </>
       )}
     </div>

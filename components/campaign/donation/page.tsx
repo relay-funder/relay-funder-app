@@ -8,7 +8,7 @@ import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';
-import ProjectInfo from '@/components/project-info';
+import { CampaignDonationSummary } from './campaign-summary';
 
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
@@ -39,9 +39,15 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
       <PageHeaderSticky message="Campaign" title="" />
       <main className="w-full">
         <DetailContainer variant="standard" padding="md">
-          <div className="grid gap-8 lg:grid-cols-2">
-            <CampaignDonationForm campaign={campaign} />
-            <ProjectInfo campaign={campaign} />
+          <div className="rounded-lg border bg-white p-8 shadow-sm">
+            <div className="grid gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <CampaignDonationForm campaign={campaign} />
+              </div>
+              <div className="lg:col-span-1">
+                <CampaignDonationSummary campaign={campaign} />
+              </div>
+            </div>
           </div>
         </DetailContainer>
       </main>

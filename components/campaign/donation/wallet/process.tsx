@@ -107,7 +107,7 @@ export function CampaignDonationWalletProcess({
         disabled={!numericAmount || processing}
         onClick={onDonateStart}
       >
-        {processing ? 'Processing...' : `Donate with Wallet`}
+        {processing ? 'Processing...' : `Contribute with Wallet`}
       </Button>
       <VisibilityToggle isVisible={state !== 'idle'}>
         <DonationProcessDisplay

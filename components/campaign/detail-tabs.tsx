@@ -14,7 +14,7 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
   return (
     <div className="w-full">
       <Tabs defaultValue="rounds" className="w-full">
-        <TabsList className="h-12 grid w-full grid-cols-4 rounded-md bg-gray-100 p-1 pb-[3px]">
+        <TabsList className="grid h-12 w-full grid-cols-4 rounded-md bg-gray-100 p-1 pb-[3px]">
           <TabsTrigger
             value="transactions"
             className="rounded-sm px-2 py-1.5 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
