@@ -174,3 +174,75 @@ export async function updateHumanityScore(
     data: { humanityScore },
   });
 }
+
+export async function updateEventFeedRead(address: string) {
+  await db.user.update({
+    where: { address },
+    data: { eventFeedRead: new Date() },
+  });
+}
+
+export async function listUserEventFeed({
+  user,
+  type,
+  startDate,
+  endDate,
+  page = 1,
+  pageSize = 10,
+}: {
+  user: { id: number };
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const skip = (page - 1) * pageSize;
+  const where: Prisma.EventFeedWhereInput = {
+    AND: [{ receiverId: user.id }],
+  };
+  const filter: Prisma.EventFeedWhereInput = { OR: [] };
+  if (type) {
+    filter.OR?.push({ type });
+  }
+  if (startDate || endDate) {
+    if (startDate) {
+      filter.OR?.push({ AND: [{ createdAt: { lt: new Date(startDate) } }] });
+    }
+    if (endDate && !startDate) {
+      filter.OR?.push({ createdAt: { gt: new Date(endDate) } });
+    } else if (endDate) {
+      const dateCondition = filter.OR?.find((expr) => Array.isArray(expr.AND));
+      if (Array.isArray(dateCondition?.AND)) {
+        dateCondition?.AND?.push({
+          createdAt: { gt: new Date(endDate) },
+        });
+      }
+    }
+  }
+  if (filter.OR?.length && Array.isArray(where.AND)) {
+    where.AND.push(filter);
+  }
+  const [dbFeedEvents, totalCount] = await Promise.all([
+    db.eventFeed.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    db.eventFeed.count({ where }),
+  ]);
+
+  return {
+    events: dbFeedEvents,
+    pagination: {
+      currentPage: page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+      totalItems: totalCount,
+      hasMore: skip + pageSize < totalCount,
+    },
+  };
+}

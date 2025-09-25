@@ -1,6 +1,7 @@
 import type { Prisma } from '@/.generated/prisma/client';
-import { DbCampaign } from '@/types/campaign';
+import { DbCampaign, CampaignUpdate } from '@/types/campaign';
 import { DisplayUser, DisplayUserWithStates } from '../user';
+import type { PaginatedResponse } from '../common';
 import { TreasuryBalance } from '@/lib/treasury/interface';
 import { z } from 'zod';
 
@@ -21,8 +22,15 @@ export interface PostCampaignsWithIdApproveBody {
   treasuryAddress?: string;
 }
 export interface PostCampaignsWithIdUpdatesBody {
-  title?: string;
-  content?: string;
+  title: string;
+  content: string;
+}
+export interface GetCampaignUpdatesResponse extends PaginatedResponse {
+  updates: CampaignUpdate[];
+}
+export interface PostCampaignUpdateResponse {
+  ok: boolean;
+  update?: CampaignUpdate | null;
 }
 export interface PostCampaignsRouteBody {
   campaignId: number;

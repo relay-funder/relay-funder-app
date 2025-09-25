@@ -16,11 +16,17 @@ import { getCampaign } from '@/lib/api/campaigns';
 import { createTreasuryManager } from '@/lib/treasury/interface';
 import { ethers } from 'ethers';
 import { chainConfig } from '@/lib/web3';
+import { notify } from '@/lib/api/event-feed';
+import { getUser } from '@/lib/api/user';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['admin']);
     await checkContractAdmin(session);
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('Admin user not found');
+    }
 
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
@@ -44,6 +50,10 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     if (!campaign.campaignAddress) {
       throw new ApiIntegrityError('Campaign address not found');
     }
+    const creator = await getUser(campaign.creatorAddress);
+    if (!creator) {
+      throw new ApiNotFoundError('Campaign Creator not found');
+    }
 
     // Update campaign status and treasury address in database
     await db.campaign.update({
@@ -52,6 +62,13 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         status: CampaignStatus.ACTIVE,
         treasuryAddress,
       },
+    });
+    await notify({
+      receiverId: creator.id,
+      creatorId: user.id,
+      type: 'CampaignApprove',
+      message: 'Approved by admin',
+      data: { campaignId },
     });
 
     // Configure treasury with campaign parameters

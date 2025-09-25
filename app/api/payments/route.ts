@@ -9,6 +9,7 @@ import {
   PatchPaymentBodyRouteSchema,
   PostPaymentBodyRouteSchema,
 } from '@/lib/api/types/campaigns/payments';
+import { notify } from '@/lib/api/event-feed';
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +22,10 @@ export async function POST(req: Request) {
     const campaign = await getCampaign(data.campaignId);
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
+    }
+    const creator = await getUser(campaign.creatorAddress);
+    if (!creator) {
+      throw new ApiNotFoundError('Campaign Creator not found');
     }
     const payment = await db.payment.create({
       data: {
@@ -53,6 +58,13 @@ export async function POST(req: Request) {
         });
       }
     }
+    await notify({
+      receiverId: creator.id,
+      creatorId: user.id,
+      type: 'CampaignPayment',
+      message: `Payment of Received`,
+      data: { campaignId: campaign.id },
+    });
     return response({ paymentId: payment.id });
   } catch (error: unknown) {
     return handleError(error);

@@ -7,7 +7,7 @@ import {
   Button,
 } from '@/components/ui';
 import Link from 'next/link';
-import { Wallet } from 'lucide-react';
+import { Wallet, Bell } from 'lucide-react';
 
 export function ProfileAdditionalSettings() {
   return (
@@ -15,7 +15,8 @@ export function ProfileAdditionalSettings() {
       <CardHeader>
         <CardTitle>Additional Settings</CardTitle>
         <CardDescription>
-          Configure your payment methods and manage wallet addresses.
+          Configure your payment methods, manage wallet addresses, and review
+          your event feed.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -24,6 +25,12 @@ export function ProfileAdditionalSettings() {
             <Button variant="outline" className="w-full">
               <Wallet className="mr-2 h-4 w-4" />
               Wallet Settings
+            </Button>
+          </Link>
+          <Link href="/profile/inbox">
+            <Button variant="outline" className="w-full">
+              <Bell className="mr-2 h-4 w-4" />
+              Inbox
             </Button>
           </Link>
         </div>
