@@ -84,29 +84,31 @@ export function CampaignCardContent({
           )}
         </div>
 
-        {/* Funding Progress */}
-        <div className="space-y-3">
-          {/* Progress Bar */}
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-            <div
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
-          </div>
-
-          {/* Funding Stats */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-gray-900">
-                {amountRaised}
-              </span>
-              <span className="text-gray-500">raised</span>
+        {/* Funding Progress - Only show if enabled */}
+        {displayOptions.showFundingProgress !== false && (
+          <div className="space-y-3">
+            {/* Progress Bar */}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
             </div>
-            <span className="text-gray-500">
-              of <span className="text-base font-semibold">{amountGoal}</span>
-            </span>
+
+            {/* Funding Stats */}
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-gray-900">
+                  {amountRaised}
+                </span>
+                <span className="text-gray-500">raised</span>
+              </div>
+              <span className="text-gray-500">
+                of <span className="text-base font-semibold">{amountGoal}</span>
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Custom children content */}

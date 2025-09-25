@@ -45,31 +45,47 @@ export function PaymentItem({
     <div
       className={cn(
         hidden && 'hidden',
-        'flex items-center justify-between rounded-lg bg-white p-4 shadow',
+        'flex items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50',
       )}
     >
-      <div className="flex items-center gap-4">
-        <div>
-          <UserInlineName user={payment.user} />
-          <p className="text-sm text-gray-500">
+      <div className="flex items-center gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <UserInlineName user={payment.user} />
+            {payment.status !== 'confirmed' && (
+              <span className="rounded-md bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">
+                Unconfirmed
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">
             <FormattedDate date={payment.date} />
           </p>
-          {payment.status !== 'confirmed' && <p>Unconfirmed</p>}
         </div>
       </div>
-      <div className="text-right">
-        <p className="font-medium">
-          {payment.amount} {payment.token}
-        </p>
-        <p className="text-xs text-gray-500">
-          {payment.token === 'USD' ? 'Credit Card' : `via ${payment.token}`}
-        </p>
-        <PaymentLink payment={payment} />
-        {canRemove && (
-          <Button onClick={onRemove} disabled={isRemovingPayment}>
-            <Trash />
-          </Button>
-        )}
+      <div className="flex items-center gap-3 text-right">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-green-600">
+            ${payment.amount}
+          </p>
+          <p className="text-xs text-gray-500">
+            {payment.token === 'USD' ? 'Credit Card' : `via ${payment.token}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <PaymentLink payment={payment} />
+          {canRemove && (
+            <Button
+              onClick={onRemove}
+              disabled={isRemovingPayment}
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

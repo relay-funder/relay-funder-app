@@ -168,14 +168,21 @@ export function CampaignInfoDialog({
             </TableBody>
           </Table>
 
-          {/* Treasury Balance Section */}
+          {/* On-Chain Treasury Balance Section */}
           {campaign.treasuryAddress && (
             <div className="border-t pt-4">
-              <h3 className="mb-2 text-sm font-medium">Treasury Balance</h3>
-              <TreasuryBalanceCompact
-                treasuryAddress={campaign.treasuryAddress}
-                className="text-xs"
-              />
+              <h3 className="mb-2 text-sm font-medium">
+                On-Chain Treasury Balance
+              </h3>
+              <div className="rounded-md bg-gray-50 p-3">
+                <TreasuryBalanceCompact
+                  treasuryAddress={campaign.treasuryAddress}
+                  className="text-xs"
+                />
+                <div className="mt-2 text-xs text-gray-500">
+                  Real-time balance from blockchain contract
+                </div>
+              </div>
             </div>
           )}
 

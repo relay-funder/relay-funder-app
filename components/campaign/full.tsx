@@ -2,8 +2,11 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { CampaignMainImage } from '@/components/campaign/main-image';
-import { CampaignCardFull } from '@/components/campaign/card-full';
+import { CampaignFundingBox } from '@/components/campaign/funding-box';
+import { CampaignDetailsBox } from '@/components/campaign/details-box';
+import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
 import { CampaignDetailTabs } from '@/components/campaign/detail-tabs';
+import { CampaignDetailTabAbout } from '@/components/campaign/detail-tab-about';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
 import { UserInlineName } from '@/components/user/inline-name';
@@ -15,6 +18,11 @@ import { CampaignStatus } from './status';
 import { CampaignError } from './error';
 import { useCampaignCategory } from '@/hooks/use-campaign-category';
 import { isCampaignFeatured } from '@/lib/utils/campaign-status';
+import { FavoriteButton } from '@/components/favorite-button';
+import { ShareDialog } from '@/components/share-dialog';
+import { CampaignInfoDialog } from '@/components/campaign/info';
+import { Button } from '@/components/ui';
+import { Info } from 'lucide-react';
 
 export function CampaignFull({ slug }: { slug: string }) {
   const { address, isAdmin, isReady } = useAuth();
@@ -23,7 +31,13 @@ export function CampaignFull({ slug }: { slug: string }) {
     campaign: campaignInstance?.campaign,
   });
   if (isPending || !isReady) {
-    return <CampaignLoading />;
+    return (
+      <PageHome header={<PageHeader />}>
+        <DetailContainer variant="wide" padding="md">
+          <CampaignLoading variant="detail" />
+        </DetailContainer>
+      </PageHome>
+    );
   }
   const campaign = campaignInstance?.campaign;
   if (!campaign) {
@@ -48,31 +62,69 @@ export function CampaignFull({ slug }: { slug: string }) {
 
   return (
     <PageHome header={navHeader}>
-      <DetailContainer variant="standard" padding="md">
-        {/* Title and metadata section within constraints */}
-        <div className="mb-8 space-y-4">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight lg:text-4xl">
-            {campaign.title}
-          </h1>
-          <div className="flex items-center justify-between gap-1">
-            <UserInlineName user={campaign.creator} badges={true} />
-            <CampaignLocation campaign={campaign} />
-          </div>
-        </div>
+      <DetailContainer variant="wide" padding="md">
+        {/* Main Layout Grid */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Left Column: Main Content */}
+          <div className="lg:col-span-2">
+            {/* Top Section: Image and Title Box */}
+            <div className="mb-8 space-y-6">
+              {/* Main Image */}
+              <div className="relative">
+                <div className="aspect-video overflow-hidden rounded-lg shadow-sm">
+                  <CampaignMainImage campaign={campaign} />
+                </div>
+              </div>
 
-        {/* Main content grid */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <div className="relative flex flex-col p-0 lg:col-span-8">
-            <CampaignMainImage campaign={campaign} />
-            <div className="absolute pl-1 pt-1">
-              <CampaignStatus campaign={campaign} />
+              {/* Title and Location Box */}
+              <div className="rounded-lg border bg-white p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
+                      {campaign.title}
+                    </h1>
+                    <div className="mt-2">
+                      <CampaignLocation campaign={campaign} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShareDialog campaign={campaign} />
+                    <FavoriteButton campaignId={campaign.id} />
+                    <CampaignInfoDialog campaign={campaign}>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full"
+                        aria-label="View campaign details"
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </CampaignInfoDialog>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* About Section - Separate from tabs */}
+            <div className="mb-8">
+              <div className="rounded-lg border bg-white p-6 shadow-sm">
+                <CampaignDetailTabAbout campaign={campaign} />
+              </div>
+            </div>
+
+            {/* Tabs Section */}
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <CampaignDetailTabs campaign={campaign} />
             </div>
           </div>
-          <div className="lg:col-span-4">
-            <CampaignCardFull campaign={campaign} />
-          </div>
-          <div className="lg:col-span-8">
-            <CampaignDetailTabs campaign={campaign} />
+
+          {/* Right Column: Campaign Cards */}
+          <div className="lg:col-span-1">
+            <div className="space-y-6">
+              <CampaignFundingBox campaign={campaign} />
+              <CampaignDetailsBox campaign={campaign} />
+              <CampaignMatchingFundsHighlight campaign={campaign} />
+            </div>
           </div>
         </div>
       </DetailContainer>

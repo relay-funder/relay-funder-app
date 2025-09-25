@@ -45,6 +45,7 @@ export interface CampaignCardDisplayOptions {
   showContractAddresses?: boolean;
   showDonateButton?: boolean;
   showStatusBasedButton?: boolean;
+  showFundingProgress?: boolean; // Control visibility of progress bar and funding stats
   truncateDescription?: boolean;
   useCardImage?: boolean; // Use CampaignMainImageCard instead of CampaignMainImage
   openLinksInNewTab?: boolean;
@@ -246,6 +247,7 @@ export function getDefaultDisplayOptions(
     showContractAddresses: false,
     showDonateButton: false, // Removed since whole card is clickable
     showStatusBasedButton: false, // Simplified design
+    showFundingProgress: true, // Show progress by default
     truncateDescription: true,
     useCardImage: false,
     openLinksInNewTab: false,
