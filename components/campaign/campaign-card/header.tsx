@@ -5,8 +5,10 @@ import { FavoriteButton } from '@/components/favorite-button';
 import { CampaignMainImage } from '../main-image';
 import { CampaignMainImageCard } from '../main-image-card';
 import { CampaignStatus } from '../status';
-import { CampaignRemoveButton } from '../remove-button';
 import { CampaignCardActions, CampaignCardDisplayOptions } from './types';
+import { CampaignInfoDialog } from '../info';
+import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
 
 interface CampaignCardHeaderProps {
   campaign: DbCampaign;
@@ -37,7 +39,7 @@ export function CampaignCardHeader({
   adminControls,
 }: CampaignCardHeaderProps) {
   return (
-    <CardHeader className="relative p-0">
+    <CardHeader className="relative p-0" style={{ pointerEvents: 'auto' }}>
       {displayOptions.useCardImage ? (
         <CampaignMainImageCard campaign={campaign} />
       ) : (
@@ -72,6 +74,29 @@ export function CampaignCardHeader({
           {adminControls}
         </div>
       )}
+
+      {/* Info icon - positioned outside main click area with explicit pointer events */}
+      <div
+        className="absolute bottom-2 right-2 z-30"
+        style={{
+          pointerEvents: 'auto',
+        }}
+      >
+        <CampaignInfoDialog campaign={campaign}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 cursor-pointer rounded-full bg-white/90 p-0 text-gray-600 shadow-sm backdrop-blur-sm hover:bg-white hover:text-gray-900 hover:shadow-md"
+            aria-label="View campaign details"
+            tabIndex={0}
+            style={{
+              pointerEvents: 'auto',
+            }}
+          >
+            <Info className="h-4 w-4" style={{ pointerEvents: 'none' }} />
+          </Button>
+        </CampaignInfoDialog>
+      </div>
     </CardHeader>
   );
 }

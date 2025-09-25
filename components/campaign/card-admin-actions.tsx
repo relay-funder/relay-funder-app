@@ -16,53 +16,101 @@ export function CampaignCardAdminActions({
   const isDraft = campaign?.status === 'DRAFT';
   const isPendingApproval = campaign?.status === 'PENDING_APPROVAL';
   const isActive = campaign?.status === 'ACTIVE';
+  const isCompleted = campaign?.status === 'COMPLETED';
+  const isFailed = campaign?.status === 'FAILED';
 
   if (!campaign) {
     return null;
   }
 
-  // Show different controls based on campaign lifecycle stage
+  // Count active buttons for smart layout
+  const primaryActions = [
+    !campaign.campaignAddress,
+    isPendingApproval && campaign.campaignAddress,
+    campaign.campaignAddress && !campaign.treasuryAddress,
+  ].filter(Boolean).length;
+
+  const secondaryActions = [
+    true, // Feature always available
+    isActive,
+    isDraft || isCompleted || isFailed,
+  ].filter(Boolean).length;
+
+  // Determine if we should use side-by-side layout for approve/feature pair
+  const hasApproveFeaturePair =
+    isPendingApproval && campaign.campaignAddress && secondaryActions === 2;
+
   return (
     <div className="w-full space-y-3">
-      {/* Contract deployment - Only if not yet deployed */}
-      {!campaign.campaignAddress && (
-        <div className="flex flex-col space-y-2">
-          <CampaignAdminDeployContractButton campaign={campaign} />
+      {/* Horizontal divider for visual separation */}
+      <div className="border-t border-gray-200"></div>
+
+      {/* Primary Actions Row - Contract/Treasury (Approve moved to secondary row) */}
+      {(!campaign.campaignAddress ||
+        (campaign.campaignAddress &&
+          !campaign.treasuryAddress &&
+          !isPendingApproval)) && (
+        <div className="flex w-full gap-2">
+          {!campaign.campaignAddress && (
+            <div className="flex-1">
+              <CampaignAdminDeployContractButton
+                campaign={campaign}
+                buttonClassName="w-full bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              />
+            </div>
+          )}
+          {campaign.campaignAddress &&
+            !campaign.treasuryAddress &&
+            !isPendingApproval && (
+              <div className="flex-1">
+                <CampaignAdminDeployButton
+                  campaign={campaign}
+                  buttonClassName="w-full bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                />
+              </div>
+            )}
         </div>
       )}
 
-      {/* Approval workflow - Only for PENDING_APPROVAL with campaign contract */}
-      {isPendingApproval && campaign.campaignAddress && (
-        <div className="flex flex-col space-y-2">
-          <CampaignAdminApproveButton campaign={campaign} />
-        </div>
-      )}
+      {/* Secondary Actions Row - Feature/Disable/Remove */}
+      <div className="flex w-full gap-2">
+        {/* Approve button - Show when pending approval */}
+        {isPendingApproval && campaign.campaignAddress && (
+          <div className="flex-1">
+            <CampaignAdminApproveButton
+              campaign={campaign}
+              buttonClassName="w-full bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            />
+          </div>
+        )}
 
-      {/* Treasury deployment - Only if campaign has contract but no treasury */}
-      {campaign.campaignAddress && !campaign.treasuryAddress && (
-        <div className="flex flex-col space-y-2">
-          <CampaignAdminDeployButton campaign={campaign} />
+        {/* Feature button - Always available */}
+        <div className="flex-1">
+          <CampaignAdminFeaturedDialog
+            campaign={campaign}
+            buttonClassName="w-full bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          />
         </div>
-      )}
 
-      {/* Featured controls */}
-      <div className="flex flex-col space-y-2 border-t border-gray-200 pt-2">
-        <CampaignAdminFeaturedDialog
-          campaign={campaign}
-          buttonClassName="w-full"
-        />
+        {/* Status-based action */}
+        {isActive && (
+          <div className="flex-1">
+            <CampaignAdminDisableButton
+              campaign={campaign}
+              buttonClassName="w-full bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+            />
+          </div>
+        )}
+
+        {(isDraft || isCompleted || isFailed) && (
+          <div className="flex-1">
+            <CampaignAdminRemoveButton
+              campaign={campaign}
+              buttonClassName="w-full bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+            />
+          </div>
+        )}
       </div>
-
-      {/* Management actions - Context-dependent */}
-      {(isActive || isDraft) && (
-        <div className="flex flex-col space-y-2 border-t border-gray-200 pt-2">
-          {/* Disable only for ACTIVE campaigns */}
-          {isActive && <CampaignAdminDisableButton campaign={campaign} />}
-
-          {/* Remove only for DRAFT campaigns */}
-          {isDraft && <CampaignAdminRemoveButton campaign={campaign} />}
-        </div>
-      )}
     </div>
   );
 }

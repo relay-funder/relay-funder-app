@@ -3,8 +3,9 @@ import { DbCampaign } from '@/types/campaign';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { Category } from '@/types';
 import { CampaignCardDisplayOptions } from './types';
-import { CampaignCardBadges } from './badges';
-import { CampaignCardMetadata } from './metadata';
+import { MapPin, Calendar } from 'lucide-react';
+import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { FormattedDate } from '../../formatted-date';
 
 interface CampaignStatusInfo {
   status: string;
@@ -47,10 +48,15 @@ export function CampaignCardContent({
   roundCampaign,
   cardType = 'standard',
 }: CampaignCardContentProps) {
+  // Get campaign stats using the hook
+  const { amountRaised, amountGoal, progress } = useCampaignStatsFromInstance({
+    campaign,
+  });
+
   return (
     <CardContent className="flex-1 p-6">
       <div className="space-y-4">
-        {/* Title - Primary hierarchy */}
+        {/* Title */}
         <h2
           className={`font-semibold leading-tight ${
             dashboardMode ? 'text-lg' : 'text-xl'
@@ -60,29 +66,47 @@ export function CampaignCardContent({
           {campaign?.title ?? 'Campaign Title'}
         </h2>
 
-        {/* Key metadata badges - Secondary hierarchy */}
-        <CampaignCardBadges
-          campaign={campaign}
-          displayOptions={displayOptions}
-          canDonate={canDonate}
-          campaignStatusInfo={campaignStatusInfo}
-          categoryDetails={categoryDetails}
-          adminMode={adminMode}
-        />
-
-        {/* Creator and description - Tertiary hierarchy */}
-        <CampaignCardMetadata
-          campaign={campaign}
-          displayOptions={displayOptions}
-          cardType={cardType}
-        />
-
-        {/* Custom description prop - only when showDescription is enabled */}
-        {displayOptions.showDescription && description && (
-          <div className="text-sm leading-relaxed text-gray-700">
-            {description}
+        {/* Category and Country */}
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            {categoryDetails && (
+              <>
+                <span className="text-base">{categoryDetails.icon}</span>
+                <span className="font-medium">{categoryDetails.name}</span>
+              </>
+            )}
           </div>
-        )}
+          {campaign?.location && (
+            <div className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              <span>{campaign.location}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Funding Progress */}
+        <div className="space-y-3">
+          {/* Progress Bar */}
+          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full bg-blue-600 transition-all duration-300"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            />
+          </div>
+
+          {/* Funding Stats */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-gray-900">
+                {amountRaised}
+              </span>
+              <span className="text-gray-500">raised</span>
+            </div>
+            <span className="text-gray-500">
+              of <span className="text-base font-semibold">{amountGoal}</span>
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Custom children content */}
