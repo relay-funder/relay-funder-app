@@ -34,7 +34,7 @@ export function ResponsiveGrid({
   const gridClasses = {
     // Standard cards (campaigns, collections, etc.) - 4 columns on small screens to match stats layout
     cards:
-      'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-4',
+      'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4',
     // Wide cards (rounds, featured content, etc.) - fewer columns for better readability
     'wide-cards': 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
     // Compact items (tags, filters, etc.) - more columns allowed for small items

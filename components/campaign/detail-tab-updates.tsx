@@ -10,7 +10,7 @@ export function CampaignDetailTabUpdates({
   campaign: DbCampaign;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl space-y-6">
       {campaign.creatorAddress && (
         <CampaignUpdateForm
           creatorAddress={campaign.creatorAddress}
@@ -29,7 +29,7 @@ export function CampaignDetailTabUpdates({
           className="w-full"
         />
       ) : (
-        <div className="rounded-lg border border-gray-100 bg-gray-50 py-8 text-center">
+        <div className="py-12 text-center">
           <h3 className="mb-2 text-lg font-semibold text-gray-700">
             No Updates Yet
           </h3>

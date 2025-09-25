@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { ReadMoreOrLess } from './read-more-or-less';
+import { Card, CardContent } from '@/components/ui';
 
 interface TimelineItemProps {
   date: Date;
@@ -14,29 +15,32 @@ export function TimelineItem({
   content,
 }: TimelineItemProps) {
   return (
-    <div className="space-y-4 border-b border-gray-100 pb-6 last:border-b-0">
-      {/* Date */}
-      <div className="text-sm text-gray-500">
-        {new Date(date).toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })}
-      </div>
-
-      {/* Content */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        <div className="prose max-w-none">
-          <ReadMoreOrLess
-            className="whitespace-pre-wrap text-sm leading-relaxed text-gray-600"
-            collapsedClassName="line-clamp-3"
-          >
-            {content}
-          </ReadMoreOrLess>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+              <span className="text-sm text-gray-500">
+                {new Date(date).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+            <div className="mt-2 prose max-w-none">
+              <ReadMoreOrLess
+                className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700"
+                collapsedClassName="line-clamp-3"
+              >
+                {content}
+              </ReadMoreOrLess>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -52,7 +56,7 @@ interface TimelineProps {
 
 export function Timeline({ items, className }: TimelineProps) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-4', className)}>
       {items.map((item, index) => (
         <TimelineItem
           key={item.id}

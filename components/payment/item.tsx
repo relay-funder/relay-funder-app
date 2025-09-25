@@ -1,5 +1,4 @@
 import type { PaymentSummaryContribution } from '@/lib/api/types';
-import { PaymentLink } from './link';
 import { UserInlineName } from '../user/inline-name';
 import { FormattedDate } from '../formatted-date';
 import { DbCampaign } from '@/types/campaign';
@@ -8,9 +7,10 @@ import { useCallback, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
 import { cn } from '@/lib/utils';
-import { Button } from '../ui';
-import { Trash } from 'lucide-react';
+import { Button, Card, CardContent, CardFooter } from '../ui';
+import { Trash, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts';
+import { chainConfig } from '@/lib/web3';
 
 export function PaymentItem({
   payment,
@@ -41,52 +41,64 @@ export function PaymentItem({
     }
   }, [removePayment, refetchCampaign, campaign, payment, toast]);
 
+  const hasExplorerLink = payment.transactionHash;
+  const explorerUrl = hasExplorerLink 
+    ? `${chainConfig.blockExplorerUrl}/tx/${payment.transactionHash}`
+    : undefined;
+
+  const handleRowClick = useCallback(() => {
+    if (explorerUrl) {
+      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    }
+  }, [explorerUrl]);
+
   return (
-    <div
+    <Card 
       className={cn(
         hidden && 'hidden',
-        'flex items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50',
+        hasExplorerLink && 'cursor-pointer transition-colors hover:bg-gray-50'
       )}
+      onClick={hasExplorerLink ? handleRowClick : undefined}
     >
-      <div className="flex items-center gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <UserInlineName user={payment.user} />
-            {payment.status !== 'confirmed' && (
-              <span className="rounded-md bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800">
-                Unconfirmed
-              </span>
-            )}
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserInlineName user={payment.user} />
+                <span className="text-sm text-gray-500">•</span>
+                <FormattedDate date={payment.date} />
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-900">
+                  ${payment.amount}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {payment.token === 'USD' ? 'Credit Card' : payment.token}
+                </span>
+                {hasExplorerLink && (
+                  <ExternalLink className="h-4 w-4 text-gray-400" />
+                )}
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">
-            <FormattedDate date={payment.date} />
-          </p>
         </div>
-      </div>
-      <div className="flex items-center gap-3 text-right">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-green-600">
-            ${payment.amount}
-          </p>
-          <p className="text-xs text-gray-500">
-            {payment.token === 'USD' ? 'Credit Card' : `via ${payment.token}`}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <PaymentLink payment={payment} />
-          {canRemove && (
-            <Button
-              onClick={onRemove}
-              disabled={isRemovingPayment}
-              variant="ghost"
-              size="sm"
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              <Trash className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+      {canRemove && (
+        <CardFooter>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            disabled={isRemovingPayment}
+            variant="ghost"
+            className="text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          >
+            <Trash className="h-3 w-3" />
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   );
 }

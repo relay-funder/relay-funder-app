@@ -39,13 +39,13 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
 
           {/* Funding Stats - Match card format */}
           <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-green-600">
+            <div className="flex items-end gap-2">
+              <span className="text-3xl font-bold">
                 {amountRaised}
               </span>
-              <span className="text-gray-500">raised</span>
+              <span className="text-gray-500 pb-[3px]">raised</span>
             </div>
-            <span className="text-gray-500">
+            <span className="text-gray-500 mt-[6px]">
               of <span className="text-base font-semibold">{amountGoal}</span>
             </span>
           </div>

@@ -34,18 +34,14 @@ export function PaymentList({ campaign }: { campaign: DbCampaign }) {
     return <PaymentEmpty />;
   }
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="space-y-4">
       {data?.pages.map((page) =>
         page.payments.map((payment) => (
           <PaymentItem key={payment.id} payment={payment} campaign={campaign} />
         )),
       )}
       {/* Loading indicator */}
-      {isFetchingNextPage && (
-        <div className="p-4">
-          <PaymentLoading />
-        </div>
-      )}
+      {isFetchingNextPage && <PaymentLoading />}
 
       {/* Intersection observer target */}
       <div ref={ref} className="h-4" />
