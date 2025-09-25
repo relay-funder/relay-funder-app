@@ -90,12 +90,12 @@ export function RoundCardMinimal({
         <CardHeader className="border-b p-4">
           <div className="flex items-start gap-4">
             <RoundMainImageAvatar round={round} />
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">
-                  {round.title ?? 'Untitled Round'}
-                </h2>
-                <Badge variant={status.variant} className="shrink-0 text-xs">
+            <div className="min-w-0 flex-1 space-y-2">
+              <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">
+                {round.title ?? 'Untitled Round'}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Badge variant={status.variant} className="text-xs">
                   {status.text}
                 </Badge>
               </div>
@@ -132,12 +132,12 @@ export function RoundCardMinimal({
                 <span>Application Status</span>
               </div>
               <span
-                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                className={`rounded-md px-2 py-1 text-xs font-normal ${
                   round.recipientStatus === 'APPROVED'
-                    ? 'bg-green-100 text-green-700'
+                    ? 'bg-green-50 text-green-600 border border-green-200'
                     : round.recipientStatus === 'REJECTED'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-yellow-100 text-yellow-700'
+                      ? 'bg-red-50 text-red-600 border border-red-200'
+                      : 'bg-gray-50 text-gray-600 border border-gray-200'
                 }`}
               >
                 {round.recipientStatus === 'APPROVED'
@@ -159,41 +159,40 @@ export function RoundCardMinimal({
         </CardContent>
 
         <CardFooter className="mt-auto p-4 pt-0">
-          <Button
-            className="w-full"
-            variant={status.text === 'Ended' ? 'default' : 'ghost'}
-            size="sm"
-            asChild
-          >
-            <span>
-              {status.text === 'Ended' ? 'View Results' : 'View Round'}
-            </span>
-          </Button>
-          {canWithdraw && (
+          <div className="flex w-full gap-2">
             <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleRemove();
-              }}
-              variant="destructive"
+              className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              variant={status.text === 'Ended' ? 'default' : 'ghost'}
               size="sm"
-              disabled={isRemoving}
-              className="ml-2"
+              asChild
             >
-              {isRemoving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Removing...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Withdraw Application
-                </>
-              )}
+              <span>
+                {status.text === 'Ended' ? 'View Results' : 'View Round'}
+              </span>
             </Button>
-          )}
+            {canWithdraw && (
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRemove();
+                }}
+                variant="ghost"
+                size="sm"
+                disabled={isRemoving}
+                className="flex-1 bg-gray-100 text-gray-700 hover:text-red-600 hover:bg-red-50"
+              >
+                {isRemoving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Withdrawing...
+                  </>
+                ) : (
+                  'Withdraw'
+                )}
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </Link>
     </Card>
