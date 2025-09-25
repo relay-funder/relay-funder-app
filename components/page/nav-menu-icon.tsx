@@ -9,7 +9,9 @@ export function PageNavMenuIcon() {
   return (
     <div
       className={cn(
-        'max-h-[100px] min-h-[100px] flex-1 items-center justify-center border-b px-4',
+        'flex max-h-[100px] min-h-[100px] items-center justify-center border-b px-4',
+        'hidden md:flex', // Show on desktop only
+        'bg-white', // Ensure background is visible
         transition,
         isOpen ? 'pt-6' : 'pt-8',
       )}

@@ -39,7 +39,7 @@ export function PageHeaderSearch({
     },
     [setSearchTerm, onSearchChanged],
   );
-  const renderContent = () => (
+  const renderDesktopContent = () => (
     <div className="flex min-h-[100px] flex-wrap items-center pl-1 pt-[2px] md:min-h-0">
       <div className="flex flex-row items-center py-1 md:ml-3">
         <div className="relative">
@@ -80,19 +80,58 @@ export function PageHeaderSearch({
     </div>
   );
 
+  const renderMobileContent = () => (
+    <div className="space-y-4 px-4 py-4 md:hidden">
+      {/* Search input */}
+      <div className="relative">
+        <Search
+          className={cn(
+            'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400',
+          )}
+        />
+        <Input
+          className="w-full rounded-xl pl-10"
+          placeholder={placeholder}
+          type="search"
+          value={searchTerm}
+          onChange={onSearchInputChanged}
+        />
+      </div>
+
+      {/* Action buttons - wallet connection handled in global top bar */}
+      <div className="flex flex-col gap-3">
+        {typeof onCreate === 'function' && typeof createTitle === 'string' && (
+          <Button
+            className="w-full bg-emerald-400 font-semibold hover:bg-emerald-500"
+            onClick={onCreate}
+          >
+            {createTitle}
+          </Button>
+        )}
+        {buttons}
+      </div>
+    </div>
+  );
+
   return (
-    <header className="inline justify-between p-0 md:p-4">
-      {containerWidth === 'detail' ? (
-        <DetailContainer variant="standard" padding="none">
-          {renderContent()}
-        </DetailContainer>
-      ) : containerWidth === 'default' ? (
-        <FullWidthContainer variant="default" padding="none">
-          {renderContent()}
-        </FullWidthContainer>
-      ) : (
-        renderContent()
-      )}
-    </header>
+    <>
+      {/* Mobile Header */}
+      {renderMobileContent()}
+
+      {/* Desktop Header */}
+      <header className="hidden justify-between p-0 md:block md:p-4">
+        {containerWidth === 'detail' ? (
+          <DetailContainer variant="standard" padding="none">
+            {renderDesktopContent()}
+          </DetailContainer>
+        ) : containerWidth === 'default' ? (
+          <FullWidthContainer variant="default" padding="none">
+            {renderDesktopContent()}
+          </FullWidthContainer>
+        ) : (
+          renderDesktopContent()
+        )}
+      </header>
+    </>
   );
 }

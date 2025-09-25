@@ -134,10 +134,10 @@ export function RoundCardMinimal({
               <span
                 className={`rounded-md px-2 py-1 text-xs font-normal ${
                   round.recipientStatus === 'APPROVED'
-                    ? 'bg-green-50 text-green-600 border border-green-200'
+                    ? 'border border-green-200 bg-green-50 text-green-600'
                     : round.recipientStatus === 'REJECTED'
-                      ? 'bg-red-50 text-red-600 border border-red-200'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200'
+                      ? 'border border-red-200 bg-red-50 text-red-600'
+                      : 'border border-gray-200 bg-gray-50 text-gray-600'
                 }`}
               >
                 {round.recipientStatus === 'APPROVED'
@@ -180,7 +180,7 @@ export function RoundCardMinimal({
                 variant="ghost"
                 size="sm"
                 disabled={isRemoving}
-                className="flex-1 bg-gray-100 text-gray-700 hover:text-red-600 hover:bg-red-50"
+                className="flex-1 bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600"
               >
                 {isRemoving ? (
                   <>

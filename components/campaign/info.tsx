@@ -19,7 +19,11 @@ import { TreasuryBalanceCompact } from './treasury-balance';
 import { useAuth } from '@/contexts';
 
 // Utility function to truncate addresses for mobile
-function truncateAddress(address: string, startChars: number = 6, endChars: number = 4): string {
+function truncateAddress(
+  address: string,
+  startChars: number = 6,
+  endChars: number = 4,
+): string {
   if (address.length <= startChars + endChars) {
     return address;
   }
@@ -62,7 +66,7 @@ export function CampaignInfoDialog({
           <Info className="float-right mr-2 h-4 w-4 cursor-pointer" />
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+      <DialogContent className="max-h-[90vh] w-[95vw] max-w-2xl overflow-y-auto sm:w-full">
         <DialogTitle>Campaign Info</DialogTitle>
         <div className="space-y-4">
           {/* Basic Information */}
@@ -71,10 +75,16 @@ export function CampaignInfoDialog({
               <div className="space-y-4">
                 {/* Creator */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-gray-500 flex-shrink-0">Creator</span>
+                  <span className="flex-shrink-0 text-sm text-gray-500">
+                    Creator
+                  </span>
                   <span className="font-mono text-sm text-gray-900">
-                    <span className="sm:hidden">{truncateAddress(campaign.creatorAddress)}</span>
-                    <span className="hidden sm:inline">{campaign.creatorAddress}</span>
+                    <span className="sm:hidden">
+                      {truncateAddress(campaign.creatorAddress)}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {campaign.creatorAddress}
+                    </span>
                   </span>
                 </div>
 
@@ -149,7 +159,9 @@ export function CampaignInfoDialog({
               <div className="space-y-4">
                 {/* Campaign Contract */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-gray-500 flex-shrink-0">Campaign</span>
+                  <span className="flex-shrink-0 text-sm text-gray-500">
+                    Campaign
+                  </span>
                   <div className="flex items-center gap-2">
                     {campaign.campaignAddress ? (
                       <ContractLink
@@ -158,8 +170,12 @@ export function CampaignInfoDialog({
                       >
                         <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700">
                           <span className="font-mono">
-                            <span className="sm:hidden">{truncateAddress(campaign.campaignAddress)}</span>
-                            <span className="hidden sm:inline">{campaign.campaignAddress}</span>
+                            <span className="sm:hidden">
+                              {truncateAddress(campaign.campaignAddress)}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {campaign.campaignAddress}
+                            </span>
                           </span>
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </div>
@@ -174,7 +190,9 @@ export function CampaignInfoDialog({
 
                 {/* Treasury Contract */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-gray-500 flex-shrink-0">Treasury</span>
+                  <span className="flex-shrink-0 text-sm text-gray-500">
+                    Treasury
+                  </span>
                   <div className="flex items-center gap-2">
                     {campaign.treasuryAddress ? (
                       <ContractLink
@@ -183,8 +201,12 @@ export function CampaignInfoDialog({
                       >
                         <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700">
                           <span className="font-mono">
-                            <span className="sm:hidden">{truncateAddress(campaign.treasuryAddress)}</span>
-                            <span className="hidden sm:inline">{campaign.treasuryAddress}</span>
+                            <span className="sm:hidden">
+                              {truncateAddress(campaign.treasuryAddress)}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {campaign.treasuryAddress}
+                            </span>
                           </span>
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </div>
