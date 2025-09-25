@@ -47,60 +47,73 @@ export function CampaignCardContent({
 
   return (
     <CardContent className="flex-1 p-6">
-      <div className="space-y-4">
-        {/* Title */}
-        <h2
-          className={`font-semibold leading-tight ${
-            dashboardMode ? 'text-lg' : 'text-xl'
+      <div className="flex h-full flex-col">
+        {/* Title - Always exactly 2 lines with minimum height */}
+        <div
+          className={`mb-4 ${
+            dashboardMode ? 'min-h-[3.5rem]' : 'min-h-[4rem]'
           }`}
-          title={campaign?.title ?? 'No Title Set'}
         >
-          {campaign?.title ?? 'Campaign Title'}
-        </h2>
+          <h2
+            className={`line-clamp-2 font-semibold leading-tight ${
+              dashboardMode ? 'text-lg' : 'text-xl'
+            }`}
+            title={campaign?.title ?? 'No Title Set'}
+          >
+            {campaign?.title ?? 'Campaign Title'}
+          </h2>
+        </div>
 
-        {/* Category and Country */}
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            {categoryDetails && (
-              <>
-                <span className="text-base">{categoryDetails.icon}</span>
-                <span className="font-medium">{categoryDetails.name}</span>
-              </>
+        {/* Spacer to push bottom content down */}
+        <div className="flex-1" />
+
+        {/* Bottom section - Always aligned consistently */}
+        <div className="space-y-3">
+          {/* Category and Country */}
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              {categoryDetails && (
+                <>
+                  <span className="text-base">{categoryDetails.icon}</span>
+                  <span className="font-medium">{categoryDetails.name}</span>
+                </>
+              )}
+            </div>
+            {campaign?.location && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                <span>{campaign.location}</span>
+              </div>
             )}
           </div>
-          {campaign?.location && (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span>{campaign.location}</span>
+
+          {/* Funding Progress - Only show if enabled */}
+          {displayOptions.showFundingProgress !== false && (
+            <div className="space-y-3">
+              {/* Progress Bar */}
+              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-300"
+                  style={{ width: `${Math.min(progress, 100)}%` }}
+                />
+              </div>
+
+              {/* Funding Stats */}
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-gray-900">
+                    {amountRaised}
+                  </span>
+                  <span className="text-gray-500">raised</span>
+                </div>
+                <span className="text-gray-500">
+                  of{' '}
+                  <span className="text-base font-semibold">{amountGoal}</span>
+                </span>
+              </div>
             </div>
           )}
         </div>
-
-        {/* Funding Progress - Only show if enabled */}
-        {displayOptions.showFundingProgress !== false && (
-          <div className="space-y-3">
-            {/* Progress Bar */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full bg-blue-600 transition-all duration-300"
-                style={{ width: `${Math.min(progress, 100)}%` }}
-              />
-            </div>
-
-            {/* Funding Stats */}
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-gray-900">
-                  {amountRaised}
-                </span>
-                <span className="text-gray-500">raised</span>
-              </div>
-              <span className="text-gray-500">
-                of <span className="text-base font-semibold">{amountGoal}</span>
-              </span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Custom children content */}

@@ -36,10 +36,12 @@ export function ContentArea({
   return (
     <div className={cn('w-full', spacingClasses[spacing], 'pb-5', className)}>
       {(title || subtitle || actions) && (
-        <div className={cn(
-          "flex flex-col gap-4 sm:flex-row sm:items-start",
-          actions ? "sm:justify-between" : "sm:justify-center"
-        )}>
+        <div
+          className={cn(
+            'flex flex-col gap-4 sm:flex-row sm:items-start',
+            actions ? 'sm:justify-between' : 'sm:justify-center',
+          )}
+        >
           <div className="space-y-2">
             {title && (
               <div className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">

@@ -138,7 +138,7 @@ export function CampaignCard({
 
   const cardContent = (
     <Card
-      className={`flex h-full flex-col overflow-hidden transition-shadow ${
+      className={`flex h-full min-h-[400px] flex-col overflow-hidden transition-shadow ${
         isClickable ? 'cursor-pointer hover:shadow-lg' : 'hover:shadow-md'
       } ${shouldDimCard ? 'opacity-50' : ''} ${className || ''}`}
       onClick={
