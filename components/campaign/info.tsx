@@ -18,6 +18,14 @@ import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { TreasuryBalanceCompact } from './treasury-balance';
 import { useAuth } from '@/contexts';
 
+// Utility function to truncate addresses for mobile
+function truncateAddress(address: string, startChars: number = 6, endChars: number = 4): string {
+  if (address.length <= startChars + endChars) {
+    return address;
+  }
+  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
+}
+
 export function CampaignInfoDialog({
   campaign,
   children,
@@ -64,8 +72,9 @@ export function CampaignInfoDialog({
                 {/* Creator */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm text-gray-500 flex-shrink-0">Creator</span>
-                  <span className="font-mono text-sm text-gray-900 truncate sm:break-all min-w-0 max-w-full">
-                    {campaign.creatorAddress}
+                  <span className="font-mono text-sm text-gray-900">
+                    <span className="sm:hidden">{truncateAddress(campaign.creatorAddress)}</span>
+                    <span className="hidden sm:inline">{campaign.creatorAddress}</span>
                   </span>
                 </div>
 
@@ -141,15 +150,16 @@ export function CampaignInfoDialog({
                 {/* Campaign Contract */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm text-gray-500 flex-shrink-0">Campaign</span>
-                  <div className="flex items-center gap-2 min-w-0 max-w-full overflow-hidden">
+                  <div className="flex items-center gap-2">
                     {campaign.campaignAddress ? (
                       <ContractLink
                         address={campaign.campaignAddress}
                         chainConfig={chainConfig}
                       >
-                        <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 min-w-0 max-w-full">
-                          <span className="font-mono truncate sm:break-all min-w-0">
-                            {campaign.campaignAddress}
+                        <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700">
+                          <span className="font-mono">
+                            <span className="sm:hidden">{truncateAddress(campaign.campaignAddress)}</span>
+                            <span className="hidden sm:inline">{campaign.campaignAddress}</span>
                           </span>
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </div>
@@ -165,15 +175,16 @@ export function CampaignInfoDialog({
                 {/* Treasury Contract */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-sm text-gray-500 flex-shrink-0">Treasury</span>
-                  <div className="flex items-center gap-2 min-w-0 max-w-full overflow-hidden">
+                  <div className="flex items-center gap-2">
                     {campaign.treasuryAddress ? (
                       <ContractLink
                         address={campaign.treasuryAddress}
                         chainConfig={chainConfig}
                       >
-                        <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 min-w-0 max-w-full">
-                          <span className="font-mono truncate sm:break-all min-w-0">
-                            {campaign.treasuryAddress}
+                        <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700">
+                          <span className="font-mono">
+                            <span className="sm:hidden">{truncateAddress(campaign.treasuryAddress)}</span>
+                            <span className="hidden sm:inline">{campaign.treasuryAddress}</span>
                           </span>
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </div>
