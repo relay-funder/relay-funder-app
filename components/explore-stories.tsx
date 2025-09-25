@@ -5,8 +5,7 @@ import { Button } from '@/components/ui';
 import { CampaignList } from '@/components/campaign/list';
 import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
-import { PageHeaderSearch } from '@/components/page/header-search';
-import { PageHome } from '@/components/page/home';
+import { PageLayout } from '@/components/page/layout';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { useSearchParams } from 'next/navigation';
 
@@ -21,14 +20,9 @@ export function ExploreStories() {
     }
   }, [searchParams]);
   return (
-    <PageHome
-      header={
-        <PageHeaderSearch
-          placeholder="Search Campaigns"
-          onSearchChanged={(search: string) => setSearchTerm(search)}
-          containerWidth="default"
-        />
-      }
+    <PageLayout
+      searchPlaceholder="Search Campaigns"
+      onSearchChanged={(search: string) => setSearchTerm(search)}
     >
       {showCampaignCreate ? (
         <div className="mb-8">
@@ -55,6 +49,6 @@ export function ExploreStories() {
           />
         </>
       )}
-    </PageHome>
+    </PageLayout>
   );
 }

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { FullWidthContainer, DetailContainer } from '@/components/layout';
 
 export function PageHeaderSearch({
+  title,
   placeholder,
   onSearchChanged,
   onCreate,
@@ -15,6 +16,7 @@ export function PageHeaderSearch({
   buttons,
   containerWidth = 'default',
 }: {
+  title?: string;
   placeholder: string;
   onSearchChanged: (search: string) => void;
   onCreate?: () => void;
@@ -41,6 +43,16 @@ export function PageHeaderSearch({
   );
   const renderDesktopContent = () => (
     <div className="flex min-h-[100px] flex-wrap items-center pl-1 pt-[2px] md:min-h-0">
+      {/* Title */}
+      {title && (
+        <div className="mr-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+            {title}
+          </h1>
+        </div>
+      )}
+
+      {/* Search */}
       <div className="flex flex-row items-center py-1 md:ml-3">
         <div className="relative">
           <Search
@@ -82,6 +94,14 @@ export function PageHeaderSearch({
 
   const renderMobileContent = () => (
     <div className="space-y-4 px-4 py-4 md:hidden">
+      {/* Title */}
+      {title && (
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
+            {title}
+          </h1>
+        </div>
+      )}
       {/* Search input */}
       <div className="relative">
         <Search

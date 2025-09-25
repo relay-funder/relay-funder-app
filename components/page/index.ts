@@ -13,5 +13,4 @@ export { MobileLogo } from './mobile-logo';
 export { MobileAuthBadge } from './mobile-auth-indicator';
 export { MobileTopBar } from './mobile-top-bar';
 export { MobileMenuHeader } from './mobile-menu-header';
-export { UnifiedHeader } from './unified-header';
-export { UnifiedLayout } from './unified-layout';
+export { PageLayout } from './layout';

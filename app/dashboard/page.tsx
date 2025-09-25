@@ -10,7 +10,7 @@ import { CampaignEmpty } from '@/components/campaign/empty';
 import { useInfiniteUserCampaigns } from '@/lib/hooks/useCampaigns';
 import { useUserFavourites } from '@/lib/hooks/useFavourites';
 import { DashboardNotAuthenticated } from '@/components/dashboard/not-authenticated';
-import { UnifiedLayout } from '@/components/page/unified-layout';
+import { PageLayout } from '@/components/page/layout';
 import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
 import { useCallback, useState } from 'react';
@@ -45,27 +45,25 @@ export default function DashboardPage() {
 
   if (!authenticated) {
     return (
-      <UnifiedLayout
+      <PageLayout
         title="Dashboard"
         searchPlaceholder="Search Your Campaigns"
         onSearchChanged={onSearchChanged}
-        showWalletConnect={false}
       >
         <DashboardOverview />
         <DashboardNotAuthenticated />
-      </UnifiedLayout>
+      </PageLayout>
     );
   }
 
   if (loading || loadingFavourites) {
     return (
-      <UnifiedLayout
+      <PageLayout
         title="Dashboard"
         searchPlaceholder="Search Your Campaigns"
         onSearchChanged={onSearchChanged}
         onCreate={onCreate}
         createTitle="Create Campaign"
-        showWalletConnect={false}
       >
         <DashboardOverview />
         <Tabs defaultValue="my-campaigns" className="mt-8">
@@ -87,17 +85,16 @@ export default function DashboardPage() {
             <CampaignLoading />
           </TabsContent>
         </Tabs>
-      </UnifiedLayout>
+      </PageLayout>
     );
   }
 
   if (showCampaignCreate) {
     return (
-      <UnifiedLayout
+      <PageLayout
         title="Create Campaign"
         searchPlaceholder="Search Your Campaigns"
         onSearchChanged={onSearchChanged}
-        showWalletConnect={false}
         buttons={
           <Button
             variant="outline"
@@ -108,18 +105,17 @@ export default function DashboardPage() {
         }
       >
         <CampaignCreate onCreated={onCreated} />
-      </UnifiedLayout>
+      </PageLayout>
     );
   }
 
   return (
-    <UnifiedLayout
+    <PageLayout
       title="Dashboard"
       searchPlaceholder="Search Your Campaigns"
       onSearchChanged={onSearchChanged}
       onCreate={onCreate}
       createTitle="Create Campaign"
-      showWalletConnect={false}
     >
       {!error && <DashboardOverview />}
 
@@ -172,6 +168,6 @@ export default function DashboardPage() {
           )}
         </TabsContent>
       </Tabs>
-    </UnifiedLayout>
+    </PageLayout>
   );
 }

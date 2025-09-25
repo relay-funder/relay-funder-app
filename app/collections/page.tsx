@@ -9,8 +9,7 @@ import { CollectionCreateDialog } from '@/components/collection/create-dialog';
 import { CollectionList } from '@/components/collection/list';
 import { CollectionListEmpty } from '@/components/collection/list-empty';
 import { CollectionListEmptyNoAuth } from '@/components/collection/list-empty-noauth';
-import { PageHome } from '@/components/page/home';
-import { PageHeaderSearch } from '@/components/page/header-search';
+import { PageLayout } from '@/components/page/layout';
 import { PageDefaultContent } from '@/components/page/default-content';
 
 export default function CollectionsPage() {
@@ -35,17 +34,13 @@ export default function CollectionsPage() {
   );
 
   return (
-    <PageHome
-      header={
-        <PageHeaderSearch
-          onSearchChanged={(search: string) => setSearchTerm(search)}
-          placeholder="Search Collections..."
-          buttons={<CollectionCreateDialog />}
-          containerWidth="default"
-        />
-      }
+    <PageLayout
+      title="Collections"
+      searchPlaceholder="Search Collections..."
+      onSearchChanged={(search: string) => setSearchTerm(search)}
+      buttons={<CollectionCreateDialog />}
     >
-      <PageDefaultContent title="Collections">
+      <PageDefaultContent>
         {authenticated ? (
           <section className="mb-12">
             <h2 className="mb-4 text-2xl font-semibold">Your Collections</h2>
@@ -78,6 +73,6 @@ export default function CollectionsPage() {
           )}
         </section>
       </PageDefaultContent>
-    </PageHome>
+    </PageLayout>
   );
 }

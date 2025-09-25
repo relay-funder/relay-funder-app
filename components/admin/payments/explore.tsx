@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { UnifiedLayout } from '@/components/page/unified-layout';
+import { PageLayout } from '@/components/page/layout';
 import {
   useInfiniteAdminPayments,
   type AdminPaymentListItem,
@@ -251,7 +251,7 @@ export function PaymentsExplore() {
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <UnifiedLayout
+    <PageLayout
       title="Payments"
       searchPlaceholder="Search by user (0x...), campaign id, or token"
       onSearchChanged={setSearchTerm}
@@ -314,7 +314,7 @@ export function PaymentsExplore() {
           </CardContent>
         </Card>
       )}
-    </UnifiedLayout>
+    </PageLayout>
   );
 }
 

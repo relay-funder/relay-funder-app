@@ -4,7 +4,7 @@ import { RoundCreate } from '@/components/round/create';
 import { Button } from '@/components/ui';
 import { RoundList } from '@/components/round/list';
 import { RoundCard } from '@/components/round/round-card';
-import { UnifiedLayout } from '@/components/page/unified-layout';
+import { PageLayout } from '@/components/page/layout';
 import { useAuth } from '@/contexts';
 
 export function RoundExplore() {
@@ -12,7 +12,7 @@ export function RoundExplore() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { isAdmin } = useAuth();
   return (
-    <UnifiedLayout
+    <PageLayout
       title="Funding Rounds"
       searchPlaceholder="Search Rounds"
       onSearchChanged={(search: string) => setSearchTerm(search)}
@@ -38,6 +38,6 @@ export function RoundExplore() {
           />
         </>
       )}
-    </UnifiedLayout>
+    </PageLayout>
   );
 }
