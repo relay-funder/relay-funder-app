@@ -23,22 +23,6 @@ export function CampaignCardAdminActions({
     return null;
   }
 
-  // Count active buttons for smart layout
-  const primaryActions = [
-    !campaign.campaignAddress,
-    isPendingApproval && campaign.campaignAddress,
-    campaign.campaignAddress && !campaign.treasuryAddress,
-  ].filter(Boolean).length;
-
-  const secondaryActions = [
-    true, // Feature always available
-    isActive,
-    isDraft || isCompleted || isFailed,
-  ].filter(Boolean).length;
-
-  // Determine if we should use side-by-side layout for approve/feature pair
-  const hasApproveFeaturePair =
-    isPendingApproval && campaign.campaignAddress && secondaryActions === 2;
 
   return (
     <div className="w-full space-y-3">

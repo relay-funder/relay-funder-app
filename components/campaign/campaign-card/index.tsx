@@ -1,4 +1,3 @@
-import React from 'react';
 
 // Main component export
 export { CampaignCard } from './main';

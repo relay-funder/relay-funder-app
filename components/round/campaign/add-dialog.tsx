@@ -19,7 +19,6 @@ import { GetRoundResponseInstance } from '@/lib/api/types';
 import { DbCampaign } from '@/types/campaign';
 import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
 import { useAuth } from '@/contexts';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
@@ -101,7 +100,6 @@ export function RoundAddDialog({
     });
   }, [allCampaigns, round]);
 
-  const hasCampaigns = allCampaigns.length > 0;
   const hasApplicableCampaigns = availableCampaigns.length > 0;
   const onCreateApplication = useCallback(async () => {
     if (typeof selectedCampaign === 'undefined') {
@@ -143,10 +141,6 @@ export function RoundAddDialog({
     }
     setPage(1);
   }, [onCreateApplication, isAdmin]);
-  const router = useRouter();
-  const onCreateCampaign = useCallback(() => {
-    router.push('/campaigns/?create=1');
-  }, [router]);
   const onApplicationReasonChanged = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) =>
       setApplicationReason(event.target.value),

@@ -12,7 +12,6 @@ export function TimelineItem({
   date,
   title,
   content,
-  isLast,
 }: TimelineItemProps) {
   return (
     <div className="space-y-4 border-b border-gray-100 pb-6 last:border-b-0">

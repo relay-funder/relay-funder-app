@@ -19,7 +19,6 @@ import { useInfiniteUserCampaigns } from '@/lib/hooks/useCampaigns';
 import { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
 import { GetRoundResponseInstance } from '@/lib/api/types';
-import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
 export function RoundApplyDialog({
@@ -107,8 +106,6 @@ export function RoundApplyDialog({
   );
 
   const hasCampaigns = userCampaigns.length > 0;
-  const hasAnyCampaigns = allUserCampaigns.length > 0;
-  const allCampaignsAlreadyApplied = hasAnyCampaigns && !hasCampaigns;
 
   const onCreateApplication = useCallback(async () => {
     if (!selectedCampaign) {
@@ -177,7 +174,7 @@ export function RoundApplyDialog({
     >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Apply Campaign to "{round.title}"</DialogTitle>
+          <DialogTitle>Apply Campaign to &quot;{round.title}&quot;</DialogTitle>
         </DialogHeader>
 
         {page === 0 && (
@@ -271,7 +268,7 @@ export function RoundApplyDialog({
                   {selectedCampaign.title}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  to "{round.title}"
+                  to &quot;{round.title}&quot;
                 </p>
               </div>
             )}

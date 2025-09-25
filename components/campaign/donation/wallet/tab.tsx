@@ -1,16 +1,13 @@
 'use client';
 
-import { Loader2, MessageSquareWarning, Wallet } from 'lucide-react';
-import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
+import { Loader2, Wallet } from 'lucide-react';
 import { useNetworkCheck } from '@/hooks/use-network';
-import { useWeb3Auth, chainConfig } from '@/lib/web3';
+import { useWeb3Auth } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { CampaignDonationWalletDetails } from './details';
 import { CampaignDonationWalletStatus } from './status';
-import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
 import { DbCampaign } from '@/types/campaign';
 import { Button } from '@/components/ui';
-import ContractLink from '@/components/page/contract-link';
 
 export function CampaignDonationWalletTab({
   campaign,
@@ -31,7 +28,7 @@ export function CampaignDonationWalletTab({
         </div>
         <p className="mb-4 text-center text-sm text-muted-foreground">
           To track your payments and the projects you support, connect your
-          wallet. It's free and easy, and no additional personal data is
+          wallet. It&apos;s free and easy, and no additional personal data is
           required to contribute.
         </p>
         <div className="flex items-center justify-center">
@@ -55,7 +52,7 @@ export function CampaignDonationWalletTab({
   }
   return (
     <div className="flex flex-col gap-6">
-      <CampaignDonationWalletStatus campaign={campaign} />
+      <CampaignDonationWalletStatus />
 
       {isCorrectNetwork && (
         <>

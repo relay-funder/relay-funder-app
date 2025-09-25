@@ -33,8 +33,6 @@ export function CampaignCardHeader({
   actionHandlers,
   isFavorite,
   adminMode,
-  round,
-  roundCampaign,
   statusIndicators,
   adminControls,
 }: CampaignCardHeaderProps) {

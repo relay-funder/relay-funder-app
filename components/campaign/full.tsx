@@ -9,14 +9,11 @@ import { CampaignDetailTabs } from '@/components/campaign/detail-tabs';
 import { CampaignDetailTabAbout } from '@/components/campaign/detail-tab-about';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
-import { UserInlineName } from '@/components/user/inline-name';
 import { CampaignLocation } from '@/components/campaign/location';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from './loading';
 import { useAuth } from '@/contexts';
-import { CampaignStatus } from './status';
 import { CampaignError } from './error';
-import { useCampaignCategory } from '@/hooks/use-campaign-category';
 import { isCampaignFeatured } from '@/lib/utils/campaign-status';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ShareDialog } from '@/components/share-dialog';
@@ -27,9 +24,6 @@ import { Info } from 'lucide-react';
 export function CampaignFull({ slug }: { slug: string }) {
   const { address, isAdmin, isReady } = useAuth();
   const { data: campaignInstance, isPending } = useCampaign(slug);
-  const { details } = useCampaignCategory({
-    campaign: campaignInstance?.campaign,
-  });
   if (isPending || !isReady) {
     return (
       <PageHome header={<PageHeader />}>

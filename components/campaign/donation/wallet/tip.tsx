@@ -1,6 +1,5 @@
 import { useCallback, type ChangeEvent } from 'react';
 import { Input, Label } from '@/components/ui';
-import { formatCrypto } from '@/lib/format-crypto';
 import { Info } from 'lucide-react';
 
 interface CampaignDonationWalletTipProps {
@@ -11,7 +10,6 @@ interface CampaignDonationWalletTipProps {
 
 export function CampaignDonationWalletTip({
   tipAmount,
-  selectedToken,
   onTipAmountChanged,
 }: CampaignDonationWalletTipProps) {
   const intermediateOnTipChange = useCallback(
@@ -21,7 +19,6 @@ export function CampaignDonationWalletTip({
     [onTipAmountChanged],
   );
 
-  const numericTipAmount = parseFloat(tipAmount) || 0;
 
   return (
     <div className="space-y-3">

@@ -1,26 +1,15 @@
 'use client';
 
-import { Alert, AlertDescription } from '@/components/ui';
-import { Wallet, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useNetworkCheck } from '@/hooks/use-network';
 import { chainConfig } from '@/lib/web3';
 import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
-import { useAuth } from '@/contexts';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
-import ContractLink from '@/components/page/contract-link';
 import { formatCrypto } from '@/lib/format-crypto';
 
-interface CampaignDonationWalletStatusProps {
-  campaign: {
-    treasuryAddress?: string | null;
-  };
-}
 
-export function CampaignDonationWalletStatus({
-  campaign,
-}: CampaignDonationWalletStatusProps) {
+export function CampaignDonationWalletStatus() {
   const { isCorrectNetwork } = useNetworkCheck();
-  const { address } = useAuth();
   const { usdcBalance, isPending: usdBalanceIsPending } = useUsdcBalance();
 
   const hasBalance = usdcBalance && parseFloat(usdcBalance) > 0;

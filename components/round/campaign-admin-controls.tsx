@@ -23,8 +23,7 @@ export function RoundCampaignAdminControls({
   round,
 }: RoundCampaignAdminControlsProps) {
   const { isAdmin } = useAuth();
-  const { mutateAsync: updateRoundCampaign, isPending: isUpdatePending } =
-    useUpdateRoundCampaign();
+  const { mutateAsync: updateRoundCampaign } = useUpdateRoundCampaign();
   const { mutateAsync: removeRoundCampaign, isPending: isRemovePending } =
     useRemoveRoundCampaign();
 
@@ -64,7 +63,7 @@ export function RoundCampaignAdminControls({
 
   const onRemove = useCallback(async () => {
     try {
-      const result = await removeRoundCampaign({
+      await removeRoundCampaign({
         campaignId: campaign.id,
         roundId: round.id,
       });

@@ -1,15 +1,12 @@
 import { useCallback, type ChangeEvent } from 'react';
 import { Input } from '@/components/ui';
-import { formatCrypto } from '@/lib/format-crypto';
 import { CampaignDonationSuggestions } from '../suggestions';
 
-const supportedTokenList = ['USDC'];
 
 export function CampaignDonationWalletAmount({
   amount,
   selectedToken,
   onAmountChanged,
-  onTokenChanged,
 }: {
   amount: string;
   selectedToken: string;
@@ -22,7 +19,6 @@ export function CampaignDonationWalletAmount({
     },
     [onAmountChanged],
   );
-  const numericAmount = parseFloat(amount) || 0;
 
   return (
     <div className="flex flex-col space-y-5">

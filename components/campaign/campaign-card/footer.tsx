@@ -48,8 +48,6 @@ export function CampaignCardFooter({
   customButtons,
   canDonate,
   campaignStatusInfo,
-  round,
-  roundCampaign,
   roundAdminFooterControls,
   cardType = 'standard',
 }: CampaignCardFooterProps) {

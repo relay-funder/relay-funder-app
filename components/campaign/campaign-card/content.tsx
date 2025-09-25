@@ -3,9 +3,8 @@ import { DbCampaign } from '@/types/campaign';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { Category } from '@/types';
 import { CampaignCardDisplayOptions } from './types';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
-import { FormattedDate } from '../../formatted-date';
 
 interface CampaignStatusInfo {
   status: string;
@@ -36,17 +35,10 @@ interface CampaignCardContentProps {
 
 export function CampaignCardContent({
   campaign,
-  description,
   displayOptions,
-  adminMode,
   dashboardMode,
-  canDonate,
-  campaignStatusInfo,
   categoryDetails,
   children,
-  round,
-  roundCampaign,
-  cardType = 'standard',
 }: CampaignCardContentProps) {
   // Get campaign stats using the hook
   const { amountRaised, amountGoal, progress } = useCampaignStatsFromInstance({

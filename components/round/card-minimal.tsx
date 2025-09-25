@@ -14,7 +14,7 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
 import { useToast } from '@/hooks/use-toast';

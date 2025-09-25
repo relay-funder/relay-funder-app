@@ -38,7 +38,6 @@ export function CampaignAddRoundDialog({
   const {
     data: roundsData,
     isPending: isRoundsDataPending,
-    error: roundsError,
   } = useRounds();
 
   const canAdd = useMemo(() => {

@@ -1,7 +1,6 @@
 'use client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { type DbCampaign } from '@/types/campaign';
-import { CampaignDetailTabAbout } from './detail-tab-about';
 import { CampaignDetailTabUpdates } from './detail-tab-updates';
 import { CampaignDetailTabComments } from './detail-tab-comments';
 import { CampaignDetailTabTransactions } from './detail-tab-transactions';

@@ -41,7 +41,7 @@ export function RoundCard({
   displayOptions: userDisplayOptions = {},
   className,
 }: RoundCardProps) {
-  const { isAdmin, authenticated, address } = useAuth();
+  const { isAdmin, address } = useAuth();
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
 
