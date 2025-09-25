@@ -18,7 +18,7 @@ import { useMemo, useCallback } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { RoundMainImageAvatar } from './main-image-avatar';
 
 export function RoundCardMinimal({

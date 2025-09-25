@@ -38,8 +38,7 @@ export function ResponsiveGrid({
     // Wide cards (rounds, featured content, etc.) - fewer columns for better readability
     'wide-cards': 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
     // Compact items (tags, filters, etc.) - more columns allowed for small items
-    compact:
-      'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
+    compact: 'grid-cols-2 sm:grid-cols-4',
   };
 
   return (

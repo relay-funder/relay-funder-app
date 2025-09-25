@@ -23,7 +23,7 @@ export function CommentList({ campaign }: { campaign: DbCampaign }) {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
   if (loading && !data) {
-    return <CommentLoading minimal={true} />;
+    return <CommentLoading expectItemCount={2} />;
   }
 
   if (error) {
@@ -37,7 +37,7 @@ export function CommentList({ campaign }: { campaign: DbCampaign }) {
         )),
       )}
       {/* Loading indicator */}
-      {isFetchingNextPage && <CommentLoading minimal={true} />}
+      {isFetchingNextPage && <CommentLoading expectItemCount={1} />}
 
       {/* Intersection observer target */}
       <div ref={ref} className="h-10" />

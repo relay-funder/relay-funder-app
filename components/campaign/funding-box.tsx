@@ -4,7 +4,7 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, Heart } from 'lucide-react';
 
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
@@ -76,7 +76,8 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
         <div className="space-y-2">
           <Link href={`/campaigns/${campaign.slug}/donation`}>
             <Button className="h-10 w-full" size="default">
-              Back this campaign
+              <Heart className="h-5 w-5 text-white" />
+              Support this campaign
             </Button>
           </Link>
           {isOwner && <WithdrawalDialog campaign={campaign} />}

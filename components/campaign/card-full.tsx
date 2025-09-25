@@ -4,7 +4,7 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock, MapPin, Target, Rocket } from 'lucide-react';
+import { Users, Clock, MapPin, Target, Rocket, Heart } from 'lucide-react';
 
 import { ShareDialog } from '@/components/share-dialog';
 import { FavoriteButton } from '@/components/favorite-button';
@@ -64,7 +64,10 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
         <div className="mt-4 space-y-3">
           <Link href={`/campaigns/${campaign.slug}/donation`}>
             <Button className="h-12 w-full text-lg" size="lg">
-              Back this campaign
+              <span className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-white" />
+                Support this campaign
+              </span>
             </Button>
           </Link>
           {isOwner && <WithdrawalDialog campaign={campaign} />}

@@ -9,7 +9,7 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
           Contribute to Campaign
         </h2>
         <p className="mt-1 text-sm text-gray-600">
-          Support this project with your contribution
+          Support this campaign with your contribution
         </p>
       </div>
       {/* Single treasury mode: Only crypto wallet donations supported */}

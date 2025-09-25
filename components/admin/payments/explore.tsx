@@ -21,8 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { PageHome } from '@/components/page/home';
-import { PageHeaderSearch } from '@/components/page/header-search';
+import { UnifiedLayout } from '@/components/page/unified-layout';
 import {
   useInfiniteAdminPayments,
   type AdminPaymentListItem,
@@ -252,55 +251,10 @@ export function PaymentsExplore() {
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <PageHome
-      header={
-        <div className="space-y-2">
-          <PageHeaderSearch
-            placeholder="Search by user (0x...), campaign id, or token"
-            onSearchChanged={setSearchTerm}
-            containerWidth="default"
-          />
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Status</span>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as PaymentStatusFilter)}
-              >
-                <SelectTrigger className="h-8 w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="canceled">Canceled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Refund</span>
-              <Select
-                value={refund}
-                onValueChange={(v) => setRefund(v as RefundFilter)}
-              >
-                <SelectTrigger className="h-8 w-44">
-                  <SelectValue placeholder="Refund" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  <SelectItem value="NONE">No Refund</SelectItem>
-                  <SelectItem value="REQUESTED">Requested</SelectItem>
-                  <SelectItem value="APPROVED">Approved</SelectItem>
-                  <SelectItem value="PROCESSED">Processed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      }
+    <UnifiedLayout
+      title="Payments"
+      searchPlaceholder="Search by user (0x...), campaign id, or token"
+      onSearchChanged={setSearchTerm}
     >
       {isError ? (
         <Card>
@@ -313,17 +267,54 @@ export function PaymentsExplore() {
         </Card>
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>Payments</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-3">
+            {/* Filter Controls */}
+            <div className="flex flex-wrap items-center gap-3 border-b pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Status</span>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as PaymentStatusFilter)}
+                >
+                  <SelectTrigger className="h-8 w-40">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="canceled">Canceled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Refund</span>
+                <Select
+                  value={refund}
+                  onValueChange={(v) => setRefund(v as RefundFilter)}
+                >
+                  <SelectTrigger className="h-8 w-44">
+                    <SelectValue placeholder="Refund" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="NONE">No Refund</SelectItem>
+                    <SelectItem value="REQUESTED">Requested</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="PROCESSED">Processed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <PaymentsTable payments={payments} isLoading={isLoading} />
             {/* Sentinel for infinite auto-fetch */}
             <div ref={ref} className="h-10" />
           </CardContent>
         </Card>
       )}
-    </PageHome>
+    </UnifiedLayout>
   );
 }
 

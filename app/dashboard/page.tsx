@@ -1,13 +1,7 @@
 'use client';
-import {
-  Input,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { useAuth } from '@/contexts';
-import { Heart, Search } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { DashboardOverview } from '@/components/dashboard/overview';
 import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CampaignLoading } from '@/components/campaign/loading';
@@ -16,12 +10,12 @@ import { CampaignEmpty } from '@/components/campaign/empty';
 import { useInfiniteUserCampaigns } from '@/lib/hooks/useCampaigns';
 import { useUserFavourites } from '@/lib/hooks/useFavourites';
 import { DashboardNotAuthenticated } from '@/components/dashboard/not-authenticated';
-import { PageDashboard } from '@/components/page/dashboard';
+import { UnifiedLayout } from '@/components/page/unified-layout';
 import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
-import { useCallback, useState, type ChangeEvent } from 'react';
+import { useCallback, useState } from 'react';
 import { CampaignUserList } from '@/components/campaign/list-user';
-import { cn } from '@/lib/utils';
+
 export default function DashboardPage() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -33,31 +27,46 @@ export default function DashboardPage() {
     isLoading: loadingFavourites,
     error: favouriteError,
   } = useUserFavourites();
+
   const onCreate = useCallback(async () => {
     setShowCampaignCreate(true);
   }, []);
+
   const onCreated = useCallback(async () => {
     setShowCampaignCreate(false);
   }, []);
-  const onSearchInputChanged = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
+
+  const onSearchChanged = useCallback(
+    (search: string) => {
+      setSearchTerm(search);
     },
     [setSearchTerm],
   );
 
   if (!authenticated) {
     return (
-      <PageDashboard>
+      <UnifiedLayout
+        title="Dashboard"
+        searchPlaceholder="Search Your Campaigns"
+        onSearchChanged={onSearchChanged}
+        showWalletConnect={false}
+      >
         <DashboardOverview />
         <DashboardNotAuthenticated />
-      </PageDashboard>
+      </UnifiedLayout>
     );
   }
 
   if (loading || loadingFavourites) {
     return (
-      <PageDashboard>
+      <UnifiedLayout
+        title="Dashboard"
+        searchPlaceholder="Search Your Campaigns"
+        onSearchChanged={onSearchChanged}
+        onCreate={onCreate}
+        createTitle="Create Campaign"
+        showWalletConnect={false}
+      >
         <DashboardOverview />
         <Tabs defaultValue="my-campaigns" className="mt-8">
           <TabsList className="mb-6">
@@ -78,28 +87,40 @@ export default function DashboardPage() {
             <CampaignLoading />
           </TabsContent>
         </Tabs>
-      </PageDashboard>
+      </UnifiedLayout>
     );
   }
+
   if (showCampaignCreate) {
     return (
-      <PageDashboard
-        title={
+      <UnifiedLayout
+        title="Create Campaign"
+        searchPlaceholder="Search Your Campaigns"
+        onSearchChanged={onSearchChanged}
+        showWalletConnect={false}
+        buttons={
           <Button
             variant="outline"
             onClick={() => setShowCampaignCreate(false)}
-            className="ml-2"
           >
             ← Back to Dashboard
           </Button>
         }
       >
         <CampaignCreate onCreated={onCreated} />
-      </PageDashboard>
+      </UnifiedLayout>
     );
   }
+
   return (
-    <PageDashboard>
+    <UnifiedLayout
+      title="Dashboard"
+      searchPlaceholder="Search Your Campaigns"
+      onSearchChanged={onSearchChanged}
+      onCreate={onCreate}
+      createTitle="Create Campaign"
+      showWalletConnect={false}
+    >
       {!error && <DashboardOverview />}
 
       <Tabs defaultValue="my-campaigns" className="mt-8">
@@ -117,32 +138,14 @@ export default function DashboardPage() {
           {error ? (
             <CampaignError error={error.message} />
           ) : (
-            <>
-              <div className="flex flex-row items-center py-1 md:ml-4">
-                <div className="relative">
-                  <Search
-                    className={cn(
-                      'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400',
-                    )}
-                  />
-                  <Input
-                    className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
-                    placeholder={'Search Your Campaigns'}
-                    type="search"
-                    value={searchTerm}
-                    onChange={onSearchInputChanged}
-                  />
-                </div>
-              </div>
-              <CampaignUserList
-                searchTerm={searchTerm}
-                statusFilter="all"
-                pageSize={3}
-                withRounds={true}
-                item={(props) => <CampaignCard {...props} type="dashboard" />}
-                onCreate={onCreate}
-              />
-            </>
+            <CampaignUserList
+              searchTerm={searchTerm}
+              statusFilter="all"
+              pageSize={3}
+              withRounds={true}
+              item={(props) => <CampaignCard {...props} type="dashboard" />}
+              onCreate={onCreate}
+            />
           )}
         </TabsContent>
 
@@ -169,6 +172,6 @@ export default function DashboardPage() {
           )}
         </TabsContent>
       </Tabs>
-    </PageDashboard>
+    </UnifiedLayout>
   );
 }

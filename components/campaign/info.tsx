@@ -11,7 +11,6 @@ import {
 import { Info, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { FormattedDate } from '@/components/formatted-date';
-import { UserInlineName } from '@/components/user/inline-name';
 import ContractLink from '../page/contract-link';
 import { chainConfig } from '@/lib/web3';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
