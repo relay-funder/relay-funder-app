@@ -261,6 +261,28 @@ export function useRounds(status?: string) {
     enabled: true,
   });
 }
+
+async function fetchActiveRound() {
+  const response = await fetch('/api/rounds/active');
+  if (!response.ok) {
+    let message = 'Failed to fetch active round';
+    try {
+      const error = await response.json();
+      message = error.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const data = await response.json();
+  return data.round;
+}
+
+export function useActiveRound() {
+  return useQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'active'],
+    queryFn: fetchActiveRound,
+    enabled: true,
+  });
+}
 export function useRound(id: number) {
   return useQuery({
     queryKey: [ROUND_QUERY_KEY, id],

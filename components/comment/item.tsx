@@ -1,6 +1,6 @@
 import { Megaphone, Trash } from 'lucide-react';
 import { DbCampaign, type DbComment } from '@/types/campaign';
-import { Card, CardContent, CardFooter, Button } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui';
 import { UserInlineName } from '../user/inline-name';
 import { FormattedDate } from '../formatted-date';
 import { useAuth } from '@/contexts';
@@ -9,6 +9,8 @@ import { useRemoveComment, useReportComment } from '@/lib/hooks/useComments';
 import { cn } from '@/lib/utils';
 import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui';
+
 export function CommentItem({
   comment,
   campaign,
@@ -64,26 +66,40 @@ export function CommentItem({
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <UserInlineName user={comment.creator} />
-              <span className="text-sm text-gray-500">
-                <FormattedDate date={comment.createdAt} />
-              </span>
+              <div className="flex flex-col items-end">
+                <span className="text-sm text-gray-500">
+                  <FormattedDate date={comment.createdAt} />
+                </span>
+                <div className="mt-1 flex gap-1">
+                  {canRemove && (
+                    <Button
+                      onClick={onRemove}
+                      variant="ghost"
+                      disabled={removeIsPending}
+                      size="icon"
+                      aria-label="Delete comment"
+                    >
+                      <Trash />
+                    </Button>
+                  )}
+                  {canReport && (
+                    <Button
+                      onClick={onReport}
+                      variant="ghost"
+                      disabled={reportIsPending}
+                      size="icon"
+                      aria-label="Report comment"
+                    >
+                      <Megaphone />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
             <p className="mt-2 text-gray-700">{comment.content}</p>
           </div>
         </div>
       </CardContent>
-      <CardFooter>
-        {canRemove && (
-          <Button onClick={onRemove} variant="ghost" disabled={removeIsPending}>
-            <Trash />
-          </Button>
-        )}
-        {canReport && (
-          <Button onClick={onReport} variant="ghost" disabled={reportIsPending}>
-            <Megaphone />
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 }

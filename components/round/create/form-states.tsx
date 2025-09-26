@@ -22,7 +22,7 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
         <p>
           Welcome to the round creation page! Configure the campaign round and
           sets the stage for the information you will provide. Understanding the
-          purpose and goals of this round is crucial for aligning projects with
+          purpose and goals of this round is crucial for aligning campaigns with
           funding opportunities. This form will guide you through the essential
           steps to set up your round, including providing a captivating title, a
           detailed description, relevant metadata, funding specifics, media
@@ -42,7 +42,7 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
           In this first step, you will provide a <b>title</b> and a{' '}
           <b>description</b> for your round. The title of your round should be
           concise yet descriptive, capturing the essence of the funding
-          opportunity. A strong title helps attract the right projects
+          opportunity. A strong title helps attract the right campaigns
         </p>
 
         <h3>Title</h3>
@@ -148,7 +148,7 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
         <p>
           In this step, you will define the <b>funding</b> details for your
           round. Specify the total funding amount available for this round. This
-          helps applicants gauge the scale of their projects and plan
+          helps applicants gauge the scale of their campaigns and plan
           accordingly.
         </p>
       </div>

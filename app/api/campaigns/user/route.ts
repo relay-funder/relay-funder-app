@@ -11,6 +11,10 @@ import {
 import { PatchUserCampaignResponse } from '@/lib/api/types';
 import { fileToUrl } from '@/lib/storage';
 import { getUser } from '@/lib/api/user';
+import {
+  isValidCategoryId,
+  VALID_CATEGORY_IDS,
+} from '@/lib/constant/categories';
 
 export async function GET(req: Request) {
   try {
@@ -63,6 +67,13 @@ export async function PATCH(req: Request) {
     }
     if (!title || !description) {
       throw new ApiParameterError('missing required fields');
+    }
+
+    // Validate category if provided
+    if (category && !isValidCategoryId(category)) {
+      throw new ApiParameterError(
+        `Invalid category "${category}". Only allowed: ${VALID_CATEGORY_IDS.join(', ')}`,
+      );
     }
     const user = await getUser(session.user.address);
     if (!user) {

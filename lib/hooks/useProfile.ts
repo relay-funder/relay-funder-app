@@ -10,6 +10,7 @@ interface IUpdateUserProfileApi {
   avatarUrl?: string;
   bio?: string;
   recipientWallet?: string;
+  email?: string;
 }
 interface IUserProfileApi {
   id: number;

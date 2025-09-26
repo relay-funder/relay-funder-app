@@ -15,6 +15,7 @@ interface SidebarContextType {
   show: () => void;
   hide: () => void;
   move: () => void;
+  toggle: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
@@ -47,14 +48,19 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     // This wont happen on mobile.
     refToggleTime.current = 0;
   }, []);
+  const toggle = useCallback(() => {
+    setIsOpen((prev) => !prev);
+    refToggleTime.current = Date.now();
+  }, [setIsOpen]);
   const value = useMemo(() => {
     return {
       show,
       hide,
       move,
+      toggle,
       isOpen,
     };
-  }, [isOpen, show, hide, move]);
+  }, [isOpen, show, hide, move, toggle]);
   return (
     <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
   );

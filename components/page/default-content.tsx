@@ -5,7 +5,7 @@ export function PageDefaultContent({
   title,
   children,
 }: {
-  title: string;
+  title?: string;
   children: ReactNode;
 }) {
   return (

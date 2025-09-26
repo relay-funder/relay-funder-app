@@ -6,13 +6,16 @@ import { DbCampaign } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminDeployContract } from '@/lib/hooks/useCampaigns';
 import { cn } from '@/lib/utils';
+import { Rocket } from 'lucide-react';
 
 export function CampaignAdminDeployContractButton({
   campaign,
   onUpdate,
+  buttonClassName,
 }: {
   campaign: DbCampaign;
   onUpdate?: () => void;
+  buttonClassName?: string;
 }) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -80,36 +83,22 @@ export function CampaignAdminDeployContractButton({
     !campaign.campaignAddress && isPendingApproval;
 
   return (
-    <div className="space-y-2">
-      <Button
-        onClick={handleDeploy}
-        className={cn(
+    <Button
+      onClick={handleDeploy}
+      className={
+        buttonClassName ||
+        cn(
           'w-full',
           needsContractDeployment
             ? 'bg-blue-700 hover:bg-blue-800'
             : 'bg-blue-600 hover:bg-blue-700',
-        )}
-        disabled={deployMutation.isPending}
-        title="Deploy the campaign info factory contract for this campaign on-chain."
-      >
-        {deployMutation.isPending
-          ? 'Deploying Contract...'
-          : needsContractDeployment
-            ? 'Deploy Contract (Required)'
-            : 'Deploy Contract'}
-      </Button>
-
-      {needsContractDeployment && (
-        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
-          Required: Deploy campaign contract before approval
-        </div>
-      )}
-
-      {campaign.campaignAddress && (
-        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
-          Contract deployed: {campaign.campaignAddress}
-        </div>
-      )}
-    </div>
+        )
+      }
+      disabled={deployMutation.isPending}
+      title="Deploy the campaign info factory contract for this campaign on-chain."
+    >
+      <Rocket className="mr-2 h-4 w-4" />
+      {deployMutation.isPending ? 'Deploying...' : 'Deploy Contract'}
+    </Button>
   );
 }

@@ -97,7 +97,7 @@ export default function Features() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-gray-50">
       <main className="w-full">
-        <FullWidthContainer variant="edge-to-edge" padding="sm">
+        <FullWidthContainer variant="default" padding="sm">
           <ContentArea
             title={
               <h1 className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-4xl font-bold text-transparent">

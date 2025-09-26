@@ -3,9 +3,8 @@ import { useState } from 'react';
 import { RoundCreate } from '@/components/round/create';
 import { Button } from '@/components/ui';
 import { RoundList } from '@/components/round/list';
-import { RoundCardEnhanced } from '@/components/round/card-enhanced';
-import { PageHeaderSearch } from '@/components/page/header-search';
-import { PageHome } from '@/components/page/home';
+import { RoundCard } from '@/components/round/round-card';
+import { PageLayout } from '@/components/page/layout';
 import { useAuth } from '@/contexts';
 
 export function RoundExplore() {
@@ -13,15 +12,12 @@ export function RoundExplore() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { isAdmin } = useAuth();
   return (
-    <PageHome
-      header={
-        <PageHeaderSearch
-          onCreate={isAdmin ? () => setShowRoundCreate(true) : undefined}
-          createTitle="Create Round"
-          placeholder="Search Rounds"
-          onSearchChanged={(search: string) => setSearchTerm(search)}
-        />
-      }
+    <PageLayout
+      title="Funding Rounds"
+      searchPlaceholder="Search Rounds"
+      onSearchChanged={(search: string) => setSearchTerm(search)}
+      onCreate={isAdmin ? () => setShowRoundCreate(true) : undefined}
+      createTitle="Create Round"
     >
       {showRoundCreate ? (
         <div className="mb-8">
@@ -36,9 +32,12 @@ export function RoundExplore() {
         </div>
       ) : (
         <>
-          <RoundList searchTerm={searchTerm} item={RoundCardEnhanced} />
+          <RoundList
+            searchTerm={searchTerm}
+            item={(props) => <RoundCard {...props} type="enhanced" />}
+          />
         </>
       )}
-    </PageHome>
+    </PageLayout>
   );
 }

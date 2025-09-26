@@ -5,7 +5,8 @@ import { useInView } from 'react-intersection-observer';
 import { useEffect } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { CampaignCardStandard } from '@/components/campaign/campaign-card';
+import { CampaignCard } from '@/components/campaign/campaign-card';
+import { ResponsiveGrid } from '@/components/layout';
 import type { CampaignItemProps } from '@/types/campaign';
 import { CreateCampaignPlaceholder } from './create-campaign-placeholder';
 interface CampaignListProps {
@@ -24,7 +25,7 @@ export function CampaignUserList({
   statusFilter = undefined,
   pageSize = 10,
   withRounds = true,
-  item: ItemComponent = CampaignCardStandard,
+  item: ItemComponent = (props) => <CampaignCard {...props} type="standard" />,
   onCreate,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
@@ -70,16 +71,18 @@ export function CampaignUserList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
-        {typeof onCreate === 'function' && (
-          <CreateCampaignPlaceholder onCreate={onCreate} />
-        )}
-        {filteredCampaigns?.map((page) =>
-          page.campaigns.map((campaign) => (
-            <ItemComponent key={campaign.id} campaign={campaign} />
-          )),
-        )}
+    <div className="space-y-6">
+      <div className="p-4">
+        <ResponsiveGrid variant="cards" gap="md">
+          {typeof onCreate === 'function' && (
+            <CreateCampaignPlaceholder onCreate={onCreate} />
+          )}
+          {filteredCampaigns?.map((page) =>
+            page.campaigns.map((campaign) => (
+              <ItemComponent key={campaign.id} campaign={campaign} />
+            )),
+          )}
+        </ResponsiveGrid>
       </div>
       {/* Loading indicator */}
       {isFetchingNextPage && <CampaignLoading minimal={true} />}

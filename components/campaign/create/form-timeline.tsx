@@ -8,20 +8,38 @@ import {
   FormMessage,
 } from '@/components/ui';
 
-export function CampaignCreateFormTimeline() {
+interface CampaignCreateFormTimelineProps {
+  isOnChainDeployed?: boolean;
+}
+
+export function CampaignCreateFormTimeline({
+  isOnChainDeployed = false,
+}: CampaignCreateFormTimelineProps) {
   const form = useFormContext();
   return (
-    <>
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="startTime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Start Time</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-900">
+              Campaign Start Date
+            </FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <Input
+                type="date"
+                className="mt-1"
+                disabled={isOnChainDeployed}
+                {...field}
+              />
             </FormControl>
             <FormMessage />
+            {isOnChainDeployed && (
+              <p className="text-sm text-orange-600">
+                Start date cannot be changed after campaign deployment
+              </p>
+            )}
           </FormItem>
         )}
       />
@@ -30,14 +48,26 @@ export function CampaignCreateFormTimeline() {
         name="endTime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>End Time</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-900">
+              Campaign End Date
+            </FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <Input
+                type="date"
+                className="mt-1"
+                disabled={isOnChainDeployed}
+                {...field}
+              />
             </FormControl>
             <FormMessage />
+            {isOnChainDeployed && (
+              <p className="text-sm text-orange-600">
+                End date cannot be changed after campaign deployment
+              </p>
+            )}
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 }
