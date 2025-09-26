@@ -82,7 +82,10 @@ export function RoundSpotlight() {
               </div>
 
               <Link href={`/rounds/${round.id}`}>
-                <Button variant="default" className="bg-gray-900 text-white hover:bg-gray-800">
+                <Button
+                  variant="default"
+                  className="bg-gray-900 text-white hover:bg-gray-800"
+                >
                   Learn More
                 </Button>
               </Link>

@@ -352,7 +352,12 @@ function selectCampaignImage(title: string): string {
 
 // Function to select appropriate category based on campaign index for even distribution
 function selectCampaignCategory(campaignIndex: number): string {
-  const categories = ['education', 'economic-development', 'climate-resilience', 'emergency-response'];
+  const categories = [
+    'education',
+    'economic-development',
+    'climate-resilience',
+    'emergency-response',
+  ];
   return categories[campaignIndex % 4]; // Ensures even distribution across all 4 categories
 }
 
@@ -719,31 +724,50 @@ async function main() {
     // Add more payments for ACTIVE campaigns, some for PENDING_APPROVAL
     if (
       campaignData.status === CampaignStatus.ACTIVE ||
-      (campaignData.status === CampaignStatus.PENDING_APPROVAL && Math.random() < 0.6)
+      (campaignData.status === CampaignStatus.PENDING_APPROVAL &&
+        Math.random() < 0.6)
     ) {
       // More payments for ACTIVE campaigns to show significant progress
-      const basePaymentCount = campaignData.status === CampaignStatus.ACTIVE ? 8 : 3;
+      const basePaymentCount =
+        campaignData.status === CampaignStatus.ACTIVE ? 8 : 3;
       const paymentCount = Math.floor(Math.random() * 15) + basePaymentCount; // 8-22 for ACTIVE, 3-17 for PENDING
       const donors = [...donorUsers, ...creatorUsers].slice(0, 20); // Use more users as donors
-      
+
       let totalCampaignAmount = 0;
 
       for (let paymentIndex = 0; paymentIndex < paymentCount; paymentIndex++) {
         const donor = selectRandom(donors);
-        
+
         // More varied payment amounts including larger donations
         const paymentAmounts = [
-          '5', '10', '15', '20', '25', '30', '40', '50', '60', '75', 
-          '100', '125', '150', '175', '200', '250', '300', '400', '500'
+          '5',
+          '10',
+          '15',
+          '20',
+          '25',
+          '30',
+          '40',
+          '50',
+          '60',
+          '75',
+          '100',
+          '125',
+          '150',
+          '175',
+          '200',
+          '250',
+          '300',
+          '400',
+          '500',
         ];
         const amount = selectRandom(paymentAmounts);
         totalCampaignAmount += parseInt(amount);
-        
+
         // Generate realistic transaction hash for display (even though on-chain balance is 0)
-        const mockTransactionHash = `0x${Array.from({ length: 64 }, () => 
-          Math.floor(Math.random() * 16).toString(16)
+        const mockTransactionHash = `0x${Array.from({ length: 64 }, () =>
+          Math.floor(Math.random() * 16).toString(16),
         ).join('')}`;
-        
+
         // Mix of payment providers
         const providers = ['stripe', 'coinbase', 'metamask', 'walletconnect'];
         const provider = selectRandom(providers);
@@ -774,8 +798,10 @@ async function main() {
           },
         });
       }
-      
-      console.log(`   Added ${paymentCount} payments totaling $${totalCampaignAmount} for campaign: ${campaign.title}`);
+
+      console.log(
+        `   Added ${paymentCount} payments totaling $${totalCampaignAmount} for campaign: ${campaign.title}`,
+      );
     }
   }
   // Define specific sponsor logos for each round
