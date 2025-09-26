@@ -86,6 +86,7 @@ export interface PatchUserCampaignResponse extends GetCampaignResponse {}
 export const PostCampaignWithdrawRouteBodySchema = z.object({
   amount: z.string(),
   token: z.string(),
+  transactionHash: z.string().optional(),
 });
 export const PatchCampaignWithdrawRouteBodySchema = z.object({
   withdrawalId: z.number(),
@@ -96,5 +97,8 @@ export type PostCampaignWithdrawRouteBody = z.infer<
   typeof PostCampaignWithdrawRouteBodySchema
 >;
 
+export type GetCampaignWithdrawRouteResponse = {
+  hasApproval: boolean;
+};
 export type PostCampaignWithdrawRouteResponse = Prisma.WithdrawalCreateInput;
 export type PatchCampaignWithdrawRouteResponse = Prisma.WithdrawalCreateInput;
