@@ -124,7 +124,7 @@ export function ConnectedWalletInfo() {
                 <WalletChain chain={currentChain} isCurrent={true} />
               </div>
               <p className="mt-1 text-xs text-gray-600">
-                The blockchain network you're currently connected to.
+                The blockchain network you&apos;re currently connected to.
               </p>
             </div>
           </div>

@@ -8,10 +8,8 @@ import { Users, Clock, Heart } from 'lucide-react';
 
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
-import { useAuth } from '@/contexts';
 
 export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
-  const { address } = useAuth();
   const {
     contributorCount,
     contributorPendingCount,
