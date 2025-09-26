@@ -70,7 +70,7 @@ export function CommentItem({
                 <span className="text-sm text-gray-500">
                   <FormattedDate date={comment.createdAt} />
                 </span>
-                <div className="flex gap-1 mt-1">
+                <div className="mt-1 flex gap-1">
                   {canRemove && (
                     <Button
                       onClick={onRemove}

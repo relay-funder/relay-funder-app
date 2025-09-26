@@ -36,7 +36,9 @@ export function FavoriteConfirmModal({
           </DialogTitle>
           <DialogDescription className="text-left">
             Are you sure you want to remove{' '}
-            <span className="font-medium text-gray-900">&quot;{campaignTitle}&quot;</span>{' '}
+            <span className="font-medium text-gray-900">
+              &quot;{campaignTitle}&quot;
+            </span>{' '}
             from your favorites? You can add it back anytime by visiting the
             campaign page.
           </DialogDescription>

@@ -168,8 +168,8 @@ export function CampaignUpdates() {
           No updates yet
         </h3>
         <p className="mb-4 text-gray-500">
-          Updates from campaigns you&apos;ve contributed to or favorited will appear
-          here.
+          Updates from campaigns you&apos;ve contributed to or favorited will
+          appear here.
         </p>
         <p className="text-sm text-gray-400">
           Start contributing to or favoriting campaigns to see their latest
