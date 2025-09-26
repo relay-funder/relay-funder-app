@@ -79,52 +79,6 @@ const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   timeStyle: 'short',
 };
 
-type ResolvedActionLink = {
-  href: string;
-  label: string;
-};
-
-const ID_LINK_RESOLVERS: Array<{
-  key: string;
-  resolve: (
-    value: unknown,
-    payload: Record<string, unknown>,
-  ) => ResolvedActionLink | null;
-}> = [
-  {
-    key: 'campaignId',
-    resolve: (value, payload) => {
-      if (typeof value !== 'number') {
-        return null;
-      }
-      const campaignTitle =
-        typeof payload.campaignTitle === 'string'
-          ? payload.campaignTitle
-          : undefined;
-      return {
-        href: `/campaigns/${value}`,
-        label: campaignTitle
-          ? `View campaign: ${campaignTitle}`
-          : 'View campaign',
-      };
-    },
-  },
-  {
-    key: 'roundId',
-    resolve: (value, payload) => {
-      if (typeof value !== 'number') {
-        return null;
-      }
-      const roundTitle =
-        typeof payload.roundTitle === 'string' ? payload.roundTitle : undefined;
-      return {
-        href: `/rounds/${value}`,
-        label: roundTitle ? `View round: ${roundTitle}` : 'View round',
-      };
-    },
-  },
-];
-
 type InlineUser = {
   name?: string | null;
   address?: string | null;

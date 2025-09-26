@@ -104,7 +104,7 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
         return await createCampaign(data);
       }
     },
-    [createCampaign, formState, onSubmitStep, onCreated],
+    [createCampaign, formState, onSubmitStep],
   );
 
   const onDeveloperSubmit = useCallback(
