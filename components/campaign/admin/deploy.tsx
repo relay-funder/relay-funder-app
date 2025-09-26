@@ -10,11 +10,14 @@ import {
 } from '@/lib/web3/hooks/useCreateCampaignContract';
 import type { DbCampaign } from '@/types/campaign';
 import { CreateProcessStates } from '@/types/campaign';
+import { Wallet } from 'lucide-react';
 
 export function CampaignAdminDeployButton({
   campaign,
+  buttonClassName,
 }: {
   campaign: DbCampaign;
+  buttonClassName?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,11 +116,12 @@ export function CampaignAdminDeployButton({
   return (
     <Button
       onClick={onDeploy}
-      className="mt-4 bg-gray-600 hover:bg-gray-700"
+      className={buttonClassName || 'mt-4 bg-gray-600 hover:bg-gray-700'}
       disabled={isLoading}
-      title="Update this Campaign from draft to pending approval"
+      title="Deploy treasury contract for this campaign"
     >
-      {isLoading ? 'Processing...' : 'Promote to Pending Approval'}
+      <Wallet className="mr-2 h-4 w-4" />
+      {isLoading ? 'Processing...' : 'Deploy Treasury'}
     </Button>
   );
 }

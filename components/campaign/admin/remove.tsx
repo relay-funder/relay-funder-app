@@ -6,11 +6,14 @@ import { Button } from '@/components/ui';
 import { useAdminRemoveCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminRemoveProcessStates } from '@/types/admin';
 import type { DbCampaign } from '@/types/campaign';
+import { Trash2 } from 'lucide-react';
 
 export function CampaignAdminRemoveButton({
   campaign,
+  buttonClassName,
 }: {
   campaign: DbCampaign;
+  buttonClassName?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,10 +81,11 @@ export function CampaignAdminRemoveButton({
   return (
     <Button
       onClick={onRemove}
-      className="mt-4 bg-red-600 hover:bg-red-700"
+      className={buttonClassName || 'mt-4 bg-red-600 hover:bg-red-700'}
       disabled={isLoading}
       title="Remove this Campaign from the database"
     >
+      <Trash2 className="mr-2 h-4 w-4" />
       {isLoading ? 'Processing...' : 'Remove'}
     </Button>
   );

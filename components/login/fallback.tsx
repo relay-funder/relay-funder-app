@@ -85,14 +85,16 @@ export function LoginFallback({
     [connect, onLoading, onError, onRestartAutoLogin],
   );
   if (!show) {
-    return;
+    return null;
   }
   return (
-    <>
-      <p className="flex justify-center">
-        Choose from available Wallet Login Methods
-      </p>
-      <div className="flex flex-col gap-2">
+    <div className="space-y-4">
+      <div className="text-center">
+        <p className="text-sm text-gray-600">
+          Choose from available wallet login methods
+        </p>
+      </div>
+      <div className="flex flex-col gap-3">
         {connectors.map((connector) => {
           const label =
             connectorDescriptions?.[connector.id]?.label ?? connector.name;
@@ -101,8 +103,12 @@ export function LoginFallback({
           return (
             <Button
               key={connector.id}
-              className="w-full"
-              variant={primary ? 'secondary' : 'outline'}
+              className={`w-full font-semibold ${
+                primary
+                  ? 'bg-black text-white hover:bg-gray-800'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              variant={primary ? 'default' : 'secondary'}
               onClick={() => handleFallbackLogin(connector)}
             >
               {label}
@@ -110,6 +116,6 @@ export function LoginFallback({
           );
         })}
       </div>
-    </>
+    </div>
   );
 }

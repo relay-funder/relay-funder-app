@@ -30,11 +30,9 @@ export function CampaignDetailTabUpdates({
   const updates = data?.pages.flatMap((page) => page.updates) ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4">
+    <div className="max-w-3xl space-y-6">
       {campaign.creatorAddress && (
-        <div className="mx-auto max-w-3xl">
-          <CampaignUpdateForm creatorAddress={campaign.creatorAddress} />
-        </div>
+        <CampaignUpdateForm creatorAddress={campaign.creatorAddress} />
       )}
 
       {error ? (
@@ -75,15 +73,13 @@ export function CampaignDetailTabUpdates({
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-lg border border-gray-100 bg-gray-50 py-12 text-center">
-            <h3 className="mb-2 text-xl font-semibold text-gray-700">
-              No Updates Yet
-            </h3>
-            <p className="text-gray-500">
-              Check back later for updates on this campaign&apos;s progress.
-            </p>
-          </div>
+        <div className="py-12 text-center">
+          <h3 className="mb-2 text-lg font-semibold text-gray-700">
+            No Updates Yet
+          </h3>
+          <p className="text-sm text-gray-500">
+            Check back later for updates on this campaign&apos;s progress.
+          </p>
         </div>
       )}
       {!error && <div ref={ref} className="h-10" />}

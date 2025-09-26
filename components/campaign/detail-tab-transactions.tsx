@@ -8,12 +8,7 @@ export function CampaignDetailTabTransactions({
   campaign: DbCampaign;
 }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Transaction History</h2>
-      <p className="text-gray-600">
-        All confirmed donations to this campaign are listed here.
-      </p>
-
+    <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
       {(campaign.paymentSummary?.countConfirmed ?? 0) > 0 ? (
         <PaymentList campaign={campaign} />
       ) : (

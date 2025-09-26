@@ -58,9 +58,6 @@ export function RoundCardSelect({
                 {status.text}
               </Badge>
             </div>
-            <p className="line-clamp-2 text-sm text-muted-foreground">
-              {round.description ?? 'No description.'}
-            </p>
           </div>
         </div>
       </CardHeader>

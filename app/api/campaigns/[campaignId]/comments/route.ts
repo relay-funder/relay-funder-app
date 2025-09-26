@@ -99,7 +99,14 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     await notify({
       receiverId: creator.id,
       creatorId: user.id,
-      data: { type: 'CampaignComment', campaignId, action: 'posted', userName },
+      data: {
+        type: 'CampaignComment',
+        campaignId,
+        campaignTitle: campaign.title,
+        action: 'posted',
+        userName,
+        comment: content,
+      },
     });
 
     return response({
@@ -165,8 +172,10 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
         data: {
           type: 'CampaignComment',
           campaignId,
+          campaignTitle: campaign.title,
           action: 'deleted',
           userName,
+          comment: comment.content,
         },
       });
     }

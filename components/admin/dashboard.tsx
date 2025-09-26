@@ -1,38 +1,44 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeaderSearch } from '@/components/page/header-search';
-import { PageHome } from '@/components/page/home';
+import { PageLayout } from '@/components/page/layout';
 import { CampaignList } from '@/components/campaign/list';
-import { CampaignCardAdmin } from '@/components/campaign/campaign-card';
-import { DashboardOverview } from '../dashboard/overview';
+import { CampaignCard } from '@/components/campaign/campaign-card';
+import { AdminGlobalOverview } from './global-overview';
 
-export function AdminDashboard() {
+/**
+ * AdminControlCenter Component
+ *
+ * The main admin interface for managing all campaigns in the system.
+ * This is the "Campaign Management" that provides admin-specific campaign management
+ * with approval actions and system-wide campaign oversight.
+ *
+ * Key features:
+ * - View all campaigns in the system (not just admin's own campaigns)
+ * - Admin-specific actions (approve, disable campaigns)
+ * - Campaign management and oversight functionality
+ * - Different from AdminUserDashboard which mirrors user workflow
+ */
+export function AdminControlCenter() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   return (
-    <PageHome
-      header={
-        <PageHeaderSearch
-          placeholder="Search Campaigns"
-          onSearchChanged={(search: string) => setSearchTerm(search)}
-        />
-      }
+    <PageLayout
+      title="Campaign Management"
+      searchPlaceholder="Search Campaigns"
+      onSearchChanged={(search: string) => setSearchTerm(search)}
     >
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-          Control Center
-        </h1>
-      </div>
-
-      <DashboardOverview />
+      <AdminGlobalOverview />
 
       <CampaignList
         searchTerm={searchTerm}
         statusFilter="all"
         pageSize={3}
         withRounds={true}
-        item={CampaignCardAdmin}
+        item={(props) => <CampaignCard {...props} type="admin" />}
       />
-    </PageHome>
+    </PageLayout>
   );
 }
+
+// Keep the old name for backward compatibility
+export const AdminDashboard = AdminControlCenter;

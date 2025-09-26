@@ -7,11 +7,14 @@ import { useAdminApproveCampaign as useAdminApproveWeb3Campaign } from '@/lib/we
 import { useAdminApproveCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminApproveProcessStates } from '@/types/admin';
 import type { DbCampaign } from '@/types/campaign';
+import { CheckCircle } from 'lucide-react';
 
 export function CampaignAdminApproveButton({
   campaign,
+  buttonClassName,
 }: {
   campaign: DbCampaign;
+  buttonClassName?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,25 +97,20 @@ export function CampaignAdminApproveButton({
     campaign.campaignAddress !== null && campaign.campaignAddress !== undefined;
 
   return (
-    <div className="space-y-2">
-      <Button
-        onClick={onApprove}
-        className="mt-4 w-full bg-green-600 hover:bg-green-700"
-        disabled={isLoading || !canApprove}
-        title={
-          !canApprove
-            ? "Campaign contract must be deployed before approval. Use 'Deploy Contract' first."
-            : 'Mark this Campaign as approved and deploy treasury contract.'
-        }
-      >
-        {isLoading ? 'Processing...' : 'Approve & Deploy Treasury'}
-      </Button>
-
-      {!canApprove && (
-        <div className="rounded bg-gray-50 p-2 text-sm text-gray-600">
-          Campaign contract must be deployed first
-        </div>
-      )}
-    </div>
+    <Button
+      onClick={onApprove}
+      className={
+        buttonClassName || 'mt-4 w-full bg-green-600 hover:bg-green-700'
+      }
+      disabled={isLoading || !canApprove}
+      title={
+        !canApprove
+          ? "Campaign contract must be deployed before approval. Use 'Deploy Contract' first."
+          : 'Mark this Campaign as approved and deploy treasury contract.'
+      }
+    >
+      <CheckCircle className="mr-2 h-4 w-4" />
+      {isLoading ? 'Processing...' : 'Approve'}
+    </Button>
   );
 }

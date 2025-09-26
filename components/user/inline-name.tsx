@@ -42,7 +42,7 @@ export function UserInlineName({
         <span className="text-sm font-semibold">{prefix}</span>
       )}
       <UserAvatar user={user} />
-      <span title={name} className="text-sm font-semibold text-pink-500">
+      <span title={name} className="text-sm font-semibold">
         {shortName}
       </span>
       {badges && <UserInlineBadges user={user} />}

@@ -5,7 +5,8 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { PaginatedResponse } from '@/lib/api/types/common';
-import { useUserProfile } from './useProfile';
+import { useUserProfile, PROFILE_QUERY_KEY } from './useProfile';
+import { NotificationData } from '@/lib/notification';
 
 export const EVENT_FEED_QUERY_KEY = 'event_feed';
 export const EVENT_FEED_REFETCH_INTERVAL = 90000; // 90 seconds
@@ -14,7 +15,7 @@ export type EventFeedItem = {
   createdAt: string;
   type: string;
   message: string;
-  data: unknown;
+  data: NotificationData;
 };
 
 export type EventFeedFilters = {
@@ -23,7 +24,7 @@ export type EventFeedFilters = {
   endDate?: string;
 };
 
-interface PaginatedEventFeedResponse extends PaginatedResponse {
+export interface PaginatedEventFeedResponse extends PaginatedResponse {
   events: EventFeedItem[];
 }
 
@@ -53,7 +54,7 @@ function buildEventFeedUrl({
   return `/api/event-feed?${params.toString()}`;
 }
 
-async function fetchEventFeedPage({
+export async function fetchEventFeedPage({
   pageParam = 1,
   pageSize = 10,
   filters,
@@ -150,7 +151,10 @@ export function useMarkEventFeedRead() {
     mutationFn: markEventFeedRead,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [EVENT_FEED_QUERY_KEY],
+        queryKey: [EVENT_FEED_QUERY_KEY, 'infinite'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [PROFILE_QUERY_KEY],
       });
     },
   });

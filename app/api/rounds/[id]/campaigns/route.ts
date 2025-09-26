@@ -3,6 +3,7 @@ import { ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { RoundsWithIdParams } from '@/lib/api/types';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(req: Request, { params }: RoundsWithIdParams) {
   try {
@@ -162,9 +163,29 @@ export async function DELETE(req: Request, { params }: RoundsWithIdParams) {
       }
     }
 
+    // Log the removal action for tracking
+    debug &&
+      console.log(
+        `Campaign removal: Campaign ${campaignId} removed from Round ${roundId}`,
+        {
+          campaignId,
+          roundId,
+          campaignTitle: campaign.title,
+          roundTitle: round.title,
+          removedBy: admin ? 'admin' : 'user',
+          removerAddress: session.user.address,
+          previousStatus: roundCampaign.status,
+          timestamp: new Date().toISOString(),
+        },
+      );
+
     await db.roundCampaigns.delete({ where: { id: roundCampaign.id } });
+
     return response({
       ok: true,
+      removedBy: admin ? 'admin' : 'user',
+      campaignTitle: campaign.title,
+      roundTitle: round.title,
     });
   } catch (error: unknown) {
     return handleError(error);

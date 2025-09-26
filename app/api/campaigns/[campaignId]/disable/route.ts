@@ -43,7 +43,11 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     await notify({
       receiverId: creator.id,
       creatorId: user.id,
-      data: { type: 'CampaignDisable', campaignId },
+      data: {
+        type: 'CampaignDisable',
+        campaignId,
+        campaignTitle: campaign.title,
+      },
     });
     return response({
       campaign: updatedCampaign,

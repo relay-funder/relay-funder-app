@@ -22,7 +22,7 @@ export function CampaignDonationSuggestions({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-gray-900">
         Quick amounts:
       </label>
       <div className="grid grid-cols-5 gap-2">
@@ -33,8 +33,8 @@ export function CampaignDonationSuggestions({
               amount === suggestedAmount.toString() ? 'default' : 'outline'
             }
             onClick={() => handleSuggestedAmount(suggestedAmount)}
-            className="text-sm"
-            size="sm"
+            className="h-10 text-sm font-medium"
+            size="default"
           >
             {suggestedAmount} {currency}
           </Button>

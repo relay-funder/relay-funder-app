@@ -3,14 +3,7 @@
  * This maintains backward compatibility while the component is now
  * split into separate, manageable files in ./campaign-card/ folder
  */
-export {
-  CampaignCard,
-  CampaignCardStandard,
-  CampaignCardDashboard,
-  CampaignCardAdmin,
-  CampaignCardItem,
-  CampaignCardFallback,
-} from './campaign-card/index';
+export { CampaignCard } from './campaign-card/index';
 
 // Modern create campaign placeholder
 export { CreateCampaignPlaceholder } from './create-campaign-placeholder';

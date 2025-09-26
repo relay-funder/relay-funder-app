@@ -3,17 +3,17 @@ import { NotificationData } from './types';
 export function generateMessage(data: NotificationData): string {
   switch (data.type) {
     case 'CampaignApprove':
-      return 'Your campaign has been approved';
+      return `Your campaign "${data.campaignTitle}" has been approved`;
     case 'CampaignDisable':
-      return 'Your campaign has ended';
+      return `Your campaign "${data.campaignTitle}" has ended`;
     case 'CampaignComment':
       return data.action === 'deleted'
-        ? `comment by ${data.userName} was deleted`
-        : `comment by ${data.userName} was posted`;
+        ? `comment by ${data.userName} was deleted on "${data.campaignTitle}"`
+        : `comment by ${data.userName} was posted on "${data.campaignTitle}"`;
     case 'CampaignPayment':
-      return `${data.formattedAmount} donation by ${data.donorName}`;
+      return `${data.formattedAmount} donation by ${data.donorName} to "${data.campaignTitle}"`;
     case 'CampaignUpdate':
-      return 'New update posted';
+      return `New update posted on "${data.campaignTitle}"`;
     default:
       return 'Notification';
   }

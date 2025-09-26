@@ -1,16 +1,16 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Bell, MessageSquare, FileText, Clock, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { FormattedDate } from '@/components/formatted-date';
 import { UserInlineName } from '@/components/user/inline-name';
 import { useUserProfile } from '@/lib/hooks/useProfile';
+import { NotificationData } from '@/lib/notification/types';
 
 export type EventFeedUser = {
   id?: number;
@@ -25,7 +25,7 @@ export type EventFeedListItemData = {
   createdAt: string;
   type: string;
   message: string;
-  data?: unknown;
+  data?: NotificationData;
   link?: string;
   linkLabel?: string;
   createdBy?: EventFeedUser | null;
@@ -79,52 +79,6 @@ const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   timeStyle: 'short',
 };
 
-type ResolvedActionLink = {
-  href: string;
-  label: string;
-};
-
-const ID_LINK_RESOLVERS: Array<{
-  key: string;
-  resolve: (
-    value: unknown,
-    payload: Record<string, unknown>,
-  ) => ResolvedActionLink | null;
-}> = [
-  {
-    key: 'campaignId',
-    resolve: (value, payload) => {
-      if (typeof value !== 'number') {
-        return null;
-      }
-      const campaignTitle =
-        typeof payload.campaignTitle === 'string'
-          ? payload.campaignTitle
-          : undefined;
-      return {
-        href: `/campaigns/${value}`,
-        label: campaignTitle
-          ? `View campaign: ${campaignTitle}`
-          : 'View campaign',
-      };
-    },
-  },
-  {
-    key: 'roundId',
-    resolve: (value, payload) => {
-      if (typeof value !== 'number') {
-        return null;
-      }
-      const roundTitle =
-        typeof payload.roundTitle === 'string' ? payload.roundTitle : undefined;
-      return {
-        href: `/rounds/${value}`,
-        label: roundTitle ? `View round: ${roundTitle}` : 'View round',
-      };
-    },
-  },
-];
-
 type InlineUser = {
   name?: string | null;
   address?: string | null;
@@ -156,6 +110,32 @@ function toInlineUser(
   };
 }
 
+function getNavigationUrl(event: EventFeedListItemData): string | null {
+  if (!event.data || typeof event.data !== 'object') {
+    return null;
+  }
+
+  const payload = event.data as Record<string, unknown>;
+
+  // For campaign-related events, navigate to campaign
+  // The notification data contains campaignId, but campaigns are accessed by slug
+  // We'll need to construct a URL that can handle campaignId lookup
+  if (
+    event.type.startsWith('Campaign') &&
+    typeof payload.campaignId === 'number'
+  ) {
+    // Use campaignId for now - the campaign page should handle ID-based lookup
+    return `/campaigns/${payload.campaignId}`;
+  }
+
+  // For user-related events, navigate to user profile (admin only)
+  if (event.createdBy?.address) {
+    return `/admin/users/${event.createdBy.address}`;
+  }
+
+  return null;
+}
+
 export type EventFeedListItemProps = {
   event: EventFeedListItemData;
   className?: string;
@@ -169,6 +149,7 @@ export function EventFeedListItem({
   onSelect,
   showReceiver: showReceiverOverride,
 }: EventFeedListItemProps) {
+  const router = useRouter();
   const { isAdmin } = useAuth();
   const { data: user } = useUserProfile();
   const showReceiver = showReceiverOverride ?? Boolean(isAdmin);
@@ -179,139 +160,93 @@ export function EventFeedListItem({
   const config = useMemo<EventFeedTypeConfig>(() => {
     return EVENT_FEED_TYPE_CONFIG[event.type] ?? fallbackTypeConfig(event.type);
   }, [event.type]);
-  const Icon = config.icon;
-  const actionLinks = useMemo<ResolvedActionLink[]>(() => {
-    const resolved: ResolvedActionLink[] = [];
-    const appendLink = (href?: string, label?: string) => {
-      if (!href) {
-        return;
-      }
-      const value =
-        typeof label === 'string' && label.trim().length > 0
-          ? label
-          : 'View details';
-      resolved.push({ href, label: value });
-    };
-
-    if (event.link) {
-      appendLink(event.link, event.linkLabel);
-    }
-
-    if (event.data && typeof event.data === 'object') {
-      const payload = event.data as Record<string, unknown>;
-      const payloadLink =
-        typeof payload.link === 'string'
-          ? payload.link
-          : typeof payload.url === 'string'
-            ? payload.url
-            : undefined;
-
-      const payloadLabel =
-        typeof payload.linkLabel === 'string'
-          ? payload.linkLabel
-          : typeof payload.label === 'string'
-            ? payload.label
-            : undefined;
-
-      appendLink(payloadLink, payloadLabel);
-
-      ID_LINK_RESOLVERS.forEach(({ key, resolve }) => {
-        const value = payload[key];
-        const resolvedLink = resolve(value, payload);
-        if (resolvedLink) {
-          appendLink(resolvedLink.href, resolvedLink.label);
-        }
-      });
-    }
-
-    const unique = new Map<string, ResolvedActionLink>();
-    resolved.forEach((link) => {
-      if (!unique.has(link.href)) {
-        unique.set(link.href, link);
-      }
-    });
-
-    return Array.from(unique.values());
-  }, [event]);
-  const creatorUser = useMemo(
-    () => toInlineUser(event.createdBy),
-    [event.createdBy],
-  );
   const receiverUser = useMemo(
     () => toInlineUser(event.receiver),
     [event.receiver],
   );
+  const navigationUrl = useMemo(() => getNavigationUrl(event), [event]);
+
   const handleClick = useCallback(() => {
     if (onSelect) {
       onSelect(event);
+      return;
     }
-  }, [event, onSelect]);
+
+    // Navigate to the relevant page if we have a URL
+    if (navigationUrl) {
+      router.push(navigationUrl);
+    }
+  }, [event, onSelect, navigationUrl, router]);
+
+  const isClickable = Boolean(onSelect || navigationUrl);
 
   return (
     <Card
-      role={onSelect ? 'button' : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      onClick={onSelect ? handleClick : undefined}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? handleClick : undefined}
       className={cn(
-        'flex items-start gap-4 border border-border/60 bg-card px-4 py-5 transition-shadow hover:shadow-md',
-        onSelect &&
+        'border border-border bg-card px-4 py-3 transition-shadow hover:shadow-sm',
+        isClickable &&
           'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-        isUnread &&
-          'border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20',
+        isUnread && 'bg-muted/20',
         className,
       )}
     >
-      <div className="relative mt-1 flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-muted text-muted-foreground">
-        <Icon className="h-5 w-5" />
-        {isUnread && (
-          <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-blue-500" />
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge variant={config.badgeVariant ?? 'outline'}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Badge
+            variant={config.badgeVariant ?? 'outline'}
+            className="shrink-0"
+          >
             {config.label}
           </Badge>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <FormattedDate
-              date={new Date(event.createdAt)}
-              options={DATE_FORMAT_OPTIONS}
-            />
-          </span>
+          {isUnread && (
+            <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+          )}
         </div>
-        <p className="text-sm leading-6 text-foreground">{event.message}</p>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          <FormattedDate
+            date={new Date(event.createdAt)}
+            options={DATE_FORMAT_OPTIONS}
+          />
+        </span>
+      </div>
 
-        {actionLinks.length > 0 ? (
-          <div className="flex flex-wrap gap-3">
-            {actionLinks.map((link) => (
-              <Button
-                key={link.href}
-                asChild
-                variant="link"
-                className="h-auto p-0 text-sm font-semibold text-primary"
-              >
-                <Link
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {link.label}
-                </Link>
-              </Button>
-            ))}
-          </div>
-        ) : null}
+      <p className="mt-2 text-sm leading-relaxed text-foreground">
+        {event.message}
+      </p>
 
-        <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
-          {creatorUser ? (
-            <UserInlineName user={creatorUser} prefix="Creator:" />
-          ) : null}
+      {isAdmin && event.data && (
+        <>
+          {event.type === 'CampaignComment' &&
+            'comment' in event.data &&
+            event.data.comment && (
+              <div className="mt-2 rounded-md bg-muted/50 px-3 py-2">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Comment:</strong> {event.data.comment}
+                </p>
+              </div>
+            )}
+          {event.type === 'CampaignUpdate' &&
+            'updateText' in event.data &&
+            event.data.updateText && (
+              <div className="mt-2 rounded-md bg-muted/50 px-3 py-2">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Update:</strong> {event.data.updateText}
+                </p>
+              </div>
+            )}
+        </>
+      )}
 
+      {showReceiver && receiverUser && (
+        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
           {showReceiver && receiverUser ? (
             <UserInlineName user={receiverUser} prefix="Receiver:" />
           ) : null}
         </div>
-      </div>
+      )}
     </Card>
   );
 }

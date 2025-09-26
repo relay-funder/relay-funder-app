@@ -67,11 +67,13 @@ export async function listRounds({
   pageSize = 10,
   skip = 0,
   admin = false,
+  userAddress = null,
 }: {
   page?: number;
   pageSize?: number;
   skip?: number;
   admin?: boolean;
+  userAddress?: string | null;
 }) {
   const [rounds, totalCount] = await Promise.all([
     db.round.findMany({
@@ -88,15 +90,44 @@ export async function listRounds({
             },
           },
           where: admin
-            ? {}
-            : {
-                status: 'APPROVED',
-                Campaign: {
-                  status: {
-                    in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+            ? {} // Admin sees all campaigns
+            : userAddress
+              ? {
+                  OR: [
+                    // Include approved campaigns
+                    {
+                      status: 'APPROVED',
+                      Campaign: {
+                        status: {
+                          in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                        },
+                      },
+                    },
+                    // Include user's own campaigns (any status)
+                    {
+                      Campaign: {
+                        creatorAddress: userAddress,
+                        status: {
+                          in: [
+                            'ACTIVE',
+                            'COMPLETED',
+                            'FAILED',
+                            'PENDING_APPROVAL',
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                }
+              : {
+                  // Non-authenticated users see only approved campaigns
+                  status: 'APPROVED',
+                  Campaign: {
+                    status: {
+                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                    },
                   },
                 },
-              },
         },
       },
       take: pageSize,
@@ -108,7 +139,7 @@ export async function listRounds({
   ]);
 
   return {
-    rounds: rounds.map((round) => mapRound(round, 'APPROVED')),
+    rounds: rounds.map((round) => mapRound(round)), // Remove hardcoded status
     pagination: {
       currentPage: page,
       pageSize,
@@ -200,6 +231,42 @@ export async function prefetchRound(
     queryFn: async () => ({
       round: await getRound(id, admin, sessionAddress),
     }),
+  });
+}
+
+// Prefetch the active round for homepage
+export async function prefetchActiveRound(queryClient: QueryClient) {
+  // Use the same logic as the API endpoint - date-based, not status-based
+  const now = new Date();
+  const activeRound = await db.round.findFirst({
+    where: {
+      startDate: {
+        lte: now, // Round has started
+      },
+      endDate: {
+        gt: now, // Round hasn't ended
+      },
+    },
+    include: {
+      media: { where: { state: 'UPLOADED' } },
+      _count: {
+        select: {
+          roundCampaigns: {
+            where: {
+              status: 'APPROVED',
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return queryClient.prefetchQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'active'],
+    queryFn: async () => (activeRound ? mapRound(activeRound) : null),
   });
 }
 

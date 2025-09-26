@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { EventFeedList } from './event-feed-list';
+import { UserEventFeedList } from './user-event-feed-list';
 import {
   useMarkEventFeedRead,
   useNewEventCount,
@@ -69,7 +69,7 @@ export function Inbox() {
       </CardHeader>
       <Separator />
       <CardContent className="pt-6">
-        <EventFeedList />
+        <UserEventFeedList />
       </CardContent>
     </Card>
   );

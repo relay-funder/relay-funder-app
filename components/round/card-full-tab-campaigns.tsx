@@ -11,7 +11,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts';
 
 import { RoundAddDialog } from './campaign/add-dialog';
-import { CampaignCardRound } from '@/components/campaign/card-round';
+import { CampaignCard } from '@/components/campaign/campaign-card';
+import { RoundCardCampaignStatus } from '@/components/round/card-campaign-status';
+import { RoundCampaignAdminControls } from '@/components/round/campaign-admin-controls';
 
 export function RoundCardTabCampaigns({
   round,
@@ -46,9 +48,26 @@ export function RoundCardTabCampaigns({
               <div className="grid grid-cols-2">
                 {roundCampaigns.map((roundCampaign) => (
                   <div key={roundCampaign.id}>
-                    <CampaignCardRound
+                    <CampaignCard
                       campaign={roundCampaign.campaign}
+                      type="round"
                       round={round}
+                      statusIndicators={
+                        roundCampaign.campaign ? (
+                          <RoundCardCampaignStatus
+                            campaign={roundCampaign.campaign}
+                            round={round}
+                          />
+                        ) : null
+                      }
+                      roundAdminFooterControls={
+                        roundCampaign.campaign ? (
+                          <RoundCampaignAdminControls
+                            campaign={roundCampaign.campaign}
+                            round={round}
+                          />
+                        ) : null
+                      }
                     />
                   </div>
                 ))}
