@@ -240,7 +240,7 @@ export function EventFeedListItem({
     });
 
     return Array.from(unique.values());
-  }, [event]);
+  }, [event, isAdmin]);
   const creatorUser = useMemo(
     () => toInlineUser(event.createdBy),
     [event.createdBy],
