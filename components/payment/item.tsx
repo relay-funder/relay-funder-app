@@ -71,7 +71,13 @@ export function PaymentItem({
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-900">
-                  ${payment.amount}
+                  $
+                  {(() => {
+                    // Format with at least 1 decimal place
+                    return payment.amount % 1 === 0
+                      ? payment.amount.toFixed(1)
+                      : payment.amount.toString();
+                  })()}
                 </span>
                 <span className="text-sm text-gray-500">
                   {payment.token === 'USD' ? 'Credit Card' : payment.token}

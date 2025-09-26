@@ -3,15 +3,16 @@ import { ReadMoreOrLess } from './read-more-or-less';
 import { Card, CardContent } from '@/components/ui';
 
 interface TimelineItemProps {
+  id: string;
   date: Date;
   title: string;
   content: string;
   isLast?: boolean;
 }
 
-export function TimelineItem({ date, title, content }: TimelineItemProps) {
+export function TimelineItem({ id, date, title, content }: TimelineItemProps) {
   return (
-    <Card>
+    <Card id={`update-${id}`} className="scroll-mt-4">
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           <div className="flex-1">
@@ -56,6 +57,7 @@ export function Timeline({ items, className }: TimelineProps) {
       {items.map((item, index) => (
         <TimelineItem
           key={item.id}
+          id={item.id}
           date={item.createdAt}
           title={item.title}
           content={item.content}

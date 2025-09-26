@@ -29,19 +29,24 @@ export function PageNavMenuItems() {
       { icon: <Home className="h-6 w-6" />, label: 'Home', href: '/' },
     ];
 
-    // Show Dashboard for all authenticated users (both regular users and admins)
+    // Show Dashboard and Campaigns for all authenticated users (both regular users and admins)
     if (authenticated) {
       items.push({
         icon: <LayoutDashboard className="h-6 w-6" />,
         label: 'Dashboard',
         href: '/dashboard',
       });
+      items.push({
+        icon: <Target className="h-6 w-6" />,
+        label: 'Campaigns',
+        href: '/campaigns',
+      });
     }
 
     // Show Funding Rounds for non-admin users
     if (authenticated && !isAdmin) {
       items.push({
-        icon: <Target className="h-6 w-6" />,
+        icon: <Coins className="h-6 w-6" />,
         label: 'Funding Rounds',
         href: '/rounds',
       });

@@ -6,13 +6,25 @@ import { CampaignDetailTabComments } from './detail-tab-comments';
 import { CampaignDetailTabTransactions } from './detail-tab-transactions';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { CampaignDetailTabRounds } from './detail-tab-rounds';
+import { useUpdateAnchor } from '@/hooks/use-update-anchor';
+import { useState } from 'react';
 
 export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
   const { contributorCount, contributorPendingCount } =
     useCampaignStatsFromInstance({ campaign });
+  const [activeTab, setActiveTab] = useState('transactions');
+
+  // Handle update anchor links - only switch tab, don't prevent user navigation
+  useUpdateAnchor({
+    onUpdateTarget: (updateId) => {
+      // Switch to updates tab when an update is targeted
+      setActiveTab('updates');
+    },
+  });
+
   return (
     <div className="w-full">
-      <Tabs defaultValue="rounds" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid h-12 w-full grid-cols-4 rounded-md bg-gray-100 p-1 pb-[3px]">
           <TabsTrigger
             value="transactions"
