@@ -9,6 +9,7 @@ import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';
 import { CampaignDonationSummary } from './campaign-summary';
+import { NotStartedYet } from '@/components/campaign//not-started-yet';
 
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
@@ -32,6 +33,9 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
         <CampaignError error="Not Active" />
       </PageHome>
     );
+  }
+  if (new Date(campaign.startTime).getTime() < Date.now()) {
+    return <NotStartedYet campaign={campaign} />;
   }
 
   return (
