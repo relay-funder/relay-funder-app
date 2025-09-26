@@ -11,41 +11,39 @@ export function CampaignEditFormSummary({
   campaign: DbCampaign;
 }) {
   const form = useFormContext();
-  const newCampaign = useMemo(() => {
+  const updatedCampaign = useMemo(() => {
     try {
       const rawValues = form.getValues();
       const values = CampaignFormSchema.parse(rawValues);
+
+      // Create updated media array - use new image if uploaded, otherwise keep existing
+      let updatedMedia = campaign.media || [];
+      if (values.bannerImage instanceof File) {
+        // New image uploaded - replace the first media item or add new one
+        const newMediaItem = {
+          id: 'updated',
+          url: values.bannerImage,
+          mimeType: 'image/unknown',
+        };
+        updatedMedia = [newMediaItem, ...(updatedMedia.slice(1) || [])];
+      }
+
+      // Merge form values with existing campaign data to preserve all fields
       return {
-        id: campaign.id,
+        ...campaign, // Preserve all existing campaign data
         title: values.title,
         description: values.description,
-        fundingGoal: campaign.fundingGoal,
-        startTime: new Date(campaign.startTime),
-        endTime: new Date(campaign.endTime),
-        creatorAddress: campaign.creatorAddress,
-        status: campaign.status,
-        transactionHash: campaign.transactionHash,
-        campaignAddress: campaign.campaignAddress,
-        treasuryAddress: campaign.treasuryAddress,
         category: values.category,
-        createdAt: campaign.createdAt,
-        updatedAt: new Date(),
-        media: [
-          {
-            id: 'unsaved',
-            url: values.bannerImage,
-            mimeType: 'image/unknown',
-          },
-        ],
-        mediaOrder: ['unsaved'],
-        slug: campaign.slug,
         location: values.location,
-        paymentSummary: campaign.paymentSummary ?? {},
-
-        creator: campaign.creator,
+        media: updatedMedia,
+        mediaOrder:
+          updatedMedia.length > 0
+            ? updatedMedia.map((m) => m.id)
+            : campaign.mediaOrder,
+        updatedAt: new Date(),
       } as DbCampaign;
     } catch {
-      return undefined;
+      return campaign; // Return original campaign if form parsing fails
     }
   }, [form, campaign]);
   return (
@@ -62,7 +60,7 @@ export function CampaignEditFormSummary({
       <div className="flex justify-center">
         <div className="w-full max-w-md">
           <CampaignCard
-            campaign={newCampaign}
+            campaign={updatedCampaign}
             type="dashboard"
             disabled={true}
             displayOptions={{

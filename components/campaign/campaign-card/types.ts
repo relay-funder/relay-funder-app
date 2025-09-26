@@ -277,6 +277,7 @@ export function getDefaultDisplayOptions(
         showWithdrawalButton: true,
         showRoundsIndicator: true,
         showInfoIcon: true, // Show info icon in dashboard for user's own campaigns
+        showStatusBadge: true, // Show status badge for creator's own campaigns
       };
 
     case 'admin':
@@ -322,6 +323,7 @@ export function getDefaultDisplayOptions(
       return {
         ...baseOptions,
         showRoundsIndicator: false, // Hide round indicators on homepage
+        showStatusBadge: false, // Hide status badge on homepage
         // Standard type now handles both regular and compact layouts
         // Use displayOptions to override for compact usage if needed
       };

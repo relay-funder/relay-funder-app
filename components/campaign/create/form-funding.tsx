@@ -8,7 +8,13 @@ import {
   FormMessage,
 } from '@/components/ui';
 
-export function CampaignCreateFormFunding() {
+interface CampaignCreateFormFundingProps {
+  isOnChainDeployed?: boolean;
+}
+
+export function CampaignCreateFormFunding({
+  isOnChainDeployed = false,
+}: CampaignCreateFormFundingProps) {
   const form = useFormContext();
   return (
     <div className="space-y-6">
@@ -26,10 +32,16 @@ export function CampaignCreateFormFunding() {
                 step="0.01"
                 className="mt-1"
                 placeholder="1000.00"
+                disabled={isOnChainDeployed}
                 {...field}
               />
             </FormControl>
             <FormMessage />
+            {isOnChainDeployed && (
+              <p className="text-sm text-orange-600">
+                Funding goal cannot be changed after campaign deployment
+              </p>
+            )}
           </FormItem>
         )}
       />

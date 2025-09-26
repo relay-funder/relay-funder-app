@@ -37,9 +37,7 @@ export default function LoginPage() {
   }
 
   if (authenticated) {
-    return (
-      <Authenticated message="You are ready to contribute!" />
-    );
+    return <Authenticated message="You are ready to contribute!" />;
   }
 
   return <Login />;

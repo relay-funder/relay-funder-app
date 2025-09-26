@@ -26,6 +26,8 @@ import {
 } from './form';
 import { useCampaignFormCreate } from './use-form-create';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [state, setState] = useState<keyof typeof CreateProcessStates>('idle');
@@ -33,10 +35,38 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [formState, setFormState] =
     useState<keyof typeof CampaignCreateFormStates>('introduction');
   const processing = state !== 'idle';
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const onCreateSuccess = useCallback(
+    (wasSubmittedForApproval: boolean) => {
+      if (wasSubmittedForApproval) {
+        toast({
+          title: 'Campaign Submitted!',
+          description:
+            'Your campaign has been submitted for approval. A Relay Funder admin will review it shortly.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Draft Saved!',
+          description:
+            'Your campaign draft has been saved successfully. You can continue editing later.',
+          variant: 'default',
+        });
+      }
+
+      // Redirect to campaigns overview
+      router.push('/campaigns');
+    },
+    [toast, router],
+  );
+
   const { mutateAsync: createCampaign } = useCampaignFormCreate({
     onStateChanged: setState,
-    onCreated,
+    onCreated: onCreated,
     onError: setError,
+    onSuccess: onCreated ? undefined : onCreateSuccess,
   });
 
   const form = useForm<CampaignFormSchemaType>({
@@ -68,20 +98,9 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
 
       if (submitType === 'draft') {
         // Save as draft - create campaign but don't process blockchain transaction
-        setState('create');
-        try {
-          await createCampaign({ ...data, _saveAsDraft: true });
-          setState('done');
-          if (onCreated) onCreated();
-        } catch (error) {
-          setState('failed');
-          setError(
-            `Failed to save draft: ${error instanceof Error ? error.message : 'Unknown Error'}`,
-          );
-        }
+        return await createCampaign({ ...data, _saveAsDraft: true });
       } else {
         // Submit for approval - full process
-        setState('setup');
         return await createCampaign(data);
       }
     },

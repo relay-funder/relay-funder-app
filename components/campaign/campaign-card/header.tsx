@@ -55,7 +55,7 @@ export function CampaignCardHeader({
         </div>
       )}
 
-      {displayOptions.showStatusBadge && adminMode && (
+      {displayOptions.showStatusBadge && (
         <div className="absolute bottom-4 left-4 z-10">
           <CampaignStatus campaign={campaign} />
         </div>

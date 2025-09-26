@@ -14,21 +14,63 @@ import { CampaignEditFormMedia } from './form-media';
 import { CampaignEditFormDescription } from './form-description';
 import { CampaignEditFormMeta } from './form-meta';
 import { CampaignEditFormSummary } from './form-summary';
+// Reuse create form components
+import { CampaignCreateFormFunding } from '../create/form-funding';
+import { CampaignCreateFormTimeline } from '../create/form-timeline';
 import { CampaignFormSchema, CampaignFormSchemaType } from './form';
 import { useCampaignFormEdit } from './use-form-edit';
 import { cn } from '@/lib/utils';
 import { categories } from '@/lib/constant';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
   const [state, setState] = useState<keyof typeof UpdateProcessStates>('idle');
   const [error, setError] = useState<string | null>(null);
   const [formState, setFormState] =
-    useState<keyof typeof CampaignEditFormStates>('introduction');
+    useState<keyof typeof CampaignEditFormStates>('description');
   const processing = state !== 'idle';
+  const router = useRouter();
+  const { toast } = useToast();
+
+  // Detect if campaign has been deployed on-chain (restricts on-chain fields)
+  const isOnChainDeployed =
+    campaign.transactionHash !== null && campaign.campaignAddress !== null;
+
+  // Detect if campaign has already been submitted for approval (affects button text)
+  const isAlreadySubmitted =
+    campaign.status === 'PENDING_APPROVAL' ||
+    campaign.status === 'ACTIVE' ||
+    campaign.status === 'COMPLETED' ||
+    isOnChainDeployed;
+  const onEditSuccess = useCallback(
+    (wasSubmittedForApproval: boolean) => {
+      if (wasSubmittedForApproval) {
+        toast({
+          title: 'Campaign Submitted!',
+          description:
+            'Your campaign has been submitted for approval. A Relay Funder admin will review it shortly.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Campaign Saved!',
+          description: 'Your campaign changes have been saved successfully.',
+          variant: 'default',
+        });
+      }
+
+      // Redirect to campaigns overview
+      router.push('/campaigns');
+    },
+    [toast, router],
+  );
+
   const { mutateAsync: updateCampaign } = useCampaignFormEdit({
     onStateChanged: setState,
     campaign,
     onError: setError,
+    onSuccess: onEditSuccess,
   });
 
   const form = useForm<CampaignFormSchemaType>({
@@ -40,6 +82,14 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
         category:
           categories.find((category) => category.id === campaign.category)
             ?.id ?? '',
+        fundingGoal: campaign.fundingGoal || '',
+        fundingModel: 'flexible', // Default funding model
+        startTime: campaign.startTime
+          ? new Date(campaign.startTime).toISOString().slice(0, 10)
+          : '',
+        endTime: campaign.endTime
+          ? new Date(campaign.endTime).toISOString().slice(0, 10)
+          : '',
       };
     },
   });
@@ -55,13 +105,21 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
   }, [form, formState]);
 
   const onSubmit = useCallback(
-    async (data: CampaignFormSchemaType) => {
+    async (data: CampaignFormSchemaType, event?: React.BaseSyntheticEvent) => {
       if (formState !== 'summary') {
         return onSubmitStep();
       }
       setError(null);
       setState('setup');
-      return await updateCampaign(data);
+
+      // Check the submission type
+      const submitType = (event?.target as any)?._submitType || 'approval';
+      const isSubmittingForApproval = submitType === 'approval';
+
+      return await updateCampaign({
+        ...data,
+        _submitForApproval: isSubmittingForApproval,
+      });
     },
     [updateCampaign, formState, onSubmitStep],
   );
@@ -80,29 +138,9 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
           <form onSubmit={form.handleSubmit(onSubmit, onSubmitStep)}>
             <CampaignEditFormPage
               state={formState}
-              page="introduction"
-              onStateChanged={setFormState}
-            >
-              <div className="space-y-6 text-center">
-                <h2 className="text-3xl font-bold text-gray-900">
-                  Edit Your Campaign
-                </h2>
-                <div className="mx-auto max-w-lg space-y-4">
-                  <p className="text-lg leading-relaxed text-gray-600">
-                    Update your campaign details to better connect with
-                    supporters and improve your project's presentation.
-                  </p>
-                  <p className="text-gray-600">
-                    Make changes to any section and save your updates when
-                    you're ready.
-                  </p>
-                </div>
-              </div>
-            </CampaignEditFormPage>
-            <CampaignEditFormPage
-              state={formState}
               page="description"
               onStateChanged={setFormState}
+              isAlreadySubmitted={isAlreadySubmitted}
             >
               <CampaignEditFormDescription />
             </CampaignEditFormPage>
@@ -110,20 +148,43 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
               state={formState}
               page="meta"
               onStateChanged={setFormState}
+              isAlreadySubmitted={isAlreadySubmitted}
             >
               <CampaignEditFormMeta />
             </CampaignEditFormPage>
             <CampaignEditFormPage
               state={formState}
+              page="funding"
+              onStateChanged={setFormState}
+              isAlreadySubmitted={isAlreadySubmitted}
+            >
+              <CampaignCreateFormFunding
+                isOnChainDeployed={isOnChainDeployed}
+              />
+            </CampaignEditFormPage>
+            <CampaignEditFormPage
+              state={formState}
+              page="timeline"
+              onStateChanged={setFormState}
+              isAlreadySubmitted={isAlreadySubmitted}
+            >
+              <CampaignCreateFormTimeline
+                isOnChainDeployed={isOnChainDeployed}
+              />
+            </CampaignEditFormPage>
+            <CampaignEditFormPage
+              state={formState}
               page="media"
               onStateChanged={setFormState}
+              isAlreadySubmitted={isAlreadySubmitted}
             >
-              <CampaignEditFormMedia />
+              <CampaignEditFormMedia campaign={campaign} />
             </CampaignEditFormPage>
             <CampaignEditFormPage
               state={formState}
               page="summary"
               onStateChanged={setFormState}
+              isAlreadySubmitted={isAlreadySubmitted}
             >
               <CampaignEditFormSummary campaign={campaign} />
             </CampaignEditFormPage>

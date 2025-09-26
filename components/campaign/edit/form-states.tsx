@@ -69,7 +69,7 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
       </div>
     ),
     next: { label: 'Next', submit: false, target: 'meta' },
-    prev: { label: 'Back', target: 'introduction' },
+    prev: null,
     fields: ['title', 'description'],
   },
   meta: {
@@ -100,9 +100,67 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
         </div>
       </div>
     ),
-    next: { label: 'Next', submit: false, target: 'media' },
+    next: { label: 'Next', submit: false, target: 'funding' },
     prev: { label: 'Back', target: 'description' },
     fields: ['location', 'category'],
+  },
+  funding: {
+    title: 'Funding Goal',
+    description: (
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Set your funding goal and choose your funding model.
+        </p>
+
+        <div>
+          <h4 className="mb-2 font-medium text-gray-900">Funding Tips:</h4>
+          <ul className="space-y-1 text-sm text-gray-600">
+            <li>Set a realistic goal based on your project needs</li>
+            <li>Consider all costs including materials and fees</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-2 font-medium text-gray-900">Important:</h4>
+          <ul className="space-y-1 text-sm text-gray-600">
+            <li>Funding goal cannot be changed after deployment</li>
+            <li>Choose carefully based on your project requirements</li>
+          </ul>
+        </div>
+      </div>
+    ),
+    next: { label: 'Next', submit: false, target: 'timeline' },
+    prev: { label: 'Back', target: 'meta' },
+    fields: ['fundingGoal', 'fundingModel'],
+  },
+  timeline: {
+    title: 'Campaign Timeline',
+    description: (
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Set your campaign start and end dates.
+        </p>
+
+        <div>
+          <h4 className="mb-2 font-medium text-gray-900">Timeline Tips:</h4>
+          <ul className="space-y-1 text-sm text-gray-600">
+            <li>Allow enough time to reach your funding goal</li>
+            <li>Consider seasonal factors and holidays</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-2 font-medium text-gray-900">Important:</h4>
+          <ul className="space-y-1 text-sm text-gray-600">
+            <li>Dates cannot be changed after deployment</li>
+            <li>Plan your timeline carefully</li>
+          </ul>
+        </div>
+      </div>
+    ),
+    next: { label: 'Next', submit: false, target: 'media' },
+    prev: { label: 'Back', target: 'funding' },
+    fields: ['startTime', 'endTime'],
   },
   media: {
     title: 'Media',
@@ -130,7 +188,7 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
       </div>
     ),
     next: { label: 'Next', submit: false, target: 'summary' },
-    prev: { label: 'Back', target: 'meta' },
+    prev: { label: 'Back', target: 'timeline' },
     fields: ['bannerImage'],
   },
   summary: {
@@ -142,18 +200,27 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Before Submitting:</h4>
+          <h4 className="mb-2 font-medium text-gray-900">Your Options:</h4>
           <ul className="space-y-1 text-sm text-gray-600">
-            <li>Review all changes and ensure accuracy</li>
-            <li>Go back to edit any section if needed</li>
+            <li>
+              <strong>Save (draft)</strong> - Save changes without submitting
+              for review
+            </li>
+            <li>
+              <strong>Submit for approval</strong> - Submit changes for review
+              and approval
+            </li>
+            <li>
+              <strong>Save</strong> - Save changes to already submitted campaign
+            </li>
           </ul>
         </div>
 
         <div>
           <h4 className="mb-2 font-medium text-gray-900">Quick Check:</h4>
           <ul className="space-y-1 text-sm text-gray-600">
-            <li>Title and description are clear and compelling</li>
-            <li>Image, location, and category are appropriate</li>
+            <li>Review all changes and ensure accuracy</li>
+            <li>Go back to edit any section if needed</li>
           </ul>
         </div>
       </div>

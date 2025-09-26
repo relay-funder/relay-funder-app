@@ -9,21 +9,27 @@ import {
   FormMessage,
   Button,
 } from '@/components/ui';
-export function CampaignEditFormMedia() {
+import { DbCampaign } from '@/types/campaign';
+
+export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
+
+  // Get existing campaign image
+  const existingImageUrl = campaign?.media?.[0]?.url;
+
   const onReset = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       form.setValue('bannerImage', null);
+      setBannerImage(null);
     },
     [form],
   );
+
+  // Handle both File objects (new uploads) and existing image URLs
   useEffect(() => {
-    if (!imageWatch) {
-      return;
-    }
     if (imageWatch instanceof File) {
       const url = URL.createObjectURL(imageWatch);
       setBannerImage(url);
@@ -31,8 +37,17 @@ export function CampaignEditFormMedia() {
         URL.revokeObjectURL(url);
         setBannerImage(null);
       };
+    } else if (
+      !imageWatch &&
+      existingImageUrl &&
+      typeof existingImageUrl === 'string'
+    ) {
+      // Show existing image if no new file is selected
+      setBannerImage(existingImageUrl);
+    } else if (!imageWatch) {
+      setBannerImage(null);
     }
-  }, [imageWatch]);
+  }, [imageWatch, existingImageUrl]);
   return (
     <div className="space-y-6">
       <FormField

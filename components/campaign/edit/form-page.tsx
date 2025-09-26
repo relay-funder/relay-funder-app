@@ -14,13 +14,117 @@ export function CampaignEditFormPage({
   page,
   children,
   onStateChanged,
+  isAlreadySubmitted = false,
 }: {
   state: keyof typeof CampaignEditFormStates;
   page: keyof typeof CampaignEditFormStates;
   children: React.ReactNode;
   onStateChanged?: (arg0: keyof typeof CampaignEditFormStates) => void;
+  isAlreadySubmitted?: boolean;
 }) {
   const buttons = useMemo(() => {
+    // Special handling for summary page with draft and approval actions
+    if (state === 'summary') {
+      // For already submitted campaigns, only show save button
+      if (isAlreadySubmitted) {
+        const saveButton = (
+          <Button
+            key="save"
+            size="lg"
+            type="button"
+            onClick={(event: React.MouseEvent) => {
+              event?.preventDefault();
+              // Trigger form submission with save flag
+              const form = document.querySelector('form');
+              if (form) {
+                (form as any)._submitType = 'save';
+                form.requestSubmit();
+              }
+            }}
+          >
+            Save
+          </Button>
+        );
+
+        const prev = onStateChanged && CampaignEditFormStates[state].prev && (
+          <Button
+            key="prev"
+            variant="ghost"
+            size="lg"
+            onClick={(event: React.MouseEvent) => {
+              event?.preventDefault();
+              if (CampaignEditFormStates[state].prev?.target) {
+                onStateChanged(CampaignEditFormStates[state].prev.target);
+              }
+            }}
+          >
+            {CampaignEditFormStates[state].prev.label}
+          </Button>
+        );
+
+        return [prev, saveButton];
+      }
+
+      // For draft campaigns, show both save as draft and submit for approval
+      const saveAsDraft = (
+        <Button
+          key="save-draft"
+          variant="outline"
+          size="lg"
+          type="button"
+          onClick={(event: React.MouseEvent) => {
+            event?.preventDefault();
+            // Trigger form submission with draft flag
+            const form = document.querySelector('form');
+            if (form) {
+              (form as any)._submitType = 'draft';
+              form.requestSubmit();
+            }
+          }}
+        >
+          Save (draft)
+        </Button>
+      );
+
+      const submitForApproval = (
+        <Button
+          key="submit-approval"
+          size="lg"
+          type="button"
+          onClick={(event: React.MouseEvent) => {
+            event?.preventDefault();
+            // Trigger form submission with approval flag
+            const form = document.querySelector('form');
+            if (form) {
+              (form as any)._submitType = 'approval';
+              form.requestSubmit();
+            }
+          }}
+        >
+          Submit for approval
+        </Button>
+      );
+
+      const prev = onStateChanged && CampaignEditFormStates[state].prev && (
+        <Button
+          key="prev"
+          variant="ghost"
+          size="lg"
+          onClick={(event: React.MouseEvent) => {
+            event?.preventDefault();
+            if (CampaignEditFormStates[state].prev?.target) {
+              onStateChanged(CampaignEditFormStates[state].prev.target);
+            }
+          }}
+        >
+          {CampaignEditFormStates[state].prev.label}
+        </Button>
+      );
+
+      return [prev, saveAsDraft, submitForApproval];
+    }
+
+    // Standard navigation buttons for other pages
     const next = onStateChanged && CampaignEditFormStates[state].next && (
       <Button key="next" size="lg" type="submit">
         {CampaignEditFormStates[state].next.label}
