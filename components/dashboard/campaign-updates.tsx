@@ -9,7 +9,6 @@ import { useEffect } from 'react';
 import { Card, CardContent, Badge } from '@/components/ui';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { ResponsiveGrid } from '@/components/layout';
 import { Calendar, ExternalLink, Bell, MessageSquare } from 'lucide-react';
 import { Category } from '@/components/shared/category';
 import Link from 'next/link';
@@ -169,7 +168,7 @@ export function CampaignUpdates() {
           No updates yet
         </h3>
         <p className="mb-4 text-gray-500">
-          Updates from campaigns you've contributed to or favorited will appear
+          Updates from campaigns you&apos;ve contributed to or favorited will appear
           here.
         </p>
         <p className="text-sm text-gray-400">

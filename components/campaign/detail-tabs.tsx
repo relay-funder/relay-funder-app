@@ -16,7 +16,7 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
 
   // Handle update anchor links - only switch tab, don't prevent user navigation
   useUpdateAnchor({
-    onUpdateTarget: (updateId) => {
+    onUpdateTarget: () => {
       // Switch to updates tab when an update is targeted
       setActiveTab('updates');
     },

@@ -9,7 +9,6 @@ import {
 import { useAuth } from '@/contexts';
 import { Heart, History, Bell, Info } from 'lucide-react';
 import { DonorDashboardOverview } from '@/components/dashboard/donor-overview';
-import { CampaignCard } from '@/components/campaign/campaign-card';
 import { FavoriteCard } from '@/components/dashboard/favorite-card';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
