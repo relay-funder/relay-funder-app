@@ -94,8 +94,8 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
         <div>
           <h4 className="mb-2 font-medium text-gray-900">Choose Wisely:</h4>
           <p className="text-sm text-gray-600">
-            Select the category that best represents your project's main focus
-            area.
+            Select the category that best represents your project&apos;s main
+            focus area.
           </p>
         </div>
       </div>

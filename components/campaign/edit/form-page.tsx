@@ -37,7 +37,9 @@ export function CampaignEditFormPage({
               // Trigger form submission with save flag
               const form = document.querySelector('form');
               if (form) {
-                (form as any)._submitType = 'save';
+                (
+                  form as HTMLFormElement & { _submitType?: string }
+                )._submitType = 'save';
                 form.requestSubmit();
               }
             }}
@@ -77,7 +79,8 @@ export function CampaignEditFormPage({
             // Trigger form submission with draft flag
             const form = document.querySelector('form');
             if (form) {
-              (form as any)._submitType = 'draft';
+              (form as HTMLFormElement & { _submitType?: string })._submitType =
+                'draft';
               form.requestSubmit();
             }
           }}
@@ -96,7 +99,8 @@ export function CampaignEditFormPage({
             // Trigger form submission with approval flag
             const form = document.querySelector('form');
             if (form) {
-              (form as any)._submitType = 'approval';
+              (form as HTMLFormElement & { _submitType?: string })._submitType =
+                'approval';
               form.requestSubmit();
             }
           }}
@@ -146,7 +150,7 @@ export function CampaignEditFormPage({
       </Button>
     );
     return [prev, next];
-  }, [state, onStateChanged]);
+  }, [state, onStateChanged, isAlreadySubmitted]);
 
   if (state !== page) {
     return null;

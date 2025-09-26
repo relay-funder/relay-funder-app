@@ -5,7 +5,6 @@ import { DbCampaign } from '@/types/campaign';
 import { useSession } from 'next-auth/react';
 import { CampaignCard } from '../campaign-card';
 import { CampaignFormSchema } from './form';
-import { cn } from '@/lib/utils';
 export function CampaignCreateFormSummary() {
   const form = useFormContext();
   const session = useSession();

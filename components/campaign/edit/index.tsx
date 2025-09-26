@@ -9,7 +9,6 @@ import { VisibilityToggle } from '@/components/visibility-toggle';
 import { CampaignEditProcessDisplay } from './process-display';
 import { CampaignEditFormStates } from './form-states';
 import { CampaignEditFormPage } from './form-page';
-import Image from 'next/image';
 import { CampaignEditFormMedia } from './form-media';
 import { CampaignEditFormDescription } from './form-description';
 import { CampaignEditFormMeta } from './form-meta';
@@ -19,7 +18,6 @@ import { CampaignCreateFormFunding } from '../create/form-funding';
 import { CampaignCreateFormTimeline } from '../create/form-timeline';
 import { CampaignFormSchema, CampaignFormSchemaType } from './form';
 import { useCampaignFormEdit } from './use-form-edit';
-import { cn } from '@/lib/utils';
 import { categories } from '@/lib/constant';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -113,7 +111,9 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
       setState('setup');
 
       // Check the submission type
-      const submitType = (event?.target as any)?._submitType || 'approval';
+      const submitType =
+        (event?.target as HTMLFormElement & { _submitType?: string })
+          ?._submitType || 'approval';
       const isSubmittingForApproval = submitType === 'approval';
 
       return await updateCampaign({

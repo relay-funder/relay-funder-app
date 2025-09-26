@@ -12,7 +12,6 @@ import { CampaignCreateProcessDisplay } from './process-display';
 import { CampaignCreateFormStates } from './form-states';
 import { CampaignCreateFormPage } from './form-page';
 import { uniqueName, uniqueDescription } from '@/lib/generate-strings';
-import Image from 'next/image';
 import { CampaignCreateFormMedia } from './form-media';
 import { CampaignCreateFormDescription } from './form-description';
 import { CampaignCreateFormMeta } from './form-meta';
@@ -25,7 +24,6 @@ import {
   campaignFormDefaultValues,
 } from './form';
 import { useCampaignFormCreate } from './use-form-create';
-import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -92,7 +90,9 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
 
       // Check if this is a draft save or approval submission
       const form = event?.target as HTMLFormElement;
-      const submitType = (form as any)?._submitType || 'approval';
+      const submitType =
+        (form as HTMLFormElement & { _submitType?: string })?._submitType ||
+        'approval';
 
       setError(null);
 
@@ -160,13 +160,13 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
               <div className="space-y-4 text-center">
                 <div className="mx-auto max-w-lg space-y-4">
                   <p className="leading-relaxed text-gray-600">
-                    You're about to create a campaign that will help bring your
-                    project to life. This process will walk you through
+                    You&apos;re about to create a campaign that will help bring
+                    your project to life. This process will walk you through
                     everything you need to attract supporters and raise funds.
                   </p>
                   <p className="text-gray-600">
-                    We'll help you craft a compelling story, set your funding
-                    goals, and prepare your campaign for success.
+                    We&apos;ll help you craft a compelling story, set your
+                    funding goals, and prepare your campaign for success.
                   </p>
                 </div>
                 <div

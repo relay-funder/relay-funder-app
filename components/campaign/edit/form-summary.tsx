@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignCard } from '../campaign-card';
 import { CampaignFormSchema } from './form';
-import { cn } from '@/lib/utils';
 export function CampaignEditFormSummary({
   campaign,
 }: {

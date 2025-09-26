@@ -9,6 +9,7 @@ import {
   FormMessage,
   Button,
 } from '@/components/ui';
+import Image from 'next/image';
 export function CampaignCreateFormMedia() {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
@@ -63,10 +64,13 @@ export function CampaignCreateFormMedia() {
           <div className="rounded-lg border bg-white p-4 shadow-sm">
             <h3 className="mb-3 text-sm font-medium text-gray-900">Preview</h3>
             <div className="flex justify-center">
-              <img
+              <Image
                 src={bannerImage}
                 alt="Campaign banner preview"
                 className="max-h-64 rounded-lg shadow-sm"
+                width={400}
+                height={256}
+                style={{ objectFit: 'contain' }}
               />
             </div>
             <div className="mt-4 flex justify-center">

@@ -95,8 +95,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         <div>
           <h4 className="mb-2 font-medium text-gray-900">Choose Wisely:</h4>
           <p className="text-sm text-gray-600">
-            Select the category that best represents your project's main focus
-            area.
+            Select the category that best represents your project&apos;s main
+            focus area.
           </p>
         </div>
       </div>
@@ -156,7 +156,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         <div>
           <h4 className="mb-2 font-medium text-gray-900">Flexible Funding:</h4>
           <p className="text-sm text-gray-600">
-            You'll receive all funds raised, even if you don't reach your goal.
+            You&apos;ll receive all funds raised, even if you don&apos;t reach
+            your goal.
           </p>
         </div>
       </div>
@@ -178,7 +179,7 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
           <h4 className="mb-2 font-medium text-gray-900">Start Date Tips:</h4>
           <ul className="space-y-1 text-sm text-gray-600">
             <li>Allow time to prepare promotional materials</li>
-            <li>Ensure you're ready to actively promote your campaign</li>
+            <li>Ensure you&apos;re ready to actively promote your campaign</li>
           </ul>
         </div>
 
