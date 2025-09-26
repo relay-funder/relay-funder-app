@@ -7,7 +7,7 @@ import { ResponsiveGrid } from '@/components/layout';
  * AdminGlobalOverview Component
  *
  * Shows global statistics across all campaigns in the system.
- * Used in the Admin Control Center for system-wide oversight.
+ * Used in the Admin Campaign Management Center for system-wide oversight.
  */
 export function AdminGlobalOverview() {
   const { data: stats, isPending } = useCampaignStats('global');

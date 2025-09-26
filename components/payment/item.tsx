@@ -60,30 +60,34 @@ export function PaymentItem({
       )}
       onClick={hasExplorerLink ? handleRowClick : undefined}
     >
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
           <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
                 <UserInlineName user={payment.user} />
-                <span className="text-sm text-gray-500">•</span>
-                <FormattedDate date={payment.date} />
+                <div className="flex items-center gap-2 text-xs text-gray-500 sm:text-sm">
+                  <span className="hidden sm:inline">•</span>
+                  <FormattedDate date={payment.date} />
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-900">
-                  $
-                  {(() => {
-                    // Format with at least 1 decimal place
-                    return payment.amount % 1 === 0
-                      ? payment.amount.toFixed(1)
-                      : payment.amount.toString();
-                  })()}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {payment.token === 'USD' ? 'Credit Card' : payment.token}
-                </span>
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
+                  <span className="text-base font-medium text-gray-900 sm:text-sm">
+                    $
+                    {(() => {
+                      // Format with at least 1 decimal place
+                      return payment.amount % 1 === 0
+                        ? payment.amount.toFixed(1)
+                        : payment.amount.toString();
+                    })()}
+                  </span>
+                  <span className="text-xs text-gray-500 sm:text-sm">
+                    {payment.token === 'USD' ? 'Credit Card' : payment.token}
+                  </span>
+                </div>
                 {hasExplorerLink && (
-                  <ExternalLink className="h-4 w-4 text-gray-400" />
+                  <ExternalLink className="h-4 w-4 flex-shrink-0 text-gray-400" />
                 )}
               </div>
             </div>
@@ -91,7 +95,7 @@ export function PaymentItem({
         </div>
       </CardContent>
       {canRemove && (
-        <CardFooter>
+        <CardFooter className="px-4 py-3 sm:px-6">
           <Button
             onClick={(e) => {
               e.stopPropagation();
@@ -99,6 +103,7 @@ export function PaymentItem({
             }}
             disabled={isRemovingPayment}
             variant="ghost"
+            size="sm"
             className="text-gray-400 hover:bg-gray-100 hover:text-gray-600"
           >
             <Trash className="h-3 w-3" />

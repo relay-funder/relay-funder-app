@@ -132,9 +132,9 @@ export function CampaignCard({
     roundCampaign?.status !== 'APPROVED' &&
     !actionHandlers.onRoundApprove; // Don't dim if user has admin controls
 
-  // Don't make admin cards clickable (they have action buttons)
+  // Don't make admin, dashboard, or round-minimal cards clickable (they have action buttons)
   // Round-minimal cards have onSelect behavior instead of navigation
-  const isClickable = !isAdminType && !isRoundMinimalType;
+  const isClickable = !isAdminType && !isDashboardType && !isRoundMinimalType;
 
   const cardContent = (
     <Card

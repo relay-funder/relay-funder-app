@@ -6,12 +6,13 @@ import { GetRoundResponseInstance } from '@/lib/api/types';
 import { CampaignCardDisplayOptions } from './types';
 import { CampaignCardActions } from './actions';
 import { useAuth } from '@/contexts';
-import { Trash2, Loader2, Edit } from 'lucide-react';
+import { Trash2, Loader2, Edit, Wallet } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminRemoveCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminRemoveProcessStates } from '@/types/admin';
 import { cn } from '@/lib/utils';
+import { WithdrawalDialog } from '../withdrawal-dialog';
 
 interface CampaignStatusInfo {
   status: string;
@@ -122,10 +123,18 @@ export function CampaignCardFooter({
   const shouldShowEditButton =
     displayOptions.showEditButton && isOwner && campaign?.slug;
 
+  // Check if withdrawal button should be shown (for campaign owner only, active campaigns with treasury)
+  const shouldShowWithdrawalButton =
+    displayOptions.showWithdrawalButton &&
+    isOwner &&
+    campaign?.treasuryAddress &&
+    campaign.status === 'ACTIVE';
+
   // Show footer only for essential actions and controls
   const hasEssentialFooterContent =
     shouldShowEditButton ||
     shouldShowDeleteButton ||
+    shouldShowWithdrawalButton ||
     (displayOptions.showRoundAdminFooterControls && roundAdminFooterControls) ||
     customButtons ||
     (adminMode && displayOptions.showCampaignAdminActions && showButtons) ||
@@ -206,8 +215,10 @@ export function CampaignCardFooter({
             </div>
           )}
 
-        {/* Edit and Delete controls */}
-        {(shouldShowEditButton || shouldShowDeleteButton) && (
+        {/* Creator controls: Edit, Withdraw, Delete */}
+        {(shouldShowEditButton ||
+          shouldShowWithdrawalButton ||
+          shouldShowDeleteButton) && (
           <div className="border-t border-gray-200 pt-3">
             <div className="flex gap-2">
               {/* Edit button */}
@@ -228,6 +239,26 @@ export function CampaignCardFooter({
                 </Link>
               )}
 
+              {/* Withdrawal button */}
+              {shouldShowWithdrawalButton && (
+                <div className="flex-1">
+                  <WithdrawalDialog
+                    campaign={campaign}
+                    trigger={
+                      <Button
+                        size="sm"
+                        className={cn(
+                          'w-full bg-green-100 px-2 py-1 text-xs text-green-700 hover:bg-green-200',
+                        )}
+                      >
+                        <Wallet className="mr-2 h-3 w-3" />
+                        Withdraw
+                      </Button>
+                    }
+                  />
+                </div>
+              )}
+
               {/* Delete button */}
               {shouldShowDeleteButton && (
                 <Button
@@ -235,7 +266,7 @@ export function CampaignCardFooter({
                   size="sm"
                   disabled={isDeleting}
                   className={cn(
-                    shouldShowEditButton ? 'flex-1' : 'w-full',
+                    'flex-1',
                     'bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200',
                     isDeleting && 'opacity-50',
                   )}

@@ -37,6 +37,7 @@ export interface CampaignCardDisplayOptions {
   showFavoriteButton?: boolean;
   showRemoveButton?: boolean;
   showEditButton?: boolean;
+  showWithdrawalButton?: boolean;
   showStatusBadge?: boolean;
   showCategoryBadge?: boolean;
   showDates?: boolean;
@@ -240,6 +241,7 @@ export function getDefaultDisplayOptions(
     showFavoriteButton: false,
     showRemoveButton: false,
     showEditButton: false,
+    showWithdrawalButton: false,
     showStatusBadge: true,
     showCategoryBadge: true,
     showDates: false,
@@ -272,6 +274,7 @@ export function getDefaultDisplayOptions(
         showFavoriteButton: true,
         showRemoveButton: true,
         showEditButton: true,
+        showWithdrawalButton: true,
         showRoundsIndicator: true,
         showInfoIcon: true, // Show info icon in dashboard for user's own campaigns
       };

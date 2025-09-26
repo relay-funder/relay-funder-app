@@ -12,17 +12,13 @@ import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { TreasuryBalanceCompact } from './treasury-balance';
-import { WithdrawalDialog } from './withdrawal-dialog';
-import { useAuth } from '@/contexts';
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 
 export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
-  const { address } = useAuth();
   const { contributorCount, contributorPendingCount } =
     useCampaignStatsFromInstance({
       campaign,
     });
-  const isOwner = campaign.creatorAddress === address;
   const {
     hasRounds,
     listingSummary: roundsListingSummary,
@@ -70,7 +66,6 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
               </span>
             </Button>
           </Link>
-          {isOwner && <WithdrawalDialog campaign={campaign} />}
         </div>
 
         <div className="flex justify-center gap-2">

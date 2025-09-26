@@ -34,7 +34,7 @@ export function PaymentList({ campaign }: { campaign: DbCampaign }) {
     return <PaymentEmpty />;
   }
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {data?.pages.map((page) =>
         page.payments.map((payment) => (
           <PaymentItem key={payment.id} payment={payment} campaign={campaign} />

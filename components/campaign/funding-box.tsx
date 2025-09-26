@@ -8,7 +8,6 @@ import { Users, Clock, Heart } from 'lucide-react';
 
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
-import { WithdrawalDialog } from './withdrawal-dialog';
 import { useAuth } from '@/contexts';
 
 export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
@@ -80,7 +79,6 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
               Support this campaign
             </Button>
           </Link>
-          {isOwner && <WithdrawalDialog campaign={campaign} />}
         </div>
       </CardContent>
     </Card>

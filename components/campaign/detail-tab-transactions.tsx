@@ -8,7 +8,7 @@ export function CampaignDetailTabTransactions({
   campaign: DbCampaign;
 }) {
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
       {(campaign.paymentSummary?.countConfirmed ?? 0) > 0 ? (
         <PaymentList campaign={campaign} />
       ) : (

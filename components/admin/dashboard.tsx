@@ -10,7 +10,7 @@ import { AdminGlobalOverview } from './global-overview';
  * AdminControlCenter Component
  *
  * The main admin interface for managing all campaigns in the system.
- * This is the "Control Center" that provides admin-specific campaign management
+ * This is the "Campaign Management" that provides admin-specific campaign management
  * with approval actions and system-wide campaign oversight.
  *
  * Key features:
@@ -23,7 +23,7 @@ export function AdminControlCenter() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   return (
     <PageLayout
-      title="Control Center"
+      title="Campaign Management"
       searchPlaceholder="Search Campaigns"
       onSearchChanged={(search: string) => setSearchTerm(search)}
     >

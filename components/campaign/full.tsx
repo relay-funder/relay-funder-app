@@ -56,9 +56,9 @@ export function CampaignFull({ slug }: { slug: string }) {
 
   return (
     <PageHome header={navHeader}>
-      <DetailContainer variant="wide" padding="md">
-        {/* Main Layout Grid */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <DetailContainer variant="wide" padding="sm">
+        {/* Desktop Layout: Original Grid */}
+        <div className="hidden lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Left Column: Main Content */}
           <div className="lg:col-span-2">
             {/* Top Section: Image and Title Box */}
@@ -119,6 +119,64 @@ export function CampaignFull({ slug }: { slug: string }) {
               <CampaignDetailsBox campaign={campaign} />
               <CampaignMatchingFundsHighlight campaign={campaign} />
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Layout: Reordered Flow */}
+        <div
+          className="block space-y-6 lg:hidden"
+          style={{ marginTop: '-30px' }}
+        >
+          {/* Main Image */}
+          <div className="relative">
+            <div className="aspect-video overflow-hidden rounded-lg shadow-sm">
+              <CampaignMainImage campaign={campaign} />
+            </div>
+          </div>
+
+          {/* Title and Location Box */}
+          <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold leading-tight tracking-tight">
+                  {campaign.title}
+                </h1>
+                <div className="mt-2">
+                  <CampaignLocation campaign={campaign} />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShareDialog campaign={campaign} />
+                <FavoriteButton campaignId={campaign.id} />
+                <CampaignInfoDialog campaign={campaign}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label="View campaign details"
+                  >
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </CampaignInfoDialog>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: Funding Progress Right After Image */}
+          <div className="space-y-4">
+            <CampaignFundingBox campaign={campaign} />
+            <CampaignDetailsBox campaign={campaign} />
+            <CampaignMatchingFundsHighlight campaign={campaign} />
+          </div>
+
+          {/* About Section */}
+          <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+            <CampaignDetailTabAbout campaign={campaign} />
+          </div>
+
+          {/* Tabs Section */}
+          <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+            <CampaignDetailTabs campaign={campaign} />
           </div>
         </div>
       </DetailContainer>
