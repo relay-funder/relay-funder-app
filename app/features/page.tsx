@@ -60,7 +60,7 @@ const features = [
   },
   {
     icon: Star,
-    title: 'Quadratic Funding',
+    title: 'Match Funding',
     description:
       'Let your community vote on which campaigns should receive funding.',
     color: 'red',

@@ -47,7 +47,7 @@ export function CampaignMatchingFundsHighlight({
               </span>
             </div>
             <p className="text-sm text-green-700">
-              This campaign is participating in quadratic funding with matching
+              This campaign is participating in match funding with matching
               based on community votes.
             </p>
             <div className="mt-2">
