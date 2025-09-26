@@ -1,17 +1,32 @@
-import { useCallback, type ChangeEvent } from 'react';
-import { Input } from '@/components/ui';
+import { useCallback, type ChangeEvent, useEffect } from 'react';
+import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
+import { useUserProfile } from '@/lib/hooks/useProfile';
+import { Mail, Shield } from 'lucide-react';
 
 export function CampaignDonationWalletAmount({
   amount,
   selectedToken,
   onAmountChanged,
+  email,
+  onEmailChanged,
 }: {
   amount: string;
   selectedToken: string;
   onAmountChanged: (amount: string) => void;
   onTokenChanged: (token: string) => void;
+  email: string;
+  onEmailChanged: (email: string) => void;
 }) {
+  const { data: profile } = useUserProfile();
+
+  // Pre-fill email from user profile
+  useEffect(() => {
+    if (profile?.email && !email) {
+      onEmailChanged(profile.email);
+    }
+  }, [profile?.email, email, onEmailChanged]);
+
   const intermediateOnAmountChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       return onAmountChanged(event.target.value);
@@ -19,8 +34,43 @@ export function CampaignDonationWalletAmount({
     [onAmountChanged],
   );
 
+  const intermediateOnEmailChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      return onEmailChanged(event.target.value);
+    },
+    [onEmailChanged],
+  );
+
   return (
-    <div className="flex flex-col space-y-5">
+    <div className="flex flex-col space-y-6">
+      {/* Email field */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4" />
+          <Label htmlFor="email" className="text-sm font-medium text-gray-900">
+            Email Address *
+          </Label>
+        </div>
+        <div className="max-w-sm">
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={intermediateOnEmailChange}
+            placeholder="john@example.com"
+            required
+            className="h-10 text-sm"
+          />
+        </div>
+        {/* Privacy message */}
+        <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+          <Shield className="h-4 w-4 flex-shrink-0" />
+          <span>
+            We won't spam you and the email won't be publicly visible.
+          </span>
+        </div>
+      </div>
+
       {/* Suggested amounts */}
       <CampaignDonationSuggestions
         amount={amount}

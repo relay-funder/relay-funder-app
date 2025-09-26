@@ -1,6 +1,10 @@
 import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
-import { ApiAuthNotAllowed, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+} from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
 import { getCampaign } from '@/lib/api/campaigns';
@@ -18,6 +22,13 @@ export async function POST(req: Request) {
     if (!user) {
       throw new ApiNotFoundError('User not found');
     }
+    // Use email from request or fallback to user profile email
+    const emailForPayment = data.userEmail || user.email;
+    if (!emailForPayment || emailForPayment.trim() === '') {
+      throw new ApiParameterError(
+        'Email is required for donation. Please provide a valid email address.',
+      );
+    }
     const campaign = await getCampaign(data.campaignId);
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
@@ -32,6 +43,9 @@ export async function POST(req: Request) {
         type: data.type ?? 'BUY',
         user: { connect: { id: user.id } },
         campaign: { connect: { id: campaign.id } },
+        metadata: {
+          userEmail: emailForPayment,
+        },
       },
     });
     // create roundContribution

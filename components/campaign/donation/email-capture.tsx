@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, Shield } from 'lucide-react';
 
 interface EmailCaptureProps {
-  onComplete: (email: string, name?: string) => void;
+  onComplete: (email: string) => void;
   onSkip?: () => void;
   required?: boolean;
 }
@@ -31,28 +31,19 @@ export function EmailCapture({
   const { toast } = useToast();
 
   const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pre-fill with existing profile data
   useEffect(() => {
     if (profile) {
       setEmail(profile.email || '');
-      setFirstName(profile.firstName || '');
-      setLastName(profile.lastName || '');
     }
   }, [profile]);
 
   // If user already has email and it's not required to update, complete immediately
   useEffect(() => {
     if (profile?.email && !required) {
-      onComplete(
-        profile.email,
-        profile.firstName && profile.lastName
-          ? `${profile.firstName} ${profile.lastName}`
-          : undefined,
-      );
+      onComplete(profile.email);
     }
   }, [profile, required, onComplete]);
 
@@ -84,21 +75,17 @@ export function EmailCapture({
     setIsSubmitting(true);
 
     try {
-      // Update profile with email and name if provided
+      // Update profile with email
       await updateProfile.mutateAsync({
         email,
-        firstName: firstName.trim() || profile?.firstName || '',
-        lastName: lastName.trim() || profile?.lastName || '',
+        firstName: profile?.firstName || '',
+        lastName: profile?.lastName || '',
         username: profile?.username || '',
         bio: profile?.bio || '',
         recipientWallet: profile?.recipientWallet || '',
       });
 
-      const fullName =
-        firstName.trim() && lastName.trim()
-          ? `${firstName.trim()} ${lastName.trim()}`
-          : undefined;
-      onComplete(email, fullName);
+      onComplete(email);
     } catch (error) {
       toast({
         title: 'Error',
@@ -143,30 +130,6 @@ export function EmailCapture({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
-            {/* Name fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name (Optional)</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name (Optional)</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
-
             {/* Email field */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address *</Label>

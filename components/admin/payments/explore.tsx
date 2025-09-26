@@ -128,6 +128,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
           <TableHead>Date</TableHead>
           <TableHead>Amount</TableHead>
           <TableHead>Contributor</TableHead>
+          <TableHead>Email</TableHead>
           <TableHead>Campaign</TableHead>
           <TableHead>Round Contribution</TableHead>
           <TableHead>Refund</TableHead>
@@ -148,6 +149,11 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
                 <UserLink user={p.user} />
               </div>
             </TableCell>
+            <TableCell className="max-w-[200px]">
+              <div className="truncate text-sm text-muted-foreground">
+                {(p.metadata as { userEmail?: string })?.userEmail || 'N/A'}
+              </div>
+            </TableCell>
             <TableCell className="max-w-[260px]">
               <div className="truncate">
                 <CampaignLink campaign={p.campaign} />
@@ -166,7 +172,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
         ))}
         {payments.length === 0 && !isLoading && (
           <TableRow>
-            <TableCell colSpan={7} className="py-10 text-center text-sm">
+            <TableCell colSpan={8} className="py-10 text-center text-sm">
               No payments found.
             </TableCell>
           </TableRow>
