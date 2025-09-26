@@ -63,6 +63,22 @@ export function PageFooter() {
                 About
               </a>
               <a
+                href={EXTERNAL_LINKS.PARTNERS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 transition-colors hover:text-gray-900"
+              >
+                Partners
+              </a>
+              <a
+                href={EXTERNAL_LINKS.FAQ}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 transition-colors hover:text-gray-900"
+              >
+                FAQ
+              </a>
+              <a
                 href={EXTERNAL_LINKS.PRIVACY}
                 target="_blank"
                 rel="noopener noreferrer"
