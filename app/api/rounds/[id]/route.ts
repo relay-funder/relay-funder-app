@@ -13,8 +13,12 @@ export async function GET(req: Request, { params }: RoundsWithIdParams) {
     // default is only approved
     // as admin, get any state
     // as user only get any-state when campaign is created by user
+    const { searchParams } = new URL(req.url);
+    const forceUserView = searchParams.get('forceUserView') === 'true';
+
     const session = await auth();
-    const admin = await isAdmin();
+    // If forceUserView is true, always use user-only mode regardless of admin status
+    const admin = forceUserView ? false : await isAdmin();
 
     const id = (await params).id;
     const round = await getRound(parseInt(id), admin, session?.user.address);

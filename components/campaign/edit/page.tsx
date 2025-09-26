@@ -6,9 +6,7 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { useAuth } from '@/contexts';
 import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColumns } from '@/components/page/two-cols';
 import { CampaignEdit } from './index';
-import ProjectInfo from '@/components/project-info';
 
 export function CampaignEditPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
@@ -37,10 +35,9 @@ export function CampaignEditPage({ slug }: { slug: string }) {
   return (
     <>
       <PageHeaderSticky message="Editing" title={campaign.title} />
-      <PageMainTwoColumns>
+      <PageHome header="">
         <CampaignEdit campaign={campaign} />
-        <ProjectInfo campaign={campaign} />
-      </PageMainTwoColumns>
+      </PageHome>
     </>
   );
 }

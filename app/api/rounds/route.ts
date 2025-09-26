@@ -18,14 +18,27 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const skip = (page - 1) * pageSize;
+    const forceUserView = searchParams.get('forceUserView') === 'true';
     if (pageSize > 10) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
 
     // Check if user is admin to determine campaign filtering
-    const admin = await isAdmin();
+    // If forceUserView is true, always use user-only mode regardless of admin status
+    const admin = forceUserView ? false : await isAdmin();
 
-    return response(await listRounds({ page, pageSize, skip, admin }));
+    // Get current user's address for including their own campaigns
+    let userAddress: string | null = null;
+    try {
+      const session = await checkAuth(['user']);
+      userAddress = session.user.address;
+    } catch {
+      // User not authenticated, continue without user address
+    }
+
+    return response(
+      await listRounds({ page, pageSize, skip, admin, userAddress }),
+    );
   } catch (error: unknown) {
     return handleError(error);
   }

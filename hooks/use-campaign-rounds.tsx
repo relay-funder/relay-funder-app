@@ -6,7 +6,13 @@ import {
 import { DbCampaign } from '@/types/campaign';
 import { useMemo } from 'react';
 
-export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
+export function useCampaignRounds({
+  campaign,
+  includePendingInFuture = true,
+}: {
+  campaign?: DbCampaign;
+  includePendingInFuture?: boolean;
+}) {
   const rounds = useMemo(() => {
     if (!Array.isArray(campaign?.rounds) || campaign.rounds.length === 0) {
       return [] as GetRoundResponseInstance[];
@@ -56,11 +62,17 @@ export function useCampaignRounds({ campaign }: { campaign?: DbCampaign }) {
   const futureRounds = useMemo(() => {
     const now = new Date();
     return rounds.filter((round) => {
-      return (
-        now < new Date(round.startTime) || round.recipientStatus === 'PENDING'
-      );
+      const isFutureByTime = now < new Date(round.startTime);
+      const isPending = round.recipientStatus === 'PENDING';
+
+      if (includePendingInFuture) {
+        return isFutureByTime || isPending;
+      } else {
+        // Only include future rounds by time, exclude pending status
+        return isFutureByTime && round.recipientStatus === 'APPROVED';
+      }
     });
-  }, [rounds]);
+  }, [rounds, includePendingInFuture]);
   const title = useMemo(() => {
     if (
       pastRounds.length === 0 &&

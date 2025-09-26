@@ -14,13 +14,53 @@ import {
 } from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';
 
+export async function GET(req: Request, { params }: CampaignsWithIdParams) {
+  try {
+    const session = await checkAuth(['user']);
+    const { campaignId: campaignIdOrSlug } = await params;
+
+    const user = await db.user.findUnique({
+      where: {
+        address: session.user.address,
+      },
+    });
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
+
+    if (!campaignIdOrSlug) {
+      throw new ApiParameterError('Campaign ID is required');
+    }
+
+    const campaign = await getCampaign(campaignIdOrSlug);
+
+    if (campaign?.creatorAddress != user.address) {
+      throw new ApiAuthNotAllowed(
+        'Only campaign owners may check withdrawal approval.',
+      );
+    }
+
+    const approvedWithdrawal = await db.withdrawal.findFirst({
+      where: {
+        campaignId: campaign.id,
+        approvedById: { not: null },
+      },
+    });
+
+    const hasApproval = !!approvedWithdrawal;
+
+    return response({ hasApproval });
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
     const { campaignId: campaignIdOrSlug } = await params;
-    const { amount, token } = PostCampaignWithdrawRouteBodySchema.parse(
-      await req.json(),
-    );
+    const { amount, token, transactionHash } =
+      PostCampaignWithdrawRouteBodySchema.parse(await req.json());
 
     const user = await db.user.findUnique({
       where: {
@@ -40,6 +80,20 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     if (campaign?.creatorAddress != user.address) {
       throw new ApiAuthNotAllowed(
         'Only campaign owners may request a withdrawal.',
+      );
+    }
+
+    // Check if campaign has prior approval for direct withdrawals
+    const hasApproval = await db.withdrawal.findFirst({
+      where: {
+        campaignId: campaign.id,
+        approvedById: { not: null },
+      },
+    });
+
+    if (transactionHash && !hasApproval) {
+      throw new ApiAuthNotAllowed(
+        'Direct withdrawal requires at least one prior approved withdrawal.',
       );
     }
 
@@ -75,6 +129,10 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         token,
         createdBy: { connect: { id: user.id } },
         campaign: { connect: { id: campaign.id } },
+        ...(transactionHash && {
+          approvedBy: { connect: { id: user.id } },
+          transactionHash,
+        }),
       },
     });
     return response(withdrawal);

@@ -18,6 +18,7 @@ export function useDonationCallback({
   poolAmount,
   selectedToken,
   isAnonymous = false,
+  userEmail,
   onStateChanged,
 }: {
   campaign: DbCampaign;
@@ -26,6 +27,7 @@ export function useDonationCallback({
   poolAmount: number;
   selectedToken: string;
   isAnonymous?: boolean;
+  userEmail?: string;
   onStateChanged: (state: keyof typeof DonationProcessStates) => void;
 }) {
   const { wallet } = useWeb3Auth();
@@ -120,6 +122,7 @@ export function useDonationCallback({
         isAnonymous: isAnonymous,
         status: 'confirming',
         transactionHash: tx.hash,
+        userEmail,
       });
 
       debug && console.log('Payment record created with ID:', paymentId);
@@ -160,6 +163,7 @@ export function useDonationCallback({
     campaign?.treasuryAddress,
     selectedToken,
     isAnonymous,
+    userEmail,
     onStateChanged,
   ]);
   return { onDonate, isProcessing, error };

@@ -1,6 +1,10 @@
 import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
-import { ApiAuthNotAllowed, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+} from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
 import { getCampaign } from '@/lib/api/campaigns';
@@ -9,6 +13,9 @@ import {
   PatchPaymentBodyRouteSchema,
   PostPaymentBodyRouteSchema,
 } from '@/lib/api/types/campaigns/payments';
+import { notify } from '@/lib/api/event-feed';
+import { getUserNameFromInstance } from '@/lib/api/user';
+import { formatCrypto } from '@/lib/format-crypto';
 
 export async function POST(req: Request) {
   try {
@@ -18,9 +25,20 @@ export async function POST(req: Request) {
     if (!user) {
       throw new ApiNotFoundError('User not found');
     }
+    // Use email from request or fallback to user profile email
+    const emailForPayment = data.userEmail || user.email;
+    if (!emailForPayment || emailForPayment.trim() === '') {
+      throw new ApiParameterError(
+        'Email is required for donation. Please provide a valid email address.',
+      );
+    }
     const campaign = await getCampaign(data.campaignId);
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
+    }
+    const creator = await getUser(campaign.creatorAddress);
+    if (!creator) {
+      throw new ApiNotFoundError('Campaign Creator not found');
     }
     const payment = await db.payment.create({
       data: {
@@ -32,6 +50,9 @@ export async function POST(req: Request) {
         type: data.type ?? 'BUY',
         user: { connect: { id: user.id } },
         campaign: { connect: { id: campaign.id } },
+        metadata: {
+          userEmail: emailForPayment,
+        },
       },
     });
     // create roundContribution
@@ -53,6 +74,33 @@ export async function POST(req: Request) {
         });
       }
     }
+    // Fetch payment with user for notification
+    const paymentWithUser = await db.payment.findUnique({
+      where: { id: payment.id },
+      include: { user: true },
+    });
+    if (!paymentWithUser) {
+      throw new ApiNotFoundError('Payment not found');
+    }
+    const numericAmount = parseFloat(paymentWithUser.amount);
+    const formattedAmount = formatCrypto(numericAmount, paymentWithUser.token);
+    const donorName = paymentWithUser.isAnonymous
+      ? 'anon'
+      : getUserNameFromInstance(paymentWithUser.user) ||
+        paymentWithUser.user?.address ||
+        'unknown';
+    await notify({
+      receiverId: creator.id,
+      creatorId: user.id,
+      data: {
+        type: 'CampaignPayment',
+        campaignId: campaign.id,
+        campaignTitle: campaign.title,
+        paymentId: payment.id,
+        formattedAmount,
+        donorName,
+      },
+    });
     return response({ paymentId: payment.id });
   } catch (error: unknown) {
     return handleError(error);

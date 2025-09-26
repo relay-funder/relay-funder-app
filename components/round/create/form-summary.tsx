@@ -2,7 +2,7 @@ import { useFormContext } from 'react-hook-form';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { RoundCardDashboard } from '../card-dashboard';
+import { RoundCard } from '../round-card';
 import { RoundFormSchema } from './form';
 import { cn } from '@/lib/utils';
 import { GetRoundResponseInstance } from '@/lib/api/types';
@@ -68,7 +68,7 @@ export function RoundCreateFormSummary() {
     <div className="pb-2">
       <h2 className={cn('flex justify-self-center text-lg')}>Preview</h2>
       <div className="flex max-w-[400px] justify-self-center">
-        <RoundCardDashboard round={round} />
+        <RoundCard round={round} type="standard" />
       </div>
     </div>
   );

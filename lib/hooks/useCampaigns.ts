@@ -99,8 +99,12 @@ async function fetchUserCampaignPage({
   const data = await response.json();
   return data as PaginatedCampaignResponse;
 }
-async function fetchCampaignStats() {
-  const url = `/api/campaigns/stats`;
+async function fetchCampaignStats(scope?: 'user' | 'global') {
+  const params = new URLSearchParams();
+  if (scope) {
+    params.set('scope', scope);
+  }
+  const url = `/api/campaigns/stats${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
@@ -505,10 +509,10 @@ export function useRefetchCampaign(campaignId: number) {
   return refetch;
 }
 
-export function useCampaignStats() {
+export function useCampaignStats(scope?: 'user' | 'global') {
   return useQuery({
-    queryKey: [CAMPAIGN_STATS_QUERY_KEY],
-    queryFn: fetchCampaignStats,
+    queryKey: [CAMPAIGN_STATS_QUERY_KEY, scope],
+    queryFn: () => fetchCampaignStats(scope),
     enabled: true,
   });
 }

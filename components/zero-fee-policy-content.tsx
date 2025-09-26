@@ -7,13 +7,13 @@ export function ZeroFeePolicyContent() {
         donation platforms, Relay Funder does not charge fees from our users.
         This means that{' '}
         <strong>
-          100% of the amount you donate goes directly to the project!
+          100% of the amount you donate goes directly to the campaign!
         </strong>
       </p>
       <p>
-        It is free to create a project on Relay Funder and send or receive
+        It is free to create a campaign on Relay Funder and send or receive
         donations. All donations are truly peer-to-peer, transacted directly
-        from the donor’s wallet to the project’s wallet, with no intermediaries
+        from the donor’s wallet to the campaign’s wallet, with no intermediaries
         involved. Relay Funder is continuously integrating more networks with
         lower gas fees (the amount you pay to the blockchain network when
         transacting crypto) and additional token options for donors to choose

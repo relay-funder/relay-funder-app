@@ -1,5 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { PostCampaignWithdrawRouteResponse } from '@/lib/api/types';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import type {
+  PostCampaignWithdrawRouteResponse,
+  GetCampaignWithdrawRouteResponse,
+} from '@/lib/api/types';
 import {
   CAMPAIGNS_QUERY_KEY,
   CAMPAIGN_PAYMENTS_QUERY_KEY,
@@ -12,12 +15,14 @@ export interface RequestWithdrawalVariables {
   campaignId: number | string; // accepts numeric ID or slug
   amount: string | number;
   token: string;
+  transactionHash?: string;
 }
 
 async function requestWithdrawal({
   campaignId,
   amount,
   token,
+  transactionHash,
 }: RequestWithdrawalVariables) {
   const response = await fetch(`/api/campaigns/${campaignId}/withdraw`, {
     method: 'POST',
@@ -25,6 +30,7 @@ async function requestWithdrawal({
     body: JSON.stringify({
       amount: String(amount),
       token,
+      ...(transactionHash && { transactionHash }),
     }),
   });
 
@@ -81,5 +87,28 @@ export function useRequestWithdrawal() {
         });
       }
     },
+  });
+}
+
+/**
+ * useWithdrawalApproval
+ * Hook to check if a campaign has withdrawal approval (at least one approved withdrawal).
+ *
+ * - GET /api/campaigns/[campaignId]/withdraw
+ * - Returns { hasApproval: boolean }
+ */
+export function useWithdrawalApproval(campaignId: number | string | undefined) {
+  return useQuery({
+    queryKey: [WITHDRAWALS_QUERY_KEY, 'approval', campaignId],
+    queryFn: async () => {
+      if (!campaignId) throw new Error('Campaign ID is required');
+      const response = await fetch(`/api/campaigns/${campaignId}/withdraw`);
+      if (!response.ok) {
+        throw new Error('Failed to check withdrawal approval');
+      }
+      const data = (await response.json()) as GetCampaignWithdrawRouteResponse;
+      return data;
+    },
+    enabled: !!campaignId,
   });
 }

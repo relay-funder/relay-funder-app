@@ -10,6 +10,8 @@ import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 import { addCampaignComment, getCampaign } from '@/lib/api/campaigns';
 import { checkAbusiveContent, listComments } from '@/lib/api/comment';
+import { getUser, getUserNameFromInstance } from '@/lib/api/user';
+import { notify } from '@/lib/api/event-feed';
 
 const MAX_COMMENT_LENGTH = 1000;
 
@@ -53,6 +55,10 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
     const { content } = await req.json();
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
@@ -71,6 +77,10 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
     }
+    const creator = await getUser(campaign.creatorAddress);
+    if (!creator) {
+      throw new ApiNotFoundError('Campaign Creator not found');
+    }
 
     // basic rate limiting
     const lastUserComment = await db.comment.findFirst({
@@ -84,8 +94,20 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiRateLimitError('Too many comments');
     }
     await checkAbusiveContent(content);
-
     addCampaignComment(campaignId, content, session.user.address);
+    const userName = getUserNameFromInstance(user) || user.address || 'unknown';
+    await notify({
+      receiverId: creator.id,
+      creatorId: user.id,
+      data: {
+        type: 'CampaignComment',
+        campaignId,
+        campaignTitle: campaign.title,
+        action: 'posted',
+        userName,
+        comment: content,
+      },
+    });
 
     return response({
       ok: true,
@@ -97,6 +119,10 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
 export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
     const { commentId }: { commentId: number } = await req.json();
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
@@ -108,6 +134,10 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
     }
+    const creator = await getUser(campaign.creatorAddress);
+    if (!creator) {
+      throw new ApiNotFoundError('Campaign Creator not found');
+    }
     const comment = await db.comment.findUnique({
       where: { id: commentId },
     });
@@ -115,6 +145,7 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiNotFoundError('Comment not found');
     }
     let canDelete = false;
+    let notifyCreator = true;
     if (session.user.address === comment.userAddress) {
       // a user may delete their own comment
       canDelete = true;
@@ -122,6 +153,7 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
     if (session.user.address === campaign.creatorAddress) {
       // a campaign user may delete any comment in the campaign
       canDelete = true;
+      notifyCreator = false;
     }
     if (await isAdmin()) {
       // a admin may delete any comment
@@ -131,7 +163,22 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiAuthNotAllowed('Not allowed to remove this comment');
     }
     await db.comment.delete({ where: { id: commentId } });
-
+    if (notifyCreator) {
+      const userName =
+        getUserNameFromInstance(user) || user.address || 'unknown';
+      await notify({
+        receiverId: creator.id,
+        creatorId: user.id,
+        data: {
+          type: 'CampaignComment',
+          campaignId,
+          campaignTitle: campaign.title,
+          action: 'deleted',
+          userName,
+          comment: comment.content,
+        },
+      });
+    }
     return response({
       ok: true,
     });

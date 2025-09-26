@@ -152,9 +152,12 @@ model User {
   payments             Payment[]
   paymentMethods       PaymentMethod[]
   createdMedia         Media[]         @relation(name: "MediaCreatedBy")
+  eventFeedRead        DateTime?
 
-  withdrawals Withdrawal[] @relation(name: "WithdrawalCreatedBy")
-  approvals   Withdrawal[] @relation(name: "WithdrawalApprovedBy")
+  withdrawals   Withdrawal[] @relation(name: "WithdrawalCreatedBy")
+  approvals     Withdrawal[] @relation(name: "WithdrawalApprovedBy")
+  eventFeed     EventFeed[]  @relation(name: "FeedReceiver")
+  eventsCreated EventFeed[]  @relation(name: "FeedCreatedBy")
 }
 
 model Payment {
@@ -333,4 +336,19 @@ model Withdrawal {
 
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId Int
+}
+
+model EventFeed {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation(name: "FeedCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById Int
+  receiver    User     @relation(name: "FeedReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId  Int
+  type        String
+  message     String
+  data        Json?
+
+  @@index([receiverId, createdAt])
+  @@index([receiverId, type])
 }
