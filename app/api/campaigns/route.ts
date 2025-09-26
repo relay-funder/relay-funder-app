@@ -14,6 +14,10 @@ import { PatchCampaignResponse, PostCampaignsResponse } from '@/lib/api/types';
 import { fileToUrl } from '@/lib/storage';
 import { debugApi as debug } from '@/lib/debug';
 import { getUser } from '@/lib/api/user';
+import {
+  isValidCategoryId,
+  VALID_CATEGORY_IDS,
+} from '@/lib/constant/categories';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -67,6 +71,13 @@ export async function POST(req: Request) {
       !creatorAddress
     ) {
       throw new ApiParameterError('missing required fields');
+    }
+
+    // Validate category if provided
+    if (category && !isValidCategoryId(category)) {
+      throw new ApiParameterError(
+        `Invalid category "${category}". Only allowed: ${VALID_CATEGORY_IDS.join(', ')}`,
+      );
     }
 
     // Generate a unique slug

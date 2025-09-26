@@ -5,6 +5,7 @@ import { Button } from '@/components/ui';
 import { CampaignList } from '@/components/campaign/list';
 import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
+import { RoundSpotlight } from '@/components/home/round-spotlight';
 import { PageLayout } from '@/components/page/layout';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { useSearchParams } from 'next/navigation';
@@ -40,6 +41,7 @@ export function ExploreStories() {
       ) : (
         <>
           <HomeExplore />
+          <RoundSpotlight />
           <HomeCategorySelect onSelected={setSelectedCategory} />
 
           <CampaignList

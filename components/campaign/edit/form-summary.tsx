@@ -23,6 +23,8 @@ export function CampaignEditFormSummary({
           id: 'updated',
           url: values.bannerImage,
           mimeType: 'image/unknown',
+          createdAt: new Date(),
+          state: 'CREATED' as const,
         };
         updatedMedia = [newMediaItem, ...(updatedMedia.slice(1) || [])];
       }

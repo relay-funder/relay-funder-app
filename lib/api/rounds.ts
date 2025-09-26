@@ -234,6 +234,42 @@ export async function prefetchRound(
   });
 }
 
+// Prefetch the active round for homepage
+export async function prefetchActiveRound(queryClient: QueryClient) {
+  // Use the same logic as the API endpoint - date-based, not status-based
+  const now = new Date();
+  const activeRound = await db.round.findFirst({
+    where: {
+      startDate: {
+        lte: now, // Round has started
+      },
+      endDate: {
+        gt: now, // Round hasn't ended
+      },
+    },
+    include: {
+      media: { where: { state: 'UPLOADED' } },
+      _count: {
+        select: {
+          roundCampaigns: {
+            where: {
+              status: 'APPROVED',
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return queryClient.prefetchQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'active'],
+    queryFn: async () => (activeRound ? mapRound(activeRound) : null),
+  });
+}
+
 export function roundIsActive(round: GetRoundResponseInstance) {
   if (typeof round.recipientStatus !== 'number') {
     return false;
