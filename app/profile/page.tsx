@@ -6,12 +6,13 @@ import { useUserProfile } from '@/lib/hooks/useProfile';
 import { ProfileCard } from '@/components/profile/card';
 import { ProfileAdditionalSettings } from '@/components/profile/additional-settings';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
-import { PageLoading } from '@/components/page/loading';
+import { ProfilePageSkeleton } from '@/components/profile/page-skeleton';
 import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { PageDefaultContent } from '@/components/page/default-content';
 import { EventFeedBell } from '@/components/event-feed/event-feed-bell';
+import { DetailContainer } from '@/components/layout';
+
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
   const { authenticated, isReady } = useAuth();
@@ -24,9 +25,7 @@ export default function ProfilePage() {
   }, [setEditProfile]);
 
   if (!isReady || (authenticated && isProfilePending)) {
-    return (
-      <PageLoading>Please wait while we initialize your profile.</PageLoading>
-    );
+    return <ProfilePageSkeleton />;
   }
   if (!authenticated) {
     return (
@@ -37,25 +36,32 @@ export default function ProfilePage() {
   }
 
   return (
-    <PageHome
-      header={
-        <PageHeader message="Manage your account settings, Wallet, and payment methods.">
-          <EventFeedBell />
-        </PageHeader>
-      }
-    >
-      <PageDefaultContent title="Profile">
-        {/* User Profile Card */}
-        <ProfileCard profile={profile} onEdit={onEditProfile} />
+    <PageHome header={<PageHeader />}>
+      <DetailContainer variant="wide" padding="md">
+        <div className="space-y-8">
+          {/* Profile Header */}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Profile Settings
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your personal information and account preferences.
+            </p>
+            <EventFeedBell />
+          </div>
 
-        {/* User Profile Form */}
-        {(editProfile || !profile) && (
-          <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
-        )}
+          {/* User Profile Card */}
+          <ProfileCard profile={profile} onEdit={onEditProfile} />
 
-        {/* Additional Settings Card */}
-        {profile && <ProfileAdditionalSettings />}
-      </PageDefaultContent>
+          {/* User Profile Form */}
+          {(editProfile || !profile) && (
+            <UserProfileForm profile={profile} onSuccess={onEditSuccess} />
+          )}
+
+          {/* Additional Settings Card */}
+          {profile && <ProfileAdditionalSettings />}
+        </div>
+      </DetailContainer>
     </PageHome>
   );
 }

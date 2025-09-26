@@ -112,7 +112,12 @@ Compact layout for list views:
 ```tsx
 <CampaignCard 
   campaign={campaign} 
-  type="compact"
+  type="standard"
+  displayOptions={{
+    useCardImage: true,
+    showCategoryBadge: false,
+    layoutVariant: 'compact'
+  }}
 />
 ```
 
@@ -233,7 +238,7 @@ import {
 |------------------|-----------|--------|
 | `CampaignCardDashboard` | `<CampaignCard type="dashboard" />` | Use convenience export or type prop |
 | `CampaignItem` | `<CampaignCard type="standard" />` | Default type |
-| `CampaignItemCard` | `<CampaignCard type="compact" />` | Compact layout |
+| `CampaignItemCard` | `<CampaignCard type="standard" displayOptions={{ useCardImage: true, showCategoryBadge: false, layoutVariant: 'compact' }} />` | Compact layout |
 | `CampaignCardAdmin` | `<CampaignCard type="admin" />` | Admin functionality |
 | `CampaignCardFallback` | `<CampaignCard campaign={undefined} />` | Fallback state |
 

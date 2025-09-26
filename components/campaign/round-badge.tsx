@@ -10,15 +10,22 @@ interface RoundBadgeProps {
   campaign?: DbCampaign;
   variant?: 'compact' | 'detailed' | 'minimal';
   className?: string;
+  showUpcomingRounds?: boolean; // New prop to control upcoming rounds visibility
+  showPendingStatus?: boolean; // New prop to control pending status visibility
 }
 
 export function CampaignRoundBadge({
   campaign,
   variant = 'detailed',
   className = '',
+  showUpcomingRounds = true,
+  showPendingStatus = true,
 }: RoundBadgeProps) {
   const { activeRounds, pastRounds, futureRounds, hasRounds } =
-    useCampaignRounds({ campaign });
+    useCampaignRounds({
+      campaign,
+      includePendingInFuture: showPendingStatus,
+    });
 
   // Determine the most relevant round to display
   const displayRound = useMemo(() => {
@@ -34,8 +41,8 @@ export function CampaignRoundBadge({
       };
     }
 
-    // Then future rounds
-    if (futureRounds.length > 0) {
+    // Then future rounds (only if showUpcomingRounds is true)
+    if (showUpcomingRounds && futureRounds.length > 0) {
       return {
         round: futureRounds[0],
         status: 'upcoming' as const,
@@ -59,7 +66,7 @@ export function CampaignRoundBadge({
     }
 
     return null;
-  }, [activeRounds, futureRounds, pastRounds]);
+  }, [activeRounds, futureRounds, pastRounds, showUpcomingRounds]);
 
   if (!hasRounds || !displayRound) {
     return null;

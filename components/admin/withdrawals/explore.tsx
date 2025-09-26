@@ -2,8 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { PageHome } from '@/components/page/home';
-import { PageHeaderSearch } from '@/components/page/header-search';
+import { PageLayout } from '@/components/page/layout';
 import {
   useInfiniteAdminWithdrawals,
   type AdminWithdrawalsFilters,
@@ -77,33 +76,10 @@ export function WithdrawalsExplore() {
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <PageHome
-      header={
-        <div className="space-y-2">
-          <PageHeaderSearch
-            placeholder="Search by creator address (0x...) or token symbol"
-            onSearchChanged={setSearchTerm}
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Status</span>
-            <Select
-              value={status}
-              onValueChange={(v) =>
-                setStatus(v as AdminWithdrawalsStatus | 'ALL')
-              }
-            >
-              <SelectTrigger className="h-8 w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      }
+    <PageLayout
+      title="Withdrawals"
+      searchPlaceholder="Search by creator address (0x...) or token symbol"
+      onSearchChanged={setSearchTerm}
     >
       {isError ? (
         <Card>
@@ -116,16 +92,32 @@ export function WithdrawalsExplore() {
         </Card>
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>Withdrawals</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-3">
+            {/* Filter Controls */}
+            <div className="flex items-center gap-2 border-b pb-3">
+              <span className="text-xs text-muted-foreground">Status</span>
+              <Select
+                value={status}
+                onValueChange={(v) =>
+                  setStatus(v as AdminWithdrawalsStatus | 'ALL')
+                }
+              >
+                <SelectTrigger className="h-8 w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <WithdrawalsTable withdrawals={withdrawals} isLoading={isLoading} />
             {/* Sentinel for infinite auto-fetch */}
             <div ref={ref} className="h-10" />
           </CardContent>
         </Card>
       )}
-    </PageHome>
+    </PageLayout>
   );
 }

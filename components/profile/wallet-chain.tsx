@@ -1,7 +1,6 @@
 import type { Chain } from 'viem';
 import { useSwitchChain, chainConfig } from '@/lib/web3';
-import { Button, Card, CardContent } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui';
 
 export function WalletChain({
   chain,
@@ -14,47 +13,49 @@ export function WalletChain({
   const isPreferred = chain.id === chainConfig.chainId;
 
   return (
-    <Card
-      className={cn(
-        'p-4',
-        isPreferred && 'border-2 border-blue-500',
-        isCurrent && isPreferred && 'border-green-500 bg-green-100',
-      )}
-    >
-      <CardContent className="flex flex-col items-start p-0">
-        <div className="flex w-full items-center justify-between">
+    <div className="space-y-2">
+      <div className="flex w-full items-center justify-between">
+        <div>
           {chain.blockExplorers?.default?.url ? (
             <a
               href={chain.blockExplorers.default.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 underline"
+              className="font-medium text-gray-900 underline hover:text-gray-700"
             >
-              {chain.name} (ID: {chain.id})
+              {chain.name}
             </a>
           ) : (
-            <span>
-              {chain.name} (ID: {chain.id})
-            </span>
+            <span className="font-medium text-gray-900">{chain.name}</span>
           )}
-          {isCurrent && !isPreferred && (
-            <span className="text-sm text-red-500">
-              {chainConfig.name} is preferred. Some features might fail.
+          <span className="ml-2 text-sm text-gray-600">(ID: {chain.id})</span>
+          {chain.testnet && (
+            <span className="ml-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-500">
+              Testnet
             </span>
-          )}
-          {!isCurrent && (
-            <Button
-              onClick={() => switchChainAsync({ chainId: chain.id })}
-              size="sm"
-            >
-              Switch
-            </Button>
           )}
         </div>
-        {chain.testnet && (
-          <span className="text-sm text-gray-500">(Testnet)</span>
+        {!isCurrent && (
+          <Button
+            onClick={() => switchChainAsync({ chainId: chain.id })}
+            size="sm"
+            className="bg-black text-white hover:bg-gray-800"
+          >
+            Switch
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      {isCurrent && !isPreferred && (
+        <p className="rounded bg-red-50 p-2 text-xs text-red-600">
+          {chainConfig.name} is preferred. Some features might not work
+          correctly on this network.
+        </p>
+      )}
+      {isCurrent && isPreferred && (
+        <p className="text-xs text-gray-600">
+          ✓ Connected to the preferred network
+        </p>
+      )}
+    </div>
   );
 }

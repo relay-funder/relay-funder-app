@@ -12,10 +12,12 @@ export function useCampaignFormCreate({
   onStateChanged,
   onCreated,
   onError,
+  onSuccess,
 }: {
   onCreated?: () => void;
   onStateChanged: (arg0: keyof typeof CreateProcessStates) => void;
   onError: (arg0: string) => void;
+  onSuccess?: (wasSubmittedForApproval: boolean) => void;
 }) {
   const { authenticated } = useAuth();
 
@@ -38,10 +40,13 @@ export function useCampaignFormCreate({
             status: 'pending_approval',
             campaignAddress,
           });
-          if (typeof onCreated === 'function') {
+          if (onSuccess) {
+            onSuccess(true); // Was submitted for approval
+          } else if (typeof onCreated === 'function') {
             onCreated();
+          } else {
+            onStateChanged('done');
           }
-          onStateChanged('done');
         } else {
           onStateChanged('failed');
           onError(
@@ -69,11 +74,11 @@ export function useCampaignFormCreate({
         );
       }
     },
-    [updateCampaign, onCreated, onStateChanged, onError],
+    [updateCampaign, onCreated, onSuccess, onStateChanged, onError],
   );
   const { createCampaignContract } = useCreateCampaignContract({ onConfirmed });
   const mutateAsync = useCallback(
-    async (data: CampaignFormSchemaType) => {
+    async (data: CampaignFormSchemaType & { _saveAsDraft?: boolean }) => {
       try {
         onStateChanged('setup');
         if (!authenticated) {
@@ -84,6 +89,20 @@ export function useCampaignFormCreate({
           throw new Error('Create campaign contract failure');
         }
         const newCampaign = await createCampaign(data);
+
+        // If saving as draft, skip blockchain transaction
+        if (data._saveAsDraft) {
+          if (onSuccess) {
+            onSuccess(false); // Was not submitted for approval
+          } else if (typeof onCreated === 'function') {
+            onCreated();
+          } else {
+            onStateChanged('done');
+          }
+          return;
+        }
+
+        // Continue with full approval process
         if (data.title.startsWith('QA:throw:createCampaignContract')) {
           throw new Error('Create campaign contract failure');
         }
@@ -102,6 +121,8 @@ export function useCampaignFormCreate({
       authenticated,
       createCampaign,
       createCampaignContract,
+      onCreated,
+      onSuccess,
       onError,
       onStateChanged,
     ],

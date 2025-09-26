@@ -86,6 +86,7 @@ export interface RoundItemProps {
   round: GetRoundResponseInstance;
   onSelect?: (arg0: GetRoundResponseInstance) => Promise<void>;
   onCreate?: () => Promise<void>;
+  forceUserView?: boolean;
 }
 
 /**

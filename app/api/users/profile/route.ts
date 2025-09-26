@@ -6,7 +6,7 @@ import { response, handleError } from '@/lib/api/response';
 export async function POST(req: Request) {
   try {
     const session = await checkAuth(['user']);
-    const { lastName, firstName, username, bio, recipientWallet } =
+    const { lastName, firstName, username, bio, recipientWallet, email } =
       await req.json();
 
     // Check if username is already taken by another user
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
         lastName,
         username,
         ...(recipientWallet && { recipientWallet }),
+        ...(email && { email }),
         bio,
       },
     });

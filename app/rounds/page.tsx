@@ -5,10 +5,11 @@ import { RoundExplore } from '@/components/round/explore';
 
 export default async function RoundsPage() {
   const queryClient = getQueryClient();
-  await prefetchRounds(queryClient);
+  // Force user-only view even for admins - this is the public user-facing rounds page
+  await prefetchRounds(queryClient, false);
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <RoundExplore />
+      <RoundExplore forceUserView={true} />
     </HydrationBoundary>
   );
 }

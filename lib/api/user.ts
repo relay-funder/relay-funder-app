@@ -110,6 +110,15 @@ export async function listUsers({
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        _count: {
+          select: {
+            payments: true,
+            createdMedia: true,
+            approvals: true,
+          },
+        },
+      },
     }),
     db.user.count({ where }),
   ]);
@@ -292,6 +301,7 @@ export async function listAdminEventFeed({
       orderBy: {
         createdAt: 'desc',
       },
+      include: { createdBy: true },
     }),
     db.eventFeed.count({ where }),
   ]);

@@ -6,9 +6,10 @@ import { CampaignLoading } from '@/components/campaign/loading';
 import { useAuth } from '@/contexts';
 import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
-import { PageMainTwoColumns } from '@/components/page/two-cols';
+import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';
-import ProjectInfo from '@/components/project-info';
+import { CampaignDonationSummary } from './campaign-summary';
+import { NotStartedYet } from '@/components/campaign//not-started-yet';
 
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
@@ -33,14 +34,27 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
       </PageHome>
     );
   }
+  if (new Date(campaign.startTime).getTime() > Date.now()) {
+    return <NotStartedYet campaign={campaign} />;
+  }
 
   return (
     <>
-      <PageHeaderSticky message="Donating to" title={campaign.title} />
-      <PageMainTwoColumns>
-        <CampaignDonationForm campaign={campaign} />
-        <ProjectInfo campaign={campaign} />
-      </PageMainTwoColumns>
+      <PageHeaderSticky message="Campaign" title="" />
+      <main className="w-full">
+        <DetailContainer variant="standard" padding="md">
+          <div className="rounded-lg border bg-white p-8 shadow-sm">
+            <div className="grid gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <CampaignDonationForm campaign={campaign} />
+              </div>
+              <div className="lg:col-span-1">
+                <CampaignDonationSummary campaign={campaign} />
+              </div>
+            </div>
+          </div>
+        </DetailContainer>
+      </main>
     </>
   );
 }

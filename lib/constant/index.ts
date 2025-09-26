@@ -1,6 +1,8 @@
 export { countries } from './countries';
 export { categories } from './categories';
 export { fundingModels } from './funding-models';
+export { EXTERNAL_LINKS } from './external-links';
+export { INFINITE_SCROLL_CONFIG } from './infinite-scroll';
 
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
@@ -26,7 +28,7 @@ export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
 export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
-export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [25, 50, 100, 250, 500];
+export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [1, 5, 10, 20, 50];
 
 export const FILE_STORAGE_PROVIDER =
   process.env.FILE_STORAGE_PROVIDER ?? 'LOCAL';

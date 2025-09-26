@@ -13,10 +13,11 @@ interface ResponsiveGridProps {
  *
  * Breakpoints:
  * - Mobile (default): 1 column
- * - Small (sm): 1-2 columns (depending on variant)
- * - Medium (md): 2 columns
- * - Large (lg): 3 columns
- * - Extra Large (xl): 4 columns
+ * - Small (sm): 2 columns
+ * - Medium (md): 4 columns (small screens, matches stats layout)
+ * - Large (lg): 3 columns (default maximum for normal laptop displays)
+ * - Extra Large (xl): 3 columns (maintained for consistency)
+ * - 2XL (2xl): 4 columns (only on very wide displays)
  */
 export function ResponsiveGrid({
   children,
@@ -31,13 +32,13 @@ export function ResponsiveGrid({
   };
 
   const gridClasses = {
-    // Standard cards (campaigns, collections, etc.)
-    cards: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+    // Standard cards (campaigns, collections, etc.) - 4 columns on small screens to match stats layout
+    cards:
+      'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4',
     // Wide cards (rounds, featured content, etc.) - fewer columns for better readability
     'wide-cards': 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
-    // Compact items (tags, filters, etc.)
-    compact:
-      'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
+    // Compact items (tags, filters, etc.) - more columns allowed for small items
+    compact: 'grid-cols-2 sm:grid-cols-4',
   };
 
   return (

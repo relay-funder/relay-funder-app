@@ -1,5 +1,4 @@
 import type React from 'react';
-import Link from 'next/link';
 
 export function ContractLink({
   address,
@@ -17,14 +16,23 @@ export function ContractLink({
     return null;
   }
   return (
-    <Link
+    <a
       href={contractUrl}
       title={address}
       target="_blank"
       rel="noopener noreferrer"
+      className="cursor-pointer hover:underline"
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent modal from closing
+        console.log('ContractLink clicked:', contractUrl); // Debug log
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation(); // Prevent any parent handlers
+      }}
+      style={{ pointerEvents: 'auto' }}
     >
       {children}
-    </Link>
+    </a>
   );
 }
 
