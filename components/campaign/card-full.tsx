@@ -49,7 +49,7 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
                 {contributorCount}
               </span>
             </div>
-            <p className="text-sm text-gray-600">backers</p>
+            <p className="text-sm text-gray-600">contributors</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">

@@ -1,5 +1,5 @@
-import { Loader2 } from 'lucide-react';
-import { useChains, useCurrentChain, useAccount, useBalance } from '@/lib/web3';
+import { Loader2, Wallet, Link as LinkIcon, DollarSign } from 'lucide-react';
+import { useCurrentChain, useAccount, useBalance } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
 import { WalletChain } from './wallet-chain';
 import {
@@ -15,7 +15,6 @@ export function ConnectedWalletInfo() {
   const { data: balance, isPending: balanceIsPending } = useBalance({
     address: address as `0x${string}`,
   });
-  const chains = useChains();
   const { chain: currentChain } = useCurrentChain();
   const { data: usdcBalance, isPending: usdcBalanceIsPending } = useBalance({
     address: address as `0x${string}`,
@@ -23,79 +22,78 @@ export function ConnectedWalletInfo() {
   });
 
   return (
-    <div className="flex flex-row">
-      <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle>Connected Wallet</CardTitle>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Wallet Details Card */}
+      <Card className="rounded-lg border bg-white shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            Connected Wallet
+          </CardTitle>
           <CardDescription>
-            Manage your connected wallet and chains.
+            Your connected wallet address and account details.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h4 className="mb-2 text-lg font-semibold">Account Details</h4>
-            <p className="break-all text-sm text-muted-foreground">
-              <span className="font-medium">Address:</span> {address}
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <LinkIcon className="h-4 w-4" />
+              <span className="font-medium">Address:</span>
+            </div>
+            <p className="break-all rounded bg-gray-50 p-2 font-mono text-sm">
+              {address}
             </p>
           </div>
 
-          {currentChain && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Current Chain</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <WalletChain chain={currentChain} isCurrent={true} />
-                {balance && (
-                  <p className="mt-2 text-sm">
-                    <span className="font-medium">Balance:</span>{' '}
-                    {balanceIsPending ? (
-                      <Loader2
-                        className="inline-block animate-spin"
-                        size={16}
-                      />
-                    ) : (
-                      balance.formatted
-                    )}{' '}
-                    {balance.symbol}
-                  </p>
-                )}
-                <p className="mt-1 text-sm">
-                  <span className="font-medium">USDC:</span>{' '}
-                  {usdcBalanceIsPending ? (
-                    <Loader2 className="inline-block animate-spin" size={16} />
-                  ) : (
-                    usdcBalance?.formatted
-                  )}
-                  {usdcBalance?.symbol}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </CardContent>
-      </Card>
-      <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle>Other Available Chains</CardTitle>
-          <CardDescription>
-            This Chains are available to use with akashic
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {chains.filter(({ id }) => id !== currentChain?.id).length > 0 && (
-            <div>
-              <h4 className="mb-2 text-lg font-semibold"></h4>
-              <div className="space-y-3">
-                {chains
-                  .filter(({ id }) => id !== currentChain?.id)
-                  .map((chain) => (
-                    <WalletChain key={chain.id} chain={chain} />
-                  ))}
+          {balance && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <DollarSign className="h-4 w-4" />
+                <span className="font-medium">Native Balance:</span>
               </div>
+              <p className="text-sm">
+                {balanceIsPending ? (
+                  <Loader2 className="inline-block animate-spin" size={16} />
+                ) : (
+                  `${balance.formatted} ${balance.symbol}`
+                )}
+              </p>
             </div>
           )}
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <DollarSign className="h-4 w-4" />
+              <span className="font-medium">USDC Balance:</span>
+            </div>
+            <p className="text-sm">
+              {usdcBalanceIsPending ? (
+                <Loader2 className="inline-block animate-spin" size={16} />
+              ) : (
+                `${usdcBalance?.formatted || '0'} ${usdcBalance?.symbol || 'USDC'}`
+              )}
+            </p>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Chain Information Card */}
+      {currentChain && (
+        <Card className="rounded-lg border bg-white shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5" />
+              Current Network
+            </CardTitle>
+            <CardDescription>
+              The blockchain network you&apos;re currently connected to.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WalletChain chain={currentChain} isCurrent={true} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -47,8 +47,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
             a wider audience and gather support.
           </li>
           <li>
-            Receive Funding: As backers contribute to your campaign, you will
-            see the funds accumulate.
+            Receive Funding: As contributors contribute to your campaign, you
+            will see the funds accumulate.
           </li>
           <li>
             Campaign Ends: Once the campaign period concludes, we will finalize

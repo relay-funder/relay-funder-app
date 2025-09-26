@@ -6,7 +6,7 @@ import { useUserProfile } from '@/lib/hooks/useProfile';
 import { ProfileCard } from '@/components/profile/card';
 import { ProfileAdditionalSettings } from '@/components/profile/additional-settings';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
-import { PageLoading } from '@/components/page/loading';
+import { ProfilePageSkeleton } from '@/components/profile/page-skeleton';
 import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
@@ -23,9 +23,7 @@ export default function ProfilePage() {
   }, [setEditProfile]);
 
   if (!isReady || (authenticated && isProfilePending)) {
-    return (
-      <PageLoading>Please wait while we initialize your profile.</PageLoading>
-    );
+    return <ProfilePageSkeleton />;
   }
   if (!authenticated) {
     return (
@@ -36,15 +34,17 @@ export default function ProfilePage() {
   }
 
   return (
-    <PageHome
-      header={
-        <PageHeader message="Manage your account settings, Wallet, and payment methods."></PageHeader>
-      }
-    >
-      <DetailContainer variant="standard" padding="md">
-        <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+    <PageHome header={<PageHeader />}>
+      <DetailContainer variant="wide" padding="md">
+        <div className="space-y-8">
+          {/* Profile Header */}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Profile Settings
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your personal information and account preferences.
+            </p>
           </div>
 
           {/* User Profile Card */}
