@@ -34,27 +34,20 @@ export function CampaignEditFormMedia() {
     }
   }, [imageWatch]);
   return (
-    <>
-      {bannerImage ? (
-        <div className="flex flex-col">
-          <picture className="flex justify-center">
-            <img src={bannerImage} alt="img-input" className="max-h-[50vh]" />
-          </picture>
-          <Button variant="ghost" onClick={onReset}>
-            Reset
-          </Button>
-        </div>
-      ) : null}
+    <div className="space-y-6">
       <FormField
         control={form.control}
         name="bannerImage"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Campaign Banner Image</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-900">
+              Campaign Banner Image
+            </FormLabel>
             <FormControl>
               <Input
                 type="file"
                 accept="image/*"
+                className="mt-1"
                 onChange={(event) =>
                   field.onChange(event.target.files && event.target.files[0])
                 }
@@ -64,6 +57,26 @@ export function CampaignEditFormMedia() {
           </FormItem>
         )}
       />
-    </>
+
+      {bannerImage && (
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-medium text-gray-900">Preview</h3>
+            <div className="flex justify-center">
+              <img
+                src={bannerImage}
+                alt="Campaign banner preview"
+                className="max-h-64 rounded-lg shadow-sm"
+              />
+            </div>
+            <div className="mt-4 flex justify-center">
+              <Button variant="outline" onClick={onReset}>
+                Remove Image
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

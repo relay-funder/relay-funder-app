@@ -73,7 +73,7 @@ export function useCampaignFormCreate({
   );
   const { createCampaignContract } = useCreateCampaignContract({ onConfirmed });
   const mutateAsync = useCallback(
-    async (data: CampaignFormSchemaType) => {
+    async (data: CampaignFormSchemaType & { _saveAsDraft?: boolean }) => {
       try {
         onStateChanged('setup');
         if (!authenticated) {
@@ -84,6 +84,17 @@ export function useCampaignFormCreate({
           throw new Error('Create campaign contract failure');
         }
         const newCampaign = await createCampaign(data);
+
+        // If saving as draft, skip blockchain transaction
+        if (data._saveAsDraft) {
+          if (typeof onCreated === 'function') {
+            onCreated();
+          }
+          onStateChanged('done');
+          return;
+        }
+
+        // Continue with full approval process
         if (data.title.startsWith('QA:throw:createCampaignContract')) {
           throw new Error('Create campaign contract failure');
         }
@@ -102,6 +113,7 @@ export function useCampaignFormCreate({
       authenticated,
       createCampaign,
       createCampaignContract,
+      onCreated,
       onError,
       onStateChanged,
     ],

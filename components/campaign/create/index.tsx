@@ -55,15 +55,37 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   }, [form, formState]);
 
   const onSubmit = useCallback(
-    async (data: CampaignFormSchemaType) => {
+    async (data: CampaignFormSchemaType, event?: React.BaseSyntheticEvent) => {
       if (formState !== 'summary') {
         return onSubmitStep();
       }
+
+      // Check if this is a draft save or approval submission
+      const form = event?.target as HTMLFormElement;
+      const submitType = (form as any)?._submitType || 'approval';
+
       setError(null);
-      setState('setup');
-      return await createCampaign(data);
+
+      if (submitType === 'draft') {
+        // Save as draft - create campaign but don't process blockchain transaction
+        setState('create');
+        try {
+          await createCampaign({ ...data, _saveAsDraft: true });
+          setState('done');
+          if (onCreated) onCreated();
+        } catch (error) {
+          setState('failed');
+          setError(
+            `Failed to save draft: ${error instanceof Error ? error.message : 'Unknown Error'}`,
+          );
+        }
+      } else {
+        // Submit for approval - full process
+        setState('setup');
+        return await createCampaign(data);
+      }
     },
-    [createCampaign, formState, onSubmitStep],
+    [createCampaign, formState, onSubmitStep, onCreated],
   );
 
   const onDeveloperSubmit = useCallback(
@@ -116,40 +138,29 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
               page="introduction"
               onStateChanged={setFormState}
             >
-              <div className="flex justify-end">
-                <div className="hidden md:block md:justify-end">
-                  <Image
-                    src="/images/campaign-create-introduction.jpg"
-                    width={512}
-                    height={768}
-                    className="max-w-[400px]"
-                    alt="Create an engaging and vibrant illustration depicting a diverse group of people collaborating on a project. Include elements that represent creativity, funding, and community support, such as lightbulbs, coins, and hands coming together. The background should convey a sense of progress and innovation, with a timeline graphic showing the steps from submission to payout."
-                    onDoubleClick={onDeveloperSubmit}
-                  />
+              <div className="space-y-4 text-center">
+                <div className="mx-auto max-w-lg space-y-4">
+                  <p className="leading-relaxed text-gray-600">
+                    You're about to create a campaign that will help bring your
+                    project to life. This process will walk you through
+                    everything you need to attract supporters and raise funds.
+                  </p>
+                  <p className="text-gray-600">
+                    We'll help you craft a compelling story, set your funding
+                    goals, and prepare your campaign for success.
+                  </p>
                 </div>
-              </div>
-              <div
-                className={cn(
-                  'w-full max-w-full',
-                  'prose prose-sm',
-                  'overflow-y-auto p-1',
-
-                  'h-[calc(100svh-200px)]',
-                  'md:hidden',
-                )}
-              >
-                <h2>{CampaignCreateFormStates.introduction.title}</h2>
                 <div
-                  className={cn(
-                    'overflow-y-visible',
-                    'md:overflow-y-auto',
-                    'h-[calc(50svh-100px-50px)]',
-                    // 200: header, 40: container, 50 buttons, 40 title, 48 prose-padding
-                    'md:h-[calc(100svh-202px-40px-50px-40px-48px)]',
-                  )}
-                >
-                  {CampaignCreateFormStates.introduction.description}
-                </div>
+                  className="hidden"
+                  onDoubleClick={onDeveloperSubmit}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: '20px',
+                    height: '20px',
+                  }}
+                />
               </div>
             </CampaignCreateFormPage>
             <CampaignCreateFormPage

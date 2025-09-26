@@ -11,15 +11,17 @@ import {
 export function CampaignCreateFormTimeline() {
   const form = useFormContext();
   return (
-    <>
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="startTime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Start Time</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-900">
+              Campaign Start Date
+            </FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <Input type="date" className="mt-1" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -30,14 +32,16 @@ export function CampaignCreateFormTimeline() {
         name="endTime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>End Time</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-900">
+              Campaign End Date
+            </FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <Input type="date" className="mt-1" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 }

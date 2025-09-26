@@ -83,38 +83,19 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
               page="introduction"
               onStateChanged={setFormState}
             >
-              <div className="flex justify-end">
-                <div className="hidden md:block md:justify-end">
-                  <Image
-                    src="/images/campaign-create-introduction.jpg"
-                    width={512}
-                    height={768}
-                    className="max-w-[400px]"
-                    alt="Create an engaging and vibrant illustration depicting a diverse group of people collaborating on a project. Include elements that represent creativity, funding, and community support, such as lightbulbs, coins, and hands coming together. The background should convey a sense of progress and innovation, with a timeline graphic showing the steps from submission to payout."
-                  />
-                </div>
-              </div>
-              <div
-                className={cn(
-                  'w-full max-w-full',
-                  'prose prose-sm',
-                  'overflow-y-auto p-1',
-
-                  'h-[calc(100svh-200px)]',
-                  'md:hidden',
-                )}
-              >
-                <h2>{CampaignEditFormStates.introduction.title}</h2>
-                <div
-                  className={cn(
-                    'overflow-y-visible',
-                    'md:overflow-y-auto',
-                    'h-[calc(50svh-100px-50px)]',
-                    // 200: header, 40: container, 50 buttons, 40 title, 48 prose-padding
-                    'md:h-[calc(100svh-202px-40px-50px-40px-48px)]',
-                  )}
-                >
-                  {CampaignEditFormStates.introduction.description}
+              <div className="space-y-6 text-center">
+                <h2 className="text-3xl font-bold text-gray-900">
+                  Edit Your Campaign
+                </h2>
+                <div className="mx-auto max-w-lg space-y-4">
+                  <p className="text-lg leading-relaxed text-gray-600">
+                    Update your campaign details to better connect with
+                    supporters and improve your project's presentation.
+                  </p>
+                  <p className="text-gray-600">
+                    Make changes to any section and save your updates when
+                    you're ready.
+                  </p>
                 </div>
               </div>
             </CampaignEditFormPage>

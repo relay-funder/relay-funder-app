@@ -46,10 +46,31 @@ export function CampaignCreateFormSummary() {
     }
   }, [form, session?.data?.user]);
   return (
-    <div className="pb-2">
-      <h2 className={cn('flex justify-self-center text-lg')}>Preview</h2>
-      <div className="flex max-w-[400px] justify-self-center">
-        <CampaignCard campaign={campaign} type="dashboard" />
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          Campaign Preview
+        </h3>
+        <p className="mb-6 text-sm text-gray-600">
+          This is how your campaign will appear to potential supporters.
+        </p>
+      </div>
+
+      <div className="flex justify-center">
+        <div className="w-full max-w-md">
+          <CampaignCard
+            campaign={campaign}
+            type="dashboard"
+            disabled={true}
+            displayOptions={{
+              showEditButton: false,
+              showRemoveButton: false,
+              showFavoriteButton: false,
+              showWithdrawalButton: false,
+              showDonateButton: false,
+            }}
+          />
+        </div>
       </div>
     </div>
   );
