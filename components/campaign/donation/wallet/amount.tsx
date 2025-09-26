@@ -44,32 +44,39 @@ export function CampaignDonationWalletAmount({
   return (
     <div className="flex flex-col space-y-6">
       {/* Email field */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4" />
-          <Label htmlFor="email" className="text-sm font-medium text-gray-900">
-            Email Address *
-          </Label>
+      {!profile?.email && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-gray-900"
+            >
+              Email Address *
+            </Label>
+          </div>
+          <div className="max-w-sm">
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={intermediateOnEmailChange}
+              placeholder="john@example.com"
+              required
+              className="h-10 text-sm"
+            />
+          </div>
+          {/* Privacy message */}
+          <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+            <Shield className="h-4 w-4 flex-shrink-0" />
+            <span>
+              You did not configure your profile yet. We will store your email
+              in your profile settings. We won&apos;t spam you and the email
+              won&apos;t be publicly visible.
+            </span>
+          </div>
         </div>
-        <div className="max-w-sm">
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={intermediateOnEmailChange}
-            placeholder="john@example.com"
-            required
-            className="h-10 text-sm"
-          />
-        </div>
-        {/* Privacy message */}
-        <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          <Shield className="h-4 w-4 flex-shrink-0" />
-          <span>
-            We won&apos;t spam you and the email won&apos;t be publicly visible.
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Suggested amounts */}
       <CampaignDonationSuggestions
