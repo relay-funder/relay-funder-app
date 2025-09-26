@@ -9,7 +9,7 @@ interface CategoryProps {
 
 export function Category({ categoryId, className = '' }: CategoryProps) {
   const { details: categoryDetails } = useCampaignCategory({
-    campaign: categoryId ? { category: categoryId } : undefined,
+    categoryId: categoryId || undefined,
   });
 
   if (!categoryDetails) {
