@@ -10,7 +10,6 @@ import { ProfilePageSkeleton } from '@/components/profile/page-skeleton';
 import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { EventFeedBell } from '@/components/event-feed/event-feed-bell';
 import { DetailContainer } from '@/components/layout';
 
 export default function ProfilePage() {
@@ -47,7 +46,6 @@ export default function ProfilePage() {
             <p className="text-muted-foreground">
               Manage your personal information and account preferences.
             </p>
-            <EventFeedBell />
           </div>
 
           {/* User Profile Card */}

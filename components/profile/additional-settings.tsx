@@ -23,31 +23,50 @@ export function ProfileAdditionalSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <Link href="/profile/wallet" className="block">
-            <Button
-              variant="outline"
-              className="h-auto w-full justify-start p-4 hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-3">
-                <Wallet className="h-5 w-5 text-gray-600" />
-                <div className="text-left">
-                  <div className="font-medium text-gray-900">
-                    Wallet Settings
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    Manage connected wallets and network settings
+        <div className="space-y-8">
+          {/* Wallet Settings Section */}
+          <div>
+            <Link href="/profile/wallet" className="block">
+              <Button
+                variant="outline"
+                className="h-auto w-full justify-start p-4 hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <Wallet className="h-5 w-5 text-gray-600" />
+                  <div className="text-left">
+                    <div className="font-medium text-gray-900">
+                      Wallet Settings
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Manage connected wallets and network settings
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Button>
-          </Link>
-          <Link href="/profile/inbox">
-            <Button variant="outline" className="w-full">
-              <Bell className="mr-2 h-4 w-4" />
-              Inbox
-            </Button>
-          </Link>
+              </Button>
+            </Link>
+          </div>
+
+          {/* Inbox Section */}
+          <div>
+            <Link href="/profile/inbox" className="block">
+              <Button
+                variant="outline"
+                className="h-auto w-full justify-start p-4 hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-gray-600" />
+                  <div className="text-left">
+                    <div className="font-medium text-gray-900">
+                      Inbox
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Check your event feed and notifications
+                    </div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>

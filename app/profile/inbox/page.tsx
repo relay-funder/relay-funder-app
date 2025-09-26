@@ -3,9 +3,9 @@
 import { useAuth } from '@/contexts';
 import { PageHome } from '@/components/page/home';
 import { PageHeader } from '@/components/page/header';
-import { PageDefaultContent } from '@/components/page/default-content';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
+import { DetailContainer } from '@/components/layout';
 import Inbox from '@/components/event-feed/inbox';
 
 export default function ProfileInboxPage() {
@@ -29,9 +29,22 @@ export default function ProfileInboxPage() {
         <PageHeader message="Keep track of campaign activity and important updates." />
       }
     >
-      <PageDefaultContent title="Inbox">
-        <Inbox />
-      </PageDefaultContent>
+      <DetailContainer variant="wide" padding="md">
+        <div className="space-y-8">
+          {/* Page Header */}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Inbox
+            </h1>
+            <p className="text-muted-foreground">
+              Keep track of campaign activity and important updates.
+            </p>
+          </div>
+
+          {/* Inbox Content */}
+          <Inbox />
+        </div>
+      </DetailContainer>
     </PageHome>
   );
 }
