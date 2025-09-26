@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DonationProcessDisplay } from './process-display';
 import { useRouter } from 'next/navigation';
-import { useUpdateUserProfile, useUserProfile } from '@/lib/hooks/useProfile';
+import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 
 export function CampaignDonationWalletProcess({
@@ -31,7 +31,7 @@ export function CampaignDonationWalletProcess({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const updateProfile = useUpdateUserProfile();
+  const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const relayFundercAmount = useMemo(() => {
@@ -91,11 +91,8 @@ export function CampaignDonationWalletProcess({
     try {
       // Only update profile if user doesn't already have an email set
       if (!profile?.email || profile.email.trim() === '') {
-        await updateProfile.mutateAsync({
+        await updateProfileEmail.mutateAsync({
           email,
-          firstName: profile?.firstName || '',
-          lastName: profile?.lastName || '',
-          username: profile?.username || '',
         });
       }
 
@@ -108,7 +105,7 @@ export function CampaignDonationWalletProcess({
         onProcessing(false);
       }
     }
-  }, [onDonate, onProcessing, email, updateProfile, toast, profile]);
+  }, [onDonate, onProcessing, email, updateProfileEmail, toast, profile]);
   useEffect(() => {
     // auto-reset state when done
     if (state === 'idle') {

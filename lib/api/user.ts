@@ -301,6 +301,7 @@ export async function listAdminEventFeed({
       orderBy: {
         createdAt: 'desc',
       },
+      include: { createdBy: true },
     }),
     db.eventFeed.count({ where }),
   ]);

@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, User, Globe, Wallet } from 'lucide-react';
+import { Loader2, Mail, User, Globe } from 'lucide-react';
 import { useUpdateUserProfile } from '@/lib/hooks/useProfile';
 import { type Profile } from '@/types/profile';
 import { debugComponentData as debug } from '@/lib/debug';
@@ -67,13 +67,6 @@ const profileFormSchema = z.object({
       message: 'Bio cannot be longer than 200 characters.',
     })
     .optional(),
-  recipientWallet: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, {
-      message: 'Please enter a valid Ethereum address.',
-    })
-    .optional()
-    .or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -94,7 +87,7 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
       lastName: profile?.lastName ?? '',
       email: profile?.email ?? '',
       uniqueUsername: profile?.username ?? '',
-      recipientWallet: profile?.recipientWallet ?? '',
+
       bio: profile?.bio ?? '',
     },
   });
@@ -110,9 +103,7 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
           lastName: data.lastName ?? '',
           email: data.email ?? '',
           username: data.uniqueUsername,
-          avatarUrl: data.avatarUrl,
           bio: data.bio,
-          recipientWallet: data.recipientWallet || undefined,
         });
         toast({
           title: 'Profile updated',
@@ -257,34 +248,6 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
                     <FormDescription>
                       A short biography to share with the community (max 200
                       characters).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Wallet Settings Section */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Wallet Settings
-              </h3>
-
-              <FormField
-                control={form.control}
-                name="recipientWallet"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4" />
-                      Recipient Wallet Address (Optional)
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="0x..." {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Set a different wallet address to receive funds. Leave
-                      empty to use your connected wallet.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

@@ -250,6 +250,13 @@ export function EventFeedListItem({
       });
     }
 
+    if (isAdmin && event?.createdBy?.address) {
+      appendLink(
+        `/admin/users/${event.createdBy.address}`,
+        'View creator user',
+      );
+    }
+
     const unique = new Map<string, ResolvedActionLink>();
     resolved.forEach((link) => {
       if (!unique.has(link.href)) {
@@ -258,7 +265,7 @@ export function EventFeedListItem({
     });
 
     return Array.from(unique.values());
-  }, [event]);
+  }, [event, isAdmin]);
   const creatorUser = useMemo(
     () => toInlineUser(event.createdBy),
     [event.createdBy],
