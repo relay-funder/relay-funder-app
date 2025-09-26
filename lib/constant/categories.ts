@@ -8,7 +8,7 @@ export const categories: readonly [Category, ...Category[]] = [
 ];
 
 // Runtime validation: only these category IDs are valid
-export const VALID_CATEGORY_IDS = categories.map((cat) => cat.id) as const;
+export const VALID_CATEGORY_IDS = ['education', 'economic-development', 'climate-resilience', 'emergency-response'] as const;
 export type ValidCategoryId = (typeof VALID_CATEGORY_IDS)[number];
 
 // Helper function to validate category ID
