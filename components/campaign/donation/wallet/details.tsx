@@ -38,6 +38,7 @@ export function CampaignDonationWalletDetails({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <CampaignDonationWalletTip
               tipAmount={tipAmount}
+              amount={amount}
               selectedToken={selectedToken}
               onTipAmountChanged={setTipAmount}
             />
