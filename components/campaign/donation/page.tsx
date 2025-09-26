@@ -34,7 +34,7 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
       </PageHome>
     );
   }
-  if (new Date(campaign.startTime).getTime() < Date.now()) {
+  if (new Date(campaign.startTime).getTime() > Date.now()) {
     return <NotStartedYet campaign={campaign} />;
   }
 
