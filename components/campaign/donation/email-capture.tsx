@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Mail, Shield } from 'lucide-react';
 
 interface EmailCaptureProps {
-  onComplete: (email: string) => void;
+  onComplete?: (email: string) => void;
   onSkip?: () => void;
   required?: boolean;
 }
@@ -43,7 +43,7 @@ export function EmailCapture({
   // If user already has email and it's not required to update, complete immediately
   useEffect(() => {
     if (profile?.email && !required) {
-      onComplete(profile.email);
+      onComplete?.(profile.email);
     }
   }, [profile, required, onComplete]);
 
