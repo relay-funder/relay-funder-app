@@ -3,6 +3,7 @@ import { PrismaClient } from '../.generated/prisma/client';
 import { CampaignStatus } from '../types/campaign';
 import shortUUID from 'short-uuid';
 import { subDays, addDays } from 'date-fns';
+import { notify } from '../lib/api/event-feed';
 import {
   deployCampaignContract,
   deployAllContracts,
@@ -269,16 +270,28 @@ const remoteImageFiles = {
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/kyle-glenn-nXt5HtLmlgE-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/elise-gaumier-NXGwIabbhSk-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/tobie-eniafe-7EZfQdvDAl8-unsplash.jpg',
+    // Add more education variety from other categories
+    'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/ffeeccde2afa88f6-UN0345662.jpg.jpeg',
   ],
   economic: [
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/emmanuel-appiah-dABvwWlKwOE-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/victor-birai-NVRywFR9CBw-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/mohnish-landge-6kqXbEdog60-unsplash.jpg',
+    // Add more economic variety
+    'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/derek-lamar-rr6jwU21VoE-unsplash.jpg',
   ],
   climate: [
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/salah-darwish-7RLkhT9awgk-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/salah-darwish-rfcUPkJfMIs-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/salah-darwish-su0rUMNakdA-unsplash.jpg',
+    // Add more climate variety
+    'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/ali-gundogdu-MEW55ogmEtU-unsplash.jpg',
+  ],
+  emergency: [
+    // Emergency response images - using general and other suitable images
+    'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/jabber-visuals-PlUQQyIMO8U-unsplash.jpg',
+    'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/victor-birai-NVRywFR9CBw-unsplash.jpg',
+    'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/kyle-glenn-nXt5HtLmlgE-unsplash.jpg',
   ],
   health: [
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/ffeeccde2afa88f6-UN0345662.jpg.jpeg',
@@ -287,66 +300,24 @@ const remoteImageFiles = {
   general: [
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/derek-lamar-rr6jwU21VoE-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/jabber-visuals-PlUQQyIMO8U-unsplash.jpg',
-    // Extra images for rounds and fallback
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/emmanuel-appiah-dABvwWlKwOE-unsplash.jpg',
     'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeie3birywzrgrp2xlhgm7s5bhq7kqphfhcv5deop25p7fepoms2cje/tobie-eniafe-7EZfQdvDAl8-unsplash.jpg',
   ],
 };
 
-// Function to select appropriate remote image based on campaign title/type
-function selectCampaignImage(title: string): string {
-  const isEducation =
-    title.toLowerCase().includes('education') ||
-    title.toLowerCase().includes('school') ||
-    title.toLowerCase().includes('learning') ||
-    title.toLowerCase().includes('teacher') ||
-    title.toLowerCase().includes('child') ||
-    title.toLowerCase().includes('library') ||
-    title.toLowerCase().includes('literacy') ||
-    title.toLowerCase().includes('stem') ||
-    title.toLowerCase().includes('vocational') ||
-    title.toLowerCase().includes('technology access');
-  const isEconomic =
-    title.toLowerCase().includes('microfinance') ||
-    title.toLowerCase().includes('entrepreneur') ||
-    title.toLowerCase().includes('cooperative') ||
-    title.toLowerCase().includes('mobile money') ||
-    title.toLowerCase().includes('artisan') ||
-    title.toLowerCase().includes('business') ||
-    title.toLowerCase().includes('agricultural value') ||
-    title.toLowerCase().includes('market stalls') ||
-    title.toLowerCase().includes('payment training') ||
-    title.toLowerCase().includes('tourism');
-  const isClimate =
-    title.toLowerCase().includes('solar') ||
-    title.toLowerCase().includes('drought') ||
-    title.toLowerCase().includes('reforestation') ||
-    title.toLowerCase().includes('climate') ||
-    title.toLowerCase().includes('rainwater') ||
-    title.toLowerCase().includes('renewable energy') ||
-    title.toLowerCase().includes('agriculture training') ||
-    title.toLowerCase().includes('fishing practices') ||
-    title.toLowerCase().includes('green building') ||
-    title.toLowerCase().includes('conservation');
-  const isEmergency =
-    title.toLowerCase().includes('emergency') ||
-    title.toLowerCase().includes('disaster') ||
-    title.toLowerCase().includes('flood response') ||
-    title.toLowerCase().includes('shelter construction') ||
-    title.toLowerCase().includes('crisis') ||
-    title.toLowerCase().includes('rapid response');
-
-  if (isEducation && remoteImageFiles.education.length > 0) {
-    return selectRandom(remoteImageFiles.education);
-  } else if (isEconomic && remoteImageFiles.economic.length > 0) {
-    return selectRandom(remoteImageFiles.economic);
-  } else if (isClimate && remoteImageFiles.climate.length > 0) {
-    return selectRandom(remoteImageFiles.climate);
-  } else if (isEmergency && remoteImageFiles.general.length > 0) {
-    // Use general images for emergency response campaigns
-    return selectRandom(remoteImageFiles.general);
-  } else {
-    return selectRandom(remoteImageFiles.general);
+// Function to select appropriate remote image based on campaign category
+function selectCampaignImage(category: string): string {
+  switch (category) {
+    case 'education':
+      return selectRandom(remoteImageFiles.education);
+    case 'economic-development':
+      return selectRandom(remoteImageFiles.economic);
+    case 'climate-resilience':
+      return selectRandom(remoteImageFiles.climate);
+    case 'emergency-response':
+      return selectRandom(remoteImageFiles.emergency);
+    default:
+      return selectRandom(remoteImageFiles.general);
   }
 }
 
@@ -383,30 +354,61 @@ async function main() {
   await db.user.deleteMany();
   await db.campaign.deleteMany();
   await db.round.deleteMany();
-  // Create 25 users instead of 100 (more realistic for debugging)
-  const creatorUsers = await createUsers(25, ['user']);
-  const donorUsers = await createUsers(25, ['user']);
+
+  console.log('Creating predefined test users...');
+  
+  // Create specific test users with known addresses
+  const protocolAdminUser = await db.user.create({
+    data: {
+      address: '0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70'.toLowerCase(),
+      roles: ['user', 'admin'],
+      featureFlags: USER_FLAGS as string[],
+    },
+  });
+  console.log(`✅ Created protocol admin user: ${protocolAdminUser.address}`);
+
+  const testCreatorUser = await db.user.create({
+    data: {
+      address: '0x9A562a11F7E014B32e2dB1E8d6bAF3C6f39Cc287'.toLowerCase(),
+      roles: ['user'],
+      featureFlags: [],
+    },
+  });
+  console.log(`✅ Created test creator user: ${testCreatorUser.address}`);
+
+  const testCreatorUser2 = await db.user.create({
+    data: {
+      address: '0xbAd15e99f9A94DbF931Ae788e10eA8350025b18a'.toLowerCase(),
+      roles: ['user'],
+      featureFlags: [],
+    },
+  });
+  console.log(`✅ Created test creator user 2: ${testCreatorUser2.address}`);
+
+  // Create additional users for variety (reduced numbers)
+  const creatorUsers = await createUsers(15, ['user']);
+  const donorUsers = await createUsers(15, ['user']);
   const adminUsers = await createUsers(
-    2,
+    1,
     ['user', 'admin'],
     USER_FLAGS as string[],
   );
 
-  const campaigns = Array.from({ length: 40 }, (_, i) => {
+  // Combine all users, with test users first for campaign assignment
+  const allCreatorUsers = [testCreatorUser, testCreatorUser2, ...creatorUsers];
+  const allAdminUsers = [protocolAdminUser, ...adminUsers];
+
+  // Create campaigns ordered by status: ACTIVE first, then PENDING_APPROVAL, then DRAFT
+  // This ensures approved campaigns are created first for better testing
+  const campaignStatuses = [
+    ...Array(8).fill(CampaignStatus.ACTIVE),            // 8 ACTIVE campaigns (approved)
+    ...Array(2).fill(CampaignStatus.PENDING_APPROVAL),  // 2 PENDING_APPROVAL campaigns
+    ...Array(2).fill(CampaignStatus.DRAFT),             // 2 DRAFT campaigns
+  ];
+
+  const campaigns = Array.from({ length: 12 }, (_, i) => {
     const title = campaignTitles[i % campaignTitles.length];
-    // Mix of statuses for comprehensive testing: 10 PENDING_APPROVAL, 12 DRAFT, 16 ACTIVE, 2 EDIT
-    // Ensure ACTIVE campaigns cover all 4 categories evenly (4 campaigns per category)
-    let campaignStatus;
-    if (i < 10) {
-      campaignStatus = CampaignStatus.PENDING_APPROVAL; // Will have campaign contracts deployed
-    } else if (i < 22) {
-      campaignStatus = CampaignStatus.DRAFT; // No contracts deployed
-    } else if (i < 38) {
-      campaignStatus = CampaignStatus.ACTIVE; // Will have both contracts deployed (16 ACTIVE campaigns)
-    } else {
-      // Use DRAFT status for campaigns in "edit" state - these will be marked differently in the database
-      campaignStatus = CampaignStatus.DRAFT; // These represent campaigns being edited
-    }
+    const campaignStatus = campaignStatuses[i];
 
     return {
       id: 0,
@@ -417,7 +419,7 @@ async function main() {
       endTime: new Date(
         Date.now() + (15 + Math.random() * 45) * 24 * 60 * 60 * 1000,
       ), // 15-60 days from now
-      creatorAddress: selectRandom(creatorUsers),
+      creatorAddress: '', // Will be set in the creation loop
       status: campaignStatus,
       slug: generateSlug(title),
       // No contract addresses - these will be deployed via admin tooling
@@ -504,7 +506,18 @@ async function main() {
 
   // Create campaigns with automatic contract deployment based on status
   for (let i = 0; i < campaigns.length; i++) {
-    const creator = selectRandom(creatorUsers);
+    // Assign specific campaigns to test creators, rest to random creators
+    let creator;
+    if (i < 3) {
+      creator = testCreatorUser; // First test creator owns first 3 campaigns
+      console.log(`   📝 Assigning campaign "${campaigns[i].title}" to test creator 1: ${testCreatorUser.address}`);
+    } else if (i < 6) {
+      creator = testCreatorUser2; // Second test creator owns next 3 campaigns
+      console.log(`   📝 Assigning campaign "${campaigns[i].title}" to test creator 2: ${testCreatorUser2.address}`);
+    } else {
+      creator = selectRandom(allCreatorUsers);
+    }
+
     const campaignData = {
       ...campaigns[i],
       id: undefined,
@@ -628,7 +641,7 @@ async function main() {
     // Assign remote IPFS image based on campaign type and link properly to campaign
     const media = await db.media.create({
       data: {
-        url: selectCampaignImage(campaign.title),
+        url: selectCampaignImage(campaign.category || 'general'),
         mimeType: 'image/jpeg',
         state: 'UPLOADED',
         createdBy: {
@@ -688,7 +701,7 @@ async function main() {
 
     // Add comments for engagement (2-15 comments per campaign)
     const commentCount = Math.floor(Math.random() * 14) + 2; // 2-15 comments
-    const commenters = [...donorUsers, ...creatorUsers].slice(0, 20); // Use first 20 users as potential commenters
+    const commenters = [...donorUsers, ...allCreatorUsers].slice(0, 20); // Use first 20 users as potential commenters
 
     for (let commentIndex = 0; commentIndex < commentCount; commentIndex++) {
       const commenter = selectRandom(commenters);
@@ -727,39 +740,89 @@ async function main() {
       (campaignData.status === CampaignStatus.PENDING_APPROVAL &&
         Math.random() < 0.6)
     ) {
-      // More payments for ACTIVE campaigns to show significant progress
-      const basePaymentCount =
-        campaignData.status === CampaignStatus.ACTIVE ? 8 : 3;
-      const paymentCount = Math.floor(Math.random() * 15) + basePaymentCount; // 8-22 for ACTIVE, 3-17 for PENDING
-      const donors = [...donorUsers, ...creatorUsers].slice(0, 20); // Use more users as donors
+      console.log(`\n💰 Adding payments to campaign "${campaign.title}" (${campaignData.status})`);
+      
+      // Varied payment counts and amounts based on campaign index for realistic funding levels
+      let basePaymentCount: number;
+      let maxPaymentCount: number;
+      let paymentAmounts: string[];
+      
+      if (campaignData.status === CampaignStatus.ACTIVE) {
+        // Create 8 different funding scenarios for 8 ACTIVE campaigns (one per campaign)
+        // Only campaigns 7 and 8 (i=6,7) will be over-funded
+        switch (i) {
+          case 0: // Campaign 1 - Early stage (15-25% of goal)
+            basePaymentCount = 2;
+            maxPaymentCount = 3;
+            paymentAmounts = ['5', '10', '15', '20'];
+            console.log(`   📊 Funding scenario: Early stage (15-25% of goal)`);
+            break;
+          case 1: // Campaign 2 - Getting started (25-35% of goal)
+            basePaymentCount = 2;
+            maxPaymentCount = 4;
+            paymentAmounts = ['8', '12', '18', '25'];
+            console.log(`   📊 Funding scenario: Getting started (25-35% of goal)`);
+            break;
+          case 2: // Campaign 3 - Mid progress (40-55% of goal)
+            basePaymentCount = 3;
+            maxPaymentCount = 5;
+            paymentAmounts = ['15', '25', '35', '45'];
+            console.log(`   📊 Funding scenario: Mid progress (40-55% of goal)`);
+            break;
+          case 3: // Campaign 4 - Good momentum (60-75% of goal)
+            basePaymentCount = 4;
+            maxPaymentCount = 6;
+            paymentAmounts = ['20', '30', '40', '60'];
+            console.log(`   📊 Funding scenario: Good momentum (60-75% of goal)`);
+            break;
+          case 4: // Campaign 5 - Strong progress (70-85% of goal)
+            basePaymentCount = 5;
+            maxPaymentCount = 8;
+            paymentAmounts = ['25', '40', '50', '75'];
+            console.log(`   📊 Funding scenario: Strong progress (70-85% of goal)`);
+            break;
+          case 5: // Campaign 6 - Nearly funded (85-95% of goal)
+            basePaymentCount = 6;
+            maxPaymentCount = 9;
+            paymentAmounts = ['30', '50', '60', '80'];
+            console.log(`   📊 Funding scenario: Nearly funded (85-95% of goal)`);
+            break;
+          case 6: // Campaign 7 - Over-funded (105-120% of goal) - FIRST SUCCESS STORY
+            basePaymentCount = 8;
+            maxPaymentCount = 12;
+            paymentAmounts = ['40', '60', '80', '100', '120'];
+            console.log(`   📊 Funding scenario: Over-funded SUCCESS (105-120% of goal)`);
+            break;
+          case 7: // Campaign 8 - Over-funded (110-130% of goal) - SECOND SUCCESS STORY
+            basePaymentCount = 9;
+            maxPaymentCount = 13;
+            paymentAmounts = ['50', '75', '100', '125', '150'];
+            console.log(`   📊 Funding scenario: Over-funded SUCCESS (110-130% of goal)`);
+            break;
+          default:
+            basePaymentCount = 5;
+            maxPaymentCount = 10;
+            paymentAmounts = ['25', '50', '75', '100'];
+        }
+      } else {
+        // PENDING_APPROVAL campaigns get moderate funding
+        basePaymentCount = 3;
+        maxPaymentCount = 8;
+        paymentAmounts = ['20', '35', '50', '75', '100'];
+        console.log(`   📊 Funding scenario: PENDING_APPROVAL - moderate funding`);
+      }
+      
+      const paymentCount = Math.floor(Math.random() * (maxPaymentCount - basePaymentCount + 1)) + basePaymentCount;
+      // Ensure test creators are always included as donors for cross-campaign donations
+      const donors = [testCreatorUser, testCreatorUser2, ...donorUsers, ...allCreatorUsers].slice(0, 22); // Use more users as donors
 
       let totalCampaignAmount = 0;
+      const createdPayments = [];
 
       for (let paymentIndex = 0; paymentIndex < paymentCount; paymentIndex++) {
         const donor = selectRandom(donors);
 
-        // More varied payment amounts including larger donations
-        const paymentAmounts = [
-          '5',
-          '10',
-          '15',
-          '20',
-          '25',
-          '30',
-          '40',
-          '50',
-          '60',
-          '75',
-          '100',
-          '125',
-          '150',
-          '175',
-          '200',
-          '250',
-          '300',
-          '400',
-          '500',
-        ];
+        // Payment amounts are set by funding scenario above
         const amount = selectRandom(paymentAmounts);
         totalCampaignAmount += parseInt(amount);
 
@@ -773,37 +836,306 @@ async function main() {
         const provider = selectRandom(providers);
         const isOnChain = provider !== 'stripe';
 
-        await db.payment.create({
-          data: {
-            amount,
-            token: 'USDC',
-            status: 'completed',
-            type: 'BUY',
-            transactionHash: isOnChain ? mockTransactionHash : null, // Simulate blockchain transactions
-            isAnonymous: Math.random() < 0.15, // 15% anonymous donations
-            createdAt: subDays(new Date(), Math.floor(Math.random() * 45) + 1), // Random date within last 45 days
-            campaignId: campaign.id,
-            userId: donor.id,
-            provider,
-            metadata: {
-              fundingBalance: amount,
-              // Add mock blockchain data for on-chain transactions
-              ...(isOnChain && {
-                blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
-                gasUsed: Math.floor(Math.random() * 50000) + 21000,
-                gasPrice: Math.floor(Math.random() * 20) + 10,
-                networkFee: (Math.random() * 0.01 + 0.001).toFixed(6),
-              }),
-            },
+        const paymentData = {
+          amount,
+          token: 'USDC',
+          status: 'confirmed',
+          type: 'BUY' as const,
+          transactionHash: isOnChain ? mockTransactionHash : null,
+          isAnonymous: Math.random() < 0.15,
+          createdAt: subDays(new Date(), Math.floor(Math.random() * 45) + 1),
+          campaignId: campaign.id, // Explicitly set foreign key
+          userId: donor.id,
+          provider,
+          metadata: {
+            fundingBalance: amount,
+            // Mark off-chain transactions for app visibility
+            isOffChain: !isOnChain,
+            isDummy: true,
+            // Add mock blockchain data for on-chain transactions
+            ...(isOnChain && {
+              blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
+              gasUsed: Math.floor(Math.random() * 50000) + 21000,
+              gasPrice: Math.floor(Math.random() * 20) + 10,
+              networkFee: (Math.random() * 0.01 + 0.001).toFixed(6),
+              chainId: 42220, // Celo mainnet
+              network: 'celo',
+            }),
           },
-        });
+        };
+
+        try {
+          const createdPayment = await db.payment.create({
+            data: paymentData,
+          });
+          
+          createdPayments.push(createdPayment);
+        } catch (error) {
+          console.error(`   ❌ Failed to create payment ${paymentIndex + 1}:`, error);
+          throw error; // Re-throw to stop seeding on payment creation failure
+        }
       }
 
-      console.log(
-        `   Added ${paymentCount} payments totaling $${totalCampaignAmount} for campaign: ${campaign.title}`,
-      );
+      console.log(`   ✅ Created ${createdPayments.length} payments totaling $${totalCampaignAmount}`);
+      
+      // Verify payments are properly linked to campaign
+      try {
+        const campaignWithPayments = await db.campaign.findUnique({
+          where: { id: campaign.id },
+          include: { 
+            payments: {
+              select: { id: true, amount: true, transactionHash: true, provider: true }
+            }
+          }
+        });
+        
+        if (campaignWithPayments?.payments.length !== paymentCount) {
+          console.error(`   ⚠️  Payment count mismatch! Expected: ${paymentCount}, Found: ${campaignWithPayments?.payments.length || 0}`);
+        } else {
+          console.log(`   ✅ Verified: Campaign ${campaign.id} has ${campaignWithPayments.payments.length} linked payments`);
+        }
+      } catch (verificationError) {
+        console.error(`   ❌ Failed to verify campaign payments:`, verificationError);
+      }
+    } else {
+      console.log(`   ⏭️  Skipping payments for campaign "${campaign.title}" (Status: ${campaignData.status})`);
     }
   }
+
+  // Add favorites for test creators so they have campaigns in their favorites list
+  console.log('\n⭐ Adding favorites for test creators...');
+  
+  // Get all created campaigns
+  const allCreatedCampaigns = await db.campaign.findMany({
+    select: { id: true, title: true, creatorAddress: true }
+  });
+  
+  // Test Creator 1 favorites: 3-4 campaigns they don't own
+  const testCreator1Favorites = allCreatedCampaigns
+    .filter(c => c.creatorAddress !== testCreatorUser.address)
+    .slice(0, 4);
+    
+  for (const campaign of testCreator1Favorites) {
+    await db.favorite.create({
+      data: {
+        userAddress: testCreatorUser.address,
+        campaignId: campaign.id,
+      },
+    });
+    console.log(`   ⭐ Added favorite: "${campaign.title}" for test creator 1`);
+  }
+  
+  // Test Creator 2 favorites: 3-4 different campaigns they don't own
+  const testCreator2Favorites = allCreatedCampaigns
+    .filter(c => c.creatorAddress !== testCreatorUser2.address)
+    .slice(2, 6); // Different selection than creator 1
+    
+  for (const campaign of testCreator2Favorites) {
+    await db.favorite.create({
+      data: {
+        userAddress: testCreatorUser2.address,
+        campaignId: campaign.id,
+      },
+    });
+    console.log(`   ⭐ Added favorite: "${campaign.title}" for test creator 2`);
+  }
+
+  console.log(`✅ Added ${testCreator1Favorites.length} favorites for test creator 1`);
+  console.log(`✅ Added ${testCreator2Favorites.length} favorites for test creator 2`);
+
+  // Add extra donations from test creators to campaigns they don't own
+  // This ensures they appear in donor dashboards with donation history
+  console.log('\n💸 Adding cross-donations from test creators...');
+  
+  const campaignsForDonations = allCreatedCampaigns.filter(c => 
+    c.creatorAddress !== testCreatorUser.address && 
+    c.creatorAddress !== testCreatorUser2.address
+  );
+
+  // Test Creator 1 makes donations to 3 campaigns they don't own
+  const creator1DonationCampaigns = campaignsForDonations.slice(0, 3);
+  for (const campaign of creator1DonationCampaigns) {
+    const donationAmounts = ['25', '50', '75', '100', '150'];
+    const amount = selectRandom(donationAmounts);
+    
+    await db.payment.create({
+      data: {
+        amount,
+        token: 'USDC',
+        status: 'confirmed',
+        type: 'BUY',
+        transactionHash: `0x${Array.from({ length: 64 }, () =>
+          Math.floor(Math.random() * 16).toString(16),
+        ).join('')}`,
+        isAnonymous: false,
+        createdAt: subDays(new Date(), Math.floor(Math.random() * 20) + 1),
+        campaignId: campaign.id,
+        userId: testCreatorUser.id,
+        provider: 'metamask',
+        metadata: {
+          fundingBalance: amount,
+          isDummy: true,
+          blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
+          chainId: 42220,
+          network: 'celo',
+        },
+      },
+    });
+    console.log(`   💸 Test creator 1 donated $${amount} to "${campaign.title}"`);
+  }
+
+  // Test Creator 2 makes donations to 3 different campaigns they don't own
+  const creator2DonationCampaigns = campaignsForDonations.slice(1, 4);
+  for (const campaign of creator2DonationCampaigns) {
+    const donationAmounts = ['30', '60', '90', '120', '200'];
+    const amount = selectRandom(donationAmounts);
+    
+    await db.payment.create({
+      data: {
+        amount,
+        token: 'USDC',
+        status: 'confirmed',
+        type: 'BUY',
+        transactionHash: `0x${Array.from({ length: 64 }, () =>
+          Math.floor(Math.random() * 16).toString(16),
+        ).join('')}`,
+        isAnonymous: false,
+        createdAt: subDays(new Date(), Math.floor(Math.random() * 25) + 1),
+        campaignId: campaign.id,
+        userId: testCreatorUser2.id,
+        provider: 'coinbase',
+        metadata: {
+          fundingBalance: amount,
+          isDummy: true,
+          blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
+          chainId: 42220,
+          network: 'celo',
+        },
+      },
+    });
+    console.log(`   💸 Test creator 2 donated $${amount} to "${campaign.title}"`);
+  }
+
+  console.log(`✅ Test creator 1 made ${creator1DonationCampaigns.length} cross-donations`);
+  console.log(`✅ Test creator 2 made ${creator2DonationCampaigns.length} cross-donations`);
+
+  // Create EventFeed entries to simulate real user activity notifications
+  console.log('\n📢 Creating event feed notifications...');
+  
+  // Get all created data for event generation
+  const allCampaignsWithDetails = await db.campaign.findMany({
+    include: {
+      payments: {
+        include: { user: true },
+        orderBy: { createdAt: 'asc' }
+      },
+      comments: {
+        orderBy: { createdAt: 'asc' }
+      },
+      updates: {
+        orderBy: { createdAt: 'asc' }
+      }
+    }
+  });
+
+  let eventCount = 0;
+
+  // Create payment notifications
+  for (const campaign of allCampaignsWithDetails) {
+    const creator = await db.user.findUnique({ where: { address: campaign.creatorAddress } });
+    if (!creator) continue;
+
+    // Payment notifications - donors notify campaign creators
+    for (const payment of campaign.payments) {
+      if (payment.userId === creator.id) continue; // Skip self-donations
+      
+      const donorName = payment.user.username || payment.user.firstName || payment.user.address?.slice(0, 8) || 'Anonymous';
+      
+      await notify({
+        receiverId: creator.id,
+        creatorId: payment.userId,
+        data: {
+          type: 'CampaignPayment',
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          paymentId: payment.id,
+          formattedAmount: `$${payment.amount}`,
+          donorName,
+        },
+      });
+      eventCount++;
+    }
+
+    // Comment notifications - commenters notify campaign creators
+    for (const comment of campaign.comments) {
+      const commenter = await db.user.findUnique({ where: { address: comment.userAddress } });
+      if (!commenter || commenter.id === creator.id) continue; // Skip self-comments
+
+      const commenterName = commenter.username || commenter.firstName || commenter.address?.slice(0, 8) || 'Anonymous';
+      
+      await notify({
+        receiverId: creator.id,
+        creatorId: commenter.id,
+        data: {
+          type: 'CampaignComment',
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          action: 'posted' as const,
+          userName: commenterName,
+          comment: comment.content.slice(0, 100), // First 100 chars
+        },
+      });
+      eventCount++;
+    }
+
+    // Update notifications - creators notify their donors/commenters
+    for (const update of campaign.updates) {
+      // Notify all users who have interacted with this campaign (donors + commenters)
+      const interactedUsers = new Set<number>();
+      
+      campaign.payments.forEach(p => interactedUsers.add(p.userId));
+      for (const comment of campaign.comments) {
+        const commenter = await db.user.findUnique({ where: { address: comment.userAddress } });
+        if (commenter) interactedUsers.add(commenter.id);
+      }
+
+      // Remove the creator from the notification list
+      interactedUsers.delete(creator.id);
+
+      for (const userId of interactedUsers) {
+        await notify({
+          receiverId: userId,
+          creatorId: creator.id,
+          data: {
+            type: 'CampaignUpdate',
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            updateText: update.content.slice(0, 100), // First 100 chars
+          },
+        });
+        eventCount++;
+      }
+    }
+
+    // Campaign approval notifications - admin notifies creators for ACTIVE campaigns
+    if (campaign.status === 'ACTIVE') {
+      const adminUser = protocolAdminUser; // Use our protocol admin
+      
+      await notify({
+        receiverId: creator.id,
+        creatorId: adminUser.id,
+        data: {
+          type: 'CampaignApprove',
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+        },
+      });
+      eventCount++;
+    }
+  }
+
+  console.log(`✅ Created ${eventCount} event feed notifications`);
+
   // Define specific sponsor logos for each round
   const roundSponsorLogos = [
     {
@@ -840,7 +1172,7 @@ async function main() {
 
   // Create the 5 rounds and assign campaigns strategically
   for (let i = 0; i < rounds.length; i++) {
-    const admin = selectRandom(adminUsers);
+    const admin = selectRandom(allAdminUsers);
     const round = await db.round.create({
       data: { ...rounds[i], managerAddress: admin.address },
     });
@@ -852,27 +1184,27 @@ async function main() {
       // Kenya Education & Development Round - assign education campaigns
       assignedCampaigns = campaigns
         .filter((c) => c.category === 'education')
-        .slice(0, 8); // First 8 education campaigns
+        .slice(0, 3); // First 3 education campaigns
     } else if (i === 1) {
       // East Africa Climate Resilience Round - assign climate resilience campaigns
       assignedCampaigns = campaigns
         .filter((c) => c.category === 'climate-resilience')
-        .slice(0, 8); // First 8 climate campaigns
+        .slice(0, 3); // First 3 climate campaigns
     } else if (i === 2) {
       // West Africa Climate Resilience Round - assign more climate resilience campaigns
       assignedCampaigns = campaigns
         .filter((c) => c.category === 'climate-resilience')
-        .slice(8, 16); // Next 8 climate campaigns
+        .slice(1, 3); // Some climate campaigns (overlap with previous round)
     } else if (i === 3) {
       // Uganda Economic Development Round - assign economic development campaigns
       assignedCampaigns = campaigns
         .filter((c) => c.category === 'economic-development')
-        .slice(0, 8); // First 8 economic campaigns
+        .slice(0, 3); // First 3 economic campaigns
     } else {
       // Emergency Response Preparedness Round - assign emergency response campaigns
       assignedCampaigns = campaigns
         .filter((c) => c.category === 'emergency-response')
-        .slice(0, 8); // First 8 emergency campaigns
+        .slice(0, 3); // First 3 emergency campaigns
     }
 
     // Create round-campaign associations
@@ -914,13 +1246,13 @@ async function main() {
     `\nSeeded ${campaigns.length} campaigns with enhanced data, ${rounds.length} matching rounds with specific sponsor logos`,
   );
   console.log(
-    'Enhanced seed data includes: more campaign updates (3-8 per campaign), more comments (2-15 per campaign), and funding progress displays',
+    'Enhanced seed data includes: campaign updates (3-8 per campaign), comments (2-15 per campaign), funding progress, and event feed notifications',
   );
   console.log(
-    'Campaign categories: ALL 4 categories evenly distributed - Education, Economic Development, Climate Resilience, Emergency Response',
+    'Campaign categories: ALL 4 categories distributed - Education, Economic Development, Climate Resilience, Emergency Response',
   );
   console.log(
-    `Campaign statuses: 16 ACTIVE campaigns (4 per category), 10 PENDING_APPROVAL, 12 DRAFT, 2 EDIT`,
+    `Campaign statuses: 8 ACTIVE campaigns (2 per category), 2 PENDING_APPROVAL, 2 DRAFT`,
   );
   console.log(
     'Enhanced transactions: 8-22 payments per ACTIVE campaign with mock transaction hashes and varied providers',
@@ -928,6 +1260,101 @@ async function main() {
   console.log(
     'All campaigns maintain zero on-chain balance but show funding progress via payment metadata',
   );
+
+  // Final verification: Query and log all created campaigns with their transactions
+  console.log('\n=== FINAL VERIFICATION: CAMPAIGNS WITH TRANSACTIONS ===');
+  
+  try {
+    const campaignsWithTransactions = await db.campaign.findMany({
+      include: {
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            transactionHash: true,
+            provider: true,
+            status: true,
+            createdAt: true,
+            metadata: true,
+          }
+        },
+        _count: {
+          select: {
+            payments: true,
+            comments: true,
+            updates: true,
+          }
+        }
+      },
+      orderBy: [
+        { status: 'asc' },
+        { id: 'asc' }
+      ]
+    });
+
+    console.log(`📊 Total campaigns created: ${campaignsWithTransactions.length}`);
+    
+    // Group by status for summary
+    const statusGroups = campaignsWithTransactions.reduce((acc, campaign) => {
+      const status = campaign.status;
+      if (!acc[status]) acc[status] = [];
+      acc[status].push(campaign);
+      return acc;
+    }, {} as Record<string, typeof campaignsWithTransactions>);
+
+    Object.entries(statusGroups).forEach(([status, campaigns]) => {
+      const totalPayments = campaigns.reduce((sum, c) => sum + c._count.payments, 0);
+      const totalAmount = campaigns.reduce((sum, c) => 
+        sum + c.payments.reduce((pSum, p) => pSum + parseInt(p.amount), 0), 0
+      );
+      
+      console.log(`\n📋 ${status} Campaigns: ${campaigns.length}`);
+      console.log(`   💰 Total payments: ${totalPayments}, Total amount: $${totalAmount}`);
+      
+      campaigns.forEach(campaign => {
+        const paymentSummary = campaign.payments.length > 0 
+          ? `${campaign.payments.length} payments ($${campaign.payments.reduce((sum, p) => sum + parseInt(p.amount), 0)})`
+          : 'No payments';
+        
+        console.log(`   📝 ID ${campaign.id}: "${campaign.title}" (${campaign.category})`);
+        console.log(`      💳 ${paymentSummary} | 💬 ${campaign._count.comments} comments | 📢 ${campaign._count.updates} updates`);
+        
+        // Log transaction hashes for campaigns with payments
+        if (campaign.payments.length > 0) {
+          const onChainTxs = campaign.payments.filter(p => p.transactionHash).length;
+          const offChainTxs = campaign.payments.filter(p => !p.transactionHash).length;
+          console.log(`      🔗 Transactions: ${onChainTxs} on-chain, ${offChainTxs} off-chain`);
+          
+          // Show first few transaction hashes as examples
+          const exampleTxs = campaign.payments.slice(0, 3);
+          exampleTxs.forEach(payment => {
+            const txHash = payment.transactionHash ? payment.transactionHash.substring(0, 10) + '...' : 'off-chain';
+            console.log(`         • $${payment.amount} via ${payment.provider} (${txHash})`);
+          });
+        }
+      });
+    });
+
+    // Verify category distribution
+    const categoryDistribution = campaignsWithTransactions.reduce((acc, campaign) => {
+      const category = campaign.category || 'unknown';
+      if (!acc[category]) acc[category] = { total: 0, active: 0, withPayments: 0 };
+      acc[category].total++;
+      if (campaign.status === 'ACTIVE') acc[category].active++;
+      if (campaign.payments.length > 0) acc[category].withPayments++;
+      return acc;
+    }, {} as Record<string, { total: number; active: number; withPayments: number }>);
+
+    console.log('\n📊 Category Distribution:');
+    Object.entries(categoryDistribution).forEach(([category, stats]) => {
+      console.log(`   ${category}: ${stats.total} total (${stats.active} active, ${stats.withPayments} with payments)`);
+    });
+
+    console.log('\n✅ Verification completed successfully!');
+    
+  } catch (verificationError) {
+    console.error('❌ Final verification failed:', verificationError);
+  }
 
   // Comprehensive deployment report
   console.log('\n=== DEPLOYMENT REPORT ===');
@@ -1080,17 +1507,98 @@ async function main() {
     console.log(
       '\nUse the dummy-web3 connector to sign in as one of these users:',
     );
-    adminUsers.map(({ address }) => console.log(`admin ${address}`));
-    creatorUsers
-      .slice(0, 3)
+    console.log(`🔑 Protocol Admin: ${protocolAdminUser.address}`);
+    console.log(`👤 Test Creator 1: ${testCreatorUser.address} (owns campaigns 1-3)`);
+    console.log(`👤 Test Creator 2: ${testCreatorUser2.address} (owns campaigns 4-6)`);
+    allAdminUsers.slice(1).map(({ address }) => console.log(`admin ${address}`));
+    allCreatorUsers
+      .slice(2, 5)
       .map(({ address }) => console.log(`creator ${address}`));
     donorUsers
       .slice(0, 3)
       .map(({ address }) => console.log(`donor ${address}`));
   } else {
-    console.log('\nCreated users for testing:');
-    console.log(`  ${adminUsers.length} admin users`);
-    console.log(`  ${creatorUsers.length} creator users`);
+    console.log('\n=== VERIFICATION: Test Creator Data ===');
+    console.log(`Verifying test creator 1 (${testCreatorUser.address}):`);
+
+    // Verify campaigns owned by test creator 1
+    const creator1Campaigns = await db.campaign.findMany({
+      where: { creatorAddress: testCreatorUser.address },
+      select: { id: true, title: true, status: true }
+    });
+    console.log(`  📋 Owns ${creator1Campaigns.length} campaigns:`);
+    creator1Campaigns.forEach(c => console.log(`     • ID ${c.id}: "${c.title}" (${c.status})`));
+
+    // Verify donations made by test creator 1
+    const creator1Donations = await db.payment.findMany({
+      where: { 
+        userId: testCreatorUser.id,
+        status: 'confirmed',
+        type: 'BUY'
+      },
+      include: { campaign: { select: { title: true } } }
+    });
+    console.log(`  💸 Made ${creator1Donations.length} donations:`);
+    creator1Donations.forEach(d => console.log(`     • $${d.amount} to "${d.campaign.title}"`));
+
+    // Verify favorites by test creator 1
+    const creator1Favorites = await db.favorite.findMany({
+      where: { userAddress: testCreatorUser.address },
+      include: { campaign: { select: { title: true } } }
+    });
+    console.log(`  ⭐ Has ${creator1Favorites.length} favorites:`);
+    creator1Favorites.forEach(f => console.log(`     • "${f.campaign.title}"`));
+
+    console.log(`\nVerifying test creator 2 (${testCreatorUser2.address}):`);
+    
+    // Verify campaigns owned by test creator 2
+    const creator2Campaigns = await db.campaign.findMany({
+      where: { creatorAddress: testCreatorUser2.address },
+      select: { id: true, title: true, status: true }
+    });
+    console.log(`  📋 Owns ${creator2Campaigns.length} campaigns:`);
+    creator2Campaigns.forEach(c => console.log(`     • ID ${c.id}: "${c.title}" (${c.status})`));
+
+    // Verify donations made by test creator 2
+    const creator2Donations = await db.payment.findMany({
+      where: { 
+        userId: testCreatorUser2.id,
+        status: 'confirmed',
+        type: 'BUY'
+      },
+      include: { campaign: { select: { title: true } } }
+    });
+    console.log(`  💸 Made ${creator2Donations.length} donations:`);
+    creator2Donations.forEach(d => console.log(`     • $${d.amount} to "${d.campaign.title}"`));
+
+    // Verify favorites by test creator 2
+    const creator2Favorites = await db.favorite.findMany({
+      where: { userAddress: testCreatorUser2.address },
+      include: { campaign: { select: { title: true } } }
+    });
+    console.log(`  ⭐ Has ${creator2Favorites.length} favorites:`);
+    creator2Favorites.forEach(f => console.log(`     • "${f.campaign.title}"`));
+    
+    console.log(`✅ Verification completed!\n`);
+
+    console.log('🔍 AUTHENTICATION DEBUG INFO:');
+    console.log('When logging in with test creator wallets, ensure:');
+    console.log('1. Wallet address matches EXACTLY (case-sensitive):');
+    console.log(`   • Test Creator 1: ${testCreatorUser.address}`);
+    console.log(`   • Test Creator 2: ${testCreatorUser2.address}`);
+    console.log('2. User must exist in database with correct address');
+    console.log('3. API calls use session.user.address for filtering');
+    console.log('4. Campaign ownership uses creatorAddress field');
+    console.log('5. Donations use userId (foreign key to User.id)');
+    console.log('6. Favorites use userAddress (string field)');
+    console.log('');
+
+    console.log('Created users for testing:');
+    console.log(`🔑 Protocol Admin: ${protocolAdminUser.address}`);
+    console.log(`👤 Test Creator 1: ${testCreatorUser.address} (owns campaigns 1-3)`);
+    console.log(`👤 Test Creator 2: ${testCreatorUser2.address} (owns campaigns 4-6)`);
+    console.log(`  ${allAdminUsers.length} total admin users`);
+    console.log(`  ${allCreatorUsers.length} total creator users`);
     console.log(`  ${donorUsers.length} donor users`);
     console.log(
       '  Use real wallet connections or authentication for these users',
