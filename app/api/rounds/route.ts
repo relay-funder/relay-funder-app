@@ -162,7 +162,7 @@ export async function PATCH(req: Request) {
     if (!session.user.id) {
       throw new ApiNotFoundError('Invalid session user');
     }
-    const user = await getUser(session.user.id);
+    const user = await getUser(session.user.address);
     if (!user?.featureFlags.includes('ROUND_MANAGER')) {
       if (instance.managerAddress !== session.user.address) {
         throw new ApiAuthNotAllowed(
