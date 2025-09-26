@@ -10,6 +10,7 @@ import {
   Users,
   CreditCard,
   Coins,
+  BellRing,
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,11 @@ export function PageNavMenuItems() {
         icon: <Users className="h-6 w-6" />,
         label: 'User Management',
         href: '/admin/users',
+      });
+      items.push({
+        icon: <BellRing className="h-6 w-6" />,
+        label: 'Event Feed',
+        href: '/admin/event-feed',
       });
       items.push({
         icon: <CreditCard className="h-6 w-6" />,

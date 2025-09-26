@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { FormattedDate } from '@/components/formatted-date';
 import { UserInlineName } from '@/components/user/inline-name';
 import { useUserProfile } from '@/lib/hooks/useProfile';
+import { NotificationData } from '@/lib/notification/types';
 
 export type EventFeedUser = {
   id?: number;
@@ -25,7 +26,7 @@ export type EventFeedListItemData = {
   createdAt: string;
   type: string;
   message: string;
-  data?: unknown;
+  data?: NotificationData;
   link?: string;
   linkLabel?: string;
   createdBy?: EventFeedUser | null;
@@ -280,6 +281,29 @@ export function EventFeedListItem({
           </span>
         </div>
         <p className="text-sm leading-6 text-foreground">{event.message}</p>
+
+        {isAdmin && event.data && (
+          <>
+            {event.type === 'CampaignComment' &&
+              'comment' in event.data &&
+              event.data.comment && (
+                <div className="mt-2 rounded-md bg-muted p-3">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Comment:</strong> {event.data.comment}
+                  </p>
+                </div>
+              )}
+            {event.type === 'CampaignUpdate' &&
+              'updateText' in event.data &&
+              event.data.updateText && (
+                <div className="mt-2 rounded-md bg-muted p-3">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Update:</strong> {event.data.updateText}
+                  </p>
+                </div>
+              )}
+          </>
+        )}
 
         {actionLinks.length > 0 ? (
           <div className="flex flex-wrap gap-3">

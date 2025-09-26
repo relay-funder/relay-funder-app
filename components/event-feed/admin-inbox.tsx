@@ -11,13 +11,13 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { UserEventFeedList } from './user-event-feed-list';
+import { AdminEventFeedList } from './admin-event-feed-list';
 import {
   useMarkEventFeedRead,
   useNewEventCount,
 } from '@/lib/hooks/useEventFeed';
 
-export function Inbox() {
+export function AdminInbox() {
   const { mutate: markRead, isPending: markingRead } = useMarkEventFeedRead();
   const newEventCount = useNewEventCount();
 
@@ -33,11 +33,13 @@ export function Inbox() {
             <BellRing className="h-6 w-6" />
           </div>
           <div>
-            <CardTitle className="text-xl font-semibold">Inbox</CardTitle>
+            <CardTitle className="text-xl font-semibold">
+              Admin Event Feed
+            </CardTitle>
             <CardDescription>
               {newEventCount === 0
-                ? "You're all caught up with your notifications."
-                : 'Track important activity across your campaigns and contributions.'}
+                ? "You're all caught up with admin notifications."
+                : 'View all events across all users and campaigns.'}
             </CardDescription>
           </div>
         </div>
@@ -69,10 +71,10 @@ export function Inbox() {
       </CardHeader>
       <Separator />
       <CardContent className="pt-6">
-        <UserEventFeedList />
+        <AdminEventFeedList />
       </CardContent>
     </Card>
   );
 }
 
-export default Inbox;
+export default AdminInbox;

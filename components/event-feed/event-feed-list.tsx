@@ -1,28 +1,32 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import {
-  useInfiniteEventFeed,
-  type EventFeedFilters,
-} from '@/lib/hooks/useEventFeed';
-import {
   EventFeedListItem,
   type EventFeedListItemData,
   type EventFeedUser,
 } from './event-feed-list-item';
+import { PaginatedEventFeedResponse } from '@/lib/hooks/useEventFeed';
+import { InfiniteData } from '@tanstack/react-query';
 
-export type EventFeedListProps = {
+export type BaseEventFeedListProps = {
   className?: string;
-  pageSize?: number;
-  filters?: EventFeedFilters;
   onSelectItem?: (event: EventFeedListItemData) => void;
   emptyState?: React.ReactNode;
   header?: React.ReactNode;
+  data?: InfiniteData<PaginatedEventFeedResponse, unknown>;
+  fetchNextPage?: () => void;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  isPending: boolean;
+  isError: boolean;
+  error?: Error | null;
+  refetch?: () => void;
 };
 
 type UnknownRecord = Record<string, unknown>;
@@ -159,36 +163,20 @@ function ErrorState({
   );
 }
 
-export function EventFeedList({
+export function BaseEventFeedList({
   className,
-  pageSize = 10,
-  filters,
   onSelectItem,
   emptyState,
   header,
-}: EventFeedListProps) {
-  const [activeFilters, setActiveFilters] = useState<EventFeedFilters>(
-    filters ?? {},
-  );
-
-  useEffect(() => {
-    setActiveFilters(filters ?? {});
-  }, [filters]);
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useInfiniteEventFeed({
-    pageSize,
-    filters: activeFilters,
-  });
-
+  data,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+  isPending,
+  isError,
+  error,
+  refetch,
+}: BaseEventFeedListProps) {
   const items = useMemo<EventFeedListItemData[]>(() => {
     const pages = data?.pages ?? [];
     const flattened = pages.flatMap((page) => page.events ?? []);
@@ -209,6 +197,9 @@ export function EventFeedList({
   const isEmpty = !isPending && items.length === 0;
 
   const handleLoadMore = useCallback(() => {
+    if (typeof fetchNextPage !== 'function') {
+      return;
+    }
     if (!isFetchingNextPage) {
       fetchNextPage();
     }
@@ -219,7 +210,7 @@ export function EventFeedList({
       {header}
 
       {isError && error ? (
-        <ErrorState message={error.message} onRetry={() => refetch()} />
+        <ErrorState message={error?.message} onRetry={() => refetch?.()} />
       ) : null}
 
       {isPending && items.length === 0 ? (
@@ -266,4 +257,4 @@ export function EventFeedList({
   );
 }
 
-export default EventFeedList;
+export default BaseEventFeedList;

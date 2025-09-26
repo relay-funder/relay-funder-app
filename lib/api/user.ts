@@ -246,3 +246,64 @@ export async function listUserEventFeed({
     },
   };
 }
+
+export async function listAdminEventFeed({
+  type,
+  startDate,
+  endDate,
+  page = 1,
+  pageSize = 10,
+}: {
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const skip = (page - 1) * pageSize;
+  const where: Prisma.EventFeedWhereInput = {};
+  const filter: Prisma.EventFeedWhereInput = { OR: [] };
+  if (type) {
+    filter.OR?.push({ type });
+  }
+  if (startDate || endDate) {
+    if (startDate) {
+      filter.OR?.push({ AND: [{ createdAt: { lt: new Date(startDate) } }] });
+    }
+    if (endDate && !startDate) {
+      filter.OR?.push({ createdAt: { gt: new Date(endDate) } });
+    } else if (endDate) {
+      const dateCondition = filter.OR?.find((expr) => Array.isArray(expr.AND));
+      if (Array.isArray(dateCondition?.AND)) {
+        dateCondition?.AND?.push({
+          createdAt: { gt: new Date(endDate) },
+        });
+      }
+    }
+  }
+  if (filter.OR?.length) {
+    Object.assign(where, filter);
+  }
+  const [dbFeedEvents, totalCount] = await Promise.all([
+    db.eventFeed.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    db.eventFeed.count({ where }),
+  ]);
+
+  return {
+    events: dbFeedEvents,
+    pagination: {
+      currentPage: page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+      totalItems: totalCount,
+      hasMore: skip + pageSize < totalCount,
+    },
+  };
+}

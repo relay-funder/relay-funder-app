@@ -81,6 +81,7 @@ export async function POST(req: Request) {
       data: {
         type: 'CampaignPayment',
         campaignId: campaign.id,
+        campaignTitle: campaign.title,
         paymentId: payment.id,
         formattedAmount,
         donorName,

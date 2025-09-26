@@ -1,15 +1,9 @@
-import { useMemo } from 'react';
-import {
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import type { PaginatedResponse } from '@/lib/api/types/common';
-import { useUserProfile } from './useProfile';
-import { NotificationData } from '@/lib/notification';
+import type { NotificationData } from '@/lib/notification';
 
-export const EVENT_FEED_QUERY_KEY = 'event_feed';
-export const EVENT_FEED_REFETCH_INTERVAL = 90000; // 90 seconds
+export const ADMIN_EVENT_FEED_QUERY_KEY = 'admin_event_feed';
+export const ADMIN_EVENT_FEED_REFETCH_INTERVAL = 90000; // 90 seconds
 
 export type EventFeedItem = {
   createdAt: string;
@@ -24,11 +18,11 @@ export type EventFeedFilters = {
   endDate?: string;
 };
 
-export interface PaginatedEventFeedResponse extends PaginatedResponse {
+interface PaginatedEventFeedResponse extends PaginatedResponse {
   events: EventFeedItem[];
 }
 
-function buildEventFeedUrl({
+function buildAdminEventFeedUrl({
   page,
   pageSize,
   filters,
@@ -51,10 +45,10 @@ function buildEventFeedUrl({
     params.set('endDate', filters.endDate);
   }
 
-  return `/api/event-feed?${params.toString()}`;
+  return `/api/admin/event-feed?${params.toString()}`;
 }
 
-export async function fetchEventFeedPage({
+export async function fetchAdminEventFeedPage({
   pageParam = 1,
   pageSize = 10,
   filters,
@@ -65,7 +59,7 @@ export async function fetchEventFeedPage({
 }) {
   const safePage = Number(pageParam) || 1;
   const safePageSize = Math.min(Math.max(pageSize ?? 10, 1), 10);
-  const url = buildEventFeedUrl({
+  const url = buildAdminEventFeedUrl({
     page: safePage,
     pageSize: safePageSize,
     filters,
@@ -73,7 +67,7 @@ export async function fetchEventFeedPage({
 
   const response = await fetch(url);
   if (!response.ok) {
-    let message = 'Failed to fetch event feed';
+    let message = 'Failed to fetch admin event feed';
     try {
       const err = await response.json();
       message = err?.error || message;
@@ -87,7 +81,7 @@ export async function fetchEventFeedPage({
   return data;
 }
 
-export function useInfiniteEventFeed({
+export function useInfiniteAdminEventFeed({
   pageSize = 10,
   filters,
 }: {
@@ -97,7 +91,7 @@ export function useInfiniteEventFeed({
   const safePageSize = Math.min(Math.max(pageSize ?? 10, 1), 10);
 
   const queryKey = [
-    EVENT_FEED_QUERY_KEY,
+    ADMIN_EVENT_FEED_QUERY_KEY,
     'infinite',
     safePageSize,
     filters ?? null,
@@ -106,7 +100,7 @@ export function useInfiniteEventFeed({
   return useInfiniteQuery<PaginatedEventFeedResponse, Error>({
     queryKey,
     queryFn: ({ pageParam = 1 }) =>
-      fetchEventFeedPage({
+      fetchAdminEventFeedPage({
         pageParam: pageParam as number,
         pageSize: safePageSize,
         filters,
@@ -120,55 +114,7 @@ export function useInfiniteEventFeed({
         ? firstPage.pagination.currentPage - 1
         : undefined,
     initialPageParam: 1,
-    refetchInterval: EVENT_FEED_REFETCH_INTERVAL,
+    refetchInterval: ADMIN_EVENT_FEED_REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
   });
-}
-
-async function markEventFeedRead() {
-  const response = await fetch('/api/event-feed', {
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-    let message = 'Failed to mark event feed as read';
-    try {
-      const err = await response.json();
-      message = err?.error || message;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
-  }
-
-  return response.json() as Promise<{ success: boolean }>;
-}
-
-export function useMarkEventFeedRead() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: markEventFeedRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [EVENT_FEED_QUERY_KEY],
-      });
-    },
-  });
-}
-
-export function useNewEventCount() {
-  const { data: user } = useUserProfile();
-  const { data, hasNextPage } = useInfiniteEventFeed({ pageSize: 10 });
-
-  const count = useMemo(() => {
-    if (!user?.eventFeedRead || !data?.pages[0]?.events) return 0;
-    const readTime = new Date(user.eventFeedRead);
-    const newEvents = data.pages[0].events.filter(
-      (event) => new Date(event.createdAt) > readTime,
-    );
-    return hasNextPage && newEvents.length === 10 ? 10 : newEvents.length;
-  }, [data, user?.eventFeedRead, hasNextPage]);
-
-  return count;
 }
