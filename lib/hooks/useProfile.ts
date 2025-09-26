@@ -7,7 +7,6 @@ interface IUpdateUserProfileApi {
   firstName: string;
   lastName: string;
   username: string;
-  avatarUrl?: string;
   bio?: string;
   recipientWallet?: string;
   email?: string;
