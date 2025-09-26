@@ -66,7 +66,7 @@ export function CampaignDonationWalletAmount({
         <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
           <Shield className="h-4 w-4 flex-shrink-0" />
           <span>
-            We won't spam you and the email won't be publicly visible.
+            We won&apos;t spam you and the email won&apos;t be publicly visible.
           </span>
         </div>
       </div>

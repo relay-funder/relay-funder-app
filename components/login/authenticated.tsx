@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWeb3Auth } from '@/lib/web3';
+import { CheckCircle, User, LogOut } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,29 +25,49 @@ export default function Authenticated({ message }: AuthenticatedProps) {
       router.push('/');
     });
   }, [logout, router]);
+
   const handleProfile = useCallback(async () => {
     router.push('/profile');
   }, [router]);
 
   return (
-    <div className="from-orange-light flex min-h-screen items-center justify-center bg-gradient-to-br to-white p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="pb-6 pt-10 text-center">
-          <div className="mb-4 flex justify-center"></div>
-          <CardTitle className="text-charcoal text-2xl font-semibold">
-            Authenticated
-          </CardTitle>
-          <CardDescription>{message}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button className="w-full" onClick={handleProfile}>
-            Profile
-          </Button>
-          <Button className="w-full" onClick={handleLogout}>
-            Logout
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="flex w-full flex-col bg-gray-50">
+      <main className="container mx-auto flex h-[calc(100vh-200px)] max-w-7xl items-center justify-center px-4 py-8">
+        <div className="flex justify-center">
+          <Card className="w-full max-w-md rounded-lg border bg-white shadow-sm">
+            <CardHeader className="pb-6 pt-8 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                  <CheckCircle className="h-8 w-8 text-gray-700" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-semibold tracking-tight text-gray-900">
+                Successfully Authenticated
+              </CardTitle>
+              <CardDescription className="text-base text-gray-600">
+                {message}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                className="w-full bg-black font-semibold text-white hover:bg-gray-800"
+                onClick={handleProfile}
+              >
+                <User className="mr-2 h-4 w-4" />
+                View Profile
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

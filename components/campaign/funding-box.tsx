@@ -21,7 +21,6 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
   } = useCampaignStatsFromInstance({
     campaign,
   });
-  const isOwner = campaign.creatorAddress === address;
 
   return (
     <Card className="sticky top-8">

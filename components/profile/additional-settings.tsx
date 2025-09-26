@@ -22,18 +22,20 @@ export function ProfileAdditionalSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           <Link href="/profile/wallet" className="block">
             <Button
               variant="outline"
-              className="h-auto w-full justify-start p-4"
+              className="h-auto w-full justify-start p-4 hover:bg-gray-50"
             >
               <div className="flex items-center gap-3">
-                <Wallet className="h-5 w-5" />
+                <Wallet className="h-5 w-5 text-gray-600" />
                 <div className="text-left">
-                  <div className="font-medium">Wallet Settings</div>
-                  <div className="text-xs text-muted-foreground">
-                    Manage connected wallets
+                  <div className="font-medium text-gray-900">
+                    Wallet Settings
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Manage connected wallets and network settings
                   </div>
                 </div>
               </div>
