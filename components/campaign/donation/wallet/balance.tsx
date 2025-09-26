@@ -29,18 +29,23 @@ export function CampaignDonationWalletBalance({
   }, [usdcBalance, selectedToken, usdBalanceIsPending]);
 
   return (
-    <div className="mt-1 flex flex-nowrap text-sm text-muted-foreground">
-      Available: {availableBalance} {selectedToken}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger>
-            <HelpCircle className="ml-1 inline h-4 w-4" />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Your available balance in {selectedToken}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <div className="space-y-1">
+      <label className="text-base font-medium text-gray-900">
+        Available Balance
+      </label>
+      <div className="flex flex-nowrap text-sm text-gray-600">
+        {availableBalance} {selectedToken}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <HelpCircle className="ml-1 inline h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Your available balance in {selectedToken}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 }

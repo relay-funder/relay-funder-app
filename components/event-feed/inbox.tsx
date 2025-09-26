@@ -11,11 +11,15 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { EventFeedList } from './event-feed-list';
-import { useMarkEventFeedRead } from '@/lib/hooks/useEventFeed';
+import { UserEventFeedList } from './user-event-feed-list';
+import {
+  useMarkEventFeedRead,
+  useNewEventCount,
+} from '@/lib/hooks/useEventFeed';
 
 export function Inbox() {
   const { mutate: markRead, isPending: markingRead } = useMarkEventFeedRead();
+  const newEventCount = useNewEventCount();
 
   const handleMarkRead = useCallback(() => {
     markRead();
@@ -31,22 +35,29 @@ export function Inbox() {
           <div>
             <CardTitle className="text-xl font-semibold">Inbox</CardTitle>
             <CardDescription>
-              Track important activity across your campaigns and contributions.
+              {newEventCount === 0
+                ? "You're all caught up with your notifications."
+                : 'Track important activity across your campaigns and contributions.'}
             </CardDescription>
           </div>
         </div>
         <Button
           type="button"
-          variant="secondary"
+          variant={newEventCount === 0 ? 'outline' : 'secondary'}
           size="sm"
           onClick={handleMarkRead}
-          disabled={markingRead}
+          disabled={markingRead || newEventCount === 0}
           className="inline-flex items-center gap-2"
         >
           {markingRead ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Updating…
+            </>
+          ) : newEventCount === 0 ? (
+            <>
+              <CheckCheck className="h-4 w-4" />
+              All read
             </>
           ) : (
             <>
@@ -58,7 +69,7 @@ export function Inbox() {
       </CardHeader>
       <Separator />
       <CardContent className="pt-6">
-        <EventFeedList />
+        <UserEventFeedList />
       </CardContent>
     </Card>
   );

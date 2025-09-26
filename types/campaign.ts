@@ -351,6 +351,26 @@ export const UpdateProcessStates = {
   setup: 'setup',
 
   /**
+   * Validate platform setup and configuration
+   */
+  validatingPlatform: 'validatingPlatform',
+
+  /**
+   * Create the campaign in the database (for edit flow compatibility)
+   */
+  create: 'create',
+
+  /**
+   * Create/update the campaign on-chain using smart contract
+   */
+  createOnChain: 'createOnChain',
+
+  /**
+   * Waiting for blockchain confirmation of the smart contract transaction
+   */
+  waitForCreationConfirmation: 'waitForCreationConfirmation',
+
+  /**
    * wait for db to store the transaction hash
    */
   updateDbCampaign: 'updateDbCampaign',

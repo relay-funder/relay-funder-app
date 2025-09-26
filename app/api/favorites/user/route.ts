@@ -14,6 +14,10 @@ export async function GET() {
         campaign: {
           include: {
             images: true,
+            media: {
+              where: { state: 'UPLOADED' },
+              orderBy: { createdAt: 'asc' },
+            },
           },
         },
       },

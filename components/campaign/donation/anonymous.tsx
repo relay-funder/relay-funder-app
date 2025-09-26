@@ -16,9 +16,14 @@ export function CampaignDonationAnonymous({
 }) {
   return (
     <div className="space-y-2">
-      <div className="mb-2 flex items-center gap-2">
+      <label className="text-sm font-medium text-gray-900">
+        Privacy Settings
+      </label>
+      <div className="flex items-center gap-2">
         <Switch checked={anonymous} onCheckedChange={onChange} id="anonymous" />
-        <span className="text-sm">Make my donation anonymous</span>
+        <span className="text-sm text-gray-700">
+          Make my contribution anonymous
+        </span>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
@@ -27,8 +32,8 @@ export function CampaignDonationAnonymous({
             <TooltipContent>
               <p>
                 By checking this, we won&apos;t consider your profile
-                information as a donor for this donation and won&apos;t show it
-                on public pages.
+                information as a contributor for this contribution and
+                won&apos;t show it on public pages.
               </p>
             </TooltipContent>
           </Tooltip>

@@ -1,38 +1,83 @@
-import { useCallback, type ChangeEvent } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Input,
-} from '@/components/ui';
-import { formatCrypto } from '@/lib/format-crypto';
+import { useCallback, type ChangeEvent, useEffect } from 'react';
+import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
-
-const supportedTokenList = ['USDC'];
+import { useUserProfile } from '@/lib/hooks/useProfile';
+import { Mail, Shield } from 'lucide-react';
 
 export function CampaignDonationWalletAmount({
   amount,
   selectedToken,
   onAmountChanged,
-  onTokenChanged,
+  email,
+  onEmailChanged,
 }: {
   amount: string;
   selectedToken: string;
   onAmountChanged: (amount: string) => void;
   onTokenChanged: (token: string) => void;
+  email: string;
+  onEmailChanged: (email: string) => void;
 }) {
+  const { data: profile } = useUserProfile();
+
+  // Pre-fill email from user profile
+  useEffect(() => {
+    if (profile?.email && !email) {
+      onEmailChanged(profile.email);
+    }
+  }, [profile?.email, email, onEmailChanged]);
+
   const intermediateOnAmountChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       return onAmountChanged(event.target.value);
     },
     [onAmountChanged],
   );
-  const numericAmount = parseFloat(amount) || 0;
+
+  const intermediateOnEmailChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      return onEmailChanged(event.target.value);
+    },
+    [onEmailChanged],
+  );
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-6">
+      {/* Email field */}
+      {!profile?.email && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-gray-900"
+            >
+              Email Address *
+            </Label>
+          </div>
+          <div className="max-w-sm">
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={intermediateOnEmailChange}
+              placeholder="john@example.com"
+              required
+              className="h-10 text-sm"
+            />
+          </div>
+          {/* Privacy message */}
+          <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+            <Shield className="h-4 w-4 flex-shrink-0" />
+            <span>
+              You did not configure your profile yet. We will store your email
+              in your profile settings. We won&apos;t spam you and the email
+              won&apos;t be publicly visible.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Suggested amounts */}
       <CampaignDonationSuggestions
         amount={amount}
@@ -41,31 +86,22 @@ export function CampaignDonationWalletAmount({
       />
 
       {/* Custom amount input */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-gray-900">
           Or enter a custom amount:
         </label>
-        <div className="flex rounded-md border shadow-sm">
-          <Select value={selectedToken} onValueChange={onTokenChanged}>
-            <SelectTrigger className="w-[120px] rounded-r-none border-0 bg-muted">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {supportedTokenList.map((supportedToken: string) => (
-                <SelectItem value={supportedToken} key={supportedToken}>
-                  {supportedToken}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            type="number"
-            value={amount}
-            onChange={intermediateOnAmountChange}
-            className="ml-1 flex-1 rounded-l-none border-0 border-l"
-          />
-          <div className="flex items-center px-3 text-sm text-muted-foreground">
-            {formatCrypto(numericAmount, selectedToken)}
+        <div className="max-w-sm">
+          <div className="relative">
+            <Input
+              type="number"
+              value={amount}
+              onChange={intermediateOnAmountChange}
+              placeholder="Enter amount"
+              className="h-10 pr-20 text-sm"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">
+              USDC
+            </div>
           </div>
         </div>
       </div>

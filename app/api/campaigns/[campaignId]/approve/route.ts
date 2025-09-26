@@ -66,9 +66,11 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     await notify({
       receiverId: creator.id,
       creatorId: user.id,
-      type: 'CampaignApprove',
-      message: 'Approved by admin',
-      data: { campaignId },
+      data: {
+        type: 'CampaignApprove',
+        campaignId,
+        campaignTitle: campaign.title,
+      },
     });
 
     // Configure treasury with campaign parameters

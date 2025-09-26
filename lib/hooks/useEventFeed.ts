@@ -1,17 +1,21 @@
+import { useMemo } from 'react';
 import {
   useMutation,
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { PaginatedResponse } from '@/lib/api/types/common';
+import { useUserProfile, PROFILE_QUERY_KEY } from './useProfile';
+import { NotificationData } from '@/lib/notification';
 
 export const EVENT_FEED_QUERY_KEY = 'event_feed';
+export const EVENT_FEED_REFETCH_INTERVAL = 90000; // 90 seconds
 
 export type EventFeedItem = {
   createdAt: string;
   type: string;
   message: string;
-  data: unknown;
+  data: NotificationData;
 };
 
 export type EventFeedFilters = {
@@ -20,7 +24,7 @@ export type EventFeedFilters = {
   endDate?: string;
 };
 
-interface PaginatedEventFeedResponse extends PaginatedResponse {
+export interface PaginatedEventFeedResponse extends PaginatedResponse {
   events: EventFeedItem[];
 }
 
@@ -50,7 +54,7 @@ function buildEventFeedUrl({
   return `/api/event-feed?${params.toString()}`;
 }
 
-async function fetchEventFeedPage({
+export async function fetchEventFeedPage({
   pageParam = 1,
   pageSize = 10,
   filters,
@@ -116,6 +120,8 @@ export function useInfiniteEventFeed({
         ? firstPage.pagination.currentPage - 1
         : undefined,
     initialPageParam: 1,
+    refetchInterval: EVENT_FEED_REFETCH_INTERVAL,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -145,8 +151,27 @@ export function useMarkEventFeedRead() {
     mutationFn: markEventFeedRead,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [EVENT_FEED_QUERY_KEY],
+        queryKey: [EVENT_FEED_QUERY_KEY, 'infinite'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [PROFILE_QUERY_KEY],
       });
     },
   });
+}
+
+export function useNewEventCount() {
+  const { data: user } = useUserProfile();
+  const { data, hasNextPage } = useInfiniteEventFeed({ pageSize: 10 });
+
+  const count = useMemo(() => {
+    if (!user?.eventFeedRead || !data?.pages[0]?.events) return 0;
+    const readTime = new Date(user.eventFeedRead);
+    const newEvents = data.pages[0].events.filter(
+      (event) => new Date(event.createdAt) > readTime,
+    );
+    return hasNextPage && newEvents.length === 10 ? 10 : newEvents.length;
+  }, [data, user?.eventFeedRead, hasNextPage]);
+
+  return count;
 }

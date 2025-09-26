@@ -1,23 +1,27 @@
 'use client';
 
 import { useInView } from 'react-intersection-observer';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { RoundLoading } from '@/components/round/loading';
 import { RoundError } from '@/components/round/error';
-import { RoundCardDashboard } from '@/components/round/card-dashboard';
+import { RoundCard } from '@/components/round/round-card';
 import { useInfiniteRounds } from '@/lib/hooks/useRounds';
 import { ResponsiveGrid } from '@/components/layout';
+import { LoadMoreButton } from '@/components/shared/load-more-button';
+import { INFINITE_SCROLL_CONFIG } from '@/lib/constant';
 import { RoundItemProps } from '@/types/round';
 interface RoundListProps {
   searchTerm: string;
   pageSize?: number;
   item?: React.ComponentType<RoundItemProps>;
+  forceUserView?: boolean;
 }
 
 export function RoundList({
   searchTerm,
   pageSize = 10,
-  item: ItemComponent = RoundCardDashboard,
+  item: ItemComponent = (props) => <RoundCard {...props} type="standard" />,
+  forceUserView = false,
 }: RoundListProps) {
   const { ref, inView } = useInView();
   const {
@@ -27,13 +31,25 @@ export function RoundList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteRounds(pageSize);
+  } = useInfiniteRounds(pageSize, forceUserView);
+
+  // Check if we've reached the auto-scroll limit
+  const currentPageCount = data?.pages.length ?? 0;
+  const shouldAutoFetch =
+    currentPageCount < INFINITE_SCROLL_CONFIG.MAX_AUTO_PAGES;
+  const shouldShowLoadMore = !shouldAutoFetch && hasNextPage;
 
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage && shouldAutoFetch) {
       fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, shouldAutoFetch]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Filter rounds based on search term and category
   const filteredRounds = data?.pages.map((page) => ({
@@ -61,7 +77,11 @@ export function RoundList({
       <ResponsiveGrid variant="wide-cards" gap="lg">
         {filteredRounds?.map((page) =>
           page.rounds.map((round) => (
-            <ItemComponent key={round.id} round={round} />
+            <ItemComponent
+              key={round.id}
+              round={round}
+              forceUserView={forceUserView}
+            />
           )),
         )}
       </ResponsiveGrid>
@@ -69,8 +89,17 @@ export function RoundList({
       {/* Loading indicator */}
       {isFetchingNextPage && <RoundLoading minimal={true} />}
 
-      {/* Intersection observer target */}
-      <div ref={ref} className="h-10" />
+      {/* Load more button when auto-fetch limit reached */}
+      {shouldShowLoadMore && (
+        <LoadMoreButton
+          onLoadMore={handleLoadMore}
+          hasMore={hasNextPage}
+          isLoading={isFetchingNextPage}
+        />
+      )}
+
+      {/* Intersection observer target - only active when auto-fetching */}
+      {shouldAutoFetch && <div ref={ref} className="h-10" />}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
   useAdminToggleCampaignFeatured,
   useAdminSetCampaignFeaturedDates,
 } from '@/lib/hooks/useAdminCampaigns';
+import { Star } from 'lucide-react';
 
 type Props = {
   campaign: DbCampaign;
@@ -128,6 +129,7 @@ export function CampaignAdminFeaturedDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button className={buttonClassName} onClick={onOpen} variant="ghost">
+            <Star className="mr-2 h-4 w-4" />
             {triggerLabel}
           </Button>
         </DialogTrigger>

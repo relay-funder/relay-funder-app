@@ -6,11 +6,14 @@ import { Button } from '@/components/ui';
 import { useAdminDisableCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminDisableProcessStates } from '@/types/admin';
 import type { DbCampaign } from '@/types/campaign';
+import { Pause } from 'lucide-react';
 
 export function CampaignAdminDisableButton({
   campaign,
+  buttonClassName,
 }: {
   campaign: DbCampaign;
+  buttonClassName?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,10 +77,11 @@ export function CampaignAdminDisableButton({
   return (
     <Button
       onClick={onDisable}
-      className="mt-4 bg-red-600 hover:bg-red-700"
+      className={buttonClassName || 'mt-4 bg-red-600 hover:bg-red-700'}
       disabled={isLoading}
       title="Disable this Campaign from the database"
     >
+      <Pause className="mr-2 h-4 w-4" />
       {isLoading ? 'Processing...' : 'Disable'}
     </Button>
   );

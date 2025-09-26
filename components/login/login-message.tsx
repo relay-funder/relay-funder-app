@@ -30,10 +30,10 @@ export function LoginMessage({ state, error }: LoginMessageProps) {
        * silk state: soon (~2s) overlays the app with a full-screen iframe
        */
       return (
-        <Alert className="text-blue-600">
-          <Wallet className="h-5 w-5" />
-          <AlertTitle>Connecting wallet... Please wait.</AlertTitle>
-        </Alert>
+        <div className="flex items-center justify-center gap-2 text-gray-600">
+          <Wallet className="h-4 w-4" />
+          <span className="text-sm">Connecting wallet... Please wait.</span>
+        </div>
       );
     case LoginState.Authenticating:
       /**
@@ -41,29 +41,31 @@ export function LoginMessage({ state, error }: LoginMessageProps) {
        * now a request for a signin signature is requested
        */
       return (
-        <Alert className="text-green-600">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <AlertTitle>Authenticating your session...</AlertTitle>
-        </Alert>
+        <div className="flex items-center justify-center gap-2 text-gray-700">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Authenticating your session...</span>
+        </div>
       );
     case LoginState.Loading:
       /**
        * booting, wagmi or silk not yet loaded
        */
       return (
-        <Alert className="text-gray-600">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <AlertTitle>Preparing your login...</AlertTitle>
-        </Alert>
+        <div className="flex items-center justify-center gap-2 text-gray-600">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Preparing your login...</span>
+        </div>
       );
     case LoginState.Error:
       return (
-        <Alert variant="destructive">
-          <AlertCircle className="h-5 w-5" />
-          <AlertTitle>
+        <Alert variant="destructive" className="text-left">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="text-sm">
             An error occurred during login. Please try again.
           </AlertTitle>
-          {error !== '' && <AlertDescription>{error}</AlertDescription>}
+          {error !== '' && (
+            <AlertDescription className="text-xs">{error}</AlertDescription>
+          )}
         </Alert>
       );
     case LoginState.Fallback:
@@ -72,20 +74,24 @@ export function LoginMessage({ state, error }: LoginMessageProps) {
        * connected state
        */
       return (
-        <Alert className="text-yellow-600">
-          <AlertCircle className="h-5 w-5" />
-          <AlertTitle>Please connect your wallet to proceed.</AlertTitle>
-        </Alert>
+        <div className="flex items-center justify-center gap-2 text-gray-600">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">
+            Please connect your wallet to proceed.
+          </span>
+        </div>
       );
     case LoginState.Connected:
       /**
        * login process completed, requested redirect to returnUrl
        */
       return (
-        <Alert className="text-green-600">
-          <CheckCircle2 className="h-5 w-5" />
-          <AlertTitle>Wallet connected successfully! Redirecting...</AlertTitle>
-        </Alert>
+        <div className="flex items-center justify-center gap-2 text-gray-700">
+          <CheckCircle2 className="h-4 w-4" />
+          <span className="text-sm">
+            Wallet connected successfully! Redirecting...
+          </span>
+        </div>
       );
     case LoginState.Initializing:
     /**
@@ -93,10 +99,10 @@ export function LoginMessage({ state, error }: LoginMessageProps) {
      */
     default:
       return (
-        <Alert className="text-gray-500">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <AlertTitle>Initializing login process...</AlertTitle>
-        </Alert>
+        <div className="flex items-center justify-center gap-2 text-gray-600">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Initializing login process...</span>
+        </div>
       );
   }
 }

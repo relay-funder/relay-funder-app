@@ -4,11 +4,9 @@ export function HomeExplore() {
   return (
     <ContentArea
       title="Explore Campaigns"
-      subtitle="Explore personal memories shared by refugees—each campaign offers a glimpse into their resilience, hopes, and dreams. By taking in these moments, you help preserve their voices and honor their journeys."
+      subtitle="Discover and fund impactful projects from refugee communities in Kenya and Uganda."
       spacing="tight"
       className="text-center"
-    >
-      <div></div>
-    </ContentArea>
+    />
   );
 }

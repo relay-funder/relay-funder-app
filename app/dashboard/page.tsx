@@ -1,173 +1,197 @@
 'use client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import {
-  Input,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui';
 import { useAuth } from '@/contexts';
-import { Heart, Search } from 'lucide-react';
-import { DashboardOverview } from '@/components/dashboard/overview';
-import { CampaignCardDashboard } from '@/components/campaign/campaign-card';
+import { Heart, History, Bell, Info } from 'lucide-react';
+import { DonorDashboardOverview } from '@/components/dashboard/donor-overview';
+import { FavoriteCard } from '@/components/dashboard/favorite-card';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { CampaignEmpty } from '@/components/campaign/empty';
-import { useInfiniteUserCampaigns } from '@/lib/hooks/useCampaigns';
 import { useUserFavourites } from '@/lib/hooks/useFavourites';
 import { DashboardNotAuthenticated } from '@/components/dashboard/not-authenticated';
-import { PageDashboard } from '@/components/page/dashboard';
-import { CampaignCreate } from '@/components/campaign/create';
-import { Button } from '@/components/ui';
-import { useCallback, useState, type ChangeEvent } from 'react';
-import { CampaignUserList } from '@/components/campaign/list-user';
-import { cn } from '@/lib/utils';
+import { PageLayout } from '@/components/page/layout';
+import { DonationHistory } from '@/components/dashboard/donation-history';
+import { CampaignUpdates } from '@/components/dashboard/campaign-updates';
+import { useCallback, useState } from 'react';
+
 export default function DashboardPage() {
-  const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { authenticated } = useAuth();
-  const { isLoading: loading, error } = useInfiniteUserCampaigns();
+  const [removedFavorites, setRemovedFavorites] = useState<Set<number>>(
+    new Set(),
+  );
 
   const {
     data: favourites,
     isLoading: loadingFavourites,
     error: favouriteError,
   } = useUserFavourites();
-  const onCreate = useCallback(async () => {
-    setShowCampaignCreate(true);
-  }, []);
-  const onCreated = useCallback(async () => {
-    setShowCampaignCreate(false);
-  }, []);
-  const onSearchInputChanged = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
+
+  const onSearchChanged = useCallback(
+    (search: string) => {
+      setSearchTerm(search);
     },
     [setSearchTerm],
   );
 
+  const handleFavoriteRemoved = useCallback((campaignId: number) => {
+    setRemovedFavorites((prev) => new Set(prev).add(campaignId));
+  }, []);
+
   if (!authenticated) {
     return (
-      <PageDashboard>
-        <DashboardOverview />
+      <PageLayout
+        title="Dashboard"
+        searchPlaceholder="Search Favorites"
+        onSearchChanged={onSearchChanged}
+      >
+        <DonorDashboardOverview />
         <DashboardNotAuthenticated />
-      </PageDashboard>
+      </PageLayout>
     );
   }
 
-  if (loading || loadingFavourites) {
+  if (loadingFavourites) {
     return (
-      <PageDashboard>
-        <DashboardOverview />
-        <Tabs defaultValue="my-campaigns" className="mt-8">
+      <PageLayout
+        title="Dashboard"
+        searchPlaceholder="Search Favorites"
+        onSearchChanged={onSearchChanged}
+      >
+        <DonorDashboardOverview />
+        <TooltipProvider>
+          <Tabs defaultValue="history" className="mt-8">
+            <TabsList className="mb-6">
+              <TabsTrigger value="history" className="px-4 py-2">
+                <History className="mr-2 h-4 w-4" />
+                Donation History
+              </TabsTrigger>
+              <TabsTrigger value="favorites" className="px-4 py-2">
+                <Heart className="mr-2 h-4 w-4" />
+                Favorites
+              </TabsTrigger>
+              <TabsTrigger value="updates" className="px-4 py-2">
+                <Bell className="mr-2 h-4 w-4" />
+                Updates
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="ml-1 h-3 w-3 cursor-help text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-48 text-xs">
+                    <p>Updates are from favorites and from donation history.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="history">
+              <CampaignLoading />
+            </TabsContent>
+
+            <TabsContent value="favorites">
+              <CampaignLoading />
+            </TabsContent>
+
+            <TabsContent value="updates">
+              <CampaignLoading />
+            </TabsContent>
+          </Tabs>
+        </TooltipProvider>
+      </PageLayout>
+    );
+  }
+
+  return (
+    <PageLayout
+      title="Dashboard"
+      searchPlaceholder="Search Favorites"
+      onSearchChanged={onSearchChanged}
+    >
+      <DonorDashboardOverview />
+
+      <TooltipProvider>
+        <Tabs defaultValue="history" className="mt-8">
           <TabsList className="mb-6">
-            <TabsTrigger value="my-campaigns" className="px-4 py-2">
-              My Campaigns
+            <TabsTrigger value="history" className="px-4 py-2">
+              <History className="mr-2 h-4 w-4" />
+              Donation History
             </TabsTrigger>
             <TabsTrigger value="favorites" className="px-4 py-2">
               <Heart className="mr-2 h-4 w-4" />
-              My Favorites
+              Favorites
+            </TabsTrigger>
+            <TabsTrigger value="updates" className="px-4 py-2">
+              <Bell className="mr-2 h-4 w-4" />
+              Updates
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="ml-1 h-3 w-3 cursor-help text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-48 text-xs">
+                  <p>Updates are from favorites and from donation history.</p>
+                </TooltipContent>
+              </Tooltip>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="my-campaigns">
-            <CampaignLoading />
+          <TabsContent value="history">
+            <DonationHistory />
           </TabsContent>
 
           <TabsContent value="favorites">
-            <CampaignLoading />
+            {favouriteError ? (
+              <CampaignError error={favouriteError.message} />
+            ) : favourites?.length === 0 ? (
+              <CampaignEmpty
+                message="You haven't saved any campaigns as favorites yet."
+                buttonText="Explore Campaigns"
+                buttonHref="/"
+              />
+            ) : (
+              <div className="space-y-3">
+                {favourites
+                  ?.filter((favourite) => {
+                    // Filter out removed favorites
+                    if (removedFavorites.has(favourite.campaign.id)) {
+                      return false;
+                    }
+
+                    // Apply search filter
+                    const searchLower = searchTerm.toLowerCase();
+                    return (
+                      favourite.campaign.title
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                      favourite.campaign.description
+                        ?.toLowerCase()
+                        .includes(searchLower) ||
+                      favourite.campaign.location
+                        ?.toLowerCase()
+                        .includes(searchLower)
+                    );
+                  })
+                  .map((favourite) => (
+                    <FavoriteCard
+                      key={`favorite-${favourite.campaign.id}`}
+                      favourite={favourite}
+                      onRemoved={handleFavoriteRemoved}
+                    />
+                  ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="updates">
+            <CampaignUpdates />
           </TabsContent>
         </Tabs>
-      </PageDashboard>
-    );
-  }
-  if (showCampaignCreate) {
-    return (
-      <PageDashboard
-        title={
-          <Button
-            variant="outline"
-            onClick={() => setShowCampaignCreate(false)}
-            className="ml-2"
-          >
-            ← Back to My Campaigns
-          </Button>
-        }
-      >
-        <CampaignCreate onCreated={onCreated} />
-      </PageDashboard>
-    );
-  }
-  return (
-    <PageDashboard>
-      {!error && <DashboardOverview />}
-
-      <Tabs defaultValue="my-campaigns" className="mt-8">
-        <TabsList className="mb-6">
-          <TabsTrigger value="my-campaigns" className="px-4 py-2">
-            My Campaigns
-          </TabsTrigger>
-          <TabsTrigger value="favorites" className="px-4 py-2">
-            <Heart className="mr-2 h-4 w-4" />
-            My Favorites
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="my-campaigns">
-          {error ? (
-            <CampaignError error={error.message} />
-          ) : (
-            <>
-              <div className="flex flex-row items-center py-1 md:ml-4">
-                <div className="relative">
-                  <Search
-                    className={cn(
-                      'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400',
-                    )}
-                  />
-                  <Input
-                    className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
-                    placeholder={'Search Your Campaigns'}
-                    type="search"
-                    value={searchTerm}
-                    onChange={onSearchInputChanged}
-                  />
-                </div>
-              </div>
-              <CampaignUserList
-                searchTerm={searchTerm}
-                statusFilter="all"
-                pageSize={3}
-                withRounds={true}
-                item={CampaignCardDashboard}
-                onCreate={onCreate}
-              />
-            </>
-          )}
-        </TabsContent>
-
-        <TabsContent value="favorites">
-          {favouriteError ? (
-            <CampaignError error={favouriteError.message} />
-          ) : favourites?.length === 0 ? (
-            <CampaignEmpty
-              message="You haven't saved any campaigns as favorites yet."
-              buttonText="Explore Campaigns"
-              buttonHref="/"
-            />
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {favourites?.map((favourite) => (
-                <CampaignCardDashboard
-                  key={`favorite-${favourite.campaign.id}`}
-                  campaign={favourite.campaign}
-                  isFavorite={true}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </PageDashboard>
+      </TooltipProvider>
+    </PageLayout>
   );
 }

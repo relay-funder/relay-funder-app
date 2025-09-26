@@ -11,11 +11,14 @@ async function getAuthUrl(): Promise<string | null> {
     const headersList = await headers();
     const host = headersList.get('host');
     const proto = headersList.get('x-forwarded-proto') || 'https';
-    
+
     if (host) {
       // Check if current domain matches deployment domain patterns (e.g., .vercel.app, .netlify.app)
-      const deploymentPatterns = process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map(p => p.trim()) || [];
-      const isDeploymentDomain = deploymentPatterns.some(pattern => {
+      const deploymentPatterns =
+        process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map(
+          (p) => p.trim(),
+        ) || [];
+      const isDeploymentDomain = deploymentPatterns.some((pattern) => {
         // Support wildcards and exact matches
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
@@ -23,9 +26,14 @@ async function getAuthUrl(): Promise<string | null> {
         }
         return host.includes(pattern);
       });
-      
+
       if (isDeploymentDomain) {
-        debug && console.log('Deployment domain detected, using request headers:', { host, proto, patterns: deploymentPatterns });
+        debug &&
+          console.log('Deployment domain detected, using request headers:', {
+            host,
+            proto,
+            patterns: deploymentPatterns,
+          });
         return `${proto}://${host}`;
       } else {
         debug && console.log('Custom domain detected, using NEXTAUTH_URL');
@@ -35,16 +43,16 @@ async function getAuthUrl(): Promise<string | null> {
   } catch (error) {
     debug && console.warn('Failed to get host from headers:', error);
   }
-  
+
   // Fallback to environment variables
   if (process.env.NEXTAUTH_URL) {
     return process.env.NEXTAUTH_URL;
   }
-  
+
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  
+
   return null;
 }
 

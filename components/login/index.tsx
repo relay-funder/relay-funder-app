@@ -173,27 +173,47 @@ export default function Login() {
     }
   }, [web3error, isLoading, isFallback, onError]);
   return (
-    <div className="from-orange-light flex min-h-screen items-center justify-center bg-gradient-to-br to-white p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="pb-6 pt-10 text-center">
-          <div className="mb-4 flex justify-center"></div>
-          <CardTitle className="text-charcoal text-2xl font-semibold">
-            Login
-          </CardTitle>
-          <CardDescription>
-            <LoginMessage state={loginState} error={error} />
-          </CardDescription>
-        </CardHeader>
+    <div className="flex w-full flex-col bg-gray-50">
+      <main className="container mx-auto flex h-[calc(100vh-200px)] max-w-7xl items-center justify-center px-4 py-8">
+        <div className="flex justify-center">
+          <Card className="w-full max-w-md rounded-lg border bg-white shadow-sm">
+            <CardHeader className="pb-6 pt-8 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                  <svg
+                    className="h-8 w-8 text-gray-700"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <CardTitle className="text-2xl font-semibold tracking-tight text-gray-900">
+                Connect Your Wallet
+              </CardTitle>
+              <CardDescription className="text-base text-gray-600">
+                <LoginMessage state={loginState} error={error} />
+              </CardDescription>
+            </CardHeader>
 
-        <CardContent>
-          <LoginFallback
-            show={showFallback}
-            onRestartAutoLogin={onRestartAutoLogin}
-            onLoading={onFallbackLoading}
-            onError={onError}
-          />
-        </CardContent>
-      </Card>
+            <CardContent className="space-y-4">
+              <LoginFallback
+                show={showFallback}
+                onRestartAutoLogin={onRestartAutoLogin}
+                onLoading={onFallbackLoading}
+                onError={onError}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

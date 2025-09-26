@@ -1,56 +1,82 @@
 'use client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { type DbCampaign } from '@/types/campaign';
-import { CampaignDetailTabAbout } from './detail-tab-about';
 import { CampaignDetailTabUpdates } from './detail-tab-updates';
 import { CampaignDetailTabComments } from './detail-tab-comments';
 import { CampaignDetailTabTransactions } from './detail-tab-transactions';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { CampaignDetailTabRounds } from './detail-tab-rounds';
-const TAB_TRIGGER_CLASS_NAMES =
-  'rounded-none data-[state=active]:border-b-2 data-[state=active]:border-green-600';
+import { useUpdateAnchor } from '@/hooks/use-update-anchor';
+import { useState } from 'react';
+
 export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
   const { contributorCount, contributorPendingCount } =
     useCampaignStatsFromInstance({ campaign });
+  const [activeTab, setActiveTab] = useState('transactions');
+
+  // Handle update anchor links - only switch tab, don't prevent user navigation
+  useUpdateAnchor({
+    onUpdateTarget: () => {
+      // Switch to updates tab when an update is targeted
+      setActiveTab('updates');
+    },
+  });
+
   return (
-    <div className="">
-      <Tabs defaultValue="campaign" className="min-h-[380px] space-y-8">
-        <TabsList className="h-12 w-full justify-start overflow-x-auto rounded-none border-b bg-transparent">
-          <TabsTrigger value="campaign" className={TAB_TRIGGER_CLASS_NAMES}>
-            Campaign
+    <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-md bg-gray-100 p-1 pb-[3px] sm:grid-cols-4 sm:gap-0">
+          <TabsTrigger
+            value="transactions"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+          >
+            <span className="hidden sm:inline">Transactions</span>
+            <span className="sm:hidden">Trans.</span>
+            <span className="ml-1">
+              ({contributorCount - contributorPendingCount})
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="updates" className={TAB_TRIGGER_CLASS_NAMES}>
-            Updates ({campaign._count?.updates ?? 0})
+          <TabsTrigger
+            value="updates"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+          >
+            <span>Updates</span>
+            <span className="ml-1">({campaign._count?.updates ?? 0})</span>
           </TabsTrigger>
-          <TabsTrigger value="comments" className={TAB_TRIGGER_CLASS_NAMES}>
-            Comments ({campaign._count?.comments ?? 0})
+          <TabsTrigger
+            value="comments"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+          >
+            <span className="hidden sm:inline">Comments</span>
+            <span className="sm:hidden">Comm.</span>
+            <span className="ml-1">({campaign._count?.comments ?? 0})</span>
           </TabsTrigger>
-          <TabsTrigger value="transactions" className={TAB_TRIGGER_CLASS_NAMES}>
-            Transactions ({contributorCount - contributorPendingCount})
-          </TabsTrigger>
-          <TabsTrigger value="rounds" className={TAB_TRIGGER_CLASS_NAMES}>
-            Rounds
+          <TabsTrigger
+            value="rounds"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+          >
+            <span>Rounds</span>
+            <span className="ml-1">({campaign.rounds?.length ?? 0})</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="campaign" className="mt-6">
-          <CampaignDetailTabAbout campaign={campaign} />
-        </TabsContent>
+        <div className="mt-4 min-h-[300px]">
+          <TabsContent value="transactions" className="mt-0">
+            <CampaignDetailTabTransactions campaign={campaign} />
+          </TabsContent>
 
-        <TabsContent value="updates">
-          <CampaignDetailTabUpdates campaign={campaign} />
-        </TabsContent>
+          <TabsContent value="updates" className="mt-0">
+            <CampaignDetailTabUpdates campaign={campaign} />
+          </TabsContent>
 
-        <TabsContent value="comments">
-          <CampaignDetailTabComments campaign={campaign} />
-        </TabsContent>
+          <TabsContent value="comments" className="mt-0">
+            <CampaignDetailTabComments campaign={campaign} />
+          </TabsContent>
 
-        <TabsContent value="transactions" className="space-y-4">
-          <CampaignDetailTabTransactions campaign={campaign} />
-        </TabsContent>
-        <TabsContent value="rounds" className="space-y-4">
-          <CampaignDetailTabRounds campaign={campaign} />
-        </TabsContent>
+          <TabsContent value="rounds" className="mt-0">
+            <CampaignDetailTabRounds campaign={campaign} />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

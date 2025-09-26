@@ -80,7 +80,7 @@ export function RoundMainImageCard({
     }
   }, [imageUrl]);
   return (
-    <>
+    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-gray-100">
       {(typeof imageUrl === 'string' || mainImageObject !== null) && (
         <Image
           src={
@@ -92,6 +92,6 @@ export function RoundMainImageCard({
           priority
         />
       )}
-    </>
+    </div>
   );
 }

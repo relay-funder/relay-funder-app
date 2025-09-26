@@ -12,13 +12,13 @@ export default async function RoundPage({
   const { id: paramId } = await params;
   const session = await auth();
   const sessionAddress = session?.user.address ?? null;
-  const isAdmin = session?.user.roles.includes('admin') ?? false;
   const id = parseInt(paramId);
   const queryClient = getQueryClient();
-  await prefetchRound(queryClient, id, isAdmin, sessionAddress);
+  // Force user-only view even for admins - this is the public user-facing round page
+  await prefetchRound(queryClient, id, false, sessionAddress);
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <RoundFull id={id} />
+      <RoundFull id={id} forceUserView={true} />
     </HydrationBoundary>
   );
 }

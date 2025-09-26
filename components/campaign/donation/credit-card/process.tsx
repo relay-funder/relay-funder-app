@@ -11,11 +11,13 @@ export function CampaignDonationCreditCardProcess({
   amount,
   donationToRelayFunder,
   anonymous,
+  userEmail,
 }: {
   campaign: DbCampaign;
   amount: string;
   donationToRelayFunder: number;
   anonymous: boolean;
+  userEmail?: string;
 }) {
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const relayFunderAmount = useMemo(() => {
@@ -34,7 +36,7 @@ export function CampaignDonationCreditCardProcess({
       amount,
       poolAmount,
       campaign,
-      userEmail: DEFAULT_USER_EMAIL, // TODO: Get actual user email from session or profile
+      userEmail: userEmail || DEFAULT_USER_EMAIL,
       isAnonymous: anonymous,
     });
   return (

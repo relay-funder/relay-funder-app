@@ -295,12 +295,12 @@ Your support can make a huge difference! Please check it out and consider contri
             >
               <strong>Sharing is Caring!</strong>{' '}
               <p>
-                By sharing this project, you help increase its visibility and
+                By sharing this campaign, you help increase its visibility and
                 attract more contributors. The networks displayed here are just
                 a subset; you can also copy the promotional text to share on any
                 platform. More visibility means a better chance of reaching
                 funding goals and engaging supporters beyond your network. Let’s
-                spread the word and make this project a success!
+                spread the word and make this campaign a success!
               </p>
             </div>
             <div
