@@ -85,7 +85,7 @@ export function EmailCapture({
         recipientWallet: profile?.recipientWallet || '',
       });
 
-      onComplete(email);
+      onComplete?.(email);
     } catch (error) {
       toast({
         title: 'Error',
