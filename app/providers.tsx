@@ -13,6 +13,7 @@ import {
   CollectionProvider,
 } from '@/contexts';
 import { getQueryClient } from '@/lib/query-client';
+import { Web3ContextProvider } from '@/lib/web3';
 
 const queryClient = getQueryClient();
 
@@ -23,9 +24,11 @@ export default function Providers({ children }: { children: ReactNode }) {
         <FeatureFlagsProvider>
           <SidebarProvider>
             <EnvironmentProvider>
-              <AuthProvider>
-                <CollectionProvider>{children}</CollectionProvider>
-              </AuthProvider>
+              <Web3ContextProvider>
+                <AuthProvider>
+                  <CollectionProvider>{children}</CollectionProvider>
+                </AuthProvider>
+              </Web3ContextProvider>
             </EnvironmentProvider>
           </SidebarProvider>
         </FeatureFlagsProvider>
