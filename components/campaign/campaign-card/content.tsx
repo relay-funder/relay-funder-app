@@ -93,7 +93,7 @@ export function CampaignCardContent({
               {/* Progress Bar */}
               <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-full bg-blue-600 transition-all duration-300"
+                  className="h-full bg-green-600 transition-all duration-300"
                   style={{ width: `${Math.min(progress, 100)}%` }}
                 />
               </div>

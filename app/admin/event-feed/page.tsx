@@ -2,7 +2,7 @@ import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { AdminAccessDenied } from '@/components/admin/access-denied';
 import { auth } from '@/server/auth';
-import { AdminInbox } from '@/components/event-feed/admin-inbox';
+import { AdminEventFeedExplore } from '@/components/event-feed/admin-event-feed-explore';
 import {
   ADMIN_EVENT_FEED_QUERY_KEY,
   fetchAdminEventFeedPage,
@@ -33,7 +33,7 @@ export default async function EventFeedPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <AdminInbox />
+      <AdminEventFeedExplore />
     </HydrationBoundary>
   );
 }
