@@ -2,14 +2,7 @@
 
 import { useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import {
-  Bell,
-  Ban,
-  MessageSquare,
-  Wallet2,
-  Megaphone,
-  CheckCircle2,
-} from 'lucide-react';
+import { Bell, MessageSquare, FileText, Clock, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
@@ -17,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormattedDate } from '@/components/formatted-date';
 import { UserInlineName } from '@/components/user/inline-name';
+import { useUserProfile } from '@/lib/hooks/useProfile';
 
 export type EventFeedUser = {
   id?: number;
@@ -47,12 +41,12 @@ export type EventFeedTypeConfig = {
 export const EVENT_FEED_TYPE_CONFIG: Record<string, EventFeedTypeConfig> = {
   CampaignApprove: {
     label: 'Campaign Approved',
-    icon: CheckCircle2,
+    icon: Edit,
     badgeVariant: 'default',
   },
   CampaignDisable: {
-    label: 'Campaign Disabled',
-    icon: Ban,
+    label: 'Campaign Ended',
+    icon: Edit,
     badgeVariant: 'destructive',
   },
   CampaignComment: {
@@ -61,13 +55,13 @@ export const EVENT_FEED_TYPE_CONFIG: Record<string, EventFeedTypeConfig> = {
     badgeVariant: 'secondary',
   },
   CampaignPayment: {
-    label: 'New Contribution',
-    icon: Wallet2,
+    label: 'New Donation',
+    icon: Clock,
     badgeVariant: 'default',
   },
   CampaignUpdate: {
     label: 'Campaign Update',
-    icon: Megaphone,
+    icon: FileText,
     badgeVariant: 'secondary',
   },
 };
@@ -176,7 +170,12 @@ export function EventFeedListItem({
   showReceiver: showReceiverOverride,
 }: EventFeedListItemProps) {
   const { isAdmin } = useAuth();
+  const { data: user } = useUserProfile();
   const showReceiver = showReceiverOverride ?? Boolean(isAdmin);
+  const isUnread = useMemo(() => {
+    if (!user?.eventFeedRead) return true;
+    return new Date(event.createdAt) > new Date(user.eventFeedRead);
+  }, [event.createdAt, user?.eventFeedRead]);
   const config = useMemo<EventFeedTypeConfig>(() => {
     return EVENT_FEED_TYPE_CONFIG[event.type] ?? fallbackTypeConfig(event.type);
   }, [event.type]);
@@ -257,11 +256,16 @@ export function EventFeedListItem({
         'flex items-start gap-4 border border-border/60 bg-card px-4 py-5 transition-shadow hover:shadow-md',
         onSelect &&
           'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+        isUnread &&
+          'border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20',
         className,
       )}
     >
-      <div className="mt-1 flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-muted text-muted-foreground">
+      <div className="relative mt-1 flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-muted text-muted-foreground">
         <Icon className="h-5 w-5" />
+        {isUnread && (
+          <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-blue-500" />
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">

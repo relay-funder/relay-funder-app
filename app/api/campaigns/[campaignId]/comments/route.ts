@@ -10,7 +10,7 @@ import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 import { addCampaignComment, getCampaign } from '@/lib/api/campaigns';
 import { checkAbusiveContent, listComments } from '@/lib/api/comment';
-import { getUser } from '@/lib/api/user';
+import { getUser, getUserNameFromInstance } from '@/lib/api/user';
 import { notify } from '@/lib/api/event-feed';
 
 const MAX_COMMENT_LENGTH = 1000;
@@ -95,12 +95,11 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     }
     await checkAbusiveContent(content);
     addCampaignComment(campaignId, content, session.user.address);
+    const userName = getUserNameFromInstance(user) || user.address || 'unknown';
     await notify({
       receiverId: creator.id,
       creatorId: user.id,
-      type: 'CampaignComment',
-      message: `Comment by user`,
-      data: { campaignId },
+      data: { type: 'CampaignComment', campaignId, action: 'posted', userName },
     });
 
     return response({
@@ -158,12 +157,17 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
     }
     await db.comment.delete({ where: { id: commentId } });
     if (notifyCreator) {
+      const userName =
+        getUserNameFromInstance(user) || user.address || 'unknown';
       await notify({
         receiverId: creator.id,
         creatorId: user.id,
-        type: 'CampaignComment',
-        message: `Comment by user`,
-        data: { campaignId },
+        data: {
+          type: 'CampaignComment',
+          campaignId,
+          action: 'deleted',
+          userName,
+        },
       });
     }
     return response({

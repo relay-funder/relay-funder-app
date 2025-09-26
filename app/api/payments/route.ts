@@ -10,6 +10,8 @@ import {
   PostPaymentBodyRouteSchema,
 } from '@/lib/api/types/campaigns/payments';
 import { notify } from '@/lib/api/event-feed';
+import { getUserNameFromInstance } from '@/lib/api/user';
+import { formatCrypto } from '@/lib/format-crypto';
 
 export async function POST(req: Request) {
   try {
@@ -58,12 +60,31 @@ export async function POST(req: Request) {
         });
       }
     }
+    // Fetch payment with user for notification
+    const paymentWithUser = await db.payment.findUnique({
+      where: { id: payment.id },
+      include: { user: true },
+    });
+    if (!paymentWithUser) {
+      throw new ApiNotFoundError('Payment not found');
+    }
+    const numericAmount = parseFloat(paymentWithUser.amount);
+    const formattedAmount = formatCrypto(numericAmount, paymentWithUser.token);
+    const donorName = paymentWithUser.isAnonymous
+      ? 'anon'
+      : getUserNameFromInstance(paymentWithUser.user) ||
+        paymentWithUser.user?.address ||
+        'unknown';
     await notify({
       receiverId: creator.id,
       creatorId: user.id,
-      type: 'CampaignPayment',
-      message: `Payment of Received`,
-      data: { campaignId: campaign.id },
+      data: {
+        type: 'CampaignPayment',
+        campaignId: campaign.id,
+        paymentId: payment.id,
+        formattedAmount,
+        donorName,
+      },
     });
     return response({ paymentId: payment.id });
   } catch (error: unknown) {

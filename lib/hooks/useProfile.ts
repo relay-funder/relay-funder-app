@@ -23,6 +23,7 @@ interface IUserProfileApi {
   updatedAt: Date;
   username: string;
   bio: string;
+  eventFeedRead: Date;
 }
 
 async function updateUserProfile(

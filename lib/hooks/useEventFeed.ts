@@ -1,11 +1,14 @@
+import { useMemo } from 'react';
 import {
   useMutation,
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { PaginatedResponse } from '@/lib/api/types/common';
+import { useUserProfile } from './useProfile';
 
 export const EVENT_FEED_QUERY_KEY = 'event_feed';
+export const EVENT_FEED_REFETCH_INTERVAL = 90000; // 90 seconds
 
 export type EventFeedItem = {
   createdAt: string;
@@ -116,6 +119,8 @@ export function useInfiniteEventFeed({
         ? firstPage.pagination.currentPage - 1
         : undefined,
     initialPageParam: 1,
+    refetchInterval: EVENT_FEED_REFETCH_INTERVAL,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -149,4 +154,20 @@ export function useMarkEventFeedRead() {
       });
     },
   });
+}
+
+export function useNewEventCount() {
+  const { data: user } = useUserProfile();
+  const { data, hasNextPage } = useInfiniteEventFeed({ pageSize: 10 });
+
+  const count = useMemo(() => {
+    if (!user?.eventFeedRead || !data?.pages[0]?.events) return 0;
+    const readTime = new Date(user.eventFeedRead);
+    const newEvents = data.pages[0].events.filter(
+      (event) => new Date(event.createdAt) > readTime,
+    );
+    return hasNextPage && newEvents.length === 10 ? 10 : newEvents.length;
+  }, [data, user?.eventFeedRead, hasNextPage]);
+
+  return count;
 }

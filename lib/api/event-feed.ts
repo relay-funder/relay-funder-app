@@ -1,25 +1,26 @@
 import { JsonObject } from '@/.generated/prisma/client/runtime/library';
 import { db } from '@/server/db';
-import { NotifyType } from './types/event-feed';
+import { generateMessage, NotificationData } from '@/lib/notification';
 
 export async function notify({
   receiverId,
   creatorId,
-  type,
   message,
   data,
 }: {
   receiverId: number;
   creatorId: number;
-  type: NotifyType;
-  message: string;
-  data?: unknown;
+  message?: string;
+  data: NotificationData;
 }) {
+  if (!message) {
+    message = generateMessage(data);
+  }
   await db.eventFeed.create({
     data: {
       receiver: { connect: { id: receiverId } },
       createdBy: { connect: { id: creatorId } },
-      type,
+      type: data.type,
       message,
       data: data as JsonObject,
     },

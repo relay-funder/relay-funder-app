@@ -11,6 +11,7 @@ import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { PageDefaultContent } from '@/components/page/default-content';
+import { EventFeedBell } from '@/components/event-feed/event-feed-bell';
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
   const { authenticated, isReady } = useAuth();
@@ -38,7 +39,9 @@ export default function ProfilePage() {
   return (
     <PageHome
       header={
-        <PageHeader message="Manage your account settings, Wallet, and payment methods."></PageHeader>
+        <PageHeader message="Manage your account settings, Wallet, and payment methods.">
+          <EventFeedBell />
+        </PageHeader>
       }
     >
       <PageDefaultContent title="Profile">

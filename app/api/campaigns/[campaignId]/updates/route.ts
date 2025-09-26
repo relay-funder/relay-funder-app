@@ -192,9 +192,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         notify({
           receiverId,
           creatorId: user.id,
-          type: 'CampaignUpdate',
-          message: 'Campaign updated',
-          data: { campaignId: campaign.id },
+          data: { type: 'CampaignUpdate', campaignId: campaign.id },
         }),
       ),
     );
