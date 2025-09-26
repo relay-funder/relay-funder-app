@@ -309,9 +309,12 @@ const remoteImageFiles = {
 const usedImages = new Set<string>();
 
 // Function to select unique remote image based on campaign category
-function selectUniqueCampaignImage(category: string, campaignIndex: number): string {
+function selectUniqueCampaignImage(
+  category: string,
+  campaignIndex: number,
+): string {
   let availableImages: string[] = [];
-  
+
   switch (category) {
     case 'education':
       availableImages = [...remoteImageFiles.education];
@@ -328,10 +331,10 @@ function selectUniqueCampaignImage(category: string, campaignIndex: number): str
     default:
       availableImages = [...remoteImageFiles.general];
   }
-  
+
   // Filter out already used images
-  const unusedImages = availableImages.filter(img => !usedImages.has(img));
-  
+  const unusedImages = availableImages.filter((img) => !usedImages.has(img));
+
   // If all category images are used, fall back to any unused image from all categories
   if (unusedImages.length === 0) {
     const allImages = [
@@ -342,12 +345,13 @@ function selectUniqueCampaignImage(category: string, campaignIndex: number): str
       ...remoteImageFiles.health,
       ...remoteImageFiles.general,
     ];
-    const allUnusedImages = allImages.filter(img => !usedImages.has(img));
-    
+    const allUnusedImages = allImages.filter((img) => !usedImages.has(img));
+
     if (allUnusedImages.length === 0) {
       // If all images are somehow used, reset and start over
       usedImages.clear();
-      const selectedImage = availableImages[campaignIndex % availableImages.length];
+      const selectedImage =
+        availableImages[campaignIndex % availableImages.length];
       usedImages.add(selectedImage);
       return selectedImage;
     } else {
@@ -693,10 +697,11 @@ async function main() {
 
     // Assign remote IPFS image based on campaign type and link properly to campaign
     // Use unique selection for ACTIVE campaigns, regular selection for others
-    const imageUrl = campaignData.status === CampaignStatus.ACTIVE 
-      ? selectUniqueCampaignImage(campaign.category || 'general', i)
-      : selectCampaignImage(campaign.category || 'general');
-    
+    const imageUrl =
+      campaignData.status === CampaignStatus.ACTIVE
+        ? selectUniqueCampaignImage(campaign.category || 'general', i)
+        : selectCampaignImage(campaign.category || 'general');
+
     const media = await db.media.create({
       data: {
         url: imageUrl,
@@ -709,8 +714,11 @@ async function main() {
       },
     });
 
-    const imageType = campaignData.status === CampaignStatus.ACTIVE ? 'unique' : 'shared';
-    console.log(`   🖼️  Assigned ${imageType} image: ${imageUrl.split('/').pop()?.split('-')[0] || 'unknown'}`);
+    const imageType =
+      campaignData.status === CampaignStatus.ACTIVE ? 'unique' : 'shared';
+    console.log(
+      `   🖼️  Assigned ${imageType} image: ${imageUrl.split('/').pop()?.split('-')[0] || 'unknown'}`,
+    );
 
     // Link the media to the campaign via mediaOrder (critical for display)
     await db.campaign.update({
@@ -1192,11 +1200,26 @@ async function main() {
   });
 
   // Combine test creator campaigns with a few additional ones
-  const allCampaignsWithDetails = [...testCreatorCampaigns, ...additionalCampaigns];
+  const allCampaignsWithDetails = [
+    ...testCreatorCampaigns,
+    ...additionalCampaigns,
+  ];
 
-  console.log(`   📊 Processing ${testCreatorCampaigns.length} test creator campaigns + ${additionalCampaigns.length} additional campaigns`);
-  console.log(`   👤 Test Creator 1 campaigns: ${testCreatorCampaigns.filter(c => c.creatorAddress === testCreatorUser.address).map(c => `"${c.title}"`).join(', ')}`);
-  console.log(`   👤 Test Creator 2 campaigns: ${testCreatorCampaigns.filter(c => c.creatorAddress === testCreatorUser2.address).map(c => `"${c.title}"`).join(', ')}`);
+  console.log(
+    `   📊 Processing ${testCreatorCampaigns.length} test creator campaigns + ${additionalCampaigns.length} additional campaigns`,
+  );
+  console.log(
+    `   👤 Test Creator 1 campaigns: ${testCreatorCampaigns
+      .filter((c) => c.creatorAddress === testCreatorUser.address)
+      .map((c) => `"${c.title}"`)
+      .join(', ')}`,
+  );
+  console.log(
+    `   👤 Test Creator 2 campaigns: ${testCreatorCampaigns
+      .filter((c) => c.creatorAddress === testCreatorUser2.address)
+      .map((c) => `"${c.title}"`)
+      .join(', ')}`,
+  );
 
   let eventCount = 0;
   const maxEventCount = 200; // Increased limit to ensure comprehensive event feed data
@@ -1204,7 +1227,9 @@ async function main() {
   // Create payment notifications
   for (const campaign of allCampaignsWithDetails) {
     if (eventCount >= maxEventCount) {
-      console.log(`   ⚠️ Reached maximum event count (${maxEventCount}), stopping...`);
+      console.log(
+        `   ⚠️ Reached maximum event count (${maxEventCount}), stopping...`,
+      );
       break;
     }
 
@@ -1214,7 +1239,8 @@ async function main() {
     if (!creator) continue;
 
     // Payment notifications - donors notify campaign creators (limited)
-    for (const payment of campaign.payments.slice(0, 5)) { // Max 5 payments per campaign
+    for (const payment of campaign.payments.slice(0, 5)) {
+      // Max 5 payments per campaign
       if (payment.userId === creator.id) continue; // Skip self-donations
       if (eventCount >= maxEventCount) break;
 
@@ -1240,9 +1266,10 @@ async function main() {
     }
 
     // Comment notifications - commenters notify campaign creators (limited)
-    for (const comment of campaign.comments.slice(0, 3)) { // Max 3 comments per campaign
+    for (const comment of campaign.comments.slice(0, 3)) {
+      // Max 3 comments per campaign
       if (eventCount >= maxEventCount) break;
-      
+
       const commenter = await db.user.findUnique({
         where: { address: comment.userAddress },
       });
@@ -1270,23 +1297,26 @@ async function main() {
     }
 
     // Update notifications - creators notify their donors/commenters (limited)
-    for (const update of campaign.updates.slice(0, 2)) { // Max 2 updates per campaign
+    for (const update of campaign.updates.slice(0, 2)) {
+      // Max 2 updates per campaign
       if (eventCount >= maxEventCount) break;
-      
+
       // Limit to first 5 interacted users to prevent explosion
       const interactedUsers = new Set<number>();
 
-      campaign.payments.slice(0, 5).forEach((p) => interactedUsers.add(p.userId));
-      
+      campaign.payments
+        .slice(0, 5)
+        .forEach((p) => interactedUsers.add(p.userId));
+
       // Remove the creator from the notification list
       interactedUsers.delete(creator.id);
 
       // Limit to max 5 users per update
       const limitedUsers = Array.from(interactedUsers).slice(0, 5);
-      
+
       for (const userId of limitedUsers) {
         if (eventCount >= maxEventCount) break;
-        
+
         await notify({
           receiverId: userId,
           creatorId: creator.id,
@@ -1580,19 +1610,29 @@ async function main() {
       orderBy: { id: 'asc' },
     });
 
-    const activeCampaigns = campaignsWithMedia.filter(c => c.status === 'ACTIVE');
-    const otherCampaigns = campaignsWithMedia.filter(c => c.status !== 'ACTIVE');
+    const activeCampaigns = campaignsWithMedia.filter(
+      (c) => c.status === 'ACTIVE',
+    );
+    const otherCampaigns = campaignsWithMedia.filter(
+      (c) => c.status !== 'ACTIVE',
+    );
 
     console.log('   📷 ACTIVE Campaigns (unique images):');
     activeCampaigns.forEach((campaign) => {
-      const imageFileName = campaign.media[0]?.url.split('/').pop()?.split('-')[0] || 'no-image';
-      console.log(`      Campaign ${campaign.id}: "${campaign.title}" → ${imageFileName}`);
+      const imageFileName =
+        campaign.media[0]?.url.split('/').pop()?.split('-')[0] || 'no-image';
+      console.log(
+        `      Campaign ${campaign.id}: "${campaign.title}" → ${imageFileName}`,
+      );
     });
 
     console.log('   📷 Other Campaigns (shared images allowed):');
     otherCampaigns.forEach((campaign) => {
-      const imageFileName = campaign.media[0]?.url.split('/').pop()?.split('-')[0] || 'no-image';
-      console.log(`      Campaign ${campaign.id}: "${campaign.title}" → ${imageFileName}`);
+      const imageFileName =
+        campaign.media[0]?.url.split('/').pop()?.split('-')[0] || 'no-image';
+      console.log(
+        `      Campaign ${campaign.id}: "${campaign.title}" → ${imageFileName}`,
+      );
     });
 
     console.log(`\n🎨 Unique images for ACTIVE campaigns: ${usedImages.size}`);
