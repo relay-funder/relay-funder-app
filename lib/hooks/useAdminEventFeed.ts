@@ -1,4 +1,8 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { PaginatedResponse } from '@/lib/api/types/common';
 import type { NotificationData } from '@/lib/notification';
 
@@ -116,5 +120,37 @@ export function useInfiniteAdminEventFeed({
     initialPageParam: 1,
     refetchInterval: ADMIN_EVENT_FEED_REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
+  });
+}
+
+async function markAdminEventFeedRead() {
+  const response = await fetch('/api/admin/event-feed', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    let message = 'Failed to mark admin event feed as read';
+    try {
+      const err = await response.json();
+      message = err?.error || message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(message);
+  }
+
+  return response.json() as Promise<{ success: boolean }>;
+}
+
+export function useMarkAdminEventFeedRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: markAdminEventFeedRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_EVENT_FEED_QUERY_KEY, 'infinite'],
+      });
+    },
   });
 }

@@ -5,7 +5,7 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { PaginatedResponse } from '@/lib/api/types/common';
-import { useUserProfile } from './useProfile';
+import { useUserProfile, PROFILE_QUERY_KEY } from './useProfile';
 import { NotificationData } from '@/lib/notification';
 
 export const EVENT_FEED_QUERY_KEY = 'event_feed';
@@ -151,7 +151,10 @@ export function useMarkEventFeedRead() {
     mutationFn: markEventFeedRead,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [EVENT_FEED_QUERY_KEY],
+        queryKey: [EVENT_FEED_QUERY_KEY, 'infinite'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [PROFILE_QUERY_KEY],
       });
     },
   });
