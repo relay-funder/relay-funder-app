@@ -24,11 +24,16 @@ import { RoundMainImageAvatar } from './main-image-avatar';
 export function RoundCardMinimal({
   round,
   campaign,
+  forceUserView = false,
 }: {
   round: GetRoundResponseInstance;
   campaign?: DbCampaign;
+  forceUserView?: boolean;
 }) {
-  const { isAdmin, address } = useAuth();
+  const { isAdmin: authIsAdmin, address } = useAuth();
+
+  // Force user view if specified, otherwise use actual admin status
+  const isAdmin = forceUserView ? false : authIsAdmin;
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
   const { toast } = useToast();

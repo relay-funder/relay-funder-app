@@ -33,8 +33,13 @@ async function fetchRounds(status?: string) {
   const data = await response.json();
   return data.rounds;
 }
-async function fetchRound(id: number) {
-  const url = `/api/rounds/${id}`;
+async function fetchRound(id: number, forceUserView = false) {
+  const params = new URLSearchParams();
+  if (forceUserView) {
+    params.set('forceUserView', 'true');
+  }
+
+  const url = `/api/rounds/${id}${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
@@ -44,8 +49,21 @@ async function fetchRound(id: number) {
   return data as GetRoundResponse;
 }
 
-async function fetchRoundPage({ pageParam = 1, pageSize = 10 }) {
-  const url = `/api/rounds?page=${pageParam}&pageSize=${pageSize}`;
+async function fetchRoundPage({
+  pageParam = 1,
+  pageSize = 10,
+  forceUserView = false,
+}) {
+  const params = new URLSearchParams({
+    page: pageParam.toString(),
+    pageSize: pageSize.toString(),
+  });
+
+  if (forceUserView) {
+    params.set('forceUserView', 'true');
+  }
+
+  const url = `/api/rounds?${params.toString()}`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
@@ -283,21 +301,22 @@ export function useActiveRound() {
     enabled: true,
   });
 }
-export function useRound(id: number) {
+export function useRound(id: number, forceUserView = false) {
   return useQuery({
-    queryKey: [ROUND_QUERY_KEY, id],
-    queryFn: () => fetchRound(id),
+    queryKey: [ROUND_QUERY_KEY, id, forceUserView],
+    queryFn: () => fetchRound(id, forceUserView),
     enabled: true,
   });
 }
 
-export function useInfiniteRounds(pageSize = 10) {
+export function useInfiniteRounds(pageSize = 10, forceUserView = false) {
   return useInfiniteQuery<PaginatedRoundsResponse, Error>({
-    queryKey: [ROUNDS_QUERY_KEY, 'infinite', pageSize],
+    queryKey: [ROUNDS_QUERY_KEY, 'infinite', pageSize, forceUserView],
     queryFn: ({ pageParam = 1 }) =>
       fetchRoundPage({
         pageParam: pageParam as number,
         pageSize,
+        forceUserView,
       }),
     getNextPageParam: (lastPage: PaginatedRoundsResponse) => {
       return lastPage.pagination.hasMore

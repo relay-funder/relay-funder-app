@@ -7,10 +7,17 @@ import { RoundCard } from '@/components/round/round-card';
 import { PageLayout } from '@/components/page/layout';
 import { useAuth } from '@/contexts';
 
-export function RoundExplore() {
+export function RoundExplore({
+  forceUserView = false,
+}: {
+  forceUserView?: boolean;
+}) {
   const [showRoundCreate, setShowRoundCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const { isAdmin } = useAuth();
+  const { isAdmin: authIsAdmin } = useAuth();
+
+  // Force user view if specified, otherwise use actual admin status
+  const isAdmin = forceUserView ? false : authIsAdmin;
   return (
     <PageLayout
       title="Funding Rounds"
@@ -34,7 +41,14 @@ export function RoundExplore() {
         <>
           <RoundList
             searchTerm={searchTerm}
-            item={(props) => <RoundCard {...props} type="enhanced" />}
+            item={(props) => (
+              <RoundCard
+                {...props}
+                type="enhanced"
+                forceUserView={forceUserView}
+              />
+            )}
+            forceUserView={forceUserView}
           />
         </>
       )}

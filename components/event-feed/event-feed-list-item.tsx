@@ -160,10 +160,6 @@ export function EventFeedListItem({
   const config = useMemo<EventFeedTypeConfig>(() => {
     return EVENT_FEED_TYPE_CONFIG[event.type] ?? fallbackTypeConfig(event.type);
   }, [event.type]);
-  const creatorUser = useMemo(
-    () => toInlineUser(event.createdBy),
-    [event.createdBy],
-  );
   const receiverUser = useMemo(
     () => toInlineUser(event.receiver),
     [event.receiver],
@@ -244,12 +240,8 @@ export function EventFeedListItem({
         </>
       )}
 
-      {(creatorUser || (showReceiver && receiverUser)) && (
+      {showReceiver && receiverUser && (
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          {creatorUser ? (
-            <UserInlineName user={creatorUser} prefix="Creator:" />
-          ) : null}
-
           {showReceiver && receiverUser ? (
             <UserInlineName user={receiverUser} prefix="Receiver:" />
           ) : null}

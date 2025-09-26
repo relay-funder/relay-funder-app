@@ -48,8 +48,8 @@ export function PageNavMenuItems() {
       );
     }
 
-    // Add Funding Rounds for non-admin users
-    if (authenticated && !isAdmin) {
+    // Add Funding Rounds for all authenticated users (both regular users and admins)
+    if (authenticated) {
       baseItems.push({
         icon: <Coins className="h-6 w-6" />,
         label: 'Funding Rounds',
@@ -58,7 +58,7 @@ export function PageNavMenuItems() {
     }
 
     return baseItems;
-  }, [authenticated, isAdmin]);
+  }, [authenticated]);
 
   const adminItems = useMemo(() => {
     if (!authenticated || !isAdmin) return [];

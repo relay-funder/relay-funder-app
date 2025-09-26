@@ -14,12 +14,14 @@ interface RoundListProps {
   searchTerm: string;
   pageSize?: number;
   item?: React.ComponentType<RoundItemProps>;
+  forceUserView?: boolean;
 }
 
 export function RoundList({
   searchTerm,
   pageSize = 10,
   item: ItemComponent = (props) => <RoundCard {...props} type="standard" />,
+  forceUserView = false,
 }: RoundListProps) {
   const { ref, inView } = useInView();
   const {
@@ -29,7 +31,7 @@ export function RoundList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteRounds(pageSize);
+  } = useInfiniteRounds(pageSize, forceUserView);
 
   // Check if we've reached the auto-scroll limit
   const currentPageCount = data?.pages.length ?? 0;
@@ -75,7 +77,11 @@ export function RoundList({
       <ResponsiveGrid variant="wide-cards" gap="lg">
         {filteredRounds?.map((page) =>
           page.rounds.map((round) => (
-            <ItemComponent key={round.id} round={round} />
+            <ItemComponent
+              key={round.id}
+              round={round}
+              forceUserView={forceUserView}
+            />
           )),
         )}
       </ResponsiveGrid>

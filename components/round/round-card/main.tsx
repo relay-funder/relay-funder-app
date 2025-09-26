@@ -40,8 +40,12 @@ export function RoundCard({
   type = 'standard',
   displayOptions: userDisplayOptions = {},
   className,
-}: RoundCardProps) {
-  const { isAdmin, address } = useAuth();
+  forceUserView = false,
+}: RoundCardProps & { forceUserView?: boolean }) {
+  const { isAdmin: authIsAdmin, address } = useAuth();
+
+  // Force user view if specified, otherwise use actual admin status
+  const isAdmin = forceUserView ? false : authIsAdmin;
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
 

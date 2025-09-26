@@ -25,9 +25,18 @@ import { RoundAdminInlineEdit } from './admin/inline-edit';
 import { RoundApplyDialog } from './apply-dialog';
 import { Button } from '@/components/ui';
 
-export function RoundFull({ id }: { id: number }) {
-  const { data: roundInstance, isPending } = useRound(id);
-  const { isAdmin, authenticated, address } = useAuth();
+export function RoundFull({
+  id,
+  forceUserView = false,
+}: {
+  id: number;
+  forceUserView?: boolean;
+}) {
+  const { data: roundInstance, isPending } = useRound(id, forceUserView);
+  const { isAdmin: authIsAdmin, authenticated, address } = useAuth();
+
+  // Force user view if specified, otherwise use actual admin status
+  const isAdmin = forceUserView ? false : authIsAdmin;
   const [showApplyDialog, setShowApplyDialog] = useState(false);
 
   // Call hooks with safe defaults for when round might be undefined

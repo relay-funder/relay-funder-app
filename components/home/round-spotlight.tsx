@@ -10,14 +10,6 @@ import { useMemo } from 'react';
 export function RoundSpotlight() {
   const { data: round, isLoading, error } = useActiveRound();
 
-  // Don't render anything if there's no active round or if loading/error
-  if (isLoading || error || !round) {
-    return null;
-  }
-
-  const logoUrl = round.media?.[0]?.url;
-  const campaignCount = round._count?.roundCampaigns || 0;
-
   // Calculate days left for countdown
   const daysLeft = useMemo(() => {
     if (!round?.endTime) {
@@ -30,6 +22,14 @@ export function RoundSpotlight() {
       Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
     );
   }, [round?.endTime]);
+
+  // Don't render anything if there's no active round or if loading/error
+  if (isLoading || error || !round) {
+    return null;
+  }
+
+  const logoUrl = round.media?.[0]?.url;
+  const campaignCount = round._count?.roundCampaigns || 0;
 
   return (
     <div className="mb-8">
@@ -77,7 +77,9 @@ export function RoundSpotlight() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-medium">{campaignCount} Participating Campaigns</span>
+                  <span className="font-medium">
+                    {campaignCount} Participating Campaigns
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4 text-orange-500" />
@@ -95,7 +97,6 @@ export function RoundSpotlight() {
                   {formatUSD(round.matchingPool)} pool until funds run out.
                 </p>
               </div>
-
             </div>
           </div>
         </CardContent>
