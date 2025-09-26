@@ -62,7 +62,7 @@ export function CampaignDonationWalletTip({
             max={MAX_PERCENTAGE}
             value={percentage}
             onChange={handlePercentageChange}
-            className="flex-1"
+            className="flex-1 accent-black"
           />
           <span className="text-sm font-medium text-gray-900">
             {percentage}%

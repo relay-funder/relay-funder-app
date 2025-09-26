@@ -1,14 +1,12 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bell, MessageSquare, FileText, Clock, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { FormattedDate } from '@/components/formatted-date';
 import { UserInlineName } from '@/components/user/inline-name';
 import { useUserProfile } from '@/lib/hooks/useProfile';
@@ -168,7 +166,10 @@ function getNavigationUrl(event: EventFeedListItemData): string | null {
   // For campaign-related events, navigate to campaign
   // The notification data contains campaignId, but campaigns are accessed by slug
   // We'll need to construct a URL that can handle campaignId lookup
-  if (event.type.startsWith('Campaign') && typeof payload.campaignId === 'number') {
+  if (
+    event.type.startsWith('Campaign') &&
+    typeof payload.campaignId === 'number'
+  ) {
     // Use campaignId for now - the campaign page should handle ID-based lookup
     return `/campaigns/${payload.campaignId}`;
   }
@@ -205,67 +206,6 @@ export function EventFeedListItem({
   const config = useMemo<EventFeedTypeConfig>(() => {
     return EVENT_FEED_TYPE_CONFIG[event.type] ?? fallbackTypeConfig(event.type);
   }, [event.type]);
-  const Icon = config.icon;
-  const actionLinks = useMemo<ResolvedActionLink[]>(() => {
-    const resolved: ResolvedActionLink[] = [];
-    const appendLink = (href?: string, label?: string) => {
-      if (!href) {
-        return;
-      }
-      const value =
-        typeof label === 'string' && label.trim().length > 0
-          ? label
-          : 'View details';
-      resolved.push({ href, label: value });
-    };
-
-    if (event.link) {
-      appendLink(event.link, event.linkLabel);
-    }
-
-    if (event.data && typeof event.data === 'object') {
-      const payload = event.data as Record<string, unknown>;
-      const payloadLink =
-        typeof payload.link === 'string'
-          ? payload.link
-          : typeof payload.url === 'string'
-            ? payload.url
-            : undefined;
-
-      const payloadLabel =
-        typeof payload.linkLabel === 'string'
-          ? payload.linkLabel
-          : typeof payload.label === 'string'
-            ? payload.label
-            : undefined;
-
-      appendLink(payloadLink, payloadLabel);
-
-      ID_LINK_RESOLVERS.forEach(({ key, resolve }) => {
-        const value = payload[key];
-        const resolvedLink = resolve(value, payload);
-        if (resolvedLink) {
-          appendLink(resolvedLink.href, resolvedLink.label);
-        }
-      });
-    }
-
-    if (isAdmin && event?.createdBy?.address) {
-      appendLink(
-        `/admin/users/${event.createdBy.address}`,
-        'View creator user',
-      );
-    }
-
-    const unique = new Map<string, ResolvedActionLink>();
-    resolved.forEach((link) => {
-      if (!unique.has(link.href)) {
-        unique.set(link.href, link);
-      }
-    });
-
-    return Array.from(unique.values());
-  }, [event, isAdmin]);
   const creatorUser = useMemo(
     () => toInlineUser(event.createdBy),
     [event.createdBy],
@@ -275,13 +215,13 @@ export function EventFeedListItem({
     [event.receiver],
   );
   const navigationUrl = useMemo(() => getNavigationUrl(event), [event]);
-  
+
   const handleClick = useCallback(() => {
     if (onSelect) {
       onSelect(event);
       return;
     }
-    
+
     // Navigate to the relevant page if we have a URL
     if (navigationUrl) {
       router.push(navigationUrl);
@@ -305,22 +245,27 @@ export function EventFeedListItem({
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Badge variant={config.badgeVariant ?? 'outline'} className="shrink-0">
+          <Badge
+            variant={config.badgeVariant ?? 'outline'}
+            className="shrink-0"
+          >
             {config.label}
           </Badge>
           {isUnread && (
-            <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+            <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
           )}
         </div>
-        <span className="text-xs text-muted-foreground shrink-0">
+        <span className="shrink-0 text-xs text-muted-foreground">
           <FormattedDate
             date={new Date(event.createdAt)}
             options={DATE_FORMAT_OPTIONS}
           />
         </span>
       </div>
-      
-      <p className="mt-2 text-sm leading-relaxed text-foreground">{event.message}</p>
+
+      <p className="mt-2 text-sm leading-relaxed text-foreground">
+        {event.message}
+      </p>
 
       {isAdmin && event.data && (
         <>

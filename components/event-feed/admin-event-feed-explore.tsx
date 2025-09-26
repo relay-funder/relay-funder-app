@@ -33,9 +33,7 @@ export function AdminEventFeedExplore() {
               <BellRing className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <h2 className="font-medium text-foreground">
-                Admin Event Feed
-              </h2>
+              <h2 className="font-medium text-foreground">Admin Event Feed</h2>
               <p className="text-sm text-muted-foreground">
                 {newEventCount === 0
                   ? "You're all caught up with admin notifications."
@@ -43,14 +41,14 @@ export function AdminEventFeedExplore() {
               </p>
             </div>
           </div>
-          
+
           <Button
             type="button"
             variant={newEventCount === 0 ? 'outline' : 'secondary'}
             size="sm"
             onClick={handleMarkRead}
             disabled={markingRead || newEventCount === 0}
-            className="inline-flex items-center gap-2 shrink-0"
+            className="inline-flex shrink-0 items-center gap-2"
           >
             {markingRead ? (
               <>
@@ -71,7 +69,9 @@ export function AdminEventFeedExplore() {
           </Button>
         </div>
 
-        <AdminEventFeedList filters={searchTerm ? { type: searchTerm } : undefined} />
+        <AdminEventFeedList
+          filters={searchTerm ? { type: searchTerm } : undefined}
+        />
       </div>
     </PageLayout>
   );
