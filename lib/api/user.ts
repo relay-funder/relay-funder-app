@@ -110,6 +110,15 @@ export async function listUsers({
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        _count: {
+          select: {
+            payments: true,
+            createdMedia: true,
+            approvals: true,
+          },
+        },
+      },
     }),
     db.user.count({ where }),
   ]);
