@@ -1,34 +1,30 @@
 import { ethers, erc20Abi } from '@/lib/web3';
 import { USDC_ADDRESS } from '@/lib/constant';
-import { type ConnectedWallet } from '@/lib/web3/types';
 import { DonationProcessStates } from '@/types/campaign';
 import { debugWeb3 as debug } from '@/lib/debug';
+import type { Chain, Client, Transport } from 'viem';
 
 export async function requestTransaction({
-  wallet,
+  client,
   address,
   amount,
   tipAmount = '0',
   onStateChanged,
 }: {
-  wallet: ConnectedWallet;
+  client: Client<Transport, Chain>;
   address: string;
   amount: string;
   tipAmount?: string;
   onStateChanged: (arg0: keyof typeof DonationProcessStates) => void;
 }) {
-  if (!wallet || !(await wallet.isConnected())) {
+  if (!client) {
     throw new Error('Wallet not connected');
-  }
-  const walletProvider = await wallet.getEthereumProvider();
-  if (!walletProvider) {
-    throw new Error('Wallet not supported or connected');
   }
 
   // Ensure accounts are properly authorized before creating ethers provider
   debug && console.log('Requesting account authorization...');
   try {
-    await walletProvider.request({ method: 'eth_requestAccounts' });
+    await client.request({ method: 'eth_requestAccounts' });
   } catch (error) {
     debug && console.error('Failed to request accounts:', error);
     throw new Error(
@@ -36,7 +32,7 @@ export async function requestTransaction({
     );
   }
 
-  const ethersProvider = new ethers.BrowserProvider(walletProvider);
+  const ethersProvider = new ethers.BrowserProvider(client);
   const signer = await ethersProvider.getSigner();
   const userAddress = signer.address;
   if (!USDC_ADDRESS || !ethers.isAddress(USDC_ADDRESS as string)) {

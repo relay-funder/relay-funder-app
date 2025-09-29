@@ -5,6 +5,12 @@ import { SiweMessage } from 'siwe';
 import { setupUser, handleError } from './common';
 import { type User } from 'next-auth';
 import { debugAuth as debug } from '@/lib/debug';
+import { createPublicClient, http } from 'viem';
+import {
+  getAddressFromMessage,
+  getChainIdFromMessage,
+} from '@reown/appkit-siwe';
+import { REOWN_CLOUD_PROJECT_ID } from '@/lib/constant';
 
 async function getAuthUrl(): Promise<string | null> {
   try {
@@ -108,7 +114,7 @@ export function SiweProvider() {
         const csrfToken = csrfTokenHost ?? csrfTokenLocal;
         const nonce = csrfToken?.value.split('|')[0];
         const { message, signature } = credentials;
-        const siwe = new SiweMessage(JSON.parse(message));
+        const siwe = new SiweMessage(message);
 
         debug &&
           console.log('SIWE domain verification:', {
@@ -135,16 +141,32 @@ export function SiweProvider() {
           });
           throw new Error('siwe.verify succeeded but for a different nonce');
         }
-        const verificationParams = {
-          signature,
-        };
+        const messageAddress = getAddressFromMessage(message);
+        const chainId = getChainIdFromMessage(message);
         debug && console.log('verify');
-        const result = await siwe.verify(verificationParams);
-        debug && console.log('result', result);
-        if (!result.success) {
+        // for the moment, the verifySignature is not working with social logins and emails  with non deployed smart accounts
+        // we are going to use https://viem.sh/docs/actions/public/verifyMessage.html
+        const publicClient = createPublicClient({
+          transport: http(
+            `https://rpc.walletconnect.org/v1/?chainId=${chainId}&projectId=${REOWN_CLOUD_PROJECT_ID}`,
+          ),
+        });
+        const isValid = await publicClient.verifyMessage({
+          message,
+          address: messageAddress as `0x${string}`,
+          signature: signature as `0x${string}`,
+        });
+        if (!isValid) {
+          debug &&
+            console.log('result', {
+              isValid,
+              message,
+              messageAddress,
+              signature,
+            });
           throw new Error('siwe.verify failed');
         }
-        const address = siwe.address;
+        const address = messageAddress;
         return await setupUser(address);
       } catch (error: unknown) {
         handleError(error);

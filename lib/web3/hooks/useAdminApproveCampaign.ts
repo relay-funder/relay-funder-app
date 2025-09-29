@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { ethers } from '@/lib/web3';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
-import { chainConfig, useWeb3Auth } from '@/lib/web3';
+import { chainConfig, useWeb3Auth, useConnectorClient } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '../switch-network';
@@ -20,6 +20,7 @@ const platformConfig = {
 export function useAdminApproveCampaign() {
   const { wallet } = useWeb3Auth();
   const { authenticated } = useAuth();
+  const { data: client } = useConnectorClient();
 
   const adminApproveCampaign = useCallback(
     async (
@@ -51,16 +52,15 @@ export function useAdminApproveCampaign() {
       if (!wallet || !(await wallet.isConnected())) {
         throw new Error('Wallet not connected');
       }
-      const walletProvider = await wallet.getEthereumProvider();
-      if (!walletProvider) {
+      if (!client) {
         throw new Error('Wallet not supported or connected');
       }
 
-      await switchNetwork({ wallet });
+      await switchNetwork({ client });
       onStateChanged('switch');
 
       // Create providers
-      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+      const ethersProvider = new ethers.BrowserProvider(client);
       const signer = await ethersProvider.getSigner();
       const signerAddress = signer.address;
 
@@ -308,7 +308,7 @@ export function useAdminApproveCampaign() {
         );
       }
     },
-    [wallet, authenticated],
+    [wallet, authenticated, client],
   );
   return { adminApproveCampaign };
 }

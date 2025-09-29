@@ -1,9 +1,5 @@
 export { useWeb3Auth } from './use-web3-auth';
-export {
-  Web3ContextProvider,
-  useWeb3Context,
-  getProvider,
-} from './context-provider';
+export { Web3ContextProvider, useWeb3Context } from './context-provider';
 
 export * from './ethers';
 export * from './config';

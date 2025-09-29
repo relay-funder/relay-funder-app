@@ -35,15 +35,16 @@ export function WalletChain({
             </span>
           )}
         </div>
-        {!isCurrent && (
-          <Button
-            onClick={() => switchChainAsync({ chainId: chain.id })}
-            size="sm"
-            className="bg-black text-white hover:bg-gray-800"
-          >
-            Switch
-          </Button>
-        )}
+        {!isCurrent ||
+          (!isPreferred && (
+            <Button
+              onClick={() => switchChainAsync({ chainId: chain.id })}
+              size="sm"
+              className="bg-black text-white hover:bg-gray-800"
+            >
+              Switch
+            </Button>
+          ))}
       </div>
       {isCurrent && !isPreferred && (
         <p className="rounded bg-red-50 p-2 text-xs text-red-600">

@@ -1,7 +1,6 @@
 import { http, type Config, type CreateConfigParameters } from 'wagmi';
-import { chainConfig } from '@/lib/web3/config/chain';
-import { sepolia, defaultChain, celo, mainnet } from './chains';
-import { injected } from './connectors';
+import { chainConfig } from './chain';
+import { defaultChain, celo } from './chains';
 
 // Add type declaration for wagmi config
 declare module 'wagmi' {
@@ -11,13 +10,14 @@ declare module 'wagmi' {
 }
 
 export const config: CreateConfigParameters = {
-  chains: [defaultChain, sepolia, celo, mainnet],
-  connectors: [injected()],
+  chains: [defaultChain],
   transports: {
     [defaultChain.id]: http(chainConfig.rpcUrl),
-    [sepolia.id]: http(),
-    [celo.id]: http(chainConfig.rpcUrl), // Use same RPC for all Celo chains
-    [mainnet.id]: http(),
   },
   ssr: true,
 };
+// once we switch to celo, avoid errors
+if (defaultChain.id !== celo.id) {
+  (config.chains as unknown as unknown[]).push(celo);
+  config.transports[celo.id] = http(chainConfig.rpcUrl);
+}

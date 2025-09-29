@@ -1,9 +1,12 @@
 import { chainConfig, ethers } from '@/lib/web3';
+import type { Eip1193Provider } from 'ethers';
 
 export const getProvider = () => {
   // For browser environments
   if (typeof window !== 'undefined' && window.ethereum) {
-    return new ethers.BrowserProvider(window.ethereum);
+    return new ethers.BrowserProvider(
+      window.ethereum as unknown as Eip1193Provider,
+    );
   }
 
   // Fallback to a public provider

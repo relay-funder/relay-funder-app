@@ -2,28 +2,30 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { chainConfig } from '@/lib/web3';
-import { ProviderRpcError } from '@/lib/web3/types';
 import {
-  useWeb3Context,
+  chainConfig,
+  useAccount,
+  useConnectorClient,
+  useSwitchChain,
   useWeb3Auth,
   useCurrentChain,
-  getProvider,
 } from '@/lib/web3';
+import type { ProviderRpcError } from '@/lib/web3/types';
 import { debugHook as debug } from '@/lib/debug';
 
 export function useNetworkCheck() {
-  const { address } = useWeb3Context();
+  const { address } = useAccount();
   const { chainId } = useCurrentChain();
   const { ready } = useWeb3Auth();
   const { toast } = useToast();
+  const { data: client } = useConnectorClient();
+  const { switchChainAsync: switchChain } = useSwitchChain();
   const [triggerCheck, setTriggerCheck] = useState(Date.now());
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
   const checkNetwork = useCallback(async () => {
     debug && console.log('use-network::checkNetwork');
-    const provider = getProvider();
-    if (!provider) {
+    if (!client) {
       return;
     }
     try {
@@ -37,25 +39,20 @@ export function useNetworkCheck() {
       setIsCorrectNetwork(false);
       return false;
     }
-  }, [chainId]);
+  }, [chainId, client]);
   useEffect(() => {
     checkNetwork();
   }, [checkNetwork, triggerCheck]);
 
   const switchNetwork = useCallback(async () => {
-    const provider = getProvider();
-    if (!ready || !provider) {
+    debug && console.log('hooks/use-network::switchNetwork', { ready, client });
+    if (!ready || !client) {
       return;
     }
 
     try {
-      const chainIdHex = `0x${chainConfig.chainId?.toString(16)}`;
-
       try {
-        await provider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainIdHex }],
-        });
+        await switchChain({ chainId: chainConfig.chainId });
         setTriggerCheck(Date.now());
       } catch (switchError) {
         // This error code indicates that the chain has not been added to MetaMask
@@ -68,7 +65,7 @@ export function useNetworkCheck() {
         ) {
           try {
             debug && console.log('trying to add chain', chainId);
-            await provider.request({
+            await client.request({
               method: 'wallet_addEthereumChain',
               params: [chainConfig.getAddChainParams()],
             });
@@ -94,7 +91,7 @@ export function useNetworkCheck() {
         variant: 'destructive',
       });
     }
-  }, [ready, toast, chainId]);
+  }, [ready, toast, chainId, client, switchChain]);
 
   useEffect(() => {
     if (!address) {
@@ -111,8 +108,7 @@ export function useNetworkCheck() {
           setIsCorrectNetwork(false);
           return;
         }
-        const provider = getProvider();
-        if (!provider) {
+        if (!client) {
           debug && console.log('use-network:effect: provider not available');
           setIsCorrectNetwork(false);
           return;
@@ -120,24 +116,6 @@ export function useNetworkCheck() {
 
         // Initial network check
         setTriggerCheck(Date.now());
-
-        // Listen for network changes
-        const handleChainChanged = async (newChainIdHex: string) => {
-          debug &&
-            console.log(
-              'use-network:effect: handleChainChanged',
-              newChainIdHex,
-            );
-          const isCorrect =
-            newChainIdHex === `0x${chainConfig.chainId.toString(16)}`;
-          setIsCorrectNetwork(isCorrect);
-        };
-        if (typeof provider?.on !== 'function') {
-          return;
-        }
-        provider.on('chainChanged', handleChainChanged);
-        cleanup = () =>
-          provider.removeListener('chainChanged', handleChainChanged);
       } catch (error) {
         console.error('Error initializing network check:', error);
         setIsCorrectNetwork(false);
@@ -146,7 +124,12 @@ export function useNetworkCheck() {
 
     initializeNetwork();
     return () => cleanup?.();
-  }, [address, checkNetwork]);
-
+  }, [address, checkNetwork, client]);
+  debug &&
+    console.log('hooks/use-network', {
+      isCorrectNetwork,
+      chainId: chainConfig.chainId,
+      currentChain: chainId,
+    });
   return { isCorrectNetwork, switchNetwork };
 }

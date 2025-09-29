@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { useAuth } from '@/contexts';
-import { chainConfig, useWeb3Context } from '@/lib/web3';
+import { chainConfig, useCurrentChain } from '@/lib/web3';
 
 interface NetworkCheckProps {
   children: ReactNode;
@@ -15,7 +15,7 @@ interface NetworkCheckProps {
 export function NetworkCheck({ children }: NetworkCheckProps) {
   const { isReady, authenticated } = useAuth();
   const { isCorrectNetwork, switchNetwork } = useNetworkCheck();
-  const { chainId } = useWeb3Context();
+  const { chainId } = useCurrentChain();
   const { toast } = useToast();
   const wasWrongNetwork = useRef(false);
 

@@ -14,12 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  useWeb3Auth,
-  useWeb3Context,
-  useAccount,
-  UserRejectedRequestError,
-} from '@/lib/web3';
+import { useWeb3Auth, useAccount, UserRejectedRequestError } from '@/lib/web3';
 
 import { LoginFallback } from './fallback';
 import { LoginMessage, LoginState } from './login-message';
@@ -40,8 +35,6 @@ export default function Login() {
     ready,
     error: web3error,
   } = useWeb3Auth();
-
-  const { initialized } = useWeb3Context();
 
   const account = useAccount();
 
@@ -109,7 +102,7 @@ export default function Login() {
   }, []);
 
   const autoLogin = useCallback(() => {
-    if (loginEffectRef.current || !initialized) {
+    if (loginEffectRef.current) {
       return;
     }
     // ensure the login is only triggered once
@@ -151,7 +144,7 @@ export default function Login() {
         onError(error.message);
       }
     });
-  }, [login, initialized, onError]);
+  }, [login, onError]);
   const onRestartAutoLogin = useCallback(() => {
     loginEffectRef.current = false;
     autoLogin();

@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { EthereumProvider } from '@/lib/web3/types';
 declare global {
   interface WindowEventMap {
     dummyChainId: CustomEvent;
@@ -28,7 +27,6 @@ interface IWeb3Context {
     address?: `0x${string}`;
     chainId?: number;
     isConnected: () => Promise<boolean>;
-    getEthereumProvider: () => EthereumProvider;
   }>;
 }
 const Web3Context = createContext({
@@ -97,14 +95,10 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
           isConnected: async () => {
             return initialized;
           },
-          getEthereumProvider: () => {
-            throw new Error('Ethereum Provider not available in dummy context');
-          },
         } as {
           address?: `0x${string}`;
           chainId?: number;
           isConnected: () => Promise<boolean>;
-          getEthereumProvider: () => EthereumProvider;
         };
       },
     };

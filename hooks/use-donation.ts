@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useWeb3Auth, ethers } from '@/lib/web3';
+import { ethers, useConnectorClient } from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
@@ -30,7 +30,7 @@ export function useDonationCallback({
   userEmail?: string;
   onStateChanged: (state: keyof typeof DonationProcessStates) => void;
 }) {
-  const { wallet } = useWeb3Auth();
+  const { data: client } = useConnectorClient();
   const { authenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,7 +48,7 @@ export function useDonationCallback({
       if (!authenticated) {
         throw new Error('Not signed in');
       }
-      if (!wallet) {
+      if (!client) {
         throw new Error('Wallet not connected');
       }
 
@@ -72,16 +72,10 @@ export function useDonationCallback({
         );
       }
 
-      debug && console.log('Getting wallet provider and signer...');
-      const walletProvider = await wallet.getEthereumProvider();
-      if (!walletProvider) {
-        throw new Error('Wallet not supported or connected');
-      }
-
       // Ensure accounts are properly authorized before creating ethers provider
       debug && console.log('Requesting account authorization...');
       try {
-        await walletProvider.request({ method: 'eth_requestAccounts' });
+        await client.request({ method: 'eth_requestAccounts' });
       } catch (error) {
         debug && console.error('Failed to request accounts:', error);
         throw new Error(
@@ -89,7 +83,7 @@ export function useDonationCallback({
         );
       }
 
-      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+      const ethersProvider = new ethers.BrowserProvider(client);
       const signer = await ethersProvider.getSigner();
       const userAddress = signer.address;
       if (!userAddress || !ethers.isAddress(userAddress)) {
@@ -101,14 +95,14 @@ export function useDonationCallback({
       debug && console.log('User address:', userAddress);
 
       onStateChanged('switch');
-      await switchNetwork({ wallet });
+      await switchNetwork({ client });
 
       onStateChanged('requestTransaction');
       const tx = await requestTransaction({
         address: campaign.treasuryAddress,
         amount,
         tipAmount,
-        wallet,
+        client,
         onStateChanged,
       });
 
@@ -151,20 +145,20 @@ export function useDonationCallback({
       setIsProcessing(false);
     }
   }, [
-    wallet,
+    onStateChanged,
     authenticated,
-    createPayment,
-    updatePaymentStatus,
-    validateUserProfile,
+    client,
+    campaign.treasuryAddress,
+    campaign.id,
     amount,
     tipAmount,
+    createPayment,
     poolAmount,
-    campaign?.id,
-    campaign?.treasuryAddress,
     selectedToken,
     isAnonymous,
     userEmail,
-    onStateChanged,
+    updatePaymentStatus,
+    validateUserProfile,
   ]);
   return { onDonate, isProcessing, error };
 }

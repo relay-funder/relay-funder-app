@@ -1,3 +1,5 @@
+'use client';
+
 import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
