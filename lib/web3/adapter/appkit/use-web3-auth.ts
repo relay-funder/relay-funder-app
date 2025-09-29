@@ -5,7 +5,6 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   useAppKit,
   useAppKitAccount,
-  useAppKitEvents,
   useAppKitState,
 } from '@reown/appkit/react';
 
@@ -13,12 +12,10 @@ import { UserRejectedRequestError } from 'viem';
 import {
   useAccount,
   useConnect,
-  useReconnect,
   useDisconnect,
   useConnectorClient,
 } from 'wagmi';
 import { ConnectorAlreadyConnectedError } from 'wagmi';
-import { useRouter, useSearchParams } from 'next/navigation';
 
 import { chainConfig } from '@/lib/web3';
 
@@ -75,59 +72,6 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
 
     setState({});
   }, [wagmiDisconnect]);
-
-  const params = useSearchParams();
-  const callbackUrl = useMemo(() => {
-    const paramCallbackUrl = params?.get('callbackUrl');
-    console.log('rememo callback url', { paramCallbackUrl });
-    if (
-      typeof window === 'undefined' ||
-      typeof paramCallbackUrl !== 'string' ||
-      paramCallbackUrl.startsWith('/')
-    ) {
-      console.log(
-        'use-web3-auth::callbackUrl:: no window, no callbackUrl or callbackUrl starts with /',
-        paramCallbackUrl,
-      );
-      return '/dashboard';
-    }
-    // Prevent cross-domain callbacks on deployment domains
-    // Check if current domain matches patterns where external callbacks should be blocked
-    try {
-      const callbackDomain = new URL(paramCallbackUrl).hostname;
-      const currentDomain = window.location.hostname;
-
-      // Get domain patterns from environment variable
-      const blockPatterns =
-        process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map(
-          (p) => p.trim(),
-        ) || [];
-
-      if (currentDomain !== callbackDomain) {
-        const shouldBlock = blockPatterns.some((pattern) => {
-          // Support wildcards and exact matches
-          if (pattern.includes('*')) {
-            const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-            return regex.test(currentDomain);
-          }
-          return currentDomain.includes(pattern);
-        });
-
-        if (shouldBlock) {
-          console.warn(
-            `Cross-domain callback prevented: ${currentDomain} → ${callbackDomain} (matched pattern)`,
-          );
-          return '/dashboard';
-        }
-      }
-    } catch (error) {
-      // Invalid URL, use dashboard
-      console.error('invalid url', error);
-      return '/dashboard';
-    }
-
-    return paramCallbackUrl;
-  }, [params]);
 
   const login = useCallback(async () => {
     setState((prevState) => ({
