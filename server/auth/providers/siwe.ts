@@ -12,54 +12,51 @@ import {
 } from '@reown/appkit-siwe';
 import { REOWN_CLOUD_PROJECT_ID } from '@/lib/constant';
 
-async function getAuthUrl(): Promise<string | null> {
-  try {
-    const headersList = await headers();
-    const host = headersList.get('host');
-    const proto = headersList.get('x-forwarded-proto') || 'https';
+// An indicator to show that system environment variables have been exposed to your project's Deployments.
+const VERCEL = process.env.VERCEL ?? '0';
+// The domain name of the generated deployment URL. Example: *.vercel.app.
+// The value does not include the protocol scheme https://.
+const VERCEL_URL = process.env.VERCEL_URL ?? null;
+// The environment that the app is deployed and running on.
+// The value can be either production, preview, or development.
+const VERCEL_ENV = process.env.VERCEL_ENV ?? 'production';
+// The git branch of the commit the deployment was triggered by.
+const VERCEL_GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF ?? 'main';
+// The environment that configures a static next-auth host responsible
+// for checking the environment variables
 
-    if (host) {
-      // Check if current domain matches deployment domain patterns (e.g., .vercel.app, .netlify.app)
-      const deploymentPatterns =
-        process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map(
-          (p) => p.trim(),
-        ) || [];
-      const isDeploymentDomain = deploymentPatterns.some((pattern) => {
-        // Support wildcards and exact matches
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(host);
-        }
-        return host.includes(pattern);
-      });
+const NEXTAUTH_URL = process.env.NEXTAUTH_URL ?? null;
 
-      if (isDeploymentDomain) {
-        debug &&
-          console.log('Deployment domain detected, using request headers:', {
-            host,
-            proto,
-            patterns: deploymentPatterns,
-          });
-        return `${proto}://${host}`;
-      } else {
-        debug && console.log('Custom domain detected, using NEXTAUTH_URL');
-        return process.env.NEXTAUTH_URL || `${proto}://${host}`;
-      }
+/**
+ * Get Auth Host
+ * returns the Host (without http) that the application is running on.
+ * Supported patterns are:
+ *   production: client visits https + NEXTAUTH_URL
+ *   staging: client visits https + NEXTAUTH_URL
+ *   preview: client visits https + VERCEL_URL
+ *   local: client visits http + NEXTAUTH_URL
+ */
+function getAuthHost() {
+  if (!NEXTAUTH_URL) {
+    throw new Error('Environment configuration error: NEXTAUTH_URL is missing');
+  }
+  if (VERCEL) {
+    // production -> NEXTAUTH_URL
+    // do not allow production to use any other host than the configured
+    // NEXTAUTH_URL to be used.
+    if (VERCEL_ENV === 'production') {
+      return NEXTAUTH_URL.replace(/https:\/\//, '');
     }
-  } catch (error) {
-    debug && console.warn('Failed to get host from headers:', error);
+
+    // preview -> VERCEL_URL (for branch deployments), NEXTAUTH_URL for staging
+    if (VERCEL_GIT_COMMIT_REF === 'develop') {
+      return NEXTAUTH_URL.replace(/https:\/\//, '');
+    }
+    return VERCEL_URL;
   }
 
-  // Fallback to environment variables
-  if (process.env.NEXTAUTH_URL) {
-    return process.env.NEXTAUTH_URL;
-  }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return null;
+  // local
+  return NEXTAUTH_URL.replace(/http:\/\//, '');
 }
 
 export function SiweProvider() {
@@ -87,10 +84,10 @@ export function SiweProvider() {
         ) {
           throw new Error('SiweMessage is undefined');
         }
-        const nextAuthUrl = await getAuthUrl();
-        if (!nextAuthUrl) {
+        const nextAuthHost = getAuthHost();
+        if (!nextAuthHost) {
           throw new Error(
-            'no nextAuthUrl (NEXTAUTH_URL,VERCEL_URL,host header) - environment not configured correctly',
+            'no nextAuthHost (NEXTAUTH_URL,VERCEL_URL) - environment not configured correctly',
           );
         }
 
@@ -105,8 +102,6 @@ export function SiweProvider() {
           return await setupUser(credentials.message);
         }
 
-        const nextAuthHost = new URL(nextAuthUrl).host;
-
         // Get CSRF token from cookie with production __Host prefix as well
         const headerCookies = await cookies();
         const csrfTokenLocal = headerCookies.get('authjs.csrf-token');
@@ -120,7 +115,6 @@ export function SiweProvider() {
           console.log('SIWE domain verification:', {
             siweDomain: siwe.domain,
             nextAuthHost,
-            nextAuthUrl,
             vercelUrl: process.env.VERCEL_URL,
             nodeEnv: process.env.NODE_ENV,
           });
@@ -129,7 +123,6 @@ export function SiweProvider() {
           console.error('auth::siwe::siwe-host', {
             siwedomain: siwe.domain,
             nextAuthHost,
-            nextAuthUrl,
             vercelUrl: process.env.VERCEL_URL,
           });
           throw new Error('siwe.verify succeeded but for a different domain');
@@ -144,7 +137,8 @@ export function SiweProvider() {
         const messageAddress = getAddressFromMessage(message);
         const chainId = getChainIdFromMessage(message);
         debug && console.log('verify');
-        // for the moment, the verifySignature is not working with social logins and emails  with non deployed smart accounts
+        // for the moment, the verifySignature is not working with social
+        // logins and emails  with non deployed smart accounts
         // we are going to use https://viem.sh/docs/actions/public/verifyMessage.html
         const publicClient = createPublicClient({
           transport: http(
