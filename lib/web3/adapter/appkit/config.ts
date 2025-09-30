@@ -1,4 +1,4 @@
-import { createAppKit } from '@reown/appkit/react';
+import { createAppKit, type AppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import type { AppKitNetwork } from '@reown/appkit/networks';
 import { defaultChain, celo } from '@/lib/web3/config/chains';
@@ -124,30 +124,39 @@ export const siweConfig = createSIWEConfig({
     }
   },
 });
+let modal: AppKit | null = null;
 // Create the modal
-export const modal = createAppKit({
-  adapters: [wagmiAdapter],
-  projectId,
-  networks,
-  metadata,
-  themeMode: 'light',
-  features: {
-    analytics: false, // Optional - defaults to your Cloud configuration
-    email: true, // default to true
-    socials: [],
-    //   'google',
-    //   'x',
-    //   'github',
-    //   'discord',
-    //   'apple',
-    //   'facebook',
-    //   'farcaster',
-    // ],
-    emailShowWallets: true, // default to true
-  },
-  themeVariables: {
-    '--w3m-accent': '#000000',
-  },
-  debug: true,
-  siweConfig,
-});
+export function createModal() {
+  if (modal) {
+    return modal;
+  }
+  modal = createAppKit({
+    adapters: [wagmiAdapter],
+    projectId,
+    networks,
+    metadata,
+    themeMode: 'light',
+    features: {
+      analytics: false, // Optional - defaults to your Cloud configuration
+      email: true, // default to true
+      socials: [],
+      //   'google',
+      //   'x',
+      //   'github',
+      //   'discord',
+      //   'apple',
+      //   'facebook',
+      //   'farcaster',
+      // ],
+      emailShowWallets: true, // default to true
+    },
+    themeVariables: {
+      '--w3m-accent': '#000000',
+      '--w3m-border-radius-master': '1px',
+    },
+    debug: true,
+    siweConfig,
+  });
+  console.log({ modal });
+  return modal;
+}
