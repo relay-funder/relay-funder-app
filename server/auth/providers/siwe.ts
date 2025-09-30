@@ -31,7 +31,7 @@ const VERCEL_ENV = process.env.VERCEL_ENV ?? 'production';
 const VERCEL_GIT_COMMIT_REF = process.env.VERCEL_GIT_COMMIT_REF ?? 'main';
 // The environment that configures a static next-auth host responsible
 // for checking the environment variables
-
+// this should not be set for VERCEL according to next-auth docs
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL ?? null;
 
 /**
@@ -44,7 +44,15 @@ const NEXTAUTH_URL = process.env.NEXTAUTH_URL ?? null;
  *   local: client visits NEXTAUTH_URL
  */
 function getAuthHost() {
-  if (VERCEL) {
+  debug &&
+    console.log('server::auth::providers::siwe::getAuthHost', {
+      VERCEL,
+      VERCEL_ENV,
+      VERCEL_PROJECT_PRODUCTION_URL,
+      VERCEL_GIT_COMMIT_REF,
+      NEXTAUTH_URL,
+    });
+  if (VERCEL === '1') {
     // production -> VERCEL_PROJECT_PRODUCTION_URL
     // do not allow production to use any other host than the configured
     // VERCEL_PROJECT_PRODUCTION_URL to be used.
