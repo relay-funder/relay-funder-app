@@ -44,9 +44,6 @@ const NEXTAUTH_URL = process.env.NEXTAUTH_URL ?? null;
  *   local: client visits NEXTAUTH_URL
  */
 function getAuthHost() {
-  if (!NEXTAUTH_URL) {
-    throw new Error('Environment configuration error: NEXTAUTH_URL is missing');
-  }
   if (VERCEL) {
     // production -> VERCEL_PROJECT_PRODUCTION_URL
     // do not allow production to use any other host than the configured
@@ -64,8 +61,10 @@ function getAuthHost() {
     }
     return VERCEL_URL;
   }
-
   // local
+  if (!NEXTAUTH_URL) {
+    throw new Error('Environment configuration error: NEXTAUTH_URL is missing');
+  }
   return NEXTAUTH_URL.replace(/http:\/\//, '');
 }
 
