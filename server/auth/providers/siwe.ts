@@ -1,5 +1,5 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 
 import { SiweMessage } from 'siwe';
 import { setupUser, handleError } from './common';
@@ -17,6 +17,13 @@ const VERCEL = process.env.VERCEL ?? '0';
 // The domain name of the generated deployment URL. Example: *.vercel.app.
 // The value does not include the protocol scheme https://.
 const VERCEL_URL = process.env.VERCEL_URL ?? null;
+// A production domain name of the project. We select the shortest production
+// custom domain, or vercel.app domain if no custom domain is available.
+// Note, that this is always set, even in preview deployments.
+// This is useful to reliably generate links that point to production such as
+// OG-image URLs. The value does not include the protocol scheme https://.
+const VERCEL_PROJECT_PRODUCTION_URL =
+  process.env.VERCEL_PROJECT_PRODUCTION_URL ?? null;
 // The environment that the app is deployed and running on.
 // The value can be either production, preview, or development.
 const VERCEL_ENV = process.env.VERCEL_ENV ?? 'production';
@@ -31,26 +38,29 @@ const NEXTAUTH_URL = process.env.NEXTAUTH_URL ?? null;
  * Get Auth Host
  * returns the Host (without http) that the application is running on.
  * Supported patterns are:
- *   production: client visits https + NEXTAUTH_URL
- *   staging: client visits https + NEXTAUTH_URL
- *   preview: client visits https + VERCEL_URL
- *   local: client visits http + NEXTAUTH_URL
+ *   production: client visits VERCEL_PROJECT_PRODUCTION_URL
+ *   staging: client visits VERCEL_PROJECT_PRODUCTION_URL, app. replaced with staging.app.
+ *   preview: client visits VERCEL_URL
+ *   local: client visits NEXTAUTH_URL
  */
 function getAuthHost() {
   if (!NEXTAUTH_URL) {
     throw new Error('Environment configuration error: NEXTAUTH_URL is missing');
   }
   if (VERCEL) {
-    // production -> NEXTAUTH_URL
+    // production -> VERCEL_PROJECT_PRODUCTION_URL
     // do not allow production to use any other host than the configured
-    // NEXTAUTH_URL to be used.
+    // VERCEL_PROJECT_PRODUCTION_URL to be used.
     if (VERCEL_ENV === 'production') {
-      return NEXTAUTH_URL.replace(/https:\/\//, '');
+      return VERCEL_PROJECT_PRODUCTION_URL;
     }
 
     // preview -> VERCEL_URL (for branch deployments), NEXTAUTH_URL for staging
-    if (VERCEL_GIT_COMMIT_REF === 'develop') {
-      return NEXTAUTH_URL.replace(/https:\/\//, '');
+    if (
+      VERCEL_GIT_COMMIT_REF === 'develop' &&
+      typeof VERCEL_PROJECT_PRODUCTION_URL === 'string'
+    ) {
+      return VERCEL_PROJECT_PRODUCTION_URL.replace(/app\./, 'staging.app.');
     }
     return VERCEL_URL;
   }
