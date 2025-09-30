@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
-import { ethers, useConnectorClient } from '@/lib/web3';
+import {
+  chainConfig,
+  ethers,
+  useConnectorClient,
+  useCurrentChain,
+} from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
@@ -34,6 +39,7 @@ export function useDonationCallback({
   const { authenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { chainId } = useCurrentChain();
 
   const { mutateAsync: createPayment } = useCreatePayment();
   const { mutateAsync: updatePaymentStatus } = useUpdatePaymentStatus();
@@ -72,17 +78,6 @@ export function useDonationCallback({
         );
       }
 
-      // Ensure accounts are properly authorized before creating ethers provider
-      debug && console.log('Requesting account authorization...');
-      try {
-        await client.request({ method: 'eth_requestAccounts' });
-      } catch (error) {
-        debug && console.error('Failed to request accounts:', error);
-        throw new Error(
-          'Wallet account authorization failed. Please connect your wallet.',
-        );
-      }
-
       const ethersProvider = new ethers.BrowserProvider(client);
       const signer = await ethersProvider.getSigner();
       const userAddress = signer.address;
@@ -95,7 +90,9 @@ export function useDonationCallback({
       debug && console.log('User address:', userAddress);
 
       onStateChanged('switch');
-      await switchNetwork({ client });
+      if (chainId !== chainConfig.chainId) {
+        await switchNetwork({ client });
+      }
 
       onStateChanged('requestTransaction');
       const tx = await requestTransaction({
@@ -159,6 +156,7 @@ export function useDonationCallback({
     userEmail,
     updatePaymentStatus,
     validateUserProfile,
+    chainId,
   ]);
   return { onDonate, isProcessing, error };
 }

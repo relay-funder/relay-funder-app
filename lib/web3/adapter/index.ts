@@ -14,6 +14,7 @@ export {
   Web3ContextProvider,
   useWeb3Auth,
   useWeb3Context,
+  useConnectedAccount,
   // config
   chainConfig,
   wagmiConfig,

@@ -1,5 +1,8 @@
 'use client';
-import { IWeb3UseAuthHook } from '@/lib/web3/types';
+import {
+  IWeb3UseAuthHook,
+  IWeb3UseConnectedAccountHook,
+} from '@/lib/web3/types';
 import { useEffect, useState, useCallback } from 'react';
 /**
  * This is a very basic adapter
@@ -104,6 +107,15 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     address,
     wallet,
   };
+}
+export function useConnectedAccount(): IWeb3UseConnectedAccountHook {
+  const { address } = useWeb3Auth();
+  const isConnected = true;
+  const isEmbedded = false;
+  const openUi = useCallback(() => {
+    console.warn('no web3::useConnectedAccount::openUi in dummy mode');
+  }, []);
+  return { isConnected, isEmbedded, address, openUi };
 }
 
 export * as ethers from './ethers';

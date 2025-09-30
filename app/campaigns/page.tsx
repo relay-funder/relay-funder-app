@@ -12,6 +12,7 @@ import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
 import { useCallback, useState } from 'react';
 import { CampaignUserList } from '@/components/campaign/list-user';
+import { Web3ContextProvider } from '@/lib/web3';
 
 export default function CampaignsPage() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
@@ -87,7 +88,9 @@ export default function CampaignsPage() {
           </Button>
         }
       >
-        <CampaignCreate onCreated={onCreated} />
+        <Web3ContextProvider>
+          <CampaignCreate onCreated={onCreated} />
+        </Web3ContextProvider>
       </PageLayout>
     );
   }

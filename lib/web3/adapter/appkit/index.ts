@@ -5,4 +5,5 @@ export * from './ethers';
 export * from './config';
 export * from './wagmi';
 export * from './viem';
+export * from './appkit';
 export const isDummy = false;
