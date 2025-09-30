@@ -54,3 +54,11 @@ export interface IWeb3UseAuthHook {
   logout: () => Promise<void>;
   ready: boolean;
 }
+
+export interface IWeb3UseConnectedAccountHook {
+  address?: string;
+  isConnected: boolean;
+  isEmbedded: boolean;
+  embeddedEmail?: string | null;
+  openUi: () => void;
+}
