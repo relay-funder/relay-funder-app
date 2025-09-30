@@ -3,6 +3,7 @@ import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { Mail, Shield } from 'lucide-react';
+import { useConnectedAccount } from '@/lib/web3';
 
 export function CampaignDonationWalletAmount({
   amount,
@@ -40,6 +41,16 @@ export function CampaignDonationWalletAmount({
     },
     [onEmailChanged],
   );
+  const { isEmbedded, embeddedEmail } = useConnectedAccount();
+  useEffect(() => {
+    if (!profile || profile.email) {
+      return;
+    }
+    if (!isEmbedded || !embeddedEmail) {
+      return;
+    }
+    onEmailChanged(embeddedEmail);
+  }, [profile, isEmbedded, embeddedEmail, onEmailChanged]);
 
   return (
     <div className="flex flex-col space-y-6">

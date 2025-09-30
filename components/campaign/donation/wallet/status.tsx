@@ -6,6 +6,8 @@ import { chainConfig } from '@/lib/web3';
 import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { formatCrypto } from '@/lib/format-crypto';
+import { useConnectedAccount } from '@/lib/web3';
+import { Button } from '@/components/ui';
 
 export function CampaignDonationWalletStatus() {
   const { isCorrectNetwork } = useNetworkCheck();
@@ -13,6 +15,7 @@ export function CampaignDonationWalletStatus() {
 
   const hasBalance = usdcBalance && parseFloat(usdcBalance) > 0;
   const balanceAmount = usdcBalance ? parseFloat(usdcBalance) : 0;
+  const { isEmbedded, openUi } = useConnectedAccount();
 
   return (
     <div className="space-y-3">
@@ -51,9 +54,27 @@ export function CampaignDonationWalletStatus() {
         )}
 
         {!hasBalance && !usdBalanceIsPending && isCorrectNetwork && (
-          <div className="mt-2 text-xs text-amber-700">
-            ⚠️ You need USDC to contribute. Get it from an exchange or on-ramp
-            service.
+          <div className="mt-2">
+            {isEmbedded ? (
+              <>
+                <Button
+                  onClick={openUi}
+                  variant="default"
+                  className="w-full sm:w-auto"
+                >
+                  Fund Embedded Wallet
+                </Button>
+                <p className="mt-1 text-xs text-gray-600">
+                  Your balance is insufficient. Use this button to fund your
+                  embedded wallet.
+                </p>
+              </>
+            ) : (
+              <div className="text-xs text-amber-700">
+                ⚠️ You need USDC to contribute. Get it from an exchange or
+                on-ramp service.
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -3,7 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Wallet, Link as LinkIcon, DollarSign } from 'lucide-react';
-import { useCurrentChain, useAccount, useBalance } from '@/lib/web3';
+import {
+  useCurrentChain,
+  useConnectedAccount,
+  useAccount,
+  useBalance,
+} from '@/lib/web3';
+
 import { USDC_ADDRESS } from '@/lib/constant';
 import { WalletChain } from './wallet-chain';
 import {
@@ -39,6 +45,7 @@ type RecipientWalletFormValues = z.infer<typeof recipientWalletSchema>;
 
 export function ConnectedWalletInfo() {
   const { address } = useAccount();
+  const { isEmbedded, openUi } = useConnectedAccount();
   const { data: balance, isPending: balanceIsPending } = useBalance({
     address: address as `0x${string}`,
   });
@@ -132,6 +139,22 @@ export function ConnectedWalletInfo() {
                 interacting with contracts.
               </p>
             </div>
+
+            {isEmbedded && (
+              <>
+                <Button
+                  onClick={openUi}
+                  variant="default"
+                  className="w-full sm:w-auto"
+                >
+                  Configure Embedded Wallet
+                </Button>
+                <p className="mt-1 text-xs text-gray-600">
+                  You are currently using an embedded wallet. Use this button to
+                  configure it in the provided user interface.
+                </p>
+              </>
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>

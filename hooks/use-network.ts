@@ -23,15 +23,18 @@ export function useNetworkCheck() {
   const [triggerCheck, setTriggerCheck] = useState(Date.now());
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
-  const checkNetwork = useCallback(async () => {
+  const checkNetwork = useCallback(() => {
     debug && console.log('use-network::checkNetwork');
-    if (!client) {
-      return;
-    }
     try {
       debug &&
         console.log('use-network::checkNetwork', chainId, chainConfig.chainId);
       const correctNetwork = chainId === chainConfig.chainId;
+      debug &&
+        console.log(
+          'use-network::checkNetwork',
+          chainId === chainConfig.chainId,
+          correctNetwork,
+        );
       setIsCorrectNetwork(correctNetwork);
       return correctNetwork;
     } catch (error) {
@@ -39,10 +42,10 @@ export function useNetworkCheck() {
       setIsCorrectNetwork(false);
       return false;
     }
-  }, [chainId, client]);
+  }, [chainId]);
   useEffect(() => {
     checkNetwork();
-  }, [checkNetwork, triggerCheck]);
+  }, [checkNetwork, triggerCheck, chainId]);
 
   const switchNetwork = useCallback(async () => {
     debug && console.log('hooks/use-network::switchNetwork', { ready, client });
@@ -105,11 +108,6 @@ export function useNetworkCheck() {
       try {
         if (!address) {
           debug && console.log('use-network:effect: wallet not connected');
-          setIsCorrectNetwork(false);
-          return;
-        }
-        if (!client) {
-          debug && console.log('use-network:effect: provider not available');
           setIsCorrectNetwork(false);
           return;
         }
