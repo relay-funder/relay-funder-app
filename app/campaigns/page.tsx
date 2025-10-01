@@ -14,10 +14,9 @@ import { useCallback, useState } from 'react';
 import { CampaignUserList } from '@/components/campaign/list-user';
 import { Web3ContextProvider } from '@/lib/web3';
 
-export default function CampaignsPage() {
+function CampaignsPageContent() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const { authenticated } = useAuth();
   const { isLoading: loading, error } = useInfiniteUserCampaigns();
 
   const onCreate = useCallback(async () => {
@@ -34,19 +33,6 @@ export default function CampaignsPage() {
     },
     [setSearchTerm],
   );
-
-  if (!authenticated) {
-    return (
-      <PageLayout
-        title="Campaigns"
-        searchPlaceholder="Search Your Campaigns"
-        onSearchChanged={onSearchChanged}
-      >
-        <DashboardOverview />
-        <DashboardNotAuthenticated />
-      </PageLayout>
-    );
-  }
 
   if (loading) {
     return (
@@ -88,9 +74,7 @@ export default function CampaignsPage() {
           </Button>
         }
       >
-        <Web3ContextProvider>
-          <CampaignCreate onCreated={onCreated} />
-        </Web3ContextProvider>
+        <CampaignCreate onCreated={onCreated} />
       </PageLayout>
     );
   }
@@ -128,5 +112,28 @@ export default function CampaignsPage() {
         </TabsContent>
       </Tabs>
     </PageLayout>
+  );
+}
+
+export default function CampaignsPage() {
+  const { authenticated } = useAuth();
+
+  if (!authenticated) {
+    return (
+      <PageLayout
+        title="Campaigns"
+        searchPlaceholder="Search Your Campaigns"
+        onSearchChanged={() => {}}
+      >
+        <DashboardOverview />
+        <DashboardNotAuthenticated />
+      </PageLayout>
+    );
+  }
+
+  return (
+    <Web3ContextProvider>
+      <CampaignsPageContent />
+    </Web3ContextProvider>
   );
 }
