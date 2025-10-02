@@ -189,7 +189,8 @@ if [[ "$IS_LISTED" != "true" ]]; then
   exit 1
 fi
 
-# Add platform data keys if missing
+# Platform data keys - kept for compatibility with existing deployments
+# Fee values are stored directly in each treasury contract via configureTreasury
 for KEY in "$FLAT_FEE_KEY" "$CUM_FLAT_FEE_KEY" "$PLATFORM_FEE_KEY" "$VAKI_COMMISSION_KEY"; do
   IS_VALID=$(cast call "$GLOBAL_PARAMS" "checkIfPlatformDataKeyValid(bytes32)(bool)" "$KEY" --rpc-url "$RPC_URL" || echo false)
   if [[ "$IS_VALID" != "true" ]]; then
@@ -235,8 +236,8 @@ cast send "$CAMPAIGN_INFO_FACTORY" \
   "$CREATOR_ADDR" \
   "$IDENTIFIER" \
   "[$PLATFORM_HASH]" \
-  "[$FLAT_FEE_KEY,$CUM_FLAT_FEE_KEY,$PLATFORM_FEE_KEY,$VAKI_COMMISSION_KEY]" \
-  "[$FLAT_FEE_VALUE,$CUM_FLAT_FEE_VALUE,$PLATFORM_FEE_VALUE,$VAKI_COMMISSION_VALUE]" \
+  "[]" \
+  "[]" \
   "($LAUNCH_TIME,$DEADLINE,$GOAL_AMOUNT)" \
   --rpc-url "$RPC_URL" \
   --private-key "$CREATOR_PK" --legacy >/tmp/cif_tx.txt
@@ -297,10 +298,11 @@ CONFIG_LOCK_PERIOD=1800  # 30 minutes
 IS_COLOMBIAN=false
 
 cast send "$TREASURY_ADDR" \
-  "configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[]))" \
+  "configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[]),(uint256,uint256,uint256[]))" \
   "($(python3 -c "print(int(0.5 * 10**$USDC_DECIMALS))"),$WITHDRAWAL_DELAY,$REFUND_DELAY,$CONFIG_LOCK_PERIOD,$IS_COLOMBIAN)" \
   "($LAUNCH_TIME,$DEADLINE,$GOAL_AMOUNT)" \
   "($FLAT_FEE_KEY,$CUM_FLAT_FEE_KEY,[$PLATFORM_FEE_KEY,$VAKI_COMMISSION_KEY])" \
+  "($FLAT_FEE_AMOUNT,$CUM_FLAT_FEE_AMOUNT,[$PLATFORM_FEE_BPS,$VAKI_COMMISSION_BPS])" \
   --rpc-url "$RPC_URL" \
   --private-key "$PLATFORM_ADMIN_PK" --legacy >/dev/null
 
