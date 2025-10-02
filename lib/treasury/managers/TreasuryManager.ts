@@ -187,7 +187,7 @@ export class TreasuryManager extends TreasuryInterface {
       }
 
       const treasuryABI = [
-        'function configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[])) external',
+        'function configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[]),(uint256,uint256,uint256[])) external',
       ];
 
       const treasuryContract = new ethers.Contract(
@@ -196,13 +196,13 @@ export class TreasuryManager extends TreasuryInterface {
         signer,
       );
 
-      // Minimum withdrawal for fee exemption
+      // Config struct
       const MIN_WITHDRAWAL_FEE_EXEMPTION = ethers.parseUnits(
         USDC_CONFIG.MIN_WITHDRAWAL_FEE_EXEMPTION,
         USDC_CONFIG.DECIMALS,
       );
 
-      // Fee keys as per shell script
+      // Fee keys
       const FLAT_FEE_KEY = ethers.keccak256(
         ethers.toUtf8Bytes(FEE_KEYS.FLAT_FEE),
       );
@@ -216,6 +216,23 @@ export class TreasuryManager extends TreasuryInterface {
         ethers.toUtf8Bytes(FEE_KEYS.VAKI_COMMISSION),
       );
 
+      // Fee values
+      const FLAT_FEE_VALUE = ethers.parseUnits(
+        process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001',
+        USDC_CONFIG.DECIMALS,
+      );
+      const CUM_FLAT_FEE_VALUE = ethers.parseUnits(
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002',
+        USDC_CONFIG.DECIMALS,
+      );
+      const PLATFORM_FEE_BPS = parseInt(
+        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
+      ); // 4%
+      const VAKI_COMMISSION_BPS = parseInt(
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
+      ); // 1%
+
+      // Campaign data
       const launchTime = Math.floor(
         new Date(campaign.startTime).getTime() / 1000,
       );
@@ -234,11 +251,8 @@ export class TreasuryManager extends TreasuryInterface {
           TREASURY_CONFIG.IS_COLOMBIAN,
         ],
         [launchTime, deadline, goalAmount],
-        [
-          FLAT_FEE_KEY,
-          CUM_FLAT_FEE_KEY,
-          [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
-        ],
+        [FLAT_FEE_KEY, CUM_FLAT_FEE_KEY, [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY]],
+        [FLAT_FEE_VALUE, CUM_FLAT_FEE_VALUE, [PLATFORM_FEE_BPS, VAKI_COMMISSION_BPS]],
         { gasLimit: TREASURY_GAS_LIMITS.CONFIGURE },
       );
 

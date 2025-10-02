@@ -219,31 +219,9 @@ export async function deployCampaignContract(
       ethers.toUtf8Bytes(`RELAYFUNDER-SEED-${uniqueSuffix}`),
     );
 
-    // Configure fee structure
-    const feeKeys = [
-      'flatFee',
-      'cumulativeFlatFee',
-      'platformFee',
-      'vakiCommission',
-    ];
-    const platformDataKeys = feeKeys.map((n) =>
-      ethers.keccak256(ethers.toUtf8Bytes(n)),
-    );
-
-    const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(
-      platformConfig.cumulativeFlatFee,
-      usdcDecimals,
-    );
-
-    const toBytes32 = (n: bigint | number) =>
-      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
-    const platformDataValues = [
-      toBytes32(flatFee),
-      toBytes32(cumulativeFlatFee),
-      toBytes32(platformConfig.platformFeeBps),
-      toBytes32(platformConfig.vakiCommissionBps),
-    ];
+    // Platform data keys and values are empty - fees are configured in treasury
+    const platformDataKeys: string[] = [];
+    const platformDataValues: string[] = [];
 
     const campaignDataArray = [launchTime, deadline, goalAmount] as const;
 

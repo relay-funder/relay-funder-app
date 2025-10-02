@@ -159,36 +159,10 @@ export async function POST(
       ethers.toUtf8Bytes(`RELAYFUNDER-${uniqueSuffix}`),
     );
 
-    // Use configurable fee structure
-    const feeKeys = [
-      'flatFee',
-      'cumulativeFlatFee',
-      'platformFee',
-      'vakiCommission',
-    ];
-    const platformDataKeys = feeKeys.map((n) =>
-      ethers.keccak256(ethers.toUtf8Bytes(n)),
-    );
+    // Platform data keys and values are empty - fees are configured in treasury
+    const platformDataKeys: string[] = [];
+    const platformDataValues: string[] = [];
 
-    // Parse fee values from configuration
-    const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(
-      platformConfig.cumulativeFlatFee,
-      usdcDecimals,
-    );
-    const platformFeeBps = platformConfig.platformFeeBps;
-    const vakiCommissionBps = platformConfig.vakiCommissionBps;
-
-    const toBytes32 = (n: bigint | number) =>
-      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
-    const platformDataValues = [
-      toBytes32(flatFee),
-      toBytes32(cumulativeFlatFee),
-      toBytes32(platformFeeBps),
-      toBytes32(vakiCommissionBps),
-    ];
-
-    // Ensure bytes32[] values order matches the function signature exactly
     const campaignData = [launchTime, deadline, goalAmount] as const;
 
     const tx = await factory.createCampaign(
