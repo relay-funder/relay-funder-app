@@ -34,6 +34,11 @@ const PROCESS_STEP_INFO: Record<
     description:
       'We are setting up the necessary details for your donation transaction. This involves preparing the data that will be sent to the blockchain.',
   },
+  registerPledge: {
+    title: 'Registering Pledge',
+    description:
+      'We are securely registering your pledge with the treasury contract using our backend system. This step ensures your donation can be properly processed.',
+  },
   approveUsdcContract: {
     title: 'Approving USDC Spending',
     description:
@@ -88,6 +93,7 @@ export function DonationProcessDisplay({
       'connect',
       'switch',
       'requestTransaction',
+      'registerPledge',
       'approveUsdcContract',
       'waitForUsdcContractConfirmation',
       'pledgeContract',

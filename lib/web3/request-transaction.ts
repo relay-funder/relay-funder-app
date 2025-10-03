@@ -68,31 +68,98 @@ export async function requestTransaction({
   );
   debug && console.log('Generated pledge ID:', pledgeId);
 
-  // Set payment gateway fee BEFORE pledge (required by KeepWhatsRaised)
-  // Even for direct wallet pledges, the pledge ID must be registered with a fee (can be 0)
-  debug && console.log('Setting payment gateway fee for pledge...');
+  // Register pledge ID with treasury via backend API (privileged operation)
+  // The backend uses platform admin credentials to call setPaymentGatewayFee
+  // This is required by KeepWhatsRaised BEFORE the backer's pledge transaction
+  debug && console.log('Registering pledge ID with treasury via backend...');
+  onStateChanged('registerPledge');
+
+  let registerData;
+  try {
+    const registerResponse = await fetch('/api/pledges/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        treasuryAddress: address,
+        pledgeId: pledgeId,
+        gatewayFee: 0, // No gateway fee for direct wallet pledges
+      }),
+    });
+
+    if (!registerResponse.ok) {
+      let errorMessage = 'Failed to register pledge with backend';
+      let errorDetails = '';
+
+      try {
+        const errorData = await registerResponse.json();
+        errorMessage = errorData.error || errorMessage;
+        errorDetails = errorData.details || '';
+      } catch {
+        // JSON parse failed, use default message
+      }
+
+      // Log detailed error for debugging
+      console.error('Pledge registration failed:', {
+        status: registerResponse.status,
+        statusText: registerResponse.statusText,
+        error: errorMessage,
+        details: errorDetails,
+      });
+
+      // Throw error with user-friendly message
+      const fullError = errorDetails
+        ? `${errorMessage}\nDetails: ${errorDetails}`
+        : errorMessage;
+      throw new Error(fullError);
+    }
+
+    registerData = await registerResponse.json();
+
+    if (!registerData.success) {
+      throw new Error('Pledge registration did not return success status');
+    }
+
+    debug &&
+      console.log('Pledge ID registered successfully:', {
+        pledgeId: registerData.pledgeId,
+        transactionHash: registerData.transactionHash,
+        blockNumber: registerData.blockNumber,
+      });
+  } catch (registerError) {
+    // Log the full error for debugging
+    console.error('❌ Pledge registration failed:', registerError);
+
+    // Extract user-friendly error message
+    let userMessage =
+      'Failed to register pledge with treasury. Please try again.';
+    if (registerError instanceof Error) {
+      // Check for specific error types
+      if (registerError.message.includes('pending')) {
+        userMessage =
+          'A transaction is already pending. Please wait a moment and try again.';
+      } else if (registerError.message.includes('timeout')) {
+        userMessage =
+          'Registration timeout. Please check your connection and try again.';
+      } else if (registerError.message.includes('nonce')) {
+        userMessage =
+          'Transaction conflict detected. Please wait a moment and try again.';
+      } else {
+        userMessage = registerError.message;
+      }
+    }
+
+    // Re-throw with clear message - this will stop the donation flow
+    throw new Error(`Pledge Registration Failed: ${userMessage}`);
+  }
+
+  // Initialize treasury contract for pledge transaction
   const treasuryContract = new ethers.Contract(
     address!,
     KeepWhatsRaisedABI,
     signer,
   );
-
-  try {
-    // TODO: Set via env variable. For direct pledges we set it as 0
-    const gatewayFee = 0n; // No gateway fee for direct wallet pledges
-    const gatewayFeeTx = await treasuryContract.setPaymentGatewayFee(
-      pledgeId,
-      gatewayFee,
-    );
-    debug && console.log('Gateway fee transaction hash:', gatewayFeeTx.hash);
-    await gatewayFeeTx.wait();
-    debug && console.log('Gateway fee registered successfully');
-  } catch (gatewayFeeError) {
-    console.error('Failed to set payment gateway fee:', gatewayFeeError);
-    throw new Error(
-      'Failed to register pledge with treasury. Please try again.',
-    );
-  }
 
   // First approve the treasury to spend USDC (pledge + tip)
   debug && console.log('Treasury address:', address);

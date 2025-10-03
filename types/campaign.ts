@@ -231,6 +231,13 @@ export const DonationProcessStates = {
   requestTransaction: 'requestTransaction',
 
   /**
+   * The backend is registering the pledge ID with the treasury contract using admin credentials.
+   * This privileged operation must complete before the user can proceed with their pledge.
+   * No direct user interaction is required during this phase.
+   */
+  registerPledge: 'registerPledge',
+
+  /**
    * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDC.
    * This action will require confirmation from the user within their wallet.
    */
