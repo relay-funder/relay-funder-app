@@ -214,9 +214,10 @@ export async function POST(
           endTime: new Date(deadline * 1000),
         },
       });
-      debug && console.log(
-        `[campaigns/create-onchain] Updated DB with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
-      );
+      debug &&
+        console.log(
+          `[campaigns/create-onchain] Updated DB with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
+        );
     } catch (persistErr) {
       console.error(
         '[campaigns/create-onchain] Failed to persist on-chain info',

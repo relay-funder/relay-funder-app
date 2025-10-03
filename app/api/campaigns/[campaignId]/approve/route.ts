@@ -86,10 +86,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
 
     if (treasuryAddress) {
       const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
-      const platformAdminSigner = new ethers.Wallet(
-        platformAdminKey,
-        provider,
-      );
+      const platformAdminSigner = new ethers.Wallet(platformAdminKey, provider);
 
       const configResult = await treasuryManager.configureTreasury(
         treasuryAddress,
@@ -103,9 +100,10 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         );
       }
 
-      debug && console.log(
-        `Treasury configured successfully: ${configResult.transactionHash}`,
-      );
+      debug &&
+        console.log(
+          `Treasury configured successfully: ${configResult.transactionHash}`,
+        );
     }
 
     return response({

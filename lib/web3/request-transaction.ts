@@ -71,18 +71,27 @@ export async function requestTransaction({
   // Set payment gateway fee BEFORE pledge (required by KeepWhatsRaised)
   // Even for direct wallet pledges, the pledge ID must be registered with a fee (can be 0)
   debug && console.log('Setting payment gateway fee for pledge...');
-  const treasuryContract = new ethers.Contract(address!, KeepWhatsRaisedABI, signer);
+  const treasuryContract = new ethers.Contract(
+    address!,
+    KeepWhatsRaisedABI,
+    signer,
+  );
 
   try {
     // TODO: Set via env variable. For direct pledges we set it as 0
     const gatewayFee = 0n; // No gateway fee for direct wallet pledges
-    const gatewayFeeTx = await treasuryContract.setPaymentGatewayFee(pledgeId, gatewayFee);
+    const gatewayFeeTx = await treasuryContract.setPaymentGatewayFee(
+      pledgeId,
+      gatewayFee,
+    );
     debug && console.log('Gateway fee transaction hash:', gatewayFeeTx.hash);
     await gatewayFeeTx.wait();
     debug && console.log('Gateway fee registered successfully');
   } catch (gatewayFeeError) {
     console.error('Failed to set payment gateway fee:', gatewayFeeError);
-    throw new Error('Failed to register pledge with treasury. Please try again.');
+    throw new Error(
+      'Failed to register pledge with treasury. Please try again.',
+    );
   }
 
   // First approve the treasury to spend USDC (pledge + tip)
@@ -106,7 +115,8 @@ export async function requestTransaction({
       tipAmountInUSDC,
     );
   } catch (gasEstimateError) {
-    debug && console.warn('Gas estimation failed, using default:', estimatedGas);
+    debug &&
+      console.warn('Gas estimation failed, using default:', estimatedGas);
   }
   debug && console.log('Estimated gas:', estimatedGas.toString());
 

@@ -403,7 +403,9 @@ async function main() {
     process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS = '1000'; // 10% platform fee
     process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS = '600'; // 6% VAKI commission
     process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC = '30'; // 30 seconds for testing (vs 3600 default)
-    console.log('   Treasury fee configuration set: 10% platform fee, 6% VAKI commission');
+    console.log(
+      '   Treasury fee configuration set: 10% platform fee, 6% VAKI commission',
+    );
     console.log('   Launch offset set to 30 seconds for testing');
   }
 
@@ -485,7 +487,10 @@ async function main() {
     const campaignStatus = campaignStatuses[i];
 
     // For ACTIVE campaigns, set startTime slightly in the future for treasury config, then we'll update it later
-    const startTimeOffset = campaignStatus === CampaignStatus.ACTIVE ? 30 : -Math.random() * 7 * 24 * 60 * 60 * 1000;
+    const startTimeOffset =
+      campaignStatus === CampaignStatus.ACTIVE
+        ? 30
+        : -Math.random() * 7 * 24 * 60 * 60 * 1000;
 
     return {
       id: 0,
@@ -628,7 +633,7 @@ async function main() {
     let transactionHash: string | null = null;
 
     // Add delay between deployments to avoid nonce conflicts and RPC issues
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     if (campaignData.status === CampaignStatus.PENDING_APPROVAL) {
       // PENDING_APPROVAL campaigns should have campaign contract deployed
@@ -683,7 +688,9 @@ async function main() {
         if (deployResult.treasuryContract?.success) {
           treasuryAddress = deployResult.treasuryContract.treasuryAddress;
           deploymentStats.successfulTreasuryDeployments++;
-          console.log(`   Treasury contract deployed and configured successfully`);
+          console.log(
+            `   Treasury contract deployed and configured successfully`,
+          );
 
           // After successful treasury configuration, update campaign startTime to be in the past
           await db.campaign.update({
@@ -692,7 +699,9 @@ async function main() {
               startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // Set to 1 day ago
             },
           });
-          console.log(`   Updated campaign startTime to past for ACTIVE status`);
+          console.log(
+            `   Updated campaign startTime to past for ACTIVE status`,
+          );
         } else {
           deploymentStats.failedTreasuryDeployments++;
           const errorType =

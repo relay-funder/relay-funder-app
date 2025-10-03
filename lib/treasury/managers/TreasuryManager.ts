@@ -270,13 +270,18 @@ export class TreasuryManager extends TreasuryInterface {
       }
 
       debug && console.log('Treasury configuration parameters:');
-      debug && console.log(
-        `  Launch Time: ${launchTime} (${new Date(launchTime * 1000).toISOString()})`,
-      );
-      debug && console.log(
-        `  Deadline: ${deadline} (${new Date(deadline * 1000).toISOString()})`,
-      );
-      debug && console.log(`  Goal Amount: ${goalAmount.toString()} (${campaign.fundingGoal} USDC)`);
+      debug &&
+        console.log(
+          `  Launch Time: ${launchTime} (${new Date(launchTime * 1000).toISOString()})`,
+        );
+      debug &&
+        console.log(
+          `  Deadline: ${deadline} (${new Date(deadline * 1000).toISOString()})`,
+        );
+      debug &&
+        console.log(
+          `  Goal Amount: ${goalAmount.toString()} (${campaign.fundingGoal} USDC)`,
+        );
 
       // Build structs as objects with named fields (required for ethers.js JSON ABI)
       const configStruct = {
@@ -306,38 +311,56 @@ export class TreasuryManager extends TreasuryInterface {
       };
 
       debug && console.log('Treasury fee configuration:');
-      debug && console.log(`  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`);
-      debug && console.log(`  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`);
+      debug &&
+        console.log(
+          `  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`,
+        );
+      debug &&
+        console.log(
+          `  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`,
+        );
       debug && console.log(`  PLATFORM_FEE_BPS: ${PLATFORM_FEE_BPS}`);
       debug && console.log(`  VAKI_COMMISSION_BPS: ${VAKI_COMMISSION_BPS}`);
-      debug && console.log('Full configuration structs:', JSON.stringify({
-        config: {
-          minimumWithdrawalForFeeExemption: MIN_WITHDRAWAL_FEE_EXEMPTION.toString(),
-          withdrawalDelay: TREASURY_DELAYS.WITHDRAWAL_DELAY,
-          refundDelay: TREASURY_DELAYS.REFUND_DELAY,
-          configLockPeriod: TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
-          isColombianCreator: TREASURY_CONFIG.IS_COLOMBIAN,
-        },
-        campaignData: {
-          launchTime,
-          deadline,
-          goalAmount: goalAmount.toString(),
-        },
-        feeKeys: {
-          flatFeeKey: FLAT_FEE_KEY,
-          cumulativeFlatFeeKey: CUM_FLAT_FEE_KEY,
-          grossPercentageFeeKeys: [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
-        },
-        feeValues: {
-          flatFeeValue: FLAT_FEE_VALUE.toString(),
-          cumulativeFlatFeeValue: CUM_FLAT_FEE_VALUE.toString(),
-          grossPercentageFeeValues: [PLATFORM_FEE_BPS, VAKI_COMMISSION_BPS],
-        },
-      }, null, 2));
+      debug &&
+        console.log(
+          'Full configuration structs:',
+          JSON.stringify(
+            {
+              config: {
+                minimumWithdrawalForFeeExemption:
+                  MIN_WITHDRAWAL_FEE_EXEMPTION.toString(),
+                withdrawalDelay: TREASURY_DELAYS.WITHDRAWAL_DELAY,
+                refundDelay: TREASURY_DELAYS.REFUND_DELAY,
+                configLockPeriod: TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
+                isColombianCreator: TREASURY_CONFIG.IS_COLOMBIAN,
+              },
+              campaignData: {
+                launchTime,
+                deadline,
+                goalAmount: goalAmount.toString(),
+              },
+              feeKeys: {
+                flatFeeKey: FLAT_FEE_KEY,
+                cumulativeFlatFeeKey: CUM_FLAT_FEE_KEY,
+                grossPercentageFeeKeys: [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
+              },
+              feeValues: {
+                flatFeeValue: FLAT_FEE_VALUE.toString(),
+                cumulativeFlatFeeValue: CUM_FLAT_FEE_VALUE.toString(),
+                grossPercentageFeeValues: [
+                  PLATFORM_FEE_BPS,
+                  VAKI_COMMISSION_BPS,
+                ],
+              },
+            },
+            null,
+            2,
+          ),
+        );
 
       // Wait for deployment transaction to be processed
       debug && console.log('  Waiting 2 seconds before configuration...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get current nonce to ensure proper transaction ordering
       const nonce = await signer.getNonce('pending');
@@ -348,7 +371,7 @@ export class TreasuryManager extends TreasuryInterface {
         campaignDataStruct,
         feeKeysStruct,
         feeValuesStruct,
-        { 
+        {
           gasLimit: TREASURY_GAS_LIMITS.CONFIGURE,
           nonce,
           type: 0, // Use legacy transaction type (like shell script --legacy flag)
@@ -357,7 +380,10 @@ export class TreasuryManager extends TreasuryInterface {
 
       debug && console.log(`  Transaction submitted: ${tx.hash}`);
       const receipt = await tx.wait();
-      debug && console.log(`  Transaction confirmed in block: ${receipt?.blockNumber}`);
+      debug &&
+        console.log(
+          `  Transaction confirmed in block: ${receipt?.blockNumber}`,
+        );
 
       return {
         success: true,
@@ -408,12 +434,12 @@ export class TreasuryManager extends TreasuryInterface {
 
   /**
    * Withdraw funds from the crypto treasury
-   * 
-   * IMPORTANT: For partial withdrawals (before deadline), flat fees are ADDED to the 
+   *
+   * IMPORTANT: For partial withdrawals (before deadline), flat fees are ADDED to the
    * withdrawal amount when deducting from available balance. This means:
    * - If available = 100 and fee = 2, max withdrawal = 98 (not 100)
    * - totalDeducted = withdrawalAmount + fee <= available
-   * 
+   *
    * The withdrawal amount passed should already account for fees if withdrawing
    * the maximum available amount.
    */
@@ -427,23 +453,30 @@ export class TreasuryManager extends TreasuryInterface {
       );
 
       const amountWei = ethers.parseUnits(params.amount, USDC_CONFIG.DECIMALS);
-      
+
       debug && console.log('Withdrawal parameters:');
       debug && console.log(`  Treasury: ${params.treasuryAddress}`);
-      debug && console.log(`  Amount: ${params.amount} USDC (${amountWei.toString()} wei)`);
+      debug &&
+        console.log(
+          `  Amount: ${params.amount} USDC (${amountWei.toString()} wei)`,
+        );
       debug && console.log(`  Recipient: ${params.recipient}`);
-      debug && console.log('  Note: Amount should already account for withdrawal fees');
+      debug &&
+        console.log(
+          '  Note: Amount should already account for withdrawal fees',
+        );
 
       const tx = await treasuryContract.withdraw(amountWei, {
         gasLimit: TREASURY_GAS_LIMITS.WITHDRAW,
       });
-      
+
       debug && console.log(`  Transaction hash: ${tx.hash}`);
       debug && console.log('  Waiting for confirmation...');
-      
+
       const receipt = await tx.wait();
-      
-      debug && console.log(`  Withdrawal confirmed in block ${receipt.blockNumber}`);
+
+      debug &&
+        console.log(`  Withdrawal confirmed in block ${receipt.blockNumber}`);
 
       return {
         success: true,
@@ -453,22 +486,34 @@ export class TreasuryManager extends TreasuryInterface {
       };
     } catch (error) {
       console.error('CryptoTreasuryManager withdrawal error:', error);
-      
+
       // Provide more helpful error message for common issues
       let errorMessage = 'Unknown withdrawal error';
       if (error instanceof Error) {
         errorMessage = error.message;
-        
+
         // Check for common withdrawal errors
-        if (errorMessage.includes('insufficient') || errorMessage.includes('exceeds')) {
-          errorMessage = 'Withdrawal amount exceeds available balance after fees. Try withdrawing a smaller amount.';
-        } else if (errorMessage.includes('not approved') || errorMessage.includes('approval')) {
-          errorMessage = 'Withdrawal not approved. Platform admin must approve withdrawals first.';
-        } else if (errorMessage.includes('deadline') || errorMessage.includes('time')) {
-          errorMessage = 'Withdrawal window has closed or campaign has not ended yet.';
+        if (
+          errorMessage.includes('insufficient') ||
+          errorMessage.includes('exceeds')
+        ) {
+          errorMessage =
+            'Withdrawal amount exceeds available balance after fees. Try withdrawing a smaller amount.';
+        } else if (
+          errorMessage.includes('not approved') ||
+          errorMessage.includes('approval')
+        ) {
+          errorMessage =
+            'Withdrawal not approved. Platform admin must approve withdrawals first.';
+        } else if (
+          errorMessage.includes('deadline') ||
+          errorMessage.includes('time')
+        ) {
+          errorMessage =
+            'Withdrawal window has closed or campaign has not ended yet.';
         }
       }
-      
+
       return {
         success: false,
         amount: params.amount,

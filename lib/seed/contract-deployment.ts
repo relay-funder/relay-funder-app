@@ -118,11 +118,13 @@ export async function deployCampaignContract(
   isDummy: boolean = false,
 ): Promise<CampaignContractDeployment> {
   try {
-    debug && console.log(`Deploying campaign contract for: ${campaignData.title}`);
+    debug &&
+      console.log(`Deploying campaign contract for: ${campaignData.title}`);
 
     // Dummy mode: simulate contract deployment without blockchain interaction
     if (isDummy) {
-      debug && console.log('  Running in dummy mode - simulating deployment...');
+      debug &&
+        console.log('  Running in dummy mode - simulating deployment...');
 
       // Generate realistic mock contract address
       const timestamp = Date.now();
@@ -131,9 +133,10 @@ export async function deployCampaignContract(
       // Generate realistic mock transaction hash
       const transactionHash = `0x${BigInt(timestamp).toString(16)}${'0'.repeat(56)}`;
 
-      debug && console.log(
-        `  Campaign contract deployed (dummy) at: ${campaignAddress}`,
-      );
+      debug &&
+        console.log(
+          `  Campaign contract deployed (dummy) at: ${campaignAddress}`,
+        );
       debug && console.log(`  Transaction hash (dummy): ${transactionHash}`);
 
       return {
@@ -285,7 +288,10 @@ export async function deployCampaignContract(
           endTime: new Date(deadline * 1000),
         },
       });
-      debug && console.log(`  Updated database with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`);
+      debug &&
+        console.log(
+          `  Updated database with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
+        );
     } finally {
       await prisma.$disconnect();
     }
@@ -330,7 +336,8 @@ export async function deployTreasuryContract(
   isDummy: boolean = false,
 ): Promise<TreasuryContractDeployment> {
   try {
-    debug && console.log(`Deploying treasury contract for campaign ${campaignId}`);
+    debug &&
+      console.log(`Deploying treasury contract for campaign ${campaignId}`);
 
     // Dummy mode: simulate treasury deployment without blockchain interaction
     if (isDummy) {
@@ -387,7 +394,8 @@ export async function deployTreasuryContract(
       throw new Error(`Treasury deployment failed: ${deployResult.error}`);
     }
 
-    debug && console.log(`  Treasury contract deployed at: ${deployResult.address}`);
+    debug &&
+      console.log(`  Treasury contract deployed at: ${deployResult.address}`);
     debug && console.log(`  Transaction hash: ${deployResult.transactionHash}`);
 
     // Configure treasury with campaign parameters
@@ -453,16 +461,17 @@ export async function deployAllContracts(
   const campaignContract = await deployCampaignContract(campaignData, isDummy);
 
   if (!campaignContract.success) {
-    debug && console.log(
-      `  Skipping treasury deployment due to campaign contract failure`,
-    );
+    debug &&
+      console.log(
+        `  Skipping treasury deployment due to campaign contract failure`,
+      );
     return { campaignContract };
   }
 
   // Add delay after campaign deployment to ensure transaction is processed
   if (!isDummy) {
     debug && console.log('  Waiting 2 seconds before treasury deployment...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
   // Deploy treasury contract

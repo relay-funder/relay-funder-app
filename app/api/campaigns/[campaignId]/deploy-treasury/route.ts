@@ -82,9 +82,10 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       );
     }
 
-    debug && console.log(
-      `Treasury configured successfully: ${configResult.transactionHash}`,
-    );
+    debug &&
+      console.log(
+        `Treasury configured successfully: ${configResult.transactionHash}`,
+      );
 
     return response({
       treasuryAddress: deployResult.address,
