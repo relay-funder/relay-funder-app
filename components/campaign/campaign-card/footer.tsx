@@ -1,17 +1,9 @@
 import { CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui';
-import Link from 'next/link';
 import { DbCampaign } from '@/types/campaign';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { CampaignCardDisplayOptions } from './types';
 import { CampaignCardActions } from './actions';
 import { useAuth } from '@/contexts';
-import { Trash2, Loader2, Edit, Wallet } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useAdminRemoveCampaign } from '@/lib/hooks/useCampaigns';
-import { AdminRemoveProcessStates } from '@/types/admin';
-import { cn } from '@/lib/utils';
 import { CampaignCardUserActions } from './user-actions';
 
 interface CampaignStatusInfo {

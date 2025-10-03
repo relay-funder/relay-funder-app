@@ -33,7 +33,6 @@ import {
   AdminDisableProcessStates,
 } from '@/types/admin';
 import { WithdrawalDialog } from '../withdrawal-dialog';
-import { CampaignAdminDisableButton } from '../admin/disable';
 import { useCampaignTreasuryBalance } from '@/hooks/use-treasury-balance';
 
 interface CampaignCardUserActionsProps {
@@ -317,7 +316,7 @@ export function CampaignCardUserActions({
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to remove this campaign? This action cannot
-              be undone. The campaign "{campaign.title}" will be permanently
+              be undone. The campaign &ldquo;{campaign.title}&rdquo; will be permanently
               deleted.
             </DialogDescription>
           </DialogHeader>

@@ -4,9 +4,6 @@
  * Contains realistic, varied campaign data that follows the same structure as production seed data.
  */
 
-import { countries } from '@/lib/constant/countries';
-import { categories, VALID_CATEGORY_IDS } from '@/lib/constant/categories';
-import { fundingModels } from '@/lib/constant/funding-models';
 
 // Valid locations for demo data (subset of all countries for realistic scenarios)
 const VALID_DEMO_LOCATIONS = [
@@ -238,13 +235,13 @@ function generateValidDemoCampaignData() {
 }
 
 // Cache generated data to ensure consistency during development session
-let cachedDemoData: any[] = [];
+let cachedDemoData: Record<string, unknown>[] = [];
 const CACHE_SIZE = 20;
 
 /**
  * Get cached or generate new valid demo campaign data
  */
-function getOrGenerateDemoData(): any[] {
+function getOrGenerateDemoData(): Record<string, unknown>[] {
   if (cachedDemoData.length === 0) {
     cachedDemoData = Array.from({ length: CACHE_SIZE }, () =>
       generateValidDemoCampaignData(),
