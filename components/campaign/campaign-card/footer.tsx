@@ -155,7 +155,7 @@ export function CampaignCardFooter({
           campaign?.rounds?.length > 0 &&
           (adminMode || isOwner) &&
           cardType !== 'standard' && (
-            <div className="space-y-2 mb-4">
+            <div className="mb-4 space-y-2">
               <h4 className="text-sm font-medium text-foreground">
                 Round Applications:
               </h4>
@@ -171,10 +171,10 @@ export function CampaignCardFooter({
                         <span
                           className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
                             round.recipientStatus === 'APPROVED'
-                              ? 'bg-bio/10 text-bio border border-bio/20'
+                              ? 'border border-bio/20 bg-bio/10 text-bio'
                               : round.recipientStatus === 'REJECTED'
-                                ? 'bg-destructive/10 text-destructive border border-destructive/20'
-                                : 'bg-solar/10 text-solar border border-solar/20'
+                                ? 'border border-destructive/20 bg-destructive/10 text-destructive'
+                                : 'border border-solar/20 bg-solar/10 text-solar'
                           }`}
                         >
                           {round.recipientStatus === 'APPROVED'
@@ -230,9 +230,7 @@ export function CampaignCardFooter({
                   <Button
                     size="sm"
                     variant="outline"
-                    className={cn(
-                      'w-full px-2 py-1 text-xs',
-                    )}
+                    className={cn('w-full px-2 py-1 text-xs')}
                   >
                     <Edit className="mr-2 h-3 w-3" />
                     Edit
@@ -249,9 +247,7 @@ export function CampaignCardFooter({
                       <Button
                         size="sm"
                         variant="outline"
-                        className={cn(
-                          'w-full px-2 py-1 text-xs',
-                        )}
+                        className={cn('w-full px-2 py-1 text-xs')}
                       >
                         <Wallet className="mr-2 h-3 w-3" />
                         Withdraw

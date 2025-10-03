@@ -49,7 +49,7 @@ export function PageNavMenuUser() {
     <nav className="flex-1 space-y-1 p-3">
       <div
         className={cn(
-          'flex items-center rounded-lg px-1 py-4 md:py-6 text-foreground hover:bg-accent hover:text-accent-foreground',
+          'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground md:py-6',
           transition,
           isOpen ? 'px-4' : 'px-[9px]',
         )}

@@ -28,7 +28,7 @@ export function CreateCampaignPlaceholder({
         </div>
 
         <div className="max-w-sm space-y-3">
-          <h3 className="text-xl font-display font-semibold text-foreground">
+          <h3 className="font-display text-xl font-semibold text-foreground">
             Create Your Campaign
           </h3>
 
