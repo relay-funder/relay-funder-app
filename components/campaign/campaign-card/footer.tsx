@@ -155,15 +155,15 @@ export function CampaignCardFooter({
           campaign?.rounds?.length > 0 &&
           (adminMode || isOwner) &&
           cardType !== 'standard' && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">
+            <div className="space-y-2 mb-4">
+              <h4 className="text-sm font-medium text-foreground">
                 Round Applications:
               </h4>
               <ul className="space-y-1">
                 {campaign.rounds.map((round: GetRoundResponseInstance) => (
                   <li
                     key={round.id}
-                    className="border-l-2 border-blue-200 pl-2 text-sm text-gray-600"
+                    className="border-l-2 border-accent pl-2 text-sm text-muted-foreground"
                   >
                     <div className="flex items-center justify-between">
                       <span>{round.title}</span>
@@ -171,10 +171,10 @@ export function CampaignCardFooter({
                         <span
                           className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
                             round.recipientStatus === 'APPROVED'
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-bio/10 text-bio border border-bio/20'
                               : round.recipientStatus === 'REJECTED'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-yellow-100 text-yellow-700'
+                                ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                                : 'bg-solar/10 text-solar border border-solar/20'
                           }`}
                         >
                           {round.recipientStatus === 'APPROVED'
@@ -200,7 +200,7 @@ export function CampaignCardFooter({
           adminMode &&
           displayOptions.showCampaignAdminActions && (
             <div className="mt-6 space-y-3">
-              <h4 className="text-sm font-semibold text-gray-800">
+              <h4 className="text-sm font-semibold text-foreground">
                 Campaign Actions
               </h4>
               <CampaignCardActions
@@ -219,7 +219,7 @@ export function CampaignCardFooter({
         {(shouldShowEditButton ||
           shouldShowWithdrawalButton ||
           shouldShowDeleteButton) && (
-          <div className="border-t border-gray-200 pt-3">
+          <div className="border-t border-border pt-3">
             <div className="flex gap-2">
               {/* Edit button */}
               {shouldShowEditButton && (
@@ -229,8 +229,9 @@ export function CampaignCardFooter({
                 >
                   <Button
                     size="sm"
+                    variant="outline"
                     className={cn(
-                      'w-full bg-blue-100 px-2 py-1 text-xs text-blue-700 hover:bg-blue-200',
+                      'w-full px-2 py-1 text-xs',
                     )}
                   >
                     <Edit className="mr-2 h-3 w-3" />
@@ -247,8 +248,9 @@ export function CampaignCardFooter({
                     trigger={
                       <Button
                         size="sm"
+                        variant="outline"
                         className={cn(
-                          'w-full bg-green-100 px-2 py-1 text-xs text-green-700 hover:bg-green-200',
+                          'w-full px-2 py-1 text-xs',
                         )}
                       >
                         <Wallet className="mr-2 h-3 w-3" />
@@ -265,9 +267,9 @@ export function CampaignCardFooter({
                   onClick={onRemove}
                   size="sm"
                   disabled={isDeleting}
+                  variant="destructive"
                   className={cn(
-                    'flex-1',
-                    'bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200',
+                    'flex-1 px-2 py-1 text-xs',
                     isDeleting && 'opacity-50',
                   )}
                 >

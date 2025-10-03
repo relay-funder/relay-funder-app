@@ -34,10 +34,16 @@ export function RoundCardCampaignStatus({
   return (
     <div
       className={cn('inline-block rounded-full px-2 py-1 text-xs font-medium', {
-        'bg-orange-100 text-orange-700':
+        // Light theme styles
+        'bg-solar/10 text-solar border border-solar/20':
           status === 'Pending' || status === 'Round: Pending Approval',
-        'bg-red-100 text-red-700': status === 'Round: Rejected',
-        'bg-green-100 text-green-700': status === 'Round: Approved',
+        'bg-destructive/10 text-destructive border border-destructive/20': status === 'Round: Rejected',
+        'bg-bio text-white border border-bio': status === 'Round: Approved',
+        // Dark theme styles for better contrast
+        'dark:bg-solar/20 dark:text-solar dark:border-solar/40':
+          status === 'Pending' || status === 'Round: Pending Approval',
+        'dark:bg-destructive/20 dark:text-destructive dark:border-destructive/40': status === 'Round: Rejected',
+        'dark:bg-bio dark:text-white dark:border-bio': status === 'Round: Approved',
       })}
     >
       {status}

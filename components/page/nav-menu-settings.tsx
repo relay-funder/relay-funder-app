@@ -13,7 +13,7 @@ export function PageNavMenuSettings() {
     return null;
   }
   return (
-    <nav className="flex-1 space-y-1 px-3">
+    <nav className="flex-1 space-y-1 p-3">
       <Link
         href="/profile"
         className={cn(
