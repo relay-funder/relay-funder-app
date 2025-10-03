@@ -182,7 +182,7 @@ export async function deployCampaignContract(
         process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
       ),
       launchOffsetSec: parseInt(
-        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
+        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
       ),
       minCampaignDurationSec: parseInt(
         process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',

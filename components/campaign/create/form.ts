@@ -7,14 +7,7 @@ function validateTimes(value: string) {
 }
 function transformStartTime(value: string) {
   const localDate = new Date(value);
-  const now = new Date();
-  if (
-    now.getFullYear() === localDate.getFullYear() &&
-    now.getMonth() === localDate.getMonth() &&
-    now.getDate() === localDate.getDate()
-  ) {
-    localDate.setHours(now.getHours() + 1);
-  }
+  // Allow campaigns to start immediately without artificial delay
   localDate.setMinutes(0);
   localDate.setSeconds(0);
   localDate.setMilliseconds(0);

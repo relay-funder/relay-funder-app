@@ -15,7 +15,7 @@ import { checkAuth } from '@/lib/api/auth';
  * NEXT_PUBLIC_VAKI_COMMISSION_BPS=100          # Vaki commission percentage (100 = 1%)
  * NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD=0.5      # Fee exemption threshold (USDC)
  * # Campaign Timing Configuration
- * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=3600           # Minimum hours before launch (3600 = 1 hour)
+ * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=300            # Minimum seconds before launch (300 = 5 minutes)
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
@@ -48,8 +48,8 @@ export async function POST(
 
       // Timing configuration (in seconds)
       launchOffsetSec: parseInt(
-        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
-      ), // 1 hour buffer
+        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
+      ), // 5 minute buffer
       minCampaignDurationSec: parseInt(
         process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
       ), // 24 hours minimum
@@ -128,7 +128,7 @@ export async function POST(
     );
 
     // Use configurable timing with reasonable defaults for production
-    const launchBuffer = platformConfig.launchOffsetSec; // Default: 1 hour buffer
+    const launchBuffer = platformConfig.launchOffsetSec; // Default: 5 minute buffer
     const minDuration = platformConfig.minCampaignDurationSec; // Default: 24 hours minimum
 
     // Ensure campaign can launch with proper buffer time
