@@ -2,6 +2,7 @@ import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
 import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { checkAuth } from '@/lib/api/auth';
@@ -200,14 +201,22 @@ export async function POST(
     }
 
     // Persist on chain info to DB
+    // Update database with actual on-chain timing for treasury configuration
+    // The campaign contract enforces minimum launch offset and duration,
+    // so we must sync the DB with these adjusted values
     try {
       await db.campaign.update({
         where: { id },
         data: {
           transactionHash: tx.hash,
           campaignAddress: campaignAddress ?? undefined,
+          startTime: new Date(launchTime * 1000),
+          endTime: new Date(deadline * 1000),
         },
       });
+      debug && console.log(
+        `[campaigns/create-onchain] Updated DB with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
+      );
     } catch (persistErr) {
       console.error(
         '[campaigns/create-onchain] Failed to persist on-chain info',

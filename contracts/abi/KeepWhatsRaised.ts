@@ -107,6 +107,17 @@ export const KeepWhatsRaisedABI = [
 
   {
     type: 'function',
+    name: 'setPaymentGatewayFee',
+    inputs: [
+      { name: 'pledgeId', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'fee', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+
+  {
+    type: 'function',
     name: 'configureTreasury',
     inputs: [
       {

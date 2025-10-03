@@ -1,7 +1,9 @@
 import { ethers } from 'ethers';
 import { db } from '@/server/db';
 import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
+import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { chainConfig } from '@/lib/web3';
+import { debugWeb3 as debug } from '@/lib/debug';
 import {
   TREASURY_DELAYS,
   TREASURY_CONFIG,
@@ -65,7 +67,7 @@ export class TreasuryManager extends TreasuryInterface {
         params.signer,
       );
 
-      // CRITICAL: Validate that campaignAddress is a deployed CampaignInfo contract
+      // Validate that campaignAddress is a deployed CampaignInfo contract
       if (!params.campaignAddress) {
         throw new Error(
           'CampaignInfo address is required for treasury deployment',
@@ -186,13 +188,21 @@ export class TreasuryManager extends TreasuryInterface {
         throw new Error('Campaign not found');
       }
 
-      const treasuryABI = [
-        'function configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[]),(uint256,uint256,uint256[])) external',
-      ];
+      // Validate campaign data before configuration
+      if (!campaign.startTime) {
+        throw new Error('Campaign startTime is not set');
+      }
+      if (!campaign.endTime) {
+        throw new Error('Campaign endTime is not set');
+      }
+      if (!campaign.fundingGoal || campaign.fundingGoal === '0') {
+        throw new Error('Campaign fundingGoal is not set or is zero');
+      }
 
+      // Use the full ABI from contracts/abi/KeepWhatsRaised.ts
       const treasuryContract = new ethers.Contract(
         treasuryAddress,
-        treasuryABI,
+        KeepWhatsRaisedABI,
         signer,
       );
 
@@ -232,7 +242,7 @@ export class TreasuryManager extends TreasuryInterface {
         process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
       ); // 1%
 
-      // Campaign data
+      // Campaign data - convert to Unix timestamps
       const launchTime = Math.floor(
         new Date(campaign.startTime).getTime() / 1000,
       );
@@ -242,21 +252,112 @@ export class TreasuryManager extends TreasuryInterface {
         USDC_CONFIG.DECIMALS,
       );
 
+      // Validate converted timestamps
+      if (isNaN(launchTime) || launchTime <= 0) {
+        throw new Error(
+          `Invalid launchTime: ${campaign.startTime} converted to ${launchTime}`,
+        );
+      }
+      if (isNaN(deadline) || deadline <= 0) {
+        throw new Error(
+          `Invalid deadline: ${campaign.endTime} converted to ${deadline}`,
+        );
+      }
+      if (deadline <= launchTime) {
+        throw new Error(
+          `Campaign deadline (${deadline}) must be after launch time (${launchTime})`,
+        );
+      }
+
+      debug && console.log('Treasury configuration parameters:');
+      debug && console.log(
+        `  Launch Time: ${launchTime} (${new Date(launchTime * 1000).toISOString()})`,
+      );
+      debug && console.log(
+        `  Deadline: ${deadline} (${new Date(deadline * 1000).toISOString()})`,
+      );
+      debug && console.log(`  Goal Amount: ${goalAmount.toString()} (${campaign.fundingGoal} USDC)`);
+
+      // Build structs as objects with named fields (required for ethers.js JSON ABI)
+      const configStruct = {
+        minimumWithdrawalForFeeExemption: MIN_WITHDRAWAL_FEE_EXEMPTION,
+        withdrawalDelay: TREASURY_DELAYS.WITHDRAWAL_DELAY,
+        refundDelay: TREASURY_DELAYS.REFUND_DELAY,
+        configLockPeriod: TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
+        isColombianCreator: TREASURY_CONFIG.IS_COLOMBIAN,
+      };
+
+      const campaignDataStruct = {
+        launchTime,
+        deadline,
+        goalAmount,
+      };
+
+      const feeKeysStruct = {
+        flatFeeKey: FLAT_FEE_KEY,
+        cumulativeFlatFeeKey: CUM_FLAT_FEE_KEY,
+        grossPercentageFeeKeys: [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
+      };
+
+      const feeValuesStruct = {
+        flatFeeValue: FLAT_FEE_VALUE,
+        cumulativeFlatFeeValue: CUM_FLAT_FEE_VALUE,
+        grossPercentageFeeValues: [PLATFORM_FEE_BPS, VAKI_COMMISSION_BPS],
+      };
+
+      debug && console.log('Treasury fee configuration:');
+      debug && console.log(`  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`);
+      debug && console.log(`  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`);
+      debug && console.log(`  PLATFORM_FEE_BPS: ${PLATFORM_FEE_BPS}`);
+      debug && console.log(`  VAKI_COMMISSION_BPS: ${VAKI_COMMISSION_BPS}`);
+      debug && console.log('Full configuration structs:', JSON.stringify({
+        config: {
+          minimumWithdrawalForFeeExemption: MIN_WITHDRAWAL_FEE_EXEMPTION.toString(),
+          withdrawalDelay: TREASURY_DELAYS.WITHDRAWAL_DELAY,
+          refundDelay: TREASURY_DELAYS.REFUND_DELAY,
+          configLockPeriod: TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
+          isColombianCreator: TREASURY_CONFIG.IS_COLOMBIAN,
+        },
+        campaignData: {
+          launchTime,
+          deadline,
+          goalAmount: goalAmount.toString(),
+        },
+        feeKeys: {
+          flatFeeKey: FLAT_FEE_KEY,
+          cumulativeFlatFeeKey: CUM_FLAT_FEE_KEY,
+          grossPercentageFeeKeys: [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
+        },
+        feeValues: {
+          flatFeeValue: FLAT_FEE_VALUE.toString(),
+          cumulativeFlatFeeValue: CUM_FLAT_FEE_VALUE.toString(),
+          grossPercentageFeeValues: [PLATFORM_FEE_BPS, VAKI_COMMISSION_BPS],
+        },
+      }, null, 2));
+
+      // Wait for deployment transaction to be processed
+      debug && console.log('  Waiting 2 seconds before configuration...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Get current nonce to ensure proper transaction ordering
+      const nonce = await signer.getNonce('pending');
+      debug && console.log(`  Using nonce: ${nonce}`);
+
       const tx = await treasuryContract.configureTreasury(
-        [
-          MIN_WITHDRAWAL_FEE_EXEMPTION,
-          TREASURY_DELAYS.WITHDRAWAL_DELAY,
-          TREASURY_DELAYS.REFUND_DELAY,
-          TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
-          TREASURY_CONFIG.IS_COLOMBIAN,
-        ],
-        [launchTime, deadline, goalAmount],
-        [FLAT_FEE_KEY, CUM_FLAT_FEE_KEY, [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY]],
-        [FLAT_FEE_VALUE, CUM_FLAT_FEE_VALUE, [PLATFORM_FEE_BPS, VAKI_COMMISSION_BPS]],
-        { gasLimit: TREASURY_GAS_LIMITS.CONFIGURE },
+        configStruct,
+        campaignDataStruct,
+        feeKeysStruct,
+        feeValuesStruct,
+        { 
+          gasLimit: TREASURY_GAS_LIMITS.CONFIGURE,
+          nonce,
+          type: 0, // Use legacy transaction type (like shell script --legacy flag)
+        },
       );
 
-      await tx.wait();
+      debug && console.log(`  Transaction submitted: ${tx.hash}`);
+      const receipt = await tx.wait();
+      debug && console.log(`  Transaction confirmed in block: ${receipt?.blockNumber}`);
 
       return {
         success: true,
@@ -307,24 +408,42 @@ export class TreasuryManager extends TreasuryInterface {
 
   /**
    * Withdraw funds from the crypto treasury
+   * 
+   * IMPORTANT: For partial withdrawals (before deadline), flat fees are ADDED to the 
+   * withdrawal amount when deducting from available balance. This means:
+   * - If available = 100 and fee = 2, max withdrawal = 98 (not 100)
+   * - totalDeducted = withdrawalAmount + fee <= available
+   * 
+   * The withdrawal amount passed should already account for fees if withdrawing
+   * the maximum available amount.
    */
   async withdraw(params: WithdrawalParams): Promise<WithdrawalResult> {
     try {
-      // Initialize treasury contract with withdrawal ABI
-      const treasuryABI = [
-        'function withdraw(uint256 amount) external',
-        'function getBalance() external view returns (uint256)',
-      ];
-
+      // Use the full ABI from contracts/abi/KeepWhatsRaised.ts
       const treasuryContract = new ethers.Contract(
         params.treasuryAddress,
-        treasuryABI,
+        KeepWhatsRaisedABI,
         params.signer,
       );
 
       const amountWei = ethers.parseUnits(params.amount, USDC_CONFIG.DECIMALS);
-      const tx = await treasuryContract.withdraw(amountWei);
-      await tx.wait();
+      
+      debug && console.log('Withdrawal parameters:');
+      debug && console.log(`  Treasury: ${params.treasuryAddress}`);
+      debug && console.log(`  Amount: ${params.amount} USDC (${amountWei.toString()} wei)`);
+      debug && console.log(`  Recipient: ${params.recipient}`);
+      debug && console.log('  Note: Amount should already account for withdrawal fees');
+
+      const tx = await treasuryContract.withdraw(amountWei, {
+        gasLimit: TREASURY_GAS_LIMITS.WITHDRAW,
+      });
+      
+      debug && console.log(`  Transaction hash: ${tx.hash}`);
+      debug && console.log('  Waiting for confirmation...');
+      
+      const receipt = await tx.wait();
+      
+      debug && console.log(`  Withdrawal confirmed in block ${receipt.blockNumber}`);
 
       return {
         success: true,
@@ -334,12 +453,27 @@ export class TreasuryManager extends TreasuryInterface {
       };
     } catch (error) {
       console.error('CryptoTreasuryManager withdrawal error:', error);
+      
+      // Provide more helpful error message for common issues
+      let errorMessage = 'Unknown withdrawal error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Check for common withdrawal errors
+        if (errorMessage.includes('insufficient') || errorMessage.includes('exceeds')) {
+          errorMessage = 'Withdrawal amount exceeds available balance after fees. Try withdrawing a smaller amount.';
+        } else if (errorMessage.includes('not approved') || errorMessage.includes('approval')) {
+          errorMessage = 'Withdrawal not approved. Platform admin must approve withdrawals first.';
+        } else if (errorMessage.includes('deadline') || errorMessage.includes('time')) {
+          errorMessage = 'Withdrawal window has closed or campaign has not ended yet.';
+        }
+      }
+      
       return {
         success: false,
         amount: params.amount,
         recipient: params.recipient,
-        error:
-          error instanceof Error ? error.message : 'Unknown withdrawal error',
+        error: errorMessage,
       };
     }
   }
@@ -350,14 +484,11 @@ export class TreasuryManager extends TreasuryInterface {
   async getBalance(treasuryAddress: string): Promise<TreasuryBalance> {
     try {
       const provider = new ethers.JsonRpcProvider(this.rpcUrl);
-      const treasuryABI = [
-        'function getRaisedAmount() external view returns (uint256)',
-        'function getAvailableRaisedAmount() external view returns (uint256)',
-      ];
 
+      // Use the full ABI from contracts/abi/KeepWhatsRaised.ts
       const treasuryContract = new ethers.Contract(
         treasuryAddress,
-        treasuryABI,
+        KeepWhatsRaisedABI,
         provider,
       );
 

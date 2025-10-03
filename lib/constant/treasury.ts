@@ -18,6 +18,7 @@ export const TREASURY_CONFIG = {
 export const TREASURY_GAS_LIMITS = {
   DEPLOY: 2000000,
   CONFIGURE: 1000000,
+  WITHDRAW: 300000, // Gas limit for withdrawal transactions
 } as const;
 
 // USDC token configuration

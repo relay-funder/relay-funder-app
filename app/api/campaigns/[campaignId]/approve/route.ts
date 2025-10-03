@@ -18,6 +18,7 @@ import { ethers } from 'ethers';
 import { chainConfig } from '@/lib/web3';
 import { notify } from '@/lib/api/event-feed';
 import { getUser } from '@/lib/api/user';
+import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -74,31 +75,37 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
     });
 
     // Configure treasury with campaign parameters
-    try {
-      const treasuryManager = await createTreasuryManager();
-      const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+    const treasuryManager = await createTreasuryManager();
+    const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
 
-      if (platformAdminKey) {
-        const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
-        const platformAdminSigner = new ethers.Wallet(
-          platformAdminKey,
-          provider,
+    if (!platformAdminKey) {
+      throw new ApiIntegrityError(
+        'PLATFORM_ADMIN_PRIVATE_KEY not configured - cannot configure treasury',
+      );
+    }
+
+    if (treasuryAddress) {
+      const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
+      const platformAdminSigner = new ethers.Wallet(
+        platformAdminKey,
+        provider,
+      );
+
+      const configResult = await treasuryManager.configureTreasury(
+        treasuryAddress,
+        campaignId,
+        platformAdminSigner,
+      );
+
+      if (!configResult.success) {
+        throw new ApiIntegrityError(
+          `Treasury configuration failed: ${configResult.error}. Campaign cannot be activated with an unconfigured treasury.`,
         );
-
-        const configResult = await treasuryManager.configureTreasury(
-          treasuryAddress,
-          campaignId,
-          platformAdminSigner,
-        );
-
-        if (!configResult.success) {
-          console.error('Treasury configuration failed:', configResult.error);
-          // Continue with approval even if configuration fails
-        }
       }
-    } catch (configError) {
-      console.error('Error during treasury configuration:', configError);
-      // Don't fail the approval if configuration fails - treasury can be configured later
+
+      debug && console.log(
+        `Treasury configured successfully: ${configResult.transactionHash}`,
+      );
     }
 
     return response({

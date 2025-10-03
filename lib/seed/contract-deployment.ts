@@ -459,7 +459,7 @@ export async function deployAllContracts(
     return { campaignContract };
   }
 
-  // Add delay after campaign deployment to ensure transaction is processed (like shell script)
+  // Add delay after campaign deployment to ensure transaction is processed
   if (!isDummy) {
     debug && console.log('  Waiting 2 seconds before treasury deployment...');
     await new Promise(resolve => setTimeout(resolve, 2000));
