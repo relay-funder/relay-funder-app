@@ -215,11 +215,11 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         <div>
           <h4 className="mb-2 font-medium text-foreground">Your Options:</h4>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>
+            <li className="dark:[&>strong]:text-white">
               <strong>Save as Draft:</strong> Keep working on your campaign
               later
             </li>
-            <li>
+            <li className="dark:[&>strong]:text-white">
               <strong>Submit for Approval:</strong> Send for review to go live
             </li>
           </ul>

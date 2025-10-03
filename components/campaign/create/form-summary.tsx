@@ -8,41 +8,33 @@ import { CampaignFormSchema } from './form';
 export function CampaignCreateFormSummary() {
   const form = useFormContext();
   const session = useSession();
-  const campaign = useMemo(() => {
-    try {
-      const rawValues = form.getValues();
-      const values = CampaignFormSchema.parse(rawValues);
-      return {
-        id: 0,
-        title: values.title,
-        description: values.description,
-        fundingGoal: values.fundingGoal,
-        startTime: new Date(values.startTime),
-        endTime: new Date(values.endTime),
-        creatorAddress: session?.data?.user.address,
-        status: 'DRAFT',
-        transactionHash: null,
-        campaignAddress: null,
-        treasuryAddress: null,
-        category: values.category,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        media: [
-          {
-            id: 'unsaved',
-            url: values.bannerImage,
-            mimeType: 'image/unknown',
-          },
-        ],
-        mediaOrder: ['unsaved'],
-        slug: 'summary-campaign',
-        location: values.location,
 
-        creator: { ...(session?.data?.user ?? {}) },
-      } as DbCampaign;
-    } catch {
-      return undefined;
-    }
+  const campaign = useMemo(() => {
+    // Parse form data for validation and data transformation (date formatting, etc.)
+    const values = CampaignFormSchema.parse(form.getValues());
+
+    return {
+      id: 0,
+      title: values.title,
+      description: values.description,
+      fundingGoal: values.fundingGoal,
+      startTime: new Date(values.startTime),
+      endTime: new Date(values.endTime),
+      creatorAddress: session?.data?.user.address,
+      status: 'DRAFT',
+      transactionHash: null,
+      campaignAddress: null,
+      treasuryAddress: null,
+      category: values.category,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      // Dev mode data excludes banner images for reliable previews
+      media: [],
+      mediaOrder: [],
+      slug: 'summary-campaign',
+      location: values.location,
+      creator: { ...(session?.data?.user ?? {}) },
+    } as DbCampaign;
   }, [form, session?.data?.user]);
   return (
     <div className="space-y-6">
