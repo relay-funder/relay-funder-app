@@ -18,7 +18,9 @@ function CountrySelectItems() {
   const prioritizedCountries = [
     'Kenya',
     'Uganda',
-    ...countries.filter(country => country !== 'Kenya' && country !== 'Uganda')
+    ...countries.filter(
+      (country) => country !== 'Kenya' && country !== 'Uganda',
+    ),
   ];
 
   return prioritizedCountries.map((country) => (

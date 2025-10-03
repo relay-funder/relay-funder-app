@@ -56,9 +56,11 @@ export function CampaignCreateFormFunding({
       />
 
       {/* Information about funding model */}
-      <div className="rounded-lg border bg-gray-50 p-4">
-        <h3 className="font-semibold text-gray-900">🎨 Flexible Funding</h3>
-        <p className="mt-2 text-sm text-gray-700">
+      <div className="rounded-lg border bg-muted p-4">
+        <h3 className="font-display font-semibold text-foreground">
+          🎨 Flexible Funding
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
           You&apos;ll receive all funds raised at the end of your campaign,
           regardless of whether you reach your funding goal.
         </p>
