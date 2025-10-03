@@ -1,7 +1,6 @@
 import { checkAuth } from '@/lib/api/auth';
 import {
   ApiParameterError,
-  ApiNotFoundError,
   ApiUpstreamError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
