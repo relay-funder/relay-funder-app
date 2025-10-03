@@ -398,12 +398,36 @@ async function main() {
     console.log(
       '   Ensure all required environment variables are set for contract deployment',
     );
+
+    // Set correct fee values to match kwr_flow_test.sh for proper treasury configuration
+    process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS = '1000'; // 10% platform fee
+    process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS = '600'; // 6% VAKI commission
+    process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC = '30'; // 30 seconds for testing (vs 3600 default)
+    console.log('   Treasury fee configuration set: 10% platform fee, 6% VAKI commission');
+    console.log('   Launch offset set to 30 seconds for testing');
   }
 
-  // Clear existing data
-  await db.user.deleteMany();
-  await db.campaign.deleteMany();
-  await db.round.deleteMany();
+  // Clear existing data (handle empty database gracefully)
+  try {
+    await db.user.deleteMany();
+    console.log('Cleared existing user data');
+  } catch (error) {
+    console.log('No existing user data to clear (table may be empty)');
+  }
+
+  try {
+    await db.campaign.deleteMany();
+    console.log('Cleared existing campaign data');
+  } catch (error) {
+    console.log('No existing campaign data to clear (table may be empty)');
+  }
+
+  try {
+    await db.round.deleteMany();
+    console.log('Cleared existing round data');
+  } catch (error) {
+    console.log('No existing round data to clear (table may be empty)');
+  }
 
   console.log('Creating predefined test users...');
 
@@ -460,12 +484,15 @@ async function main() {
     const title = campaignTitles[i % campaignTitles.length];
     const campaignStatus = campaignStatuses[i];
 
+    // For ACTIVE campaigns, set startTime slightly in the future for treasury config, then we'll update it later
+    const startTimeOffset = campaignStatus === CampaignStatus.ACTIVE ? 30 : -Math.random() * 7 * 24 * 60 * 60 * 1000;
+
     return {
       id: 0,
       title,
       description: generateDescription(title),
       fundingGoal: generateFundingGoal(),
-      startTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random start within last week
+      startTime: new Date(Date.now() + startTimeOffset),
       endTime: new Date(
         Date.now() + (15 + Math.random() * 45) * 24 * 60 * 60 * 1000,
       ), // 15-60 days from now
@@ -600,6 +627,9 @@ async function main() {
     let treasuryAddress: string | null = null;
     let transactionHash: string | null = null;
 
+    // Add delay between deployments to avoid nonce conflicts and RPC issues
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     if (campaignData.status === CampaignStatus.PENDING_APPROVAL) {
       // PENDING_APPROVAL campaigns should have campaign contract deployed
       console.log(`   Deploying campaign contract (status: PENDING_APPROVAL)`);
@@ -631,6 +661,7 @@ async function main() {
     } else if (campaignData.status === CampaignStatus.ACTIVE) {
       // ACTIVE campaigns should have both contracts deployed
       console.log(`   Deploying both contracts (status: ACTIVE)`);
+
       const deployResult = await deployAllContracts(
         {
           id: campaign.id,
@@ -652,7 +683,16 @@ async function main() {
         if (deployResult.treasuryContract?.success) {
           treasuryAddress = deployResult.treasuryContract.treasuryAddress;
           deploymentStats.successfulTreasuryDeployments++;
-          console.log(`   Treasury contract deployed successfully`);
+          console.log(`   Treasury contract deployed and configured successfully`);
+
+          // After successful treasury configuration, update campaign startTime to be in the past
+          await db.campaign.update({
+            where: { id: campaign.id },
+            data: {
+              startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // Set to 1 day ago
+            },
+          });
+          console.log(`   Updated campaign startTime to past for ACTIVE status`);
         } else {
           deploymentStats.failedTreasuryDeployments++;
           const errorType =
