@@ -6,10 +6,12 @@ import React, {
   useMemo,
   useState,
   useEffect,
+  useCallback,
 } from 'react';
 import { debugAuth as debug } from '@/lib/debug';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useDisconnect } from '@reown/appkit/react';
 
 interface AuthContextType {
   address?: string;
@@ -35,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const session = useSession();
-
+  const { disconnect } = useDisconnect();
   const [isClient, setIsClient] = useState(false);
 
   const authenticated = useMemo(() => {
@@ -90,7 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }),
     );
   }, [authenticated, address, isAdmin, isClient]);
-
+  const logout = useCallback(async () => {
+    await disconnect();
+    await signOut();
+  }, [disconnect]);
   const value = useMemo(() => {
     return {
       address,
@@ -99,9 +104,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isAdmin,
       isClient,
       login: signIn,
-      logout: signOut,
+      logout,
     };
-  }, [address, authenticated, isReady, isAdmin, isClient]);
+  }, [address, authenticated, isReady, isAdmin, isClient, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

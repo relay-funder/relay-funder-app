@@ -1,23 +1,24 @@
 import { chainConfig } from '@/lib/web3';
-import { ConnectedWallet } from '@/lib/web3/types';
 import { debugWeb3 as debug } from '@/lib/debug';
+import type { Chain, Client, Transport } from 'viem';
 
-export async function switchNetwork({ wallet }: { wallet: ConnectedWallet }) {
-  if (!wallet || !(await wallet.isConnected())) {
+export async function switchNetwork({
+  client,
+}: {
+  client: Client<Transport, Chain>;
+}) {
+  if (!client) {
     throw new Error('Wallet not connected');
   }
-  const walletProvider = await wallet.getEthereumProvider();
-  if (!walletProvider) {
-    throw new Error('Wallet not supported or connected');
-  }
   try {
-    debug && console.log('Switching to Alfajores network...');
+    debug && console.log(`Switching to  ${chainConfig.name} network...`);
     const chainIdHex = `0x${chainConfig.chainId.toString(16)}`;
-    await walletProvider.request({
+    await client.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: chainIdHex }],
     });
-    debug && console.log('Successfully switched to Alfajores network');
+    debug &&
+      console.log(`Successfully switched to  ${chainConfig.name} network`);
   } catch (switchError: unknown) {
     debug && console.error('Network switch error:', switchError);
     if (
@@ -26,12 +27,13 @@ export async function switchNetwork({ wallet }: { wallet: ConnectedWallet }) {
       switchError.code === 4902
     ) {
       try {
-        debug && console.log('Attempting to add Alfajores network...');
-        await walletProvider.request({
+        debug &&
+          console.log(`Attempting to add ${chainConfig.name} network...`);
+        await client.request({
           method: 'wallet_addEthereumChain',
           params: [chainConfig.getAddChainParams()],
         });
-        debug && console.log('Successfully added Alfajores network');
+        debug && console.log(`Successfully added  ${chainConfig.name} network`);
       } catch (addError) {
         debug && console.error('Error adding network:', addError);
         throw new Error('Failed to add network');

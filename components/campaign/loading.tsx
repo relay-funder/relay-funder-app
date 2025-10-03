@@ -36,12 +36,12 @@ export function CampaignLoading({
           </Card>
         ) : (
           <Card key={index} className="animate-pulse">
-            <CardHeader className="h-[200px] bg-gray-200 p-0" />
+            <CardHeader className="h-[200px] bg-muted p-0" />
             <CardContent className="p-6">
-              <div className="mb-4 h-6 rounded bg-gray-200" />
+              <div className="mb-4 h-6 rounded bg-muted" />
               <div className="space-y-2">
-                <div className="h-4 rounded bg-gray-200" />
-                <div className="h-4 rounded bg-gray-200" />
+                <div className="h-4 rounded bg-muted" />
+                <div className="h-4 rounded bg-muted" />
               </div>
             </CardContent>
           </Card>

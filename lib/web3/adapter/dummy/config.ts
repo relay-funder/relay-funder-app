@@ -69,7 +69,7 @@ export const chainConfig = {
   defaultChain,
   getAddChainParams() {
     return {
-      chainId: this.chainId,
+      chainId: `${this.chainId}`,
       chainName: this.name,
       nativeCurrency: this.nativeCurrency,
       rpcUrls: [this.rpcUrl],

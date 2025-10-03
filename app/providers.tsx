@@ -10,10 +10,9 @@ import {
   SidebarProvider,
   FeatureFlagsProvider,
   EnvironmentProvider,
-  CollectionProvider,
+  ThemeProvider,
 } from '@/contexts';
 import { getQueryClient } from '@/lib/query-client';
-import { Web3ContextProvider } from '@/lib/web3';
 
 const queryClient = getQueryClient();
 
@@ -21,17 +20,15 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <FeatureFlagsProvider>
-          <SidebarProvider>
-            <EnvironmentProvider>
-              <Web3ContextProvider>
-                <AuthProvider>
-                  <CollectionProvider>{children}</CollectionProvider>
-                </AuthProvider>
-              </Web3ContextProvider>
-            </EnvironmentProvider>
-          </SidebarProvider>
-        </FeatureFlagsProvider>
+        <ThemeProvider>
+          <FeatureFlagsProvider>
+            <SidebarProvider>
+              <EnvironmentProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </EnvironmentProvider>
+            </SidebarProvider>
+          </FeatureFlagsProvider>
+        </ThemeProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </SessionProvider>

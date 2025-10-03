@@ -41,7 +41,6 @@ export interface ConnectedWallet {
   address?: string;
   chainId?: number;
   isConnected: () => Promise<boolean>;
-  getEthereumProvider: () => Promise<EthereumProvider | undefined>;
 }
 
 export interface IWeb3UseAuthHook {
@@ -54,4 +53,12 @@ export interface IWeb3UseAuthHook {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   ready: boolean;
+}
+
+export interface IWeb3UseConnectedAccountHook {
+  address?: string;
+  isConnected: boolean;
+  isEmbedded: boolean;
+  embeddedEmail?: string | null;
+  openUi: () => void;
 }

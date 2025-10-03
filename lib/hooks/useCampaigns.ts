@@ -270,6 +270,27 @@ async function disableCampaign(variables: IDisableCampaign) {
   }
   return response.json();
 }
+
+async function enableCampaign(variables: IDisableCampaign) {
+  const response = await fetch(
+    `/api/campaigns/${variables.campaignId}/enable`,
+    {
+      method: 'POST',
+      body: JSON.stringify(variables),
+    },
+  );
+  if (!response.ok) {
+    let errorMsg = 'Failed to enable campaign';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData?.error
+        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
+        : errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+}
 async function removeCampaign(variables: IDisableCampaign) {
   const response = await fetch(`/api/campaigns/${variables.campaignId}`, {
     method: 'DELETE',
@@ -484,8 +505,40 @@ export function useAdminDisableCampaign() {
   return useMutation({
     mutationFn: disableCampaign,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      // Invalidate all campaign-related queries more aggressively
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
       queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
+
+      // Force refetch of all campaign data
+      queryClient.refetchQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
+    },
+  });
+}
+
+export function useAdminEnableCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: enableCampaign,
+    onSuccess: () => {
+      // Invalidate all campaign-related queries more aggressively
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
+
+      // Force refetch of all campaign data
+      queryClient.refetchQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
     },
   });
 }

@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { chainConfig } from '@/lib/web3';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { createTreasuryManager } from '@/lib/treasury/interface';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 /**
  * Categorize deployment errors for better reporting
@@ -117,11 +118,13 @@ export async function deployCampaignContract(
   isDummy: boolean = false,
 ): Promise<CampaignContractDeployment> {
   try {
-    console.log(`Deploying campaign contract for: ${campaignData.title}`);
+    debug &&
+      console.log(`Deploying campaign contract for: ${campaignData.title}`);
 
     // Dummy mode: simulate contract deployment without blockchain interaction
     if (isDummy) {
-      console.log('  Running in dummy mode - simulating deployment...');
+      debug &&
+        console.log('  Running in dummy mode - simulating deployment...');
 
       // Generate realistic mock contract address
       const timestamp = Date.now();
@@ -130,10 +133,11 @@ export async function deployCampaignContract(
       // Generate realistic mock transaction hash
       const transactionHash = `0x${BigInt(timestamp).toString(16)}${'0'.repeat(56)}`;
 
-      console.log(
-        `  Campaign contract deployed (dummy) at: ${campaignAddress}`,
-      );
-      console.log(`  Transaction hash (dummy): ${transactionHash}`);
+      debug &&
+        console.log(
+          `  Campaign contract deployed (dummy) at: ${campaignAddress}`,
+        );
+      debug && console.log(`  Transaction hash (dummy): ${transactionHash}`);
 
       return {
         campaignAddress,
@@ -171,17 +175,15 @@ export async function deployCampaignContract(
 
     // Platform configuration
     const platformConfig = {
-      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001',
+      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
       cumulativeFlatFee:
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002',
-      platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
-      ),
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
+      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'),
       vakiCommissionBps: parseInt(
-        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
       ),
       launchOffsetSec: parseInt(
-        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
+        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
       ),
       minCampaignDurationSec: parseInt(
         process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
@@ -219,36 +221,14 @@ export async function deployCampaignContract(
       ethers.toUtf8Bytes(`RELAYFUNDER-SEED-${uniqueSuffix}`),
     );
 
-    // Configure fee structure
-    const feeKeys = [
-      'flatFee',
-      'cumulativeFlatFee',
-      'platformFee',
-      'vakiCommission',
-    ];
-    const platformDataKeys = feeKeys.map((n) =>
-      ethers.keccak256(ethers.toUtf8Bytes(n)),
-    );
-
-    const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(
-      platformConfig.cumulativeFlatFee,
-      usdcDecimals,
-    );
-
-    const toBytes32 = (n: bigint | number) =>
-      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
-    const platformDataValues = [
-      toBytes32(flatFee),
-      toBytes32(cumulativeFlatFee),
-      toBytes32(platformConfig.platformFeeBps),
-      toBytes32(platformConfig.vakiCommissionBps),
-    ];
+    // Platform data keys and values are empty - fees are configured in treasury
+    const platformDataKeys: string[] = [];
+    const platformDataValues: string[] = [];
 
     const campaignDataArray = [launchTime, deadline, goalAmount] as const;
 
     // Deploy campaign contract
-    console.log('  Submitting contract deployment transaction...');
+    debug && console.log('  Submitting contract deployment transaction...');
     const tx = await factory.createCampaign(
       campaignData.creatorAddress,
       identifierHash,
@@ -258,7 +238,7 @@ export async function deployCampaignContract(
       campaignDataArray,
     );
 
-    console.log('  Waiting for transaction confirmation...');
+    debug && console.log('  Waiting for transaction confirmation...');
     const receipt = await tx.wait();
 
     // Extract campaign address from factory event logs (using same logic as working admin endpoint)
@@ -291,8 +271,28 @@ export async function deployCampaignContract(
       );
     }
 
-    console.log(`  Campaign contract deployed at: ${campaignAddress}`);
-    console.log(`  Transaction hash: ${receipt.hash}`);
+    debug && console.log(`  Campaign contract deployed at: ${campaignAddress}`);
+    debug && console.log(`  Transaction hash: ${receipt.hash}`);
+
+    // Update database with actual on-chain timing for treasury configuration
+    // The campaign contract enforces minimum launch offset and duration, so we need to sync the DB
+    const { PrismaClient } = await import('../../.generated/prisma/client');
+    const prisma = new PrismaClient();
+    try {
+      await prisma.campaign.update({
+        where: { id: campaignData.id },
+        data: {
+          startTime: new Date(launchTime * 1000),
+          endTime: new Date(deadline * 1000),
+        },
+      });
+      debug &&
+        console.log(
+          `  Updated database with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
+        );
+    } finally {
+      await prisma.$disconnect();
+    }
 
     return {
       campaignAddress,
@@ -334,7 +334,8 @@ export async function deployTreasuryContract(
   isDummy: boolean = false,
 ): Promise<TreasuryContractDeployment> {
   try {
-    console.log(`Deploying treasury contract for campaign ${campaignId}`);
+    debug &&
+      console.log(`Deploying treasury contract for campaign ${campaignId}`);
 
     // Dummy mode: simulate treasury deployment without blockchain interaction
     if (isDummy) {
@@ -379,7 +380,7 @@ export async function deployTreasuryContract(
 
     const treasuryManager = await createTreasuryManager();
 
-    console.log('  Deploying treasury via TreasuryManager...');
+    debug && console.log('  Deploying treasury via TreasuryManager...');
     const deployResult = await treasuryManager.deploy({
       campaignId,
       platformBytes: platformHash,
@@ -391,11 +392,12 @@ export async function deployTreasuryContract(
       throw new Error(`Treasury deployment failed: ${deployResult.error}`);
     }
 
-    console.log(`  Treasury contract deployed at: ${deployResult.address}`);
-    console.log(`  Transaction hash: ${deployResult.transactionHash}`);
+    debug &&
+      console.log(`  Treasury contract deployed at: ${deployResult.address}`);
+    debug && console.log(`  Transaction hash: ${deployResult.transactionHash}`);
 
     // Configure treasury with campaign parameters
-    console.log('  Configuring treasury...');
+    debug && console.log('  Configuring treasury...');
     const configResult = await treasuryManager.configureTreasury(
       deployResult.address,
       campaignId,
@@ -403,11 +405,13 @@ export async function deployTreasuryContract(
     );
 
     if (!configResult.success) {
-      console.warn('  Treasury configuration failed:', configResult.error);
-      // Continue anyway - treasury can be configured later
-    } else {
-      console.log('  Treasury configured successfully');
+      throw new Error(
+        `Treasury configuration failed: ${configResult.error}. Treasury deployed but not configured.`,
+      );
     }
+
+    debug && console.log('  Treasury configured successfully');
+    debug && console.log(`  Configuration tx: ${configResult.transactionHash}`);
 
     return {
       treasuryAddress: deployResult.address,
@@ -455,10 +459,17 @@ export async function deployAllContracts(
   const campaignContract = await deployCampaignContract(campaignData, isDummy);
 
   if (!campaignContract.success) {
-    console.log(
-      `  Skipping treasury deployment due to campaign contract failure`,
-    );
+    debug &&
+      console.log(
+        `  Skipping treasury deployment due to campaign contract failure`,
+      );
     return { campaignContract };
+  }
+
+  // Add delay after campaign deployment to ensure transaction is processed
+  if (!isDummy) {
+    debug && console.log('  Waiting 2 seconds before treasury deployment...');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
   // Deploy treasury contract

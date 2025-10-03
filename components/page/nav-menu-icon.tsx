@@ -1,8 +1,8 @@
 import { useSidebar } from '@/contexts';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import Link from 'next/link';
 import { transition } from './sidebar-constants';
+import { ThemeAwareImage } from '@/hooks/use-theme-logo';
 
 export function PageNavMenuIcon() {
   const { isOpen } = useSidebar();
@@ -11,7 +11,7 @@ export function PageNavMenuIcon() {
       className={cn(
         'flex max-h-[100px] min-h-[100px] items-center justify-center border-b px-4',
         'hidden md:flex', // Show on desktop only
-        'bg-white', // Ensure background is visible
+        'bg-background', // Ensure background is visible
         transition,
         isOpen ? 'pt-6' : 'pt-8',
       )}
@@ -34,7 +34,7 @@ export function PageNavMenuIcon() {
               !isOpen ? 'w-[150px] opacity-0' : 'w-[200px] opacity-100',
             )}
           >
-            <Image
+            <ThemeAwareImage
               src="/relay-funder-logo.png"
               alt="RelayFunder Logo"
               width={474}
@@ -49,7 +49,7 @@ export function PageNavMenuIcon() {
               isOpen ? 'w-[55px] opacity-0' : 'w-[38px] opacity-100',
             )}
           >
-            <Image
+            <ThemeAwareImage
               src="/relay-funder-logo-mark.png"
               alt="RelayFunder Mark"
               width={129}

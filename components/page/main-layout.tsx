@@ -14,7 +14,7 @@ export function PageMainLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden bg-gray-50">
+    <div className="flex min-h-screen overflow-x-hidden bg-background">
       <PageSidebar />
       <div
         className={cn(
@@ -39,7 +39,7 @@ export function PageMainLayout({ children }: { children: React.ReactNode }) {
             <div
               className={cn(
                 'float-left h-[100px] w-[72px] md:float-none md:hidden',
-                'bg-white',
+                'bg-background',
               )}
             >
               {/* placeholder to avoid that sidebar covers content */}

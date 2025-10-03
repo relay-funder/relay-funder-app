@@ -3,7 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Wallet, Link as LinkIcon, DollarSign } from 'lucide-react';
-import { useCurrentChain, useAccount, useBalance } from '@/lib/web3';
+import {
+  useCurrentChain,
+  useConnectedAccount,
+  useAccount,
+  useBalance,
+} from '@/lib/web3';
+
 import { USDC_ADDRESS } from '@/lib/constant';
 import { WalletChain } from './wallet-chain';
 import {
@@ -39,6 +45,7 @@ type RecipientWalletFormValues = z.infer<typeof recipientWalletSchema>;
 
 export function ConnectedWalletInfo() {
   const { address } = useAccount();
+  const { isEmbedded, openUi } = useConnectedAccount();
   const { data: balance, isPending: balanceIsPending } = useBalance({
     address: address as `0x${string}`,
   });
@@ -99,7 +106,7 @@ export function ConnectedWalletInfo() {
   );
 
   return (
-    <Card className="rounded-lg border bg-white shadow-sm">
+    <Card className="rounded-lg border bg-card shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5" />
@@ -112,38 +119,54 @@ export function ConnectedWalletInfo() {
       <CardContent className="space-y-6">
         {/* Connected Wallet Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="font-display text-lg font-semibold text-foreground">
             Connected Wallet
           </h3>
 
           <div className="space-y-4">
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                <Wallet className="h-4 w-4" />
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
                 Address
               </label>
-              <div className="mt-1 rounded-md border bg-gray-50 p-3">
-                <p className="break-all font-mono text-sm text-gray-700">
+              <div className="mt-1 rounded-md border border-border bg-muted p-3">
+                <p className="break-all font-mono text-sm text-foreground">
                   {address}
                 </p>
               </div>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Your connected wallet address for receiving payments and
                 interacting with contracts.
               </p>
             </div>
 
+            {isEmbedded && (
+              <>
+                <Button
+                  onClick={openUi}
+                  variant="default"
+                  className="w-full sm:w-auto"
+                >
+                  Configure Embedded Wallet
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  You are currently using an embedded wallet. Use this button to
+                  configure it in the provided user interface.
+                </p>
+              </>
+            )}
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                  <DollarSign className="h-4 w-4" />
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                   Native Balance
                 </label>
-                <div className="mt-1 rounded-md border bg-gray-50 p-3">
-                  <p className="text-sm text-gray-700">
+                <div className="mt-1 rounded-md border border-border bg-muted p-3">
+                  <p className="text-sm text-foreground">
                     {balanceIsPending ? (
                       <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         Loading...
                       </span>
                     ) : balance ? (
@@ -153,21 +176,21 @@ export function ConnectedWalletInfo() {
                     )}
                   </p>
                 </div>
-                <p className="mt-1 text-xs text-gray-600">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Your native token balance for transaction fees.
                 </p>
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                  <DollarSign className="h-4 w-4" />
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                   USDC Balance
                 </label>
-                <div className="mt-1 rounded-md border bg-gray-50 p-3">
-                  <p className="text-sm text-gray-700">
+                <div className="mt-1 rounded-md border border-border bg-muted p-3">
+                  <p className="text-sm text-foreground">
                     {usdcBalanceIsPending ? (
                       <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         Loading...
                       </span>
                     ) : usdcBalance ? (
@@ -177,7 +200,7 @@ export function ConnectedWalletInfo() {
                     )}
                   </p>
                 </div>
-                <p className="mt-1 text-xs text-gray-600">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Your USDC balance available for contributions.
                 </p>
               </div>
@@ -188,19 +211,19 @@ export function ConnectedWalletInfo() {
         {/* Network Information Section */}
         {currentChain && (
           <div className="space-y-4 border-t pt-6">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="font-display text-lg font-semibold text-foreground">
               Network Information
             </h3>
 
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                <LinkIcon className="h-4 w-4" />
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <LinkIcon className="h-4 w-4 text-muted-foreground" />
                 Current Network
               </label>
-              <div className="mt-1 rounded-md border bg-gray-50 p-3">
+              <div className="mt-1 rounded-md border border-border bg-muted p-3">
                 <WalletChain chain={currentChain} isCurrent={true} />
               </div>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-1 text-xs text-muted-foreground">
                 The blockchain network you&apos;re currently connected to.
               </p>
             </div>
@@ -209,7 +232,7 @@ export function ConnectedWalletInfo() {
 
         {/* Recipient Wallet Section */}
         <div className="space-y-4 border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="font-display text-lg font-semibold text-foreground">
             Recipient Wallet Address
           </h3>
 

@@ -23,7 +23,7 @@ export function CampaignCreateFormTimeline({
         name="startTime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Campaign Start Date
             </FormLabel>
             <FormControl>
@@ -36,7 +36,7 @@ export function CampaignCreateFormTimeline({
             </FormControl>
             <FormMessage />
             {isOnChainDeployed && (
-              <p className="text-sm text-orange-600">
+              <p className="text-sm text-solar">
                 Start date cannot be changed after campaign deployment
               </p>
             )}
@@ -48,7 +48,7 @@ export function CampaignCreateFormTimeline({
         name="endTime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Campaign End Date
             </FormLabel>
             <FormControl>
@@ -61,7 +61,7 @@ export function CampaignCreateFormTimeline({
             </FormControl>
             <FormMessage />
             {isOnChainDeployed && (
-              <p className="text-sm text-orange-600">
+              <p className="text-sm text-solar">
                 End date cannot be changed after campaign deployment
               </p>
             )}

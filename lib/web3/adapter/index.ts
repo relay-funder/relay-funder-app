@@ -14,7 +14,7 @@ export {
   Web3ContextProvider,
   useWeb3Auth,
   useWeb3Context,
-  getProvider,
+  useConnectedAccount,
   // config
   chainConfig,
   wagmiConfig,
@@ -53,4 +53,4 @@ export {
   // ethers
   ethers,
   isDummy,
-} from './silk';
+} from './appkit';

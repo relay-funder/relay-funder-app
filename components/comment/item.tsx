@@ -67,7 +67,7 @@ export function CommentItem({
             <div className="flex items-center justify-between">
               <UserInlineName user={comment.creator} />
               <div className="flex flex-col items-end">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   <FormattedDate date={comment.createdAt} />
                 </span>
                 <div className="mt-1 flex gap-1">
@@ -96,7 +96,7 @@ export function CommentItem({
                 </div>
               </div>
             </div>
-            <p className="mt-2 text-gray-700">{comment.content}</p>
+            <p className="mt-2 text-muted-foreground">{comment.content}</p>
           </div>
         </div>
       </CardContent>

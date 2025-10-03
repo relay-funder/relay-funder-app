@@ -81,7 +81,7 @@ export function UserCard({
             <Badge
               key={role}
               variant="outline"
-              className="border-slate-300 text-slate-600"
+              className="border-border text-muted-foreground"
               title={role}
             >
               {role}
@@ -91,7 +91,7 @@ export function UserCard({
           {overflow > 0 && (
             <Badge
               variant="outline"
-              className="border-slate-300 text-slate-600"
+              className="border-border text-muted-foreground"
             >
               +{overflow}
             </Badge>

@@ -37,7 +37,7 @@ export function CampaignDonationSummary({
         {/* Title and Info Button */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h2 className="line-clamp-2 text-lg font-semibold text-gray-900">
+            <h2 className="line-clamp-2 font-display text-lg font-semibold text-foreground">
               {campaign.title}
             </h2>
             <div className="mt-1">
@@ -58,9 +58,9 @@ export function CampaignDonationSummary({
 
         {/* Description */}
         {campaign.description && (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             <ReadMoreOrLess
-              className="text-sm text-gray-600"
+              className="text-sm text-muted-foreground"
               collapsedClassName="line-clamp-2"
             >
               {campaign.description}
@@ -71,16 +71,16 @@ export function CampaignDonationSummary({
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="font-medium">
+            <span className="font-medium text-foreground">
               {formatUSD(safeAmountRaised)} raised
             </span>
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
               of {formatUSD(safeAmountGoal)} goal
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-gray-200">
+          <div className="h-2 w-full rounded-full bg-muted">
             <div
-              className="h-2 rounded-full bg-green-500 transition-all duration-300"
+              className="h-2 rounded-full bg-quantum transition-all duration-300"
               style={{ width: `${Math.min(safeProgress, 100)}%` }}
             />
           </div>
@@ -88,11 +88,11 @@ export function CampaignDonationSummary({
 
         {/* Stats */}
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1 text-gray-600">
+          <div className="flex items-center gap-1 text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>{safeContributorCount} backers</span>
           </div>
-          <div className="flex items-center gap-1 text-gray-600">
+          <div className="flex items-center gap-1 text-muted-foreground">
             <Clock className="h-4 w-4" />
             <CampaignDaysLeft campaign={campaign} />
           </div>

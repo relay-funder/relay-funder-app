@@ -12,14 +12,14 @@ export function PageDashboard({
 }) {
   return (
     <>
-      <div className="w-full border-b border-gray-200 bg-white">
+      <div className="w-full border-b border-border bg-card">
         <FullWidthContainer variant="default" padding="sm">
           <ContentArea title={title} actions={actions} spacing="tight">
             <div></div>
           </ContentArea>
         </FullWidthContainer>
       </div>
-      <div className="flex min-h-[calc(100svh-200px)] w-full flex-col bg-gray-50">
+      <div className="flex min-h-[calc(100svh-200px)] w-full flex-col bg-background">
         <FullWidthContainer variant="default" padding="sm">
           {children}
         </FullWidthContainer>

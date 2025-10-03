@@ -73,7 +73,7 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
 
   return (
     <>
-      <Card className="overflow-hidden transition-shadow hover:shadow-md">
+      <Card className="overflow-hidden bg-card transition-shadow hover:shadow-md">
         <CardContent className="p-4">
           <Link href={`/campaigns/${campaign.slug}`} className="block">
             <div className="flex gap-3">
@@ -89,8 +89,8 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
                     />
                   </div>
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100">
-                    <Target className="h-8 w-8 text-gray-400" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
+                    <Target className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -98,7 +98,7 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
               {/* Campaign Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between">
-                  <h3 className="line-clamp-2 font-semibold leading-tight text-gray-900">
+                  <h3 className="line-clamp-2 font-semibold leading-tight text-foreground">
                     {campaign.title}
                   </h3>
 
@@ -106,7 +106,7 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-2 h-8 w-8 shrink-0 p-1 hover:bg-red-50"
+                    className="ml-2 h-8 w-8 shrink-0 p-1 hover:bg-destructive/10"
                     onClick={handleFavoriteClick}
                     disabled={isPending}
                     title="Remove from favorites"
@@ -116,7 +116,7 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
                 </div>
 
                 {/* Category and Location */}
-                <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
+                <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
                   <Category categoryId={campaign.category} />
                   {campaign.location && (
                     <div className="flex items-center gap-1">
@@ -129,7 +129,7 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
                 {/* Status */}
                 {campaign.status === 'COMPLETED' && (
                   <div className="mt-2">
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                    <span className="inline-flex items-center rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
                       Completed
                     </span>
                   </div>

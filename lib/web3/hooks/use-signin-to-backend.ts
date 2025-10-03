@@ -1,21 +1,15 @@
 import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   getCsrfToken,
   getSession,
   signIn as nextAuthSignIn,
 } from 'next-auth/react';
 import { SiweMessage } from 'siwe';
-import {
-  ethers,
-  useAccount,
-  useSignMessage,
-  getProvider,
-  UserRejectedRequestError,
-} from '@/lib/web3';
+import { ethers, useAccount, useSignMessage } from '@/lib/web3';
 import { PROJECT_NAME } from '@/lib/constant';
 
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
+import { loginCallbackUrl } from '@/server/auth/providers/login-callback-url';
 
 async function fetchNonce() {
   try {
@@ -26,52 +20,9 @@ async function fetchNonce() {
   return;
 }
 export function useSignInToBackend() {
-  const params = useSearchParams();
   const callbackUrl = useMemo(() => {
-    const paramCallbackUrl = params?.get('callbackUrl');
-
-    // Prevent cross-domain callbacks on deployment domains
-    // Check if current domain matches patterns where external callbacks should be blocked
-    if (
-      typeof window !== 'undefined' &&
-      paramCallbackUrl &&
-      !paramCallbackUrl.startsWith('/')
-    ) {
-      try {
-        const callbackDomain = new URL(paramCallbackUrl).hostname;
-        const currentDomain = window.location.hostname;
-
-        // Get domain patterns from environment variable
-        const blockPatterns =
-          process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(
-            ',',
-          ).map((p) => p.trim()) || [];
-
-        if (currentDomain !== callbackDomain) {
-          const shouldBlock = blockPatterns.some((pattern) => {
-            // Support wildcards and exact matches
-            if (pattern.includes('*')) {
-              const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-              return regex.test(currentDomain);
-            }
-            return currentDomain.includes(pattern);
-          });
-
-          if (shouldBlock) {
-            console.warn(
-              `Cross-domain callback prevented: ${currentDomain} → ${callbackDomain} (matched pattern)`,
-            );
-            return '/dashboard';
-          }
-        }
-      } catch {
-        // Invalid URL, use dashboard
-        return '/dashboard';
-      }
-    }
-
-    return paramCallbackUrl || '/dashboard';
-  }, [params]);
+    return loginCallbackUrl();
+  }, []);
   const { signMessageAsync } = useSignMessage();
   const account = useAccount();
 
@@ -118,43 +69,9 @@ export function useSignInToBackend() {
         'web3/hooks/use-signin-to-backend: Wagmi signMessageAsync not found',
       );
     }
-    let signature = '';
-    try {
-      signature = await signMessageAsync({
-        message: preparedMessage,
-      });
-    } catch (error: unknown) {
-      // signMessageAsync cannot work because the wagmi connector is not set yet
-      // that signature would only work if we detach the nextauth login from the wagmi connect
-      // in a way that react could process the contexts&providers
-      // const signature = await signMessageAsync({
-      //   message: preparedMessage,
-      // });
-      if (error instanceof UserRejectedRequestError) {
-        throw error;
-      }
-      const provider = getProvider();
-      if (!provider) {
-        throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: Wallet is not loaded',
-        );
-      }
-      debug &&
-        console.log(
-          'web3/adapter/silk/use-auth:signInToBackend: request signature',
-        );
-      const updatedProvider = getProvider();
-      if (!updatedProvider) {
-        throw new Error('Provider no longer available');
-      }
-      signature = (await updatedProvider.request({
-        method: 'personal_sign',
-        params: [
-          ethers.hexlify(ethers.toUtf8Bytes(preparedMessage)),
-          ethers.getAddress(address),
-        ],
-      })) as string;
-    }
+    const signature = await signMessageAsync({
+      message: preparedMessage,
+    });
 
     debug &&
       console.log('web3/hooks/use-signin-to-backend: login to next-auth');

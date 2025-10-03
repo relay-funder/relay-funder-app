@@ -1,7 +1,8 @@
-export { useWeb3Context, getProvider } from './context-provider';
+export { useWeb3Context } from './context-provider';
 export {
   Web3ContextProvider,
   useWeb3Auth,
+  useConnectedAccount,
   // config
   chainConfig,
   wagmiConfig,

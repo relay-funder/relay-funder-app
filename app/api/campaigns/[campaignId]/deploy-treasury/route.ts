@@ -10,6 +10,7 @@ import { CampaignsWithIdParams } from '@/lib/api/types';
 import { createTreasuryManager } from '@/lib/treasury/interface';
 import { ethers } from 'ethers';
 import { chainConfig } from '@/lib/web3';
+import { debugWeb3 as debug } from '@/lib/debug';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -63,9 +64,33 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new Error(`Treasury deployment failed: ${deployResult.error}`);
     }
 
+    debug && console.log(`Treasury deployed at: ${deployResult.address}`);
+    debug && console.log(`Transaction hash: ${deployResult.transactionHash}`);
+
+    // Configure treasury immediately after deployment
+    debug && console.log('Configuring treasury with campaign parameters...');
+    const configResult = await treasuryManager.configureTreasury(
+      deployResult.address,
+      campaignId,
+      platformAdminSigner,
+    );
+
+    if (!configResult.success) {
+      // Treasury is deployed but not configured - this is a critical error
+      throw new ApiIntegrityError(
+        `Treasury deployed but configuration failed: ${configResult.error}. Please reconfigure via admin panel.`,
+      );
+    }
+
+    debug &&
+      console.log(
+        `Treasury configured successfully: ${configResult.transactionHash}`,
+      );
+
     return response({
       treasuryAddress: deployResult.address,
-      transactionHash: deployResult.transactionHash,
+      deploymentTransactionHash: deployResult.transactionHash,
+      configurationTransactionHash: configResult.transactionHash,
       status: 'success',
     });
   } catch (error: unknown) {
