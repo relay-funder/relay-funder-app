@@ -49,22 +49,22 @@ export function CampaignDonationWalletTip({
 
   return (
     <div className="space-y-3">
-      <Label className="flex items-center gap-2 text-sm font-medium text-gray-900">
+      <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
         Add a tip (optional)
-        <Info className="h-4 w-4 text-gray-400" />
+        <Info className="h-4 w-4 text-muted-foreground" />
       </Label>
       <div className="space-y-2">
         <div className="flex items-center gap-4">
-          <Label className="text-sm text-gray-700">Percentage:</Label>
+          <Label className="text-sm text-muted-foreground">Percentage:</Label>
           <input
             type="range"
             min={MIN_PERCENTAGE}
             max={MAX_PERCENTAGE}
             value={percentage}
             onChange={handlePercentageChange}
-            className="flex-1 accent-black"
+            className="flex-1 accent-quantum dark:accent-quantum"
           />
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-sm font-medium text-foreground">
             {percentage}%
           </span>
         </div>
@@ -79,13 +79,13 @@ export function CampaignDonationWalletTip({
               min="0"
               step="0.01"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
               {selectedToken}
             </div>
           </div>
         </div>
       </div>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground">
         Tips support the platform and go directly to platform administrators.
       </p>
     </div>

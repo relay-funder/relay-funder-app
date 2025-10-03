@@ -11,10 +11,10 @@ export default function LoginPage() {
   // Show loading state while authentication status is being determined
   if (!isReady) {
     return (
-      <div className="flex w-full flex-col bg-gray-50">
+      <div className="flex w-full flex-col bg-background">
         <main className="container mx-auto flex h-[calc(100vh-200px)] max-w-7xl items-center justify-center px-4 py-8">
           <div className="flex justify-center">
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <svg
                 className="h-5 w-5 animate-spin"
                 fill="none"

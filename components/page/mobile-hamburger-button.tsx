@@ -14,16 +14,16 @@ export function MobileHamburgerButton() {
       size="sm"
       className={cn(
         'relative z-50 p-2 md:hidden',
-        'bg-white shadow-md hover:bg-gray-50',
-        'rounded-lg border border-gray-200',
+        'bg-card shadow-md hover:bg-accent',
+        'rounded-lg border border-border',
       )}
       onClick={toggle}
       aria-label={isOpen ? 'Close menu' : 'Open menu'}
     >
       {isOpen ? (
-        <X className="h-5 w-5 text-gray-700" />
+        <X className="h-5 w-5 text-foreground" />
       ) : (
-        <Menu className="h-5 w-5 text-gray-700" />
+        <Menu className="h-5 w-5 text-foreground" />
       )}
     </Button>
   );

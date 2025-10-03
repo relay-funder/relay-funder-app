@@ -19,10 +19,10 @@ export function CampaignDonationWalletTab({
   const { authenticated, login } = useAuth();
   if (!authenticated) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border p-4">
+      <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4">
         <div className="mb-4 flex items-center space-x-2">
-          <Wallet />
-          <span className="text-base font-semibold">
+          <Wallet className="text-muted-foreground" />
+          <span className="font-display text-base font-semibold text-foreground">
             You need to connect your wallet to contribute
           </span>
         </div>
@@ -39,10 +39,12 @@ export function CampaignDonationWalletTab({
   }
   if (!ready) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border p-4">
+      <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4">
         <div className="mb-4 flex items-center space-x-2">
-          <Loader2 className="animate-spin" />
-          <span className="text-base font-semibold">Connecting to wallet</span>
+          <Loader2 className="animate-spin text-muted-foreground" />
+          <span className="font-display text-base font-semibold text-foreground">
+            Connecting to wallet
+          </span>
         </div>
         <p className="text-center text-sm text-muted-foreground">
           Please wait while we detect your web3 browser wallet.

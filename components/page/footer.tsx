@@ -6,7 +6,7 @@ export function PageFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-gray-200 bg-white">
+    <footer className="mt-auto border-t border-border bg-background">
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row sm:gap-4">
           {/* Social Links - Left Side on Desktop, Second on Mobile */}
@@ -15,7 +15,7 @@ export function PageFooter() {
               href={EXTERNAL_LINKS.TWITTER}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-gray-600 transition-colors hover:text-gray-900"
+              className="flex items-center gap-1 text-text-muted transition-colors hover:text-text-primary"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +31,7 @@ export function PageFooter() {
               href={EXTERNAL_LINKS.GITHUB}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 transition-colors hover:text-gray-900"
+              className="text-text-muted transition-colors hover:text-text-primary"
             >
               <span className="flex items-center gap-1">
                 <svg
@@ -58,7 +58,7 @@ export function PageFooter() {
                 href={EXTERNAL_LINKS.ABOUT}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 transition-colors hover:text-gray-900"
+                className="text-text-muted transition-colors hover:text-text-primary"
               >
                 About
               </a>
@@ -66,7 +66,7 @@ export function PageFooter() {
                 href={EXTERNAL_LINKS.PARTNERS}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 transition-colors hover:text-gray-900"
+                className="text-text-muted transition-colors hover:text-text-primary"
               >
                 Partners
               </a>
@@ -74,7 +74,7 @@ export function PageFooter() {
                 href={EXTERNAL_LINKS.FAQ}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 transition-colors hover:text-gray-900"
+                className="text-text-muted transition-colors hover:text-text-primary"
               >
                 FAQ
               </a>
@@ -82,7 +82,7 @@ export function PageFooter() {
                 href={EXTERNAL_LINKS.PRIVACY}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 transition-colors hover:text-gray-900"
+                className="text-text-muted transition-colors hover:text-text-primary"
               >
                 Privacy
               </a>
@@ -90,12 +90,12 @@ export function PageFooter() {
                 href={EXTERNAL_LINKS.TERMS}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 transition-colors hover:text-gray-900"
+                className="text-text-muted transition-colors hover:text-text-primary"
               >
                 Terms
               </a>
             </div>
-            <div className="text-gray-600">
+            <div className="text-text-muted">
               © {currentYear} Relay Funder Inc., PBC
             </div>
           </div>

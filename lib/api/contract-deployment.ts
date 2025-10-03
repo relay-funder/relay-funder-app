@@ -76,37 +76,9 @@ export async function deployCampaignContract(
     ethers.toUtf8Bytes(`RELAYFUNDER-${uniqueSuffix}`),
   );
 
-  // Use configurable fee structure
-  const feeKeys = [
-    'flatFee',
-    'cumulativeFlatFee',
-    'platformFee',
-    'vakiCommission',
-  ];
-  const platformDataKeys = feeKeys.map((n) =>
-    ethers.keccak256(ethers.toUtf8Bytes(n)),
-  );
-
-  // Parse fee values from configuration
-  const flatFee = ethers.parseUnits(
-    config.platformConfig.flatFee,
-    config.usdcDecimals,
-  );
-  const cumulativeFlatFee = ethers.parseUnits(
-    config.platformConfig.cumulativeFlatFee,
-    config.usdcDecimals,
-  );
-  const platformFeeBps = config.platformConfig.platformFeeBps;
-  const vakiCommissionBps = config.platformConfig.vakiCommissionBps;
-
-  const toBytes32 = (n: bigint | number) =>
-    `0x${BigInt(n).toString(16).padStart(64, '0')}`;
-  const platformDataValues = [
-    toBytes32(flatFee),
-    toBytes32(cumulativeFlatFee),
-    toBytes32(platformFeeBps),
-    toBytes32(vakiCommissionBps),
-  ];
+  // Platform data keys and values are empty - fees are configured in treasury
+  const platformDataKeys: string[] = [];
+  const platformDataValues: string[] = [];
 
   // Campaign timing and goal data
   const campaignData = [launchTime, deadline, goalAmount] as const;
@@ -169,16 +141,16 @@ export function getDeploymentConfig(): DeploymentConfig {
 
   // Platform configuration (matching working create-onchain endpoint)
   const platformConfig = {
-    flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001', // 0.001 USDC per pledge
+    flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDC per pledge
     cumulativeFlatFee:
-      process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
-    platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400'), // 4% platform fee
+      process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDC threshold
+    platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'), // 0% platform fee
     vakiCommissionBps: parseInt(
-      process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
-    ), // 1% commission
+      process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+    ), // 0% commission
     launchOffsetSec: parseInt(
-      process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
-    ), // 1 hour buffer
+      process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
+    ), // 5 minute buffer
     minCampaignDurationSec: parseInt(
       process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
     ), // 24 hours minimum

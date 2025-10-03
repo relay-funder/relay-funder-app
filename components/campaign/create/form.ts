@@ -7,14 +7,7 @@ function validateTimes(value: string) {
 }
 function transformStartTime(value: string) {
   const localDate = new Date(value);
-  const now = new Date();
-  if (
-    now.getFullYear() === localDate.getFullYear() &&
-    now.getMonth() === localDate.getMonth() &&
-    now.getDate() === localDate.getDate()
-  ) {
-    localDate.setHours(now.getHours() + 1);
-  }
+  // Allow campaigns to start immediately without artificial delay
   localDate.setMinutes(0);
   localDate.setSeconds(0);
   localDate.setMilliseconds(0);
@@ -36,10 +29,14 @@ function transformEndTime(value: string) {
 
 export const CampaignFormSchema = z
   .object({
-    title: z.string().min(5, { message: 'Title must not be empty' }),
+    title: z
+      .string()
+      .min(5, { message: 'Title must not be empty' })
+      .max(100, { message: 'Title must be 100 characters or less' }),
     description: z
       .string()
-      .min(50, { message: 'Description must not be empty' }),
+      .min(50, { message: 'Description must not be empty' })
+      .max(2000, { message: 'Description must be 2000 characters or less' }),
     fundingGoal: z.string().refine(
       (value: string) => {
         const fValue = parseFloat(value);

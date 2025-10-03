@@ -59,6 +59,7 @@ function buildStatusList({
         list.push(
           CampaignStatus.DRAFT,
           CampaignStatus.PENDING_APPROVAL,
+          CampaignStatus.DISABLED,
           CampaignStatus.COMPLETED,
         );
       }
@@ -66,6 +67,7 @@ function buildStatusList({
       list.push(
         CampaignStatus.DRAFT,
         CampaignStatus.PENDING_APPROVAL,
+        CampaignStatus.DISABLED,
         CampaignStatus.COMPLETED,
       );
     }

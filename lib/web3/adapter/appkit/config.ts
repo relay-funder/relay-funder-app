@@ -25,7 +25,6 @@ export const projectId =
 if (!projectId) {
   throw new Error('Web3::Adapter::Appkit: Project ID is not defined');
 }
-console.log({ REOWN_CLOUD_PROJECT_ID });
 
 export const networks = [defaultChain] as [AppKitNetwork, ...AppKitNetwork[]];
 if (defaultChain.id !== celo.id) {

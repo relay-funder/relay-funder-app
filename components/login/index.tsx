@@ -166,15 +166,15 @@ export default function Login() {
     }
   }, [web3error, isLoading, isFallback, onError]);
   return (
-    <div className="flex w-full flex-col bg-gray-50">
+    <div className="flex w-full flex-col bg-background">
       <main className="container mx-auto flex h-[calc(100vh-200px)] max-w-7xl items-center justify-center px-4 py-8">
         <div className="flex justify-center">
-          <Card className="w-full max-w-md rounded-lg border bg-white shadow-sm">
+          <Card className="w-full max-w-md rounded-lg border bg-card shadow-sm">
             <CardHeader className="pb-6 pt-8 text-center">
               <div className="mb-4 flex justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                   <svg
-                    className="h-8 w-8 text-gray-700"
+                    className="h-8 w-8 text-muted-foreground"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -188,10 +188,10 @@ export default function Login() {
                   </svg>
                 </div>
               </div>
-              <CardTitle className="text-2xl font-semibold tracking-tight text-gray-900">
+              <CardTitle className="text-2xl font-semibold tracking-tight text-foreground">
                 Connect Your Wallet
               </CardTitle>
-              <CardDescription className="text-base text-gray-600">
+              <CardDescription className="text-base text-muted-foreground">
                 <LoginMessage state={loginState} error={error} />
               </CardDescription>
             </CardHeader>

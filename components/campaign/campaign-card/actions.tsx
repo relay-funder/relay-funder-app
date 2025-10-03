@@ -47,7 +47,7 @@ export function CampaignCardActions({
                   href={`/campaigns/${campaign.slug}/donation`}
                   className="flex-1"
                 >
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  <Button className="w-full">
                     <Image
                       src="/diamond.png"
                       alt="wallet"
@@ -60,7 +60,7 @@ export function CampaignCardActions({
               ) : displayOptions.showStatusBasedButton ? (
                 <Button
                   disabled
-                  className="w-full cursor-not-allowed bg-gray-400"
+                  className="w-full cursor-not-allowed"
                   title={campaignStatusInfo.description}
                 >
                   <Image

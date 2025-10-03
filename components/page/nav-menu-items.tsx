@@ -102,10 +102,10 @@ export function PageNavMenuItems() {
       key={item.href}
       href={item.href}
       className={cn(
-        'flex items-center rounded-lg px-1 py-4 text-gray-800 hover:bg-gray-100 hover:text-gray-900',
+        'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground',
         transition,
         isOpen ? 'px-4' : 'px-[9px]',
-        pathname === item.href && 'flex-grow bg-green-200 text-gray-900',
+        pathname === item.href && 'flex-grow bg-muted text-foreground',
       )}
     >
       <div className="flex items-center">{item.icon}</div>

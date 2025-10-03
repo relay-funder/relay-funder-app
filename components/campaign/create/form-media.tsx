@@ -41,7 +41,7 @@ export function CampaignCreateFormMedia() {
         name="bannerImage"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Campaign Banner Image
             </FormLabel>
             <FormControl>
@@ -61,8 +61,10 @@ export function CampaignCreateFormMedia() {
 
       {bannerImage && (
         <div className="space-y-4">
-          <div className="rounded-lg border bg-white p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-medium text-gray-900">Preview</h3>
+          <div className="rounded-lg border bg-card p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-medium text-foreground">
+              Preview
+            </h3>
             <div className="flex justify-center">
               <Image
                 src={bannerImage}

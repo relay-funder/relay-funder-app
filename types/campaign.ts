@@ -19,7 +19,13 @@ export interface DbCampaign {
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: 'DRAFT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
+  status:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'ACTIVE'
+    | 'DISABLED'
+    | 'COMPLETED'
+    | 'FAILED';
   transactionHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -194,6 +200,7 @@ export enum CampaignStatus {
   DRAFT = 'DRAFT',
   PENDING_APPROVAL = 'PENDING_APPROVAL',
   ACTIVE = 'ACTIVE',
+  DISABLED = 'DISABLED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
 }
@@ -229,6 +236,13 @@ export const DonationProcessStates = {
    * This step is unlikely to require direct user interaction.
    */
   requestTransaction: 'requestTransaction',
+
+  /**
+   * The backend is registering the pledge ID with the treasury contract using admin credentials.
+   * This privileged operation must complete before the user can proceed with their pledge.
+   * No direct user interaction is required during this phase.
+   */
+  registerPledge: 'registerPledge',
 
   /**
    * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDC.

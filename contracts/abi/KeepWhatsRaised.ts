@@ -25,9 +25,10 @@ export const KeepWhatsRaisedABI = [
     type: 'function',
     name: 'pledgeWithoutAReward',
     inputs: [
+      { name: 'pledgeId', type: 'bytes32', internalType: 'bytes32' },
       { name: 'backer', type: 'address', internalType: 'address' },
       { name: 'pledgeAmount', type: 'uint256', internalType: 'uint256' },
-      { name: 'tip', type: 'uint256', internalType: 'uint256' },
+      { name: 'tipAmount', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -37,9 +38,10 @@ export const KeepWhatsRaisedABI = [
     type: 'function',
     name: 'pledgeForAReward',
     inputs: [
+      { name: 'pledgeId', type: 'bytes32', internalType: 'bytes32' },
       { name: 'backer', type: 'address', internalType: 'address' },
-      { name: 'tip', type: 'uint256', internalType: 'uint256' },
-      { name: 'reward', type: 'bytes32[]', internalType: 'bytes32[]' },
+      { name: 'tipAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'rewards', type: 'bytes32[]', internalType: 'bytes32[]' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -105,6 +107,17 @@ export const KeepWhatsRaisedABI = [
 
   {
     type: 'function',
+    name: 'setPaymentGatewayFee',
+    inputs: [
+      { name: 'pledgeId', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'fee', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+
+  {
+    type: 'function',
     name: 'configureTreasury',
     inputs: [
       {
@@ -123,6 +136,11 @@ export const KeepWhatsRaisedABI = [
             name: 'configLockPeriod',
             type: 'uint256',
             internalType: 'uint256',
+          },
+          {
+            name: 'isColombianCreator',
+            type: 'bool',
+            internalType: 'bool',
           },
         ],
       },
@@ -152,10 +170,23 @@ export const KeepWhatsRaisedABI = [
             type: 'bytes32[]',
             internalType: 'bytes32[]',
           },
+        ],
+      },
+      {
+        name: 'feeValues',
+        type: 'tuple',
+        internalType: 'struct KeepWhatsRaised.FeeValues',
+        components: [
+          { name: 'flatFeeValue', type: 'uint256', internalType: 'uint256' },
           {
-            name: 'netPercentageFeeKeys',
-            type: 'bytes32[]',
-            internalType: 'bytes32[]',
+            name: 'cumulativeFlatFeeValue',
+            type: 'uint256',
+            internalType: 'uint256',
+          },
+          {
+            name: 'grossPercentageFeeValues',
+            type: 'uint256[]',
+            internalType: 'uint256[]',
           },
         ],
       },

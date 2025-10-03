@@ -71,10 +71,10 @@ export function CampaignFull({ slug }: { slug: string }) {
               </div>
 
               {/* Title and Location Box */}
-              <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <div className="rounded-lg border bg-card p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h1 className="text-2xl font-bold leading-tight tracking-tight lg:text-3xl">
+                    <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-foreground lg:text-3xl">
                       {campaign.title}
                     </h1>
                     <div className="mt-2">
@@ -101,13 +101,13 @@ export function CampaignFull({ slug }: { slug: string }) {
 
             {/* About Section - Separate from tabs */}
             <div className="mb-8">
-              <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <div className="rounded-lg border bg-card p-4 shadow-sm">
                 <CampaignDetailTabAbout campaign={campaign} />
               </div>
             </div>
 
             {/* Tabs Section */}
-            <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
               <CampaignDetailTabs campaign={campaign} />
             </div>
           </div>
@@ -135,10 +135,10 @@ export function CampaignFull({ slug }: { slug: string }) {
           </div>
 
           {/* Title and Location Box */}
-          <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+          <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold leading-tight tracking-tight">
+                <h1 className="font-display text-2xl font-bold leading-tight tracking-tight">
                   {campaign.title}
                 </h1>
                 <div className="mt-2">
@@ -170,12 +170,12 @@ export function CampaignFull({ slug }: { slug: string }) {
           </div>
 
           {/* About Section */}
-          <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+          <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
             <CampaignDetailTabAbout campaign={campaign} />
           </div>
 
           {/* Tabs Section */}
-          <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+          <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
             <CampaignDetailTabs campaign={campaign} />
           </div>
         </div>

@@ -2,6 +2,7 @@ import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
 import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { checkAuth } from '@/lib/api/auth';
@@ -14,7 +15,7 @@ import { checkAuth } from '@/lib/api/auth';
  * NEXT_PUBLIC_VAKI_COMMISSION_BPS=100          # Vaki commission percentage (100 = 1%)
  * NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD=0.5      # Fee exemption threshold (USDC)
  * # Campaign Timing Configuration
- * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=3600           # Minimum hours before launch (3600 = 1 hour)
+ * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=300            # Minimum seconds before launch (300 = 5 minutes)
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
@@ -35,20 +36,18 @@ export async function POST(
     // Platform configuration - should be configurable per platform/environment
     const platformConfig = {
       // Fee structure (in USDC)
-      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001', // 0.001 USDC per pledge
+      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDC per pledge
       cumulativeFlatFee:
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
-      platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
-      ), // 4% platform fee
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDC threshold
+      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'), // 0% platform fee
       vakiCommissionBps: parseInt(
-        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
-      ), // 1% commission
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+      ), // 0% commission
 
       // Timing configuration (in seconds)
       launchOffsetSec: parseInt(
-        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '3600',
-      ), // 1 hour buffer
+        process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
+      ), // 5 minute buffer
       minCampaignDurationSec: parseInt(
         process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
       ), // 24 hours minimum
@@ -127,7 +126,7 @@ export async function POST(
     );
 
     // Use configurable timing with reasonable defaults for production
-    const launchBuffer = platformConfig.launchOffsetSec; // Default: 1 hour buffer
+    const launchBuffer = platformConfig.launchOffsetSec; // Default: 5 minute buffer
     const minDuration = platformConfig.minCampaignDurationSec; // Default: 24 hours minimum
 
     // Ensure campaign can launch with proper buffer time
@@ -159,36 +158,10 @@ export async function POST(
       ethers.toUtf8Bytes(`RELAYFUNDER-${uniqueSuffix}`),
     );
 
-    // Use configurable fee structure
-    const feeKeys = [
-      'flatFee',
-      'cumulativeFlatFee',
-      'platformFee',
-      'vakiCommission',
-    ];
-    const platformDataKeys = feeKeys.map((n) =>
-      ethers.keccak256(ethers.toUtf8Bytes(n)),
-    );
+    // Platform data keys and values are empty - fees are configured in treasury
+    const platformDataKeys: string[] = [];
+    const platformDataValues: string[] = [];
 
-    // Parse fee values from configuration
-    const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(
-      platformConfig.cumulativeFlatFee,
-      usdcDecimals,
-    );
-    const platformFeeBps = platformConfig.platformFeeBps;
-    const vakiCommissionBps = platformConfig.vakiCommissionBps;
-
-    const toBytes32 = (n: bigint | number) =>
-      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
-    const platformDataValues = [
-      toBytes32(flatFee),
-      toBytes32(cumulativeFlatFee),
-      toBytes32(platformFeeBps),
-      toBytes32(vakiCommissionBps),
-    ];
-
-    // Ensure bytes32[] values order matches the function signature exactly
     const campaignData = [launchTime, deadline, goalAmount] as const;
 
     const tx = await factory.createCampaign(
@@ -226,14 +199,23 @@ export async function POST(
     }
 
     // Persist on chain info to DB
+    // Update database with actual on-chain timing for treasury configuration
+    // The campaign contract enforces minimum launch offset and duration,
+    // so we must sync the DB with these adjusted values
     try {
       await db.campaign.update({
         where: { id },
         data: {
           transactionHash: tx.hash,
           campaignAddress: campaignAddress ?? undefined,
+          startTime: new Date(launchTime * 1000),
+          endTime: new Date(deadline * 1000),
         },
       });
+      debug &&
+        console.log(
+          `[campaigns/create-onchain] Updated DB with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
+        );
     } catch (persistErr) {
       console.error(
         '[campaigns/create-onchain] Failed to persist on-chain info',

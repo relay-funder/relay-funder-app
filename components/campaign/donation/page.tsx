@@ -43,7 +43,7 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
       <PageHeaderSticky message="Campaign" title="" />
       <main className="w-full">
         <DetailContainer variant="standard" padding="md">
-          <div className="rounded-lg border bg-white p-8 shadow-sm">
+          <div className="rounded-lg border bg-card p-8 shadow-sm">
             <div className="grid gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <CampaignDonationForm campaign={campaign} />

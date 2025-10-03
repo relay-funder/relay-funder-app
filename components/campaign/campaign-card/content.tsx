@@ -55,7 +55,7 @@ export function CampaignCardContent({
           }`}
         >
           <h2
-            className={`line-clamp-2 font-semibold leading-tight ${
+            className={`line-clamp-2 font-display font-semibold leading-tight text-foreground ${
               dashboardMode ? 'text-lg' : 'text-xl'
             }`}
             title={campaign?.title ?? 'No Title Set'}
@@ -70,7 +70,7 @@ export function CampaignCardContent({
         {/* Bottom section - Always aligned consistently */}
         <div className="space-y-3">
           {/* Category and Country */}
-          <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               {categoryDetails && (
                 <>
@@ -91,9 +91,9 @@ export function CampaignCardContent({
           {displayOptions.showFundingProgress !== false && (
             <div className="space-y-3">
               {/* Progress Bar */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-green-600 transition-all duration-300"
+                  className="h-full bg-quantum transition-all duration-300"
                   style={{ width: `${Math.min(progress, 100)}%` }}
                 />
               </div>
@@ -101,12 +101,12 @@ export function CampaignCardContent({
               {/* Funding Stats */}
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-gray-900">
+                  <span className="text-xl font-bold text-foreground">
                     {amountRaised}
                   </span>
-                  <span className="text-gray-500">raised</span>
+                  <span className="text-muted-foreground">raised</span>
                 </div>
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                   of{' '}
                   <span className="text-base font-semibold">{amountGoal}</span>
                 </span>
