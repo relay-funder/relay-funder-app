@@ -17,7 +17,7 @@ export function CampaignCreateFormDescription() {
         name="title"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Campaign Title
             </FormLabel>
             <FormControl>
@@ -36,7 +36,7 @@ export function CampaignCreateFormDescription() {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Campaign Description
             </FormLabel>
             <FormControl>

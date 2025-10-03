@@ -5,7 +5,7 @@ export function CampaignLocation({ campaign }: { campaign?: DbCampaign }) {
   return (
     <div className="align flex self-start">
       <MapPin className="mr-1 text-[#55DFAB]" />
-      <span className="text-sm text-gray-900">
+      <span className="text-sm text-foreground">
         {campaign?.location ?? 'Earth'}
       </span>
     </div>

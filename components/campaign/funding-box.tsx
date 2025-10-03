@@ -29,17 +29,17 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-end gap-2">
               <span className="text-3xl font-bold">{amountRaised}</span>
-              <span className="pb-[3px] text-gray-500">raised</span>
+              <span className="pb-[3px] text-muted-foreground">raised</span>
             </div>
-            <span className="mt-[6px] text-gray-500">
+            <span className="mt-[6px] text-muted-foreground">
               of <span className="text-base font-semibold">{amountGoal}</span>
             </span>
           </div>
 
           {/* Progress Bar */}
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full bg-green-600 transition-all duration-300"
+              className="h-full bg-quantum transition-all duration-300"
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>
@@ -48,7 +48,7 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gray-500" />
+              <Users className="h-4 w-4 text-muted-foreground" />
               <span
                 className="text-xl font-bold"
                 title={`Pending Contributors: ${contributorPendingCount}`}
@@ -56,23 +56,26 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
                 {contributorCount}
               </span>
             </div>
-            <p className="text-xs text-gray-600">contributors</p>
+            <p className="text-xs text-muted-foreground">contributors</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-500" />
+              <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-xl font-bold">
                 <CampaignDaysLeft campaign={campaign} />
               </span>
             </div>
-            <p className="text-xs text-gray-600">days left</p>
+            <p className="text-xs text-muted-foreground">days left</p>
           </div>
         </div>
 
         <div className="space-y-2">
           <Link href={`/campaigns/${campaign.slug}/donation`}>
-            <Button className="h-10 w-full" size="default">
-              <Heart className="h-5 w-5 text-white" />
+            <Button
+              className="h-10 w-full dark:bg-quantum dark:text-white dark:hover:bg-quantum/90"
+              size="default"
+            >
+              <Heart className="h-5 w-5 text-white dark:text-white" />
               Support this campaign
             </Button>
           </Link>

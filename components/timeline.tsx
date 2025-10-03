@@ -17,8 +17,10 @@ export function TimelineItem({ id, date, title, content }: TimelineItemProps) {
         <div className="flex items-start gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-              <span className="text-sm text-gray-500">
+              <h3 className="font-display text-lg font-semibold text-foreground">
+                {title}
+              </h3>
+              <span className="text-sm text-muted-foreground">
                 {new Date(date).toLocaleDateString(undefined, {
                   year: 'numeric',
                   month: 'long',
@@ -28,7 +30,7 @@ export function TimelineItem({ id, date, title, content }: TimelineItemProps) {
             </div>
             <div className="prose mt-2 max-w-none">
               <ReadMoreOrLess
-                className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700"
+                className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground"
                 collapsedClassName="line-clamp-3"
               >
                 {content}

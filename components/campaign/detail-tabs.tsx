@@ -25,10 +25,10 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-md bg-gray-100 p-1 pb-[3px] sm:grid-cols-4 sm:gap-0">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-md bg-muted p-1 pb-[3px] sm:grid-cols-4 sm:gap-0">
           <TabsTrigger
             value="transactions"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
             <span className="hidden sm:inline">Transactions</span>
             <span className="sm:hidden">Trans.</span>
@@ -38,14 +38,14 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
           </TabsTrigger>
           <TabsTrigger
             value="updates"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
             <span>Updates</span>
             <span className="ml-1">({campaign._count?.updates ?? 0})</span>
           </TabsTrigger>
           <TabsTrigger
             value="comments"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
             <span className="hidden sm:inline">Comments</span>
             <span className="sm:hidden">Comm.</span>
@@ -53,7 +53,7 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
           </TabsTrigger>
           <TabsTrigger
             value="rounds"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
             <span>Rounds</span>
             <span className="ml-1">({campaign.rounds?.length ?? 0})</span>

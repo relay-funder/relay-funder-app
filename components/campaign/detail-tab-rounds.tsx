@@ -28,11 +28,13 @@ export function CampaignDetailTabRounds({
   return (
     <div className="max-w-3xl space-y-4">
       <div className="prose prose-lg">
-        <h2 className="mb-4 text-2xl font-semibold">Rounds</h2>
+        <h2 className="mb-4 font-display text-2xl font-semibold text-foreground">
+          Rounds
+        </h2>
       </div>
       {hasRounds ? (
         <>
-          <div className="flex items-center gap-3 text-gray-600">
+          <div className="flex items-center gap-3 text-muted-foreground">
             <Rocket className="h-5 w-5" />
 
             {roundsListingSummary}
@@ -46,7 +48,9 @@ export function CampaignDetailTabRounds({
           </div>
         </>
       ) : (
-        <p>This Campaign is not part of any round</p>
+        <p className="text-muted-foreground">
+          This Campaign is not part of any round
+        </p>
       )}
       {campaign.creatorAddress === address && (
         <>

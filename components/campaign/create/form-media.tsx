@@ -41,7 +41,7 @@ export function CampaignCreateFormMedia() {
         name="bannerImage"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Campaign Banner Image
             </FormLabel>
             <FormControl>

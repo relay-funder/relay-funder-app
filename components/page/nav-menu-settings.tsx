@@ -17,10 +17,11 @@ export function PageNavMenuSettings() {
       <Link
         href="/profile"
         className={cn(
-          'flex items-center rounded-lg px-1 py-4 text-gray-800 hover:bg-gray-100 hover:text-gray-900',
+          'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground',
           transition,
           isOpen ? 'px-4' : 'px-[9px]',
-          pathname === '/profile' && 'flex-grow bg-green-200 text-gray-900',
+          pathname === '/profile' &&
+            'flex-grow bg-secondary text-secondary-foreground',
         )}
       >
         <div className="flex items-center">

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Button, Input } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import { FullWidthContainer, DetailContainer } from '@/components/layout';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function PageHeaderSearch({
   title,
@@ -46,7 +47,7 @@ export function PageHeaderSearch({
       {/* Title */}
       {title && (
         <div className="mr-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {title}
           </h1>
         </div>
@@ -57,7 +58,7 @@ export function PageHeaderSearch({
         <div className="relative">
           <Search
             className={cn(
-              'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400',
+              'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground',
             )}
           />
           <Input
@@ -71,6 +72,7 @@ export function PageHeaderSearch({
       </div>
       <div className="grow" />
       <div className="flex flex-row items-center gap-4">
+        <ThemeToggle />
         <Button
           variant="outline"
           className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
@@ -97,7 +99,7 @@ export function PageHeaderSearch({
       {/* Title */}
       {title && (
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {title}
           </h1>
         </div>

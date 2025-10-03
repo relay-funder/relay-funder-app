@@ -23,7 +23,7 @@ export function CampaignCreateFormFunding({
         name="fundingGoal"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Funding Goal (USDC)
             </FormLabel>
             <FormControl>
@@ -38,7 +38,7 @@ export function CampaignCreateFormFunding({
             </FormControl>
             <FormMessage />
             {isOnChainDeployed && (
-              <p className="text-sm text-orange-600">
+              <p className="text-sm text-solar">
                 Funding goal cannot be changed after campaign deployment
               </p>
             )}
