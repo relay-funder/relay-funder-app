@@ -9,9 +9,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, mounted } = useTheme();
 
   const getThemeIcon = () => {
+    // Use system icon as default until mounted to prevent hydration mismatch
+    if (!mounted) {
+      return <Monitor className="h-4 w-4" />;
+    }
+
     switch (theme) {
       case 'light':
         return <Sun className="h-4 w-4" />;

@@ -6,6 +6,7 @@ interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   actualTheme: 'light' | 'dark';
+  mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -21,8 +22,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const root = window.document.documentElement;
 
     // Remove previous theme classes
@@ -72,6 +75,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     theme,
     setTheme,
     actualTheme,
+    mounted,
   };
 
   return (

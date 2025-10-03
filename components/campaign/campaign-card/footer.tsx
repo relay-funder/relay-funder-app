@@ -115,10 +115,10 @@ export function CampaignCardFooter({
                           }`}
                         >
                           {round.recipientStatus === 'APPROVED'
-                            ? 'approved'
+                            ? 'Approved'
                             : round.recipientStatus === 'REJECTED'
-                              ? 'rejected'
-                              : 'pending'}
+                              ? 'Rejected'
+                              : 'Pending'}
                         </span>
                       )}
                     </div>

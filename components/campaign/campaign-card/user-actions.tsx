@@ -265,7 +265,8 @@ export function CampaignCardUserActions({
           <Button
             onClick={handleDisableConfirm}
             size="sm"
-            className="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
+            variant="destructive"
+            className="h-8 w-full px-2 py-1 text-xs"
           >
             <Pause className="mr-2 h-3 w-3" />
             Disable

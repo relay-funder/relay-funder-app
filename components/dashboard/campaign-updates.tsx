@@ -22,10 +22,10 @@ function UpdateCard({ update }: UpdateCardProps) {
   const { campaign } = update;
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-md">
+    <Card className="overflow-hidden bg-card transition-shadow hover:shadow-md">
       <CardContent className="p-0">
         {/* Campaign Header */}
-        <div className="border-b bg-gray-50 p-4">
+        <div className="border-b border-border bg-muted p-4">
           <div className="flex items-center gap-3">
             {campaign.image ? (
               <div className="relative h-12 w-12 overflow-hidden rounded-lg">
@@ -37,19 +37,19 @@ function UpdateCard({ update }: UpdateCardProps) {
                 />
               </div>
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200">
-                <MessageSquare className="h-6 w-6 text-gray-400" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+                <MessageSquare className="h-6 w-6 text-muted-foreground" />
               </div>
             )}
 
             <div className="min-w-0 flex-1">
               <Link
                 href={`/campaigns/${campaign.slug}`}
-                className="block truncate text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                className="block truncate text-sm font-medium text-foreground hover:text-accent-foreground hover:underline"
               >
                 {campaign.title}
               </Link>
-              <div className="flex items-center text-xs text-gray-500">
+              <div className="flex items-center text-xs text-muted-foreground">
                 <Category categoryId={campaign.category} className="text-xs" />
                 {campaign.location && (
                   <>
@@ -71,7 +71,7 @@ function UpdateCard({ update }: UpdateCardProps) {
           <div className="mb-3">
             <Link
               href={`/campaigns/${campaign.slug}#update-${update.id}`}
-              className="text-lg font-semibold text-gray-900 hover:text-blue-600 hover:underline"
+              className="text-lg font-semibold text-foreground hover:text-accent-foreground hover:underline"
             >
               {update.title}
             </Link>
@@ -79,7 +79,7 @@ function UpdateCard({ update }: UpdateCardProps) {
 
           {/* Update content preview */}
           <div className="mb-4">
-            <p className="line-clamp-3 text-sm leading-relaxed text-gray-700">
+            <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
               {update.content.length > 150
                 ? `${update.content.substring(0, 150)}...`
                 : update.content}
@@ -104,7 +104,7 @@ function UpdateCard({ update }: UpdateCardProps) {
                   </div>
                 ))}
                 {update.media.length > 2 && (
-                  <div className="flex items-center justify-center rounded-md bg-gray-100 text-xs text-gray-600">
+                  <div className="flex items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
                     +{update.media.length - 2} more
                   </div>
                 )}
@@ -113,7 +113,7 @@ function UpdateCard({ update }: UpdateCardProps) {
           )}
 
           {/* Update metadata */}
-          <div className="flex items-center justify-between border-t pt-3 text-sm text-gray-500">
+          <div className="flex items-center justify-between border-t border-border pt-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
               {new Date(update.createdAt).toLocaleDateString()}
@@ -121,7 +121,7 @@ function UpdateCard({ update }: UpdateCardProps) {
 
             <Link
               href={`/campaigns/${campaign.slug}#update-${update.id}`}
-              className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
+              className="flex items-center gap-1 font-medium text-accent-foreground hover:text-accent-foreground/80"
             >
               <ExternalLink className="h-4 w-4" />
               View Full Update
@@ -163,15 +163,15 @@ export function CampaignUpdates() {
   if (updates.length === 0) {
     return (
       <div className="py-12 text-center">
-        <Bell className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
+        <Bell className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h3 className="mb-2 text-lg font-medium text-foreground">
           No updates yet
         </h3>
-        <p className="mb-4 text-gray-500">
+        <p className="mb-4 text-muted-foreground">
           Updates from campaigns you&apos;ve contributed to or favorited will
           appear here.
         </p>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Start contributing to or favoriting campaigns to see their latest
           updates and announcements.
         </p>
