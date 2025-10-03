@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Form } from '@/components/ui';
 import { countries, categories } from '@/lib/constant';
-import { enableFormDefault } from '@/lib/develop';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateProcessStates } from '@/types/campaign';
@@ -11,7 +10,6 @@ import { VisibilityToggle } from '@/components/visibility-toggle';
 import { CampaignCreateProcessDisplay } from './process-display';
 import { CampaignCreateFormStates } from './form-states';
 import { CampaignCreateFormPage } from './form-page';
-import { uniqueName, uniqueDescription } from '@/lib/generate-strings';
 import { CampaignCreateFormMedia } from './form-media';
 import { CampaignCreateFormDescription } from './form-description';
 import { CampaignCreateFormMeta } from './form-meta';
@@ -26,6 +24,8 @@ import {
 import { useCampaignFormCreate } from './use-form-create';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { useDeveloperPrefill } from '@/lib/develop/use-developer-prefill';
+import { Button } from '@/components/ui/button';
 
 export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [state, setState] = useState<keyof typeof CreateProcessStates>('idle');
@@ -71,6 +71,7 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
     resolver: zodResolver(CampaignFormSchema),
     defaultValues: campaignFormDefaultValues,
   });
+
   const onSubmitStep = useCallback(async () => {
     const isPageValid = await form.trigger(
       CampaignCreateFormStates[formState]
@@ -107,37 +108,8 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
     [createCampaign, formState, onSubmitStep],
   );
 
-  const onDeveloperSubmit = useCallback(
-    async (event: React.MouseEvent) => {
-      if (!event.shiftKey) {
-        return;
-      }
-      if (!enableFormDefault) {
-        return;
-      }
-      form.setValue('title', uniqueName());
-      form.setValue('description', uniqueDescription());
-      form.setValue('fundingGoal', `${(Math.random() * 1000).toFixed(2)}`);
-      form.setValue('fundingModel', 'flexible');
-      form.setValue('startTime', new Date().toISOString().slice(0, 16));
-      form.setValue(
-        'endTime',
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 16),
-      );
-      form.setValue(
-        'location',
-        countries[Math.floor(Math.random() * countries.length)],
-      );
-      form.setValue(
-        'category',
-        categories[Math.floor(Math.random() * categories.length)].id,
-      );
-      setFormState('summary');
-    },
-    [form],
-  );
+  // Use demo campaign data for development prefill
+  const { onDeveloperSubmit } = useDeveloperPrefill(form, setFormState);
 
   const onFailureRetry = useCallback(async () => {
     setState('setup');
@@ -168,18 +140,20 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
                     We&apos;ll help you craft a compelling story, set your
                     funding goals, and prepare your campaign for success.
                   </p>
+                  {/* Development-only button to replicate original image shift/double-click campaign pre-fill logic */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="mt-6">
+                      <Button
+                        onClick={(e) => onDeveloperSubmit(e)}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        🚀 Dev: Pre-fill Form
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div
-                  className="hidden"
-                  onDoubleClick={onDeveloperSubmit}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    width: '20px',
-                    height: '20px',
-                  }}
-                />
               </div>
             </CampaignCreateFormPage>
             <CampaignCreateFormPage
