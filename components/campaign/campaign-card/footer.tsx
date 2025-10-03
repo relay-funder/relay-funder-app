@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAdminRemoveCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminRemoveProcessStates } from '@/types/admin';
 import { cn } from '@/lib/utils';
-import { WithdrawalDialog } from '../withdrawal-dialog';
+import { CampaignCardUserActions } from './user-actions';
 
 interface CampaignStatusInfo {
   status: string;
@@ -55,62 +55,6 @@ export function CampaignCardFooter({
   const { address } = useAuth();
   const isOwner = campaign?.creatorAddress === address;
 
-  // Delete functionality state
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [processState, setProcessState] =
-    useState<keyof typeof AdminRemoveProcessStates>('idle');
-  const { toast } = useToast();
-  const { mutateAsync: adminRemoveCampaign } = useAdminRemoveCampaign();
-
-  const onStateChanged = useCallback(
-    (state: keyof typeof AdminRemoveProcessStates) => {
-      setProcessState(state);
-    },
-    [],
-  );
-
-  const removeCampaign = useCallback(
-    async (campaign: DbCampaign) => {
-      try {
-        onStateChanged('setup');
-        await adminRemoveCampaign({
-          campaignId: campaign.id,
-        });
-        onStateChanged('done');
-      } catch (error) {
-        onStateChanged('failed');
-        console.error('Error removing campaign:', error);
-        setError(
-          error instanceof Error ? error.message : 'Failed to remove campaign',
-        );
-      }
-    },
-    [adminRemoveCampaign, onStateChanged],
-  );
-
-  const onRemove = useCallback(async () => {
-    setIsDeleting(true);
-    await removeCampaign(campaign);
-    setIsDeleting(false);
-  }, [removeCampaign, campaign]);
-
-  useEffect(() => {
-    if (processState === 'done') {
-      toast({
-        title: 'Success',
-        description: 'Campaign has been removed successfully',
-      });
-    }
-    if (processState === 'failed') {
-      toast({
-        title: 'Error',
-        description: error,
-        variant: 'destructive',
-      });
-    }
-  }, [toast, processState, error]);
-
   // Check if delete button should be shown (same conditions as original CampaignRemoveButton)
   const shouldShowDeleteButton =
     displayOptions.showRemoveButton &&
@@ -123,18 +67,11 @@ export function CampaignCardFooter({
   const shouldShowEditButton =
     displayOptions.showEditButton && isOwner && campaign?.slug;
 
-  // Check if withdrawal button should be shown (for campaign owner only, active campaigns with treasury)
-  const shouldShowWithdrawalButton =
-    displayOptions.showWithdrawalButton &&
-    isOwner &&
-    campaign?.treasuryAddress &&
-    campaign.status === 'ACTIVE';
-
   // Show footer only for essential actions and controls
   const hasEssentialFooterContent =
     shouldShowEditButton ||
     shouldShowDeleteButton ||
-    shouldShowWithdrawalButton ||
+    displayOptions.showWithdrawalButton ||
     (displayOptions.showRoundAdminFooterControls && roundAdminFooterControls) ||
     customButtons ||
     (adminMode && displayOptions.showCampaignAdminActions && showButtons) ||
@@ -215,75 +152,14 @@ export function CampaignCardFooter({
             </div>
           )}
 
-        {/* Creator controls: Edit, Withdraw, Delete */}
-        {(shouldShowEditButton ||
-          shouldShowWithdrawalButton ||
-          shouldShowDeleteButton) && (
-          <div className="border-t border-border pt-3">
-            <div className="flex gap-2">
-              {/* Edit button */}
-              {shouldShowEditButton && (
-                <Link
-                  href={`/campaigns/${campaign.slug}/edit`}
-                  className="flex-1"
-                >
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className={cn('w-full px-2 py-1 text-xs')}
-                  >
-                    <Edit className="mr-2 h-3 w-3" />
-                    Edit
-                  </Button>
-                </Link>
-              )}
-
-              {/* Withdrawal button */}
-              {shouldShowWithdrawalButton && (
-                <div className="flex-1">
-                  <WithdrawalDialog
-                    campaign={campaign}
-                    trigger={
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={cn('w-full px-2 py-1 text-xs')}
-                      >
-                        <Wallet className="mr-2 h-3 w-3" />
-                        Withdraw
-                      </Button>
-                    }
-                  />
-                </div>
-              )}
-
-              {/* Delete button */}
-              {shouldShowDeleteButton && (
-                <Button
-                  onClick={onRemove}
-                  size="sm"
-                  disabled={isDeleting}
-                  variant="destructive"
-                  className={cn(
-                    'flex-1 px-2 py-1 text-xs',
-                    isDeleting && 'opacity-50',
-                  )}
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      Removing...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Remove
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
+        {/* User actions for campaign owners */}
+        {displayOptions.showWithdrawalButton && (
+          <CampaignCardUserActions
+            campaign={campaign}
+            onRemove={() => {
+              // Handle remove callback if needed
+            }}
+          />
         )}
       </div>
     </CardFooter>

@@ -16,6 +16,7 @@ export function CampaignCardAdminActions({
   const isDraft = campaign?.status === 'DRAFT';
   const isPendingApproval = campaign?.status === 'PENDING_APPROVAL';
   const isActive = campaign?.status === 'ACTIVE';
+  const isDisabled = campaign?.status === 'DISABLED';
   const isCompleted = campaign?.status === 'COMPLETED';
   const isFailed = campaign?.status === 'FAILED';
 
@@ -76,11 +77,15 @@ export function CampaignCardAdminActions({
         </div>
 
         {/* Status-based action */}
-        {isActive && (
+        {(isActive || isDisabled || isPendingApproval) && (
           <div className="flex-1">
             <CampaignAdminDisableButton
               campaign={campaign}
-              buttonClassName="w-full bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+              buttonClassName={`w-full px-3 py-2 text-sm font-medium ${
+                isActive
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              }`}
             />
           </div>
         )}

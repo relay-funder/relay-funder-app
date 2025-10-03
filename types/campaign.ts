@@ -19,7 +19,13 @@ export interface DbCampaign {
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: 'DRAFT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
+  status:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'ACTIVE'
+    | 'DISABLED'
+    | 'COMPLETED'
+    | 'FAILED';
   transactionHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -194,6 +200,7 @@ export enum CampaignStatus {
   DRAFT = 'DRAFT',
   PENDING_APPROVAL = 'PENDING_APPROVAL',
   ACTIVE = 'ACTIVE',
+  DISABLED = 'DISABLED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
 }

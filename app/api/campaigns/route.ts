@@ -23,6 +23,7 @@ const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
   pending_approval: CampaignStatus.PENDING_APPROVAL,
   active: CampaignStatus.ACTIVE,
+  disabled: CampaignStatus.DISABLED,
   completed: CampaignStatus.COMPLETED,
   failed: CampaignStatus.FAILED,
 };
@@ -159,6 +160,7 @@ export async function PATCH(req: Request) {
         CampaignStatus.FAILED,
         CampaignStatus.PENDING_APPROVAL,
         CampaignStatus.DRAFT,
+        CampaignStatus.DISABLED,
         undefined,
       ].includes(status)
     ) {

@@ -8,6 +8,8 @@ export function useCampaignStatus(campaign?: DbCampaign) {
     return 'Draft';
   } else if (campaign.status === 'PENDING_APPROVAL') {
     return 'Pending Approval';
+  } else if (campaign.status === 'DISABLED') {
+    return 'Disabled';
   } else if (campaign.status === 'FAILED') {
     return 'Failed';
   } else if (campaign.status === 'COMPLETED') {
