@@ -36,15 +36,15 @@ export async function POST(
     // Platform configuration - should be configurable per platform/environment
     const platformConfig = {
       // Fee structure (in USDC)
-      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001', // 0.001 USDC per pledge
+      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDC per pledge
       cumulativeFlatFee:
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDC threshold
       platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
-      ), // 4% platform fee
+        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
+      ), // 0% platform fee
       vakiCommissionBps: parseInt(
-        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
-      ), // 1% commission
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+      ), // 0% commission
 
       // Timing configuration (in seconds)
       launchOffsetSec: parseInt(

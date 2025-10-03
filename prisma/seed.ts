@@ -400,11 +400,11 @@ async function main() {
     );
 
     // Set correct fee values to match kwr_flow_test.sh for proper treasury configuration
-    process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS = '1000'; // 10% platform fee
-    process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS = '600'; // 6% VAKI commission
+    process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS = '0'; // 0% platform fee
+    process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS = '0'; // 0% VAKI commission
     process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC = '30'; // 30 seconds for testing (vs 3600 default)
     console.log(
-      '   Treasury fee configuration set: 10% platform fee, 6% VAKI commission',
+      '   Treasury fee configuration set: 0% platform fee, 0% VAKI commission',
     );
     console.log('   Launch offset set to 30 seconds for testing');
   }

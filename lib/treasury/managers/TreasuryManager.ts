@@ -228,19 +228,19 @@ export class TreasuryManager extends TreasuryInterface {
 
       // Fee values
       const FLAT_FEE_VALUE = ethers.parseUnits(
-        process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001',
+        process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
         USDC_CONFIG.DECIMALS,
       );
       const CUM_FLAT_FEE_VALUE = ethers.parseUnits(
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002',
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
         USDC_CONFIG.DECIMALS,
       );
       const PLATFORM_FEE_BPS = parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
-      ); // 4%
+        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
+      ); // 0%
       const VAKI_COMMISSION_BPS = parseInt(
-        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
-      ); // 1%
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+      ); // 0%
 
       // Campaign data - convert to Unix timestamps
       const launchTime = Math.floor(

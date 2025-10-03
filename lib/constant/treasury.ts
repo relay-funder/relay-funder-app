@@ -29,7 +29,7 @@ export const USDC_CONFIG = {
 
 // Platform fee configuration
 export const PLATFORM_CONFIG = {
-  FEE_PERCENT: 1000, // 10.00% (in basis points: 1000 = 10%)
+  FEE_PERCENT: 0, // 0.00% (in basis points: 0 = 0%)
 } as const;
 
 // Fee key names for keccak256 hashing
