@@ -4,6 +4,16 @@
  * Contains realistic, varied campaign data that follows the same structure as production seed data.
  */
 
+interface DemoCampaignData {
+  title: string;
+  description: string;
+  fundingGoal: number;
+  fundingModel: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  category: string;
+}
 
 // Valid locations for demo data (subset of all countries for realistic scenarios)
 const VALID_DEMO_LOCATIONS = [
@@ -204,7 +214,7 @@ function randomFromArray<T>(array: readonly T[]): T {
  * Generate valid demo campaign data dynamically
  * This ensures all generated data is guaranteed to be valid
  */
-function generateValidDemoCampaignData() {
+function generateValidDemoCampaignData(): DemoCampaignData {
   const template = randomFromArray(CAMPAIGN_TEMPLATES);
   const location = randomFromArray(VALID_DEMO_LOCATIONS);
   const durationRange = randomFromArray(DURATION_RANGES);
@@ -235,13 +245,13 @@ function generateValidDemoCampaignData() {
 }
 
 // Cache generated data to ensure consistency during development session
-let cachedDemoData: Record<string, unknown>[] = [];
+let cachedDemoData: DemoCampaignData[] = [];
 const CACHE_SIZE = 20;
 
 /**
  * Get cached or generate new valid demo campaign data
  */
-function getOrGenerateDemoData(): Record<string, unknown>[] {
+function getOrGenerateDemoData(): DemoCampaignData[] {
   if (cachedDemoData.length === 0) {
     cachedDemoData = Array.from({ length: CACHE_SIZE }, () =>
       generateValidDemoCampaignData(),
@@ -254,7 +264,7 @@ function getOrGenerateDemoData(): Record<string, unknown>[] {
  * Get random demo campaign data for development pre-filling
  * Always returns valid data with guaranteed enum/category compliance
  */
-export function getRandomDemoCampaignData() {
+export function getRandomDemoCampaignData(): DemoCampaignData {
   const demoData = getOrGenerateDemoData();
   const randomIndex = Math.floor(Math.random() * demoData.length);
   return demoData[randomIndex];
@@ -264,7 +274,7 @@ export function getRandomDemoCampaignData() {
  * Get specific demo campaign data by index (for consistent testing)
  * Always returns valid data with guaranteed enum/category compliance
  */
-export function getDemoCampaignDataByIndex(index: number) {
+export function getDemoCampaignDataByIndex(index: number): DemoCampaignData {
   const demoData = getOrGenerateDemoData();
   return demoData[index % demoData.length];
 }
@@ -273,7 +283,7 @@ export function getDemoCampaignDataByIndex(index: number) {
  * Get demo campaign data optimized for preview generation (excludes banner image)
  * Always returns valid data with guaranteed enum/category compliance
  */
-export function getDemoCampaignDataForPreview() {
+export function getDemoCampaignDataForPreview(): DemoCampaignData & { bannerImage: null } {
   const data = getRandomDemoCampaignData();
   return {
     ...data,
