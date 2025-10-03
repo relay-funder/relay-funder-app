@@ -1,6 +1,5 @@
 import { useSidebar } from '@/contexts';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import Link from 'next/link';
 import { transition } from './sidebar-constants';
 import { ThemeAwareImage } from '@/hooks/use-theme-logo';
