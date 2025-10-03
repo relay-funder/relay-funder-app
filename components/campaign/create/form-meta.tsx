@@ -14,7 +14,14 @@ import {
 import { countries, categories } from '@/lib/constant';
 
 function CountrySelectItems() {
-  return countries.map((country) => (
+  // Prioritize Kenya and Uganda at the top of the list
+  const prioritizedCountries = [
+    'Kenya',
+    'Uganda',
+    ...countries.filter(country => country !== 'Kenya' && country !== 'Uganda')
+  ];
+
+  return prioritizedCountries.map((country) => (
     <SelectItem key={country} value={country}>
       {country}
     </SelectItem>
