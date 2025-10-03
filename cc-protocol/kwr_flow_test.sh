@@ -297,6 +297,12 @@ REFUND_DELAY=7200      # 2 hours
 CONFIG_LOCK_PERIOD=1800  # 30 minutes
 IS_COLOMBIAN=false
 
+# Wait for deployment transaction to be processed
+sleep 2
+# Fetch next pending nonce for configuration to avoid nonce-too-low error
+CONFIG_NONCE_HEX=$(cast rpc eth_getTransactionCount "$PLATFORM_ADMIN_ADDR" pending --rpc-url "$RPC_URL" | tr -d '"')
+CONFIG_NONCE=$(python3 -c 'import sys;print(int(sys.argv[1],16))' "${CONFIG_NONCE_HEX#0x}")
+
 cast send "$TREASURY_ADDR" \
   "configureTreasury((uint256,uint256,uint256,uint256,bool),(uint256,uint256,uint256),(bytes32,bytes32,bytes32[]),(uint256,uint256,uint256[]))" \
   "($(python3 -c "print(int(0.5 * 10**$USDC_DECIMALS))"),$WITHDRAWAL_DELAY,$REFUND_DELAY,$CONFIG_LOCK_PERIOD,$IS_COLOMBIAN)" \
@@ -304,7 +310,7 @@ cast send "$TREASURY_ADDR" \
   "($FLAT_FEE_KEY,$CUM_FLAT_FEE_KEY,[$PLATFORM_FEE_KEY,$VAKI_COMMISSION_KEY])" \
   "($FLAT_FEE_AMOUNT,$CUM_FLAT_FEE_AMOUNT,[$PLATFORM_FEE_BPS,$VAKI_COMMISSION_BPS])" \
   --rpc-url "$RPC_URL" \
-  --private-key "$PLATFORM_ADMIN_PK" --legacy >/dev/null
+  --private-key "$PLATFORM_ADMIN_PK" --nonce "$CONFIG_NONCE" --legacy >/dev/null
 
 echo "Waiting for campaign launch time..."
 now_hex2=$(cast block latest --rpc-url "$RPC_URL" --json | jq -r .timestamp)
@@ -322,7 +328,7 @@ if (( sleep_for > 0 )); then
   echo "Campaign should now be live!"
 fi
 
-PLEDGE_USDC=0.1                # 0.1 USDC pledge (10 cents - much smaller for testing)
+PLEDGE_USDC=1.0                # 1.0 USDC pledge (provides enough funds for withdrawal with fees)
 TIP_USDC=0
 PLEDGE_AMOUNT=$(python3 -c "print(int($PLEDGE_USDC * 10**$USDC_DECIMALS))")
 TIP_AMOUNT=$(python3 -c "print(int($TIP_USDC * 10**$USDC_DECIMALS))")
@@ -335,9 +341,24 @@ BACKER_BAL_BEFORE_DEC=$(python3 -c "print($BACKER_BAL_BEFORE / 10**$USDC_DECIMAL
 echo "Backer USDC balance before pledge: $BACKER_BAL_BEFORE_DEC USDC"
 echo "About to pledge: $PLEDGE_USDC USDC (+ $TIP_USDC tip)"
 
+# Set payment gateway fee before pledge (required by KeepWhatsRaised)
+# Gateway fee is 0 for this test, but the pledge ID must be registered
+echo "Setting payment gateway fee for pledge..."
+sleep 1
+GATEWAY_FEE_NONCE_HEX=$(cast rpc eth_getTransactionCount "$PLATFORM_ADMIN_ADDR" pending --rpc-url "$RPC_URL" | tr -d '"')
+GATEWAY_FEE_NONCE=$(python3 -c 'import sys;print(int(sys.argv[1],16))' "${GATEWAY_FEE_NONCE_HEX#0x}")
+GATEWAY_FEE_AMOUNT=0  # No gateway fee for direct pledges in testing
+cast send "$TREASURY_ADDR" \
+  "setPaymentGatewayFee(bytes32,uint256)" \
+  "$PLEDGE_ID" "$GATEWAY_FEE_AMOUNT" \
+  --rpc-url "$RPC_URL" --private-key "$PLATFORM_ADMIN_PK" --nonce "$GATEWAY_FEE_NONCE" --legacy >/dev/null
+
 echo "Approving USDC allowance from backer..."
+sleep 1
+APPROVE_NONCE_HEX=$(cast rpc eth_getTransactionCount "$BACKER_ADDR" pending --rpc-url "$RPC_URL" | tr -d '"')
+APPROVE_NONCE=$(python3 -c 'import sys;print(int(sys.argv[1],16))' "${APPROVE_NONCE_HEX#0x}")
 cast send "$USDC" "approve(address,uint256)" "$TREASURY_ADDR" "$((PLEDGE_AMOUNT + TIP_AMOUNT))" \
-  --rpc-url "$RPC_URL" --private-key "$BACKER_PK" --legacy >/dev/null
+  --rpc-url "$RPC_URL" --private-key "$BACKER_PK" --nonce "$APPROVE_NONCE" --legacy >/dev/null
 
 echo "Submitting pledge..."
 # Small delay to let pending nonce update across RPC nodes
@@ -385,31 +406,65 @@ OWNER_ADDR=$(cast call "$CAMPAIGN_ADDR" "owner()(address)" --rpc-url "$RPC_URL")
 BAL_BEFORE=$(cast call "$USDC" "balanceOf(address)(uint256)" "$OWNER_ADDR" --rpc-url "$RPC_URL")
 
 echo "Approving withdrawals (platform admin)..."
-cast send "$TREASURY_ADDR" "approveWithdrawal()" --rpc-url "$RPC_URL" --private-key "$PLATFORM_ADMIN_PK" --legacy >/dev/null
+# Fetch fresh nonce for approval transaction
+sleep 1
+APPROVAL_NONCE_HEX=$(cast rpc eth_getTransactionCount "$PLATFORM_ADMIN_ADDR" pending --rpc-url "$RPC_URL" | tr -d '"')
+APPROVAL_NONCE=$(python3 -c 'import sys;print(int(sys.argv[1],16))' "${APPROVAL_NONCE_HEX#0x}")
+cast send "$TREASURY_ADDR" "approveWithdrawal()" \
+  --rpc-url "$RPC_URL" --private-key "$PLATFORM_ADMIN_PK" --nonce "$APPROVAL_NONCE" --legacy >/dev/null
 
 # Withdraw immediately after pledge (withdrawal window is before deadline + withdrawalDelay)
 # NOTE: In KeepWhatsRaised, withdraw(0) is only valid AFTER deadline; before deadline you must pass amount > 0.
 # Get current available amount for pre-deadline withdrawal
 AVAILABLE_RAW=$(cast call "$TREASURY_ADDR" "getAvailableRaisedAmount()(uint256)" --rpc-url "$RPC_URL")
 AVAILABLE_AMOUNT=$(echo "$AVAILABLE_RAW" | awk '{print $1}')
-echo "Withdrawing available amount ($AVAILABLE_AMOUNT base units) before deadline..."
-cast send "$TREASURY_ADDR" "withdraw(uint256)" "$AVAILABLE_AMOUNT" \
-  --rpc-url "$RPC_URL" --private-key "$CREATOR_PK" --legacy >/dev/null
 
-BAL_AFTER_RAW=$(cast call "$USDC" "balanceOf(address)(uint256)" "$OWNER_ADDR" --rpc-url "$RPC_URL")
-BAL_AFTER=$(echo "$BAL_AFTER_RAW" | awk '{print $1}')
-AVAIL_AFTER_RAW=$(cast call "$TREASURY_ADDR" "getAvailableRaisedAmount()(uint256)" --rpc-url "$RPC_URL")
-AVAIL_AFTER=$(echo "$AVAIL_AFTER_RAW" | awk '{print $1}')
+# For partial withdrawals before deadline, flat fee is ADDED to amount deducted from available balance
+# Available: 83000, minimumWithdrawalForFeeExemption: 500000 (0.5 USDC)
+# Since available < exemption threshold, cumulativeFlatFee (2000) applies
+# Total deducted = withdrawalAmount + fee, so: withdrawalAmount = available - fee
+WITHDRAWAL_AMOUNT=$(python3 -c "print(max(0, $AVAILABLE_AMOUNT - $CUM_FLAT_FEE_AMOUNT))")
+echo "Available: $AVAILABLE_AMOUNT base units, Cumulative flat fee: $CUM_FLAT_FEE_AMOUNT base units"
+echo "Withdrawing amount: $WITHDRAWAL_AMOUNT base units (available - fee for partial withdrawal)"
 
-BAL_BEFORE_CLEAN=$(echo "$BAL_BEFORE" | awk '{print $1}')
-delta=$((BAL_AFTER - BAL_BEFORE_CLEAN))
-echo "Creator received (base units): $delta"
-echo "Treasury available after withdrawal (base units): $AVAIL_AFTER"
-
-if (( delta > 0 )); then
-  echo "KeepWhatsRaised Flow OK: pledge, approval, and withdrawal executed successfully."
+if (( WITHDRAWAL_AMOUNT <= 0 )); then
+  echo "WARNING: Not enough funds to cover withdrawal fees. Skipping withdrawal test."
+  echo "To test withdrawal, increase pledge amount or reduce flat fees."
 else
-  echo "KeepWhatsRaised Flow WARNING: creator balance did not increase; inspect transactions above."
+  # Fetch fresh nonce for creator's withdrawal transaction
+  sleep 2
+  WITHDRAW_NONCE_HEX=$(cast rpc eth_getTransactionCount "$CREATOR_ADDR" pending --rpc-url "$RPC_URL" | tr -d '"')
+  WITHDRAW_NONCE=$(python3 -c 'import sys;print(int(sys.argv[1],16))' "${WITHDRAW_NONCE_HEX#0x}")
+  echo "Executing withdrawal with creator account (nonce: $WITHDRAW_NONCE)..."
+  cast send "$TREASURY_ADDR" "withdraw(uint256)" "$WITHDRAWAL_AMOUNT" \
+    --rpc-url "$RPC_URL" --private-key "$CREATOR_PK" --nonce "$WITHDRAW_NONCE" --legacy >/dev/null
+fi
+
+if (( WITHDRAWAL_AMOUNT > 0 )); then
+  BAL_AFTER_RAW=$(cast call "$USDC" "balanceOf(address)(uint256)" "$OWNER_ADDR" --rpc-url "$RPC_URL")
+  BAL_AFTER=$(echo "$BAL_AFTER_RAW" | awk '{print $1}')
+  AVAIL_AFTER_RAW=$(cast call "$TREASURY_ADDR" "getAvailableRaisedAmount()(uint256)" --rpc-url "$RPC_URL")
+  AVAIL_AFTER=$(echo "$AVAIL_AFTER_RAW" | awk '{print $1}')
+
+  BAL_BEFORE_CLEAN=$(echo "$BAL_BEFORE" | awk '{print $1}')
+  delta=$((BAL_AFTER - BAL_BEFORE_CLEAN))
+  delta_usdc=$(python3 -c "print($delta / 10**$USDC_DECIMALS)")
+  echo ""
+  echo "=== WITHDRAWAL RESULTS ==="
+  echo "Creator received: $delta base units ($delta_usdc USDC)"
+  echo "Treasury available after withdrawal: $AVAIL_AFTER base units"
+  echo "Fees charged: $CUM_FLAT_FEE_AMOUNT base units (cumulative flat fee)"
+
+  if (( delta > 0 )); then
+    echo ""
+    echo "✓ KeepWhatsRaised Flow OK: pledge, approval, and withdrawal executed successfully."
+  else
+    echo ""
+    echo "✗ KeepWhatsRaised Flow WARNING: creator balance did not increase; inspect transactions above."
+  fi
+else
+  echo ""
+  echo "✗ Withdrawal test skipped due to insufficient funds."
 fi
 
 echo "KeepWhatsRaised test completed."
