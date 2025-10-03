@@ -13,6 +13,7 @@ enum CampaignStatus {
   DRAFT
   PENDING_APPROVAL
   ACTIVE
+  DISABLED
   COMPLETED
   FAILED
 }

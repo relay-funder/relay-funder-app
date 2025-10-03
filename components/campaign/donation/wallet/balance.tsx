@@ -30,10 +30,10 @@ export function CampaignDonationWalletBalance({
 
   return (
     <div className="space-y-1">
-      <label className="text-base font-medium text-gray-900">
+      <label className="text-base font-medium text-foreground">
         Available Balance
       </label>
-      <div className="flex flex-nowrap text-sm text-gray-600">
+      <div className="flex flex-nowrap text-sm text-muted-foreground">
         {availableBalance} {selectedToken}
         <TooltipProvider>
           <Tooltip>

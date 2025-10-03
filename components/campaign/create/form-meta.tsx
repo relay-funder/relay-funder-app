@@ -14,7 +14,16 @@ import {
 import { countries, categories } from '@/lib/constant';
 
 function CountrySelectItems() {
-  return countries.map((country) => (
+  // Prioritize Kenya and Uganda at the top of the list
+  const prioritizedCountries = [
+    'Kenya',
+    'Uganda',
+    ...countries.filter(
+      (country) => country !== 'Kenya' && country !== 'Uganda',
+    ),
+  ];
+
+  return prioritizedCountries.map((country) => (
     <SelectItem key={country} value={country}>
       {country}
     </SelectItem>
@@ -29,7 +38,7 @@ export function CampaignCreateFormMeta() {
         name="location"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Location
             </FormLabel>
             <FormControl>
@@ -51,7 +60,7 @@ export function CampaignCreateFormMeta() {
         name="category"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">
+            <FormLabel className="text-sm font-medium text-foreground">
               Category
             </FormLabel>
             <FormControl>

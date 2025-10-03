@@ -56,8 +56,10 @@ export function CommentForm({ campaign }: CommentFormProps) {
   if (campaign.creatorAddress === address) {
     return (
       <div className="space-y-4 p-4">
-        <h2 className="text-2xl font-bold">Your Campaign Comments</h2>
-        <p className="text-gray-600">
+        <h2 className="font-display text-2xl font-bold text-foreground">
+          Your Campaign Comments
+        </h2>
+        <p className="text-muted-foreground">
           {campaign._count?.comments}{' '}
           {campaign._count?.comments === 1 ? 'Comment' : 'Comments'} entered by
           users for your Campaign.
@@ -67,10 +69,10 @@ export function CommentForm({ campaign }: CommentFormProps) {
   }
   return (
     <form ref={formRef} onSubmit={handleSubmit}>
-      <div className="rounded-lg bg-white p-4 shadow">
+      <div className="rounded-lg bg-card p-4 shadow">
         <textarea
           name="content"
-          className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full rounded-md border border-border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="Write a comment..."
           rows={4}
           required

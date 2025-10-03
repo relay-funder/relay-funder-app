@@ -141,13 +141,13 @@ export function getDeploymentConfig(): DeploymentConfig {
 
   // Platform configuration (matching working create-onchain endpoint)
   const platformConfig = {
-    flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001', // 0.001 USDC per pledge
+    flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDC per pledge
     cumulativeFlatFee:
-      process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
-    platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400'), // 4% platform fee
+      process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDC threshold
+    platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'), // 0% platform fee
     vakiCommissionBps: parseInt(
-      process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
-    ), // 1% commission
+      process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+    ), // 0% commission
     launchOffsetSec: parseInt(
       process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
     ), // 5 minute buffer

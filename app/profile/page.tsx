@@ -40,7 +40,7 @@ export default function ProfilePage() {
         <div className="space-y-8">
           {/* Profile Header */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
               Profile Settings
             </h1>
             <p className="text-muted-foreground">

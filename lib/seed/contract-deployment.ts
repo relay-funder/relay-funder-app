@@ -175,14 +175,12 @@ export async function deployCampaignContract(
 
     // Platform configuration
     const platformConfig = {
-      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001',
+      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
       cumulativeFlatFee:
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002',
-      platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
-      ),
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
+      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'),
       vakiCommissionBps: parseInt(
-        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
       ),
       launchOffsetSec: parseInt(
         process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',

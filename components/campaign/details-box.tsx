@@ -17,14 +17,16 @@ export function CampaignDetailsBox({ campaign }: { campaign: DbCampaign }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <h3 className="text-sm font-semibold">Campaign Details</h3>
+        <h3 className="font-display text-sm font-semibold text-foreground">
+          Campaign Details
+        </h3>
       </CardHeader>
       <CardContent className="space-y-3 p-4 pt-0">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4" />
           <span>{campaign.location || 'Location not specified'}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Target className="h-4 w-4" />
           <span>
             Campaign ends {new Date(campaign.endTime).toLocaleDateString()}
@@ -32,7 +34,7 @@ export function CampaignDetailsBox({ campaign }: { campaign: DbCampaign }) {
         </div>
         {hasRounds && (
           <div
-            className="flex items-center gap-2 text-sm text-gray-600"
+            className="flex items-center gap-2 text-sm text-muted-foreground"
             title={roundsTitle}
           >
             <Rocket className="h-4 w-4" />

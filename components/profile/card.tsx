@@ -27,20 +27,20 @@ export function ProfileCard({
   }, [logout, router]);
 
   return (
-    <Card className="rounded-lg border bg-white shadow-sm">
+    <Card className="rounded-lg border bg-card shadow-sm">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-gray-100">
-                <UserRound className="h-8 w-8 text-gray-600" />
+              <AvatarFallback className="bg-muted">
+                <UserRound className="h-8 w-8 text-muted-foreground" />
               </AvatarFallback>
             </Avatar>
 
             <div className="flex-1 space-y-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold leading-tight tracking-tight">
+                  <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground">
                     {profile?.firstName || 'Anonymous User'}
                     {profile?.lastName && ` ${profile?.lastName}`}
                   </h1>
@@ -84,7 +84,7 @@ export function ProfileCard({
               </div>
 
               {profile?.bio && (
-                <p className="text-sm text-gray-600">{profile.bio}</p>
+                <p className="text-sm text-muted-foreground">{profile.bio}</p>
               )}
             </div>
           </div>

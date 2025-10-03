@@ -400,11 +400,11 @@ async function main() {
     );
 
     // Set correct fee values to match kwr_flow_test.sh for proper treasury configuration
-    process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS = '1000'; // 10% platform fee
-    process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS = '600'; // 6% VAKI commission
+    process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS = '0'; // 0% platform fee
+    process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS = '0'; // 0% VAKI commission
     process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC = '30'; // 30 seconds for testing (vs 3600 default)
     console.log(
-      '   Treasury fee configuration set: 10% platform fee, 6% VAKI commission',
+      '   Treasury fee configuration set: 0% platform fee, 0% VAKI commission',
     );
     console.log('   Launch offset set to 30 seconds for testing');
   }
@@ -464,6 +464,15 @@ async function main() {
   });
   console.log(`✅ Created test creator user 2: ${testCreatorUser2.address}`);
 
+  const testCreatorUser3 = await db.user.create({
+    data: {
+      address: '0x0ed2FD2bb8CEcc7159cA8B4DD26740E9Cebe5Aa1'.toLowerCase(),
+      roles: ['user'],
+      featureFlags: [],
+    },
+  });
+  console.log(`✅ Created test creator user 3: ${testCreatorUser3.address}`);
+
   // Create additional users for variety (reduced numbers)
   const creatorUsers = await createUsers(15, ['user']);
   const donorUsers = await createUsers(15, ['user']);
@@ -474,7 +483,7 @@ async function main() {
   );
 
   // Combine all users, with test users first for campaign assignment
-  const allCreatorUsers = [testCreatorUser, testCreatorUser2, ...creatorUsers];
+  const allCreatorUsers = [testCreatorUser, testCreatorUser2, testCreatorUser3, ...creatorUsers];
   const allAdminUsers = [protocolAdminUser, ...adminUsers];
 
   // Create campaigns ordered by status: ACTIVE first, then PENDING_APPROVAL, then DRAFT
@@ -602,6 +611,11 @@ async function main() {
       creator = testCreatorUser2; // Second test creator owns next 4 campaigns (4,5,6,7)
       console.log(
         `   📝 Assigning campaign "${campaigns[i].title}" to test creator 2: ${testCreatorUser2.address}`,
+      );
+    } else if (i < 12) {
+      creator = testCreatorUser3; // Third test creator owns next 4 campaigns (8,9,10,11)
+      console.log(
+        `   📝 Assigning campaign "${campaigns[i].title}" to test creator 3: ${testCreatorUser3.address}`,
       );
     } else {
       creator = selectRandom(allCreatorUsers);
@@ -1105,11 +1119,29 @@ async function main() {
     console.log(`   ⭐ Added favorite: "${campaign.title}" for test creator 2`);
   }
 
+  // Test Creator 3 favorites: 3-4 different campaigns they don't own
+  const testCreator3Favorites = allCreatedCampaigns
+    .filter((c) => c.creatorAddress !== testCreatorUser3.address)
+    .slice(4, 8); // Different selection than creators 1 and 2
+
+  for (const campaign of testCreator3Favorites) {
+    await db.favorite.create({
+      data: {
+        userAddress: testCreatorUser3.address,
+        campaignId: campaign.id,
+      },
+    });
+    console.log(`   ⭐ Added favorite: "${campaign.title}" for test creator 3`);
+  }
+
   console.log(
     `✅ Added ${testCreator1Favorites.length} favorites for test creator 1`,
   );
   console.log(
     `✅ Added ${testCreator2Favorites.length} favorites for test creator 2`,
+  );
+  console.log(
+    `✅ Added ${testCreator3Favorites.length} favorites for test creator 3`,
   );
 
   // Add extra donations from test creators to campaigns they don't own
@@ -1190,11 +1222,46 @@ async function main() {
     );
   }
 
+  // Test Creator 3 makes donations to 3 different campaigns they don't own
+  const creator3DonationCampaigns = campaignsForDonations.slice(2, 5);
+  for (const campaign of creator3DonationCampaigns) {
+    const donationAmounts = ['40', '70', '100', '140', '180'];
+    const amount = selectRandom(donationAmounts);
+
+    await db.payment.create({
+      data: {
+        amount,
+        token: 'USDC',
+        status: 'confirmed',
+        type: 'BUY',
+        transactionHash: `0x${Array.from({ length: 64 }, () =>
+          Math.floor(Math.random() * 16).toString(16),
+        ).join('')}`,
+        isAnonymous: false,
+        createdAt: subDays(new Date(), Math.floor(Math.random() * 20) + 1),
+        campaignId: campaign.id,
+        userId: testCreatorUser3.id,
+        provider: 'stripe',
+        metadata: {
+          fundingBalance: amount,
+          isDummy: true,
+          isOffChain: true,
+        },
+      },
+    });
+    console.log(
+      `   💸 Test creator 3 donated $${amount} to "${campaign.title}"`,
+    );
+  }
+
   console.log(
     `✅ Test creator 1 made ${creator1DonationCampaigns.length} cross-donations`,
   );
   console.log(
     `✅ Test creator 2 made ${creator2DonationCampaigns.length} cross-donations`,
+  );
+  console.log(
+    `✅ Test creator 3 made ${creator3DonationCampaigns.length} cross-donations`,
   );
 
   // Create EventFeed entries to simulate real user activity notifications
@@ -1846,10 +1913,13 @@ async function main() {
     );
     console.log(`🔑 Protocol Admin: ${protocolAdminUser.address}`);
     console.log(
-      `👤 Test Creator 1: ${testCreatorUser.address} (owns campaigns 1-3)`,
+      `👤 Test Creator 1: ${testCreatorUser.address} (owns campaigns 1-4)`,
     );
     console.log(
-      `👤 Test Creator 2: ${testCreatorUser2.address} (owns campaigns 4-6)`,
+      `👤 Test Creator 2: ${testCreatorUser2.address} (owns campaigns 5-8)`,
+    );
+    console.log(
+      `👤 Test Creator 3: ${testCreatorUser3.address} (owns campaigns 9-12)`,
     );
     allAdminUsers
       .slice(1)
@@ -1941,6 +2011,7 @@ async function main() {
     console.log('1. Wallet address matches EXACTLY (case-sensitive):');
     console.log(`   • Test Creator 1: ${testCreatorUser.address}`);
     console.log(`   • Test Creator 2: ${testCreatorUser2.address}`);
+    console.log(`   • Test Creator 3: ${testCreatorUser3.address}`);
     console.log('2. User must exist in database with correct address');
     console.log('3. API calls use session.user.address for filtering');
     console.log('4. Campaign ownership uses creatorAddress field');
@@ -1951,10 +2022,13 @@ async function main() {
     console.log('Created users for testing:');
     console.log(`🔑 Protocol Admin: ${protocolAdminUser.address}`);
     console.log(
-      `👤 Test Creator 1: ${testCreatorUser.address} (owns campaigns 1-3)`,
+      `👤 Test Creator 1: ${testCreatorUser.address} (owns campaigns 1-4)`,
     );
     console.log(
-      `👤 Test Creator 2: ${testCreatorUser2.address} (owns campaigns 4-6)`,
+      `👤 Test Creator 2: ${testCreatorUser2.address} (owns campaigns 5-8)`,
+    );
+    console.log(
+      `👤 Test Creator 3: ${testCreatorUser3.address} (owns campaigns 9-12)`,
     );
     console.log(`  ${allAdminUsers.length} total admin users`);
     console.log(`  ${allCreatorUsers.length} total creator users`);

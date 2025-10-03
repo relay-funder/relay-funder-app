@@ -22,7 +22,7 @@ export function CampaignDonationSuggestions({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-gray-900">
+      <label className="text-sm font-medium text-foreground">
         Quick amounts:
       </label>
       <div className="grid grid-cols-5 gap-2">

@@ -55,6 +55,17 @@ export function CampaignAdminFeaturedDialog({
   const currentlyFeatured =
     Boolean(campaign?.featuredStart) && !campaign?.featuredEnd;
 
+  // Determine button styling based on featured state
+  const buttonVariant = currentlyFeatured ? 'default' : 'ghost';
+  const buttonClassNameWithState = currentlyFeatured
+    ? `${buttonClassName} bg-accent text-accent-foreground hover:bg-accent/90 border-accent`
+    : buttonClassName;
+
+  // Add visual indicator for featured state
+  const starColor = currentlyFeatured
+    ? 'text-accent-foreground'
+    : 'text-muted-foreground';
+
   const { mutateAsync: toggleFeatured, isPending: isTogglePending } =
     useAdminToggleCampaignFeatured();
   const { mutateAsync: setFeaturedDates, isPending: isSetPending } =
@@ -128,8 +139,12 @@ export function CampaignAdminFeaturedDialog({
     <div className={className}>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className={buttonClassName} onClick={onOpen} variant="ghost">
-            <Star className="mr-2 h-4 w-4" />
+          <Button
+            className={buttonClassNameWithState}
+            onClick={onOpen}
+            variant={buttonVariant}
+          >
+            <Star className={`mr-2 h-4 w-4 ${starColor}`} />
             {triggerLabel}
           </Button>
         </DialogTrigger>

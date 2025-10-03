@@ -16,6 +16,7 @@ export function CampaignCardAdminActions({
   const isDraft = campaign?.status === 'DRAFT';
   const isPendingApproval = campaign?.status === 'PENDING_APPROVAL';
   const isActive = campaign?.status === 'ACTIVE';
+  const isDisabled = campaign?.status === 'DISABLED';
   const isCompleted = campaign?.status === 'COMPLETED';
   const isFailed = campaign?.status === 'FAILED';
 
@@ -24,76 +25,75 @@ export function CampaignCardAdminActions({
   }
 
   return (
-    <div className="w-full space-y-3">
-      {/* Horizontal divider for visual separation */}
-      <div className="border-t border-gray-200"></div>
-
-      {/* Primary Actions Row - Contract/Treasury (Approve moved to secondary row) */}
-      {(!campaign.campaignAddress ||
-        (campaign.campaignAddress &&
-          !campaign.treasuryAddress &&
-          !isPendingApproval)) && (
-        <div className="flex w-full gap-2">
+    <div className="space-y-2 border-t border-border pt-3">
+      {/* Draft campaigns: Keep existing layout with deploy and remove buttons */}
+      {isDraft && (
+        <>
+          {/* Deploy contract button for drafts without address */}
           {!campaign.campaignAddress && (
-            <div className="flex-1">
-              <CampaignAdminDeployContractButton
-                campaign={campaign}
-                buttonClassName="w-full bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-              />
-            </div>
+            <CampaignAdminDeployContractButton
+              campaign={campaign}
+              buttonClassName="h-8 w-full px-2 py-1 text-xs bg-black text-white hover:bg-gray-800"
+            />
           )}
-          {campaign.campaignAddress &&
-            !campaign.treasuryAddress &&
-            !isPendingApproval && (
-              <div className="flex-1">
-                <CampaignAdminDeployButton
-                  campaign={campaign}
-                  buttonClassName="w-full bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                />
-              </div>
-            )}
-        </div>
+
+          {/* Deploy treasury button for campaigns with contract but no treasury */}
+          {campaign.campaignAddress && !campaign.treasuryAddress && (
+            <CampaignAdminDeployButton
+              campaign={campaign}
+              buttonClassName="h-8 w-full px-2 py-1 text-xs bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            />
+          )}
+
+          {/* Remove button for draft campaigns */}
+          <CampaignAdminRemoveButton
+            campaign={campaign}
+            buttonClassName="h-8 w-full px-2 py-1 text-xs"
+          />
+        </>
       )}
 
-      {/* Secondary Actions Row - Feature/Disable/Remove */}
-      <div className="flex w-full gap-2">
-        {/* Approve button - Show when pending approval */}
-        {isPendingApproval && campaign.campaignAddress && (
+      {/* Active campaigns: Feature + Disable buttons side-by-side */}
+      {isActive && (
+        <div className="flex gap-2">
           <div className="flex-1">
-            <CampaignAdminApproveButton
+            <CampaignAdminFeaturedDialog
               campaign={campaign}
-              buttonClassName="w-full bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              buttonClassName="h-8 w-full px-2 py-1 text-xs bg-muted text-muted-foreground hover:bg-muted/80"
             />
           </div>
-        )}
-
-        {/* Feature button - Always available */}
-        <div className="flex-1">
-          <CampaignAdminFeaturedDialog
-            campaign={campaign}
-            buttonClassName="w-full bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          />
-        </div>
-
-        {/* Status-based action */}
-        {isActive && (
           <div className="flex-1">
             <CampaignAdminDisableButton
               campaign={campaign}
-              buttonClassName="w-full bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+              buttonClassName="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
             />
           </div>
-        )}
+        </div>
+      )}
 
-        {(isDraft || isCompleted || isFailed) && (
-          <div className="flex-1">
-            <CampaignAdminRemoveButton
-              campaign={campaign}
-              buttonClassName="w-full bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
-            />
-          </div>
-        )}
-      </div>
+      {/* Pending approval campaigns: Single full-width approve button */}
+      {isPendingApproval && campaign.campaignAddress && (
+        <CampaignAdminApproveButton
+          campaign={campaign}
+          buttonClassName="h-8 w-full px-2 py-1 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+        />
+      )}
+
+      {/* Disabled campaigns: Single full-width enable button */}
+      {isDisabled && (
+        <CampaignAdminDisableButton
+          campaign={campaign}
+          buttonClassName="h-8 w-full border border-bio bg-bio px-2 py-1 text-xs text-white hover:bg-bio/90"
+        />
+      )}
+
+      {/* Completed/Failed campaigns: Single full-width remove button */}
+      {(isCompleted || isFailed) && (
+        <CampaignAdminRemoveButton
+          campaign={campaign}
+          buttonClassName="h-8 w-full px-2 py-1 text-xs"
+        />
+      )}
     </div>
   );
 }

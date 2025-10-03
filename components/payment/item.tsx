@@ -56,7 +56,8 @@ export function PaymentItem({
     <Card
       className={cn(
         hidden && 'hidden',
-        hasExplorerLink && 'cursor-pointer transition-colors hover:bg-gray-50',
+        hasExplorerLink &&
+          'cursor-pointer transition-colors hover:bg-accent/50',
       )}
       onClick={hasExplorerLink ? handleRowClick : undefined}
     >
@@ -66,14 +67,14 @@ export function PaymentItem({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
                 <UserInlineName user={payment.user} />
-                <div className="flex items-center gap-2 text-xs text-gray-500 sm:text-sm">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">
                   <span className="hidden sm:inline">•</span>
                   <FormattedDate date={payment.date} />
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3 sm:justify-end">
                 <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
-                  <span className="text-base font-medium text-gray-900 sm:text-sm">
+                  <span className="text-base font-medium text-foreground sm:text-sm">
                     $
                     {(() => {
                       // Format with at least 1 decimal place
@@ -82,12 +83,12 @@ export function PaymentItem({
                         : payment.amount.toString();
                     })()}
                   </span>
-                  <span className="text-xs text-gray-500 sm:text-sm">
+                  <span className="text-xs text-muted-foreground sm:text-sm">
                     {payment.token === 'USD' ? 'Credit Card' : payment.token}
                   </span>
                 </div>
                 {hasExplorerLink && (
-                  <ExternalLink className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 )}
               </div>
             </div>
@@ -104,7 +105,7 @@ export function PaymentItem({
             disabled={isRemovingPayment}
             variant="ghost"
             size="sm"
-            className="text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
           >
             <Trash className="h-3 w-3" />
           </Button>

@@ -81,7 +81,7 @@ export default function DashboardPage() {
                 Updates
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Info className="ml-1 h-3 w-3 cursor-help text-gray-400" />
+                    <Info className="ml-1 h-3 w-3 cursor-help text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-48 text-xs">
                     <p>Updates are from favorites and from donation history.</p>

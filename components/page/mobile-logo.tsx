@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { ThemeAwareImage } from '@/hooks/use-theme-logo';
 
 export function MobileLogo() {
   return (
@@ -15,7 +15,7 @@ export function MobileLogo() {
         'px-1 py-2', // Healthy padding around logo
       )}
     >
-      <Image
+      <ThemeAwareImage
         src="/relay-funder-logo.png"
         alt="RelayFunder"
         width={150}

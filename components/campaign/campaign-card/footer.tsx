@@ -1,18 +1,10 @@
 import { CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui';
-import Link from 'next/link';
 import { DbCampaign } from '@/types/campaign';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { CampaignCardDisplayOptions } from './types';
 import { CampaignCardActions } from './actions';
 import { useAuth } from '@/contexts';
-import { Trash2, Loader2, Edit, Wallet } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useAdminRemoveCampaign } from '@/lib/hooks/useCampaigns';
-import { AdminRemoveProcessStates } from '@/types/admin';
-import { cn } from '@/lib/utils';
-import { WithdrawalDialog } from '../withdrawal-dialog';
+import { CampaignCardUserActions } from './user-actions';
 
 interface CampaignStatusInfo {
   status: string;
@@ -55,62 +47,6 @@ export function CampaignCardFooter({
   const { address } = useAuth();
   const isOwner = campaign?.creatorAddress === address;
 
-  // Delete functionality state
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [processState, setProcessState] =
-    useState<keyof typeof AdminRemoveProcessStates>('idle');
-  const { toast } = useToast();
-  const { mutateAsync: adminRemoveCampaign } = useAdminRemoveCampaign();
-
-  const onStateChanged = useCallback(
-    (state: keyof typeof AdminRemoveProcessStates) => {
-      setProcessState(state);
-    },
-    [],
-  );
-
-  const removeCampaign = useCallback(
-    async (campaign: DbCampaign) => {
-      try {
-        onStateChanged('setup');
-        await adminRemoveCampaign({
-          campaignId: campaign.id,
-        });
-        onStateChanged('done');
-      } catch (error) {
-        onStateChanged('failed');
-        console.error('Error removing campaign:', error);
-        setError(
-          error instanceof Error ? error.message : 'Failed to remove campaign',
-        );
-      }
-    },
-    [adminRemoveCampaign, onStateChanged],
-  );
-
-  const onRemove = useCallback(async () => {
-    setIsDeleting(true);
-    await removeCampaign(campaign);
-    setIsDeleting(false);
-  }, [removeCampaign, campaign]);
-
-  useEffect(() => {
-    if (processState === 'done') {
-      toast({
-        title: 'Success',
-        description: 'Campaign has been removed successfully',
-      });
-    }
-    if (processState === 'failed') {
-      toast({
-        title: 'Error',
-        description: error,
-        variant: 'destructive',
-      });
-    }
-  }, [toast, processState, error]);
-
   // Check if delete button should be shown (same conditions as original CampaignRemoveButton)
   const shouldShowDeleteButton =
     displayOptions.showRemoveButton &&
@@ -123,18 +59,11 @@ export function CampaignCardFooter({
   const shouldShowEditButton =
     displayOptions.showEditButton && isOwner && campaign?.slug;
 
-  // Check if withdrawal button should be shown (for campaign owner only, active campaigns with treasury)
-  const shouldShowWithdrawalButton =
-    displayOptions.showWithdrawalButton &&
-    isOwner &&
-    campaign?.treasuryAddress &&
-    campaign.status === 'ACTIVE';
-
   // Show footer only for essential actions and controls
   const hasEssentialFooterContent =
     shouldShowEditButton ||
     shouldShowDeleteButton ||
-    shouldShowWithdrawalButton ||
+    displayOptions.showWithdrawalButton ||
     (displayOptions.showRoundAdminFooterControls && roundAdminFooterControls) ||
     customButtons ||
     (adminMode && displayOptions.showCampaignAdminActions && showButtons) ||
@@ -155,15 +84,15 @@ export function CampaignCardFooter({
           campaign?.rounds?.length > 0 &&
           (adminMode || isOwner) &&
           cardType !== 'standard' && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">
+            <div className="mb-4 space-y-2">
+              <h4 className="text-sm font-medium text-foreground">
                 Round Applications:
               </h4>
               <ul className="space-y-1">
                 {campaign.rounds.map((round: GetRoundResponseInstance) => (
                   <li
                     key={round.id}
-                    className="border-l-2 border-blue-200 pl-2 text-sm text-gray-600"
+                    className="border-l-2 border-accent pl-2 text-sm text-muted-foreground"
                   >
                     <div className="flex items-center justify-between">
                       <span>{round.title}</span>
@@ -171,17 +100,17 @@ export function CampaignCardFooter({
                         <span
                           className={`ml-2 rounded-full px-2 py-0.5 text-xs font-medium ${
                             round.recipientStatus === 'APPROVED'
-                              ? 'bg-green-100 text-green-700'
+                              ? 'border border-bio/20 bg-bio/10 text-bio'
                               : round.recipientStatus === 'REJECTED'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-yellow-100 text-yellow-700'
+                                ? 'border border-destructive/20 bg-destructive/10 text-destructive'
+                                : 'border border-solar/20 bg-solar/10 text-solar'
                           }`}
                         >
                           {round.recipientStatus === 'APPROVED'
-                            ? 'approved'
+                            ? 'Approved'
                             : round.recipientStatus === 'REJECTED'
-                              ? 'rejected'
-                              : 'pending'}
+                              ? 'Rejected'
+                              : 'Pending'}
                         </span>
                       )}
                     </div>
@@ -200,7 +129,7 @@ export function CampaignCardFooter({
           adminMode &&
           displayOptions.showCampaignAdminActions && (
             <div className="mt-6 space-y-3">
-              <h4 className="text-sm font-semibold text-gray-800">
+              <h4 className="text-sm font-semibold text-foreground">
                 Campaign Actions
               </h4>
               <CampaignCardActions
@@ -215,77 +144,14 @@ export function CampaignCardFooter({
             </div>
           )}
 
-        {/* Creator controls: Edit, Withdraw, Delete */}
-        {(shouldShowEditButton ||
-          shouldShowWithdrawalButton ||
-          shouldShowDeleteButton) && (
-          <div className="border-t border-gray-200 pt-3">
-            <div className="flex gap-2">
-              {/* Edit button */}
-              {shouldShowEditButton && (
-                <Link
-                  href={`/campaigns/${campaign.slug}/edit`}
-                  className="flex-1"
-                >
-                  <Button
-                    size="sm"
-                    className={cn(
-                      'w-full bg-blue-100 px-2 py-1 text-xs text-blue-700 hover:bg-blue-200',
-                    )}
-                  >
-                    <Edit className="mr-2 h-3 w-3" />
-                    Edit
-                  </Button>
-                </Link>
-              )}
-
-              {/* Withdrawal button */}
-              {shouldShowWithdrawalButton && (
-                <div className="flex-1">
-                  <WithdrawalDialog
-                    campaign={campaign}
-                    trigger={
-                      <Button
-                        size="sm"
-                        className={cn(
-                          'w-full bg-green-100 px-2 py-1 text-xs text-green-700 hover:bg-green-200',
-                        )}
-                      >
-                        <Wallet className="mr-2 h-3 w-3" />
-                        Withdraw
-                      </Button>
-                    }
-                  />
-                </div>
-              )}
-
-              {/* Delete button */}
-              {shouldShowDeleteButton && (
-                <Button
-                  onClick={onRemove}
-                  size="sm"
-                  disabled={isDeleting}
-                  className={cn(
-                    'flex-1',
-                    'bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200',
-                    isDeleting && 'opacity-50',
-                  )}
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      Removing...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Remove
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
+        {/* User actions for campaign owners */}
+        {displayOptions.showWithdrawalButton && (
+          <CampaignCardUserActions
+            campaign={campaign}
+            onRemove={() => {
+              // Handle remove callback if needed
+            }}
+          />
         )}
       </div>
     </CardFooter>

@@ -1,130 +1,293 @@
 /**
  * Demo campaign data for development environment only.
- * This data is used to pre-fill campaign creation forms for faster development testing.
+ * This data is dynamically generated to ensure all values are always valid.
  * Contains realistic, varied campaign data that follows the same structure as production seed data.
  */
 
-// Demo campaign data for development environment only
+interface DemoCampaignData {
+  title: string;
+  description: string;
+  fundingGoal: number;
+  fundingModel: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  category: string;
+}
 
-// Demo campaign data that mirrors the seed structure but is more varied for development testing
-export const demoCampaignData = [
+// Valid locations for demo data (subset of all countries for realistic scenarios)
+const VALID_DEMO_LOCATIONS = [
+  'Kenya',
+  'Uganda',
+  'Tanzania',
+  'Rwanda',
+  'Ethiopia',
+];
+
+// Valid campaign titles and descriptions with varied phrasing, tone, and structure
+const CAMPAIGN_TEMPLATES = [
+  // Climate Resilience - Formal, impact-focused
   {
-    title: 'Community Solar Microgrid Project - Rural Kenya',
+    title: 'Solar Microgrids for Rural {location} Communities',
     description:
-      'Installing solar microgrids in remote Kenyan villages to provide reliable electricity for homes, schools, and small businesses. This project will connect 500 households to clean, sustainable energy while creating local jobs in solar installation and maintenance.',
-    fundingGoal: 1200,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Kenya',
-    category: 'climate-resilience',
+      'Deploying sustainable solar microgrids across remote {location} villages. This initiative provides reliable electricity to 500+ households, schools, and businesses while creating local employment in renewable energy infrastructure.',
+    category: 'climate-resilience' as const,
+    fundingRange: [800, 1500] as [number, number],
   },
+  // Climate Resilience - Urgent, community-focused
   {
-    title: 'Urban Youth Entrepreneurship Hub - Nairobi',
+    title: 'Clean Energy Access - {location} Villages',
     description:
-      'Creating a dedicated space for young entrepreneurs in Nairobi to access mentorship, co-working facilities, and business development training. The hub will support 200+ youth entrepreneurs annually with market linkages and seed funding.',
-    fundingGoal: 850,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Kenya',
-    category: 'economic-development',
+      'Bringing solar power to {location} communities that need it most. We install microgrids serving homes, schools, and clinics, creating sustainable energy solutions and local green jobs.',
+    category: 'climate-resilience' as const,
+    fundingRange: [900, 1400] as [number, number],
   },
+  // Economic Development - Professional, business-oriented
   {
-    title: 'Mobile Health Clinic for Maasai Communities',
+    title: 'Youth Entrepreneurship Center - {location}',
     description:
-      'Operating mobile health clinics serving remote Maasai communities in southern Kenya. Services include maternal care, child vaccinations, HIV/AIDS testing, and telemedicine consultations. Currently serving 15,000+ community members annually.',
-    fundingGoal: 650,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Kenya',
-    category: 'emergency-response',
+      'Establishing a comprehensive entrepreneurship hub in {location} for young innovators. Features mentorship programs, co-working spaces, and business development support serving 200+ entrepreneurs annually.',
+    category: 'economic-development' as const,
+    fundingRange: [600, 1200] as [number, number],
   },
+  // Economic Development - Casual, opportunity-focused
   {
-    title: 'Digital Skills Training for Refugees - Kakuma',
+    title: 'Startup Hub for {location} Young Leaders',
     description:
-      'Providing comprehensive digital literacy and vocational training to refugees and host community youth in Kakuma refugee camp. Programs include basic computing, graphic design, mobile app development, and online entrepreneurship courses.',
-    fundingGoal: 500,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Kenya',
-    category: 'education',
+      'Building a vibrant space where {location} youth can turn ideas into businesses. We provide mentorship, workspace, and connections to help 200+ entrepreneurs launch successful ventures.',
+    category: 'economic-development' as const,
+    fundingRange: [700, 1300] as [number, number],
   },
+  // Emergency Response - Technical, service-oriented
   {
-    title: 'Sustainable Agriculture Cooperative - Western Uganda',
+    title: 'Mobile Healthcare Units - {location}',
     description:
-      'Supporting 300+ smallholder farmers in western Uganda through cooperative farming initiatives. Focus on climate-resilient crops, organic farming techniques, and market access to improve food security and household incomes.',
-    fundingGoal: 1500,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Uganda',
-    category: 'agriculture',
+      'Delivering essential medical services to underserved {location} communities through mobile clinics. Comprehensive care includes maternal health, vaccinations, HIV testing, and telemedicine for 15,000+ people.',
+    category: 'emergency-response' as const,
+    fundingRange: [500, 1000] as [number, number],
   },
+  // Emergency Response - Compassionate, human-focused
   {
-    title: 'Girls STEM Education Initiative - Kampala',
+    title: 'Healthcare on Wheels for {location}',
     description:
-      'Breaking gender barriers in STEM education through targeted programs for girls in Kampala. Includes coding bootcamps, robotics workshops, science clubs, and mentorship programs to prepare the next generation of female tech leaders.',
-    fundingGoal: 750,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Uganda',
-    category: 'education',
+      'Bringing medical care directly to remote {location} villages. Our mobile clinics provide maternal care, vaccinations, HIV/AIDS support, and telemedicine to communities that need it most.',
+    category: 'emergency-response' as const,
+    fundingRange: [600, 1100] as [number, number],
   },
+  // Education - Academic, structured approach
   {
-    title: 'Emergency Response Network - Coastal Tanzania',
+    title: 'Digital Literacy Program - {location} Youth',
     description:
-      "Building community-based emergency response capacity along Tanzania's coast. Training local volunteers in disaster preparedness, first aid, and rapid response coordination for floods, cyclones, and other climate-related emergencies.",
-    fundingGoal: 450,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 50 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Tanzania',
-    category: 'emergency-response',
+      'Comprehensive technology education initiative for {location} students. Curriculum covers computing fundamentals, digital design, mobile development, and entrepreneurship skills for future-ready careers.',
+    category: 'education' as const,
+    fundingRange: [300, 800] as [number, number],
   },
+  // Education - Inspirational, future-focused
   {
-    title: 'Artisanal Fisheries Cooperative - Lake Victoria',
+    title: 'Future Tech Leaders from {location}',
     description:
-      "Organizing small-scale fishermen on Lake Victoria into sustainable cooperatives. Providing training in sustainable fishing practices, value addition, and market linkages to improve incomes and preserve the lake's fisheries.",
-    fundingGoal: 300,
-    fundingModel: 'flexible',
-    startTime: new Date().toISOString().slice(0, 10),
-    endTime: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10),
-    location: 'Tanzania',
-    category: 'economic-development',
+      'Empowering {location} youth with digital skills for tomorrow. Our program teaches coding, design, app development, and online business to prepare the next generation of innovators.',
+    category: 'education' as const,
+    fundingRange: [400, 900] as [number, number],
+  },
+  // Economic Development - Agricultural focus
+  {
+    title: 'Climate-Smart Farming - {location} Farmers',
+    description:
+      'Supporting {location} smallholder farmers with sustainable agriculture techniques. Training in resilient crops, organic methods, and market access to improve food security and farmer incomes.',
+    category: 'economic-development' as const,
+    fundingRange: [700, 2000] as [number, number],
+  },
+  // Education - STEM specific
+  {
+    title: 'STEM Breakthrough Program - {location}',
+    description:
+      'Democratizing STEM education in {location} through intensive programs. Students participate in coding camps, robotics labs, science experiments, and mentorship from tech professionals.',
+    category: 'education' as const,
+    fundingRange: [400, 1000] as [number, number],
+  },
+  // Emergency Response - Disaster preparedness
+  {
+    title: 'Community Emergency Response - {location}',
+    description:
+      'Building local capacity for disaster response in {location}. Training volunteers in emergency preparedness, first aid, and coordination for floods, storms, and climate emergencies.',
+    category: 'emergency-response' as const,
+    fundingRange: [300, 800] as [number, number],
+  },
+  // Economic Development - Fisheries focus
+  {
+    title: 'Sustainable Fishing Cooperative - {location}',
+    description:
+      'Organizing {location} fishermen into sustainable cooperatives. Training in responsible fishing, value addition, and market development to protect fisheries while improving livelihoods.',
+    category: 'economic-development' as const,
+    fundingRange: [200, 600] as [number, number],
+  },
+  // Climate Resilience - Water/energy focus
+  {
+    title: 'Renewable Energy Village Project - {location}',
+    description:
+      'Transforming {location} villages with clean energy solutions. Solar installations provide electricity for homes and businesses, reducing carbon emissions while creating sustainable jobs.',
+    category: 'climate-resilience' as const,
+    fundingRange: [1000, 1800] as [number, number],
+  },
+  // Education - Skills training
+  {
+    title: 'Vocational Tech Academy - {location}',
+    description:
+      'Modern vocational training for {location} youth. Hands-on programs in digital tools, creative software, mobile technology, and digital entrepreneurship for immediate career opportunities.',
+    category: 'education' as const,
+    fundingRange: [350, 750] as [number, number],
+  },
+  // Emergency Response - Health emergency focus
+  {
+    title: 'Rural Health Emergency Network - {location}',
+    description:
+      'Strengthening health emergency response in {location} rural areas. Mobile units deliver critical care, vaccinations, and telemedicine to isolated communities facing health challenges.',
+    category: 'emergency-response' as const,
+    fundingRange: [450, 950] as [number, number],
+  },
+  // Economic Development - Women-focused
+  {
+    title: 'Women&apos;s Business Collective - {location}',
+    description:
+      'Empowering {location} women entrepreneurs through cooperative business development. Access to training, financing, and markets helps women build sustainable economic opportunities.',
+    category: 'economic-development' as const,
+    fundingRange: [500, 1100] as [number, number],
+  },
+  // Climate Resilience - Conservation focus
+  {
+    title: 'Forest Protection Initiative - {location}',
+    description:
+      'Safeguarding {location} forests through community conservation. Local training in sustainable practices, alternative livelihoods, and environmental monitoring protects vital ecosystems.',
+    category: 'climate-resilience' as const,
+    fundingRange: [600, 1200] as [number, number],
+  },
+  // Education - Community learning
+  {
+    title: 'Community Learning Hub - {location}',
+    description:
+      'Creating accessible learning centers in {location} communities. Technology training, digital literacy programs, and skill development serve diverse learners across all age groups.',
+    category: 'education' as const,
+    fundingRange: [250, 650] as [number, number],
+  },
+  // Emergency Response - Humanitarian aid
+  {
+    title: 'Humanitarian Aid Network - {location}',
+    description:
+      'Coordinating emergency humanitarian support in {location}. Mobile response teams provide immediate aid, medical care, and recovery support to communities in crisis.',
+    category: 'emergency-response' as const,
+    fundingRange: [400, 900] as [number, number],
+  },
+  // Economic Development - Tourism focus
+  {
+    title: 'Community Tourism Cooperative - {location}',
+    description:
+      'Developing sustainable tourism opportunities in {location}. Training local guides, preserving cultural heritage, and creating economic benefits for indigenous communities.',
+    category: 'economic-development' as const,
+    fundingRange: [550, 1150] as [number, number],
   },
 ];
 
+// Valid duration ranges in days
+const DURATION_RANGES = [
+  [14, 21], // 2-3 weeks
+  [21, 35], // 3-5 weeks
+  [30, 60], // 1-2 months
+  [45, 90], // 1.5-3 months
+];
+
+/**
+ * Generate a random number between min and max (inclusive)
+ */
+function randomBetween(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Get a random item from an array
+ */
+function randomFromArray<T>(array: readonly T[]): T {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
+ * Generate valid demo campaign data dynamically
+ * This ensures all generated data is guaranteed to be valid
+ */
+function generateValidDemoCampaignData(): DemoCampaignData {
+  const template = randomFromArray(CAMPAIGN_TEMPLATES);
+  const location = randomFromArray(VALID_DEMO_LOCATIONS);
+  const durationRange = randomFromArray(DURATION_RANGES);
+
+  // Generate funding goal within template's range
+  const fundingGoal = randomBetween(
+    template.fundingRange[0],
+    template.fundingRange[1],
+  );
+
+  // Generate duration within valid range
+  const durationDays = randomBetween(durationRange[0], durationRange[1]);
+
+  // Generate dates
+  const startDate = new Date();
+  const endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+
+  return {
+    title: template.title.replace('{location}', location),
+    description: template.description.replace('{location}', location),
+    fundingGoal,
+    fundingModel: 'flexible' as const, // Only valid funding model
+    startTime: startDate.toISOString().slice(0, 10),
+    endTime: endDate.toISOString().slice(0, 10),
+    location,
+    category: template.category, // Guaranteed to be valid
+  };
+}
+
+// Cache generated data to ensure consistency during development session
+let cachedDemoData: DemoCampaignData[] = [];
+const CACHE_SIZE = 20;
+
+/**
+ * Get cached or generate new valid demo campaign data
+ */
+function getOrGenerateDemoData(): DemoCampaignData[] {
+  if (cachedDemoData.length === 0) {
+    cachedDemoData = Array.from({ length: CACHE_SIZE }, () =>
+      generateValidDemoCampaignData(),
+    );
+  }
+  return cachedDemoData;
+}
+
 /**
  * Get random demo campaign data for development pre-filling
+ * Always returns valid data with guaranteed enum/category compliance
  */
-export function getRandomDemoCampaignData() {
-  const randomIndex = Math.floor(Math.random() * demoCampaignData.length);
-  return demoCampaignData[randomIndex];
+export function getRandomDemoCampaignData(): DemoCampaignData {
+  const demoData = getOrGenerateDemoData();
+  const randomIndex = Math.floor(Math.random() * demoData.length);
+  return demoData[randomIndex];
 }
 
 /**
  * Get specific demo campaign data by index (for consistent testing)
+ * Always returns valid data with guaranteed enum/category compliance
  */
-export function getDemoCampaignDataByIndex(index: number) {
-  return demoCampaignData[index % demoCampaignData.length];
+export function getDemoCampaignDataByIndex(index: number): DemoCampaignData {
+  const demoData = getOrGenerateDemoData();
+  return demoData[index % demoData.length];
+}
+
+/**
+ * Get demo campaign data optimized for preview generation (excludes banner image)
+ * Always returns valid data with guaranteed enum/category compliance
+ */
+export function getDemoCampaignDataForPreview(): DemoCampaignData & { bannerImage: null } {
+  const data = getRandomDemoCampaignData();
+  return {
+    ...data,
+    // Explicitly exclude banner image for reliable preview generation
+    bannerImage: null,
+  };
 }

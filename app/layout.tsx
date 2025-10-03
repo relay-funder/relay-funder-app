@@ -20,6 +20,10 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: 'Relay Funder',
   description: 'Fundraising platform for open source projects',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

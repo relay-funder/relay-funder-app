@@ -75,10 +75,10 @@ export function CampaignInfoDialog({
               <div className="space-y-4">
                 {/* Creator */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="flex-shrink-0 text-sm text-gray-500">
+                  <span className="flex-shrink-0 text-sm text-muted-foreground">
                     Creator
                   </span>
-                  <span className="font-mono text-sm text-gray-900">
+                  <span className="font-mono text-sm text-foreground">
                     <span className="sm:hidden">
                       {truncateAddress(campaign.creatorAddress)}
                     </span>
@@ -90,31 +90,33 @@ export function CampaignInfoDialog({
 
                 {/* Goal */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Goal</span>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm text-muted-foreground">Goal</span>
+                  <span className="text-sm font-medium text-foreground">
                     {amountGoal}
                   </span>
                 </div>
 
                 {/* Status */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Status</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <span className="text-sm text-foreground">
                     {campaign.status.replace('_', ' ').toLowerCase()}
                   </span>
                 </div>
 
                 {/* Timing */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Launch</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-muted-foreground">Launch</span>
+                  <span className="text-sm text-foreground">
                     <FormattedDate date={campaign.startTime} />
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Deadline</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-muted-foreground">
+                    Deadline
+                  </span>
+                  <span className="text-sm text-foreground">
                     <FormattedDate date={campaign.endTime} />
                   </span>
                 </div>
@@ -122,8 +124,10 @@ export function CampaignInfoDialog({
                 {/* Location */}
                 {campaign.location && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Location</span>
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-muted-foreground">
+                      Location
+                    </span>
+                    <span className="text-sm text-foreground">
                       {campaign.location}
                     </span>
                   </div>
@@ -132,8 +136,10 @@ export function CampaignInfoDialog({
                 {/* Category */}
                 {campaign.category && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Category</span>
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-muted-foreground">
+                      Category
+                    </span>
+                    <span className="text-sm text-foreground">
                       {campaign.category}
                     </span>
                   </div>
@@ -141,8 +147,8 @@ export function CampaignInfoDialog({
 
                 {/* Created */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Created</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-muted-foreground">Created</span>
+                  <span className="text-sm text-foreground">
                     <FormattedDate date={campaign.createdAt} />
                   </span>
                 </div>
@@ -153,13 +159,13 @@ export function CampaignInfoDialog({
           {/* Smart Contracts */}
           <Card>
             <CardContent className="p-6">
-              <h3 className="mb-4 text-sm font-medium text-gray-900">
+              <h3 className="mb-4 text-sm font-medium text-foreground">
                 Smart Contracts
               </h3>
               <div className="space-y-4">
                 {/* Campaign Contract */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="flex-shrink-0 text-sm text-gray-500">
+                  <span className="flex-shrink-0 text-sm text-muted-foreground">
                     Campaign
                   </span>
                   <div className="flex items-center gap-2">
@@ -168,7 +174,7 @@ export function CampaignInfoDialog({
                         address={campaign.campaignAddress}
                         chainConfig={chainConfig}
                       >
-                        <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700">
+                        <div className="flex items-center gap-2 text-sm text-foreground hover:text-gray-700">
                           <span className="font-mono">
                             <span className="sm:hidden">
                               {truncateAddress(campaign.campaignAddress)}
@@ -190,7 +196,7 @@ export function CampaignInfoDialog({
 
                 {/* Treasury Contract */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="flex-shrink-0 text-sm text-gray-500">
+                  <span className="flex-shrink-0 text-sm text-muted-foreground">
                     Treasury
                   </span>
                   <div className="flex items-center gap-2">
@@ -199,7 +205,7 @@ export function CampaignInfoDialog({
                         address={campaign.treasuryAddress}
                         chainConfig={chainConfig}
                       >
-                        <div className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700">
+                        <div className="flex items-center gap-2 text-sm text-foreground hover:text-gray-700">
                           <span className="font-mono">
                             <span className="sm:hidden">
                               {truncateAddress(campaign.treasuryAddress)}
@@ -226,14 +232,14 @@ export function CampaignInfoDialog({
           {campaign.treasuryAddress && (
             <Card>
               <CardContent className="p-6">
-                <h3 className="mb-4 text-sm font-medium text-gray-900">
+                <h3 className="mb-4 text-sm font-medium text-foreground">
                   On-Chain Treasury Balance
                 </h3>
                 <TreasuryBalanceCompact
                   treasuryAddress={campaign.treasuryAddress}
                   className="text-sm"
                 />
-                <div className="mt-2 text-sm text-gray-500">
+                <div className="mt-2 text-sm text-muted-foreground">
                   Real-time balance from blockchain contract
                 </div>
               </CardContent>
@@ -244,7 +250,7 @@ export function CampaignInfoDialog({
           {hasRounds && (
             <Card>
               <CardContent className="p-6">
-                <h3 className="mb-4 text-sm font-medium text-gray-900">
+                <h3 className="mb-4 text-sm font-medium text-foreground">
                   {isOwner ? 'Rounds & Applications' : 'Participating Rounds'}
                 </h3>
                 <div className="space-y-3">
@@ -256,7 +262,7 @@ export function CampaignInfoDialog({
                     >
                       <Link
                         href={`/rounds/${round.id}`}
-                        className="truncate text-sm text-gray-900 hover:text-gray-700 hover:underline"
+                        className="truncate text-sm text-foreground hover:text-gray-700 hover:underline"
                       >
                         {round.title}
                       </Link>
@@ -272,11 +278,11 @@ export function CampaignInfoDialog({
                       >
                         <Link
                           href={`/rounds/${round.id}`}
-                          className="truncate text-sm text-gray-900 hover:text-gray-700 hover:underline"
+                          className="truncate text-sm text-foreground hover:text-gray-700 hover:underline"
                         >
                           {round.title}
                         </Link>
-                        <span className="ml-3 text-sm text-gray-500">
+                        <span className="ml-3 text-sm text-muted-foreground">
                           pending review
                         </span>
                       </div>
