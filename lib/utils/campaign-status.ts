@@ -78,6 +78,13 @@ export function getCampaignStatusInfo(campaign?: DbCampaign) {
         description: 'Campaign has reached its goal',
         canDonate: false,
       };
+    case CampaignStatus.DISABLED:
+      return {
+        status: 'Disabled',
+        variant: 'outline' as const,
+        description: 'Campaign has been temporarily disabled by the owner',
+        canDonate: false,
+      };
     case CampaignStatus.FAILED:
       return {
         status: 'Failed',

@@ -11,7 +11,7 @@ export function PageHome({
   return (
     <>
       {header}
-      <div className="flex min-h-screen w-full flex-col bg-gray-50">
+      <div className="flex min-h-screen w-full flex-col bg-background">
         <main className="w-full">
           <FullWidthContainer variant="default" padding="sm">
             {children}

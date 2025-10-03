@@ -128,17 +128,41 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
               page="introduction"
               onStateChanged={setFormState}
             >
-              <div className="space-y-4 text-center">
-                <div className="mx-auto max-w-lg space-y-4">
-                  <p className="leading-relaxed text-gray-600">
-                    You&apos;re about to create a campaign that will help bring
-                    your project to life. This process will walk you through
-                    everything you need to attract supporters and raise funds.
+              <div className="space-y-4">
+                <div className="max-w-lg space-y-4">
+                  <p className="text-lg font-medium leading-relaxed text-muted-foreground">
+                    <strong>
+                      You&apos;re about to launch your campaign, an exciting
+                      step toward bringing your project to life and attracting
+                      the support it deserves!
+                    </strong>
                   </p>
-                  <p className="text-gray-600">
-                    We&apos;ll help you craft a compelling story, set your
-                    funding goals, and prepare your campaign for success.
-                  </p>
+                  <div className="space-y-2 text-muted-foreground">
+                    <p>
+                      <em>This guided process will help you:</em>
+                    </p>
+                    <ul className="max-w-sm list-inside list-disc space-y-1 text-left">
+                      <li>
+                        <em>Share your story in a compelling way</em>
+                      </li>
+                      <li>
+                        <em>Set clear and realistic funding goals</em>
+                      </li>
+                      <li>
+                        <em>
+                          Prepare your campaign for maximum visibility and
+                          success
+                        </em>
+                      </li>
+                    </ul>
+                    <p className="pt-2">
+                      <em>
+                        We&apos;ll walk you through everything you need to
+                        inspire supporters and raise the funds to make your
+                        vision possible.
+                      </em>
+                    </p>
+                  </div>
                   {/* Development-only button to replicate original image shift/double-click campaign pre-fill logic */}
                   {process.env.NODE_ENV === 'development' && (
                     <div className="mt-6">

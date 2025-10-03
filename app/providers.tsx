@@ -10,6 +10,7 @@ import {
   SidebarProvider,
   FeatureFlagsProvider,
   EnvironmentProvider,
+  ThemeProvider,
 } from '@/contexts';
 import { getQueryClient } from '@/lib/query-client';
 
@@ -19,13 +20,15 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <FeatureFlagsProvider>
-          <SidebarProvider>
-            <EnvironmentProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </EnvironmentProvider>
-          </SidebarProvider>
-        </FeatureFlagsProvider>
+        <ThemeProvider>
+          <FeatureFlagsProvider>
+            <SidebarProvider>
+              <EnvironmentProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </EnvironmentProvider>
+            </SidebarProvider>
+          </FeatureFlagsProvider>
+        </ThemeProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </SessionProvider>

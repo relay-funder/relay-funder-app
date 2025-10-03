@@ -1,8 +1,5 @@
 import { checkAuth } from '@/lib/api/auth';
-import {
-  ApiParameterError,
-  ApiUpstreamError,
-} from '@/lib/api/error';
+import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { ethers } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';

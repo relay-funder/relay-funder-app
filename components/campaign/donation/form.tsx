@@ -7,10 +7,10 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="font-display text-xl font-semibold text-foreground">
           Contribute to Campaign
         </h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Support this campaign with your contribution
         </p>
       </div>

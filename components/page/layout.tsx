@@ -49,7 +49,7 @@ export function PageLayout({
     if (title) {
       return (
         <div className="px-4 py-6 md:px-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {title}
           </h1>
         </div>
@@ -62,7 +62,7 @@ export function PageLayout({
   return (
     <>
       {renderHeader()}
-      <div className="flex min-h-screen w-full flex-col bg-gray-50">
+      <div className="flex min-h-screen w-full flex-col bg-background">
         <main className="w-full">
           <FullWidthContainer variant="default" padding="sm">
             {children}

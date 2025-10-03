@@ -37,11 +37,11 @@ export function CampaignDetailTabUpdates({
 
       {error ? (
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-lg border border-red-100 bg-red-50 py-12 text-center">
-            <h3 className="mb-2 text-xl font-semibold text-red-700">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 py-12 text-center">
+            <h3 className="mb-2 font-display text-xl font-semibold text-destructive">
               Unable to load updates
             </h3>
-            <p className="text-red-600">
+            <p className="text-destructive/80">
               {error?.message ?? 'An unexpected error occurred.'}
             </p>
           </div>
@@ -63,21 +63,21 @@ export function CampaignDetailTabUpdates({
         </>
       ) : isLoading ? (
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-lg border border-gray-100 bg-gray-50 py-12 text-center">
-            <h3 className="mb-2 text-xl font-semibold text-gray-700">
+          <div className="rounded-lg border border-border bg-card py-12 text-center">
+            <h3 className="mb-2 font-display text-xl font-semibold text-foreground">
               Loading updates...
             </h3>
-            <p className="text-gray-500">
+            <p className="text-muted-foreground">
               We are fetching the latest updates for this campaign.
             </p>
           </div>
         </div>
       ) : (
         <div className="py-12 text-center">
-          <h3 className="mb-2 text-lg font-semibold text-gray-700">
+          <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
             No Updates Yet
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Check back later for updates on this campaign&apos;s progress.
           </p>
         </div>

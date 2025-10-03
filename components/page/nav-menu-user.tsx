@@ -46,10 +46,10 @@ export function PageNavMenuUser() {
     return { short: 'User', full: 'User' };
   }, [address, session]);
   return (
-    <nav className="flex-1 space-y-1 px-3">
+    <nav className="flex-1 space-y-1 p-3">
       <div
         className={cn(
-          'flex items-center rounded-lg px-1 py-4 text-gray-800 hover:bg-gray-100 hover:text-gray-900',
+          'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground md:py-6',
           transition,
           isOpen ? 'px-4' : 'px-[9px]',
         )}
@@ -83,7 +83,7 @@ export function PageNavMenuUser() {
           {!authenticated ? (
             <Button
               variant="ghost"
-              className="pl-3 text-sm font-semibold text-black"
+              className="pl-3 text-sm font-semibold text-foreground"
               onClick={login}
             >
               Connect Wallet
@@ -98,7 +98,7 @@ export function PageNavMenuUser() {
               </span>
               <span title="Logout">
                 <LogOut
-                  className="h-5 w-5 cursor-pointer text-gray-400 transition-colors group-hover:text-red-600"
+                  className="h-5 w-5 cursor-pointer text-muted-foreground transition-colors group-hover:text-red-600"
                   onClick={async () => {
                     await logout();
                     window.location.href = '/';

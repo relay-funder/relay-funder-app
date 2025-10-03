@@ -23,7 +23,7 @@ function DonationItem({ donation }: DonationItemProps) {
   const { campaign } = donation;
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-lg">
+    <Card className="overflow-hidden bg-card transition-shadow hover:shadow-lg">
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           {/* Campaign Image */}
@@ -38,8 +38,8 @@ function DonationItem({ donation }: DonationItemProps) {
                 />
               </div>
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-gray-100">
-                <Target className="h-10 w-10 text-gray-400" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-muted">
+                <Target className="h-10 w-10 text-muted-foreground" />
               </div>
             )}
           </div>
@@ -50,19 +50,19 @@ function DonationItem({ donation }: DonationItemProps) {
             <div className="flex items-start justify-between">
               <Link
                 href={`/campaigns/${campaign.slug}`}
-                className="text-lg font-semibold leading-tight text-gray-900 hover:text-blue-600"
+                className="text-lg font-semibold leading-tight text-foreground hover:text-accent-foreground"
               >
                 {campaign.title}
               </Link>
               {campaign.isCompleted && (
-                <Badge className="ml-2 shrink-0 bg-blue-100 text-blue-800">
+                <Badge variant="secondary" className="ml-2 shrink-0">
                   Completed
                 </Badge>
               )}
             </div>
 
             {/* Category and Location */}
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
               <Category categoryId={campaign.category} />
               {campaign.location && (
                 <div className="flex items-center gap-1">
@@ -75,16 +75,18 @@ function DonationItem({ donation }: DonationItemProps) {
             {/* Donation Details */}
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <div className="text-sm text-gray-500">Donation</div>
-                <div className="text-2xl font-bold">
+                <div className="text-sm text-muted-foreground">Donation</div>
+                <div className="text-2xl font-bold text-foreground">
                   ${donation.amount.toFixed(2)}
                 </div>
               </div>
 
               {donation.roundContribution && (
                 <div className="space-y-1 text-right">
-                  <div className="text-sm text-gray-500">Impact Bet</div>
-                  <div className="text-lg font-semibold text-blue-600">
+                  <div className="text-sm text-muted-foreground">
+                    Impact Bet
+                  </div>
+                  <div className="text-lg font-semibold text-quantum">
                     ${(donation.amount * 0.05).toFixed(2)} (5.0%)
                   </div>
                 </div>
@@ -92,16 +94,16 @@ function DonationItem({ donation }: DonationItemProps) {
 
               {donation.roundContribution && (
                 <div className="space-y-1 text-right">
-                  <div className="text-sm text-gray-500">Reward</div>
-                  <div className="text-lg font-semibold text-orange-600">
+                  <div className="text-sm text-muted-foreground">Reward</div>
+                  <div className="text-lg font-semibold text-solar">
                     ${(donation.amount * 0.083).toFixed(2)}
                   </div>
                 </div>
               )}
 
               <div className="space-y-1 text-right">
-                <div className="text-sm text-gray-500">Date</div>
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm text-muted-foreground">Date</div>
+                <div className="text-sm font-medium text-foreground">
                   {new Date(donation.date).toLocaleDateString()}
                 </div>
               </div>
@@ -109,12 +111,12 @@ function DonationItem({ donation }: DonationItemProps) {
 
             {/* Round Information */}
             {donation.roundContribution && (
-              <div className="flex items-center gap-2 rounded-md bg-purple-50 p-2">
-                <Zap className="h-4 w-4 text-purple-500" />
-                <span className="text-sm font-medium text-purple-700">
+              <div className="flex items-center gap-2 rounded-md bg-secondary/20 p-2">
+                <Zap className="h-4 w-4 text-secondary-foreground" />
+                <span className="text-sm font-medium text-secondary-foreground">
                   {donation.roundContribution.round.title}
                 </span>
-                <span className="text-xs text-purple-600">
+                <span className="text-xs text-secondary-foreground/80">
                   • Humanity Score: {donation.roundContribution.humanityScore}
                 </span>
               </div>
@@ -128,7 +130,7 @@ function DonationItem({ donation }: DonationItemProps) {
                 href={`${chainConfig.blockExplorerUrl}/tx/${donation.transactionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 transition-colors hover:text-gray-600"
+                className="text-muted-foreground transition-colors hover:text-accent-foreground"
                 title="View transaction details"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -171,16 +173,16 @@ export function DonationHistory() {
   if (donations.length === 0) {
     return (
       <div className="py-12 text-center">
-        <Heart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
+        <Heart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h3 className="mb-2 text-lg font-medium text-foreground">
           No contributions yet
         </h3>
-        <p className="mb-6 text-gray-500">
+        <p className="mb-6 text-muted-foreground">
           Start supporting campaigns you care about to see your impact here.
         </p>
         <Link
           href="/"
-          className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Explore Campaigns
         </Link>

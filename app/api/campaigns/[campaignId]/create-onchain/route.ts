@@ -39,9 +39,7 @@ export async function POST(
       flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDC per pledge
       cumulativeFlatFee:
         process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDC threshold
-      platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
-      ), // 0% platform fee
+      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'), // 0% platform fee
       vakiCommissionBps: parseInt(
         process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
       ), // 0% commission

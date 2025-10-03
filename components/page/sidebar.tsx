@@ -24,7 +24,7 @@ export const PageSidebar = () => {
       <div className={cn(isOpen ? 'h-screen' : 'h-[100px] md:h-screen')}>
         <aside
           className={cn(
-            'fixed left-0 top-0 border-r bg-white',
+            'fixed left-0 top-0 border-r bg-background',
             'overflow-hidden',
             transition,
             // Mobile: full overlay when open, hidden when closed

@@ -44,12 +44,12 @@ export function ContentArea({
         >
           <div className="space-y-2">
             {title && (
-              <div className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+              <div className="bg-gradient-to-br from-foreground to-quantum bg-clip-text pb-2 font-display text-3xl font-light leading-[0.95] tracking-tight text-transparent md:text-4xl lg:text-6xl">
                 {title}
               </div>
             )}
             {subtitle && (
-              <div className="text-base text-gray-600 sm:text-lg">
+              <div className="text-base text-muted-foreground sm:text-lg">
                 {subtitle}
               </div>
             )}

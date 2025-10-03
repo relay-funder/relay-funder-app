@@ -21,16 +21,18 @@ export function WalletChain({
               href={chain.blockExplorers.default.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-gray-900 underline hover:text-gray-700"
+              className="font-medium text-foreground underline hover:text-accent-foreground"
             >
               {chain.name}
             </a>
           ) : (
-            <span className="font-medium text-gray-900">{chain.name}</span>
+            <span className="font-medium text-foreground">{chain.name}</span>
           )}
-          <span className="ml-2 text-sm text-gray-600">(ID: {chain.id})</span>
+          <span className="ml-2 text-sm text-muted-foreground">
+            (ID: {chain.id})
+          </span>
           {chain.testnet && (
-            <span className="ml-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-500">
+            <span className="ml-2 rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
               Testnet
             </span>
           )}
@@ -47,13 +49,13 @@ export function WalletChain({
           ))}
       </div>
       {isCurrent && !isPreferred && (
-        <p className="rounded bg-red-50 p-2 text-xs text-red-600">
+        <p className="rounded bg-destructive/5 p-2 text-xs text-destructive">
           {chainConfig.name} is preferred. Some features might not work
           correctly on this network.
         </p>
       )}
       {isCurrent && isPreferred && (
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-muted-foreground">
           ✓ Connected to the preferred network
         </p>
       )}

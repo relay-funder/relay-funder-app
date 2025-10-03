@@ -22,19 +22,21 @@ export function HomeCategorySelect({
   // Show error state or loading fallback (fallback to no categories)
   if (error || isLoading) {
     return (
-      <div className="mb-8 flex flex-wrap justify-center gap-3">
-        <Button
-          key="all"
-          variant="outline"
-          className={cn(
-            'flex items-center gap-2 rounded-full px-4 py-2',
-            'bg-purple-100 text-purple-600',
-          )}
-          onClick={() => onSelect(null)}
-        >
-          <div className="text-2xl">🌟</div>
-          All Categories
-        </Button>
+      <div className="mb-8 p-4">
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button
+            key="all"
+            variant="outline"
+            className={cn(
+              'flex items-center gap-2 rounded-full px-4 py-2',
+              'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+            onClick={() => onSelect(null)}
+          >
+            <div className="text-2xl">🌟</div>
+            All Categories
+          </Button>
+        </div>
       </div>
     );
   }
@@ -42,35 +44,39 @@ export function HomeCategorySelect({
   const categories = categoriesData?.categories || [];
 
   return (
-    <div className="mb-8 flex flex-wrap justify-center gap-3">
-      <Button
-        key="all"
-        variant="outline"
-        className={cn(
-          'flex items-center gap-2 rounded-full px-4 py-2',
-          !selectedCategory ? 'bg-purple-100 text-purple-600' : 'bg-white',
-        )}
-        onClick={() => onSelect(null)}
-      >
-        <div className="text-2xl">🌟</div>
-        All Categories
-      </Button>
-      {categories.map((category) => (
+    <div className="mb-8 p-4">
+      <div className="flex flex-wrap justify-center gap-3">
         <Button
-          key={category.id}
+          key="all"
           variant="outline"
           className={cn(
             'flex items-center gap-2 rounded-full px-4 py-2',
-            selectedCategory === category.id
-              ? 'bg-purple-100 text-purple-600'
-              : 'bg-white',
+            !selectedCategory
+              ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              : 'bg-card text-foreground hover:bg-secondary/50',
           )}
-          onClick={() => onSelect(category.id)}
+          onClick={() => onSelect(null)}
         >
-          <div className="text-2xl">{category.icon}</div>
-          {category.name}
+          <div className="text-2xl">🌟</div>
+          All Categories
         </Button>
-      ))}
+        {categories.map((category) => (
+          <Button
+            key={category.id}
+            variant="outline"
+            className={cn(
+              'flex items-center gap-2 rounded-full px-4 py-2',
+              selectedCategory === category.id
+                ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                : 'bg-card text-foreground hover:bg-secondary/50',
+            )}
+            onClick={() => onSelect(category.id)}
+          >
+            <div className="text-2xl">{category.icon}</div>
+            {category.name}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

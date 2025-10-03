@@ -178,9 +178,7 @@ export async function deployCampaignContract(
       flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
       cumulativeFlatFee:
         process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
-      platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
-      ),
+      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'),
       vakiCommissionBps: parseInt(
         process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
       ),

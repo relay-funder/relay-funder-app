@@ -128,7 +128,7 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   );
 
   return (
-    <Card className="rounded-lg border bg-white shadow-sm">
+    <Card className="rounded-lg border bg-card shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
@@ -144,7 +144,7 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Personal Information Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="font-display text-lg font-semibold text-foreground">
                 Personal Information
               </h3>
 

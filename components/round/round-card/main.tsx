@@ -95,7 +95,7 @@ export function RoundCard({
           {/* Round Info */}
           <div className="min-w-0 flex-1 space-y-3">
             <div className="flex items-start justify-between gap-2">
-              <h2 className="line-clamp-2 text-lg font-semibold leading-tight">
+              <h2 className="line-clamp-2 font-display text-lg font-semibold leading-tight text-foreground">
                 {round.title ?? 'Untitled Round'}
               </h2>
               <Badge variant={status.variant} className="shrink-0 text-xs">

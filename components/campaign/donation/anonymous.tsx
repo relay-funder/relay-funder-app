@@ -16,12 +16,17 @@ export function CampaignDonationAnonymous({
 }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-900">
+      <label className="text-sm font-medium text-foreground">
         Privacy Settings
       </label>
       <div className="flex items-center gap-2">
-        <Switch checked={anonymous} onCheckedChange={onChange} id="anonymous" />
-        <span className="text-sm text-gray-700">
+        <Switch
+          checked={anonymous}
+          onCheckedChange={onChange}
+          id="anonymous"
+          className="dark:data-[state=checked]:bg-quantum dark:data-[state=unchecked]:bg-muted"
+        />
+        <span className="text-sm text-muted-foreground">
           Make my contribution anonymous
         </span>
         <TooltipProvider>

@@ -61,7 +61,7 @@ export function CampaignDonationWalletAmount({
             <Mail className="h-4 w-4" />
             <Label
               htmlFor="email"
-              className="text-sm font-medium text-gray-900"
+              className="text-sm font-medium text-foreground"
             >
               Email Address *
             </Label>
@@ -98,7 +98,7 @@ export function CampaignDonationWalletAmount({
 
       {/* Custom amount input */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-900">
+        <label className="text-sm font-medium text-foreground">
           Or enter a custom amount:
         </label>
         <div className="max-w-sm">
@@ -110,7 +110,7 @@ export function CampaignDonationWalletAmount({
               placeholder="Enter amount"
               className="h-10 pr-20 text-sm"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
               USDC
             </div>
           </div>

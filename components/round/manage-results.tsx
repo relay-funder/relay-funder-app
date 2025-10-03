@@ -146,10 +146,10 @@ export function RoundManageResults({
   return (
     <div className="space-y-4">
       {needsAction && (
-        <Card className="border-amber-300 bg-amber-50">
+        <Card className="border-solar bg-solar/10">
           <CardContent className="flex items-center justify-between gap-4 p-4">
             <div>
-              <div className="font-medium">
+              <div className="font-medium text-foreground">
                 Round has ended and requires action
               </div>
               <div className="text-sm text-muted-foreground">
@@ -161,9 +161,9 @@ export function RoundManageResults({
         </Card>
       )}
 
-      <Card>
+      <Card className="bg-card">
         <CardHeader>
-          <CardTitle>Manage Results</CardTitle>
+          <CardTitle className="text-foreground">Manage Results</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -223,7 +223,7 @@ export function RoundManageResults({
             </div>
           ) : approvedResult ? (
             <div className="space-y-3">
-              <div className="text-sm">
+              <div className="text-sm text-foreground">
                 <span className="font-medium">Approved Results Ready.</span>{' '}
                 Review the validation and proceed to payout.
               </div>
@@ -268,9 +268,11 @@ export function RoundManageResults({
                 </Card>
               )}
 
-              <Card>
+              <Card className="bg-card">
                 <CardHeader>
-                  <CardTitle>Distribution Preview</CardTitle>
+                  <CardTitle className="text-foreground">
+                    Distribution Preview
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <DistributionPreviewTable
@@ -279,9 +281,11 @@ export function RoundManageResults({
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-card">
                 <CardHeader>
-                  <CardTitle>Execute Payout</CardTitle>
+                  <CardTitle className="text-foreground">
+                    Execute Payout
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-sm text-muted-foreground">
