@@ -409,26 +409,29 @@ async function main() {
     console.log('   Launch offset set to 30 seconds for testing');
   }
 
-  // Clear existing data (handle empty database gracefully)
+  // Clear existing data
   try {
     await db.user.deleteMany();
     console.log('Cleared existing user data');
   } catch (error) {
-    console.log('No existing user data to clear (table may be empty)');
+    console.error('Failed to clear user data:', error);
+    process.exit(1);
   }
 
   try {
     await db.campaign.deleteMany();
     console.log('Cleared existing campaign data');
   } catch (error) {
-    console.log('No existing campaign data to clear (table may be empty)');
+    console.error('Failed to clear campaign data:', error);
+    process.exit(1);
   }
 
   try {
     await db.round.deleteMany();
     console.log('Cleared existing round data');
   } catch (error) {
-    console.log('No existing round data to clear (table may be empty)');
+    console.error('Failed to clear round data:', error);
+    process.exit(1);
   }
 
   console.log('Creating predefined test users...');
