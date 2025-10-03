@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Form } from '@/components/ui';
-import { countries, categories } from '@/lib/constant';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateProcessStates } from '@/types/campaign';
@@ -144,7 +143,7 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
                   {process.env.NODE_ENV === 'development' && (
                     <div className="mt-6">
                       <Button
-                        onClick={(e) => onDeveloperSubmit(e)}
+                        onClick={onDeveloperSubmit}
                         variant="outline"
                         size="sm"
                         className="text-xs"
