@@ -1,6 +1,9 @@
 import { describe, test, expect, vi } from 'vitest';
-import { getRoundQFDistribution } from './get-qf-distribution';
 import { ApiNotFoundError } from '@/lib/api/error';
+import { Decimal } from '@/server/db';
+import { getRoundQFDistribution } from './get-qf-distribution';
+import { getRoundForCalculationQuery } from './queries';
+import { parseRoundForQF, calculateQFDistribution } from './utils';
 import type { QFRoundDB } from './types';
 
 vi.mock('@/lib/debug', () => ({
@@ -16,9 +19,6 @@ vi.mock('./utils', () => ({
   calculateQFDistribution: vi.fn(),
 }));
 
-import { getRoundForCalculationQuery } from './queries';
-import { parseRoundForQF, calculateQFDistribution } from './utils';
-
 describe('getRoundQFDistribution', () => {
   test('should throw error when round does not exist', async () => {
     vi.mocked(getRoundForCalculationQuery).mockResolvedValue(null);
@@ -33,11 +33,7 @@ describe('getRoundQFDistribution', () => {
     const mockRound: QFRoundDB = {
       id: 1,
       title: 'Empty Round',
-      matchingPool: {
-        mul: vi
-          .fn()
-          .mockReturnValue({ toFixed: vi.fn().mockReturnValue('1000000000') }),
-      } as any,
+      matchingPool: new Decimal('1000000000'),
       startDate: new Date(),
       endDate: new Date(),
       blockchain: 'ethereum',
@@ -65,9 +61,7 @@ describe('getRoundQFDistribution', () => {
     const mockRound: QFRoundDB = {
       id: 1,
       title: 'No Matching Pool',
-      matchingPool: {
-        mul: vi.fn().mockReturnValue({ toFixed: vi.fn().mockReturnValue('0') }),
-      } as any,
+      matchingPool: new Decimal('0'),
       startDate: new Date(),
       endDate: new Date(),
       blockchain: 'ethereum',
@@ -114,11 +108,7 @@ describe('getRoundQFDistribution', () => {
     const mockRound: QFRoundDB = {
       id: 1,
       title: 'Test Round',
-      matchingPool: {
-        mul: vi
-          .fn()
-          .mockReturnValue({ toFixed: vi.fn().mockReturnValue('1000000000') }),
-      } as any,
+      matchingPool: new Decimal('1000000000'),
       startDate: new Date(),
       endDate: new Date(),
       blockchain: 'ethereum',
