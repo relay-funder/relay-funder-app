@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
 import { Decimal } from '@/server/db';
-import { parseRoundForQF } from './parseRoundForQF';
+import { parseRoundForQF } from './parse-round-qf';
 import { QFRoundDB } from '../types';
 
 vi.mock('@/lib/debug', () => ({

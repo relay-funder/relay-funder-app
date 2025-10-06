@@ -1,2 +1,2 @@
-export * from './calculateQFDistribution';
-export * from './parseRoundForQF';
+export * from './calculate-qf-distribution';
+export * from './parse-round-qf';

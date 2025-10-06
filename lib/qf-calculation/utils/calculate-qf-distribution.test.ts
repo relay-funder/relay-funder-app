@@ -1,6 +1,6 @@
 import { formatUnits, parseUnits } from 'viem';
 import { describe, test, expect, vi } from 'vitest';
-import { calculateQFDistribution } from './calculateQFDistribution';
+import { calculateQFDistribution } from './calculate-qf-distribution';
 import type { QFCalculationResult, QFCampaign } from '../types';
 
 vi.mock(import('@/lib/debug'), () => ({

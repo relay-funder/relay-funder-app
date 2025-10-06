@@ -1,1 +1,1 @@
-export * from './getQFDistribution';
+export * from './get-qf-distribution';

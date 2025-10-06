@@ -1,1 +1,1 @@
-export * from './getRoundForQFQuery';
+export * from './get-round-qf-query';

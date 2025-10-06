@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { getRoundQFDistribution } from './getQFDistribution';
+import { getRoundQFDistribution } from './get-qf-distribution';
 import { ApiNotFoundError } from '@/lib/api/error';
 import type { QFRoundDB } from './types';
 
