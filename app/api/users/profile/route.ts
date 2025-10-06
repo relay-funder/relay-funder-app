@@ -2,6 +2,9 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import { ApiIntegrityError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
+import { notify } from '@/lib/api/event-feed';
+import { ADMIN_ADDRESS } from '@/lib/constant';
+import { isProfileComplete } from '@/lib/api/user';
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +23,13 @@ export async function POST(req: Request) {
       }
     }
 
+    // Get current user to check if profile was incomplete
+    const currentUser = await db.user.findUnique({
+      where: { address: session.user.address },
+    });
+
+    const wasIncomplete = !isProfileComplete(currentUser);
+
     // Find or create the user
     const user = await db.user.update({
       where: { address: session.user.address },
@@ -32,6 +42,24 @@ export async function POST(req: Request) {
         bio,
       },
     });
+
+    // Notify admin if profile was just completed
+    const isComplete = isProfileComplete(user);
+    if (wasIncomplete && isComplete) {
+      const adminUser = await db.user.findUnique({
+        where: { address: ADMIN_ADDRESS?.toLowerCase() },
+      });
+      if (adminUser) {
+        await notify({
+          receiverId: adminUser.id,
+          creatorId: user.id,
+          data: {
+            type: 'ProfileCompleted',
+            userName: `${user.firstName} ${user.lastName}`,
+          },
+        });
+      }
+    }
 
     return response({
       success: true,

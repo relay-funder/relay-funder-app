@@ -1,7 +1,10 @@
 import { Card, CardContent } from '@/components/ui';
 import { useDonationStats } from '@/lib/hooks/useDonations';
-import { Heart, Coins, Target, TrendingUp } from 'lucide-react';
+import { useUserScore } from '@/lib/hooks/useUserScore';
+import { Heart, Coins, Target, TrendingUp, Trophy } from 'lucide-react';
 import { ResponsiveGrid } from '@/components/layout';
+import { ScoreExplanationModal } from '@/components/score-explanation-modal';
+import { useState } from 'react';
 
 /**
  * DonorDashboardOverview Component
@@ -11,6 +14,8 @@ import { ResponsiveGrid } from '@/components/layout';
  */
 export function DonorDashboardOverview() {
   const { data: stats, isPending } = useDonationStats();
+  const { data: score, isLoading: isScoreLoading } = useUserScore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="mb-8">
@@ -97,7 +102,29 @@ export function DonorDashboardOverview() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="cursor-pointer" onClick={() => setIsModalOpen(true)}>
+          <CardContent className="flex items-center p-2 md:p-6">
+            <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
+              <Trophy className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="whitespace-nowrap text-xs font-medium text-muted-foreground md:text-sm">
+                Total Score
+              </p>
+              {isScoreLoading ? (
+                <div className="mt-1 h-8 animate-pulse rounded bg-muted" />
+              ) : (
+                <h3 className="whitespace-nowrap text-sm font-bold md:text-xl">
+                  {score?.totalScore ?? 0}
+                </h3>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </ResponsiveGrid>
+
+      <ScoreExplanationModal open={isModalOpen} onOpenChange={setIsModalOpen} />
     </div>
   );
 }

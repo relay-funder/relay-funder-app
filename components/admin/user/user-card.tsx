@@ -137,6 +137,9 @@ export function UserCard({
         <Badge variant="secondary" className="bg-slate-100 text-slate-700">
           Assets: {totalAssets}
         </Badge>
+        <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+          Score: {user.score?.totalScore ?? 0}
+        </Badge>
       </div>
 
       {footer ? <div className="pt-1">{footer}</div> : null}

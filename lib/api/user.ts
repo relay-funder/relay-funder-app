@@ -1,5 +1,16 @@
-import { db, type Payment, type Prisma } from '@/server/db';
+import { db, type Payment, Prisma } from '@/server/db';
 import { DisplayUserWithStates } from './types/user';
+
+export function isProfileComplete(
+  user: {
+    firstName?: string | null;
+    lastName?: string | null;
+    username?: string | null;
+    email?: string | null;
+  } | null,
+): boolean {
+  return !!(user?.firstName && user?.lastName && user?.username && user?.email);
+}
 
 export function getUserNameFromInstance(
   instance?: { username?: string | null; firstName?: string | null } | null,
@@ -123,8 +134,15 @@ export async function listUsers({
     db.user.count({ where }),
   ]);
 
+  const users = await Promise.all(
+    dbUsers.map(async (user) => ({
+      ...user,
+      score: await calculateUserScore({ userId: user.id }),
+    })),
+  );
+
   return {
-    users: dbUsers,
+    users,
     pagination: {
       currentPage: page,
       pageSize,
@@ -316,4 +334,83 @@ export async function listAdminEventFeed({
       hasMore: skip + pageSize < totalCount,
     },
   };
+}
+
+export async function calculateUserScore({
+  userId,
+  creatorWeights = {
+    CampaignComment: 1,
+    CampaignPayment: 5,
+    CampaignUpdate: 3,
+    ProfileCompleted: 2,
+  },
+  receiverWeights = {
+    CampaignApprove: 10,
+    CampaignDisable: -5,
+    CampaignComment: 1,
+    CampaignPayment: 1,
+    CampaignUpdate: 0,
+    CampaignShare: 2,
+  },
+}: {
+  userId: number;
+  creatorWeights?: Record<string, number>;
+  receiverWeights?: Record<string, number>;
+}) {
+  try {
+    const creatorTypes = Object.keys(creatorWeights);
+    const receiverTypes = Object.keys(receiverWeights);
+    const allTypes = Array.from(new Set([...creatorTypes, ...receiverTypes]));
+
+    let creatorCaseParts: Prisma.Sql = Prisma.sql``;
+    for (const type of allTypes) {
+      if (creatorWeights[type] !== undefined) {
+        creatorCaseParts = Prisma.sql`${creatorCaseParts}
+          WHEN "createdById" = ${userId} AND "type" = ${type} THEN ${creatorWeights[type]}`;
+      }
+    }
+
+    let receiverCaseParts: Prisma.Sql = Prisma.sql``;
+    for (const type of allTypes) {
+      if (receiverWeights[type] !== undefined) {
+        receiverCaseParts = Prisma.sql`${receiverCaseParts}
+          WHEN "receiverId" = ${userId} AND "type" = ${type} THEN ${receiverWeights[type]}`;
+      }
+    }
+
+    const query = Prisma.sql`
+      SELECT
+        SUM(CASE
+          ${creatorCaseParts}
+          ELSE 0
+        END) AS "creatorScore",
+        SUM(CASE
+          ${receiverCaseParts}
+          ELSE 0
+        END) AS "receiverScore"
+      FROM
+        "EventFeed"
+      WHERE
+        "createdById" = ${userId} OR "receiverId" = ${userId}
+    `;
+    const result =
+      await db.$queryRaw<{ creatorScore: bigint; receiverScore: bigint }[]>(
+        query,
+      );
+    if (result.length === 0) {
+      return { creatorScore: 0, receiverScore: 0, totalScore: 0 };
+    }
+
+    const { creatorScore, receiverScore } = result[0];
+    const creatorScoreNum = Number(creatorScore);
+    const receiverScoreNum = Number(receiverScore);
+    return {
+      creatorScore: creatorScoreNum,
+      receiverScore: receiverScoreNum,
+      totalScore: creatorScoreNum + receiverScoreNum,
+    };
+  } catch (error) {
+    console.error('Error calculating user score:', error);
+    throw new Error('Failed to calculate user score');
+  }
 }
