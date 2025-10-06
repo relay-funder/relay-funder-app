@@ -316,8 +316,8 @@ export function CampaignCardUserActions({
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to remove this campaign? This action cannot
-              be undone. The campaign &ldquo;{campaign.title}&rdquo; will be permanently
-              deleted.
+              be undone. The campaign &ldquo;{campaign.title}&rdquo; will be
+              permanently deleted.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -9,6 +9,7 @@ import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';
 import { CampaignDonationSummary } from './campaign-summary';
+import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
 import { NotStartedYet } from '@/components/campaign//not-started-yet';
 
 export function CampaignDonationPage({ slug }: { slug: string }) {
@@ -48,8 +49,12 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
               <div className="lg:col-span-2">
                 <CampaignDonationForm campaign={campaign} />
               </div>
-              <div className="lg:col-span-1">
+              <div className="space-y-4 lg:col-span-1">
                 <CampaignDonationSummary campaign={campaign} />
+                <CampaignMatchingFundsHighlight
+                  campaign={campaign}
+                  variant="compact"
+                />
               </div>
             </div>
           </div>
