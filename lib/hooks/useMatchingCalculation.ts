@@ -18,10 +18,16 @@ async function fetchRoundMatchingCalculation(id: number) {
   return data as QFCalculationResult;
 }
 
-export function useMatchingCalculation(roundId: number) {
+export function useMatchingCalculation({
+  roundId,
+  enabled = true,
+}: {
+  roundId: number;
+  enabled?: boolean;
+}) {
   return useQuery({
     queryKey: [MATCHING_CALCULATION_QUERY_KEY, roundId],
     queryFn: () => fetchRoundMatchingCalculation(roundId),
-    enabled: true,
+    enabled: roundId !== undefined && enabled,
   });
 }
