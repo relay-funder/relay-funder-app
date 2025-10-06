@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { useUserScore } from '@/lib/hooks/useUserScore';
-import { Trophy, User, Users } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { ScoreExplanationModal } from '@/components/score-explanation-modal';
 import { useState } from 'react';
 
