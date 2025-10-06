@@ -2,6 +2,7 @@
 
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { useCampaignMatching } from '@/lib/hooks/useCampaignMatching';
+import clsx from 'clsx';
 import { useMemo } from 'react';
 
 export function CampaignRoundMatching({
@@ -25,15 +26,18 @@ export function CampaignRoundMatching({
   const isUpcomingRound = status === 'Upcoming';
   const hasMatchingPool = round.matchingPool > 0;
 
-  const { data: estimatedMatch } = useCampaignMatching({
+  const { data: estimatedMatch, isPending } = useCampaignMatching({
     roundId: round.id,
     campaignId,
     enabled: hasMatchingPool && !isUpcomingRound,
   });
 
   const formattedEstimatedMatch = useMemo(() => {
+    if (isPending) {
+      return '$ ...';
+    }
     return estimatedMatch ? `$${parseFloat(estimatedMatch).toFixed(2)}` : 'TBD';
-  }, [estimatedMatch]);
+  }, [estimatedMatch, isPending]);
 
   return (
     <div>
@@ -43,7 +47,12 @@ export function CampaignRoundMatching({
         </span>
       </div>
       {!isUpcomingRound && (
-        <div className="mt-1 flex items-center gap-2">
+        <div
+          className={clsx(
+            'mt-1 flex items-center gap-2',
+            isPending && 'animate-pulse',
+          )}
+        >
           <span className="text-sm text-green-700">Estimated match</span>
           <span className="text-sm font-semibold text-green-800">
             {formattedEstimatedMatch}
