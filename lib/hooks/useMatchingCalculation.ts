@@ -68,7 +68,7 @@ export function useMatchingCalculation({
   return useQuery({
     queryKey: [MATCHING_CALCULATION_QUERY_KEY, roundId],
     queryFn: () => fetchRoundMatchingCalculation(roundId),
-    enabled: roundId !== undefined && enabled,
+    enabled,
     retry: (failureCount, error) => {
       // Don't retry on client errors (4xx) or custom QF errors
       if (
