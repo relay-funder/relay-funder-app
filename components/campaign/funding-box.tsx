@@ -4,7 +4,7 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock, Heart } from 'lucide-react';
+import { Users, Clock } from 'lucide-react';
 
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
@@ -75,7 +75,6 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
               className="h-10 w-full dark:bg-quantum dark:text-white dark:hover:bg-quantum/90"
               size="default"
             >
-              <Heart className="h-5 w-5 text-white dark:text-white" />
               Support this campaign
             </Button>
           </Link>
