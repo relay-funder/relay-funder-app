@@ -33,11 +33,6 @@ export const roundForQFSelect = {
     },
     where: {
       status: 'APPROVED',
-      Campaign: {
-        status: {
-          in: ['ACTIVE', 'COMPLETED', 'FAILED'],
-        },
-      },
     },
   },
 } satisfies Prisma.RoundSelect;
