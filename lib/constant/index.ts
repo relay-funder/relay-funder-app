@@ -7,7 +7,7 @@ export { INFINITE_SCROLL_CONFIG } from './infinite-scroll';
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
-export const USDC_DECIMALS = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS) || 6;
+export const USDC_DECIMALS = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS) ?? 6;
 
 // Allo Integration Contract
 export const ALLO_ADDRESS = '0x1133eA7Af70876e64665ecD07C0A0476d09465a1';
