@@ -1,8 +1,8 @@
-import { response, handleError } from '@/lib/api/response';
-import { RoundsWithIdParams } from '@/lib/api/types';
-import { getRoundQFDistribution } from '@/lib/qf-calculation';
-import { debugApi as debug } from '@/lib/debug';
 import { ApiParameterError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { getRoundQFDistribution } from '@/lib/qf-calculation';
+import { RoundsWithIdParams } from '@/lib/api/types';
+import { debugApi as debug } from '@/lib/debug';
 
 export async function GET(req: Request, { params }: RoundsWithIdParams) {
   const rawId = (await params).id;

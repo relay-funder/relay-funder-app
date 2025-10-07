@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { QFCalculationResult } from '@/lib/qf-calculation/types';
-import { QFCalculationError } from '@/lib/qf-calculation';
+import { QFCalculationError } from '@/lib/qf-calculation/error';
 
 export const MATCHING_CALCULATION_QUERY_KEY = 'matching_calculation';
 
