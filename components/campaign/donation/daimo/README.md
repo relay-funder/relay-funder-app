@@ -164,11 +164,8 @@ This approach follows the Daimo Pay requirement that `DaimoPayProvider` must be 
 Add to `.env.local`:
 
 ```bash
-# Public app ID for client-side Daimo Pay integration
+# Public app ID for client-side Daimo Pay integration (same value used for API authentication)
 NEXT_PUBLIC_DAIMO_PAY_APP_ID=your_daimo_pay_app_id_here
-
-# Server-side API key for Daimo Pay API operations (keep secret)
-DAIMO_PAY_API_KEY=your_daimo_pay_api_key_here
 
 # Webhook secret token provided by Daimo Pay when configuring webhooks (keep secret)
 DAIMO_PAY_WEBHOOK_SECRET=your_webhook_secret_token_here
@@ -176,15 +173,13 @@ DAIMO_PAY_WEBHOOK_SECRET=your_webhook_secret_token_here
 
 ### Daimo Pay Dashboard Setup
 
-1. **Obtain App ID**: Get your public app ID from the Daimo Pay dashboard
-2. **Obtain API Key**: Get your server-side API key from the Daimo Pay dashboard (keep this secret)
-3. **Configure Webhook**: Set webhook URL in Daimo Pay dashboard and obtain the webhook secret token (keep this secret)
-4. **Test Webhooks**: Use test endpoints to verify webhook functionality
+1. **Obtain App ID**: Get your app ID from the Daimo Pay dashboard (this single value serves both client and server authentication needs)
+2. **Configure Webhook**: Set webhook URL in Daimo Pay dashboard and obtain the webhook secret token (keep this secret)
+3. **Test Webhooks**: Use test endpoints to verify webhook functionality
 
 ### Security Considerations
 
-- **Public App ID**: `NEXT_PUBLIC_DAIMO_PAY_APP_ID` is exposed to client-side code and is safe to include in public repositories
-- **Server-Side API Key**: `DAIMO_PAY_API_KEY` should never be exposed to client-side code and must remain secret
+- **Public App ID**: `NEXT_PUBLIC_DAIMO_PAY_APP_ID` is exposed to client-side code and is safe to include in public repositories (this single credential serves both client and server authentication needs)
 - **Webhook Secret**: `DAIMO_PAY_WEBHOOK_SECRET` is a unique token provided by Daimo Pay for webhook authentication and must remain secret
 
 ## Webhook Configuration
@@ -226,7 +221,7 @@ interface DaimoPayWebhookPayload {
 
 The webhook endpoint (`/api/webhooks/daimo/route.ts`) handles:
 
-1. **Authentication**: Verifies `Authorization: Basic <token>` header matches `DAIMO_PAY_API_KEY`
+1. **Authentication**: Verifies `Authorization: Basic <token>` header matches `DAIMO_PAY_WEBHOOK_SECRET`
 2. **Test Events**: Acknowledges without processing to prevent data corruption
 3. **Payment Matching**: Finds CCP payment records by Daimo Pay `paymentId`
 4. **Status Updates**: Maps Daimo Pay statuses to CCP payment statuses
@@ -351,7 +346,7 @@ Future versions may include:
    - Review webhook payload structure against documentation
 
 3. **Daimo Pay Button Not Loading**
-   - Verify `NEXT_PUBLIC_DAIMO_PAY_API_KEY` environment variable
+   - Verify `NEXT_PUBLIC_DAIMO_PAY_APP_ID` environment variable
    - Check browser console for SDK loading errors
    - Ensure campaign has valid treasury address
 

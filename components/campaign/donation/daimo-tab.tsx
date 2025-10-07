@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { DaimoPayButtonComponent } from './daimo-button';
 import { CampaignDonationWalletAmount } from './wallet/amount';
@@ -9,7 +9,6 @@ import { CampaignDonationAnonymous } from './anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DaimoPayProvider } from '@daimo/pay';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
-
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const [selectedToken, setSelectedToken] = useState('USDC');
   const [amount, setAmount] = useState('0');
@@ -18,21 +17,36 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const [email, setEmail] = useState('');
   const [processing, setProcessing] = useState(false);
 
+  const handleAmountChanged = useCallback((newAmount: string) => {
+    setAmount(newAmount);
+  }, []);
+
+  const handleTipAmountChanged = useCallback((newTipAmount: string) => {
+    setTipAmount(newTipAmount);
+  }, []);
+
+  const handleEmailChanged = useCallback((newEmail: string) => {
+    setEmail(newEmail);
+  }, []);
+
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
 
+
   return (
-    <DaimoPayProvider>
+    <DaimoPayProvider
+      theme="auto"
+    >
       <div className="relative flex flex-col gap-6">
         <VisibilityToggle isVisible={!processing}>
           <div className="space-y-6">
             <CampaignDonationWalletAmount
-              onAmountChanged={setAmount}
+              onAmountChanged={handleAmountChanged}
               onTokenChanged={setSelectedToken}
               amount={amount}
               selectedToken={selectedToken}
               email={email}
-              onEmailChanged={setEmail}
+              onEmailChanged={handleEmailChanged}
             />
 
             {/* Two-column grid for tip and privacy settings on desktop */}
@@ -41,7 +55,7 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
                 tipAmount={tipAmount}
                 amount={amount}
                 selectedToken={selectedToken}
-                onTipAmountChanged={setTipAmount}
+                onTipAmountChanged={handleTipAmountChanged}
               />
               <CampaignDonationAnonymous
                 anonymous={donationAnonymous}

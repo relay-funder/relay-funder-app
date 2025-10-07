@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
 import { Input, Label } from '@/components/ui';
 import { Info } from 'lucide-react';
+import { debugHook as debug } from '@/lib/debug';
 
 interface CampaignDonationWalletTipProps {
   tipAmount: string;
@@ -23,21 +24,14 @@ export function CampaignDonationWalletTip({
 
   useEffect(() => {
     const tip = (percentage / 100) * parseFloat(amount || '0');
+    debug && console.log('Tip calculation:', {
+      percentage,
+      amount,
+      tip: tip.toFixed(2),
+      total: (parseFloat(amount || '0') + tip).toFixed(2),
+    });
     onTipAmountChanged(tip.toFixed(2));
   }, [percentage, amount, onTipAmountChanged]);
-
-  const handleTipAmountChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const newTipAmount = event.target.value;
-      onTipAmountChanged(newTipAmount);
-      const newPercentage =
-        (parseFloat(newTipAmount || '0') / parseFloat(amount || '1')) * 100;
-      setPercentage(
-        Math.min(MAX_PERCENTAGE, Math.max(MIN_PERCENTAGE, newPercentage)),
-      );
-    },
-    [onTipAmountChanged, amount],
-  );
 
   const handlePercentageChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -73,9 +67,9 @@ export function CampaignDonationWalletTip({
             <Input
               type="number"
               value={tipAmount}
-              onChange={handleTipAmountChange}
-              placeholder="Enter tip amount"
-              className="h-10 pr-20 text-sm"
+              readOnly
+              placeholder="Tip calculated from percentage"
+              className="h-10 pr-20 text-sm bg-muted cursor-not-allowed"
               min="0"
               step="0.01"
             />

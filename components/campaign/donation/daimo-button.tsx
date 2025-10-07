@@ -1,6 +1,7 @@
 'use client';
 
-import { DaimoPayButton } from '@daimo/pay';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { DaimoPayButton, useDaimoPayUI } from '@daimo/pay';
 import { optimismUSDC } from '@daimo/pay-common';
 import { getAddress, encodeFunctionData } from 'viem';
 import { DbCampaign } from '@/types/campaign';
@@ -47,6 +48,58 @@ export function DaimoPayButtonComponent({
   const { toast } = useToast();
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
+  const { resetPayment } = useDaimoPayUI();
+
+  // Calculate amounts separately for smart contract (memoized to prevent recalculation on every render)
+  const baseAmount = useMemo(() => parseFloat(amount || '0'), [amount]);
+  const tipAmountNum = useMemo(() => parseFloat(tipAmount || '0'), [tipAmount]);
+  const totalAmount = useMemo(() => {
+    const total = (baseAmount + tipAmountNum).toFixed(2);
+    debug && console.log('Daimo Pay amounts:', {
+      amount,
+      tipAmount,
+      baseAmount,
+      tipAmountNum,
+      totalAmount: total,
+      expectedTipPercentage: baseAmount > 0 ? ((tipAmountNum / baseAmount) * 100).toFixed(2) + '%' : 'N/A'
+    });
+    return total;
+  }, [baseAmount, tipAmountNum, amount, tipAmount]);
+
+  // Generate pledge ID for Daimo Pay transaction (memoized to prevent re-creation on every render)
+  const pledgeId = useMemo(() => {
+    if (!address) return '0x'; // Return dummy value if address not available
+    return ethers.keccak256(
+      ethers.toUtf8Bytes(
+        `daimo-pledge-${address}-${campaign.id}-${amount}-${tipAmount}`,
+      ),
+    );
+  }, [address, campaign.id, amount, tipAmount]);
+
+  // Convert amounts to proper units (USDC has 6 decimals)
+  const pledgeAmountInUSDC = useMemo(
+    () => ethers.parseUnits(baseAmount.toString(), 6), // 6 decimals for USDC
+    [baseAmount]
+  );
+  const tipAmountInUSDC = useMemo(
+    () => ethers.parseUnits(tipAmountNum.toString(), 6),
+    [tipAmountNum]
+  );
+
+  // Encode the pledgeWithoutAReward contract call (memoized)
+  const pledgeCallData = useMemo(() => {
+    if (!address || pledgeId === '0x') return '0x'; // Return dummy value if address not available
+    return encodeFunctionData({
+      abi: KeepWhatsRaisedABI,
+      functionName: 'pledgeWithoutAReward',
+      args: [
+        pledgeId,
+        address as `0x${string}`, // backer address
+        pledgeAmountInUSDC, // pledge amount in USDC units
+        tipAmountInUSDC, // tip amount in USDC units
+      ],
+    });
+  }, [pledgeId, address, pledgeAmountInUSDC, tipAmountInUSDC]);
 
   const {
     onPaymentStarted: daimoOnPaymentStarted,
@@ -61,30 +114,109 @@ export function DaimoPayButtonComponent({
     userEmail: email,
   });
 
-  const totalAmount = (parseFloat(amount) + parseFloat(tipAmount)).toFixed(2);
+  // Validate and memoize address formats (memoized to prevent changing references on every render)
+  const { validatedAddress, validatedTreasuryAddress, addressValidationError } = useMemo(() => {
+    let validatedAddr: `0x${string}` | null = null;
+    let validatedTreasuryAddr: `0x${string}` | null = null;
+    let hasError = false;
 
-  // Generate pledge ID for Daimo Pay transaction
-  const pledgeId = ethers.keccak256(
-    ethers.toUtf8Bytes(
-      `daimo-pledge-${Date.now()}-${address}-${campaign.id}-${amount}`,
-    ),
-  );
+    if (address && campaign.treasuryAddress) {
+      try {
+        validatedAddr = getAddress(address);
+        validatedTreasuryAddr = getAddress(campaign.treasuryAddress);
+      } catch (error) {
+        console.error('Daimo Pay: Invalid address format:', error);
+        hasError = true;
+      }
+    }
 
-  // Convert amounts to proper units (USDC has 6 decimals)
-  const pledgeAmountInUSDC = ethers.parseUnits(amount, 6); // 6 decimals for USDC
-  const tipAmountInUSDC = ethers.parseUnits(tipAmount, 6);
+    return {
+      validatedAddress: validatedAddr,
+      validatedTreasuryAddress: validatedTreasuryAddr,
+      addressValidationError: hasError,
+    };
+  }, [address, campaign.treasuryAddress]);
 
-  // Encode the pledgeWithoutAReward contract call
-  const pledgeCallData = encodeFunctionData({
-    abi: KeepWhatsRaisedABI,
-    functionName: 'pledgeWithoutAReward',
-    args: [
-      pledgeId,
-      address as `0x${string}`, // backer address
-      pledgeAmountInUSDC, // pledge amount in USDC units
-      tipAmountInUSDC, // tip amount in USDC units
-    ],
-  });
+  // Track last reset parameters to prevent redundant resetPayment calls
+  const lastResetParamsRef = useRef<string>('');
+
+  // Update payment parameters when they change (after initial render)
+  useEffect(() => {
+    if (
+      resetPayment &&
+      validatedTreasuryAddress &&
+      parseFloat(totalAmount) >= 0.1 &&
+      pledgeCallData !== '0x' &&
+      pledgeId !== '0x'
+    ) {
+      // Create a unique key for these parameters to prevent redundant calls
+      const currentParamsKey = JSON.stringify({
+        totalAmount,
+        pledgeId,
+        treasuryAddress: validatedTreasuryAddress,
+        email,
+        anonymous,
+        tipAmount,
+        baseAmount: amount,
+      });
+
+      // Only call resetPayment if parameters have actually changed
+      if (lastResetParamsRef.current !== currentParamsKey) {
+        debug && console.log('Daimo Pay: Updating payment parameters via resetPayment', {
+          totalAmount,
+          pledgeId: pledgeId.substring(0, 10) + '...',
+          treasuryAddress: validatedTreasuryAddress,
+          email,
+          anonymous,
+          tipAmount,
+          baseAmount: amount,
+        });
+        
+        try {
+          resetPayment({
+            toChain: optimismUSDC.chainId,
+            toToken: getAddress(optimismUSDC.token),
+            toAddress: validatedTreasuryAddress,
+            toUnits: totalAmount,
+            toCallData: pledgeCallData,
+            metadata: {
+              campaignId: campaign.id.toString(),
+              pledgeId: pledgeId,
+              email,
+              anonymous: anonymous.toString(),
+              tipAmount,
+              baseAmount: amount,
+              token: 'USDC',
+              chain: 'Optimism',
+            },
+          });
+          
+          // Update the ref to track we've called resetPayment with these params
+          lastResetParamsRef.current = currentParamsKey;
+        } catch (error) {
+          console.error('Daimo Pay: Error updating payment parameters:', error);
+        }
+      }
+    }
+    // NOTE: resetPayment is intentionally excluded from dependencies to prevent infinite loops
+    // The Daimo Pay library's resetPayment function is not stable and triggers re-renders
+    // We use lastResetParamsRef to track parameter changes instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    totalAmount,
+    pledgeId,
+    pledgeCallData,
+    validatedTreasuryAddress,
+    campaign.id,
+    email,
+    anonymous,
+    tipAmount,
+    amount,
+  ]);
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handlePaymentStarted = async (event: any) => {
     debug && console.log('Daimo Pay: Payment started', event);
@@ -163,21 +295,12 @@ export function DaimoPayButtonComponent({
     }
   };
 
-  // If not authenticated, show login button
-  if (!authenticated) {
+  // Conditional returns - ALL hooks must be called before these
+  // Handle address validation errors
+  if (addressValidationError) {
     return (
-      <Button
-        className="w-full"
-        size="lg"
-        onClick={() => {
-          toast({
-            title: 'Authentication Required',
-            description: 'Please connect your wallet to continue.',
-            variant: 'destructive',
-          });
-        }}
-      >
-        Connect Wallet First
+      <Button disabled className="w-full" size="lg">
+        Invalid Address Format
       </Button>
     );
   }
@@ -218,9 +341,9 @@ export function DaimoPayButtonComponent({
   const configuredToken = getAddress(optimismUSDC.token);
   const configuredChain = optimismUSDC.chainId;
 
-  // Critical: Ensure we're accepting USDC payments only
+  // Ensure we're accepting USDC payments only
   if (configuredToken.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
-    console.error('CRITICAL: Daimo Pay not configured for USDC!', {
+    console.error('Daimo Pay not configured for USDC!', {
       configured: configuredToken,
       expected: USDC_ADDRESS,
       message:
@@ -233,7 +356,7 @@ export function DaimoPayButtonComponent({
   }
 
   if (configuredChain !== OPTIMISM_CHAIN_ID) {
-    console.error('CRITICAL: Daimo Pay not configured for Optimism!', {
+    console.error('Daimo Pay not configured for Optimism!', {
       configured: configuredChain,
       expected: OPTIMISM_CHAIN_ID,
       message: 'Daimo Pay must use Optimism chain for USDC payments',
@@ -250,29 +373,67 @@ export function DaimoPayButtonComponent({
       verified: configuredToken.toLowerCase() === USDC_ADDRESS.toLowerCase(),
     });
 
+  // Only render Daimo Pay button when amount meets minimum requirement
+  if (parseFloat(totalAmount) < 0.1) {
+    return (
+      <Button disabled className="w-full" size="lg">
+        Enter donation amount to continue
+      </Button>
+    );
+  }
+
+  // Only render the button when we have valid amounts
+  if (parseFloat(totalAmount) < 0.1 || pledgeCallData === '0x' || pledgeId === '0x') {
+    return (
+      <Button disabled className="w-full">
+        Enter donation amount to continue
+      </Button>
+    );
+  }
+
+  // Type guard: ensure we have a validated treasury address at this point
+  if (!validatedTreasuryAddress) {
+    return (
+      <Button disabled className="w-full">
+        Campaign treasury address not available
+      </Button>
+    );
+  }
+
+  debug && console.log('Daimo Pay: Rendering button with final values', {
+    totalAmount,
+    toUnits: totalAmount,
+    baseAmount: amount,
+    tipAmount,
+    calculatedTotal: (parseFloat(amount) + parseFloat(tipAmount)).toFixed(2),
+    treasuryAddress: validatedTreasuryAddress,
+    pledgeId: pledgeId.substring(0, 10) + '...',
+  });
+
   return (
-    <DaimoPayButton
-      appId={DAIMO_PAY_APP_ID}
-      intent="Donate"
-      refundAddress={address} // User's connected wallet for refunds
-      toChain={optimismUSDC.chainId}
-      toToken={getAddress(optimismUSDC.token)}
-      toAddress={campaign.treasuryAddress as `0x${string}`}
-      toUnits={totalAmount}
-      toCallData={pledgeCallData} // Call pledgeWithoutAReward after payment
-      metadata={{
-        campaignId: campaign.id.toString(),
-        pledgeId: pledgeId,
-        email,
-        anonymous: anonymous.toString(),
-        tipAmount,
-        baseAmount: amount,
-        token: 'USDC', // Explicitly mark as USDC payment
-        chain: 'Optimism',
-      }}
-      onPaymentStarted={handlePaymentStarted}
-      onPaymentCompleted={handlePaymentCompleted}
-      onPaymentBounced={handlePaymentBounced}
-    />
+    <div className="w-full">
+      <DaimoPayButton
+        appId={DAIMO_PAY_APP_ID}
+        intent="Donate"
+        toChain={optimismUSDC.chainId}
+        toToken={getAddress(optimismUSDC.token)}
+        toAddress={validatedTreasuryAddress}
+        toUnits={totalAmount}
+        toCallData={pledgeCallData}
+        metadata={{
+          campaignId: campaign.id.toString(),
+          pledgeId: pledgeId,
+          email,
+          anonymous: anonymous.toString(),
+          tipAmount,
+          baseAmount: amount,
+          token: 'USDC',
+          chain: 'Optimism',
+        }}
+        onPaymentStarted={handlePaymentStarted}
+        onPaymentCompleted={handlePaymentCompleted}
+        onPaymentBounced={handlePaymentBounced}
+      />
+    </div>
   );
 }

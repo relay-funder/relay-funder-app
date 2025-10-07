@@ -38,8 +38,7 @@ export const PINATA_API_JWT_ACCESS_TOKEN =
 export const NEXT_PUBLIC_PINATA_GATEWAY_URL =
   process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL ?? '';
 
-// Daimo Pay configuration - appId is public, API key and webhook secret are server-side only
+// Daimo Pay configuration - appId is public for client-side, webhook secret is server-side only
 export const DAIMO_PAY_APP_ID = process.env.NEXT_PUBLIC_DAIMO_PAY_APP_ID ?? '';
-export const DAIMO_PAY_API_KEY = process.env.DAIMO_PAY_API_KEY ?? '';
 export const DAIMO_PAY_WEBHOOK_SECRET =
   process.env.DAIMO_PAY_WEBHOOK_SECRET ?? '';
