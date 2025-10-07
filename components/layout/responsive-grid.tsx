@@ -46,7 +46,8 @@ export function ResponsiveGrid({
     // Compact items (tags, filters, etc.) - more columns allowed for small items
     compact: 'grid-cols-2 sm:grid-cols-5',
     // Overview cards (dashboard stats) - responsive layout for optimal readability
-    overview: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+    overview:
+      'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
   };
 
   return (

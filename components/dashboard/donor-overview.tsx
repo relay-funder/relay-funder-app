@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui';
 import { useDonationStats } from '@/lib/hooks/useDonations';
 import { useUserScore } from '@/lib/hooks/useUserScore';
-import { Heart, Coins, Target, TrendingUp, Trophy } from 'lucide-react';
+import { Heart, Coins, Target, TrendingUp, Flower2 } from 'lucide-react';
 import { ResponsiveGrid } from '@/components/layout';
 
 /**
@@ -19,17 +19,17 @@ export function DonorDashboardOverview() {
       <ResponsiveGrid variant="overview" gap="md">
         <Card>
           <CardContent className="flex items-center p-3 sm:p-4 md:p-6">
-            <div className="mr-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-bio/10 dark:bg-bio/20">
-              <Coins className="h-5 w-5 sm:h-6 sm:w-6 text-bio" />
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-bio/10 dark:bg-bio/20 sm:h-12 sm:w-12">
+              <Coins className="h-5 w-5 text-bio sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                 Total Contributed
               </p>
               {isPending ? (
-                <div className="mt-1 h-6 sm:h-8 animate-pulse rounded bg-muted" />
+                <div className="mt-1 h-6 animate-pulse rounded bg-muted sm:h-8" />
               ) : (
-                <h3 className="text-lg font-bold sm:text-xl md:text-2xl truncate">
+                <h3 className="truncate text-lg font-bold sm:text-xl md:text-2xl">
                   ${Math.floor(stats?.totalDonated ?? 0)} USDC
                 </h3>
               )}
@@ -39,15 +39,15 @@ export function DonorDashboardOverview() {
 
         <Card>
           <CardContent className="flex items-center p-3 sm:p-4 md:p-6">
-            <div className="mr-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-quantum/10 dark:bg-quantum/20">
-              <Target className="h-5 w-5 sm:h-6 sm:w-6 text-quantum" />
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-quantum/10 dark:bg-quantum/20 sm:h-12 sm:w-12">
+              <Target className="h-5 w-5 text-quantum sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                 Campaigns Backed
               </p>
               {isPending ? (
-                <div className="mt-1 h-6 sm:h-8 animate-pulse rounded bg-muted" />
+                <div className="mt-1 h-6 animate-pulse rounded bg-muted sm:h-8" />
               ) : (
                 <h3 className="text-lg font-bold sm:text-xl md:text-2xl">
                   {stats?.totalCampaigns ?? 0}
@@ -59,15 +59,15 @@ export function DonorDashboardOverview() {
 
         <Card>
           <CardContent className="flex items-center p-3 sm:p-4 md:p-6">
-            <div className="mr-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-accent/20 dark:bg-accent/30">
-              <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-accent-foreground" />
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-accent/20 dark:bg-accent/30 sm:h-12 sm:w-12">
+              <Heart className="h-5 w-5 text-accent-foreground sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                 Total Donations
               </p>
               {isPending ? (
-                <div className="mt-1 h-6 sm:h-8 animate-pulse rounded bg-muted" />
+                <div className="mt-1 h-6 animate-pulse rounded bg-muted sm:h-8" />
               ) : (
                 <h3 className="text-lg font-bold sm:text-xl md:text-2xl">
                   {stats?.totalDonations ?? 0}
@@ -79,20 +79,22 @@ export function DonorDashboardOverview() {
 
         <Card>
           <CardContent className="flex items-center p-3 sm:p-4 md:p-6">
-            <div className="mr-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-solar/10 dark:bg-solar/20">
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-solar" />
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-solar/10 dark:bg-solar/20 sm:h-12 sm:w-12">
+              <TrendingUp className="h-5 w-5 text-solar sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                 Avg. Contribution
               </p>
               {isPending ? (
-                <div className="mt-1 h-6 sm:h-8 animate-pulse rounded bg-muted" />
+                <div className="mt-1 h-6 animate-pulse rounded bg-muted sm:h-8" />
               ) : (
-                <h3 className="text-lg font-bold sm:text-xl md:text-2xl truncate">
-                  ${stats?.totalDonations && stats?.totalDonations > 0
+                <h3 className="truncate text-lg font-bold sm:text-xl md:text-2xl">
+                  $
+                  {stats?.totalDonations && stats?.totalDonations > 0
                     ? Math.floor(stats.totalDonated / stats.totalDonations)
-                    : 0} USDC
+                    : 0}{' '}
+                  USDC
                 </h3>
               )}
             </div>
@@ -101,15 +103,15 @@ export function DonorDashboardOverview() {
 
         <Card>
           <CardContent className="flex items-center p-3 sm:p-4 md:p-6">
-            <div className="mr-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
-              <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 sm:h-12 sm:w-12">
+              <Flower2 className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-                Total Score
+                Karma
               </p>
               {isScoreLoading ? (
-                <div className="mt-1 h-6 sm:h-8 animate-pulse rounded bg-muted" />
+                <div className="mt-1 h-6 animate-pulse rounded bg-muted sm:h-8" />
               ) : (
                 <h3 className="text-lg font-bold sm:text-xl md:text-2xl">
                   {score?.totalScore ?? 0}

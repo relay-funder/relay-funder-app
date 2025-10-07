@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui';
 import { useAuth } from '@/contexts';
-import { Heart, History, Bell, Info, Trophy } from 'lucide-react';
+import { Heart, History, Bell, Info, Flower2 } from 'lucide-react';
 import { DonorDashboardOverview } from '@/components/dashboard/donor-overview';
 import { FavoriteCard } from '@/components/dashboard/favorite-card';
 import { CampaignLoading } from '@/components/campaign/loading';
@@ -73,9 +73,9 @@ export default function DashboardPage() {
                 value="score"
                 className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
               >
-                <Trophy className="mr-1 h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Score</span>
-                <span className="sm:hidden">Score</span>
+                <Flower2 className="mr-1 h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Karma</span>
+                <span className="sm:hidden">Karma</span>
               </TabsTrigger>
               <TabsTrigger
                 value="history"
@@ -145,9 +145,9 @@ export default function DashboardPage() {
               value="score"
               className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
             >
-              <Trophy className="mr-1 h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Score</span>
-              <span className="sm:hidden">Score</span>
+              <Flower2 className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Karma</span>
+              <span className="sm:hidden">Karma</span>
             </TabsTrigger>
             <TabsTrigger
               value="history"
