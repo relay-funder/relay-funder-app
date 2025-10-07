@@ -15,7 +15,6 @@ import { TrendingUp, HelpCircle } from 'lucide-react';
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 import { useCampaignMatching } from '@/lib/hooks/useCampaignMatching';
 import { HowMatchingWorksDialog } from './how-matching-works-dialog';
-import { useMemo } from 'react';
 
 export function CampaignMatchingFundsHighlight({
   campaign,
@@ -31,20 +30,8 @@ export function CampaignMatchingFundsHighlight({
   const validRounds = [...activeRounds, ...futureRounds];
   const latestRound = validRounds[0];
 
-  const status = useMemo(() => {
-    if (!latestRound) return 'Upcoming';
-    const now = new Date();
-    if (
-      now >= new Date(latestRound.startTime) &&
-      now <= new Date(latestRound.endTime)
-    ) {
-      return 'Active';
-    }
-    if (now > new Date(latestRound.endTime)) {
-      return 'Ended';
-    }
-    return 'Upcoming';
-  }, [latestRound]);
+  // Status is Active if there are active rounds, otherwise Upcoming (future rounds)
+  const status = activeRounds.length > 0 ? 'Active' : 'Upcoming';
 
   const isUpcomingRound = status === 'Upcoming';
   const hasMatchingPool = latestRound?.matchingPool > 0;
