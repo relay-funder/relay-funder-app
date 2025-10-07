@@ -1,7 +1,7 @@
 import { debugApi as debug } from '@/lib/debug';
-import { QFCalculationResult, QFDistribution, QFRound, UserID } from '../types';
-import { sqrtBigInt } from './bigint';
+import { QFCalculationResult, QFDistribution, QFRound } from '../types';
 import { formatUnits } from 'viem';
+import { calculateQfScore } from './calculate-qf-score';
 
 /**
  * Quadratic Funding distribution calculator.
@@ -20,29 +20,6 @@ import { formatUnits } from 'viem';
  * - Decide a fair way to distribute the dust
  * - Token decimals can be taken from the token address
  */
-
-/**
- * Calculates the quadratic funding score of a campaign based on user contributions.
- *
- * score = (sum_{users} sqrt(total_contribution_by_user))^2
- *
- * - Input `contributionsSumByUser` should contain each unique donor once with their total amount contributed.
- * - All arithmetic is performed in bigint of the smallest token unit.
- *
- * @param contributionsSumByUser - Map of user id -> total contributed amount (in smallest unit, bigint).
- * @returns The campaign's QF score as a bigint in squared smallest units.
- */
-function calculateCampaignScore(
-  contributionsSumByUser: Record<UserID, bigint>,
-): bigint {
-  let sumSqrt = 0n;
-
-  for (const amount of Object.values(contributionsSumByUser)) {
-    sumSqrt += sqrtBigInt(amount);
-  }
-
-  return sumSqrt * sumSqrt;
-}
 
 /**
  * Rounds an on‑chain amount down to a desired precision (in decimals), preserving token decimals semantics.
@@ -183,10 +160,12 @@ export function calculateQFDistribution({
   // score = (sum of sqrt(user contributions))^2
   const campaignScores = campaigns.map(
     ({ id, title, aggregatedContributionsByUser }) => {
-      const score = calculateCampaignScore(aggregatedContributionsByUser);
+      const amounts = Object.values(aggregatedContributionsByUser);
+      const score = calculateQfScore(amounts);
+
       debug &&
         console.log(
-          `[QF Calc] Campaign ${id} score: ${score} (${Object.keys(aggregatedContributionsByUser).length} contributors)`,
+          `[QF Calc] Campaign ${id} score: ${score} (${amounts.length} contributors)`,
         );
 
       totalScore += score;
