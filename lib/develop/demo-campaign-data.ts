@@ -283,7 +283,9 @@ export function getDemoCampaignDataByIndex(index: number): DemoCampaignData {
  * Get demo campaign data optimized for preview generation (excludes banner image)
  * Always returns valid data with guaranteed enum/category compliance
  */
-export function getDemoCampaignDataForPreview(): DemoCampaignData & { bannerImage: null } {
+export function getDemoCampaignDataForPreview(): DemoCampaignData & {
+  bannerImage: null;
+} {
   const data = getRandomDemoCampaignData();
   return {
     ...data,
