@@ -4,7 +4,7 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock, MapPin, Target, Rocket, Heart } from 'lucide-react';
+import { Users, Clock, MapPin, Target, Rocket } from 'lucide-react';
 
 import { ShareDialog } from '@/components/share-dialog';
 import { FavoriteButton } from '@/components/favorite-button';

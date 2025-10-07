@@ -4,7 +4,7 @@ import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
 import { Card, CardContent, Button } from '@/components/ui';
-import { Users, Clock, Heart } from 'lucide-react';
+import { Users, Clock } from 'lucide-react';
 
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
