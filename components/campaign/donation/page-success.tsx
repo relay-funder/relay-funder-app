@@ -8,6 +8,7 @@ import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationSummary } from './campaign-summary';
+import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
 import { PaymentStatus } from '@/components/payment/status';
 import { PaymentStatusLoading } from '@/components/payment/status-loading';
 import { Suspense } from 'react';
@@ -48,8 +49,12 @@ export function CampaignDonationSuccessPage({ slug }: { slug: string }) {
                   <PaymentStatus />
                 </Suspense>
               </div>
-              <div className="lg:col-span-1">
+              <div className="space-y-4 lg:col-span-1">
                 <CampaignDonationSummary campaign={campaign} />
+                <CampaignMatchingFundsHighlight
+                  campaign={campaign}
+                  variant="compact"
+                />
               </div>
             </div>
           </div>

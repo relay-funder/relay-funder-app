@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
 import { useSidebar, useAuth } from '@/contexts';
 import { usePathname } from 'next/navigation';
+import { useFeatureFlag } from '@/lib/flags';
 import {
   Home,
   LayoutDashboard,
@@ -23,6 +24,7 @@ interface NavItem {
 export function PageNavMenuItems() {
   const { isOpen } = useSidebar();
   const { authenticated, isAdmin } = useAuth();
+  const isRoundsVisibilityEnabled = useFeatureFlag('ROUNDS_VISIBILITY');
 
   const pathname = usePathname();
 
@@ -48,8 +50,8 @@ export function PageNavMenuItems() {
       );
     }
 
-    // Add Funding Rounds for all authenticated users (both regular users and admins)
-    if (authenticated) {
+    // Add Funding Rounds for authenticated users if rounds visibility is enabled or user is admin
+    if (authenticated && (isRoundsVisibilityEnabled || isAdmin)) {
       baseItems.push({
         icon: <Coins className="h-6 w-6" />,
         label: 'Funding Rounds',
@@ -58,7 +60,7 @@ export function PageNavMenuItems() {
     }
 
     return baseItems;
-  }, [authenticated]);
+  }, [authenticated, isRoundsVisibilityEnabled, isAdmin]);
 
   const adminItems = useMemo(() => {
     if (!authenticated || !isAdmin) return [];

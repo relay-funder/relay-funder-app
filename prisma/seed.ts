@@ -483,7 +483,12 @@ async function main() {
   );
 
   // Combine all users, with test users first for campaign assignment
-  const allCreatorUsers = [testCreatorUser, testCreatorUser2, testCreatorUser3, ...creatorUsers];
+  const allCreatorUsers = [
+    testCreatorUser,
+    testCreatorUser2,
+    testCreatorUser3,
+    ...creatorUsers,
+  ];
   const allAdminUsers = [protocolAdminUser, ...adminUsers];
 
   // Create campaigns ordered by status: ACTIVE first, then PENDING_APPROVAL, then DRAFT
