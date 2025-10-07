@@ -62,7 +62,7 @@ function getAuthHost() {
 
     // preview -> VERCEL_URL (for branch deployments), NEXTAUTH_URL for staging
     if (
-      VERCEL_GIT_COMMIT_REF === 'develop' &&
+      VERCEL_GIT_COMMIT_REF === 'staging' &&
       typeof VERCEL_PROJECT_PRODUCTION_URL === 'string'
     ) {
       return VERCEL_PROJECT_PRODUCTION_URL.replace(/app\./, 'staging.app.');

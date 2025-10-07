@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function ProfileAdditionalSettingsSkeleton() {
   return (
-    <Card className="rounded-lg border bg-white shadow-sm">
+    <Card className="rounded-lg border bg-card shadow-sm">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5" /> {/* Icon */}

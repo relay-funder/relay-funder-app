@@ -66,7 +66,7 @@ function CampaignDetailLoading() {
           </div>
 
           {/* Title and Location Box Skeleton */}
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-8 w-3/4" />
@@ -83,7 +83,7 @@ function CampaignDetailLoading() {
 
         {/* About Section Skeleton */}
         <div className="mb-8">
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
             <div className="space-y-3">
               <Skeleton className="h-6 w-48" />
               <div className="space-y-2">
@@ -95,10 +95,10 @@ function CampaignDetailLoading() {
         </div>
 
         {/* Tabs Section Skeleton */}
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
           <div className="space-y-6">
             {/* Tab buttons */}
-            <div className="grid grid-cols-4 gap-1 rounded-lg bg-gray-100 p-1">
+            <div className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1">
               <Skeleton className="h-10 rounded-md" />
               <Skeleton className="h-10 rounded-md" />
               <Skeleton className="h-10 rounded-md" />

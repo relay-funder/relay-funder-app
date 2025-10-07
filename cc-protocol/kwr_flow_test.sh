@@ -158,13 +158,12 @@ PLATFORM_FEE_KEY=$(keccak "platformFee")
 VAKI_COMMISSION_KEY=$(keccak "vakiCommission")
 
 # Platform data values (bytes32-encoded numbers)
-# Per CCP guidance: flat and cumulative fees must be non-zero and scaled by 1e18
-# Tests use 100e18/200e18 for 18-decimal tokens. For USDC (6 decimals), use much smaller values.
-# These represent the actual fee amounts in the fee calculation system (not token units)
-FLAT_FEE_AMOUNT=$(python3 -c "print(int(0.001 * 10**6))")         # 0.001 USDC (1000 base units)
-CUM_FLAT_FEE_AMOUNT=$(python3 -c "print(int(0.002 * 10**6))")     # 0.002 USDC (2000 base units)
-PLATFORM_FEE_BPS=1000                                           # 10% in basis points (divider 10000)
-VAKI_COMMISSION_BPS=600                                         # 6%
+# Using ZERO fees to match the platform configuration (no fees during testing)
+# Fee amounts are in USDC base units (6 decimals)
+FLAT_FEE_AMOUNT=0                                               # 0 USDC flat fee
+CUM_FLAT_FEE_AMOUNT=0                                           # 0 USDC cumulative flat fee
+PLATFORM_FEE_BPS=0                                              # 0% platform fee (no basis points fee)
+VAKI_COMMISSION_BPS=0                                           # 0% VAKI commission
 
 FLAT_FEE_VALUE=$(to_bytes32 "$FLAT_FEE_AMOUNT")
 CUM_FLAT_FEE_VALUE=$(to_bytes32 "$CUM_FLAT_FEE_AMOUNT")
@@ -419,13 +418,11 @@ cast send "$TREASURY_ADDR" "approveWithdrawal()" \
 AVAILABLE_RAW=$(cast call "$TREASURY_ADDR" "getAvailableRaisedAmount()(uint256)" --rpc-url "$RPC_URL")
 AVAILABLE_AMOUNT=$(echo "$AVAILABLE_RAW" | awk '{print $1}')
 
-# For partial withdrawals before deadline, flat fee is ADDED to amount deducted from available balance
-# Available: 83000, minimumWithdrawalForFeeExemption: 500000 (0.5 USDC)
-# Since available < exemption threshold, cumulativeFlatFee (2000) applies
-# Total deducted = withdrawalAmount + fee, so: withdrawalAmount = available - fee
-WITHDRAWAL_AMOUNT=$(python3 -c "print(max(0, $AVAILABLE_AMOUNT - $CUM_FLAT_FEE_AMOUNT))")
-echo "Available: $AVAILABLE_AMOUNT base units, Cumulative flat fee: $CUM_FLAT_FEE_AMOUNT base units"
-echo "Withdrawing amount: $WITHDRAWAL_AMOUNT base units (available - fee for partial withdrawal)"
+# For partial withdrawals before deadline with zero fees configured
+# With zero fees, we can withdraw the full available amount
+WITHDRAWAL_AMOUNT=$AVAILABLE_AMOUNT
+echo "Available: $AVAILABLE_AMOUNT base units, Cumulative flat fee: $CUM_FLAT_FEE_AMOUNT base units (zero)"
+echo "Withdrawing amount: $WITHDRAWAL_AMOUNT base units (full available amount with zero fees)"
 
 if (( WITHDRAWAL_AMOUNT <= 0 )); then
   echo "WARNING: Not enough funds to cover withdrawal fees. Skipping withdrawal test."
@@ -453,7 +450,7 @@ if (( WITHDRAWAL_AMOUNT > 0 )); then
   echo "=== WITHDRAWAL RESULTS ==="
   echo "Creator received: $delta base units ($delta_usdc USDC)"
   echo "Treasury available after withdrawal: $AVAIL_AFTER base units"
-  echo "Fees charged: $CUM_FLAT_FEE_AMOUNT base units (cumulative flat fee)"
+  echo "Fees charged: $CUM_FLAT_FEE_AMOUNT base units (zero fees configured)"
 
   if (( delta > 0 )); then
     echo ""
