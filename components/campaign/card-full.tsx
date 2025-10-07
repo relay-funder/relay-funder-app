@@ -61,7 +61,6 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
           <Link href={`/campaigns/${campaign.slug}/donation`}>
             <Button className="h-12 w-full text-lg" size="lg">
               <span className="flex items-center gap-2">
-                <Heart className="h-5 w-5 text-white" />
                 Support this campaign
               </span>
             </Button>

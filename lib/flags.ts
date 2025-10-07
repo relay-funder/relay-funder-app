@@ -5,7 +5,10 @@ import { useEffect, useState } from 'react';
 // Feature flag configuration with environment variable support
 const FLAG_CONFIG = {
   DEBUG: { envVar: 'NEXT_PUBLIC_DEBUG', default: false },
-  ROUNDS_VISIBILITY: { envVar: 'NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY', default: false },
+  ROUNDS_VISIBILITY: {
+    envVar: 'NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY',
+    default: false,
+  },
 } as const;
 
 // Initialize flags from environment variables or defaults
@@ -17,7 +20,7 @@ const FLAGS = Object.fromEntries(
       return [key, envValue === 'true' || envValue === '1'];
     }
     return [key, config.default];
-  })
+  }),
 ) as Record<keyof typeof FLAG_CONFIG, boolean>;
 
 export type FeatureFlag = keyof typeof FLAGS;

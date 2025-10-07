@@ -75,7 +75,6 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
               className="h-10 w-full dark:bg-quantum dark:text-white dark:hover:bg-quantum/90"
               size="default"
             >
-              <Heart className="h-5 w-5 text-white dark:text-white" />
               Support this campaign
             </Button>
           </Link>

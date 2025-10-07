@@ -27,12 +27,16 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
   });
 
   const showRoundsTab = isRoundsVisibilityEnabled || isAdmin;
-  const gridCols = showRoundsTab ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3';
+  const gridCols = showRoundsTab
+    ? 'grid-cols-2 sm:grid-cols-4'
+    : 'grid-cols-1 sm:grid-cols-3';
 
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid h-auto w-full gap-1 rounded-md bg-muted p-1 pb-[3px] ${gridCols} sm:gap-0`}>
+        <TabsList
+          className={`grid h-auto w-full gap-1 rounded-md bg-muted p-1 pb-[3px] ${gridCols} sm:gap-0`}
+        >
           <TabsTrigger
             value="transactions"
             className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"

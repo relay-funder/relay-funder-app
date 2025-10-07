@@ -32,7 +32,9 @@ export function RoundExplore({
       title="Funding Rounds"
       searchPlaceholder="Search Rounds"
       onSearchChanged={(search: string) => setSearchTerm(search)}
-      onCreate={(!forceUserView && isAdmin) ? () => setShowRoundCreate(true) : undefined}
+      onCreate={
+        !forceUserView && isAdmin ? () => setShowRoundCreate(true) : undefined
+      }
       createTitle="Create Round"
     >
       {showRoundCreate ? (

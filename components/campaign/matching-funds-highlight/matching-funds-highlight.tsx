@@ -28,15 +28,11 @@ export function CampaignMatchingFundsHighlight({
     campaign,
   });
 
-  // Only show if campaign has active or future rounds (matching funding)
-  if (!hasRounds || (activeRounds.length === 0 && futureRounds.length === 0)) {
-    return null;
-  }
-
   const validRounds = [...activeRounds, ...futureRounds];
   const latestRound = validRounds[0];
 
   const status = useMemo(() => {
+    if (!latestRound) return 'Upcoming';
     const now = new Date();
     if (
       now >= new Date(latestRound.startTime) &&
@@ -51,18 +47,22 @@ export function CampaignMatchingFundsHighlight({
   }, [latestRound]);
 
   const isUpcomingRound = status === 'Upcoming';
-  const hasMatchingPool = latestRound.matchingPool > 0;
+  const hasMatchingPool = latestRound?.matchingPool > 0;
 
   const {
     data: estimatedMatch,
     isPending,
     isError,
-    isSuccess,
   } = useCampaignMatching({
-    roundId: latestRound.id,
+    roundId: latestRound?.id,
     campaignId: campaign.id,
     enabled: hasMatchingPool && !isUpcomingRound,
   });
+
+  // Only show if campaign has active or future rounds (matching funding)
+  if (!hasRounds || (activeRounds.length === 0 && futureRounds.length === 0)) {
+    return null;
+  }
 
   const formattedMatchingPool = latestRound.matchingPool.toLocaleString();
 
