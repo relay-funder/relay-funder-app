@@ -68,22 +68,34 @@ export default function DashboardPage() {
         <DonorDashboardOverview />
         <TooltipProvider>
           <Tabs defaultValue="score" className="mt-8">
-            <TabsList className="mb-6 w-full overflow-x-auto justify-start">
-              <TabsTrigger value="score" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+            <TabsList className="mb-6 w-full justify-start overflow-x-auto">
+              <TabsTrigger
+                value="score"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
                 <Trophy className="mr-1 h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Score</span>
                 <span className="sm:hidden">Score</span>
               </TabsTrigger>
-              <TabsTrigger value="history" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+              <TabsTrigger
+                value="history"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
                 <History className="mr-1 h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Donation History</span>
                 <span className="sm:hidden">History</span>
               </TabsTrigger>
-              <TabsTrigger value="favorites" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+              <TabsTrigger
+                value="favorites"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
                 <Heart className="mr-1 h-4 w-4 sm:mr-2" />
                 Favorites
               </TabsTrigger>
-              <TabsTrigger value="updates" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+              <TabsTrigger
+                value="updates"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
                 <Bell className="mr-1 h-4 w-4 sm:mr-2" />
                 Updates
                 <Tooltip>
@@ -128,22 +140,34 @@ export default function DashboardPage() {
 
       <TooltipProvider>
         <Tabs defaultValue="score" className="mt-8">
-          <TabsList className="mb-6 w-full overflow-x-auto justify-start">
-            <TabsTrigger value="score" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+          <TabsList className="mb-6 w-full justify-start overflow-x-auto">
+            <TabsTrigger
+              value="score"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
               <Trophy className="mr-1 h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Score</span>
               <span className="sm:hidden">Score</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+            <TabsTrigger
+              value="history"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
               <History className="mr-1 h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Donation History</span>
               <span className="sm:hidden">History</span>
             </TabsTrigger>
-            <TabsTrigger value="favorites" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+            <TabsTrigger
+              value="favorites"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
               <Heart className="mr-1 h-4 w-4 sm:mr-2" />
               Favorites
             </TabsTrigger>
-            <TabsTrigger value="updates" className="px-3 py-2 text-xs sm:px-4 sm:text-sm whitespace-nowrap">
+            <TabsTrigger
+              value="updates"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
               <Bell className="mr-1 h-4 w-4 sm:mr-2" />
               Updates
               <Tooltip>
