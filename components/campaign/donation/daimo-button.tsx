@@ -137,70 +137,99 @@ export function DaimoPayButtonComponent({
     };
   }, [address, campaign.treasuryAddress]);
 
-  // Track last reset parameters to prevent redundant resetPayment calls
-  const lastResetParamsRef = useRef<string>('');
+  // Track last payment parameters to prevent redundant resetPayment calls
+  const lastPaymentParamsRef = useRef<string>('');
+  const resetPaymentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update payment parameters when they change (after initial render)
+  // Update payment parameters using resetPayment when they change
+  // Per Daimo Pay documentation: props don't update after initial render,
+  // must use resetPayment to dynamically update payment parameters
+  // DEBOUNCED: Waits 300ms after last change before calling resetPayment
   useEffect(() => {
-    if (
-      resetPayment &&
-      validatedTreasuryAddress &&
-      parseFloat(totalAmount) >= 0.1 &&
-      pledgeCallData !== '0x' &&
-      pledgeId !== '0x'
-    ) {
-      // Create a unique key for these parameters to prevent redundant calls
-      const currentParamsKey = JSON.stringify({
+    // Clear any pending timeout
+    if (resetPaymentTimeoutRef.current) {
+      clearTimeout(resetPaymentTimeoutRef.current);
+    }
+
+    // Only update if we have valid parameters
+    if (!resetPayment || !validatedTreasuryAddress || parseFloat(totalAmount) < 0.1) {
+      return;
+    }
+
+    if (pledgeCallData === '0x' || pledgeId === '0x') {
+      return;
+    }
+
+    // Create a stable key for these parameters
+    const currentParamsKey = JSON.stringify({
+      totalAmount,
+      pledgeId,
+      treasuryAddress: validatedTreasuryAddress,
+      callData: pledgeCallData,
+      email,
+      anonymous,
+    });
+
+    // Only call resetPayment if parameters have actually changed
+    if (lastPaymentParamsRef.current === currentParamsKey) {
+      return;
+    }
+
+    debug && console.log('Daimo Pay: Parameters changed, scheduling resetPayment...', {
+      totalAmount,
+      tipAmount,
+      baseAmount: amount,
+      pledgeId: pledgeId.substring(0, 10) + '...',
+    });
+
+    // Debounce: Wait 300ms after last change before calling resetPayment
+    // This prevents flooding resetPayment during slider drag
+    resetPaymentTimeoutRef.current = setTimeout(() => {
+      debug && console.log('Daimo Pay: Calling resetPayment with final parameters', {
         totalAmount,
-        pledgeId,
-        treasuryAddress: validatedTreasuryAddress,
-        email,
-        anonymous,
         tipAmount,
         baseAmount: amount,
+        treasuryAddress: validatedTreasuryAddress,
       });
 
-      // Only call resetPayment if parameters have actually changed
-      if (lastResetParamsRef.current !== currentParamsKey) {
-        debug && console.log('Daimo Pay: Updating payment parameters via resetPayment', {
-          totalAmount,
-          pledgeId: pledgeId.substring(0, 10) + '...',
-          treasuryAddress: validatedTreasuryAddress,
-          email,
-          anonymous,
-          tipAmount,
-          baseAmount: amount,
+      try {
+        // Call resetPayment with updated parameters
+        // Per documentation: only pass the props we wish to change
+        resetPayment({
+          toChain: optimismUSDC.chainId,
+          toToken: getAddress(optimismUSDC.token),
+          toAddress: validatedTreasuryAddress,
+          toUnits: totalAmount, // Updated amount (base + tip)
+          toCallData: pledgeCallData,
+          metadata: {
+            campaignId: campaign.id.toString(),
+            pledgeId: pledgeId,
+            email,
+            anonymous: anonymous.toString(),
+            tipAmount,
+            baseAmount: amount,
+            token: 'USDC',
+            chain: 'Optimism',
+          },
         });
+
+        // Update ref to track we've called resetPayment with these params
+        lastPaymentParamsRef.current = currentParamsKey;
         
-        try {
-          resetPayment({
-            toChain: optimismUSDC.chainId,
-            toToken: getAddress(optimismUSDC.token),
-            toAddress: validatedTreasuryAddress,
-            toUnits: totalAmount,
-            toCallData: pledgeCallData,
-            metadata: {
-              campaignId: campaign.id.toString(),
-              pledgeId: pledgeId,
-              email,
-              anonymous: anonymous.toString(),
-              tipAmount,
-              baseAmount: amount,
-              token: 'USDC',
-              chain: 'Optimism',
-            },
-          });
-          
-          // Update the ref to track we've called resetPayment with these params
-          lastResetParamsRef.current = currentParamsKey;
-        } catch (error) {
-          console.error('Daimo Pay: Error updating payment parameters:', error);
-        }
+        debug && console.log('Daimo Pay: resetPayment completed successfully');
+      } catch (error) {
+        console.error('Daimo Pay: Error calling resetPayment:', error);
       }
-    }
-    // NOTE: resetPayment is intentionally excluded from dependencies to prevent infinite loops
-    // The Daimo Pay library's resetPayment function is not stable and triggers re-renders
-    // We use lastResetParamsRef to track parameter changes instead
+    }, 300); // 300ms debounce delay
+
+    // Cleanup function: clear timeout if component unmounts or dependencies change
+    return () => {
+      if (resetPaymentTimeoutRef.current) {
+        clearTimeout(resetPaymentTimeoutRef.current);
+      }
+    };
+    // NOTE: resetPayment is intentionally excluded from dependencies
+    // Including it would cause infinite loops as resetPayment triggers state changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     totalAmount,
