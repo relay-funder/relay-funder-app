@@ -1,9 +1,9 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { QFCalculationResult } from '@/lib/qf-calculation/types';
 
 export const MATCHING_CALCULATION_QUERY_KEY = 'matching_calculation';
-export const CAMPAIGN_MATCHING_CALCULATION_QUERY_KEY =
-  'campaign_matching_calculation';
 
 async function fetchRoundMatchingCalculation(id: number) {
   const url = `/api/qf-calculation/${id}`;

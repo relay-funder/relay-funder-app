@@ -1,3 +1,5 @@
+'use client';
+
 import { useMatchingCalculation } from './useMatchingCalculation';
 
 export function useCampaignMatching({
