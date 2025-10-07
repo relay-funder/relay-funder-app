@@ -16,7 +16,7 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
     useCampaignStatsFromInstance({ campaign });
   const { isAdmin } = useAuth();
   const isRoundsVisibilityEnabled = useFeatureFlag('ROUNDS_VISIBILITY');
-  const [activeTab, setActiveTab] = useState('transactions');
+  const [activeTab, setActiveTab] = useState('updates');
 
   // Handle update anchor links - only switch tab, don't prevent user navigation
   useUpdateAnchor({
@@ -38,6 +38,13 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
           className={`grid h-auto w-full gap-1 rounded-md bg-muted p-1 pb-[3px] ${gridCols} sm:gap-0`}
         >
           <TabsTrigger
+            value="updates"
+            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+          >
+            <span>Updates</span>
+            <span className="ml-1">({campaign._count?.updates ?? 0})</span>
+          </TabsTrigger>
+          <TabsTrigger
             value="transactions"
             className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
@@ -46,13 +53,6 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
             <span className="ml-1">
               ({contributorCount - contributorPendingCount})
             </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="updates"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
-          >
-            <span>Updates</span>
-            <span className="ml-1">({campaign._count?.updates ?? 0})</span>
           </TabsTrigger>
           <TabsTrigger
             value="comments"
@@ -74,12 +74,12 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
         </TabsList>
 
         <div className="mt-4 min-h-[300px]">
-          <TabsContent value="transactions" className="mt-0">
-            <CampaignDetailTabTransactions campaign={campaign} />
-          </TabsContent>
-
           <TabsContent value="updates" className="mt-0">
             <CampaignDetailTabUpdates campaign={campaign} />
+          </TabsContent>
+
+          <TabsContent value="transactions" className="mt-0">
+            <CampaignDetailTabTransactions campaign={campaign} />
           </TabsContent>
 
           <TabsContent value="comments" className="mt-0">
