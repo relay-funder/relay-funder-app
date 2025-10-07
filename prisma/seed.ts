@@ -483,7 +483,12 @@ async function main() {
   );
 
   // Combine all users, with test users first for campaign assignment
-  const allCreatorUsers = [testCreatorUser, testCreatorUser2, testCreatorUser3, ...creatorUsers];
+  const allCreatorUsers = [
+    testCreatorUser,
+    testCreatorUser2,
+    testCreatorUser3,
+    ...creatorUsers,
+  ];
   const allAdminUsers = [protocolAdminUser, ...adminUsers];
 
   // Create campaigns ordered by status: ACTIVE first, then PENDING_APPROVAL, then DRAFT
@@ -524,14 +529,14 @@ async function main() {
       location: locations[i % locations.length],
     };
   });
-  // Create 5 rounds for matching - variety of statuses for comprehensive testing
+  // Create exactly 3 rounds: one upcoming, one active, one ended
   const rounds = [
     {
-      title: 'Kenya Education & Development Round',
+      title: 'Prezenti by Celo',
       description:
-        'Supporting educational initiatives and community development projects across Kenya. This comprehensive matching round focuses on creating sustainable impact through quality education, economic empowerment, and essential infrastructure development. We believe that education is the cornerstone of lasting change, and our funding approach prioritizes projects that demonstrate measurable outcomes, community ownership, and innovative approaches to addressing educational gaps. From rural schools lacking basic resources to vocational training programs that equip youth with market-relevant skills, this round aims to transform communities by investing in their most valuable asset - human potential. Our selection criteria emphasize collaborative partnerships, environmental sustainability, and gender inclusivity to ensure that funded projects create ripple effects of positive change throughout Kenya.',
+        "Celo's prezenti grant program is committed to maintaining grassroots grant funding to reputable members of the celo community.",
       descriptionUrl: 'https://relayfunder.com',
-      matchingPool: 50000,
+      matchingPool: 12500, // Realistic funding cap between 10,000-15,000
       startDate: subDays(new Date(), 5), // Started 5 days ago (active)
       endDate: addDays(new Date(), 25), // Ends in 25 days
       applicationStart: subDays(new Date(), 15),
@@ -545,7 +550,7 @@ async function main() {
       description:
         'Addressing urgent climate challenges across East Africa through innovative renewable energy solutions, comprehensive water conservation initiatives, and sustainable agriculture projects that enhance food security. This specialized funding round emphasizes community-led climate adaptation solutions that combine traditional knowledge with modern technology. We prioritize projects that demonstrate clear environmental impact, economic viability, and social equity. From solar-powered irrigation systems that transform arid landscapes into productive farmland to community-based forest restoration programs that sequester carbon while creating livelihoods, this round supports holistic approaches to climate resilience. Our funding strategy recognizes that climate adaptation requires long-term thinking, cross-sector collaboration, and deep community engagement to build truly sustainable solutions that can withstand future environmental challenges while improving current living conditions.',
       descriptionUrl: 'https://relayfunder.com',
-      matchingPool: 75000,
+      matchingPool: 35000,
       startDate: addDays(new Date(), 10), // Starts in 10 days (upcoming)
       endDate: addDays(new Date(), 40), // Ends in 40 days
       applicationStart: addDays(new Date(), 5),
@@ -559,42 +564,14 @@ async function main() {
       description:
         'Addressing urgent climate challenges across West Africa through innovative renewable energy solutions, comprehensive water conservation initiatives, and sustainable agriculture projects that enhance food security. This specialized funding round emphasizes community-led climate adaptation solutions that combine traditional knowledge with modern technology. We prioritize projects that demonstrate clear environmental impact, economic viability, and social equity. From solar-powered irrigation systems that transform arid landscapes into productive farmland to community-based forest restoration programs that sequester carbon while creating livelihoods, this round supports holistic approaches to climate resilience. Our funding strategy recognizes that climate adaptation requires long-term thinking, cross-sector collaboration, and deep community engagement to build truly sustainable solutions that can withstand future environmental challenges while improving current living conditions.',
       descriptionUrl: 'https://relayfunder.com',
-      matchingPool: 75000,
-      startDate: subDays(new Date(), 40), // Started 40 days ago (completed)
+      matchingPool: 25000,
+      startDate: subDays(new Date(), 40), // Started 40 days ago (ended)
       endDate: subDays(new Date(), 10), // Ended 10 days ago
       applicationStart: subDays(new Date(), 50),
       applicationClose: subDays(new Date(), 45),
       blockchain: 'CELO',
       managerAddress: selectRandom(adminUsers),
       fundWalletAddress: `0xround3matchingpool000000000000000000000000`,
-    },
-    {
-      title: 'Uganda Economic Development Round',
-      description:
-        'Empowering economic growth and entrepreneurship across Uganda through targeted funding for small business development, agricultural innovation, and financial inclusion initiatives. This round prioritizes projects that create sustainable livelihoods, support women and youth entrepreneurs, and strengthen local value chains. We focus on initiatives that demonstrate potential for scalability, community ownership, and measurable economic impact. From microfinance cooperatives that provide accessible credit to rural farmers, to digital payment platforms that connect remote communities to broader markets, this round invests in the economic infrastructure needed for long-term prosperity and poverty reduction.',
-      descriptionUrl: 'https://relayfunder.com',
-      matchingPool: 60000,
-      startDate: addDays(new Date(), 20), // Starts in 20 days (upcoming)
-      endDate: addDays(new Date(), 50), // Ends in 50 days
-      applicationStart: addDays(new Date(), 15),
-      applicationClose: addDays(new Date(), 18),
-      blockchain: 'CELO',
-      managerAddress: selectRandom(adminUsers),
-      fundWalletAddress: `0xround4matchingpool000000000000000000000000`,
-    },
-    {
-      title: 'Emergency Response Preparedness Round',
-      description:
-        'Building resilient emergency response systems across East Africa to protect communities from natural disasters, health crises, and humanitarian emergencies. This specialized round supports early warning systems, emergency supply chains, disaster preparedness training, and rapid response infrastructure. We prioritize projects that strengthen community resilience, improve emergency coordination, and ensure vulnerable populations have access to life-saving resources during crises. From mobile emergency communication networks to community-based disaster response teams, this round invests in the critical infrastructure needed to save lives and protect communities when emergencies strike.',
-      descriptionUrl: 'https://relayfunder.com',
-      matchingPool: 80000,
-      startDate: subDays(new Date(), 15), // Started 15 days ago (active)
-      endDate: addDays(new Date(), 15), // Ends in 15 days
-      applicationStart: subDays(new Date(), 25),
-      applicationClose: subDays(new Date(), 20),
-      blockchain: 'CELO',
-      managerAddress: selectRandom(adminUsers),
-      fundWalletAddress: `0xround5matchingpool000000000000000000000000`,
     },
   ];
 
@@ -1469,75 +1446,56 @@ async function main() {
 
   console.log(`✅ Created ${eventCount} event feed notifications`);
 
-  // Define specific sponsor logos for each round
+  // Define specific sponsor logos for each round (exactly 3)
   const roundSponsorLogos = [
     {
-      // Kenya Education & Development Round - Ethereum Main logo
-      url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/345351662ea35292-ethereum-main.jpg',
-      mimeType: 'image/jpeg',
-      caption: 'Ethereum Foundation Sponsor Logo',
-    },
-    {
-      // East Africa Climate Resilience Round - Celo Camp logo
+      // Prezenti by Celo (active) - Celo Camp logo
       url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/a41bb1ae87c99ce0-celo-camp.webp',
       mimeType: 'image/webp',
       caption: 'Celo Camp Sponsor Logo',
     },
     {
-      // West Africa Climate Resilience Round - Celo Camp logo
+      // East Africa Climate Resilience Round (upcoming) - Celo Camp logo
       url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/a41bb1ae87c99ce0-celo-camp.webp',
       mimeType: 'image/webp',
       caption: 'Celo Camp Sponsor Logo',
     },
     {
-      // Uganda Economic Development Round - Ethereum Main logo
-      url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/345351662ea35292-ethereum-main.jpg',
-      mimeType: 'image/jpeg',
-      caption: 'Ethereum Foundation Sponsor Logo',
-    },
-    {
-      // Emergency Response Preparedness Round - Celo Camp logo
+      // West Africa Climate Resilience Round (ended) - Celo Camp logo
       url: 'https://amethyst-kind-cheetah-202.mypinata.cloud/ipfs/bafybeiahqmv44vmm4oorfi7q565xfnwpadtjcvki2mszo4qqchaazqqvim/a41bb1ae87c99ce0-celo-camp.webp',
       mimeType: 'image/webp',
       caption: 'Celo Camp Sponsor Logo',
     },
   ];
 
-  // Create the 5 rounds and assign campaigns strategically
+  // Create exactly 3 rounds and assign campaigns strategically
   for (let i = 0; i < rounds.length; i++) {
     const admin = selectRandom(allAdminUsers);
     const round = await db.round.create({
       data: { ...rounds[i], managerAddress: admin.address },
     });
 
-    // Assign campaigns to rounds based on their category
+    // Assign campaigns to rounds: most to active round, distribute remaining
     let assignedCampaigns = [];
 
     if (i === 0) {
-      // Kenya Education & Development Round - assign education campaigns
-      assignedCampaigns = campaigns
-        .filter((c) => c.category === 'education')
-        .slice(0, 3); // First 3 education campaigns
+      // Prezenti by Celo (active round) - assign 7 campaigns (6-8 range, choosing 7)
+      assignedCampaigns = campaigns.slice(0, 7);
+      console.log(
+        `   📋 Prezenti by Celo (Active): Assigned ${assignedCampaigns.length} campaigns`,
+      );
     } else if (i === 1) {
-      // East Africa Climate Resilience Round - assign climate resilience campaigns
-      assignedCampaigns = campaigns
-        .filter((c) => c.category === 'climate-resilience')
-        .slice(0, 3); // First 3 climate campaigns
-    } else if (i === 2) {
-      // West Africa Climate Resilience Round - assign more climate resilience campaigns
-      assignedCampaigns = campaigns
-        .filter((c) => c.category === 'climate-resilience')
-        .slice(1, 3); // Some climate campaigns (overlap with previous round)
-    } else if (i === 3) {
-      // Uganda Economic Development Round - assign economic development campaigns
-      assignedCampaigns = campaigns
-        .filter((c) => c.category === 'economic-development')
-        .slice(0, 3); // First 3 economic campaigns
+      // Upcoming round - assign next 3 campaigns
+      assignedCampaigns = campaigns.slice(7, 10);
+      console.log(
+        `   📋 Upcoming Round: Assigned ${assignedCampaigns.length} campaigns`,
+      );
     } else {
-      // Emergency Response Preparedness Round - assign emergency response campaigns
-      assignedCampaigns = campaigns
-        .filter((c) => c.category === 'emergency-response')
-        .slice(0, 3); // First 3 emergency campaigns
+      // Ended round - assign remaining 2 campaigns
+      assignedCampaigns = campaigns.slice(10, 12);
+      console.log(
+        `   📋 Ended Round: Assigned ${assignedCampaigns.length} campaigns`,
+      );
     }
 
     // Create round-campaign associations
@@ -1576,7 +1534,7 @@ async function main() {
   }
 
   console.log(
-    `\nSeeded ${campaigns.length} campaigns with enhanced data, ${rounds.length} matching rounds with specific sponsor logos`,
+    `\nSeeded ${campaigns.length} campaigns with enhanced data, ${rounds.length} matching rounds (1 active, 1 upcoming, 1 ended) with specific sponsor logos`,
   );
   console.log(
     'Enhanced seed data includes: campaign updates (3-8 per campaign), comments (2-15 per campaign), funding progress, and event feed notifications',
