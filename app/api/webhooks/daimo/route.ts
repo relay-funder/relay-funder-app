@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/server/db';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import { ApiParameterError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { notify } from '@/lib/api/event-feed';
 import { getUserNameFromInstance } from '@/lib/api/user';
@@ -8,11 +8,8 @@ import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant';
 import {
   DaimoPayWebhookPayloadSchema,
-  type DaimoPayWebhookPayload,
 } from '@/lib/api/types/webhooks';
 import { debugApi as debug } from '@/lib/debug';
-import { ethers } from '@/lib/web3';
-import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 
 export async function POST(req: Request) {
   try {

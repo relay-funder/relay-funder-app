@@ -8,7 +8,6 @@ import { CampaignDonationWalletTip } from './wallet/tip';
 import { CampaignDonationAnonymous } from './anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DaimoPayProvider } from '@daimo/pay';
-import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const [selectedToken, setSelectedToken] = useState('USDC');
   const [amount, setAmount] = useState('0');
@@ -28,9 +27,6 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const handleEmailChanged = useCallback((newEmail: string) => {
     setEmail(newEmail);
   }, []);
-
-  const updateProfileEmail = useUpdateProfileEmail();
-  const { data: profile } = useUserProfile();
 
 
   return (

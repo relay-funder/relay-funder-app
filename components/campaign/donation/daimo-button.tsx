@@ -6,7 +6,6 @@ import { optimismUSDC } from '@daimo/pay-common';
 import { getAddress, encodeFunctionData } from 'viem';
 import { DbCampaign } from '@/types/campaign';
 import { DAIMO_PAY_APP_ID } from '@/lib/constant';
-import { useAuth } from '@/contexts';
 import { Button } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { useDaimoDonationCallback } from '@/hooks/use-daimo-donation';
@@ -16,15 +15,22 @@ import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { ethers } from '@/lib/web3';
 import { debugHook as debug } from '@/lib/debug';
 
+interface DaimoPayEvent {
+  paymentId?: string;
+  status?: string;
+  amount?: string;
+  [key: string]: unknown;
+}
+
 interface DaimoPayButtonComponentProps {
   campaign: DbCampaign;
   amount: string;
   tipAmount?: string;
   email: string;
   anonymous: boolean;
-  onPaymentStarted?: (event: any) => void;
-  onPaymentCompleted?: (event: any) => void;
-  onPaymentBounced?: (event: any) => void;
+  onPaymentStarted?: (event: DaimoPayEvent) => void;
+  onPaymentCompleted?: (event: DaimoPayEvent) => void;
+  onPaymentBounced?: (event: DaimoPayEvent) => void;
   onPaymentStartedCallback?: () => void;
   onPaymentCompletedCallback?: () => void;
   onPaymentBouncedCallback?: () => void;
@@ -43,7 +49,6 @@ export function DaimoPayButtonComponent({
   onPaymentCompletedCallback,
   onPaymentBouncedCallback,
 }: DaimoPayButtonComponentProps) {
-  const { authenticated } = useAuth();
   const { address } = useAccount();
   const { toast } = useToast();
   const updateProfileEmail = useUpdateProfileEmail();
@@ -115,14 +120,13 @@ export function DaimoPayButtonComponent({
   });
 
   // Validate and memoize address formats (memoized to prevent changing references on every render)
-  const { validatedAddress, validatedTreasuryAddress, addressValidationError } = useMemo(() => {
-    let validatedAddr: `0x${string}` | null = null;
+  const { validatedTreasuryAddress, addressValidationError } = useMemo(() => {
     let validatedTreasuryAddr: `0x${string}` | null = null;
     let hasError = false;
 
     if (address && campaign.treasuryAddress) {
       try {
-        validatedAddr = getAddress(address);
+        getAddress(address); // Validate user address format
         validatedTreasuryAddr = getAddress(campaign.treasuryAddress);
       } catch (error) {
         console.error('Daimo Pay: Invalid address format:', error);
@@ -131,7 +135,6 @@ export function DaimoPayButtonComponent({
     }
 
     return {
-      validatedAddress: validatedAddr,
       validatedTreasuryAddress: validatedTreasuryAddr,
       addressValidationError: hasError,
     };
@@ -236,11 +239,7 @@ export function DaimoPayButtonComponent({
     amount,
   ]);
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const handlePaymentStarted = async (event: any) => {
+  const handlePaymentStarted = async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment started', event);
     try {
       // Validate email first
@@ -253,11 +252,7 @@ export function DaimoPayButtonComponent({
         return;
       }
 
-      const isValidEmail = (email: string) => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-      };
-
-      if (!isValidEmail(email)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast({
           title: 'Invalid email',
           description: 'Please enter a valid email address.',
@@ -286,7 +281,7 @@ export function DaimoPayButtonComponent({
     }
   };
 
-  const handlePaymentCompleted = async (event: any) => {
+  const handlePaymentCompleted = async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment completed', event);
     try {
       await daimoOnPaymentCompleted(event);
@@ -301,7 +296,7 @@ export function DaimoPayButtonComponent({
     }
   };
 
-  const handlePaymentBounced = async (event: any) => {
+  const handlePaymentBounced = async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment bounced', event);
     try {
       await daimoOnPaymentBounced(event);
