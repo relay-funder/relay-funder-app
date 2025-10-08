@@ -1,5 +1,14 @@
 import { CampaignStatus } from '@/types/campaign';
 import { DbCampaign } from '@/types/campaign';
+import {
+  parseISO,
+  isValid,
+  addMinutes,
+  startOfDay,
+  endOfDay,
+  formatISO,
+  addDays,
+} from 'date-fns';
 
 /**
  * Check if a campaign is active and can accept donations
@@ -99,5 +108,90 @@ export function getCampaignStatusInfo(campaign?: DbCampaign) {
         description: 'Campaign status unknown',
         canDonate: false,
       };
+  }
+}
+
+/**
+ * Time transformation utilities for campaign forms
+ */
+
+/**
+ * Transforms a date string to a proper ISO timestamp for campaign start time.
+ * Handles YYYY-MM-DD format and converts to appropriate future time.
+ */
+export function transformStartTime(value: string): string {
+  // Handle empty or invalid values gracefully
+  if (!value || typeof value !== 'string' || value.trim() === '') {
+    // Return a default future date if value is invalid
+    return formatISO(addDays(new Date(), 1)); // Tomorrow
+  }
+
+  try {
+    // If value is already an ISO string (already transformed), return it as-is
+    if (value.includes('T') && value.includes('Z')) {
+      return value;
+    }
+
+    // Parse YYYY-MM-DD format
+    const parsedDate = parseISO(value + 'T00:00:00');
+
+    // Check if the date is valid
+    if (!isValid(parsedDate)) {
+      // Invalid date, return default
+      return formatISO(addDays(new Date(), 1)); // Tomorrow
+    }
+
+    const now = new Date();
+
+    // If selected date is today, set to 5 minutes from now
+    // If selected date is in the future, set to start of day
+    const isToday = parsedDate.toDateString() === now.toDateString();
+
+    if (isToday) {
+      // Today: set to 5 minutes from now
+      return formatISO(addMinutes(now, 5));
+    } else {
+      // Future date: set to start of day in UTC
+      return formatISO(startOfDay(parsedDate));
+    }
+  } catch (error) {
+    // If any error occurs, return a safe default
+    console.warn('Error in transformStartTime, using default:', error);
+    return formatISO(addDays(new Date(), 1)); // Tomorrow
+  }
+}
+
+/**
+ * Transforms a date string to a proper ISO timestamp for campaign end time.
+ * Handles YYYY-MM-DD format and sets time to end of the selected day.
+ */
+export function transformEndTime(value: string): string {
+  // Handle empty or invalid values gracefully
+  if (!value || typeof value !== 'string' || value.trim() === '') {
+    // Return a default future end date if value is invalid
+    return formatISO(addDays(new Date(), 7)); // 7 days from now
+  }
+
+  try {
+    // If value is already an ISO string (already transformed), return it as-is
+    if (value.includes('T') && value.includes('Z')) {
+      return value;
+    }
+
+    // Parse YYYY-MM-DD format
+    const parsedDate = parseISO(value + 'T00:00:00');
+
+    // Check if the date is valid
+    if (!isValid(parsedDate)) {
+      // Invalid date, return default
+      return formatISO(addDays(new Date(), 7)); // 7 days from now
+    }
+
+    // Set end time to end of the selected day
+    return formatISO(endOfDay(parsedDate));
+  } catch (error) {
+    // If any error occurs, return a safe default
+    console.warn('Error in transformEndTime, using default:', error);
+    return formatISO(addDays(new Date(), 7)); // 7 days from now
   }
 }

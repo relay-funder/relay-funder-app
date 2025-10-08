@@ -8,6 +8,10 @@ import { useAuth } from '@/contexts';
 import { switchNetwork } from '../switch-network';
 import { AdminApproveProcessStates } from '@/types/admin';
 import { debugHook as debug } from '@/lib/debug';
+import {
+  getValidationSummary,
+  ValidationStage,
+} from '@/lib/ccp-validation/campaign-validation';
 
 // Add platform config
 const platformConfig = {
@@ -271,6 +275,41 @@ export function useAdminApproveCampaign() {
           `Invalid campaign contract address: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
       }
+
+      // Get campaign data for validation
+      const campaignResponse = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!campaignResponse.ok) {
+        const errorData = await campaignResponse.json();
+        throw new Error(`Failed to fetch campaign: ${errorData.error || 'Unknown error'}`);
+      }
+
+      const { campaign } = await campaignResponse.json();
+
+      if (!campaign) {
+        throw new Error('Campaign not found');
+      }
+
+      // Validate campaign before treasury deployment
+      debug && console.log('Validating campaign before treasury deployment...');
+      const validation = getValidationSummary(
+        campaign,
+        ValidationStage.ACTIVE,
+      );
+      if (!validation.canProceed) {
+        throw new Error(
+          `Campaign validation failed: ${validation.messages.join(', ')}. Cannot deploy treasury.`,
+        );
+      }
+      debug &&
+        console.log(
+          'Campaign validation passed, proceeding with deployment...',
+        );
 
       // Deploy treasury server-side
       onStateChanged('treasuryFactoryWait');

@@ -5,7 +5,7 @@ interface ResponsiveGridProps {
   children: ReactNode;
   className?: string;
   gap?: 'sm' | 'md' | 'lg';
-  variant?: 'cards' | 'wide-cards' | 'compact' | 'overview';
+  variant?: 'cards' | 'wide-cards' | 'compact' | 'overview' | 'stats';
 }
 
 /**
@@ -24,6 +24,7 @@ interface ResponsiveGridProps {
  * - wide-cards: Wide cards for featured content (1/2/3 columns)
  * - compact: Compact items like tags (2/5 columns)
  * - overview: Dashboard overview cards (1/2/3/4/5 columns)
+ * - stats: Dashboard stats cards (1/2/3/4 columns max)
  */
 export function ResponsiveGrid({
   children,
@@ -48,6 +49,8 @@ export function ResponsiveGrid({
     // Overview cards (dashboard stats) - responsive layout for optimal readability
     overview:
       'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+    // Stats cards (dashboard with fixed number of cards) - caps at 4 columns
+    stats: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
   };
 
   return (

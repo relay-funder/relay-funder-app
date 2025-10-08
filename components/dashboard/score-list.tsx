@@ -103,7 +103,6 @@ function ScoreEventSkeleton() {
   );
 }
 
-
 export function ScoreList() {
   const {
     data: score,
