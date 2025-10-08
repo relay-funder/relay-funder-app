@@ -8,6 +8,7 @@ import { useAdminApproveCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminApproveProcessStates } from '@/types/admin';
 import type { DbCampaign } from '@/types/campaign';
 import { CheckCircle } from 'lucide-react';
+import { FormattedDate } from '@/components/formatted-date';
 import {
   getValidationSummary,
   ValidationStage,
@@ -130,7 +131,7 @@ export function CampaignAdminApproveButton({
           </div>
           <p className="mt-2 text-red-600 dark:text-red-400">
             This campaign has already started (
-            {new Date(campaign.startTime).toLocaleDateString()}). Treasury
+            <FormattedDate date={new Date(campaign.startTime)}/>). Treasury
             configuration would fail because the start time is in the past.
           </p>
         </div>

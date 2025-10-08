@@ -149,12 +149,15 @@ export function validateCampaign(
   const warnings: ValidationRule[] = [];
 
   for (const rule of applicableRules) {
-    if (rule.condition(campaign)) {
-      if (rule.severity === ValidationSeverity.ERROR) {
-        errors.push(rule);
-      } else if (rule.severity === ValidationSeverity.WARNING) {
-        warnings.push(rule);
-      }
+    if (!rule.condition(campaign)) continue;
+
+    if (rule.severity === ValidationSeverity.ERROR) {
+      errors.push(rule);
+      continue;
+    }
+
+    if (rule.severity === ValidationSeverity.WARNING) {
+      warnings.push(rule);
     }
   }
 
