@@ -19,7 +19,7 @@ import {
   isValidCategoryId,
   VALID_CATEGORY_IDS,
 } from '@/lib/constant/categories';
-import { checkIpLimit, checkUserDailyLimit } from '@/lib/api/rate-limit';
+import { checkIpRateLimit, checkUserRateLimit } from '@/lib/api/rate-limit';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -31,8 +31,10 @@ const statusMap: Record<string, CampaignStatus> = {
 };
 
 export async function POST(req: Request) {
+  const ROUTE = '/api/campaigns:POST';
+
   try {
-    const ipResult = await checkIpLimit('campaign-create');
+    const ipResult = await checkIpRateLimit(ROUTE);
     if (!ipResult.allowed) {
       throw new ApiRateLimitError(
         'Too many requests from this IP. Please try later.',
@@ -42,10 +44,10 @@ export async function POST(req: Request) {
     const session = await checkAuth(['user']);
     const creatorAddress = session.user.address;
 
-    const userResult = checkUserDailyLimit('campaign-create', creatorAddress);
+    const userResult = await checkUserRateLimit(ROUTE, creatorAddress);
     if (!userResult.allowed) {
       throw new ApiRateLimitError(
-        'Daily campaign creation limit reached. Please try later.',
+        'User campaign creation limit reached. Please try later.',
       );
     }
 
