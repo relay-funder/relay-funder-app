@@ -353,3 +353,15 @@ model EventFeed {
   @@index([receiverId, createdAt])
   @@index([receiverId, type])
 }
+
+model ApiAudit {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  ip          String?
+  user        String?
+  route       String
+
+  @@index([user, createdAt])
+  @@index([ip, createdAt])
+  @@index([route, createdAt])
+}
