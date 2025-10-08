@@ -18,6 +18,7 @@ import {
   Minus,
   Flower2,
 } from 'lucide-react';
+import { CREATOR_EVENT_POINTS, RECEIVER_EVENT_POINTS } from '@/lib/constant';
 
 interface ScoreExplanationModalProps {
   open: boolean;
@@ -57,7 +58,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>5 points</span>
+                  <span>{CREATOR_EVENT_POINTS.CampaignPayment} points</span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -67,7 +68,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>1 point</span>
+                  <span>{CREATOR_EVENT_POINTS.CampaignComment} point{CREATOR_EVENT_POINTS.CampaignComment === 1 ? '' : 's'}</span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -77,7 +78,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>2 points</span>
+                  <span>{CREATOR_EVENT_POINTS.ProfileCompleted} points</span>
                 </div>
               </li>
             </ul>
@@ -96,7 +97,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>10 points</span>
+                  <span>{RECEIVER_EVENT_POINTS.CampaignApprove} points</span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -106,7 +107,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-red-600">
                   <Minus className="h-4 w-4" />
-                  <span>5 points</span>
+                  <span>{Math.abs(RECEIVER_EVENT_POINTS.CampaignDisable)} points</span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -116,7 +117,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>1 point</span>
+                  <span>{RECEIVER_EVENT_POINTS.CampaignComment} point{RECEIVER_EVENT_POINTS.CampaignComment === 1 ? '' : 's'}</span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -126,7 +127,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>1 point</span>
+                  <span>{RECEIVER_EVENT_POINTS.CampaignPayment} point{RECEIVER_EVENT_POINTS.CampaignPayment === 1 ? '' : 's'}</span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -136,7 +137,7 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>3 points</span>
+                  <span>{CREATOR_EVENT_POINTS.CampaignUpdate} points</span>
                 </div>
               </li>
             </ul>
@@ -151,21 +152,11 @@ export function ScoreExplanationModal({
               <li className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Heart className="h-5 w-5 text-pink-500" />
-                  <span>Someone signs up via your share link</span>
+                  <span>Someone uses your share link</span>
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>2 points</span>
-                </div>
-              </li>
-              <li className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-pink-500" />
-                  <span>Someone donates via your share link</span>
-                </div>
-                <div className="flex items-center gap-1 font-medium text-green-600">
-                  <Plus className="h-4 w-4" />
-                  <span>5 points</span>
+                  <span>{RECEIVER_EVENT_POINTS.CampaignShare} points</span>
                 </div>
               </li>
             </ul>

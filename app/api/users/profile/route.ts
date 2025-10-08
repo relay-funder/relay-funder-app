@@ -45,9 +45,9 @@ export async function POST(req: Request) {
 
     // Notify admin if profile was just completed
     const isComplete = isProfileComplete(user);
-    if (wasIncomplete && isComplete) {
+    if (wasIncomplete && isComplete && ADMIN_ADDRESS) {
       const adminUser = await db.user.findUnique({
-        where: { address: ADMIN_ADDRESS?.toLowerCase() },
+        where: { address: ADMIN_ADDRESS.toLowerCase() },
       });
       if (adminUser) {
         await notify({

@@ -5,6 +5,7 @@
 
 import { db, type Payment, Prisma } from '@/server/db';
 import { DisplayUserWithStates } from './types/user';
+import { CREATOR_EVENT_POINTS, RECEIVER_EVENT_POINTS } from '@/lib/constant';
 
 export function isProfileComplete(
   user: {
@@ -355,7 +356,7 @@ export async function calculateUserScore({
     CampaignComment: 1,
     CampaignPayment: 1,
     CampaignUpdate: 0,
-    CampaignShare: 2,
+    // CampaignShare is handled dynamically based on shareType
   },
 }: {
   userId: number;
@@ -445,11 +446,11 @@ export async function getUserScoreEvents({
 
   // Filter by category if specified
   if (category) {
-    if (category === 'donor') {
-      // Donor events are when user created them
+    if (category === 'creator') {
+      // Creator events are when user created them
       where.createdById = userId;
-    } else if (category === 'creator') {
-      // Creator events are when user received them
+    } else if (category === 'donor') {
+      // Donor events are when user received them
       where.receiverId = userId;
     }
   }
@@ -474,22 +475,22 @@ export async function getUserScoreEvents({
         // User created this event (donor actions)
         switch (event.type) {
           case 'CampaignComment':
-            points = 1;
+            points = CREATOR_EVENT_POINTS.CampaignComment;
             action = 'Commented on a campaign';
             eventCategory = 'donor';
             break;
           case 'CampaignPayment':
-            points = 5;
+            points = CREATOR_EVENT_POINTS.CampaignPayment;
             action = 'Made a donation';
             eventCategory = 'donor';
             break;
           case 'ProfileCompleted':
-            points = 2;
+            points = CREATOR_EVENT_POINTS.ProfileCompleted;
             action = 'Completed profile';
             eventCategory = 'donor';
             break;
           case 'CampaignUpdate':
-            points = 3;
+            points = CREATOR_EVENT_POINTS.CampaignUpdate;
             action = 'Updated campaign';
             eventCategory = 'creator';
             break;
@@ -498,31 +499,28 @@ export async function getUserScoreEvents({
         // User received this event (creator rewards)
         switch (event.type) {
           case 'CampaignApprove':
-            points = 10;
+            points = RECEIVER_EVENT_POINTS.CampaignApprove;
             action = 'Campaign approved';
             eventCategory = 'creator';
             break;
           case 'CampaignDisable':
-            points = -5;
+            points = RECEIVER_EVENT_POINTS.CampaignDisable;
             action = 'Campaign disabled';
             eventCategory = 'creator';
             break;
           case 'CampaignComment':
-            points = 1;
+            points = RECEIVER_EVENT_POINTS.CampaignComment;
             action = 'Received comment on campaign';
             eventCategory = 'creator';
             break;
           case 'CampaignPayment':
-            points = 1;
+            points = RECEIVER_EVENT_POINTS.CampaignPayment;
             action = 'Received donation on campaign';
             eventCategory = 'creator';
             break;
           case 'CampaignShare':
-            points = (event.data as { shareType?: string })?.shareType === 'donation' ? 5 : 2;
-            action =
-              (event.data as { shareType?: string })?.shareType === 'donation'
-                ? 'Someone donated via your share link'
-                : 'Someone signed up via your share link';
+            points = RECEIVER_EVENT_POINTS.CampaignShare;
+            action = 'Someone used your share link';
             eventCategory = 'creator';
             break;
         }
