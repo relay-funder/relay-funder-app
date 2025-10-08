@@ -1,3 +1,8 @@
+// TODO: Break down large functions into smaller, focused utilities
+// - Extract calculateUserScore SQL building logic into separate functions
+// - Split getUserScoreEvents event mapping logic into dedicated mappers
+// - Create reusable pagination utilities for list functions
+
 import { db, type Payment, Prisma } from '@/server/db';
 import { DisplayUserWithStates } from './types/user';
 
