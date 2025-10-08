@@ -513,9 +513,9 @@ export async function getUserScoreEvents({
             eventCategory = 'creator';
             break;
           case 'CampaignShare':
-            points = event.data?.shareType === 'donation' ? 5 : 2;
+            points = (event.data as { shareType?: string })?.shareType === 'donation' ? 5 : 2;
             action =
-              event.data?.shareType === 'donation'
+              (event.data as { shareType?: string })?.shareType === 'donation'
                 ? 'Someone donated via your share link'
                 : 'Someone signed up via your share link';
             eventCategory = 'creator';
