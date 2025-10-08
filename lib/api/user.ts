@@ -434,7 +434,7 @@ export async function getUserScoreEvents({
   const skip = (page - 1) * pageSize;
 
   // Build where clause
-  const where: any = {
+  const where: Prisma.EventFeedWhereInput = {
     OR: [{ createdById: userId }, { receiverId: userId }],
   };
 

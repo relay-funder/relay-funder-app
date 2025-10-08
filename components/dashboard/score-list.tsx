@@ -4,7 +4,6 @@ import { useUserScore } from '@/lib/hooks/useUserScore';
 import { useUserScoreEvents } from '@/lib/hooks/useUserScoreEvents';
 import { Card, CardContent } from '@/components/ui';
 import { Button } from '@/components/ui';
-import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
 import { ScoreExplanationModal } from '@/components/score-explanation-modal';
 import { LoadMoreButton } from '@/components/shared/load-more-button';
@@ -104,49 +103,6 @@ function ScoreEventSkeleton() {
   );
 }
 
-interface ScoreItemProps {
-  icon: React.ReactNode;
-  title: string;
-  value: number;
-  action: string;
-  valueColor?: string;
-}
-
-function ScoreItem({
-  icon,
-  title,
-  value,
-  action,
-  valueColor = 'text-green-600',
-}: ScoreItemProps) {
-  return (
-    <Card className="bg-card transition-shadow hover:shadow-md">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              {icon}
-            </div>
-            <div>
-              <h4 className="font-medium text-foreground">{title}</h4>
-              <p className="text-sm text-muted-foreground">{action}</p>
-            </div>
-          </div>
-          <div
-            className={`flex items-center gap-1 font-semibold ${valueColor}`}
-          >
-            {value > 0 ? (
-              <Plus className="h-4 w-4" />
-            ) : value < 0 ? (
-              <Minus className="h-4 w-4" />
-            ) : null}
-            <span>{Math.abs(value)}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export function ScoreList() {
   const {
