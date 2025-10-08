@@ -37,10 +37,6 @@ export function UserScoreCard() {
     );
   }
 
-  if (!score) {
-    return null;
-  }
-
   return (
     <Card className="rounded-lg border bg-card shadow-sm">
       <CardContent className="flex items-center p-2 md:p-6">
@@ -52,7 +48,7 @@ export function UserScoreCard() {
             Total Score
           </p>
           <h3 className="whitespace-nowrap text-sm font-bold md:text-xl">
-            {score.totalScore}
+            {score?.totalScore ?? 0}
           </h3>
         </div>
       </CardContent>

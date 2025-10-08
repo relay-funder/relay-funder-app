@@ -414,3 +414,138 @@ export async function calculateUserScore({
     throw new Error('Failed to calculate user score');
   }
 }
+
+export async function getUserScoreEvents({
+  userId,
+  page = 1,
+  pageSize = 10,
+  category,
+}: {
+  userId: number;
+  page?: number;
+  pageSize?: number;
+  category?: 'donor' | 'creator';
+}) {
+  // Validate pageSize
+  if (pageSize > 100) {
+    throw new Error('Maximum page size exceeded');
+  }
+
+  const skip = (page - 1) * pageSize;
+
+  // Build where clause
+  const where: any = {
+    OR: [{ createdById: userId }, { receiverId: userId }],
+  };
+
+  // Filter by category if specified
+  if (category) {
+    if (category === 'donor') {
+      // Donor events are when user created them
+      where.createdById = userId;
+    } else if (category === 'creator') {
+      // Creator events are when user received them
+      where.receiverId = userId;
+    }
+  }
+
+  const totalItems = await db.eventFeed.count({ where });
+
+  const events = await db.eventFeed.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: pageSize,
+  });
+
+  const scoreEvents = events
+    .map((event) => {
+      let points = 0;
+      let action = '';
+      let eventCategory = '';
+
+      // Determine points based on event type and user role
+      if (event.createdById === userId) {
+        // User created this event (donor actions)
+        switch (event.type) {
+          case 'CampaignComment':
+            points = 1;
+            action = 'Commented on a campaign';
+            eventCategory = 'donor';
+            break;
+          case 'CampaignPayment':
+            points = 5;
+            action = 'Made a donation';
+            eventCategory = 'donor';
+            break;
+          case 'ProfileCompleted':
+            points = 2;
+            action = 'Completed profile';
+            eventCategory = 'donor';
+            break;
+          case 'CampaignUpdate':
+            points = 3;
+            action = 'Updated campaign';
+            eventCategory = 'creator';
+            break;
+        }
+      } else if (event.receiverId === userId) {
+        // User received this event (creator rewards)
+        switch (event.type) {
+          case 'CampaignApprove':
+            points = 10;
+            action = 'Campaign approved';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignDisable':
+            points = -5;
+            action = 'Campaign disabled';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignComment':
+            points = 1;
+            action = 'Received comment on campaign';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignPayment':
+            points = 1;
+            action = 'Received donation on campaign';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignShare':
+            points = event.data?.shareType === 'donation' ? 5 : 2;
+            action =
+              event.data?.shareType === 'donation'
+                ? 'Someone donated via your share link'
+                : 'Someone signed up via your share link';
+            eventCategory = 'creator';
+            break;
+        }
+      }
+
+      return {
+        id: event.id,
+        type: event.type,
+        action,
+        points,
+        category: eventCategory,
+        createdAt: event.createdAt.toISOString(),
+        data: event.data,
+      };
+    })
+    .filter((event) => event.points !== 0); // Only include events that give/take points
+
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const hasMore = page * pageSize < totalItems;
+
+  return {
+    events: scoreEvents,
+    pagination: {
+      currentPage: page,
+      pageSize,
+      totalPages,
+      totalItems,
+      hasMore,
+    },
+  };
+}
