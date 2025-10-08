@@ -333,11 +333,11 @@ export function useAdminApproveCampaign() {
           `Treasury deployment failed: ${deployResult.error || 'Unknown error'}`,
         );
       }
-
+      try {
         // Configure the treasury
         onStateChanged('configureTreasury');
         const configResult = await configureTreasury(
-          deployResult.treasuryAddress,
+          deployResult.address,
           campaignId,
           {
             startTime: campaign.startTime,
@@ -356,17 +356,24 @@ export function useAdminApproveCampaign() {
         onStateChanged('storageComplete');
         await approveCampaignApi({
           campaignId,
-          treasuryAddress: deployResult.treasuryAddress,
+          treasuryAddress: deployResult.address,
         });
 
-        return deployResult.treasuryAddress;
+        return deployResult.address;
       } catch (deployError) {
         throw new Error(
           `Treasury deployment failed: ${deployError instanceof Error ? deployError.message : 'Unknown error'}`,
         );
       }
     },
-    [wallet, authenticated, client, configureTreasury, deployTreasury, approveCampaignApi],
+    [
+      wallet,
+      authenticated,
+      client,
+      configureTreasury,
+      deployTreasury,
+      approveCampaignApi,
+    ],
   );
   return { adminApproveCampaign };
 }
