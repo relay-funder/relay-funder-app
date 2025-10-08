@@ -12,6 +12,11 @@ import {
   getValidationSummary,
   ValidationStage,
 } from '@/lib/ccp-validation/campaign-validation';
+import {
+  useAdminConfigureTreasury,
+  type CampaignData,
+} from './useAdminConfigureTreasury';
+import { useAdminApproveCampaign as useAdminApproveCampaignApi } from '@/lib/hooks/useCampaigns';
 
 // Add platform config
 const platformConfig = {
@@ -25,6 +30,8 @@ export function useAdminApproveCampaign() {
   const { wallet } = useWeb3Auth();
   const { authenticated } = useAuth();
   const { data: client } = useConnectorClient();
+  const { configureTreasury } = useAdminConfigureTreasury();
+  const { mutateAsync: approveCampaignApi } = useAdminApproveCampaignApi();
 
   const adminApproveCampaign = useCallback(
     async (
@@ -286,7 +293,9 @@ export function useAdminApproveCampaign() {
 
       if (!campaignResponse.ok) {
         const errorData = await campaignResponse.json();
-        throw new Error(`Failed to fetch campaign: ${errorData.error || 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch campaign: ${errorData.error || 'Unknown error'}`,
+        );
       }
 
       const { campaign } = await campaignResponse.json();
@@ -297,10 +306,7 @@ export function useAdminApproveCampaign() {
 
       // Validate campaign before treasury deployment
       debug && console.log('Validating campaign before treasury deployment...');
-      const validation = getValidationSummary(
-        campaign,
-        ValidationStage.ACTIVE,
-      );
+      const validation = getValidationSummary(campaign, ValidationStage.ACTIVE);
       if (!validation.canProceed) {
         throw new Error(
           `Campaign validation failed: ${validation.messages.join(', ')}. Cannot deploy treasury.`,
@@ -340,6 +346,31 @@ export function useAdminApproveCampaign() {
           );
         }
 
+        // Configure the treasury
+        onStateChanged('configureTreasury');
+        const configResult = await configureTreasury(
+          deployResult.treasuryAddress,
+          campaignId,
+          {
+            startTime: campaign.startTime,
+            endTime: campaign.endTime,
+            fundingGoal: campaign.fundingGoal,
+          } as CampaignData,
+        );
+
+        if (!configResult.success) {
+          throw new Error(
+            `Treasury configuration failed: ${configResult.error}`,
+          );
+        }
+
+        // Call the approve API to update the database
+        onStateChanged('storageComplete');
+        await approveCampaignApi({
+          campaignId,
+          treasuryAddress: deployResult.treasuryAddress,
+        });
+
         return deployResult.treasuryAddress;
       } catch (deployError) {
         throw new Error(
@@ -347,7 +378,7 @@ export function useAdminApproveCampaign() {
         );
       }
     },
-    [wallet, authenticated, client],
+    [wallet, authenticated, client, configureTreasury, approveCampaignApi],
   );
   return { adminApproveCampaign };
 }
