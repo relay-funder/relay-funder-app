@@ -1,12 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { useUserScore } from '@/lib/hooks/useUserScore';
 import { Trophy } from 'lucide-react';
-import { ScoreExplanationModal } from '@/components/score-explanation-modal';
-import { useState } from 'react';
 
 export function UserScoreCard() {
   const { data: score, isLoading, error } = useUserScore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -45,26 +42,20 @@ export function UserScoreCard() {
   }
 
   return (
-    <>
-      <Card
-        className="cursor-pointer rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-sm"
-        onClick={() => setIsModalOpen(true)}
-      >
-        <CardContent className="flex items-center p-2 md:p-6">
-          <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
-            <Trophy className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <p className="whitespace-nowrap text-xs font-medium text-muted-foreground md:text-sm">
-              Total Score
-            </p>
-            <h3 className="whitespace-nowrap text-sm font-bold md:text-xl">
-              {score.totalScore}
-            </h3>
-          </div>
-        </CardContent>
-      </Card>
-      <ScoreExplanationModal open={isModalOpen} onOpenChange={setIsModalOpen} />
-    </>
+    <Card className="rounded-lg border bg-card shadow-sm">
+      <CardContent className="flex items-center p-2 md:p-6">
+        <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
+          <Trophy className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <p className="whitespace-nowrap text-xs font-medium text-muted-foreground md:text-sm">
+            Total Score
+          </p>
+          <h3 className="whitespace-nowrap text-sm font-bold md:text-xl">
+            {score.totalScore}
+          </h3>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
