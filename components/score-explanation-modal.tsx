@@ -68,7 +68,10 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>{CREATOR_EVENT_POINTS.CampaignComment} point{CREATOR_EVENT_POINTS.CampaignComment === 1 ? '' : 's'}</span>
+                  <span>
+                    {CREATOR_EVENT_POINTS.CampaignComment} point
+                    {CREATOR_EVENT_POINTS.CampaignComment === 1 ? '' : 's'}
+                  </span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -107,7 +110,9 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-red-600">
                   <Minus className="h-4 w-4" />
-                  <span>{Math.abs(RECEIVER_EVENT_POINTS.CampaignDisable)} points</span>
+                  <span>
+                    {Math.abs(RECEIVER_EVENT_POINTS.CampaignDisable)} points
+                  </span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -117,7 +122,10 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>{RECEIVER_EVENT_POINTS.CampaignComment} point{RECEIVER_EVENT_POINTS.CampaignComment === 1 ? '' : 's'}</span>
+                  <span>
+                    {RECEIVER_EVENT_POINTS.CampaignComment} point
+                    {RECEIVER_EVENT_POINTS.CampaignComment === 1 ? '' : 's'}
+                  </span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
@@ -127,7 +135,10 @@ export function ScoreExplanationModal({
                 </div>
                 <div className="flex items-center gap-1 font-medium text-green-600">
                   <Plus className="h-4 w-4" />
-                  <span>{RECEIVER_EVENT_POINTS.CampaignPayment} point{RECEIVER_EVENT_POINTS.CampaignPayment === 1 ? '' : 's'}</span>
+                  <span>
+                    {RECEIVER_EVENT_POINTS.CampaignPayment} point
+                    {RECEIVER_EVENT_POINTS.CampaignPayment === 1 ? '' : 's'}
+                  </span>
                 </div>
               </li>
               <li className="flex items-center justify-between">
