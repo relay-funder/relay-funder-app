@@ -93,9 +93,13 @@ export class ApiIntegrityError extends Error {
  * This error indicates that the route was executed too frequently
  */
 export class ApiRateLimitError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public resetAt?: number,
+  ) {
     super(message);
     Object.setPrototypeOf(this, ApiRateLimitError.prototype);
     this.name = 'RateLimitError';
+    this.resetAt = resetAt;
   }
 }
