@@ -169,7 +169,7 @@ export default function DashboardPage() {
               className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
             >
               <Bell className="mr-1 h-4 w-4 sm:mr-2" />
-              Updates
+              Campaign Updates
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="ml-1 h-3 w-3 cursor-help text-gray-400" />
