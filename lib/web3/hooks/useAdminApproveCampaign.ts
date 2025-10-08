@@ -16,6 +16,7 @@ import {
   useAdminConfigureTreasury,
   type CampaignData,
 } from './useAdminConfigureTreasury';
+import { useAdminDeployTreasury } from './useAdminDeployTreasury';
 import { useAdminApproveCampaign as useAdminApproveCampaignApi } from '@/lib/hooks/useCampaigns';
 
 // Add platform config
@@ -31,6 +32,7 @@ export function useAdminApproveCampaign() {
   const { authenticated } = useAuth();
   const { data: client } = useConnectorClient();
   const { configureTreasury } = useAdminConfigureTreasury();
+  const { deployTreasury } = useAdminDeployTreasury();
   const { mutateAsync: approveCampaignApi } = useAdminApproveCampaignApi();
 
   const adminApproveCampaign = useCallback(
@@ -317,34 +319,20 @@ export function useAdminApproveCampaign() {
           'Campaign validation passed, proceeding with deployment...',
         );
 
-      // Deploy treasury server-side
+      // Deploy treasury client-side
       onStateChanged('treasuryFactoryWait');
 
-      try {
-        const deployResponse = await fetch(
-          `/api/campaigns/${campaignId}/deploy-treasury`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
+      const deployResult = await deployTreasury({
+        campaignId,
+        campaignAddress: campaignAddress,
+        platformBytes: platformConfig.platformBytes,
+      });
+
+      if (deployResult.deploymentStatus !== 'success') {
+        throw new Error(
+          `Treasury deployment failed: ${deployResult.error || 'Unknown error'}`,
         );
-
-        if (!deployResponse.ok) {
-          const errorData = await deployResponse.json();
-          throw new Error(
-            `Treasury deployment failed: ${errorData.error || 'Unknown server error'}`,
-          );
-        }
-
-        const deployResult = await deployResponse.json();
-
-        if (deployResult.status !== 'success') {
-          throw new Error(
-            `Treasury deployment failed: ${deployResult.error || 'Unknown error'}`,
-          );
-        }
+      }
 
         // Configure the treasury
         onStateChanged('configureTreasury');
@@ -378,7 +366,7 @@ export function useAdminApproveCampaign() {
         );
       }
     },
-    [wallet, authenticated, client, configureTreasury, approveCampaignApi],
+    [wallet, authenticated, client, configureTreasury, deployTreasury, approveCampaignApi],
   );
   return { adminApproveCampaign };
 }
