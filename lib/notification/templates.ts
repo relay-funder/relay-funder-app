@@ -14,6 +14,10 @@ export function generateMessage(data: NotificationData): string {
       return `${data.formattedAmount} donation by ${data.donorName} to "${data.campaignTitle}"`;
     case 'CampaignUpdate':
       return `New update posted on "${data.campaignTitle}"`;
+    case 'ProfileCompleted':
+      return `User ${data.userName} has completed their profile`;
+    case 'CampaignShare':
+      return `Someone visited "${data.campaignTitle}" via your share link by ${data.sharerName}`;
     default:
       return 'Notification';
   }

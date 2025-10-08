@@ -12,7 +12,9 @@ export interface UserWithAddressParams {
     address: string;
   }>;
 }
-export interface GetUserResponseInstance extends UserWithCount {}
+export interface GetUserResponseInstance extends UserWithCount {
+  score?: { totalScore: number };
+}
 export interface GetUserResponse {
   user: GetUserResponseInstance;
 }

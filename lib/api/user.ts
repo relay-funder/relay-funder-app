@@ -1,5 +1,22 @@
-import { db, type Payment, type Prisma } from '@/server/db';
+// TODO: Break down large functions into smaller, focused utilities
+// - Extract calculateUserScore SQL building logic into separate functions
+// - Split getUserScoreEvents event mapping logic into dedicated mappers
+// - Create reusable pagination utilities for list functions
+
+import { db, type Payment, Prisma } from '@/server/db';
 import { DisplayUserWithStates } from './types/user';
+import { CREATOR_EVENT_POINTS, RECEIVER_EVENT_POINTS } from '@/lib/constant';
+
+export function isProfileComplete(
+  user: {
+    firstName?: string | null;
+    lastName?: string | null;
+    username?: string | null;
+    email?: string | null;
+  } | null,
+): boolean {
+  return !!(user?.firstName && user?.lastName && user?.username && user?.email);
+}
 
 export function getUserNameFromInstance(
   instance?: { username?: string | null; firstName?: string | null } | null,
@@ -123,8 +140,15 @@ export async function listUsers({
     db.user.count({ where }),
   ]);
 
+  const users = await Promise.all(
+    dbUsers.map(async (user) => ({
+      ...user,
+      score: await calculateUserScore({ userId: user.id }),
+    })),
+  );
+
   return {
-    users: dbUsers,
+    users,
     pagination: {
       currentPage: page,
       pageSize,
@@ -314,6 +338,217 @@ export async function listAdminEventFeed({
       totalPages: Math.ceil(totalCount / pageSize),
       totalItems: totalCount,
       hasMore: skip + pageSize < totalCount,
+    },
+  };
+}
+
+export async function calculateUserScore({
+  userId,
+  creatorWeights = {
+    CampaignComment: 1,
+    CampaignPayment: 5,
+    CampaignUpdate: 3,
+    ProfileCompleted: 2,
+  },
+  receiverWeights = {
+    CampaignApprove: 10,
+    CampaignDisable: -5,
+    CampaignComment: 1,
+    CampaignPayment: 1,
+    CampaignUpdate: 0,
+    // CampaignShare is handled dynamically based on shareType
+  },
+}: {
+  userId: number;
+  creatorWeights?: Record<string, number>;
+  receiverWeights?: Record<string, number>;
+}) {
+  try {
+    const creatorTypes = Object.keys(creatorWeights);
+    const receiverTypes = Object.keys(receiverWeights);
+    const allTypes = Array.from(new Set([...creatorTypes, ...receiverTypes]));
+
+    let creatorCaseParts: Prisma.Sql = Prisma.sql``;
+    for (const type of allTypes) {
+      if (creatorWeights[type] !== undefined) {
+        creatorCaseParts = Prisma.sql`${creatorCaseParts}
+          WHEN "createdById" = ${userId} AND "type" = ${type} THEN ${creatorWeights[type]}`;
+      }
+    }
+
+    let receiverCaseParts: Prisma.Sql = Prisma.sql``;
+    for (const type of allTypes) {
+      if (receiverWeights[type] !== undefined) {
+        receiverCaseParts = Prisma.sql`${receiverCaseParts}
+          WHEN "receiverId" = ${userId} AND "type" = ${type} THEN ${receiverWeights[type]}`;
+      }
+    }
+
+    const query = Prisma.sql`
+      SELECT
+        SUM(CASE
+          ${creatorCaseParts}
+          ELSE 0
+        END) AS "creatorScore",
+        SUM(CASE
+          ${receiverCaseParts}
+          ELSE 0
+        END) AS "receiverScore"
+      FROM
+        "EventFeed"
+      WHERE
+        "createdById" = ${userId} OR "receiverId" = ${userId}
+    `;
+    const result =
+      await db.$queryRaw<{ creatorScore: bigint; receiverScore: bigint }[]>(
+        query,
+      );
+    if (result.length === 0) {
+      return { creatorScore: 0, receiverScore: 0, totalScore: 0 };
+    }
+
+    const { creatorScore, receiverScore } = result[0];
+    const creatorScoreNum = Number(creatorScore);
+    const receiverScoreNum = Number(receiverScore);
+    return {
+      creatorScore: creatorScoreNum,
+      receiverScore: receiverScoreNum,
+      totalScore: creatorScoreNum + receiverScoreNum,
+    };
+  } catch (error) {
+    console.error('Error calculating user score:', error);
+    throw new Error('Failed to calculate user score');
+  }
+}
+
+export async function getUserScoreEvents({
+  userId,
+  page = 1,
+  pageSize = 10,
+  category,
+}: {
+  userId: number;
+  page?: number;
+  pageSize?: number;
+  category?: 'donor' | 'creator';
+}) {
+  // Validate pageSize
+  if (pageSize > 100) {
+    throw new Error('Maximum page size exceeded');
+  }
+
+  const skip = (page - 1) * pageSize;
+
+  // Build where clause
+  const where: Prisma.EventFeedWhereInput = {
+    OR: [{ createdById: userId }, { receiverId: userId }],
+  };
+
+  // Filter by category if specified
+  if (category) {
+    if (category === 'creator') {
+      // Creator events are when user created them
+      where.createdById = userId;
+    } else if (category === 'donor') {
+      // Donor events are when user received them
+      where.receiverId = userId;
+    }
+  }
+
+  const totalItems = await db.eventFeed.count({ where });
+
+  const events = await db.eventFeed.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: pageSize,
+  });
+
+  const scoreEvents = events
+    .map((event) => {
+      let points = 0;
+      let action = '';
+      let eventCategory = '';
+
+      // Determine points based on event type and user role
+      if (event.createdById === userId) {
+        // User created this event (donor actions)
+        switch (event.type) {
+          case 'CampaignComment':
+            points = CREATOR_EVENT_POINTS.CampaignComment;
+            action = 'Commented on a campaign';
+            eventCategory = 'donor';
+            break;
+          case 'CampaignPayment':
+            points = CREATOR_EVENT_POINTS.CampaignPayment;
+            action = 'Made a donation';
+            eventCategory = 'donor';
+            break;
+          case 'ProfileCompleted':
+            points = CREATOR_EVENT_POINTS.ProfileCompleted;
+            action = 'Completed profile';
+            eventCategory = 'donor';
+            break;
+          case 'CampaignUpdate':
+            points = CREATOR_EVENT_POINTS.CampaignUpdate;
+            action = 'Updated campaign';
+            eventCategory = 'creator';
+            break;
+        }
+      } else if (event.receiverId === userId) {
+        // User received this event (creator rewards)
+        switch (event.type) {
+          case 'CampaignApprove':
+            points = RECEIVER_EVENT_POINTS.CampaignApprove;
+            action = 'Campaign approved';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignDisable':
+            points = RECEIVER_EVENT_POINTS.CampaignDisable;
+            action = 'Campaign disabled';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignComment':
+            points = RECEIVER_EVENT_POINTS.CampaignComment;
+            action = 'Received comment on campaign';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignPayment':
+            points = RECEIVER_EVENT_POINTS.CampaignPayment;
+            action = 'Received donation on campaign';
+            eventCategory = 'creator';
+            break;
+          case 'CampaignShare':
+            points = RECEIVER_EVENT_POINTS.CampaignShare;
+            action = 'Someone used your share link';
+            eventCategory = 'creator';
+            break;
+        }
+      }
+
+      return {
+        id: event.id,
+        type: event.type,
+        action,
+        points,
+        category: eventCategory,
+        createdAt: event.createdAt.toISOString(),
+        data: event.data,
+      };
+    })
+    .filter((event) => event.points !== 0); // Only include events that give/take points
+
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const hasMore = page * pageSize < totalItems;
+
+  return {
+    events: scoreEvents,
+    pagination: {
+      currentPage: page,
+      pageSize,
+      totalPages,
+      totalItems,
+      hasMore,
     },
   };
 }

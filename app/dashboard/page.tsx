@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui';
 import { useAuth } from '@/contexts';
-import { Heart, History, Bell, Info } from 'lucide-react';
+import { Heart, History, Bell, Info, Flower2 } from 'lucide-react';
 import { DonorDashboardOverview } from '@/components/dashboard/donor-overview';
 import { FavoriteCard } from '@/components/dashboard/favorite-card';
 import { CampaignLoading } from '@/components/campaign/loading';
@@ -18,6 +18,7 @@ import { DashboardNotAuthenticated } from '@/components/dashboard/not-authentica
 import { PageLayout } from '@/components/page/layout';
 import { DonationHistory } from '@/components/dashboard/donation-history';
 import { CampaignUpdates } from '@/components/dashboard/campaign-updates';
+import { ScoreList } from '@/components/dashboard/score-list';
 import { useCallback, useState } from 'react';
 
 export default function DashboardPage() {
@@ -66,18 +67,36 @@ export default function DashboardPage() {
       >
         <DonorDashboardOverview />
         <TooltipProvider>
-          <Tabs defaultValue="history" className="mt-8">
-            <TabsList className="mb-6">
-              <TabsTrigger value="history" className="px-4 py-2">
-                <History className="mr-2 h-4 w-4" />
-                Donation History
+          <Tabs defaultValue="score" className="mt-8">
+            <TabsList className="mb-6 w-full justify-start overflow-x-auto">
+              <TabsTrigger
+                value="score"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
+                <Flower2 className="mr-1 h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Karma</span>
+                <span className="sm:hidden">Karma</span>
               </TabsTrigger>
-              <TabsTrigger value="favorites" className="px-4 py-2">
-                <Heart className="mr-2 h-4 w-4" />
+              <TabsTrigger
+                value="history"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
+                <History className="mr-1 h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Donation History</span>
+                <span className="sm:hidden">History</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="favorites"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
+                <Heart className="mr-1 h-4 w-4 sm:mr-2" />
                 Favorites
               </TabsTrigger>
-              <TabsTrigger value="updates" className="px-4 py-2">
-                <Bell className="mr-2 h-4 w-4" />
+              <TabsTrigger
+                value="updates"
+                className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+              >
+                <Bell className="mr-1 h-4 w-4 sm:mr-2" />
                 Updates
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -89,6 +108,10 @@ export default function DashboardPage() {
                 </Tooltip>
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="score">
+              <CampaignLoading />
+            </TabsContent>
 
             <TabsContent value="history">
               <CampaignLoading />
@@ -116,18 +139,36 @@ export default function DashboardPage() {
       <DonorDashboardOverview />
 
       <TooltipProvider>
-        <Tabs defaultValue="history" className="mt-8">
-          <TabsList className="mb-6">
-            <TabsTrigger value="history" className="px-4 py-2">
-              <History className="mr-2 h-4 w-4" />
-              Donation History
+        <Tabs defaultValue="score" className="mt-8">
+          <TabsList className="mb-6 w-full justify-start overflow-x-auto">
+            <TabsTrigger
+              value="score"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
+              <Flower2 className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Karma</span>
+              <span className="sm:hidden">Karma</span>
             </TabsTrigger>
-            <TabsTrigger value="favorites" className="px-4 py-2">
-              <Heart className="mr-2 h-4 w-4" />
+            <TabsTrigger
+              value="history"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
+              <History className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Donation History</span>
+              <span className="sm:hidden">History</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="favorites"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
+              <Heart className="mr-1 h-4 w-4 sm:mr-2" />
               Favorites
             </TabsTrigger>
-            <TabsTrigger value="updates" className="px-4 py-2">
-              <Bell className="mr-2 h-4 w-4" />
+            <TabsTrigger
+              value="updates"
+              className="whitespace-nowrap px-3 py-2 text-xs sm:px-4 sm:text-sm"
+            >
+              <Bell className="mr-1 h-4 w-4 sm:mr-2" />
               Updates
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -139,6 +180,10 @@ export default function DashboardPage() {
               </Tooltip>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="score">
+            <ScoreList />
+          </TabsContent>
 
           <TabsContent value="history">
             <DonationHistory />

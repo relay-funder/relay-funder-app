@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts';
 import { UserProfileForm } from '@/components/profile/user-profile-form';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { ProfileCard } from '@/components/profile/card';
+import { UserScoreCard } from '@/components/profile/user-score-card';
 import { ProfileAdditionalSettings } from '@/components/profile/additional-settings';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { ProfilePageSkeleton } from '@/components/profile/page-skeleton';
@@ -50,6 +51,9 @@ export default function ProfilePage() {
 
           {/* User Profile Card */}
           <ProfileCard profile={profile} onEdit={onEditProfile} />
+
+          {/* User Score Card */}
+          <UserScoreCard />
 
           {/* User Profile Form */}
           {(editProfile || !profile) && (
