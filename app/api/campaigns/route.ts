@@ -5,6 +5,7 @@ import {
   ApiUpstreamError,
   ApiAuthNotAllowed,
   ApiNotFoundError,
+  ApiRateLimitError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 
@@ -18,6 +19,7 @@ import {
   isValidCategoryId,
   VALID_CATEGORY_IDS,
 } from '@/lib/constant/categories';
+import { checkIpLimit, checkUserDailyLimit } from '@/lib/api/rate-limit';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -30,8 +32,23 @@ const statusMap: Record<string, CampaignStatus> = {
 
 export async function POST(req: Request) {
   try {
+    const ipResult = await checkIpLimit('campaign-create');
+    if (!ipResult.allowed) {
+      throw new ApiRateLimitError(
+        'Too many requests from this IP. Please try later.',
+      );
+    }
+
     const session = await checkAuth(['user']);
     const creatorAddress = session.user.address;
+
+    const userResult = checkUserDailyLimit('campaign-create', creatorAddress);
+    if (!userResult.allowed) {
+      throw new ApiRateLimitError(
+        'Daily campaign creation limit reached. Please try later.',
+      );
+    }
+
     const user = await getUser(creatorAddress);
     if (!user) {
       throw new ApiNotFoundError('User not found');
