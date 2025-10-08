@@ -152,19 +152,12 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
             Consider These Costs:
           </h4>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>Production, materials, and marketing costs</li>
-            <li>Platform fees, taxes, and contingency buffer (10-20%)</li>
+            <li>
+              Production, materials, and any other costs incurred for the
+              project.
+            </li>
+            <li>A 10–20% contingency buffer is recommended.</li>
           </ul>
-        </div>
-
-        <div>
-          <h4 className="mb-2 font-medium text-foreground">
-            Flexible Funding:
-          </h4>
-          <p className="text-sm text-muted-foreground">
-            You&apos;ll receive all funds raised, even if you don&apos;t reach
-            your goal.
-          </p>
         </div>
       </div>
     ),
