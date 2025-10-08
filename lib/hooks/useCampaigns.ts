@@ -17,7 +17,6 @@ import type {
 } from '@/lib/api/types';
 import { DbCampaign } from '@/types/campaign';
 import { PaginatedResponse } from '@/lib/api/types/common';
-import { useAdminDeployCampaignContract } from '@/lib/web3/hooks/useAdminDeployCampaignContract';
 
 export const CAMPAIGNS_QUERY_KEY = 'campaigns';
 export const CAMPAIGN_STATS_QUERY_KEY = 'campaign_stats';
@@ -313,7 +312,7 @@ async function removeCampaign(variables: IDisableCampaign) {
 interface IUpdateCampaignTransaction {
   campaignId: number;
   transactionHash: string;
-  campaignAddress?: string;
+  campaignAddress?: string | null;
 }
 
 async function updateCampaignTransactionApi(
@@ -341,12 +340,6 @@ async function updateCampaignTransactionApi(
   }
 
   return response.json();
-}
-
-export function useAdminUpdateCampaignTransaction() {
-  return useMutation({
-    mutationFn: updateCampaignTransactionApi,
-  });
 }
 
 export function resetCampaign(id: number, queryClient: QueryClient) {

@@ -25,9 +25,7 @@ export function useAdminDeployTreasury() {
   const { data: client } = useConnectorClient();
 
   const deployTreasury = useCallback(
-    async (
-      params: DeployTreasuryParams,
-    ): Promise<TreasuryDeploymentResult> => {
+    async (params: DeployTreasuryParams): Promise<TreasuryDeploymentResult> => {
       if (!client) {
         throw new Error('Wallet not connected');
       }

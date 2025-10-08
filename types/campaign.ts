@@ -25,7 +25,9 @@ export interface DbCampaign {
     | 'ACTIVE'
     | 'DISABLED'
     | 'COMPLETED'
-    | 'FAILED';
+    | 'FAILED'
+    | 'PAUSED'
+    | 'CANCELLED';
   transactionHash: string | null;
   createdAt: Date;
   updatedAt: Date;

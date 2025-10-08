@@ -5,12 +5,21 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
   describe('PENDING_APPROVAL Stage - Pre-submission validation', () => {
     it('should pass validation for complete campaign data', () => {
       const validCampaign = {
+        id: 1,
         title: 'Test Campaign',
         description: 'Test description',
         fundingGoal: '1000000000000000000',
         creatorAddress: '0x1234567890123456789012345678901234567890',
         startTime: new Date(Date.now() + 86400000),
         endTime: new Date(Date.now() + 86400000 * 30),
+        status: 'PENDING_APPROVAL' as const,
+        transactionHash: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        campaignAddress: null,
+        slug: 'test-campaign',
+        location: null,
+        treasuryAddress: null,
       };
 
       const validation = getValidationSummary(
@@ -24,12 +33,21 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
 
     it('should fail validation for missing required fields', () => {
       const invalidCampaign = {
+        id: 1,
         title: '', // Empty title
         description: 'Test description',
         fundingGoal: '1000000000000000000',
         creatorAddress: '0x1234567890123456789012345678901234567890',
         startTime: new Date(Date.now() + 86400000),
         endTime: new Date(Date.now() + 86400000 * 30),
+        status: 'PENDING_APPROVAL' as const,
+        transactionHash: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        campaignAddress: null,
+        slug: 'test-campaign',
+        location: null,
+        treasuryAddress: null,
       };
 
       const validation = getValidationSummary(
@@ -47,12 +65,21 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
 
     it('should fail validation for whitespace-only fields', () => {
       const invalidCampaign = {
+        id: 1,
         title: '   ', // Whitespace only
         description: 'Test description',
         fundingGoal: '1000000000000000000',
         creatorAddress: '0x1234567890123456789012345678901234567890',
         startTime: new Date(Date.now() + 86400000),
         endTime: new Date(Date.now() + 86400000 * 30),
+        status: 'PENDING_APPROVAL' as const,
+        transactionHash: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        campaignAddress: null,
+        slug: 'test-campaign',
+        location: null,
+        treasuryAddress: null,
       };
 
       const validation = getValidationSummary(
@@ -78,7 +105,13 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
       startTime: new Date(Date.now() + 86400000), // Tomorrow
       endTime: new Date(Date.now() + 86400000 * 30), // 30 days from now
       creatorAddress: '0x1234567890123456789012345678901234567890',
+      status: 'PENDING_APPROVAL' as const,
+      transactionHash: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
       campaignAddress: '0x1234567890123456789012345678901234567890',
+      slug: 'test-campaign',
+      location: null,
       treasuryAddress: null,
     };
 

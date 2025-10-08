@@ -1,4 +1,3 @@
-relay-funder-app/lib/web3/hooks/useAdminDeployCampaignContract.ts
 import { useCallback } from 'react';
 import { ethers } from '@/lib/web3';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
@@ -20,9 +19,9 @@ export interface CampaignData {
   campaignAddress: string | null;
   slug: string;
   location: string | null;
-  treasuryAddress: string | null;
-  category: any;
-  mediaOrder: any;
+  treasuryAddress?: string | null;
+  category?: string | null;
+  mediaOrder?: string[] | null;
 }
 
 export interface DeploymentResult {
@@ -51,17 +50,28 @@ export function useAdminDeployCampaignContract() {
         const usdcDecimals = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS || 6);
 
         if (!factoryAddr || !globalPlatformHash) {
-          throw new Error('Missing required environment variables for deployment');
+          throw new Error(
+            'Missing required environment variables for deployment',
+          );
         }
 
         // Platform configuration
         const platformConfig = {
           flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
-          cumulativeFlatFee: process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
-          platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'),
-          vakiCommissionBps: parseInt(process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0'),
-          launchOffsetSec: parseInt(process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300'),
-          minCampaignDurationSec: parseInt(process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400'),
+          cumulativeFlatFee:
+            process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
+          platformFeeBps: parseInt(
+            process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
+          ),
+          vakiCommissionBps: parseInt(
+            process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+          ),
+          launchOffsetSec: parseInt(
+            process.env.NEXT_PUBLIC_LAUNCH_OFFSET_SEC || '300',
+          ),
+          minCampaignDurationSec: parseInt(
+            process.env.NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC || '86400',
+          ),
         };
 
         // Create factory contract instance
@@ -72,7 +82,9 @@ export function useAdminDeployCampaignContract() {
         );
 
         // Prepare campaign data for contract deployment
-        const providedLaunchTime = Math.floor(campaign.startTime.getTime() / 1000);
+        const providedLaunchTime = Math.floor(
+          campaign.startTime.getTime() / 1000,
+        );
         const providedDeadline = Math.floor(campaign.endTime.getTime() / 1000);
 
         const latestBlock = await ethersProvider.getBlock('latest');
@@ -141,10 +153,14 @@ export function useAdminDeployCampaignContract() {
             }
           }
         } catch (decodeErr) {
-          console.error('Failed to decode campaignAddress from logs', decodeErr);
+          console.error(
+            'Failed to decode campaignAddress from logs',
+            decodeErr,
+          );
         }
 
-        debug && console.log(`Campaign contract deployed at: ${campaignAddress}`);
+        debug &&
+          console.log(`Campaign contract deployed at: ${campaignAddress}`);
         debug && console.log(`Transaction hash: ${tx.hash}`);
 
         return {
