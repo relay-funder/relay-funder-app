@@ -1,159 +1,141 @@
-import { headers } from 'next/headers';
 import { debugApi as debug } from '@/lib/debug';
+import { RATE_LIMITS } from '@/lib/constant';
+import { db } from '@/server/db';
+import type {
+  RateLimit,
+  RateLimitResult,
+  RateLimits,
+  RateLimitsEntry,
+} from './types';
+import { getClientIp } from './ip';
 
-type WindowStore = Map<string, { count: number; resetAt: number }>;
+class RateLimiter {
+  constructor(private rateLimits: RateLimits) {}
 
-// Simple in-memory rate limiter. For multi-instance deployments, replace with Redis/Upstash.
-class FixedWindowRateLimiter {
-  private store: WindowStore = new Map();
+  getRateLimits(route: string) {
+    return this.rateLimits[route];
+  }
 
-  constructor(
-    private windowMs: number,
-    private limit: number,
-  ) {}
+  setRateLimits(route: string, limits: RateLimitsEntry) {
+    this.rateLimits[route] = {
+      user: limits.user ? { ...limits.user } : undefined,
+      ip: limits.ip ? { ...limits.ip } : undefined,
+    };
+    debug && console.debug('[rate-limit] set rate limits', route, limits);
+  }
 
-  consume(key: string) {
-    const now = Date.now();
-    const current = this.store.get(key);
-    if (!current || current.resetAt <= now) {
-      const resetAt = now + this.windowMs;
-      const count = 1;
-      this.store.set(key, { count, resetAt });
-      const result = {
-        allowed: true,
-        remaining: this.limit - 1,
-        resetAt,
-      };
-      debug &&
-        console.debug('[rate-limit] reset/new window', {
-          key,
-          result,
-          count,
-          windowMs: this.windowMs,
-          limit: this.limit,
-        });
-      return result;
+  setRateLimit(route: string, type: keyof RateLimitsEntry, limit: RateLimit) {
+    this.rateLimits[route] = {
+      ...this.rateLimits[route],
+      [type]: limit,
+    };
+    debug && console.debug('[rate-limit] set rate limit', route, type, limit);
+  }
+
+  clearRateLimits(route: string) {
+    delete this.rateLimits[route];
+    debug && console.debug('[rate-limit] clear rate limits', route);
+  }
+
+  async consume(
+    route: string,
+    type: keyof RateLimitsEntry,
+    value: string,
+  ): Promise<RateLimitResult> {
+    const result = await this.check(route, type, value);
+    if (result.allowed) {
+      await this.registerAttempt(route, type, value);
     }
-    if (current.count < this.limit) {
-      current.count += 1;
-      const result = {
-        allowed: true,
-        remaining: this.limit - current.count,
-        resetAt: current.resetAt,
-      };
-      debug &&
-        console.debug('[rate-limit] within window', {
-          key,
-          result,
-          count: current.count,
-        });
-      return result;
-    }
-    const result = { allowed: false, remaining: 0, resetAt: current.resetAt };
-    debug &&
-      console.debug('[rate-limit] limit exceeded', {
-        key,
-        result,
-        count: current.count,
-      });
     return result;
   }
 
-  get(key: string) {
-    return this.store.get(key);
-  }
+  async check(
+    route: string,
+    type: keyof RateLimitsEntry,
+    value: string,
+  ): Promise<RateLimitResult> {
+    if (!this.rateLimits[route]?.[type]) {
+      return { allowed: true, remaining: Infinity };
+    }
+    const { limit, window } = this.rateLimits[route][type];
+    const since = new Date(Date.now() - window);
 
-  getAll() {
-    return Object.fromEntries(
-      this.store.entries().map(([key, value]) => [key, value]),
+    const { count, firstAttempt } = await this.checkAttempts(
+      route,
+      type,
+      value,
+      since,
     );
+
+    const allowed = count < limit;
+    const remaining = Math.max(0, limit - count);
+
+    if (allowed) return { allowed, remaining };
+
+    const nextAttemptAt = firstAttempt?.getTime()
+      ? firstAttempt.getTime() + window
+      : undefined;
+
+    return {
+      allowed,
+      remaining,
+      nextAttemptAt,
+    };
   }
 
-  getKeys() {
-    return Array.from(this.store.keys()).sort();
-  }
+  private async registerAttempt(
+    route: string,
+    type: keyof RateLimitsEntry,
+    value: string,
+  ) {
+    await db.apiAudit
+      .create({
+        data: { route, [type]: value },
+      })
+      .catch(() => {
+        debug &&
+          console.error(
+            `[rate-limit] failed to register attempt for route: ${route} - ip: ${value} - user: ${value}`,
+          );
+      });
 
-  reset(key: string) {
-    this.store.delete(key);
-    debug && console.debug('[rate-limit] reset key', { key });
-  }
-
-  resetAll() {
-    this.store.clear();
-    debug && console.debug('[rate-limit] reset all keys');
-  }
-
-  setLimit(limit: number) {
-    if (!Number.isFinite(limit) || limit < 0) return;
-    this.limit = Math.floor(limit);
-    debug && console.debug('[rate-limit] limit updated', { limit: this.limit });
-  }
-
-  setWindow(windowMs: number) {
-    if (!Number.isFinite(windowMs) || windowMs < 0) return;
-    this.windowMs = Math.floor(windowMs);
     debug &&
-      console.debug('[rate-limit] window updated', { windowMs: this.windowMs });
+      console.log(
+        `[rate-limit] registered attempt for route: ${route} - ip: ${value} - user: ${value}`,
+      );
   }
 
-  setConfig(config: { limit?: number; windowMs?: number }) {
-    typeof config.limit === 'number' && this.setLimit(config.limit);
-    typeof config.windowMs === 'number' && this.setWindow(config.windowMs);
-    debug && console.debug('[rate-limit] config updated', { config });
-  }
-
-  getConfig() {
-    return { limit: this.limit, windowMs: this.windowMs };
+  private async checkAttempts(
+    route: string,
+    type: 'ip' | 'user',
+    value: string,
+    since: Date,
+  ) {
+    const { _count, _min } = await db.apiAudit.aggregate({
+      where: {
+        route,
+        [type]: value,
+        createdAt: { gte: since },
+      },
+      _count: true,
+      _min: { createdAt: true },
+    });
+    return { count: _count || 0, firstAttempt: _min?.createdAt };
   }
 }
 
-export interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  resetAt: number;
-}
+export const rateLimiter = new RateLimiter(RATE_LIMITS);
 
-export const getClientIp = async () => {
-  const h = await headers();
-  // Standard headers through proxies/CDNs
-  const ip =
-    h.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    h.get('x-real-ip') ||
-    h.get('cf-connecting-ip') ||
-    h.get('fastly-client-ip') ||
-    h.get('x-cluster-client-ip') ||
-    h.get('x-forwarded') ||
-    h.get('forwarded-for') ||
-    h.get('forwarded') ||
-    'unknown';
-  debug && ip === 'unknown' && console.debug('[rate-limit] unknown client ip');
-  return ip;
-};
-
-// Configurable buckets
-const ONE_MINUTE = 60_000;
-const ONE_DAY = 86_400_000;
-
-// Per-IP short window throttle
-const ipRateLimiter = new FixedWindowRateLimiter(
-  parseInt(process.env.CAMPAIGN_CREATE_IP_WINDOW_MS || '', 10) || ONE_MINUTE,
-  parseInt(process.env.CAMPAIGN_CREATE_IP_LIMIT || '', 10) || 20,
-);
-
-// Per-user daily limit
-const userRateLimiter = new FixedWindowRateLimiter(
-  parseInt(process.env.CAMPAIGN_CREATE_USER_WINDOW_MS || '', 10) || ONE_DAY,
-  parseInt(process.env.CAMPAIGN_CREATE_USER_LIMIT || '', 10) || 5,
-);
-
-export async function checkIpLimit(prefix: string): Promise<RateLimitResult> {
+export async function checkIpRateLimit(
+  route: string,
+): Promise<RateLimitResult> {
   const ip = await getClientIp();
-  return ipRateLimiter.consume(`${prefix}:ip:${ip}`);
+  return rateLimiter.consume(route, 'ip', ip);
 }
 
-export function checkUserDailyLimit(
-  prefix: string,
+export async function checkUserRateLimit(
+  route: string,
   user: string,
-): RateLimitResult {
-  return userRateLimiter.consume(`${prefix}:user:${user.toLowerCase()}`);
+): Promise<RateLimitResult> {
+  return rateLimiter.consume(route, 'user', user.toLowerCase());
 }
