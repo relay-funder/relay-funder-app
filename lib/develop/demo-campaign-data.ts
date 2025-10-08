@@ -228,15 +228,30 @@ function generateValidDemoCampaignData(): DemoCampaignData {
   // Generate duration within valid range
   const durationDays = randomBetween(durationRange[0], durationRange[1]);
 
-  // Generate dates
-  const startDate = new Date();
-  const endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+  // Generate dates that meet validation requirements
+  const now = new Date();
+
+  // Calculate future start time based on environment
+  const isDev = process.env.NODE_ENV === 'development';
+  const baseMinutes = isDev ? 5 : 3 * 24 * 60; // 5 min dev, 3 days prod
+
+  // For demo data, ensure we generate dates that are actually in the future
+  // Since dates get formatted as YYYY-MM-DD (midnight), we need at least tomorrow
+  // Add extra days to ensure the date is definitely in the future
+  const extraDays = isDev ? 1 : 0; // Tomorrow for dev, today+3days for prod
+  const totalMinutes = baseMinutes + extraDays * 24 * 60;
+
+  const startDate = new Date(now.getTime() + totalMinutes * 60 * 1000);
+  const endDate = new Date(
+    startDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+  );
 
   return {
     title: template.title.replace('{location}', location),
     description: template.description.replace('{location}', location),
     fundingGoal,
     fundingModel: 'flexible' as const, // Only valid funding model
+    // Format as date input (YYYY-MM-DD) - transformation functions will set appropriate times
     startTime: startDate.toISOString().slice(0, 10),
     endTime: endDate.toISOString().slice(0, 10),
     location,
@@ -244,20 +259,26 @@ function generateValidDemoCampaignData(): DemoCampaignData {
   };
 }
 
-// Cache generated data to ensure consistency during development session
-let cachedDemoData: DemoCampaignData[] = [];
-const CACHE_SIZE = 20;
-
 /**
- * Get cached or generate new valid demo campaign data
+ * Generate fresh demo campaign data (no caching to ensure validity)
+ * Each call generates new data that meets current validation requirements
  */
-function getOrGenerateDemoData(): DemoCampaignData[] {
-  if (cachedDemoData.length === 0) {
-    cachedDemoData = Array.from({ length: CACHE_SIZE }, () =>
-      generateValidDemoCampaignData(),
+function getFreshDemoData(): DemoCampaignData[] {
+  // Only generate demo data in development environment
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn(
+      '🚫 Demo data generation is only available in development mode',
     );
+    return [];
   }
-  return cachedDemoData;
+
+  try {
+    return Array.from({ length: 20 }, () => generateValidDemoCampaignData());
+  } catch (error) {
+    console.error('🚨 Error generating demo campaign data:', error);
+    // Return empty array on error to prevent crashes
+    return [];
+  }
 }
 
 /**
@@ -265,7 +286,10 @@ function getOrGenerateDemoData(): DemoCampaignData[] {
  * Always returns valid data with guaranteed enum/category compliance
  */
 export function getRandomDemoCampaignData(): DemoCampaignData {
-  const demoData = getOrGenerateDemoData();
+  const demoData = getFreshDemoData();
+  if (demoData.length === 0) {
+    throw new Error('No demo data available - check if in development mode');
+  }
   const randomIndex = Math.floor(Math.random() * demoData.length);
   return demoData[randomIndex];
 }
@@ -275,7 +299,10 @@ export function getRandomDemoCampaignData(): DemoCampaignData {
  * Always returns valid data with guaranteed enum/category compliance
  */
 export function getDemoCampaignDataByIndex(index: number): DemoCampaignData {
-  const demoData = getOrGenerateDemoData();
+  const demoData = getFreshDemoData();
+  if (demoData.length === 0) {
+    throw new Error('No demo data available - check if in development mode');
+  }
   return demoData[index % demoData.length];
 }
 
@@ -286,10 +313,29 @@ export function getDemoCampaignDataByIndex(index: number): DemoCampaignData {
 export function getDemoCampaignDataForPreview(): DemoCampaignData & {
   bannerImage: null;
 } {
-  const data = getRandomDemoCampaignData();
-  return {
-    ...data,
-    // Explicitly exclude banner image for reliable preview generation
-    bannerImage: null,
-  };
+  try {
+    const data = getRandomDemoCampaignData();
+    return {
+      ...data,
+      // Explicitly exclude banner image for reliable preview generation
+      bannerImage: null,
+    };
+  } catch (error) {
+    console.error('🚨 Error getting demo data for preview:', error);
+    // Return minimal valid data structure on error
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const nextWeek = new Date(tomorrow.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return {
+      title: 'Demo Campaign',
+      description: 'This is a demo campaign for testing purposes.',
+      fundingGoal: 1000,
+      fundingModel: 'flexible',
+      startTime: tomorrow.toISOString().slice(0, 10), // Tomorrow
+      endTime: nextWeek.toISOString().slice(0, 10), // Next week
+      location: 'Kenya',
+      category: 'education',
+      bannerImage: null,
+    };
+  }
 }

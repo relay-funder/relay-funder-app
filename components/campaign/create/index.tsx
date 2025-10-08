@@ -20,6 +20,10 @@ import {
   CampaignFormSchemaType,
   campaignFormDefaultValues,
 } from './form';
+import {
+  transformStartTime,
+  transformEndTime,
+} from '@/lib/utils/campaign-status';
 import { useCampaignFormCreate } from './use-form-create';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -96,12 +100,19 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
 
       setError(null);
 
+      // Apply date transformations only during submission
+      const transformedData = {
+        ...data,
+        startTime: transformStartTime(data.startTime),
+        endTime: transformEndTime(data.endTime),
+      };
+
       if (submitType === 'draft') {
         // Save as draft - create campaign but don't process blockchain transaction
-        return await createCampaign({ ...data, _saveAsDraft: true });
+        return await createCampaign({ ...transformedData, _saveAsDraft: true });
       } else {
         // Submit for approval - full process
-        return await createCampaign(data);
+        return await createCampaign(transformedData);
       }
     },
     [createCampaign, formState, onSubmitStep],

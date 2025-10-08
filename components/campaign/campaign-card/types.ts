@@ -207,8 +207,21 @@ export interface CampaignCardData {
 }
 
 /**
+ * Check if a value is a valid Date object or can be parsed as a valid date
+ */
+function isValidDate(value: unknown): value is Date | string {
+  if (value instanceof Date) return true;
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return !isNaN(parsed.getTime());
+  }
+  return false;
+}
+
+/**
  * Runtime validation for campaign card data
  * Ensures data conforms to expected schema
+ * Handles both Date objects (from direct database queries) and date strings (from API responses)
  */
 export function validateCampaignCardData(
   campaign: unknown,
@@ -224,8 +237,8 @@ export function validateCampaignCardData(
     typeof c.description === 'string' &&
     typeof c.slug === 'string' &&
     typeof c.status === 'string' &&
-    c.startTime instanceof Date &&
-    c.endTime instanceof Date &&
+    isValidDate(c.startTime) &&
+    isValidDate(c.endTime) &&
     typeof c.creatorAddress === 'string' &&
     typeof c.fundingGoal === 'string'
   );

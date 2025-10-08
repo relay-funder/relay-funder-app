@@ -5,36 +5,85 @@ import { DbCampaign } from '@/types/campaign';
 import { useSession } from 'next-auth/react';
 import { CampaignCard } from '../campaign-card';
 import { CampaignFormSchema } from './form';
+import {
+  transformStartTime,
+  transformEndTime,
+} from '@/lib/utils/campaign-status';
 export function CampaignCreateFormSummary() {
   const form = useFormContext();
   const session = useSession();
 
   const campaign = useMemo(() => {
-    // Parse form data for validation and data transformation (date formatting, etc.)
-    const values = CampaignFormSchema.parse(form.getValues());
+    try {
+      // Parse form data for validation and data transformation (date formatting, etc.)
+      const values = CampaignFormSchema.parse(form.getValues());
 
-    return {
-      id: 0,
-      title: values.title,
-      description: values.description,
-      fundingGoal: values.fundingGoal,
-      startTime: new Date(values.startTime),
-      endTime: new Date(values.endTime),
-      creatorAddress: session?.data?.user.address,
-      status: 'DRAFT',
-      transactionHash: null,
-      campaignAddress: null,
-      treasuryAddress: null,
-      category: values.category,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      // Dev mode data excludes banner images for reliable previews
-      media: [],
-      mediaOrder: [],
-      slug: 'summary-campaign',
-      location: values.location,
-      creator: { ...(session?.data?.user ?? {}) },
-    } as DbCampaign;
+      // Include uploaded image in preview when available, keep empty for dev prefill
+      const media = values.bannerImage
+        ? [
+            {
+              id: 'preview-image',
+              url: values.bannerImage,
+              mimeType: values.bannerImage.type,
+              caption: null,
+              createdAt: new Date(),
+              state: 'CREATED' as const,
+            },
+          ]
+        : [];
+
+      const mediaOrder = values.bannerImage ? ['preview-image'] : [];
+
+      return {
+        id: 0,
+        title: values.title,
+        description: values.description,
+        fundingGoal: values.fundingGoal,
+        startTime: new Date(transformStartTime(values.startTime)),
+        endTime: new Date(transformEndTime(values.endTime)),
+        creatorAddress: session?.data?.user.address,
+        status: 'DRAFT',
+        transactionHash: null,
+        campaignAddress: null,
+        treasuryAddress: null,
+        category: values.category,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        media,
+        mediaOrder,
+        slug: 'summary-campaign',
+        location: values.location,
+        creator: { ...(session?.data?.user ?? {}) },
+      } as DbCampaign;
+    } catch (error) {
+      console.warn(
+        'Error parsing form data in summary, using fallback:',
+        error,
+      );
+      // Return a minimal fallback campaign object to prevent crashes
+      return {
+        id: 0,
+        title: 'Campaign Preview',
+        description: 'Please complete the campaign form to see a full preview.',
+        fundingGoal: '1000',
+        fundingRaised: '0',
+        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        creatorAddress: session?.data?.user.address || '',
+        status: 'DRAFT',
+        transactionHash: null,
+        campaignAddress: null,
+        treasuryAddress: null,
+        category: 'education',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        media: [],
+        mediaOrder: [],
+        slug: 'summary-campaign-error',
+        location: 'Unknown',
+        creator: { ...(session?.data?.user ?? {}) },
+      } as DbCampaign;
+    }
   }, [form, session?.data?.user]);
   return (
     <div className="space-y-6">
