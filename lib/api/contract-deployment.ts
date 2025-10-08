@@ -7,7 +7,6 @@ import type { DbCampaign } from '@/types/campaign';
 export interface DeploymentConfig {
   factoryAddr: string;
   globalPlatformHash: string;
-  platformAdminKey: string;
   usdcDecimals: number;
   platformConfig: {
     flatFee: string;
@@ -132,10 +131,9 @@ export async function deployCampaignContract(
 export function getDeploymentConfig(): DeploymentConfig {
   const factoryAddr = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
   const globalPlatformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH;
-  const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
   const usdcDecimals = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS || 6);
 
-  if (!factoryAddr || !globalPlatformHash || !platformAdminKey) {
+  if (!factoryAddr || !globalPlatformHash) {
     throw new ApiIntegrityError('Missing required environment variables');
   }
 
@@ -159,7 +157,6 @@ export function getDeploymentConfig(): DeploymentConfig {
   return {
     factoryAddr,
     globalPlatformHash,
-    platformAdminKey,
     usdcDecimals,
     platformConfig,
   };

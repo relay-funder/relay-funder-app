@@ -57,13 +57,14 @@ export async function POST(
         process.env.NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD || '0.5', // 0.5 USDC threshold
     };
 
-    const adminPk = process.env.PLATFORM_ADMIN_PRIVATE_KEY as string;
-    if (!rpcUrl || !factoryAddr || !globalPlatformHash || !adminPk) {
+    const sponsorPrivateKey = process.env
+      .PLATFORM_SPONSOR_PRIVATE_KEY as string;
+    if (!rpcUrl || !factoryAddr || !globalPlatformHash || !sponsorPrivateKey) {
       console.warn('[campaigns/create-onchain] Missing env', {
         hasRpcUrl: !!rpcUrl,
         hasFactory: !!factoryAddr,
         hasPlatformHash: !!globalPlatformHash,
-        hasAdminPk: !!adminPk,
+        hasSponsorPrivateKey: !!sponsorPrivateKey,
       });
       throw new ApiParameterError('Missing required env vars');
     }
@@ -105,7 +106,7 @@ export async function POST(
     }
     // Build inputs aligned to shell script
     const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const signer = new ethers.Wallet(adminPk, provider);
+    const signer = new ethers.Wallet(sponsorPrivateKey, provider);
     const factory = new ethers.Contract(
       factoryAddr,
       CampaignInfoFactoryABI,

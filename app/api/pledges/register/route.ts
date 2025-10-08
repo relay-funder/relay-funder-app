@@ -107,9 +107,9 @@ export async function POST(req: Request) {
     try {
       // Verify required environment variables
       const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
-      const adminPk = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+      const sponsorPrivateKey = process.env.PLATFORM_SPONSOR_PRIVATE_KEY;
 
-      if (!rpcUrl || !adminPk) {
+      if (!rpcUrl || !sponsorPrivateKey) {
         console.error(
           '[pledges/register] Missing required environment variables',
         );
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
 
       // Initialize provider and admin signer
       const provider = new ethers.JsonRpcProvider(rpcUrl);
-      const adminSigner = new ethers.Wallet(adminPk, provider);
+      const adminSigner = new ethers.Wallet(sponsorPrivateKey, provider);
 
       debug &&
         console.log(
