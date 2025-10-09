@@ -7,7 +7,7 @@ export function DashboardOverview() {
   const { data: stats, isPending } = useCampaignStats('user');
   return (
     <div className="mb-8">
-      <ResponsiveGrid variant="compact" gap="md">
+      <ResponsiveGrid variant="stats" gap="md">
         <Card>
           <CardContent className="flex items-center p-2 md:p-6">
             <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">

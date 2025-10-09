@@ -22,4 +22,15 @@ export type NotificationData =
       campaignId: number;
       campaignTitle: string;
       updateText: string;
+    }
+  | {
+      type: 'ProfileCompleted';
+      userName: string;
+    }
+  | {
+      type: 'CampaignShare';
+      campaignId: number;
+      campaignTitle: string;
+      sharerName: string;
+      pointsEarned: number;
     };

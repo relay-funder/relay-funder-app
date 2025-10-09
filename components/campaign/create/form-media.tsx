@@ -14,15 +14,27 @@ export function CampaignCreateFormMedia() {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
+
   const onReset = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       form.setValue('bannerImage', null);
+      setBannerImage(null);
     },
     [form],
   );
+
+  const onFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] || null;
+      form.setValue('bannerImage', file);
+    },
+    [form],
+  );
+
   useEffect(() => {
     if (!imageWatch) {
+      setBannerImage(null);
       return;
     }
     if (imageWatch instanceof File) {
@@ -39,7 +51,7 @@ export function CampaignCreateFormMedia() {
       <FormField
         control={form.control}
         name="bannerImage"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <FormLabel className="text-sm font-medium text-foreground">
               Campaign Banner Image
@@ -49,9 +61,7 @@ export function CampaignCreateFormMedia() {
                 type="file"
                 accept="image/*"
                 className="mt-1"
-                onChange={(event) =>
-                  field.onChange(event.target.files && event.target.files[0])
-                }
+                onChange={onFileChange}
               />
             </FormControl>
             <FormMessage />

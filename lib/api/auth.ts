@@ -7,6 +7,7 @@ import { ApiAuthError, ApiAuthNotAllowed } from './error';
 import { debugApi as debug } from '@/lib/debug';
 import { getUser } from './user';
 import { setupUser } from '@/server/auth/providers/common';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 /**
  * check authorization
@@ -79,7 +80,7 @@ export async function checkContractAdmin(session: Session) {
   if (!enableBypassContractAdmin) {
     if (
       !requestUserAddress ||
-      requestUserAddress.toLowerCase() !== ADMIN_ADDRESS?.toLowerCase()
+      requestUserAddress !== normalizeAddress(ADMIN_ADDRESS)
     ) {
       throw new ApiAuthNotAllowed(
         'address is not registered as admin for contracts',

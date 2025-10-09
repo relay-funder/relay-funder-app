@@ -5,7 +5,7 @@ interface ResponsiveGridProps {
   children: ReactNode;
   className?: string;
   gap?: 'sm' | 'md' | 'lg';
-  variant?: 'cards' | 'wide-cards' | 'compact';
+  variant?: 'cards' | 'wide-cards' | 'compact' | 'overview' | 'stats';
 }
 
 /**
@@ -18,6 +18,13 @@ interface ResponsiveGridProps {
  * - Large (lg): 3 columns (default maximum for normal laptop displays)
  * - Extra Large (xl): 3 columns (maintained for consistency)
  * - 2XL (2xl): 4 columns (only on very wide displays)
+ *
+ * Variants:
+ * - cards: Standard cards layout (1/2/3/3/4 columns)
+ * - wide-cards: Wide cards for featured content (1/2/3 columns)
+ * - compact: Compact items like tags (2/5 columns)
+ * - overview: Dashboard overview cards (1/2/3/4/5 columns)
+ * - stats: Dashboard stats cards (1/2/3/4 columns max)
  */
 export function ResponsiveGrid({
   children,
@@ -38,7 +45,12 @@ export function ResponsiveGrid({
     // Wide cards (rounds, featured content, etc.) - fewer columns for better readability
     'wide-cards': 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
     // Compact items (tags, filters, etc.) - more columns allowed for small items
-    compact: 'grid-cols-2 sm:grid-cols-4',
+    compact: 'grid-cols-2 sm:grid-cols-5',
+    // Overview cards (dashboard stats) - responsive layout for optimal readability
+    overview:
+      'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+    // Stats cards (dashboard with fixed number of cards) - caps at 4 columns
+    stats: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
   };
 
   return (

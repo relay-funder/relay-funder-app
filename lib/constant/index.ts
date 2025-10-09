@@ -3,6 +3,10 @@ export { categories } from './categories';
 export { fundingModels } from './funding-models';
 export { EXTERNAL_LINKS } from './external-links';
 export { INFINITE_SCROLL_CONFIG } from './infinite-scroll';
+export {
+  CREATOR_EVENT_POINTS,
+  RECEIVER_EVENT_POINTS,
+} from './user-score-points';
 
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;

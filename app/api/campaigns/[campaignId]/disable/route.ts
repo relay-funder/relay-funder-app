@@ -44,12 +44,15 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiNotFoundError('Campaign Creator not found');
     }
 
-    // Determine the appropriate status based on who is disabling
+    // Determine the appropriate status based on who is disabling and campaign state
     let newStatus: CampaignStatus;
 
     if (isAdmin) {
-      // Admin disabling: requires re-approval
-      newStatus = CampaignStatus.PENDING_APPROVAL;
+      // Admin disabling: if campaign has treasury address, just disable it (can be re-enabled)
+      // If no treasury address, it requires re-approval
+      newStatus = campaign.treasuryAddress
+        ? CampaignStatus.DISABLED
+        : CampaignStatus.PENDING_APPROVAL;
     } else {
       // Owner disabling their own campaign: mark as disabled (can be re-enabled)
       newStatus = CampaignStatus.DISABLED;

@@ -309,37 +309,37 @@ async function removeCampaign(variables: IDisableCampaign) {
   return response.json();
 }
 
-interface IDeployContract {
+interface IUpdateCampaignTransaction {
   campaignId: number;
+  transactionHash: string;
+  campaignAddress?: string | null;
 }
 
-async function deployContract(variables: IDeployContract) {
+async function updateCampaignTransactionApi(
+  variables: IUpdateCampaignTransaction,
+) {
   const response = await fetch(
-    `/api/admin/campaigns/${variables.campaignId}/deploy-campaign-contract`,
+    `/api/admin/campaigns/${variables.campaignId}/update-transaction`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        transactionHash: variables.transactionHash,
+        campaignAddress: variables.campaignAddress,
+      }),
     },
   );
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      `Contract deployment failed: ${errorData.error || 'Unknown server error'}`,
+      `Failed to update campaign transaction: ${errorData.error || 'Unknown error'}`,
     );
   }
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(
-      `Contract deployment failed: ${result.error || 'Unknown error'}`,
-    );
-  }
-
-  return result;
+  return response.json();
 }
 
 export function resetCampaign(id: number, queryClient: QueryClient) {
@@ -570,13 +570,13 @@ export function useCampaignStats(scope?: 'user' | 'global') {
   });
 }
 
-export function useAdminDeployContract() {
+export function useAdminUpdateCampaignTransaction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deployContract,
+    mutationFn: updateCampaignTransactionApi,
     onSuccess: (data, variables) => {
-      // Invalidate all campaign-related queries
+      // Invalidate campaign-related queries
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [CAMPAIGNS_QUERY_KEY, variables.campaignId],

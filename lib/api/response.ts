@@ -113,13 +113,27 @@ export async function notAllowed(cause: Error) {
 /**
  * rate limited: the resource accessed is refusing the request to prevent abuse
  */
-export async function rateLimited(cause: Error) {
+export async function rateLimited(cause: ApiRateLimitError) {
   return NextResponse.json(
     {
       success: false,
       error: 'Rate Limited',
       details: cause?.message,
     },
-    { status: 429 },
+    {
+      status: 429,
+      headers: {
+        ...(cause.limit && { 'X-RateLimit-Limit': cause.limit.toString() }),
+        ...(cause.remaining && {
+          'X-RateLimit-Remaining': cause.remaining.toString(),
+        }),
+        ...(cause.reset && {
+          'X-RateLimit-Reset': cause.reset.toString(),
+          'Retry-After': Math.ceil(
+            (cause.reset - Date.now()) / 1000,
+          ).toString(),
+        }),
+      },
+    },
   );
 }

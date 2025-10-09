@@ -5,6 +5,12 @@ import { ethers } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { debugApi as debug } from '@/lib/debug';
 import { z } from 'zod';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterRegisterPledge,
+  userLimiterRegisterPledge,
+} from '@/lib/rate-limit';
 
 // In-memory lock to prevent concurrent registrations from the same user
 // Maps userAddress -> { pledgeId, timestamp }
@@ -79,15 +85,19 @@ const RegisterPledgeSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
+    await checkIpLimit(req.headers, ipLimiterRegisterPledge);
+
     // Authenticate the user making the request
     const session = await checkAuth(['user']);
+    const userAddress = session.user.address;
+
+    await checkUserLimit(userAddress, userLimiterRegisterPledge);
 
     // Validate request body
     const body = await req.json();
     const validatedData = RegisterPledgeSchema.parse(body);
 
     const { treasuryAddress, pledgeId, gatewayFee } = validatedData;
-    const userAddress = session.user.address;
 
     debug &&
       console.log('[pledges/register] Registering pledge:', {
@@ -107,32 +117,32 @@ export async function POST(req: Request) {
     try {
       // Verify required environment variables
       const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
-      const adminPk = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+      const sponsorPrivateKey = process.env.PLATFORM_SPONSOR_PRIVATE_KEY;
 
-      if (!rpcUrl || !adminPk) {
+      if (!rpcUrl || !sponsorPrivateKey) {
         console.error(
           '[pledges/register] Missing required environment variables',
         );
         throw new ApiParameterError(
-          'Server configuration error: missing RPC or admin credentials',
+          'Server configuration error: missing RPC or sponsor credentials',
         );
       }
 
       // Initialize provider and admin signer
       const provider = new ethers.JsonRpcProvider(rpcUrl);
-      const adminSigner = new ethers.Wallet(adminPk, provider);
+      const sponsorSigner = new ethers.Wallet(sponsorPrivateKey, provider);
 
       debug &&
         console.log(
           '[pledges/register] Admin signer address:',
-          adminSigner.address,
+          sponsorSigner.address,
         );
 
       // Initialize treasury contract with admin signer
       const treasuryContract = new ethers.Contract(
         treasuryAddress,
         KeepWhatsRaisedABI,
-        adminSigner,
+        sponsorSigner,
       );
 
       // Set payment gateway fee (privileged operation)
@@ -142,7 +152,7 @@ export async function POST(req: Request) {
 
         // Get current nonce to ensure proper transaction ordering
         const nonce = await provider.getTransactionCount(
-          adminSigner.address,
+          sponsorSigner.address,
           'pending',
         );
 
