@@ -9,6 +9,7 @@ import {
   deployAllContracts,
 } from '../lib/seed/contract-deployment';
 import { USER_FLAGS } from '../lib/constant/user-flags';
+import { normalizeAddress } from '../lib/normalize-address';
 // Load environment variables
 config({ path: '.env.local' });
 
@@ -162,17 +163,20 @@ async function createUsers(
 ) {
   const userPromises = [];
   for (let i = 0; i < amount; i++) {
+    const address = randomAddress();
     userPromises.push(
       db.user.create({
         data: {
-          address: randomAddress(),
+          address,
+          rawAddress: address,
           roles,
           featureFlags,
         },
       }),
     );
   }
-  return await Promise.all(userPromises);
+  const users = await Promise.all(userPromises);
+  return users;
 }
 
 // Generate realistic grassroots funding goals ($200 - $2,000)
@@ -437,36 +441,42 @@ async function main() {
   console.log('Creating predefined test users...');
 
   // Create specific test users with known addresses
+  const protocolAdminUserAddress = '0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70';
   const protocolAdminUser = await db.user.create({
     data: {
-      address: '0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70'.toLowerCase(),
+      address: normalizeAddress(protocolAdminUserAddress) as string,
+      rawAddress: protocolAdminUserAddress,
       roles: ['user', 'admin'],
       featureFlags: USER_FLAGS as string[],
     },
   });
   console.log(`✅ Created protocol admin user: ${protocolAdminUser.address}`);
 
+  const testCreatorUserAddress = '0x9A562a11F7E014B32e2dB1E8d6bAF3C6f39Cc287';
   const testCreatorUser = await db.user.create({
     data: {
-      address: '0x9A562a11F7E014B32e2dB1E8d6bAF3C6f39Cc287'.toLowerCase(),
+      address: normalizeAddress(testCreatorUserAddress) as string,
+      rawAddress: testCreatorUserAddress,
       roles: ['user'],
       featureFlags: [],
     },
   });
   console.log(`✅ Created test creator user: ${testCreatorUser.address}`);
-
+  const testCreatorUser2Address = '0xbAd15e99f9A94DbF931Ae788e10eA8350025b18a';
   const testCreatorUser2 = await db.user.create({
     data: {
-      address: '0xbAd15e99f9A94DbF931Ae788e10eA8350025b18a'.toLowerCase(),
+      address: normalizeAddress(testCreatorUser2Address) as string,
+      rawAddress: testCreatorUser2Address,
       roles: ['user'],
       featureFlags: [],
     },
   });
   console.log(`✅ Created test creator user 2: ${testCreatorUser2.address}`);
-
+  const testCreatorUser3Address = '0x0ed2FD2bb8CEcc7159cA8B4DD26740E9Cebe5Aa1';
   const testCreatorUser3 = await db.user.create({
     data: {
-      address: '0x0ed2FD2bb8CEcc7159cA8B4DD26740E9Cebe5Aa1'.toLowerCase(),
+      address: normalizeAddress(testCreatorUser3Address) as string,
+      rawAddress: testCreatorUser3Address,
       roles: ['user'],
       featureFlags: [],
     },

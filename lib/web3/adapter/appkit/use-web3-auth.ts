@@ -22,6 +22,7 @@ import { chainConfig } from '@/lib/web3';
 import { useToast } from '@/hooks/use-toast';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 /**
  * Handles wagmi connect, signMessage, and logout using the appkit wallet.
@@ -53,9 +54,9 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
         address,
       );
     if (typeof address === 'string' && address.startsWith('0x')) {
-      return address.toLowerCase();
+      return normalizeAddress(address);
     }
-    return undefined;
+    return null;
   }, [address]);
   const isConnected = useCallback(async () => {
     return isWagmiConnected;
@@ -157,6 +158,7 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     });
   return {
     address: normalizedAddress,
+    rawAddress: address,
     wallet,
     authenticating: state.authenticating ?? false,
     connecting: state.connecting ?? false,

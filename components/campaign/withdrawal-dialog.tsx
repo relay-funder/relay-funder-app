@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
 import { AlertTriangle, Wallet, Loader2, CheckCircle2 } from 'lucide-react';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 type WithdrawalStep = 'amount' | 'review' | 'executing' | 'submitted';
 
@@ -102,14 +103,16 @@ export function WithdrawalDialog({
 
   const recipientAddress = useMemo<string | null>(() => {
     // If user set a recipientWallet in profile, prefer that; else use profile.address
-    return profile?.recipientWallet?.trim()
-      ? profile.recipientWallet.trim()
-      : (profile?.address ?? null);
+    return normalizeAddress(
+      profile?.recipientWallet?.trim()
+        ? profile.recipientWallet.trim()
+        : (profile?.address ?? null),
+    );
   }, [profile]);
 
   const isMismatch = useMemo<boolean>(() => {
     if (!connectedAddress || !recipientAddress) return false;
-    return connectedAddress.toLowerCase() !== recipientAddress.toLowerCase();
+    return connectedAddress !== recipientAddress;
   }, [connectedAddress, recipientAddress]);
 
   // Form validation

@@ -177,8 +177,8 @@ export function SiweProvider() {
             });
           throw new Error('siwe.verify failed');
         }
-        const address = messageAddress;
-        return await setupUser(address);
+        const rawAddress = messageAddress;
+        return await setupUser(rawAddress);
       } catch (error: unknown) {
         handleError(error);
       }

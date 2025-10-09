@@ -5,6 +5,12 @@ import { ethers } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { debugApi as debug } from '@/lib/debug';
 import { z } from 'zod';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterRegisterPledge,
+  userLimiterRegisterPledge,
+} from '@/lib/rate-limit';
 
 // In-memory lock to prevent concurrent registrations from the same user
 // Maps userAddress -> { pledgeId, timestamp }
@@ -79,15 +85,19 @@ const RegisterPledgeSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
+    await checkIpLimit(req.headers, ipLimiterRegisterPledge);
+
     // Authenticate the user making the request
     const session = await checkAuth(['user']);
+    const userAddress = session.user.address;
+
+    await checkUserLimit(userAddress, userLimiterRegisterPledge);
 
     // Validate request body
     const body = await req.json();
     const validatedData = RegisterPledgeSchema.parse(body);
 
     const { treasuryAddress, pledgeId, gatewayFee } = validatedData;
-    const userAddress = session.user.address;
 
     debug &&
       console.log('[pledges/register] Registering pledge:', {

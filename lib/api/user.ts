@@ -6,6 +6,7 @@
 import { db, type Payment, Prisma } from '@/server/db';
 import { DisplayUserWithStates } from './types/user';
 import { CREATOR_EVENT_POINTS, RECEIVER_EVENT_POINTS } from '@/lib/constant';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 export function isProfileComplete(
   user: {
@@ -75,11 +76,10 @@ export function getPaymentUser(
 }
 
 export async function getUser(address: string) {
-  if (!address) {
+  const normalizedAddress = normalizeAddress(address);
+  if (!normalizedAddress) {
     return null;
   }
-
-  const normalizedAddress = address.toLowerCase();
 
   const instance = await db.user.findUnique({
     where: { address: normalizedAddress },

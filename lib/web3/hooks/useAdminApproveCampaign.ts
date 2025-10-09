@@ -12,6 +12,7 @@ import {
   getValidationSummary,
   ValidationStage,
 } from '@/lib/ccp-validation/campaign-validation';
+import { normalizeAddress } from '@/lib/normalize-address';
 import {
   useAdminConfigureTreasury,
   type CampaignData,
@@ -142,7 +143,9 @@ export function useAdminApproveCampaign() {
           throw new Error('Invalid platform admin address');
         }
 
-        if (adminAddress.toLowerCase() !== signerAddress.toLowerCase()) {
+        if (
+          normalizeAddress(adminAddress) !== normalizeAddress(signerAddress)
+        ) {
           console.warn('⚠️ [AdminApproval] Platform admin address mismatch', {
             expected: adminAddress,
             actual: signerAddress,

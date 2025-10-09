@@ -9,7 +9,14 @@ import {
 import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
+import { normalizeAddress } from '@/lib/normalize-address';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterCreateCampaignOnChain,
+  userLimiterCreateCampaignOnChain,
+} from '@/lib/rate-limit';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 
 /**
@@ -24,9 +31,15 @@ import { CampaignsWithIdParams } from '@/lib/api/types';
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
-export async function POST(_req: Request, { params }: CampaignsWithIdParams) {
+export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
+    await checkIpLimit(req.headers, ipLimiterCreateCampaignOnChain);
+
     const session = await checkAuth(['user']);
+    const creatorAddress = session.user.address;
+
+    await checkUserLimit(creatorAddress, userLimiterCreateCampaignOnChain);
+
     const { campaignId } = await params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env
@@ -193,7 +206,7 @@ export async function POST(_req: Request, { params }: CampaignsWithIdParams) {
       for (const log of receipt?.logs || []) {
         if (
           log?.topics?.[0] === eventTopic &&
-          log?.address?.toLowerCase() === factoryAddr.toLowerCase()
+          normalizeAddress(log?.address) === normalizeAddress(factoryAddr)
         ) {
           // campaignInfoAddress is the second indexed parameter (topic[2])
           const campaignAddressTopic = log.topics[2];

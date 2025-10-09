@@ -7,6 +7,7 @@ import {
 } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { IWeb3UseAuthHook } from '@/lib/web3/types';
+import { normalizeAddress } from '@/lib/normalize-address';
 import { useSession } from 'next-auth/react';
 import { useWallet } from './use-wallet';
 export function useAuth(): IWeb3UseAuthHook {
@@ -18,7 +19,7 @@ export function useAuth(): IWeb3UseAuthHook {
   const callbackUrl = params?.get('callbackUrl') || '/dashboard';
   const address = useMemo(() => {
     if (typeof user?.wallet?.address === 'string') {
-      return user.wallet.address.toLowerCase();
+      return normalizeAddress(user.wallet.address);
     }
     return undefined;
   }, [user?.wallet?.address]);

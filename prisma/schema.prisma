@@ -135,7 +135,8 @@ model Media {
 
 model User {
   id                   Int             @id @default(autoincrement())
-  address              String          @unique
+  address              String          @unique // normalized (lowercased) address
+  rawAddress           String // original case sensitive address
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   prevSigninAt         DateTime?
@@ -355,3 +356,13 @@ model EventFeed {
   @@index([receiverId, createdAt])
   @@index([receiverId, type])
 }
+
+model RateLimit {
+  identifier  String   @id // Format: "prefix:user" or "prefix:ip" example: "create-campaign:user" or "/api/campaigns:POST:
+  requests    Int      @default(1)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([windowStart])
+}
+

@@ -115,10 +115,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiNotFoundError('Campaign not found');
     }
 
-    if (
-      session.user.address.toLowerCase() !==
-      campaign.creatorAddress.toLowerCase()
-    ) {
+    if (session.user.address !== campaign.creatorAddress) {
       throw new ApiAuthNotAllowed('Only the campaign creator can post updates');
     }
 
