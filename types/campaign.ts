@@ -158,6 +158,7 @@ export type Payment = {
 type User = {
   id: number;
   address: string;
+  rawAddress: string;
   username?: string;
   firstName?: string;
   lastName?: string;

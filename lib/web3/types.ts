@@ -38,13 +38,14 @@ export interface ProviderRpcError extends Error {
 }
 
 export interface ConnectedWallet {
-  address?: string;
+  address?: string | null;
   chainId?: number;
   isConnected: () => Promise<boolean>;
 }
 
 export interface IWeb3UseAuthHook {
-  address?: string;
+  address?: string | null;
+  rawAddress?: string;
   wallet?: ConnectedWallet;
   authenticating: boolean;
   connecting: boolean;
@@ -56,7 +57,7 @@ export interface IWeb3UseAuthHook {
 }
 
 export interface IWeb3UseConnectedAccountHook {
-  address?: string;
+  address?: string | null;
   isConnected: boolean;
   isEmbedded: boolean;
   embeddedEmail?: string | null;

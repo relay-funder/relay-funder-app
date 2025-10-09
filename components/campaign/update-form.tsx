@@ -46,7 +46,7 @@ export function CampaignUpdateForm({
     },
   });
 
-  const isOwner = userAddress?.toLowerCase() === creatorAddress?.toLowerCase();
+  const isOwner = userAddress === creatorAddress;
 
   if (!isOwner) {
     return null;

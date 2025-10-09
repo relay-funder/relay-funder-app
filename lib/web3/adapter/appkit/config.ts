@@ -63,6 +63,7 @@ export const siweConfig = createSIWEConfig({
   createMessage: ({ address, nonce, chainId }: SIWECreateMessageArgs) => {
     const message = new SiweMessage({
       domain: window.location.host,
+      // use rawAddress, will get normalized in api
       address: address.split(':').pop() as `0x${string}`,
       statement: `${PROJECT_NAME} - Please sign this message to log in to the app.`,
       uri: window.location.origin,
@@ -87,6 +88,7 @@ export const siweConfig = createSIWEConfig({
     }
 
     // Validate address and chainId types
+    // session will always contain normalized address
     if (typeof session.user.address !== 'string') {
       return null;
     }
@@ -156,6 +158,5 @@ export function createModal() {
     debug: true,
     siweConfig,
   });
-  console.log({ modal });
   return modal;
 }

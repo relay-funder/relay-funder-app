@@ -1,5 +1,6 @@
 export interface Profile {
   address: string;
+  rawAddress: string;
   recipientWallet: string;
   crowdsplitCustomerId: string;
   firstName: string;

@@ -135,7 +135,8 @@ model Media {
 
 model User {
   id                   Int             @id @default(autoincrement())
-  address              String          @unique
+  address              String          @unique // normalized (lowercased) address
+  rawAddress           String // original case sensitive address
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   prevSigninAt         DateTime?
