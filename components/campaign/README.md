@@ -65,27 +65,26 @@ The `CampaignCard` component is a unified, composable component for displaying c
 import { CampaignCard } from '@/components/campaign/campaign-card';
 
 // Standard campaign card
-<CampaignCard campaign={campaign} />
+<CampaignCard campaign={campaign} />;
 ```
 
 ## Type Configurations
 
 ### Standard (Default)
+
 Basic campaign card with donate functionality:
 
 ```tsx
-<CampaignCard 
-  campaign={campaign} 
-  type="standard" 
-/>
+<CampaignCard campaign={campaign} type="standard" />
 ```
 
 ### Dashboard
+
 User dashboard with favorite and management features:
 
 ```tsx
-<CampaignCard 
-  campaign={campaign} 
+<CampaignCard
+  campaign={campaign}
   type="dashboard"
   isFavorite={isFavorite}
   actionHandlers={{ onFavoriteToggle: handleFavoriteToggle }}
@@ -93,30 +92,32 @@ User dashboard with favorite and management features:
 ```
 
 ### Admin
+
 Administrative interface with contract information and management actions:
 
 ```tsx
-<CampaignCard 
-  campaign={campaign} 
+<CampaignCard
+  campaign={campaign}
   type="admin"
-  actionHandlers={{ 
+  actionHandlers={{
     onApprove: handleApprove,
-    onDisable: handleDisable 
+    onDisable: handleDisable,
   }}
 />
 ```
 
 ### Compact
+
 Compact layout for list views:
 
 ```tsx
-<CampaignCard 
-  campaign={campaign} 
+<CampaignCard
+  campaign={campaign}
   type="standard"
   displayOptions={{
     useCardImage: true,
     showCategoryBadge: false,
-    layoutVariant: 'compact'
+    layoutVariant: 'compact',
   }}
 />
 ```
@@ -124,25 +125,27 @@ Compact layout for list views:
 ## Advanced Configuration
 
 ### Custom Display Options
+
 Override default display behavior:
 
 ```tsx
-<CampaignCard 
+<CampaignCard
   campaign={campaign}
   type="standard"
   displayOptions={{
     showDates: true,
     showTreasuryBalance: true,
-    truncateDescription: false
+    truncateDescription: false,
   }}
 />
 ```
 
 ### Custom Actions
+
 Provide custom button implementation:
 
 ```tsx
-<CampaignCard 
+<CampaignCard
   campaign={campaign}
   customButtons={
     <div className="flex gap-2">
@@ -154,28 +157,26 @@ Provide custom button implementation:
 ```
 
 ### Disabled State
+
 Disable all interactive elements:
 
 ```tsx
-<CampaignCard 
-  campaign={campaign}
-  disabled={true}
-/>
+<CampaignCard campaign={campaign} disabled={true} />
 ```
 
 ## Props API
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `campaign` | `DbCampaign` | - | Campaign data to display |
-| `type` | `'standard' \| 'dashboard' \| 'admin' \| 'compact'` | `'standard'` | Card type configuration |
-| `isFavorite` | `boolean` | - | Whether campaign is favorited (dashboard type) |
-| `actionHandlers` | `CampaignCardActions` | `{}` | Event handlers for card interactions |
-| `displayOptions` | `Partial<CampaignCardDisplayOptions>` | `{}` | Override display options |
-| `customButtons` | `React.ReactNode` | - | Custom button implementation |
-| `disabled` | `boolean` | `false` | Disable all interactions |
-| `className` | `string` | - | Additional CSS classes |
-| `children` | `React.ReactNode` | - | Custom content for card body |
+| Prop             | Type                                                | Default      | Description                                    |
+| ---------------- | --------------------------------------------------- | ------------ | ---------------------------------------------- |
+| `campaign`       | `DbCampaign`                                        | -            | Campaign data to display                       |
+| `type`           | `'standard' \| 'dashboard' \| 'admin' \| 'compact'` | `'standard'` | Card type configuration                        |
+| `isFavorite`     | `boolean`                                           | -            | Whether campaign is favorited (dashboard type) |
+| `actionHandlers` | `CampaignCardActions`                               | `{}`         | Event handlers for card interactions           |
+| `displayOptions` | `Partial<CampaignCardDisplayOptions>`               | `{}`         | Override display options                       |
+| `customButtons`  | `React.ReactNode`                                   | -            | Custom button implementation                   |
+| `disabled`       | `boolean`                                           | `false`      | Disable all interactions                       |
+| `className`      | `string`                                            | -            | Additional CSS classes                         |
+| `children`       | `React.ReactNode`                                   | -            | Custom content for card body                   |
 
 ## Action Handlers
 
@@ -217,9 +218,9 @@ interface CampaignCardDisplayOptions {
 For existing code, convenience exports are available:
 
 ```tsx
-import { 
+import {
   CampaignCardStandard,
-  CampaignCardDashboard, 
+  CampaignCardDashboard,
   CampaignCardAdmin,
   CampaignCardItem,
   CampaignCardFallback
@@ -234,13 +235,13 @@ import {
 
 ### From Legacy Components
 
-| Legacy Component | New Usage | Notes |
-|------------------|-----------|--------|
-| `CampaignCardDashboard` | `<CampaignCard type="dashboard" />` | Use convenience export or type prop |
-| `CampaignItem` | `<CampaignCard type="standard" />` | Default type |
-| `CampaignItemCard` | `<CampaignCard type="standard" displayOptions={{ useCardImage: true, showCategoryBadge: false, layoutVariant: 'compact' }} />` | Compact layout |
-| `CampaignCardAdmin` | `<CampaignCard type="admin" />` | Admin functionality |
-| `CampaignCardFallback` | `<CampaignCard campaign={undefined} />` | Fallback state |
+| Legacy Component        | New Usage                                                                                                                      | Notes                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `CampaignCardDashboard` | `<CampaignCard type="dashboard" />`                                                                                            | Use convenience export or type prop |
+| `CampaignItem`          | `<CampaignCard type="standard" />`                                                                                             | Default type                        |
+| `CampaignItemCard`      | `<CampaignCard type="standard" displayOptions={{ useCardImage: true, showCategoryBadge: false, layoutVariant: 'compact' }} />` | Compact layout                      |
+| `CampaignCardAdmin`     | `<CampaignCard type="admin" />`                                                                                                | Admin functionality                 |
+| `CampaignCardFallback`  | `<CampaignCard campaign={undefined} />`                                                                                        | Fallback state                      |
 
 ### Common Migration Patterns
 
@@ -280,12 +281,7 @@ test('renders admin features when admin type', () => {
 
 test('handles custom actions', () => {
   const onEdit = jest.fn();
-  render(
-    <CampaignCard 
-      campaign={mockCampaign} 
-      actionHandlers={{ onEdit }}
-    />
-  );
+  render(<CampaignCard campaign={mockCampaign} actionHandlers={{ onEdit }} />);
   // Test custom action handling
 });
 ```

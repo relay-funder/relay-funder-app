@@ -48,7 +48,7 @@ To use Pinata for decentralized file storage:
    NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
    ```
 
-3. **Start Development Environment:**
+5. **Start Development Environment:**
 
    ```bash
    docker compose up
@@ -59,14 +59,14 @@ To use Pinata for decentralized file storage:
    - PostgreSQL database
    - Next.js development server (accessible at [http://localhost:3000](http://localhost:3000))
 
-4. **Initialize Database (in a new terminal):**
+6. **Initialize Database (in a new terminal):**
 
    ```bash
    docker compose exec app pnpm prisma migrate dev
    docker compose exec app pnpm prisma db seed
    ```
 
-5. **Setup Development Wallet**
+7. **Setup Development Wallet**
 
 Create a browser profile and install a Wallet like metamask
 
