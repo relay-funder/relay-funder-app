@@ -11,6 +11,12 @@ import { debugApi as debug } from '@/lib/debug';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { normalizeAddress } from '@/lib/normalize-address';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterCreateCampaignOnChain,
+  userLimiterCreateCampaignOnChain,
+} from '@/lib/rate-limit';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 
 /**
@@ -27,7 +33,13 @@ import { CampaignsWithIdParams } from '@/lib/api/types';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
+    await checkIpLimit(req.headers, ipLimiterCreateCampaignOnChain);
+
     const session = await checkAuth(['user']);
+    const creatorAddress = session.user.address;
+
+    await checkUserLimit(creatorAddress, userLimiterCreateCampaignOnChain);
+
     const { campaignId } = await params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env

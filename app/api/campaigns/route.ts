@@ -18,6 +18,12 @@ import {
   isValidCategoryId,
   VALID_CATEGORY_IDS,
 } from '@/lib/constant/categories';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterCreateCampaign,
+  userLimiterCreateCampaign,
+} from '@/lib/rate-limit';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -30,8 +36,13 @@ const statusMap: Record<string, CampaignStatus> = {
 
 export async function POST(req: Request) {
   try {
+    await checkIpLimit(req.headers, ipLimiterCreateCampaign);
+
     const session = await checkAuth(['user']);
     const creatorAddress = session.user.address;
+
+    await checkUserLimit(creatorAddress, userLimiterCreateCampaign);
+
     const user = await getUser(creatorAddress);
     if (!user) {
       throw new ApiNotFoundError('User not found');
