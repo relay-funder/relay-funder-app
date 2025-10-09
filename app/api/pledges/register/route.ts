@@ -1,10 +1,19 @@
 import { checkAuth } from '@/lib/api/auth';
-import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
+import {
+  ApiParameterError,
+  ApiRateLimitError,
+  ApiUpstreamError,
+} from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { ethers } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { debugApi as debug } from '@/lib/debug';
 import { z } from 'zod';
+import { getClientIp } from '@/lib/rate-limit/helpers';
+import {
+  ipLimiterRegisterPledge,
+  userLimiterRegisterPledge,
+} from '@/lib/rate-limit';
 
 // In-memory lock to prevent concurrent registrations from the same user
 // Maps userAddress -> { pledgeId, timestamp }
@@ -79,15 +88,32 @@ const RegisterPledgeSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
+    const clientIp = getClientIp(req.headers);
+    const ipResult = await ipLimiterRegisterPledge.check(clientIp);
+    if (!ipResult.success) {
+      throw new ApiRateLimitError(
+        'Too many requests from this IP. Please try later.',
+        ipResult,
+      );
+    }
+
     // Authenticate the user making the request
     const session = await checkAuth(['user']);
+    const userAddress = session.user.address;
+
+    const userResult = await userLimiterRegisterPledge.check(userAddress);
+    if (!userResult.success) {
+      throw new ApiRateLimitError(
+        'User pledge registration limit reached. Please try later.',
+        userResult,
+      );
+    }
 
     // Validate request body
     const body = await req.json();
     const validatedData = RegisterPledgeSchema.parse(body);
 
     const { treasuryAddress, pledgeId, gatewayFee } = validatedData;
-    const userAddress = session.user.address;
 
     debug &&
       console.log('[pledges/register] Registering pledge:', {

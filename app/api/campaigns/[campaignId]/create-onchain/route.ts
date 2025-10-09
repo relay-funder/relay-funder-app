@@ -1,11 +1,20 @@
 import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiParameterError,
+  ApiNotFoundError,
+  ApiRateLimitError,
+} from '@/lib/api/error';
 import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { checkAuth } from '@/lib/api/auth';
+import { getClientIp } from '@/lib/rate-limit/helpers';
+import {
+  ipLimiterCreateCampaignOnChain,
+  userLimiterCreateCampaignOnChain,
+} from '@/lib/rate-limit';
 
 /**
  * # Platform Fee Configuration
@@ -24,7 +33,26 @@ export async function POST(
   context: { params: Promise<{ campaignId: string }> },
 ) {
   try {
-    await checkAuth(['user']);
+    const clientIp = getClientIp(req.headers);
+    const ipResult = await ipLimiterCreateCampaignOnChain.check(clientIp);
+    if (!ipResult.success) {
+      throw new ApiRateLimitError(
+        'Too many requests from this IP. Please try later.',
+        ipResult,
+      );
+    }
+    const session = await checkAuth(['user']);
+    const creatorAddress = session.user.address;
+
+    const userResult =
+      await userLimiterCreateCampaignOnChain.check(creatorAddress);
+    if (!userResult.success) {
+      throw new ApiRateLimitError(
+        'User campaign creation limit reached. Please try later.',
+        userResult,
+      );
+    }
+
     const { campaignId } = await context.params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env
