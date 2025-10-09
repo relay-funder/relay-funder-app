@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { db } from '@/server/db';
-import { checkAuth } from '@/lib/api/auth';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
@@ -12,6 +12,7 @@ import { CampaignsWithIdParams } from '@/lib/api/types';
 import { addCampaignUpdate } from '@/lib/api/campaigns';
 import { notify } from '@/lib/api/event-feed';
 import { getUser } from '@/lib/api/user';
+import { auth } from '@/server/auth';
 
 const MAX_UPDATES_PAGE_SIZE = 10;
 
@@ -52,6 +53,10 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiNotFoundError('Campaign not found');
     }
 
+    const session = await auth();
+    const isCreator = session?.user.address === campaign.creatorAddress;
+    const isSessionAdmin = await isAdmin();
+
     const { searchParams } = new URL(req.url);
     const pageParam = searchParams.get('page');
     const pageSizeParam = searchParams.get('pageSize');
@@ -71,15 +76,21 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     const skip = (page - 1) * pageSize;
 
+    const whereClause =
+      isCreator || isSessionAdmin
+        ? { campaignId }
+        : { campaignId, isHidden: false };
+
     const [updates, totalCount] = await Promise.all([
       db.campaignUpdate.findMany({
-        where: { campaignId },
+        where: whereClause,
         orderBy: { createdAt: 'desc' },
         skip,
         take: pageSize,
+        include: { media: true },
       }),
       db.campaignUpdate.count({
-        where: { campaignId },
+        where: whereClause,
       }),
     ]);
 
@@ -119,8 +130,13 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiAuthNotAllowed('Only the campaign creator can post updates');
     }
 
-    const body = await req.json();
-    const parsed = CreateCampaignUpdateSchema.safeParse(body);
+    const formData = await req.formData();
+    const title = formData.get('title') as string;
+    const content = formData.get('content') as string;
+    const mediaFiles = formData.getAll('media') as File[];
+
+    const jsonData = { title, content };
+    const parsed = CreateCampaignUpdateSchema.safeParse(jsonData);
     if (!parsed.success) {
       throw new ApiParameterError(
         'Invalid request body',
@@ -128,16 +144,13 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       );
     }
 
-    await addCampaignUpdate(
+    const createdUpdate = await addCampaignUpdate(
       campaign.id,
-      parsed.data.title,
-      parsed.data.content,
+      parsed.data.title.trim(),
+      parsed.data.content.trim(),
+      mediaFiles,
+      user.id,
     );
-
-    const createdUpdate = await db.campaignUpdate.findFirst({
-      where: { campaignId: campaign.id },
-      orderBy: { createdAt: 'desc' },
-    });
 
     const campaignContributors = await db.payment.findMany({
       where: {
@@ -194,7 +207,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
             type: 'CampaignUpdate',
             campaignId: campaign.id,
             campaignTitle: campaign.title,
-            updateText: parsed.data.content,
+            updateText: content,
           },
         }),
       ),

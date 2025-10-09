@@ -121,6 +121,9 @@ export type CampaignUpdate = {
   updatedAt: Date;
   campaignId: number;
   creatorAddress: string;
+  media?: Media[];
+  mediaOrder?: string[];
+  isHidden?: boolean;
 };
 
 export type DbPayment = {

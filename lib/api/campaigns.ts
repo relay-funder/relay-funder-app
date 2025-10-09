@@ -18,6 +18,7 @@ import { getPaymentUser, getUserWithStates } from './user';
 import { ApiConflictError } from './error';
 import { mapRound } from './rounds';
 import { JsonValue } from '@/.generated/prisma/client/runtime/library';
+import { fileToUrl } from '@/lib/storage';
 
 /**
  * Local types
@@ -532,6 +533,8 @@ export async function addCampaignUpdate(
   id: number,
   title: string,
   content: string,
+  media?: File[],
+  userId?: number,
 ) {
   const campaign = await db.campaign.findUnique({ where: { id } });
   if (!campaign?.creatorAddress) {
@@ -539,17 +542,71 @@ export async function addCampaignUpdate(
       'campaign without a creatorAddress cannot store campaignUpdate',
     );
   }
-  await db.$transaction([
-    db.campaignUpdate.create({
-      data: {
-        title,
-        content,
-        campaignId: campaign.id,
-        creatorAddress: campaign.creatorAddress,
-      },
-    }),
-    db.campaign.update({ where: { id }, data: { updatedAt: new Date() } }),
-  ]);
+
+  const update = await db.campaignUpdate.create({
+    data: {
+      title,
+      content,
+      campaignId: campaign.id,
+      creatorAddress: campaign.creatorAddress,
+    },
+  });
+
+  // Handle media uploads
+  if (media && media.length > 0 && userId) {
+    const mediaUrls = [];
+    for (const file of media) {
+      try {
+        const url = await fileToUrl(file);
+
+        const mediaRecord = await db.media.create({
+          data: {
+            url,
+            mimeType: file.type,
+            state: 'UPLOADED',
+            update: { connect: { id: update.id } },
+            createdBy: { connect: { id: userId } },
+          },
+        });
+        mediaUrls.push(mediaRecord.id);
+      } catch (error) {
+        console.error('Error uploading media file:', error);
+        // Skip failed uploads
+      }
+    }
+    if (mediaUrls.length > 0) {
+      await db.campaignUpdate.update({
+        where: { id: update.id },
+        data: {
+          mediaOrder: mediaUrls,
+        },
+      });
+    }
+  }
+
+  await db.campaign.update({ where: { id }, data: { updatedAt: new Date() } });
+
+  return update;
+}
+
+export async function toggleHideCampaignUpdate(
+  campaignId: number,
+  updateId: number,
+) {
+  const currentUpdate = await db.campaignUpdate.findUniqueOrThrow({
+    where: { id: updateId },
+  });
+  const updatedUpdate = await db.campaignUpdate.update({
+    where: { id: updateId },
+    data: { isHidden: !currentUpdate.isHidden },
+  });
+
+  await db.campaign.update({
+    where: { id: campaignId },
+    data: { updatedAt: new Date() },
+  });
+
+  return updatedUpdate;
 }
 
 export async function addCampaignComment(
