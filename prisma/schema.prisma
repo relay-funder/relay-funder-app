@@ -354,14 +354,12 @@ model EventFeed {
   @@index([receiverId, type])
 }
 
-model ApiAudit {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  ip          String?
-  user        String?
-  route       String
+model RateLimit {
+  identifier  String   @id // Format: "prefix:user" or "prefix:ip" example: "create-campaign:user" or "/api/campaigns:POST:
+  requests    Int      @default(1)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@index([user, createdAt])
-  @@index([ip, createdAt])
-  @@index([route, createdAt])
+  @@index([windowStart])
 }
+

@@ -5,4 +5,3 @@ export * from './common';
 export * from './rounds';
 export * from './score-events';
 export * from './user/overview';
-export * from './rate-limits';

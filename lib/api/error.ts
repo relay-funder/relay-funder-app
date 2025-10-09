@@ -1,3 +1,5 @@
+import { RateLimitInfo } from '@/lib/rate-limit/types';
+
 /**
  * AuthError
  * Error to be thrown from route functions, used for consistent error responses
@@ -87,19 +89,25 @@ export class ApiIntegrityError extends Error {
     this.name = 'IntegrityError';
   }
 }
+
 /**
  * Rate Limit Error
  * Error to be thrown from route functions.
  * This error indicates that the route was executed too frequently
  */
 export class ApiRateLimitError extends Error {
-  constructor(
-    message: string,
-    public resetAt?: number,
-  ) {
+  public reset?: number;
+  public limit?: number;
+  public remaining?: number;
+
+  constructor(message: string, rateLimitInfo?: RateLimitInfo) {
     super(message);
     Object.setPrototypeOf(this, ApiRateLimitError.prototype);
     this.name = 'RateLimitError';
-    this.resetAt = resetAt;
+    if (rateLimitInfo) {
+      this.reset = rateLimitInfo.reset;
+      this.limit = rateLimitInfo.limit;
+      this.remaining = rateLimitInfo.remaining;
+    }
   }
 }
