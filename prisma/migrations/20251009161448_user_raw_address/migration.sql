@@ -1,4 +1,4 @@
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN "rawAddress" TEXT;
-ALTER TABLE "User" ADD COLUMN "address" TEXT UNIQUE;
+UPDATE "User" SET "rawAddress" = "address";
 ALTER TABLE "User" ALTER COLUMN "rawAddress" SET NOT NULL;
