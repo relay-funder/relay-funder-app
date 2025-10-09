@@ -25,7 +25,9 @@ export interface DbCampaign {
     | 'ACTIVE'
     | 'DISABLED'
     | 'COMPLETED'
-    | 'FAILED';
+    | 'FAILED'
+    | 'PAUSED'
+    | 'CANCELLED';
   transactionHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -203,6 +205,8 @@ export enum CampaignStatus {
   DISABLED = 'DISABLED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
 }
 
 export type CampaignCreatedEvent = {

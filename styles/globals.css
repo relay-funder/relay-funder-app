@@ -41,9 +41,13 @@
 
     /* Light-style shadows and glows */
     --shadow-subtle: 0 1px 3px 0 hsl(220 15% 15% / 0.1);
-    --shadow-medium: 0 4px 12px 0 hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.05);
-    --shadow-large: 0 12px 24px -4px hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.1);
-    --shadow-glow: 0 0 20px hsl(210 100% 65% / 0.2), 0 0 40px hsl(210 100% 65% / 0.08);
+    --shadow-medium:
+      0 4px 12px 0 hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.05);
+    --shadow-large:
+      0 12px 24px -4px hsl(220 15% 15% / 0.08),
+      0 0 0 1px hsl(210 100% 65% / 0.1);
+    --shadow-glow:
+      0 0 20px hsl(210 100% 65% / 0.2), 0 0 40px hsl(210 100% 65% / 0.08);
     --shadow-glow-green: 0 0 20px hsl(150 65% 55% / 0.2);
     --shadow-glow-orange: 0 0 20px hsl(25 95% 65% / 0.2);
 
@@ -73,7 +77,11 @@
     --accent-foreground: 220 15% 12%;
 
     /* Web3 gradients and textures */
-    --gradient-quantum: linear-gradient(135deg, hsl(210 100% 65%), hsl(195 100% 70%));
+    --gradient-quantum: linear-gradient(
+      135deg,
+      hsl(210 100% 65%),
+      hsl(195 100% 70%)
+    );
     --gradient-bio: linear-gradient(135deg, hsl(150 65% 55%), hsl(120 55% 60%));
     --gradient-solar: linear-gradient(135deg, hsl(25 95% 65%), hsl(40 90% 70%));
     --gradient-mesh:
@@ -136,14 +144,22 @@
 
     /* Dark-style shadows and glows - adjusted for lighter blue-gray background */
     --shadow-subtle: 0 1px 3px 0 hsl(220 20% 8% / 0.4);
-    --shadow-medium: 0 4px 12px 0 hsl(220 20% 8% / 0.3), 0 0 0 1px hsl(210 100% 65% / 0.1);
-    --shadow-large: 0 12px 24px -4px hsl(220 20% 8% / 0.35), 0 0 0 1px hsl(210 100% 65% / 0.15);
-    --shadow-glow: 0 0 20px hsl(210 100% 65% / 0.4), 0 0 40px hsl(210 100% 65% / 0.15);
+    --shadow-medium:
+      0 4px 12px 0 hsl(220 20% 8% / 0.3), 0 0 0 1px hsl(210 100% 65% / 0.1);
+    --shadow-large:
+      0 12px 24px -4px hsl(220 20% 8% / 0.35),
+      0 0 0 1px hsl(210 100% 65% / 0.15);
+    --shadow-glow:
+      0 0 20px hsl(210 100% 65% / 0.4), 0 0 40px hsl(210 100% 65% / 0.15);
     --shadow-glow-green: 0 0 20px hsl(150 60% 55% / 0.3);
     --shadow-glow-orange: 0 0 20px hsl(25 90% 60% / 0.3);
 
     /* Web3 gradients and textures - Dark theme */
-    --gradient-quantum: linear-gradient(135deg, hsl(210 100% 65%), hsl(195 100% 70%));
+    --gradient-quantum: linear-gradient(
+      135deg,
+      hsl(210 100% 65%),
+      hsl(195 100% 70%)
+    );
     --gradient-bio: linear-gradient(135deg, hsl(150 60% 55%), hsl(120 55% 60%));
     --gradient-solar: linear-gradient(135deg, hsl(25 90% 60%), hsl(40 85% 65%));
     --gradient-mesh:
@@ -193,7 +209,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background font-body text-foreground antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     transition:
       background-color 0.3s ease,
@@ -213,23 +229,27 @@
 @layer components {
   /* Web3 × Humanitarian Typography */
   .text-hero {
-    @apply text-4xl md:text-5xl lg:text-7xl font-light leading-[0.95] tracking-tight font-display;
-    background: linear-gradient(135deg, hsl(var(--text-primary)), hsl(var(--quantum-blue)));
+    @apply font-display text-4xl font-light leading-[0.95] tracking-tight md:text-5xl lg:text-7xl;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--text-primary)),
+      hsl(var(--quantum-blue))
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-subhero {
-    @apply text-lg md:text-xl font-light leading-relaxed font-body;
+    @apply font-body text-lg font-light leading-relaxed md:text-xl;
   }
 
   .text-section-title {
-    @apply text-2xl md:text-4xl font-semibold leading-tight font-display;
+    @apply font-display text-2xl font-semibold leading-tight md:text-4xl;
   }
 
   .text-mono-accent {
-    @apply font-mono text-quantum tracking-wider uppercase;
+    @apply font-mono uppercase tracking-wider text-quantum;
     font-size: 17px;
   }
 
@@ -247,37 +267,37 @@
   }
 
   .hover-quantum {
-    @apply hover:shadow-glow hover:border-quantum transition-all duration-300;
+    @apply transition-all duration-300 hover:border-quantum hover:shadow-glow;
   }
 
   .hover-bio {
-    @apply hover:shadow-glow-green hover:border-bio transition-all duration-300;
+    @apply transition-all duration-300 hover:border-bio hover:shadow-glow-green;
   }
 
   .hover-solar {
-    @apply hover:shadow-glow-orange hover:border-solar transition-all duration-300;
+    @apply transition-all duration-300 hover:border-solar hover:shadow-glow-orange;
   }
 
   /* Original Button Variants */
   .btn-quantum {
-    @apply bg-gradient-to-r from-quantum to-accent text-white px-6 py-3 rounded-xl font-semibold interactive-base hover:shadow-glow;
+    @apply interactive-base rounded-xl bg-gradient-to-r from-quantum to-accent px-6 py-3 font-semibold text-white hover:shadow-glow;
   }
 
   .btn-bio {
-    @apply bg-gradient-to-r from-bio to-green-400 text-white px-6 py-3 rounded-xl font-semibold interactive-base hover:shadow-glow-green;
+    @apply interactive-base rounded-xl bg-gradient-to-r from-bio to-green-400 px-6 py-3 font-semibold text-white hover:shadow-glow-green;
   }
 
   .btn-solar {
-    @apply bg-gradient-to-r from-solar to-yellow-400 text-white px-6 py-3 rounded-xl font-semibold interactive-base hover:shadow-glow-orange;
+    @apply interactive-base rounded-xl bg-gradient-to-r from-solar to-yellow-400 px-6 py-3 font-semibold text-white hover:shadow-glow-orange;
   }
 
   .btn-ghost {
-    @apply border-2 border-quantum text-quantum hover:bg-quantum hover:text-white px-6 py-3 rounded-xl font-semibold interactive-base;
+    @apply interactive-base rounded-xl border-2 border-quantum px-6 py-3 font-semibold text-quantum hover:bg-quantum hover:text-white;
   }
 
   /* Enhanced disabled states for better contrast */
   .btn-quantum.opacity-60 {
-    @apply bg-muted text-text-primary border border-border cursor-not-allowed;
+    @apply cursor-not-allowed border border-border bg-muted text-text-primary;
   }
 
   .btn-quantum.opacity-60:hover {
@@ -286,7 +306,7 @@
 
   /* Original Geometric Elements */
   .web3-card {
-    @apply bg-card border border-border rounded-2xl backdrop-blur-sm relative overflow-hidden;
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card backdrop-blur-sm;
   }
 
   .web3-card::before {
@@ -296,19 +316,24 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, hsl(var(--quantum-blue) / 0.5), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--quantum-blue) / 0.5),
+      transparent
+    );
   }
 
   .quantum-surface {
-    @apply bg-surface-elevated border border-quantum/20 rounded-lg;
+    @apply rounded-lg border border-quantum/20 bg-surface-elevated;
   }
 
   .bio-surface {
-    @apply bg-surface-elevated border border-bio/20 rounded-2xl;
+    @apply rounded-2xl border border-bio/20 bg-surface-elevated;
   }
 
   .solar-surface {
-    @apply bg-surface-elevated border border-solar/20 rounded-2xl;
+    @apply rounded-2xl border border-solar/20 bg-surface-elevated;
   }
 
   /* Mesh background pattern */
@@ -322,8 +347,16 @@
     position: absolute;
     inset: 0;
     background-image:
-      radial-gradient(circle at 25% 25%, hsl(var(--quantum-blue) / 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, hsl(var(--bio-green) / 0.1) 0%, transparent 50%);
+      radial-gradient(
+        circle at 25% 25%,
+        hsl(var(--quantum-blue) / 0.1) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 75% 75%,
+        hsl(var(--bio-green) / 0.1) 0%,
+        transparent 50%
+      );
   }
 
   /* Web3 utility classes */
@@ -435,7 +468,8 @@
   .quantum-surface,
   .mesh-bg,
   .theme-aware-image {
-    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-property:
+      background-color, border-color, color, fill, stroke, box-shadow;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;
   }

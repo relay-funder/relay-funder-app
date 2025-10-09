@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DbCampaign } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';
-import { useAdminDeployContract } from '@/lib/hooks/useCampaigns';
+import { useAdminUpdateCampaignTransaction } from '@/lib/hooks/useCampaigns';
+import { useAdminDeployCampaignContract } from '@/lib/web3/hooks/useAdminDeployCampaignContract';
 import { cn } from '@/lib/utils';
 import { Rocket } from 'lucide-react';
 
@@ -19,17 +20,27 @@ export function CampaignAdminDeployContractButton({
 }) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDeploying, setIsDeploying] = useState(false);
   const { toast } = useToast();
 
-  const deployMutation = useAdminDeployContract();
+  const { deployCampaignContract } = useAdminDeployCampaignContract();
+  const { mutateAsync: updateTransaction } =
+    useAdminUpdateCampaignTransaction();
 
   const handleDeploy = async () => {
     setSuccessMessage(null);
     setErrorMessage(null);
+    setIsDeploying(true);
 
     try {
-      const result = await deployMutation.mutateAsync({
+      // Deploy using web3 hook
+      const result = await deployCampaignContract(campaign);
+
+      // Update DB
+      await updateTransaction({
         campaignId: campaign.id,
+        transactionHash: result.txHash,
+        campaignAddress: result.campaignAddress,
       });
 
       setSuccessMessage(
@@ -44,6 +55,8 @@ export function CampaignAdminDeployContractButton({
       const message =
         err instanceof Error ? err.message : 'Unknown error occurred';
       setErrorMessage(message);
+    } finally {
+      setIsDeploying(false);
     }
   };
 
@@ -94,11 +107,11 @@ export function CampaignAdminDeployContractButton({
             : 'bg-blue-600 hover:bg-blue-700',
         )
       }
-      disabled={deployMutation.isPending}
+      disabled={isDeploying}
       title="Deploy the campaign info factory contract for this campaign on-chain."
     >
       <Rocket className="mr-2 h-4 w-4" />
-      {deployMutation.isPending ? 'Deploying...' : 'Deploy Contract'}
+      {isDeploying ? 'Deploying...' : 'Deploy Contract'}
     </Button>
   );
 }
