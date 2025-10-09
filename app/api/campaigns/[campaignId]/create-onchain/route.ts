@@ -30,7 +30,7 @@ import { CampaignsWithIdParams } from '@/lib/api/types';
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
-export async function POST(_req: Request, { params }: CampaignsWithIdParams) {
+export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     await checkIpLimit(req.headers, ipLimiterCreateCampaignOnChain);
 
