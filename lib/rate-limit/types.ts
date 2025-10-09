@@ -14,6 +14,6 @@ export interface RateLimiter {
 
 export type RateLimitConfig = {
   requests: number;
-  window: number;
+  window: number; // in milliseconds
   prefix: string;
 };
