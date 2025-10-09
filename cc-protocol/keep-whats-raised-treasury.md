@@ -187,6 +187,7 @@ keepWhatsRaised.configureTreasury(cfg, campaignData, feeKeys, feeValues);
 ```
 
 Notes:
+
 - The treasury stores `feeValues` internally and reads them via `getFeeValue(feeKey)` during pledges and withdrawal fee logic.
 - Protocol fee percent comes from GlobalParams and is applied at pledge time.
 
@@ -203,11 +204,12 @@ During the active funding period, between `launchTime` and `deadline`, the treas
 - Duplicate pledge protection: Each pledge uses an `internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))`. Re-using the same `pledgeId` from the same caller reverts.
 
 - Facilitating pledges (Platform Admin):
+
   - `setPaymentGatewayFee(pledgeId, fee)` sets the fee for a unique pledge ID before pledge.
   - `setFeeAndPledge(...)` sets the fee and executes a pledge in one tx. Tokens are transferred from the admin (`msg.sender`) as the source; the NFT is minted to `backer`.
 
 - Pledging flow (direct backer):
-  1) Approve tokens on the ERC20 token; 2) Call the pledge function.
+  1. Approve tokens on the ERC20 token; 2) Call the pledge function.
 
 ```solidity
 // Example: backer pledges 1000 tokens without a reward
@@ -252,6 +254,7 @@ keepWhatsRaised.setFeeAndPledge(
 Once the campaign ends, functions shift to fund distribution.
 
 - Withdrawing Funds (Campaign Owner or Platform Admin):
+
   - `approveWithdrawal()` must have been called earlier by the Platform Admin.
   - `withdraw(uint256 amount)` is allowed only up to `deadline + withdrawalDelay`.
   - Partial withdrawal (before deadline): `amount > 0` and `amount + fees <= s_availablePledgedAmount`.
@@ -259,10 +262,12 @@ Once the campaign ends, functions shift to fund distribution.
   - Note: For partial withdrawals, the creator receives `amount` and the fee is deducted from the remaining available balance. For final withdrawal, the creator receives `available - totalFee`.
 
 - Refunding Pledges (Backers):
+
   - `claimRefund(uint256 tokenId)` burns the pledge NFT and returns `grossPledge - totalPledgeTimeFees` (percentage + gateway + protocol). Tips are non-refundable.
   - Refund window: active after deadline or cancellation until `refundDelay` elapses.
 
 - Claiming Funds (Platform Admin):
+
   - `claimTip`: After deadline or cancellation (post-cutoff), collects all tips.
   - `claimFund`: If no withdrawal was made within the grace period, claim all remaining `s_availablePledgedAmount` after:
     - Cancelled: `block.timestamp > cancellationTime + refundDelay`
@@ -283,8 +288,9 @@ When a pledge is made, fees are calculated upfront and deducted from the gross p
 - Net calculation: `net = pledgeAmount - (platformPercentFees + gatewayFee + protocolFee)`. The total pledge-time fee is stored per token for refund logic.
 
 Example (with protocol fee): A backer pledges 1,000 tokens; gateway fee 40; percentage fees 10% and 6%; protocol fee 2%.
-- Percentage fees = 1000*(10%+6%) = 160
-- Protocol fee = 1000*2% = 20
+
+- Percentage fees = 1000\*(10%+6%) = 160
+- Protocol fee = 1000\*2% = 20
 - Gateway fee = 40
 - Total fees = 160 + 20 + 40 = 220
 - Net added to `s_availablePledgedAmount` = 1000 − 220 = 780
@@ -294,6 +300,7 @@ Example (with protocol fee): A backer pledges 1,000 tokens; gateway fee 40; perc
 When funds are withdrawn via `withdraw(amount)`, flat fees and a regional tax may apply:
 
 - Flat fees (using `getFeeValue`):
+
   - Partial (before deadline): if `amount < minimumWithdrawalForFeeExemption`, apply `cumulativeFlatFeeKey`; else apply `flatFeeKey`.
   - Final (after deadline): if `available < minimumWithdrawalForFeeExemption`, apply `flatFeeKey`; else the flat fee is waived.
 
@@ -330,6 +337,7 @@ uint256 netRefundAmount = amountToRefund - paymentFee;
 ### A. Campaign Parameter Updates
 
 - `updateDeadline(newDeadline)`
+
   - Caller: Platform Admin OR Campaign Owner
   - Timing: Only before `deadline - configLockPeriod`
   - Purpose: Extends or modifies the campaign deadline
@@ -344,6 +352,7 @@ uint256 netRefundAmount = amountToRefund - paymentFee;
 ### B. Reward Management Updates
 
 - `addRewards(rewardNames, rewards)`
+
   - Caller: Campaign Owner only
   - Timing: During active campaign (not paused/cancelled)
   - Purpose: Adds new primary tiers or add-ons
@@ -357,6 +366,7 @@ uint256 netRefundAmount = amountToRefund - paymentFee;
 ### C. Administrative Updates
 
 - `approveWithdrawal()`
+
   - Caller: Platform Admin only
   - Timing: Any time after configuration
   - Purpose: One-time activation of withdrawal functionality

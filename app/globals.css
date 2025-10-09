@@ -41,9 +41,13 @@
 
     /* Light-style shadows and glows */
     --shadow-subtle: 0 1px 3px 0 hsl(220 15% 15% / 0.1);
-    --shadow-medium: 0 4px 12px 0 hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.05);
-    --shadow-large: 0 12px 24px -4px hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.1);
-    --shadow-glow: 0 0 20px hsl(210 100% 65% / 0.2), 0 0 40px hsl(210 100% 65% / 0.08);
+    --shadow-medium:
+      0 4px 12px 0 hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.05);
+    --shadow-large:
+      0 12px 24px -4px hsl(220 15% 15% / 0.08),
+      0 0 0 1px hsl(210 100% 65% / 0.1);
+    --shadow-glow:
+      0 0 20px hsl(210 100% 65% / 0.2), 0 0 40px hsl(210 100% 65% / 0.08);
     --shadow-glow-green: 0 0 20px hsl(150 65% 55% / 0.2);
     --shadow-glow-orange: 0 0 20px hsl(25 95% 65% / 0.2);
 
@@ -73,7 +77,11 @@
     --accent-foreground: 220 15% 12%;
 
     /* Web3 gradients and textures */
-    --gradient-quantum: linear-gradient(135deg, hsl(210 100% 65%), hsl(195 100% 70%));
+    --gradient-quantum: linear-gradient(
+      135deg,
+      hsl(210 100% 65%),
+      hsl(195 100% 70%)
+    );
     --gradient-bio: linear-gradient(135deg, hsl(150 65% 55%), hsl(120 55% 60%));
     --gradient-solar: linear-gradient(135deg, hsl(25 95% 65%), hsl(40 90% 70%));
     --gradient-mesh:
@@ -136,14 +144,22 @@
 
     /* Dark-style shadows and glows - adjusted for lighter blue-gray background */
     --shadow-subtle: 0 1px 3px 0 hsl(220 20% 8% / 0.4);
-    --shadow-medium: 0 4px 12px 0 hsl(220 20% 8% / 0.3), 0 0 0 1px hsl(210 100% 65% / 0.1);
-    --shadow-large: 0 12px 24px -4px hsl(220 20% 8% / 0.35), 0 0 0 1px hsl(210 100% 65% / 0.15);
-    --shadow-glow: 0 0 20px hsl(210 100% 65% / 0.4), 0 0 40px hsl(210 100% 65% / 0.15);
+    --shadow-medium:
+      0 4px 12px 0 hsl(220 20% 8% / 0.3), 0 0 0 1px hsl(210 100% 65% / 0.1);
+    --shadow-large:
+      0 12px 24px -4px hsl(220 20% 8% / 0.35),
+      0 0 0 1px hsl(210 100% 65% / 0.15);
+    --shadow-glow:
+      0 0 20px hsl(210 100% 65% / 0.4), 0 0 40px hsl(210 100% 65% / 0.15);
     --shadow-glow-green: 0 0 20px hsl(150 60% 55% / 0.3);
     --shadow-glow-orange: 0 0 20px hsl(25 90% 60% / 0.3);
 
     /* Web3 gradients and textures - Dark theme */
-    --gradient-quantum: linear-gradient(135deg, hsl(210 100% 65%), hsl(195 100% 70%));
+    --gradient-quantum: linear-gradient(
+      135deg,
+      hsl(210 100% 65%),
+      hsl(195 100% 70%)
+    );
     --gradient-bio: linear-gradient(135deg, hsl(150 60% 55%), hsl(120 55% 60%));
     --gradient-solar: linear-gradient(135deg, hsl(25 90% 60%), hsl(40 85% 65%));
     --gradient-mesh:
@@ -191,16 +207,16 @@
 @layer components {
   /* Typography */
   .text-hero {
-    @apply text-4xl md:text-5xl lg:text-7xl font-light leading-[0.95] tracking-tight font-display;
+    @apply font-display text-4xl font-light leading-[0.95] tracking-tight md:text-5xl lg:text-7xl;
   }
   .text-section-title {
-    @apply text-2xl md:text-4xl font-semibold leading-tight font-display;
+    @apply font-display text-2xl font-semibold leading-tight md:text-4xl;
   }
   .text-body-large {
-    @apply text-lg md:text-xl font-light leading-relaxed font-body;
+    @apply font-body text-lg font-light leading-relaxed md:text-xl;
   }
   .text-caption {
-    @apply font-mono text-foreground tracking-wider uppercase;
+    @apply font-mono uppercase tracking-wider text-foreground;
   }
   .text-quote {
     @apply font-serif italic text-bio;
@@ -208,18 +224,18 @@
 
   /* Interactive elements */
   .btn-quantum {
-    @apply bg-quantum text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:bg-quantum/90 hover:shadow-glow focus:ring-2 focus:ring-quantum/50;
+    @apply rounded-lg bg-quantum px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-quantum/90 hover:shadow-glow focus:ring-2 focus:ring-quantum/50;
   }
   .btn-bio {
-    @apply bg-bio text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:bg-bio/90 hover:shadow-glow-green focus:ring-2 focus:ring-bio/50;
+    @apply rounded-lg bg-bio px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-bio/90 hover:shadow-glow-green focus:ring-2 focus:ring-bio/50;
   }
   .btn-solar {
-    @apply bg-solar text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:bg-solar/90 hover:shadow-glow-orange focus:ring-2 focus:ring-solar/50;
+    @apply rounded-lg bg-solar px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-solar/90 hover:shadow-glow-orange focus:ring-2 focus:ring-solar/50;
   }
 
   /* Cards and containers */
   .web3-card {
-    @apply bg-card border border-border rounded-lg p-6 shadow-medium transition-all duration-200 hover:shadow-large hover:border-quantum/20;
+    @apply rounded-lg border border-border bg-card p-6 shadow-medium transition-all duration-200 hover:border-quantum/20 hover:shadow-large;
   }
   .mesh-bg {
     background: var(--gradient-mesh);
@@ -227,7 +243,8 @@
 
   /* Animations */
   @keyframes floatSubtle {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0px) rotate(0deg);
     }
     50% {
@@ -236,7 +253,8 @@
   }
 
   @keyframes pulseGlow {
-    0%, 100% {
+    0%,
+    100% {
       box-shadow: var(--shadow-glow);
     }
     50% {
@@ -258,6 +276,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background font-body text-foreground antialiased;
   }
 }
