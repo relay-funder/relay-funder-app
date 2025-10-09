@@ -131,8 +131,9 @@ export function CampaignAdminApproveButton({
           </div>
           <p className="mt-2 text-red-600 dark:text-red-400">
             This campaign has already started (
-            <FormattedDate date={new Date(campaign.startTime)}/>). Treasury
-            configuration would fail because the start time is in the past.
+            <FormattedDate date={new Date(campaign.startTime)} />
+            ). Treasury configuration would fail because the start time is in
+            the past.
           </p>
         </div>
       )}

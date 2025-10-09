@@ -68,9 +68,10 @@ bash util/kwr_flow_test.sh
 #### Environment Variables Required:
 
 From `util/env.foundry`:
+
 - `NEXT_PUBLIC_RPC_URL` - Network RPC endpoint (Alfajores testnet)
 - `PLATFORM_ADMIN_PRIVATE_KEY` - Platform admin wallet private key
-- `PROTOCOL_ADMIN_PRIVATE_KEY` - Protocol admin wallet private key  
+- `PROTOCOL_ADMIN_PRIVATE_KEY` - Protocol admin wallet private key
 - `CREATOR_PRIVATE_KEY` - Campaign creator wallet private key
 - `BACKER_PRIVATE_KEY` - Backer wallet private key
 - `NEXT_PUBLIC_USDC_ADDRESS` - USDC token contract address (6 decimals)
@@ -100,13 +101,15 @@ From `util/env.foundry`:
 #### Current Status:
 
 ✅ **Working Components:**
+
 - Campaign creation via factory
-- Treasury deployment and configuration  
+- Treasury deployment and configuration
 - Pledge flow with balance verification
 - Comprehensive logging and error handling
 - Interactive verification points
 
 🔧 **Known Issues:**
+
 - Withdrawal step currently fails with error `0x7ce6c522` (under investigation)
 - May be related to timing, authorization, or fee calculation
 - **Withdrawal Logic**: Uses `withdraw(amount)` with specific available amount before deadline; `withdraw(0)` only valid after deadline

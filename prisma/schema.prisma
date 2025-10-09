@@ -16,6 +16,8 @@ enum CampaignStatus {
   DISABLED
   COMPLETED
   FAILED
+  PAUSED
+  CANCELLED
 }
 
 enum RoundStatus {

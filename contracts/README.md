@@ -387,7 +387,8 @@ To use the provided admin wallets in your local environment:
 
    ```bash
    # Replace the truncated keys with full private keys
-   PLATFORM_ADMIN_PRIVATE_KEY=0xfef684505b... # Full key from CC Protocol
+   PLATFORM_SPONSOR_PRIVATE_KEY=0xfef684505c... # Full key managed by platform
+   PLATFORM_ADMIN_PRIVATE_KEY=0xfef684505b... # Full key managed by platform
    PROTOCOL_ADMIN_PRIVATE_KEY=0x83e2056711... # Full key from CC Protocol
    ```
 

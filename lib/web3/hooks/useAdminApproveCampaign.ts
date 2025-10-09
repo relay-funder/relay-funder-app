@@ -13,6 +13,12 @@ import {
   ValidationStage,
 } from '@/lib/ccp-validation/campaign-validation';
 import { normalizeAddress } from '@/lib/normalize-address';
+import {
+  useAdminConfigureTreasury,
+  type CampaignData,
+} from './useAdminConfigureTreasury';
+import { useAdminDeployTreasury } from './useAdminDeployTreasury';
+import { useAdminApproveCampaign as useAdminApproveCampaignApi } from '@/lib/hooks/useCampaigns';
 
 // Add platform config
 const platformConfig = {
@@ -26,6 +32,9 @@ export function useAdminApproveCampaign() {
   const { wallet } = useWeb3Auth();
   const { authenticated } = useAuth();
   const { data: client } = useConnectorClient();
+  const { configureTreasury } = useAdminConfigureTreasury();
+  const { deployTreasury } = useAdminDeployTreasury();
+  const { mutateAsync: approveCampaignApi } = useAdminApproveCampaignApi();
 
   const adminApproveCampaign = useCallback(
     async (
@@ -313,43 +322,61 @@ export function useAdminApproveCampaign() {
           'Campaign validation passed, proceeding with deployment...',
         );
 
-      // Deploy treasury server-side
+      // Deploy treasury client-side
       onStateChanged('treasuryFactoryWait');
 
+      const deployResult = await deployTreasury({
+        campaignId,
+        campaignAddress: campaignAddress,
+        platformBytes: platformConfig.platformBytes,
+      });
+
+      if (deployResult.deploymentStatus !== 'success') {
+        throw new Error(
+          `Treasury deployment failed: ${deployResult.error || 'Unknown error'}`,
+        );
+      }
       try {
-        const deployResponse = await fetch(
-          `/api/campaigns/${campaignId}/deploy-treasury`,
+        // Configure the treasury
+        onStateChanged('configureTreasury');
+        const configResult = await configureTreasury(
+          deployResult.address,
+          campaignId,
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
+            startTime: campaign.startTime,
+            endTime: campaign.endTime,
+            fundingGoal: campaign.fundingGoal,
+          } as CampaignData,
         );
 
-        if (!deployResponse.ok) {
-          const errorData = await deployResponse.json();
+        if (!configResult.success) {
           throw new Error(
-            `Treasury deployment failed: ${errorData.error || 'Unknown server error'}`,
+            `Treasury configuration failed: ${configResult.error}`,
           );
         }
 
-        const deployResult = await deployResponse.json();
+        // Call the approve API to update the database
+        onStateChanged('storageComplete');
+        await approveCampaignApi({
+          campaignId,
+          treasuryAddress: deployResult.address,
+        });
 
-        if (deployResult.status !== 'success') {
-          throw new Error(
-            `Treasury deployment failed: ${deployResult.error || 'Unknown error'}`,
-          );
-        }
-
-        return deployResult.treasuryAddress;
+        return deployResult.address;
       } catch (deployError) {
         throw new Error(
           `Treasury deployment failed: ${deployError instanceof Error ? deployError.message : 'Unknown error'}`,
         );
       }
     },
-    [wallet, authenticated, client],
+    [
+      wallet,
+      authenticated,
+      client,
+      configureTreasury,
+      deployTreasury,
+      approveCampaignApi,
+    ],
   );
   return { adminApproveCampaign };
 }

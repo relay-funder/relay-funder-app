@@ -13,12 +13,9 @@ import {
 } from '@/lib/api/types';
 import { CampaignStatus } from '@/types/campaign';
 import { getCampaign } from '@/lib/api/campaigns';
-import { createTreasuryManager } from '@/lib/treasury/interface';
-import { ethers } from 'ethers';
-import { chainConfig } from '@/lib/web3';
+
 import { notify } from '@/lib/api/event-feed';
 import { getUser } from '@/lib/api/user';
-import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -73,38 +70,6 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         campaignTitle: campaign.title,
       },
     });
-
-    // Configure treasury with campaign parameters
-    const treasuryManager = await createTreasuryManager();
-    const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
-
-    if (!platformAdminKey) {
-      throw new ApiIntegrityError(
-        'PLATFORM_ADMIN_PRIVATE_KEY not configured - cannot configure treasury',
-      );
-    }
-
-    if (treasuryAddress) {
-      const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
-      const platformAdminSigner = new ethers.Wallet(platformAdminKey, provider);
-
-      const configResult = await treasuryManager.configureTreasury(
-        treasuryAddress,
-        campaignId,
-        platformAdminSigner,
-      );
-
-      if (!configResult.success) {
-        throw new ApiIntegrityError(
-          `Treasury configuration failed: ${configResult.error}. Campaign cannot be activated with an unconfigured treasury.`,
-        );
-      }
-
-      debug &&
-        console.log(
-          `Treasury configured successfully: ${configResult.transactionHash}`,
-        );
-    }
 
     return response({
       campaign: await getCampaign(campaignId),
