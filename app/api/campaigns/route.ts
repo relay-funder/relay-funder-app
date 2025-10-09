@@ -5,7 +5,6 @@ import {
   ApiUpstreamError,
   ApiAuthNotAllowed,
   ApiNotFoundError,
-  ApiRateLimitError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 
@@ -20,10 +19,11 @@ import {
   VALID_CATEGORY_IDS,
 } from '@/lib/constant/categories';
 import {
+  checkIpLimit,
+  checkUserLimit,
   ipLimiterCreateCampaign,
   userLimiterCreateCampaign,
 } from '@/lib/rate-limit';
-import { getClientIp } from '@/lib/rate-limit/helpers';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -36,25 +36,12 @@ const statusMap: Record<string, CampaignStatus> = {
 
 export async function POST(req: Request) {
   try {
-    const clientIp = getClientIp(req.headers);
-    const ipResult = await ipLimiterCreateCampaign.check(clientIp);
-    if (!ipResult.success) {
-      throw new ApiRateLimitError(
-        'Too many requests from this IP. Please try later.',
-        ipResult,
-      );
-    }
+    await checkIpLimit(req.headers, ipLimiterCreateCampaign);
 
     const session = await checkAuth(['user']);
     const creatorAddress = session.user.address;
 
-    const userResult = await userLimiterCreateCampaign.check(creatorAddress);
-    if (!userResult.success) {
-      throw new ApiRateLimitError(
-        'User campaign creation limit reached. Please try later.',
-        userResult,
-      );
-    }
+    await checkUserLimit(creatorAddress, userLimiterCreateCampaign);
 
     const user = await getUser(creatorAddress);
     if (!user) {
