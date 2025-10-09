@@ -1,4 +1,4 @@
-import { PostgresRateLimiter } from './postgress-rate-limiter';
+import { PostgresRateLimiter } from './postgres-rate-limiter';
 import { RateLimitConfig, RateLimiter } from './types';
 
 export function createRateLimiter(config: RateLimitConfig): RateLimiter {
