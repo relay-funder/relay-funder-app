@@ -3,6 +3,7 @@ import { chainConfig } from '@/lib/web3';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { ApiIntegrityError } from '@/lib/api/error';
 import type { DbCampaign } from '@/types/campaign';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 export interface DeploymentConfig {
   factoryAddr: string;
@@ -104,7 +105,7 @@ export async function deployCampaignContract(
     for (const log of receipt?.logs || []) {
       if (
         log?.topics?.[0] === eventTopic &&
-        log?.address?.toLowerCase() === config.factoryAddr.toLowerCase()
+        normalizeAddress(log?.address) === normalizeAddress(config.factoryAddr)
       ) {
         // campaignInfoAddress is the second indexed parameter (topic[2])
         const campaignAddressTopic = log.topics[2];

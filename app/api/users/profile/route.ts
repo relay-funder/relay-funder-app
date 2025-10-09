@@ -2,8 +2,7 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import { ApiIntegrityError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
-import { notify } from '@/lib/api/event-feed';
-import { ADMIN_ADDRESS } from '@/lib/constant';
+import { notifyIntern } from '@/lib/api/event-feed';
 import { isProfileComplete } from '@/lib/api/user';
 
 export async function POST(req: Request) {
@@ -45,20 +44,14 @@ export async function POST(req: Request) {
 
     // Notify admin if profile was just completed
     const isComplete = isProfileComplete(user);
-    if (wasIncomplete && isComplete && ADMIN_ADDRESS) {
-      const adminUser = await db.user.findUnique({
-        where: { address: ADMIN_ADDRESS.toLowerCase() },
+    if (wasIncomplete && isComplete) {
+      notifyIntern({
+        creatorId: user.id,
+        data: {
+          type: 'ProfileCompleted',
+          userName: `${user.firstName} ${user.lastName}`,
+        },
       });
-      if (adminUser) {
-        await notify({
-          receiverId: adminUser.id,
-          creatorId: user.id,
-          data: {
-            type: 'ProfileCompleted',
-            userName: `${user.firstName} ${user.lastName}`,
-          },
-        });
-      }
     }
 
     return response({

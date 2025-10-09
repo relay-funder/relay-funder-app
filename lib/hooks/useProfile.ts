@@ -18,6 +18,7 @@ interface IUpdateUserProfileEmailApi {
 interface IUserProfileApi {
   id: number;
   address: string;
+  rawAddress: string;
   recipientWallet: string;
   crowdsplitCustomerId: string;
   firstName: string;

@@ -1,13 +1,17 @@
 import { db } from '@/server/db';
 import { debugAuth as debug } from '@/lib/debug';
+import { normalizeAddress } from '@/lib/normalize-address';
 
-export async function setupUser(address: string) {
-  const normalizedAddress = address.toLowerCase();
+export async function setupUser(rawAddress: string) {
+  const normalizedAddress = normalizeAddress(rawAddress);
   debug &&
     console.log('setupUser called with:', {
-      originalAddress: address,
+      rawAddress: rawAddress,
       normalizedAddress,
     });
+  if (!normalizedAddress) {
+    throw new Error('Bad user address');
+  }
 
   let dbUser = await db.user.findUnique({
     where: { address: normalizedAddress },
@@ -20,8 +24,9 @@ export async function setupUser(address: string) {
     );
 
   // Determine roles based on platform admin address and mock auth
-  const platformAdminAddress =
-    process.env.NEXT_PUBLIC_PLATFORM_ADMIN?.toLowerCase();
+  const platformAdminAddress = normalizeAddress(
+    process.env.NEXT_PUBLIC_PLATFORM_ADMIN,
+  );
   const isPlatformAdmin =
     platformAdminAddress && normalizedAddress === platformAdminAddress;
   const isMockAdmin =
@@ -39,6 +44,7 @@ export async function setupUser(address: string) {
     dbUser = await db.user.create({
       data: {
         address: normalizedAddress,
+        rawAddress: rawAddress,
         createdAt: new Date(),
         updatedAt: new Date(),
         roles: userRoles,

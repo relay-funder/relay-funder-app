@@ -6,6 +6,7 @@ import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { checkAuth } from '@/lib/api/auth';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 /**
  * # Platform Fee Configuration
@@ -183,7 +184,7 @@ export async function POST(
       for (const log of receipt?.logs || []) {
         if (
           log?.topics?.[0] === eventTopic &&
-          log?.address?.toLowerCase() === factoryAddr.toLowerCase()
+          normalizeAddress(log?.address) === normalizeAddress(factoryAddr)
         ) {
           // campaignInfoAddress is the second indexed parameter (topic[2])
           const campaignAddressTopic = log.topics[2];

@@ -12,6 +12,7 @@ import {
   getValidationSummary,
   ValidationStage,
 } from '@/lib/ccp-validation/campaign-validation';
+import { normalizeAddress } from '@/lib/normalize-address';
 
 // Add platform config
 const platformConfig = {
@@ -133,7 +134,9 @@ export function useAdminApproveCampaign() {
           throw new Error('Invalid platform admin address');
         }
 
-        if (adminAddress.toLowerCase() !== signerAddress.toLowerCase()) {
+        if (
+          normalizeAddress(adminAddress) !== normalizeAddress(signerAddress)
+        ) {
           console.warn('⚠️ [AdminApproval] Platform admin address mismatch', {
             expected: adminAddress,
             actual: signerAddress,
@@ -286,7 +289,9 @@ export function useAdminApproveCampaign() {
 
       if (!campaignResponse.ok) {
         const errorData = await campaignResponse.json();
-        throw new Error(`Failed to fetch campaign: ${errorData.error || 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch campaign: ${errorData.error || 'Unknown error'}`,
+        );
       }
 
       const { campaign } = await campaignResponse.json();
@@ -297,10 +302,7 @@ export function useAdminApproveCampaign() {
 
       // Validate campaign before treasury deployment
       debug && console.log('Validating campaign before treasury deployment...');
-      const validation = getValidationSummary(
-        campaign,
-        ValidationStage.ACTIVE,
-      );
+      const validation = getValidationSummary(campaign, ValidationStage.ACTIVE);
       if (!validation.canProceed) {
         throw new Error(
           `Campaign validation failed: ${validation.messages.join(', ')}. Cannot deploy treasury.`,
