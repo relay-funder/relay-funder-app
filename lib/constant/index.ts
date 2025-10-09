@@ -7,8 +7,6 @@ export {
   CREATOR_EVENT_POINTS,
   RECEIVER_EVENT_POINTS,
 } from './user-score-points';
-export { ONE_MINUTE_MS, ONE_DAY_MS } from './time';
-export { RATE_LIMITS } from './rate-limits';
 
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
