@@ -96,7 +96,9 @@ export function validateCampaignForSubmission(
     title: campaignData.title || '',
     description: campaignData.description || '',
     fundingGoal: campaignData.fundingGoal || '0',
-    startTime: campaignData.startTime ? new Date(campaignData.startTime) : new Date(),
+    startTime: campaignData.startTime
+      ? new Date(campaignData.startTime)
+      : new Date(),
     endTime: campaignData.endTime ? new Date(campaignData.endTime) : new Date(),
     creatorAddress: '', // Will be set by session
     status: 'DRAFT',

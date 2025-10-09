@@ -35,6 +35,12 @@ export const AdminApproveProcessStates = {
   treasuryFactoryWait: 'treasuryFactoryWait',
 
   /**
+   * The treasury is being configured with campaign parameters.
+   * This action sets up the treasury contract for the campaign.
+   */
+  configureTreasury: 'configureTreasury',
+
+  /**
    * The successful execution of the donation is being stored in the application's database.
    * This is typically the final step after blockchain confirmation.
    */

@@ -1,17 +1,22 @@
 import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiParameterError,
+  ApiNotFoundError,
+  ApiAuthNotAllowed,
+} from '@/lib/api/error';
 import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
-import { checkAuth } from '@/lib/api/auth';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
 import {
   checkIpLimit,
   checkUserLimit,
   ipLimiterCreateCampaignOnChain,
   userLimiterCreateCampaignOnChain,
 } from '@/lib/rate-limit';
+import { CampaignsWithIdParams } from '@/lib/api/types';
 
 /**
  * # Platform Fee Configuration
@@ -25,10 +30,7 @@ import {
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
-export async function POST(
-  req: Request,
-  context: { params: Promise<{ campaignId: string }> },
-) {
+export async function POST(_req: Request, { params }: CampaignsWithIdParams) {
   try {
     await checkIpLimit(req.headers, ipLimiterCreateCampaignOnChain);
 
@@ -37,7 +39,7 @@ export async function POST(
 
     await checkUserLimit(creatorAddress, userLimiterCreateCampaignOnChain);
 
-    const { campaignId } = await context.params;
+    const { campaignId } = await params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env
       .NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
@@ -69,13 +71,14 @@ export async function POST(
         process.env.NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD || '0.5', // 0.5 USDC threshold
     };
 
-    const adminPk = process.env.PLATFORM_ADMIN_PRIVATE_KEY as string;
-    if (!rpcUrl || !factoryAddr || !globalPlatformHash || !adminPk) {
+    const sponsorPrivateKey = process.env
+      .PLATFORM_SPONSOR_PRIVATE_KEY as string;
+    if (!rpcUrl || !factoryAddr || !globalPlatformHash || !sponsorPrivateKey) {
       console.warn('[campaigns/create-onchain] Missing env', {
         hasRpcUrl: !!rpcUrl,
         hasFactory: !!factoryAddr,
         hasPlatformHash: !!globalPlatformHash,
-        hasAdminPk: !!adminPk,
+        hasSponsorPrivateKey: !!sponsorPrivateKey,
       });
       throw new ApiParameterError('Missing required env vars');
     }
@@ -89,6 +92,13 @@ export async function POST(
     const campaign = await db.campaign.findUnique({ where: { id } });
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
+    }
+    if (campaign.creatorAddress !== session.user.address) {
+      if (!(await isAdmin())) {
+        throw new ApiAuthNotAllowed(
+          'Cannot execute CampaignInfoFactory for not owned Campaign',
+        );
+      }
     }
 
     // Validate platform configuration
@@ -117,7 +127,7 @@ export async function POST(
     }
     // Build inputs aligned to shell script
     const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const signer = new ethers.Wallet(adminPk, provider);
+    const signer = new ethers.Wallet(sponsorPrivateKey, provider);
     const factory = new ethers.Contract(
       factoryAddr,
       CampaignInfoFactoryABI,
