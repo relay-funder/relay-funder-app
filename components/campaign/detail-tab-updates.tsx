@@ -32,7 +32,10 @@ export function CampaignDetailTabUpdates({
   return (
     <div className="max-w-3xl space-y-6">
       {campaign.creatorAddress && (
-        <CampaignUpdateForm creatorAddress={campaign.creatorAddress} />
+        <CampaignUpdateForm
+          campaignId={campaign.id}
+          creatorAddress={campaign.creatorAddress}
+        />
       )}
 
       {error ? (
