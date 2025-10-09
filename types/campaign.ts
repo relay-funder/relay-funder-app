@@ -205,6 +205,8 @@ export enum CampaignStatus {
   DISABLED = 'DISABLED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
 }
 
 export type CampaignCreatedEvent = {

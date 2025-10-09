@@ -1,11 +1,16 @@
 import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiParameterError,
+  ApiNotFoundError,
+  ApiAuthNotAllowed,
+} from '@/lib/api/error';
 import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
-import { checkAuth } from '@/lib/api/auth';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { CampaignsWithIdParams } from '@/lib/api/types';
 
 /**
  * # Platform Fee Configuration
@@ -19,13 +24,10 @@ import { checkAuth } from '@/lib/api/auth';
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
-export async function POST(
-  req: Request,
-  context: { params: Promise<{ campaignId: string }> },
-) {
+export async function POST(_req: Request, { params }: CampaignsWithIdParams) {
   try {
-    await checkAuth(['user']);
-    const { campaignId } = await context.params;
+    const session = await checkAuth(['user']);
+    const { campaignId } = await params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env
       .NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
@@ -78,6 +80,13 @@ export async function POST(
     const campaign = await db.campaign.findUnique({ where: { id } });
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
+    }
+    if (campaign.creatorAddress !== session.user.address) {
+      if (!(await isAdmin())) {
+        throw new ApiAuthNotAllowed(
+          'Cannot execute CampaignInfoFactory for not owned Campaign',
+        );
+      }
     }
 
     // Validate platform configuration

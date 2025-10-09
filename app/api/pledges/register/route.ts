@@ -114,25 +114,25 @@ export async function POST(req: Request) {
           '[pledges/register] Missing required environment variables',
         );
         throw new ApiParameterError(
-          'Server configuration error: missing RPC or admin credentials',
+          'Server configuration error: missing RPC or sponsor credentials',
         );
       }
 
       // Initialize provider and admin signer
       const provider = new ethers.JsonRpcProvider(rpcUrl);
-      const adminSigner = new ethers.Wallet(sponsorPrivateKey, provider);
+      const sponsorSigner = new ethers.Wallet(sponsorPrivateKey, provider);
 
       debug &&
         console.log(
           '[pledges/register] Admin signer address:',
-          adminSigner.address,
+          sponsorSigner.address,
         );
 
       // Initialize treasury contract with admin signer
       const treasuryContract = new ethers.Contract(
         treasuryAddress,
         KeepWhatsRaisedABI,
-        adminSigner,
+        sponsorSigner,
       );
 
       // Set payment gateway fee (privileged operation)
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
 
         // Get current nonce to ensure proper transaction ordering
         const nonce = await provider.getTransactionCount(
-          adminSigner.address,
+          sponsorSigner.address,
           'pending',
         );
 
