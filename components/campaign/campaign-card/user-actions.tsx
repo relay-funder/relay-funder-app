@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Pause,
   Play,
+  View,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -205,6 +206,7 @@ export function CampaignCardUserActions({
 
   // Determine button states based on campaign status
   const canEdit = campaign?.slug && campaign.status !== 'COMPLETED';
+  const canView = Boolean(campaign?.slug);
   const canRemove =
     campaign.status === 'PENDING_APPROVAL' ||
     campaign.status === 'DRAFT' ||
@@ -236,7 +238,19 @@ export function CampaignCardUserActions({
             Edit
           </Button>
         </Link>
-
+        {canView && (
+          <Link href={`/campaigns/${campaign.slug}`}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canView}
+              className="h-8 w-full px-2 py-1 text-xs"
+            >
+              <View className="mr-2 h-3 w-3" />
+              View
+            </Button>
+          </Link>
+        )}
         {/* Right column: Disable or Remove button */}
         {canRemove && (
           <Button
