@@ -95,7 +95,11 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     ]);
 
     return response({
-      updates,
+      updates: updates.map((update) =>
+        isCreator || isSessionAdmin
+          ? update
+          : { ...update, isHidden: undefined },
+      ),
       pagination: {
         currentPage: page,
         pageSize,
