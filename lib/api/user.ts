@@ -294,106 +294,166 @@ export async function listAdminEventFeed({
   pageSize?: number;
 }) {
   const skip = (page - 1) * pageSize;
-  const where: Prisma.EventFeedWhereInput = {};
-  const filter: Prisma.EventFeedWhereInput = { OR: [] };
+
+  let whereClause = Prisma.sql`TRUE`;
   if (type) {
-    filter.OR?.push({ type });
+    whereClause = Prisma.sql`${whereClause} AND "type" = ${type}`;
   }
-  if (startDate || endDate) {
-    if (startDate) {
-      filter.OR?.push({ AND: [{ createdAt: { lt: new Date(startDate) } }] });
-    }
-    if (endDate && !startDate) {
-      filter.OR?.push({ createdAt: { gt: new Date(endDate) } });
-    } else if (endDate) {
-      const dateCondition = filter.OR?.find((expr) => Array.isArray(expr.AND));
-      if (Array.isArray(dateCondition?.AND)) {
-        dateCondition?.AND?.push({
-          createdAt: { gt: new Date(endDate) },
-        });
-      }
-    }
+  if (startDate) {
+    whereClause = Prisma.sql`${whereClause} AND "createdAt" < ${new Date(startDate)}`;
   }
-  if (filter.OR?.length) {
-    Object.assign(where, filter);
+  if (endDate) {
+    whereClause = Prisma.sql`${whereClause} AND "createdAt" > ${new Date(endDate)}`;
   }
-  const [dbFeedEvents, totalCount] = await Promise.all([
-    db.eventFeed.findMany({
-      where,
-      skip,
-      take: pageSize,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: { createdBy: true },
-    }),
-    db.eventFeed.count({ where }),
-  ]);
+
+  const countQuery = Prisma.sql`
+    SELECT COUNT(*) as count
+    FROM (
+      SELECT 1
+      FROM "EventFeed"
+      WHERE ${whereClause}
+      GROUP BY "eventUuid"
+    ) AS grouped
+  `;
+
+  const totalResult = await db.$queryRaw<{ count: bigint }[]>(countQuery);
+  const totalItems = Number(totalResult[0]?.count || 0);
+
+  const eventsQuery = Prisma.sql`
+    WITH grouped AS (
+      SELECT
+        "eventUuid",
+        MAX("createdAt") AS max_created_at,
+        (ARRAY_AGG(id ORDER BY "createdAt" DESC))[1] AS selected_id
+      FROM "EventFeed"
+      WHERE ${whereClause}
+      GROUP BY "eventUuid"
+    )
+    SELECT ef.*, u.*
+    FROM grouped g
+    JOIN "EventFeed" ef ON ef.id = g.selected_id
+    LEFT JOIN "User" u ON ef."createdById" = u.id
+    ORDER BY g.max_created_at DESC
+    LIMIT ${pageSize} OFFSET ${skip}
+  `;
+
+  const dbFeedEvents = await db.$queryRaw<
+    Array<{
+      id: number;
+      createdAt: Date;
+      createdById: number;
+      receiverId: number;
+      type: string;
+      message: string;
+      data: Prisma.JsonValue;
+      eventUuid: string;
+      // User fields
+      address: string;
+      rawAddress: string;
+      updatedAt: Date;
+      prevSigninAt: Date | null;
+      lastSigninAt: Date | null;
+      lastSignoutAt: Date | null;
+      roles: string[];
+      featureFlags: string[];
+      crowdsplitCustomerId: string | null;
+      email: string | null;
+      username: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      bio: string | null;
+      recipientWallet: string | null;
+      humanityScore: number;
+      collections: Prisma.JsonValue;
+      payments: Prisma.JsonValue;
+      paymentMethods: Prisma.JsonValue;
+      createdMedia: Prisma.JsonValue;
+      eventFeedRead: Date | null;
+      withdrawals: Prisma.JsonValue;
+      approvals: Prisma.JsonValue;
+    }>
+  >(eventsQuery);
+
+  // Transform to match the expected structure
+  const events = dbFeedEvents.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    createdById: row.createdById,
+    receiverId: row.receiverId,
+    type: row.type,
+    message: row.message,
+    data: row.data,
+    eventUuid: row.eventUuid,
+    createdBy: {
+      id: row.createdById,
+      address: row.address,
+      rawAddress: row.rawAddress,
+      updatedAt: row.updatedAt,
+      prevSigninAt: row.prevSigninAt,
+      lastSigninAt: row.lastSigninAt,
+      lastSignoutAt: row.lastSignoutAt,
+      roles: row.roles,
+      featureFlags: row.featureFlags,
+      crowdsplitCustomerId: row.crowdsplitCustomerId,
+      email: row.email,
+      username: row.username,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      bio: row.bio,
+      recipientWallet: row.recipientWallet,
+      humanityScore: row.humanityScore,
+      collections: row.collections,
+      payments: row.payments,
+      paymentMethods: row.paymentMethods,
+      createdMedia: row.createdMedia,
+      eventFeedRead: row.eventFeedRead,
+      withdrawals: row.withdrawals,
+      approvals: row.approvals,
+    },
+  }));
 
   return {
-    events: dbFeedEvents,
+    events,
     pagination: {
       currentPage: page,
       pageSize,
-      totalPages: Math.ceil(totalCount / pageSize),
-      totalItems: totalCount,
-      hasMore: skip + pageSize < totalCount,
+      totalPages: Math.ceil(totalItems / pageSize),
+      totalItems,
+      hasMore: skip + pageSize < totalItems,
     },
   };
 }
 
+function getPointsCaseSql(
+  userId: number,
+  weights: Record<string, number>,
+  role: 'creator' | 'receiver',
+): Prisma.Sql {
+  let caseParts = Prisma.sql``;
+  for (const [type, points] of Object.entries(weights)) {
+    caseParts = Prisma.sql`${caseParts} WHEN "type" = ${type} THEN ${points}`;
+  }
+  if (role === 'creator') {
+    return Prisma.sql`CASE WHEN "createdById" = ${userId} THEN (CASE ${caseParts} ELSE 0 END) ELSE 0 END`;
+  } else {
+    return Prisma.sql`CASE WHEN "receiverId" = ${userId} THEN (CASE ${caseParts} ELSE 0 END) ELSE 0 END`;
+  }
+}
+
 export async function calculateUserScore({
   userId,
-  creatorWeights = {
-    CampaignComment: 1,
-    CampaignPayment: 5,
-    CampaignUpdate: 3,
-    ProfileCompleted: 2,
-  },
-  receiverWeights = {
-    CampaignApprove: 10,
-    CampaignDisable: -5,
-    CampaignComment: 1,
-    CampaignPayment: 1,
-    CampaignUpdate: 0,
-    // CampaignShare is handled dynamically based on shareType
-  },
+  creatorWeights = CREATOR_EVENT_POINTS,
+  receiverWeights = RECEIVER_EVENT_POINTS,
 }: {
   userId: number;
   creatorWeights?: Record<string, number>;
   receiverWeights?: Record<string, number>;
 }) {
   try {
-    const creatorTypes = Object.keys(creatorWeights);
-    const receiverTypes = Object.keys(receiverWeights);
-    const allTypes = Array.from(new Set([...creatorTypes, ...receiverTypes]));
-
-    let creatorCaseParts: Prisma.Sql = Prisma.sql``;
-    for (const type of allTypes) {
-      if (creatorWeights[type] !== undefined) {
-        creatorCaseParts = Prisma.sql`${creatorCaseParts}
-          WHEN "createdById" = ${userId} AND "type" = ${type} THEN ${creatorWeights[type]}`;
-      }
-    }
-
-    let receiverCaseParts: Prisma.Sql = Prisma.sql``;
-    for (const type of allTypes) {
-      if (receiverWeights[type] !== undefined) {
-        receiverCaseParts = Prisma.sql`${receiverCaseParts}
-          WHEN "receiverId" = ${userId} AND "type" = ${type} THEN ${receiverWeights[type]}`;
-      }
-    }
-
     const query = Prisma.sql`
       SELECT
-        SUM(CASE
-          ${creatorCaseParts}
-          ELSE 0
-        END) AS "creatorScore",
-        SUM(CASE
-          ${receiverCaseParts}
-          ELSE 0
-        END) AS "receiverScore"
+        SUM(${getPointsCaseSql(userId, creatorWeights, 'creator')}) AS "creatorScore",
+        SUM(${getPointsCaseSql(userId, receiverWeights, 'receiver')}) AS "receiverScore"
       FROM
         "EventFeed"
       WHERE
@@ -439,30 +499,81 @@ export async function getUserScoreEvents({
 
   const skip = (page - 1) * pageSize;
 
-  // Build where clause
-  const where: Prisma.EventFeedWhereInput = {
-    OR: [{ createdById: userId }, { receiverId: userId }],
-  };
-
-  // Filter by category if specified
-  if (category) {
-    if (category === 'creator') {
-      // Creator events are when user created them
-      where.createdById = userId;
-    } else if (category === 'donor') {
-      // Donor events are when user received them
-      where.receiverId = userId;
-    }
+  let whereClause = Prisma.sql`"createdById" = ${userId} OR "receiverId" = ${userId}`;
+  if (category === 'creator') {
+    whereClause = Prisma.sql`"createdById" = ${userId}`;
+  } else if (category === 'donor') {
+    whereClause = Prisma.sql`"receiverId" = ${userId}`;
   }
 
-  const totalItems = await db.eventFeed.count({ where });
+  const countQuery = Prisma.sql`
+    WITH scored_events AS (
+      SELECT
+        *,
+        ${getPointsCaseSql(userId, CREATOR_EVENT_POINTS, 'creator')} + ${getPointsCaseSql(userId, RECEIVER_EVENT_POINTS, 'receiver')} AS points
+      FROM "EventFeed"
+      WHERE ${whereClause}
+    ),
+    grouped_events AS (
+      SELECT
+        "eventUuid",
+        SUM(points) AS sum_points,
+        MAX("createdAt") AS max_created_at
+      FROM scored_events
+      GROUP BY "eventUuid"
+      HAVING SUM(points) > 0
+    )
+    SELECT COUNT(*) as count FROM grouped_events
+  `;
 
-  const events = await db.eventFeed.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take: pageSize,
-  });
+  const totalResult = await db.$queryRaw<{ count: bigint }[]>(countQuery);
+  const totalItems = Number(totalResult[0]?.count || 0);
+
+  const eventsQuery = Prisma.sql`
+    WITH scored_events AS (
+      SELECT
+        *,
+        ${getPointsCaseSql(userId, CREATOR_EVENT_POINTS, 'creator')} + ${getPointsCaseSql(userId, RECEIVER_EVENT_POINTS, 'receiver')} AS points
+      FROM "EventFeed"
+      WHERE ${whereClause}
+    ),
+    grouped_events AS (
+      SELECT
+        "eventUuid",
+        SUM(points) AS sum_points,
+        MAX("createdAt") AS max_created_at
+      FROM scored_events
+      GROUP BY "eventUuid"
+      HAVING SUM(points) > 0
+    ),
+    ranked_events AS (
+      SELECT
+        se.*,
+        ge.sum_points,
+        ge.max_created_at,
+        ROW_NUMBER() OVER (PARTITION BY se."eventUuid" ORDER BY se.points DESC, se.id DESC) AS rn
+      FROM scored_events se
+      JOIN grouped_events ge ON se."eventUuid" = ge."eventUuid"
+    )
+    SELECT * FROM ranked_events WHERE rn = 1 ORDER BY max_created_at DESC LIMIT ${pageSize} OFFSET ${skip}
+  `;
+
+  const events = await db.$queryRaw<
+    Array<{
+      id: number;
+      createdAt: Date;
+      createdById: number;
+      receiverId: number;
+      type: string;
+      message: string;
+      data: Prisma.JsonValue;
+      eventUuid: string;
+      points: number;
+      sum_points: number;
+      max_created_at: Date;
+      rn: number;
+    }>
+  >(eventsQuery);
 
   const scoreEvents = events
     .map((event) => {
@@ -470,27 +581,26 @@ export async function getUserScoreEvents({
       let action = '';
       let eventCategory = '';
 
-      // Determine points based on event type and user role
+      // Use the summed points from the query
+      points = event.sum_points;
+
+      // Determine action and category based on the representative event
       if (event.createdById === userId) {
         // User created this event (donor actions)
         switch (event.type) {
           case 'CampaignComment':
-            points = CREATOR_EVENT_POINTS.CampaignComment;
             action = 'Commented on a campaign';
             eventCategory = 'donor';
             break;
           case 'CampaignPayment':
-            points = CREATOR_EVENT_POINTS.CampaignPayment;
             action = 'Made a donation';
             eventCategory = 'donor';
             break;
           case 'ProfileCompleted':
-            points = CREATOR_EVENT_POINTS.ProfileCompleted;
             action = 'Completed profile';
             eventCategory = 'donor';
             break;
           case 'CampaignUpdate':
-            points = CREATOR_EVENT_POINTS.CampaignUpdate;
             action = 'Updated campaign';
             eventCategory = 'creator';
             break;
@@ -499,27 +609,22 @@ export async function getUserScoreEvents({
         // User received this event (creator rewards)
         switch (event.type) {
           case 'CampaignApprove':
-            points = RECEIVER_EVENT_POINTS.CampaignApprove;
             action = 'Campaign approved';
             eventCategory = 'creator';
             break;
           case 'CampaignDisable':
-            points = RECEIVER_EVENT_POINTS.CampaignDisable;
             action = 'Campaign disabled';
             eventCategory = 'creator';
             break;
           case 'CampaignComment':
-            points = RECEIVER_EVENT_POINTS.CampaignComment;
             action = 'Received comment on campaign';
             eventCategory = 'creator';
             break;
           case 'CampaignPayment':
-            points = RECEIVER_EVENT_POINTS.CampaignPayment;
             action = 'Received donation on campaign';
             eventCategory = 'creator';
             break;
           case 'CampaignShare':
-            points = RECEIVER_EVENT_POINTS.CampaignShare;
             action = 'Someone used your share link';
             eventCategory = 'creator';
             break;

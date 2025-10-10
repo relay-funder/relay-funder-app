@@ -353,9 +353,11 @@ model EventFeed {
   type        String
   message     String
   data        Json?
+  eventUuid   String   @default(uuid())
 
   @@index([receiverId, createdAt])
   @@index([receiverId, type])
+  @@index([eventUuid])
 }
 
 model RateLimit {
