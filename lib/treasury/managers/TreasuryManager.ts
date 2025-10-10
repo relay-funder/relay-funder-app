@@ -321,50 +321,26 @@ export class TreasuryManager extends TreasuryInterface {
         );
       debug && console.log(`  PLATFORM_FEE_BPS: ${PLATFORM_FEE_BPS}`);
       debug && console.log(`  VAKI_COMMISSION_BPS: ${VAKI_COMMISSION_BPS}`);
-      debug &&
-        console.log(
-          'Full configuration structs:',
-          JSON.stringify(
-            {
-              config: {
-                minimumWithdrawalForFeeExemption:
-                  MIN_WITHDRAWAL_FEE_EXEMPTION.toString(),
-                withdrawalDelay: TREASURY_DELAYS.WITHDRAWAL_DELAY,
-                refundDelay: TREASURY_DELAYS.REFUND_DELAY,
-                configLockPeriod: TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
-                isColombianCreator: TREASURY_CONFIG.IS_COLOMBIAN,
-              },
-              campaignData: {
-                launchTime,
-                deadline,
-                goalAmount: goalAmount.toString(),
-              },
-              feeKeys: {
-                flatFeeKey: FLAT_FEE_KEY,
-                cumulativeFlatFeeKey: CUM_FLAT_FEE_KEY,
-                grossPercentageFeeKeys: [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
-              },
-              feeValues: {
-                flatFeeValue: FLAT_FEE_VALUE.toString(),
-                cumulativeFlatFeeValue: CUM_FLAT_FEE_VALUE.toString(),
-                grossPercentageFeeValues: [
-                  PLATFORM_FEE_BPS,
-                  VAKI_COMMISSION_BPS,
-                ],
-              },
-            },
-            null,
-            2,
-          ),
-        );
 
       // Wait for deployment transaction to be processed
-      debug && console.log('  Waiting 2 seconds before configuration...');
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      debug && console.log('  Waiting 5 seconds before configuration...');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // Get current nonce to ensure proper transaction ordering
-      const nonce = await signer.getNonce('pending');
-      debug && console.log(`  Using nonce: ${nonce}`);
+      // Check if treasury is already configured
+      debug && console.log('  Checking if treasury is already configured...');
+      const currentLaunchTime = await treasuryContract.getLaunchTime();
+      if (currentLaunchTime > 0) {
+        debug &&
+          console.log(
+            '  Treasury is already configured, skipping configuration',
+          );
+        return {
+          success: true,
+          transactionHash: '',
+        };
+      }
+
+      debug && console.log('  Configuring treasury...');
 
       const tx = await treasuryContract.configureTreasury(
         configStruct,
@@ -373,22 +349,27 @@ export class TreasuryManager extends TreasuryInterface {
         feeValuesStruct,
         {
           gasLimit: TREASURY_GAS_LIMITS.CONFIGURE,
-          nonce,
-          type: 0, // Use legacy transaction type (like shell script --legacy flag)
         },
       );
 
       debug && console.log(`  Transaction submitted: ${tx.hash}`);
-      const receipt = await tx.wait();
-      debug &&
-        console.log(
-          `  Transaction confirmed in block: ${receipt?.blockNumber}`,
-        );
+      debug && console.log(`  Transaction data: ${tx.data}`);
 
-      return {
-        success: true,
-        transactionHash: tx.hash,
-      };
+      try {
+        const receipt = await tx.wait();
+        debug &&
+          console.log(
+            `  Transaction confirmed in block: ${receipt?.blockNumber}`,
+          );
+
+        return {
+          success: true,
+          transactionHash: tx.hash,
+        };
+      } catch (waitError: unknown) {
+        console.error('  Transaction wait error:', waitError);
+        throw waitError;
+      }
     } catch (error) {
       console.error('Error configuring treasury:', error);
       return {
