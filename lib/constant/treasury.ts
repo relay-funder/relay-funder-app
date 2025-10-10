@@ -2,6 +2,8 @@
  * Treasury-related constants
  */
 
+import { USD_TOKEN, USDC_DECIMALS, USDT_DECIMALS } from '.';
+
 // Time delays in seconds
 export const TREASURY_DELAYS = {
   WITHDRAWAL_DELAY: 3600, // 1 hour
@@ -21,11 +23,16 @@ export const TREASURY_GAS_LIMITS = {
   WITHDRAW: 300000, // Gas limit for withdrawal transactions
 } as const;
 
-// USDC token configuration
+// USD token configuration
 export const USDC_CONFIG = {
-  DECIMALS: 6,
+  DECIMALS: USDC_DECIMALS,
   MIN_WITHDRAWAL_FEE_EXEMPTION: '0.5', // 0.5 USDC threshold
 } as const;
+export const USDT_CONFIG = {
+  DECIMALS: USDT_DECIMALS,
+  MIN_WITHDRAWAL_FEE_EXEMPTION: '0.5', // 0.5 USDT threshold
+} as const;
+export const USD_CONFIG = USD_TOKEN === 'USDC' ? USDC_CONFIG : USDT_CONFIG;
 
 // Platform fee configuration
 export const PLATFORM_CONFIG = {

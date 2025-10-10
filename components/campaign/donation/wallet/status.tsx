@@ -3,18 +3,19 @@
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useNetworkCheck } from '@/hooks/use-network';
 import { chainConfig } from '@/lib/web3';
-import { useUsdcBalance } from '@/lib/web3/hooks/use-usdc-balance';
+import { useUsdBalance } from '@/lib/web3/hooks/use-usd-balance';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
 import { formatCrypto } from '@/lib/format-crypto';
 import { useConnectedAccount } from '@/lib/web3';
 import { Button } from '@/components/ui';
+import { USD_TOKEN } from '@/lib/constant';
 
 export function CampaignDonationWalletStatus() {
   const { isCorrectNetwork } = useNetworkCheck();
-  const { usdcBalance, isPending: usdBalanceIsPending } = useUsdcBalance();
+  const { usdBalance, isPending: usdBalanceIsPending } = useUsdBalance();
 
-  const hasBalance = usdcBalance && parseFloat(usdcBalance) > 0;
-  const balanceAmount = usdcBalance ? parseFloat(usdcBalance) : 0;
+  const hasBalance = usdBalance && parseFloat(usdBalance) > 0;
+  const balanceAmount = usdBalance ? parseFloat(usdBalance) : 0;
   const { isEmbedded, openUi } = useConnectedAccount();
 
   return (
@@ -42,7 +43,7 @@ export function CampaignDonationWalletStatus() {
             <div className="text-sm font-medium text-foreground">
               {usdBalanceIsPending
                 ? 'Loading...'
-                : formatCrypto(balanceAmount, 'USDC')}
+                : formatCrypto(balanceAmount, USD_TOKEN)}
             </div>
           )}
         </div>
@@ -71,8 +72,8 @@ export function CampaignDonationWalletStatus() {
               </>
             ) : (
               <div className="text-xs text-solar">
-                ⚠️ You need USDC to contribute. Get it from an exchange or
-                on-ramp service.
+                ⚠️ You need {USD_TOKEN} to contribute. Get it from an exchange
+                or on-ramp service.
               </div>
             )}
           </div>

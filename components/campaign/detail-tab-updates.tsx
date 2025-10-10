@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { CampaignUpdateForm } from '@/components/campaign/update-form';
 import { Timeline } from '@/components/timeline';
@@ -27,7 +27,25 @@ export function CampaignDetailTabUpdates({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const updates = data?.pages.flatMap((page) => page.updates) ?? [];
+  const updates = useMemo(() => {
+    return data?.pages.flatMap((page) => page.updates) ?? [];
+  }, [data?.pages]);
+
+  const timelineItems = useMemo(
+    () =>
+      updates.map((update) => ({
+        ...update,
+        campaignId: campaign.id,
+        media: update.mediaOrder
+          ? update.mediaOrder
+              .map((mediaId) =>
+                update.media?.find((media) => media.id === mediaId),
+              )
+              .filter((media) => typeof media !== 'undefined')
+          : [],
+      })),
+    [updates, campaign],
+  );
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -52,11 +70,10 @@ export function CampaignDetailTabUpdates({
       ) : updates.length > 0 ? (
         <>
           <Timeline
-            items={updates.map((update) => ({
-              ...update,
-              id: update.id.toString(),
-            }))}
+            items={timelineItems}
             className="w-full"
+            creatorAddress={campaign.creatorAddress}
+            campaignId={campaign.id}
           />
           {(isLoading || isFetchingNextPage) && (
             <div className="text-center text-sm text-gray-500">

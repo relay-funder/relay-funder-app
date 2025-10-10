@@ -9,11 +9,12 @@ import type {
   QFRoundDB,
   UserID,
 } from '../types';
+import { USD_DECIMALS } from '@/lib/constant';
 
 function parseContributionForQF(payment: QFPaymentDB) {
   const token = payment.token;
   const userId = payment.userId;
-  const decimals = 6; // USDC
+  const decimals = USD_DECIMALS; // USDC
 
   const amount = parseUnits(payment.amount, decimals);
 
@@ -84,7 +85,7 @@ export function parseRoundForQF(round: QFRoundDB): QFRound {
     return campaign;
   });
 
-  const matchingPoolDecimals = 6; // USDC
+  const matchingPoolDecimals = USD_DECIMALS; // USDC
   const matchingPool = BigInt(
     round.matchingPool.mul(Decimal.pow(10, matchingPoolDecimals)).toFixed(0),
   );

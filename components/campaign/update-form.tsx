@@ -16,22 +16,24 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts';
 import { useCreateCampaignUpdate } from '@/lib/hooks/useUpdates';
+import { UpdateFormMedia } from './update-form-media';
 
 interface CampaignUpdateFormProps {
   creatorAddress: string;
   campaignId?: number;
-  onSubmit?: (formData: FormData) => Promise<void>;
+  onSuccess?: () => void;
 }
 const campaignUpdateFormSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }),
   content: z.string().min(1, { message: 'Content is required' }),
+  media: z.any().optional(),
 });
 type CampaignUpdateFormValues = z.infer<typeof campaignUpdateFormSchema>;
 
 export function CampaignUpdateForm({
   creatorAddress,
   campaignId,
-  onSubmit,
+  onSuccess,
 }: CampaignUpdateFormProps) {
   const { toast } = useToast();
   const { mutateAsync: createCampaignUpdate, isPending } =
@@ -43,6 +45,7 @@ export function CampaignUpdateForm({
     defaultValues: {
       title: '',
       content: '',
+      media: [],
     },
   });
 
@@ -63,30 +66,23 @@ export function CampaignUpdateForm({
     }
 
     try {
-      const payload = {
-        title: values.title.trim(),
-        content: values.content.trim(),
-      };
-
-      if (campaignId) {
-        await createCampaignUpdate({
-          campaignId,
-          ...payload,
-        });
-      } else if (onSubmit) {
-        const formData = new FormData();
-        formData.append('title', payload.title);
-        formData.append('content', payload.content);
-        await onSubmit(formData);
-      } else {
+      if (!campaignId) {
         throw new Error('Campaign not specified');
       }
+
+      await createCampaignUpdate({
+        campaignId,
+        title: values.title.trim(),
+        content: values.content.trim(),
+        media: values.media || [],
+      });
 
       form.reset();
       toast({
         title: 'Success!',
         description: 'Campaign update posted successfully.',
       });
+      onSuccess?.();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -133,6 +129,7 @@ export function CampaignUpdateForm({
             </FormItem>
           )}
         />
+        <UpdateFormMedia />
         <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? 'Posting...' : 'Post Update'}
         </Button>
