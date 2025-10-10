@@ -76,7 +76,7 @@ export async function GET(req: Request) {
         user: { address: session.user.address },
         type: 'BUY',
         status: 'confirmed',
-        token: { in: ['USD', 'USDC'] },
+        token: { in: ['USD', 'USDC', 'USDT'] },
       },
       select: {
         amount: true,

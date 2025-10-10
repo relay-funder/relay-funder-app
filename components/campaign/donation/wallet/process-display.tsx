@@ -39,15 +39,15 @@ const PROCESS_STEP_INFO: Record<
     description:
       'We are securely registering your pledge with the treasury contract using our backend system. This step ensures your donation can be properly processed.',
   },
-  approveUsdcContract: {
-    title: 'Approving USDC Spending',
+  approveUsdtContract: {
+    title: 'Approving USD Token Spending',
     description:
-      'Before we can transfer your USDC, you need to grant permission for our smart contract to spend a specific amount of USDC from your wallet. This is a standard security measure.',
+      'Before we can transfer your USD Token, you need to grant permission for our smart contract to spend a specific amount of USD Token from your wallet. This is a standard security measure.',
   },
-  waitForUsdcContractConfirmation: {
-    title: 'Confirming USDC Approval',
+  waitForUsdtContractConfirmation: {
+    title: 'Confirming USD Token Approval',
     description:
-      'We are waiting for the blockchain to confirm that your USDC spending approval has been successfully processed. This might take a moment.',
+      'We are waiting for the blockchain to confirm that your USD Token spending approval has been successfully processed. This might take a moment.',
   },
   pledgeContract: {
     title: 'Executing Donation',
@@ -94,8 +94,8 @@ export function DonationProcessDisplay({
       'switch',
       'requestTransaction',
       'registerPledge',
-      'approveUsdcContract',
-      'waitForUsdcContractConfirmation',
+      'approveUsdtContract',
+      'waitForUsdtContractConfirmation',
       'pledgeContract',
       'waitForPledgeContractConfirmation',
       'storageComplete',

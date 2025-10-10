@@ -2,6 +2,7 @@ import { createTreasuryManager } from '@/lib/treasury/interface';
 import { response, handleError } from '@/lib/api/response';
 import { ApiParameterError } from '@/lib/api/error';
 import { ethers } from 'ethers';
+import { USD_TOKEN } from '@/lib/constant';
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
         balance: {
           available: '100',
           totalPledged: '200',
-          currency: 'USDC',
+          currency: USD_TOKEN,
         },
       });
     }

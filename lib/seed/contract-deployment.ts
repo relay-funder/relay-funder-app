@@ -10,6 +10,7 @@ import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { createTreasuryManager } from '@/lib/treasury/interface';
 import { debugWeb3 as debug } from '@/lib/debug';
 import { normalizeAddress } from '@/lib/normalize-address';
+import { USD_DECIMALS } from '@/lib/constant';
 
 /**
  * Categorize deployment errors for better reporting
@@ -151,7 +152,7 @@ export async function deployCampaignContract(
     const factoryAddr = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
     const globalPlatformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH;
     const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
-    const usdcDecimals = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS || 6);
+    const usdDecimals = USD_DECIMALS;
 
     if (!factoryAddr || !globalPlatformHash || !platformAdminKey) {
       const missingVars = [];
@@ -213,7 +214,7 @@ export async function deployCampaignContract(
 
     const goalAmount = ethers.parseUnits(
       String(campaignData.fundingGoal || '0'),
-      usdcDecimals,
+      usdDecimals,
     );
 
     // Generate unique campaign identifier

@@ -33,7 +33,7 @@ Relay Funder App is a Next.js 15 fundraising platform for open source projects b
 
 1. **Campaign Management**: Create, edit, and manage fundraising campaigns
 2. **Web3 Integration**: Wallet connectivity with multiple adapters (Privy, Silk, Dummy)
-3. **Dual Payment System**: Support for both crypto (USDC) and credit card payments
+3. **Dual Payment System**: Support for both crypto (USDT) and credit card payments
 4. **Admin Dashboard**: Administrative functionality for campaign approval and management
 5. **Collections & Rounds**: Curated campaign collections and quadratic funding rounds
 6. **Real-time Notifications**: In-app notification system for user actions

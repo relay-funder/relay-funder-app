@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 
 import { AlertTriangle, Wallet, Loader2, CheckCircle2 } from 'lucide-react';
 import { normalizeAddress } from '@/lib/normalize-address';
+import { USD_TOKEN } from '@/lib/constant';
 
 type WithdrawalStep = 'amount' | 'review' | 'executing' | 'submitted';
 
@@ -86,7 +87,7 @@ export function WithdrawalDialog({
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
-    return treasuryBalance?.balance?.currency ?? 'USDC';
+    return treasuryBalance?.balance?.currency ?? USD_TOKEN;
   }, [treasuryBalance]);
 
   const availableFloat = useMemo<number>(() => {
@@ -94,7 +95,7 @@ export function WithdrawalDialog({
     const parsed = parseFloat(available || '0');
     return Number.isFinite(parsed) ? parsed : 0;
   }, [treasuryBalance]);
-  const token = currency; // use API token the same as currency string (ex. 'USDC')
+  const token = currency; // use API token the same as currency string (ex. 'USDT')
 
   const enabled = availableFloat > 0;
   const hasApproval = useMemo<boolean>(() => {

@@ -6,6 +6,7 @@ import {
   useWriteContract,
 } from '@/lib/web3';
 import { KickStarterQFABI } from '@/contracts/abi/qf/KickStarterQF';
+import { USD_DECIMALS } from '@/lib/constant';
 
 export interface ExecutePayoutCampaignLike {
   recipientAddress?: string | null;
@@ -17,7 +18,7 @@ export interface ExecutePayoutCampaignLike {
 export interface ExecutePayoutParams {
   strategyAddress: string;
   campaigns: ExecutePayoutCampaignLike[];
-  decimals?: number; // defaults to NEXT_PUBLIC_USDC_DECIMALS or 6
+  decimals?: number; // defaults to USD_DECIMALS (6)
 }
 
 export interface ExecutePayoutResult {
@@ -43,9 +44,7 @@ export function buildSetPayoutCalldata({
     if (typeof decimals === 'number' && Number.isFinite(decimals)) {
       return Math.max(0, Math.floor(decimals));
     }
-    const s = process.env.NEXT_PUBLIC_USDC_DECIMALS;
-    const n = s ? parseInt(s) : NaN;
-    return Number.isFinite(n) ? n : 6;
+    return USD_DECIMALS;
   })();
 
   const recipients: `0x${string}`[] = [];
