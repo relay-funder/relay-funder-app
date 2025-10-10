@@ -8,8 +8,9 @@ import { CampaignDonationWalletTip } from './wallet/tip';
 import { CampaignDonationAnonymous } from './anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DaimoPayProvider } from '@daimo/pay';
+import { USD_TOKEN } from '@/lib/constant';
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
-  const [selectedToken, setSelectedToken] = useState('USDC');
+  const [selectedToken, setSelectedToken] = useState(USD_TOKEN);
   const [amount, setAmount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
   const [donationAnonymous, setDonationAnonymous] = useState(false);

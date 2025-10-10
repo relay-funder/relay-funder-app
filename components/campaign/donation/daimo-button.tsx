@@ -2,10 +2,10 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
 import { DaimoPayButton, useDaimoPayUI } from '@daimo/pay';
-import { optimismUSDC } from '@daimo/pay-common';
+import { optimismUSDT, optimismUSDC } from '@daimo/pay-common';
 import { getAddress, encodeFunctionData } from 'viem';
 import { DbCampaign } from '@/types/campaign';
-import { DAIMO_PAY_APP_ID } from '@/lib/constant';
+import { DAIMO_PAY_APP_ID, USD_DECIMALS, USD_TOKEN } from '@/lib/constant';
 import { Button } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { useDaimoDonationCallback } from '@/hooks/use-daimo-donation';
@@ -85,13 +85,13 @@ export function DaimoPayButtonComponent({
     );
   }, [address, campaign.id, amount, tipAmount]);
 
-  // Convert amounts to proper units (USDC has 6 decimals)
-  const pledgeAmountInUSDC = useMemo(
-    () => ethers.parseUnits(baseAmount.toString(), 6), // 6 decimals for USDC
+  // Convert amounts to proper units (USDT has 6 decimals)
+  const pledgeAmountInUSD = useMemo(
+    () => ethers.parseUnits(baseAmount.toString(), USD_DECIMALS),
     [baseAmount],
   );
-  const tipAmountInUSDC = useMemo(
-    () => ethers.parseUnits(tipAmountNum.toString(), 6),
+  const tipAmountInUSD = useMemo(
+    () => ethers.parseUnits(tipAmountNum.toString(), USD_DECIMALS),
     [tipAmountNum],
   );
 
@@ -104,11 +104,11 @@ export function DaimoPayButtonComponent({
       args: [
         pledgeId,
         address as `0x${string}`, // backer address
-        pledgeAmountInUSDC, // pledge amount in USDC units
-        tipAmountInUSDC, // tip amount in USDC units
+        pledgeAmountInUSD, // pledge amount in USD units
+        tipAmountInUSD, // tip amount in USD units
       ],
     });
-  }, [pledgeId, address, pledgeAmountInUSDC, tipAmountInUSDC]);
+  }, [pledgeId, address, pledgeAmountInUSD, tipAmountInUSD]);
 
   const {
     onPaymentStarted: daimoOnPaymentStarted,
@@ -118,7 +118,7 @@ export function DaimoPayButtonComponent({
     campaign,
     amount,
     tipAmount,
-    selectedToken: 'USDC', // Daimo Pay uses USDC
+    selectedToken: USD_TOKEN,
     isAnonymous: anonymous,
     userEmail: email,
   });
@@ -203,7 +203,7 @@ export function DaimoPayButtonComponent({
             anonymous: anonymous.toString(),
             tipAmount,
             baseAmount: amount,
-            token: 'USDC',
+            token: USD_TOKEN,
             chain: 'Optimism',
           },
         });
@@ -365,23 +365,29 @@ export function DaimoPayButtonComponent({
 
   // USDC Configuration - Ensure Daimo Pay accepts USDC payments
   const USDC_ADDRESS = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as const; // USDC on Optimism
+  const USDT_ADDRESS = '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58' as const; // USDT on Optimism
+  const USD_ADDRESS = USD_TOKEN === 'USDC' ? USDC_ADDRESS : USDT_ADDRESS;
   const OPTIMISM_CHAIN_ID = 10 as const;
 
   // Use @daimo/pay-common constants with fallback validation
-  const configuredToken = getAddress(optimismUSDC.token);
-  const configuredChain = optimismUSDC.chainId;
+  const configuredToken =
+    USD_TOKEN === 'USDC'
+      ? getAddress(optimismUSDC.token)
+      : getAddress(optimismUSDT.token);
+  const configuredChain =
+    USD_TOKEN === 'USDC' ? optimismUSDC.chainId : optimismUSDT.chainId;
 
-  // Ensure we're accepting USDC payments only
-  if (configuredToken.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
-    console.error('Daimo Pay not configured for USDC!', {
+  // Ensure we're accepting $USD_TOKEN payments only
+  if (configuredToken.toLowerCase() !== USD_ADDRESS.toLowerCase()) {
+    console.error(`Daimo Pay not configured for ${USD_TOKEN}!`, {
       configured: configuredToken,
       expected: USDC_ADDRESS,
-      message:
-        'Daimo Pay must accept USDC to maintain compatibility with CCP treasury contracts',
+      message: `Daimo Pay must accept ${USD_TOKEN} to maintain compatibility with CCP treasury contracts`,
     });
 
     // Fallback: Use hardcoded USDC address if @daimo/pay-common is incorrect
-    debug && console.warn('Using fallback USDC configuration for Daimo Pay');
+    debug &&
+      console.warn(`Using fallback ${USD_TOKEN} configuration for Daimo Pay`);
     // Note: In production, we would use the configured token, but for safety we validate
   }
 
@@ -389,7 +395,7 @@ export function DaimoPayButtonComponent({
     console.error('Daimo Pay not configured for Optimism!', {
       configured: configuredChain,
       expected: OPTIMISM_CHAIN_ID,
-      message: 'Daimo Pay must use Optimism chain for USDC payments',
+      message: `Daimo Pay must use Optimism chain for ${USD_TOKEN} payments`,
     });
   }
 
@@ -397,10 +403,10 @@ export function DaimoPayButtonComponent({
     console.log('Daimo Pay USDC Payment Configuration:', {
       token: configuredToken,
       chain: configuredChain,
-      tokenSymbol: 'USDC',
+      tokenSymbol: USD_TOKEN,
       chainName: 'Optimism',
       contractCompatible: true, // CCP contracts expect USDC
-      verified: configuredToken.toLowerCase() === USDC_ADDRESS.toLowerCase(),
+      verified: configuredToken.toLowerCase() === USD_ADDRESS.toLowerCase(),
     });
 
   // Only render Daimo Pay button when amount meets minimum requirement
@@ -462,7 +468,7 @@ export function DaimoPayButtonComponent({
           anonymous: anonymous.toString(),
           tipAmount,
           baseAmount: amount,
-          token: 'USDC',
+          token: USD_TOKEN,
           chain: 'Optimism',
         }}
         onPaymentStarted={handlePaymentStarted}
