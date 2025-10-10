@@ -60,14 +60,18 @@ export function DaimoPayButtonComponent({
   const tipAmountNum = useMemo(() => parseFloat(tipAmount || '0'), [tipAmount]);
   const totalAmount = useMemo(() => {
     const total = (baseAmount + tipAmountNum).toFixed(2);
-    debug && console.log('Daimo Pay amounts:', {
-      amount,
-      tipAmount,
-      baseAmount,
-      tipAmountNum,
-      totalAmount: total,
-      expectedTipPercentage: baseAmount > 0 ? ((tipAmountNum / baseAmount) * 100).toFixed(2) + '%' : 'N/A'
-    });
+    debug &&
+      console.log('Daimo Pay amounts:', {
+        amount,
+        tipAmount,
+        baseAmount,
+        tipAmountNum,
+        totalAmount: total,
+        expectedTipPercentage:
+          baseAmount > 0
+            ? ((tipAmountNum / baseAmount) * 100).toFixed(2) + '%'
+            : 'N/A',
+      });
     return total;
   }, [baseAmount, tipAmountNum, amount, tipAmount]);
 
@@ -84,11 +88,11 @@ export function DaimoPayButtonComponent({
   // Convert amounts to proper units (USDC has 6 decimals)
   const pledgeAmountInUSDC = useMemo(
     () => ethers.parseUnits(baseAmount.toString(), 6), // 6 decimals for USDC
-    [baseAmount]
+    [baseAmount],
   );
   const tipAmountInUSDC = useMemo(
     () => ethers.parseUnits(tipAmountNum.toString(), 6),
-    [tipAmountNum]
+    [tipAmountNum],
   );
 
   // Encode the pledgeWithoutAReward contract call (memoized)
@@ -155,7 +159,11 @@ export function DaimoPayButtonComponent({
     }
 
     // Validate we have all required parameters
-    if (!resetPayment || !validatedTreasuryAddress || parseFloat(totalAmount) < 0.1) {
+    if (
+      !resetPayment ||
+      !validatedTreasuryAddress ||
+      parseFloat(totalAmount) < 0.1
+    ) {
       return;
     }
 
@@ -166,19 +174,20 @@ export function DaimoPayButtonComponent({
     // Function to call resetPayment with current parameters
     const executeResetPayment = () => {
       const isFirstCall = !hasCalledResetPaymentRef.current;
-      
-      debug && console.log('Daimo Pay: Calling resetPayment', {
-        totalAmount,
-        tipAmount,
-        baseAmount: amount,
-        isFirstCall,
-        breakdown: {
-          base: parseFloat(amount),
-          tip: parseFloat(tipAmount),
-          calculated: (parseFloat(amount) + parseFloat(tipAmount)).toFixed(2),
-          toUnits: totalAmount,
-        },
-      });
+
+      debug &&
+        console.log('Daimo Pay: Calling resetPayment', {
+          totalAmount,
+          tipAmount,
+          baseAmount: amount,
+          isFirstCall,
+          breakdown: {
+            base: parseFloat(amount),
+            tip: parseFloat(tipAmount),
+            calculated: (parseFloat(amount) + parseFloat(tipAmount)).toFixed(2),
+            toUnits: totalAmount,
+          },
+        });
 
       try {
         resetPayment({
@@ -211,10 +220,14 @@ export function DaimoPayButtonComponent({
     if (!hasCalledResetPaymentRef.current) {
       // Wait 500ms for tip component to calculate, propagate state, and update tipAmount
       // This handles the initial render where React needs time to run all useEffects
-      debug && console.log('Daimo Pay: First call - scheduling resetPayment in 500ms', {
-        currentTipAmount: tipAmount,
-        currentTotalAmount: totalAmount,
-      });
+      debug &&
+        console.log(
+          'Daimo Pay: First call - scheduling resetPayment in 500ms',
+          {
+            currentTipAmount: tipAmount,
+            currentTotalAmount: totalAmount,
+          },
+        );
       debounceTimeoutRef.current = setTimeout(executeResetPayment, 500);
     } else {
       debounceTimeoutRef.current = setTimeout(executeResetPayment, 300);
@@ -400,7 +413,11 @@ export function DaimoPayButtonComponent({
   }
 
   // Only render the button when we have valid amounts
-  if (parseFloat(totalAmount) < 0.1 || pledgeCallData === '0x' || pledgeId === '0x') {
+  if (
+    parseFloat(totalAmount) < 0.1 ||
+    pledgeCallData === '0x' ||
+    pledgeId === '0x'
+  ) {
     return (
       <Button disabled className="w-full">
         Enter donation amount to continue
@@ -417,15 +434,16 @@ export function DaimoPayButtonComponent({
     );
   }
 
-  debug && console.log('Daimo Pay: Rendering button with final values', {
-    totalAmount,
-    toUnits: totalAmount,
-    baseAmount: amount,
-    tipAmount,
-    calculatedTotal: (parseFloat(amount) + parseFloat(tipAmount)).toFixed(2),
-    treasuryAddress: validatedTreasuryAddress,
-    pledgeId: pledgeId.substring(0, 10) + '...',
-  });
+  debug &&
+    console.log('Daimo Pay: Rendering button with final values', {
+      totalAmount,
+      toUnits: totalAmount,
+      baseAmount: amount,
+      tipAmount,
+      calculatedTotal: (parseFloat(amount) + parseFloat(tipAmount)).toFixed(2),
+      treasuryAddress: validatedTreasuryAddress,
+      pledgeId: pledgeId.substring(0, 10) + '...',
+    });
 
   return (
     <div className="w-full">

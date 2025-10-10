@@ -28,11 +28,8 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setEmail(newEmail);
   }, []);
 
-
   return (
-    <DaimoPayProvider
-      theme="auto"
-    >
+    <DaimoPayProvider theme="auto">
       <div className="relative flex flex-col gap-6">
         <VisibilityToggle isVisible={!processing}>
           <div className="space-y-6">

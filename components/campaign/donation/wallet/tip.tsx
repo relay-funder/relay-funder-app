@@ -24,12 +24,13 @@ export function CampaignDonationWalletTip({
 
   useEffect(() => {
     const tip = (percentage / 100) * parseFloat(amount || '0');
-    debug && console.log('Tip calculation:', {
-      percentage,
-      amount,
-      tip: tip.toFixed(2),
-      total: (parseFloat(amount || '0') + tip).toFixed(2),
-    });
+    debug &&
+      console.log('Tip calculation:', {
+        percentage,
+        amount,
+        tip: tip.toFixed(2),
+        total: (parseFloat(amount || '0') + tip).toFixed(2),
+      });
     onTipAmountChanged(tip.toFixed(2));
   }, [percentage, amount, onTipAmountChanged]);
 
@@ -69,7 +70,7 @@ export function CampaignDonationWalletTip({
               value={tipAmount}
               readOnly
               placeholder="Tip calculated from percentage"
-              className="h-10 pr-20 text-sm bg-muted cursor-not-allowed"
+              className="h-10 cursor-not-allowed bg-muted pr-20 text-sm"
               min="0"
               step="0.01"
             />

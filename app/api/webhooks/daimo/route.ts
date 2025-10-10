@@ -6,9 +6,7 @@ import { notify } from '@/lib/api/event-feed';
 import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant';
-import {
-  DaimoPayWebhookPayloadSchema,
-} from '@/lib/api/types/webhooks';
+import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
 import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(req: Request) {
