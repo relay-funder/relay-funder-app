@@ -10,9 +10,13 @@ export {
 
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
-export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
+export const USDC_ADDRESS =
+  process.env.NEXT_PUBLIC_USDC_ADDRESS ??
+  '0x01C5C0122039549AD1493B8220cABEdD739BC44E'; // Celo/Sepolia
 export const USDC_DECIMALS = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS) ?? 6;
-export const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS;
+export const USDT_ADDRESS =
+  process.env.NEXT_PUBLIC_USDT_ADDRESS ??
+  '0xF9AB1c552cEB4665074C854B70ae9eeF72BC5e10'; //
 export const USDT_DECIMALS = Number(process.env.NEXT_PUBLIC_USDT_DECIMALS) ?? 6;
 
 export const USD_TOKEN: 'USDC' | 'USDT' =

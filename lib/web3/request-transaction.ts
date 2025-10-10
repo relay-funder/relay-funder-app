@@ -38,7 +38,7 @@ export async function requestTransaction({
     throw new Error('Treasury address is missing or invalid');
   }
   // Initialize contracts
-  debug && console.log('Initializing USDC contract...');
+  debug && console.log('Initializing USDX contract...');
   const usdContract = new ethers.Contract(
     USD_ADDRESS as string,
     erc20Abi,
