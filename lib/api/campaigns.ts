@@ -501,7 +501,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
       _count: {
         select: {
           comments: true,
-          updates: true,
+          updates: { where: { isHidden: false } },
           RoundCampaigns: true,
         },
       },
