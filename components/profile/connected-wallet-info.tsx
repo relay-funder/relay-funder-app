@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { PropsWithChildren, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,8 +28,11 @@ import {
   Button,
   Input,
 } from '@/components/ui';
+import { CopyAddress } from '@/components/copy-text';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile, useUpdateUserProfile } from '@/lib/hooks/useProfile';
+import { formatAddress } from '@/lib/format-address';
+import { cn } from '@/lib/utils';
 
 const recipientWalletSchema = z.object({
   recipientWallet: z
@@ -42,6 +45,35 @@ const recipientWalletSchema = z.object({
 });
 
 type RecipientWalletFormValues = z.infer<typeof recipientWalletSchema>;
+
+function LabelLike({
+  children,
+  className,
+}: PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 text-sm font-medium text-foreground',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function InputLike({
+  children,
+  className,
+}: PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
+  return (
+    <div
+      className={cn('rounded-md border border-border bg-muted p-3', className)}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function ConnectedWalletInfo() {
   const { address } = useAccount();
@@ -105,6 +137,8 @@ export function ConnectedWalletInfo() {
     [updateUserProfile, toast, profile],
   );
 
+  const formattedAddress = formatAddress(address ?? '');
+
   return (
     <Card className="rounded-lg border bg-card shadow-sm">
       <CardHeader className="pb-4">
@@ -124,24 +158,27 @@ export function ConnectedWalletInfo() {
           </h3>
 
           <div className="space-y-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <div className="space-y-1">
+              <LabelLike>
                 <Wallet className="h-4 w-4 text-muted-foreground" />
                 Address
-              </label>
-              <div className="mt-1 rounded-md border border-border bg-muted p-3">
-                <p className="break-all font-mono text-sm text-foreground">
-                  {address}
-                </p>
+              </LabelLike>
+              <div className="flex items-center gap-2">
+                <InputLike className="flex-1">
+                  <p className="break-all font-mono text-sm text-foreground">
+                    {formattedAddress}
+                  </p>
+                </InputLike>
+                <CopyAddress address={address} variant="outline" />
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Your connected wallet address for receiving payments and
                 interacting with contracts.
               </p>
             </div>
 
             {isEmbedded && (
-              <>
+              <div className="space-y-1">
                 <Button
                   onClick={openUi}
                   variant="default"
@@ -153,16 +190,16 @@ export function ConnectedWalletInfo() {
                   You are currently using an embedded wallet. Use this button to
                   configure it in the provided user interface.
                 </p>
-              </>
+              </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <div className="space-y-1">
+                <LabelLike>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   Native Balance
-                </label>
-                <div className="mt-1 rounded-md border border-border bg-muted p-3">
+                </LabelLike>
+                <InputLike>
                   <p className="text-sm text-foreground">
                     {balanceIsPending ? (
                       <span className="flex items-center gap-2">
@@ -175,18 +212,18 @@ export function ConnectedWalletInfo() {
                       '0.0000'
                     )}
                   </p>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                </InputLike>
+                <p className="text-xs text-muted-foreground">
                   Your native token balance for transaction fees.
                 </p>
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <div className="space-y-1">
+                <LabelLike>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   USDC Balance
-                </label>
-                <div className="mt-1 rounded-md border border-border bg-muted p-3">
+                </LabelLike>
+                <InputLike>
                   <p className="text-sm text-foreground">
                     {usdcBalanceIsPending ? (
                       <span className="flex items-center gap-2">
@@ -199,8 +236,8 @@ export function ConnectedWalletInfo() {
                       '0.00 USDC'
                     )}
                   </p>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                </InputLike>
+                <p className="text-xs text-muted-foreground">
                   Your USDC balance available for contributions.
                 </p>
               </div>
@@ -215,15 +252,15 @@ export function ConnectedWalletInfo() {
               Network Information
             </h3>
 
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <div className="space-y-1">
+              <LabelLike>
                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
                 Current Network
-              </label>
-              <div className="mt-1 rounded-md border border-border bg-muted p-3">
+              </LabelLike>
+              <InputLike>
                 <WalletChain chain={currentChain} isCurrent={true} />
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              </InputLike>
+              <p className="text-xs text-muted-foreground">
                 The blockchain network you&apos;re currently connected to.
               </p>
             </div>
