@@ -2,6 +2,17 @@ import { createAppKit, type AppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import type { AppKitNetwork } from '@reown/appkit/networks';
 import { defaultChain, celo } from '@/lib/web3/config/chains';
+import {
+  mainnet,
+  arbitrum,
+  base,
+  bsc,
+  linea,
+  polygon,
+  optimism,
+  scroll,
+  worldchain,
+} from 'wagmi/chains';
 
 import { PROJECT_NAME, REOWN_CLOUD_PROJECT_ID } from '@/lib/constant';
 import { getCsrfToken, getSession, signIn, signOut } from 'next-auth/react';
@@ -26,10 +37,34 @@ if (!projectId) {
   throw new Error('Web3::Adapter::Appkit: Project ID is not defined');
 }
 
-export const networks = [defaultChain] as [AppKitNetwork, ...AppKitNetwork[]];
+// Start with existing networks
+const existingNetworks = [defaultChain] as AppKitNetwork[];
 if (defaultChain.id !== celo.id) {
-  networks.push(celo);
+  existingNetworks.push(celo);
 }
+
+// Daimo Pay required networks
+const daimoNetworks = [
+  mainnet,
+  arbitrum,
+  base,
+  bsc,
+  linea,
+  polygon,
+  optimism,
+  scroll,
+  worldchain,
+];
+
+// Combine existing and Daimo networks, removing duplicates
+const allNetworks = [...existingNetworks];
+daimoNetworks.forEach((network) => {
+  if (!allNetworks.some((existing) => existing.id === network.id)) {
+    allNetworks.push(network);
+  }
+});
+
+export const networks = allNetworks as [AppKitNetwork, ...AppKitNetwork[]];
 
 export const wagmiAdapter = new WagmiAdapter({
   ssr: true,
