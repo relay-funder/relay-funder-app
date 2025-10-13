@@ -4,6 +4,7 @@ import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { Mail, Shield } from 'lucide-react';
 import { useConnectedAccount } from '@/lib/web3';
+import { USD_TOKEN } from '@/lib/constant';
 
 export function CampaignDonationWalletAmount({
   amount,
@@ -15,7 +16,7 @@ export function CampaignDonationWalletAmount({
   amount: string;
   selectedToken: string;
   onAmountChanged: (amount: string) => void;
-  onTokenChanged: (token: string) => void;
+  onTokenChanged: (token: 'USDC' | 'USDT') => void;
   email: string;
   onEmailChanged: (email: string) => void;
 }) {
@@ -111,7 +112,7 @@ export function CampaignDonationWalletAmount({
               className="h-10 pr-20 text-sm"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-              USDC
+              {USD_TOKEN}
             </div>
           </div>
         </div>

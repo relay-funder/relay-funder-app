@@ -7,7 +7,7 @@ import {
   TREASURY_DELAYS,
   TREASURY_CONFIG,
   TREASURY_GAS_LIMITS,
-  USDC_CONFIG,
+  USD_CONFIG,
   FEE_KEYS,
 } from '@/lib/constant/treasury';
 
@@ -61,8 +61,8 @@ export function useAdminConfigureTreasury() {
 
         // Config struct
         const MIN_WITHDRAWAL_FEE_EXEMPTION = ethers.parseUnits(
-          USDC_CONFIG.MIN_WITHDRAWAL_FEE_EXEMPTION,
-          USDC_CONFIG.DECIMALS,
+          USD_CONFIG.MIN_WITHDRAWAL_FEE_EXEMPTION,
+          USD_CONFIG.DECIMALS,
         );
 
         // Fee keys
@@ -82,11 +82,11 @@ export function useAdminConfigureTreasury() {
         // Fee values
         const FLAT_FEE_VALUE = ethers.parseUnits(
           process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
-          USDC_CONFIG.DECIMALS,
+          USD_CONFIG.DECIMALS,
         );
         const CUM_FLAT_FEE_VALUE = ethers.parseUnits(
           process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
-          USDC_CONFIG.DECIMALS,
+          USD_CONFIG.DECIMALS,
         );
         const PLATFORM_FEE_BPS = parseInt(
           process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
@@ -104,7 +104,7 @@ export function useAdminConfigureTreasury() {
         );
         const goalAmount = ethers.parseUnits(
           campaignData.fundingGoal,
-          USDC_CONFIG.DECIMALS,
+          USD_CONFIG.DECIMALS,
         );
 
         // Validate converted timestamps
@@ -135,7 +135,7 @@ export function useAdminConfigureTreasury() {
           );
         debug &&
           console.log(
-            `  Goal Amount: ${goalAmount.toString()} (${campaignData.fundingGoal} USDC)`,
+            `  Goal Amount: ${goalAmount.toString()} (${campaignData.fundingGoal} USD)`,
           );
 
         // Build structs as objects with named fields (required for ethers.js JSON ABI)
@@ -168,11 +168,11 @@ export function useAdminConfigureTreasury() {
         debug && console.log('Treasury fee configuration:');
         debug &&
           console.log(
-            `  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`,
+            `  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USD_CONFIG.DECIMALS)} USD)`,
           );
         debug &&
           console.log(
-            `  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`,
+            `  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USD_CONFIG.DECIMALS)} USD)`,
           );
         debug && console.log(`  PLATFORM_FEE_BPS: ${PLATFORM_FEE_BPS}`);
         debug && console.log(`  VAKI_COMMISSION_BPS: ${VAKI_COMMISSION_BPS}`);

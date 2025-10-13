@@ -3,6 +3,7 @@ import { ethers } from '@/lib/web3';
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
 import { useConnectorClient } from '@/lib/web3';
 import { debugHook as debug } from '@/lib/debug';
+import { USD_DECIMALS } from '@/lib/constant';
 
 export interface CampaignData {
   id: number;
@@ -47,7 +48,7 @@ export function useAdminDeployCampaignContract() {
         // Get deployment configuration from environment
         const factoryAddr = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
         const globalPlatformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH;
-        const usdcDecimals = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS || 6);
+        const usdDecimals = USD_DECIMALS;
 
         if (!factoryAddr || !globalPlatformHash) {
           throw new Error(
@@ -104,7 +105,7 @@ export function useAdminDeployCampaignContract() {
 
         const goalAmount = ethers.parseUnits(
           String(campaign.fundingGoal || '0'),
-          usdcDecimals,
+          usdDecimals,
         );
 
         // Generate meaningful campaign identifier

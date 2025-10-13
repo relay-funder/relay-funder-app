@@ -651,7 +651,7 @@ export async function getStats({
           "campaignId",
           SUM(
             CASE
-              WHEN "token" IN ('USD', 'USDC')
+              WHEN "token" IN ('USD', 'USDC', 'USDT')
                     AND "type" = 'BUY'
                     AND "status" = 'confirmed'
                     THEN
@@ -703,7 +703,7 @@ export async function getStats({
           "Campaign"."id" AS "campaignId",
           SUM(
             CASE
-              WHEN "Payment"."token" IN ('USD', 'USDC')
+              WHEN "Payment"."token" IN ('USD', 'USDC', 'USDT')
                     AND "Payment"."type" = 'BUY'
                     AND "Payment"."status" = 'confirmed'
                     THEN

@@ -3,6 +3,7 @@ import { useDonationStats } from '@/lib/hooks/useDonations';
 import { useUserScore } from '@/lib/hooks/useUserScore';
 import { Heart, Coins, Target, TrendingUp, Flower2 } from 'lucide-react';
 import { ResponsiveGrid } from '@/components/layout';
+import { USD_TOKEN } from '@/lib/constant';
 
 /**
  * DonorDashboardOverview Component
@@ -30,7 +31,7 @@ export function DonorDashboardOverview() {
                 <div className="mt-1 h-6 animate-pulse rounded bg-muted sm:h-8" />
               ) : (
                 <h3 className="truncate text-lg font-bold sm:text-xl md:text-2xl">
-                  ${Math.floor(stats?.totalDonated ?? 0)} USDC
+                  ${Math.floor(stats?.totalDonated ?? 0)} {USD_TOKEN}
                 </h3>
               )}
             </div>
@@ -94,7 +95,7 @@ export function DonorDashboardOverview() {
                   {stats?.totalDonations && stats?.totalDonations > 0
                     ? Math.floor(stats.totalDonated / stats.totalDonations)
                     : 0}{' '}
-                  USDC
+                  {USD_TOKEN}
                 </h3>
               )}
             </div>
