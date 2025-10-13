@@ -324,12 +324,27 @@ export async function listAdminEventFeed({
       SELECT
         "eventUuid",
         MAX("createdAt") AS max_created_at,
-        (ARRAY_AGG(id ORDER BY "createdAt" DESC))[1] AS selected_id
+        (ARRAY_AGG(id ORDER BY "createdAt" DESC, id DESC))[1] AS selected_id
       FROM "EventFeed"
       WHERE ${whereClause}
       GROUP BY "eventUuid"
     )
-    SELECT ef.*, u.*
+    SELECT
+      ef.id AS event_id,
+      ef."createdAt" AS event_created_at,
+      ef."createdById" AS event_created_by_id,
+      ef."receiverId" AS event_receiver_id,
+      ef."type" AS event_type,
+      ef."message" AS event_message,
+      ef."data" AS event_data,
+      ef."eventUuid" AS event_uuid,
+      json_build_object(
+        'id', u.id,
+        'address', u.address,
+        'username', u.username,
+        'firstName', u."firstName",
+        'lastName', u."lastName",
+        ) AS createdBy
     FROM grouped g
     JOIN "EventFeed" ef ON ef.id = g.selected_id
     LEFT JOIN "User" u ON ef."createdById" = u.id
@@ -339,77 +354,35 @@ export async function listAdminEventFeed({
 
   const dbFeedEvents = await db.$queryRaw<
     Array<{
-      id: number;
-      createdAt: Date;
-      createdById: number;
-      receiverId: number;
-      type: string;
-      message: string;
-      data: Prisma.JsonValue;
-      eventUuid: string;
-      // User fields
-      address: string;
-      rawAddress: string;
-      updatedAt: Date;
-      prevSigninAt: Date | null;
-      lastSigninAt: Date | null;
-      lastSignoutAt: Date | null;
-      roles: string[];
-      featureFlags: string[];
-      crowdsplitCustomerId: string | null;
-      email: string | null;
-      username: string | null;
-      firstName: string | null;
-      lastName: string | null;
-      bio: string | null;
-      recipientWallet: string | null;
-      humanityScore: number;
-      collections: Prisma.JsonValue;
-      payments: Prisma.JsonValue;
-      paymentMethods: Prisma.JsonValue;
-      createdMedia: Prisma.JsonValue;
-      eventFeedRead: Date | null;
-      withdrawals: Prisma.JsonValue;
-      approvals: Prisma.JsonValue;
+      event_id: number;
+      event_created_at: Date;
+      event_created_by_id: number;
+      event_receiver_id: number;
+      event_type: string;
+      event_message: string;
+      event_data: Prisma.JsonValue;
+      event_uuid: string;
+      createdBy: {
+        id: number;
+        address: string;
+        username: string | null;
+        firstName: string | null;
+        lastName: string | null;
+      };
     }>
   >(eventsQuery);
 
   // Transform to match the expected structure
   const events = dbFeedEvents.map((row) => ({
-    id: row.id,
-    createdAt: row.createdAt,
-    createdById: row.createdById,
-    receiverId: row.receiverId,
-    type: row.type,
-    message: row.message,
-    data: row.data,
-    eventUuid: row.eventUuid,
-    createdBy: {
-      id: row.createdById,
-      address: row.address,
-      rawAddress: row.rawAddress,
-      updatedAt: row.updatedAt,
-      prevSigninAt: row.prevSigninAt,
-      lastSigninAt: row.lastSigninAt,
-      lastSignoutAt: row.lastSignoutAt,
-      roles: row.roles,
-      featureFlags: row.featureFlags,
-      crowdsplitCustomerId: row.crowdsplitCustomerId,
-      email: row.email,
-      username: row.username,
-      firstName: row.firstName,
-      lastName: row.lastName,
-      bio: row.bio,
-      recipientWallet: row.recipientWallet,
-      humanityScore: row.humanityScore,
-      collections: row.collections,
-      payments: row.payments,
-      paymentMethods: row.paymentMethods,
-      createdMedia: row.createdMedia,
-      eventFeedRead: row.eventFeedRead,
-      withdrawals: row.withdrawals,
-      approvals: row.approvals,
-    },
+    id: row.event_id,
+    createdAt: row.event_created_at,
+    createdById: row.event_created_by_id,
+    receiverId: row.event_receiver_id,
+    type: row.event_type,
+    message: row.event_message,
+    data: row.event_data,
+    eventUuid: row.event_uuid,
+    createdBy: row.createdBy,
   }));
 
   return {
@@ -429,6 +402,9 @@ function getPointsCaseSql(
   weights: Record<string, number>,
   role: 'creator' | 'receiver',
 ): Prisma.Sql {
+  if (Object.keys(weights).length === 0) {
+    return Prisma.sql`0`;
+  }
   let caseParts = Prisma.sql``;
   for (const [type, points] of Object.entries(weights)) {
     caseParts = Prisma.sql`${caseParts} WHEN "type" = ${type} THEN ${points}`;
