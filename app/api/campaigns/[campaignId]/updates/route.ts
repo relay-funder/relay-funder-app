@@ -10,7 +10,7 @@ import {
 import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 import { addCampaignUpdate } from '@/lib/api/campaigns';
-import { notify } from '@/lib/api/event-feed';
+import { notifyMany } from '@/lib/api/event-feed';
 import { getUser } from '@/lib/api/user';
 import { auth } from '@/server/auth';
 
@@ -202,20 +202,16 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       }
       return accumulator.concat(id);
     }, [] as number[]);
-    await Promise.all(
-      receiverIds.map((receiverId) =>
-        notify({
-          receiverId,
-          creatorId: user.id,
-          data: {
-            type: 'CampaignUpdate',
-            campaignId: campaign.id,
-            campaignTitle: campaign.title,
-            updateText: content,
-          },
-        }),
-      ),
-    );
+    await notifyMany({
+      receivers: receiverIds,
+      creatorId: user.id,
+      data: {
+        type: 'CampaignUpdate',
+        campaignId: campaign.id,
+        campaignTitle: campaign.title,
+        updateText: content,
+      },
+    });
 
     return response({
       ok: true,

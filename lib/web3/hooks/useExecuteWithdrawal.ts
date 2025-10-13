@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useWriteContract, ethers } from '@/lib/web3';
 import { PaymentTreasuryABI } from '@/contracts/abi/PaymentTreasury';
-import { USDC_CONFIG } from '@/lib/constant/treasury';
+import { USD_CONFIG } from '@/lib/constant/treasury';
 
 export interface ExecuteWithdrawalParams {
   treasuryAddress: string;
@@ -41,8 +41,8 @@ export function useExecuteWithdrawal() {
       try {
         setIsExecuting(true);
 
-        // Parse amount to wei (assuming USDC decimals)
-        const amountWei = ethers.parseUnits(amount, USDC_CONFIG.DECIMALS);
+        // Parse amount to wei (assuming USD decimals)
+        const amountWei = ethers.parseUnits(amount, USD_CONFIG.DECIMALS);
 
         // Call the treasury withdraw function
         const tx = await writeContract({

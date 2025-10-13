@@ -7,6 +7,7 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui';
+import { USD_TOKEN } from '@/lib/constant';
 
 interface CampaignCreateFormFundingProps {
   isOnChainDeployed?: boolean;
@@ -24,7 +25,7 @@ export function CampaignCreateFormFunding({
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-sm font-medium text-foreground">
-              Funding Goal (USDC)
+              Funding Goal ({USD_TOKEN})
             </FormLabel>
             <FormControl>
               <Input

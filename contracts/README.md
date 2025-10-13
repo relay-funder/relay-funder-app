@@ -11,7 +11,7 @@ This guide provides comprehensive instructions for testing and deploying CC Prot
 - **Implementation ID**: `0`
 - **Primary Method**: `pledgeWithoutAReward(address backer, uint256 pledgeAmount, uint256 tip)`
 - **Withdrawal**: Complex fee-based system with admin approval required
-- **Use Case**: Direct wallet-to-wallet USDC payments
+- **Use Case**: Direct wallet-to-wallet USDT payments
 
 <!-- PaymentTreasury commented out for single treasury MVP focus -->
 <!-- **PaymentTreasury** (Credit Card Flow) - Commented out for MVP
@@ -59,8 +59,8 @@ NEXT_PUBLIC_PLATFORM_ADMIN=0x4567890123456789012345678901234567890123     # Plat
 # PaymentTreasury functionality commented out for MVP focus
 
 # Test Token Configuration
-NEXT_PUBLIC_USDC_ADDRESS=0x6789012345678901234567890123456789012345        # USDC token address
-NEXT_PUBLIC_USDC_DECIMALS=6
+NEXT_PUBLIC_USDT_ADDRESS=0x6789012345678901234567890123456789012345        # USDT token address
+NEXT_PUBLIC_USDT_DECIMALS=6
 
 
 ```
