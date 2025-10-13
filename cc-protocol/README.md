@@ -121,7 +121,7 @@ Using RPC: https://alfajores-forno.celo-testnet.org
 CampaignInfoFactory: 0x3c95449E75C9e3F2C10FF1225f139293D0fb45D3
 TreasuryFactory:     0x9F42bF9e482de836972C9bde5618F8A88a325BCd
 GlobalParams:        0xed944522b41CC8B790eb0825720C98D336a8484C
-USDT:                0xF9AB1c552cEB4665074C854B70ae9eeF72BC5e10 (decimals=6)
+USDT:                0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e (decimals=6)
 Platform Hash:       0x8dfe5499a94ebda35ae3d6c7b6c32b140c2cb04687d76f2cc3564ada0ef5dce6
 Creator:             0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70
 Backer:              0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70
