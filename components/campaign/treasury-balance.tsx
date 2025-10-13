@@ -3,6 +3,7 @@ import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Wallet } from 'lucide-react';
+import { USD_TOKEN } from '@/lib/constant';
 
 interface TreasuryBalanceProps {
   treasuryAddress: string;
@@ -56,7 +57,7 @@ export function TreasuryBalance({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Badge variant="outline" className="text-xs">
-          {treasuryBalance.balance?.currency ?? 'USDC'}
+          {treasuryBalance.balance?.currency ?? USD_TOKEN}
         </Badge>
       </CardHeader>
       <CardContent>
@@ -105,7 +106,7 @@ export function TreasuryBalanceCompact({
 
   // Safely parse balance values with fallbacks
   const totalPledged = treasuryBalance.balance?.totalPledged ?? '0';
-  const currency = treasuryBalance.balance?.currency ?? 'USDC';
+  const currency = treasuryBalance.balance?.currency ?? USD_TOKEN;
 
   // Parse as numbers with fallback to 0
   const totalPledgedNum = parseFloat(totalPledged) || 0;

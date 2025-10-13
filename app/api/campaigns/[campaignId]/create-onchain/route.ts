@@ -18,14 +18,15 @@ import {
   userLimiterCreateCampaignOnChain,
 } from '@/lib/rate-limit';
 import { CampaignsWithIdParams } from '@/lib/api/types';
+import { USD_DECIMALS } from '@/lib/constant';
 
 /**
  * # Platform Fee Configuration
- * NEXT_PUBLIC_PLATFORM_FLAT_FEE=0.001          # Flat fee per pledge (USDC)
- * NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE=0.002 # Cumulative flat fee threshold (USDC)
+ * NEXT_PUBLIC_PLATFORM_FLAT_FEE=0.001          # Flat fee per pledge (USDX)
+ * NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE=0.002 # Cumulative flat fee threshold (USDX)
  * NEXT_PUBLIC_PLATFORM_FEE_BPS=400             # Platform fee percentage (400 = 4%)
  * NEXT_PUBLIC_VAKI_COMMISSION_BPS=100          # Vaki commission percentage (100 = 1%)
- * NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD=0.5      # Fee exemption threshold (USDC)
+ * NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD=0.5      # Fee exemption threshold (USDX)
  * # Campaign Timing Configuration
  * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=300            # Minimum seconds before launch (300 = 5 minutes)
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
@@ -46,14 +47,14 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       .NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
     const globalPlatformHash = process.env
       .NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`;
-    const usdcDecimals = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS || 6);
+    const usdDecimals = USD_DECIMALS;
 
     // Platform configuration - should be configurable per platform/environment
     const platformConfig = {
-      // Fee structure (in USDC)
-      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDC per pledge
+      // Fee structure (in USDX)
+      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDX per pledge
       cumulativeFlatFee:
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDC threshold
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDX threshold
       platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'), // 0% platform fee
       vakiCommissionBps: parseInt(
         process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
@@ -69,7 +70,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
 
       // Platform settings
       feeExemptionThreshold:
-        process.env.NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD || '0.5', // 0.5 USDC threshold
+        process.env.NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD || '0.5', // 0.5 USDX threshold
     };
 
     const sponsorPrivateKey = process.env
@@ -172,7 +173,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
 
     const goalAmount = ethers.parseUnits(
       String(campaign.fundingGoal || '0'),
-      usdcDecimals,
+      usdDecimals,
     );
 
     // Generate meaningful campaign identifier for production use

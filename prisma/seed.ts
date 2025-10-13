@@ -1093,7 +1093,7 @@ async function main() {
 
         const paymentData = {
           amount,
-          token: 'USDC',
+          token: selectRandom(['USD', 'USDT', 'USDC']),
           status: 'confirmed',
           type: 'BUY' as const,
           transactionHash: isOnChain ? mockTransactionHash : null,
@@ -1262,7 +1262,7 @@ async function main() {
     await db.payment.create({
       data: {
         amount,
-        token: 'USDC',
+        token: selectRandom(['USD', 'USDT', 'USDC']),
         status: 'confirmed',
         type: 'BUY',
         transactionHash: `0x${Array.from({ length: 64 }, () =>
@@ -1296,7 +1296,7 @@ async function main() {
     await db.payment.create({
       data: {
         amount,
-        token: 'USDC',
+        token: selectRandom(['USD', 'USDT', 'USDC']),
         status: 'confirmed',
         type: 'BUY',
         transactionHash: `0x${Array.from({ length: 64 }, () =>
@@ -1330,7 +1330,7 @@ async function main() {
     await db.payment.create({
       data: {
         amount,
-        token: 'USDC',
+        token: selectRandom(['USD', 'USDT', 'USDC']),
         status: 'confirmed',
         type: 'BUY',
         transactionHash: `0x${Array.from({ length: 64 }, () =>

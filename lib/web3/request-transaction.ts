@@ -1,5 +1,5 @@
 import { ethers, erc20Abi } from '@/lib/web3';
-import { USDC_ADDRESS } from '@/lib/constant';
+import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import { DonationProcessStates } from '@/types/campaign';
 import { debugWeb3 as debug } from '@/lib/debug';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
@@ -25,8 +25,8 @@ export async function requestTransaction({
   const ethersProvider = new ethers.BrowserProvider(client);
   const signer = await ethersProvider.getSigner();
   const userAddress = signer.address;
-  if (!USDC_ADDRESS || !ethers.isAddress(USDC_ADDRESS as string)) {
-    throw new Error('USDC_ADDRESS is missing or invalid');
+  if (!USD_ADDRESS || !ethers.isAddress(USD_ADDRESS as string)) {
+    throw new Error('USD_ADDRESS is missing or invalid');
   }
   if (!userAddress || !ethers.isAddress(userAddress)) {
     throw new Error('User address is missing or invalid');
@@ -38,29 +38,20 @@ export async function requestTransaction({
     throw new Error('Treasury address is missing or invalid');
   }
   // Initialize contracts
-  debug && console.log('Initializing USDC contract...');
-  const usdcContract = new ethers.Contract(
-    USDC_ADDRESS as string,
+  debug && console.log('Initializing USDX contract...');
+  const usdContract = new ethers.Contract(
+    USD_ADDRESS as string,
     erc20Abi,
     signer,
   );
 
-  let unit: number | string = parseInt(
-    process.env.NEXT_PUBLIC_USDC_DECIMALS ?? '',
-  );
-  if (isNaN(unit)) {
-    unit =
-      typeof process.env.NEXT_PUBLIC_USDC_DECIMALS === 'string'
-        ? parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)
-        : 6;
-  }
-  const pledgeAmountInUSDC = ethers.parseUnits(amount || '0', unit);
-  const tipAmountInUSDC = ethers.parseUnits(tipAmount || '0', unit);
-  const totalAmount = pledgeAmountInUSDC + tipAmountInUSDC;
+  const pledgeAmountInUSD = ethers.parseUnits(amount || '0', USD_DECIMALS);
+  const tipAmountInUSD = ethers.parseUnits(tipAmount || '0', USD_DECIMALS);
+  const totalAmount = pledgeAmountInUSD + tipAmountInUSD;
 
-  debug && console.log('Pledge amount in USDC:', pledgeAmountInUSDC.toString());
-  debug && console.log('Tip amount in USDC:', tipAmountInUSDC.toString());
-  debug && console.log('Total amount in USDC:', totalAmount.toString());
+  debug && console.log('Pledge amount in USD:', pledgeAmountInUSD.toString());
+  debug && console.log('Tip amount in USD:', tipAmountInUSD.toString());
+  debug && console.log('Total amount in USD:', totalAmount.toString());
 
   // Generate pledge ID as per shell script pattern (must be done first)
   const pledgeId = ethers.keccak256(
@@ -161,15 +152,15 @@ export async function requestTransaction({
     signer,
   );
 
-  // First approve the treasury to spend USDC (pledge + tip)
+  // First approve the treasury to spend USD (pledge + tip)
   debug && console.log('Treasury address:', address);
-  debug && console.log('Approving USDC spend...');
-  onStateChanged('approveUsdcContract');
-  const approveTx = await usdcContract.approve(address, totalAmount);
+  debug && console.log('Approving USDX spend...');
+  onStateChanged('approveUsdtContract');
+  const approveTx = await usdContract.approve(address, totalAmount);
   debug && console.log('Approval transaction hash:', approveTx.hash);
-  onStateChanged('waitForUsdcContractConfirmation');
+  onStateChanged('waitForUsdtContractConfirmation');
   await approveTx.wait();
-  debug && console.log('USDC approval confirmed');
+  debug && console.log('USDX approval confirmed');
 
   // Make the pledge transaction
   debug && console.log('Estimating gas for pledge transaction...');
@@ -178,8 +169,8 @@ export async function requestTransaction({
     estimatedGas = await treasuryContract.pledgeWithoutAReward.estimateGas(
       pledgeId,
       userAddress,
-      pledgeAmountInUSDC,
-      tipAmountInUSDC,
+      pledgeAmountInUSD,
+      tipAmountInUSD,
     );
   } catch (gasEstimateError) {
     debug &&
@@ -192,8 +183,8 @@ export async function requestTransaction({
   const tx = await treasuryContract.pledgeWithoutAReward(
     pledgeId,
     userAddress,
-    pledgeAmountInUSDC,
-    tipAmountInUSDC,
+    pledgeAmountInUSD,
+    tipAmountInUSD,
     {
       gasLimit: (estimatedGas * 120n) / 100n, // 20% buffer for gas
     },

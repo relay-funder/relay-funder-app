@@ -48,10 +48,10 @@ export function WalletInfoSkeleton() {
               <div>
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-4 w-4" /> {/* Icon */}
-                  <Skeleton className="h-4 w-28" /> {/* USDC label */}
+                  <Skeleton className="h-4 w-28" /> {/* USD label */}
                 </div>
                 <Skeleton className="mt-1 h-12 w-full rounded-md" />{' '}
-                {/* USDC box */}
+                {/* USD box */}
                 <Skeleton className="mt-1 h-3 w-44" /> {/* Description */}
               </div>
             </div>

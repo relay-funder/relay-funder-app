@@ -30,7 +30,7 @@ export interface CreatePoolArgs {
     allowedTokens: Address[];
     isUsingAllocationMetadata: boolean; // Likely false based on KickstarterQF._allocate
   };
-  token: Address; // Pool's native token (e.g., USDC address)
+  token: Address; // Pool's native token (e.g., USDT address)
   amount: bigint; // Initial funding amount (requires prior ERC20 approval to ALLO_ADDRESS)
   metadata: Metadata;
   managers: Address[];

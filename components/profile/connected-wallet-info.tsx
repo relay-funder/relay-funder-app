@@ -10,7 +10,7 @@ import {
   useBalance,
 } from '@/lib/web3';
 
-import { USDC_ADDRESS } from '@/lib/constant';
+import { USD_TOKEN } from '@/lib/constant';
 import { WalletChain } from './wallet-chain';
 import {
   Card,
@@ -31,6 +31,7 @@ import {
 import { CopyAddress } from '@/components/copy-text';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile, useUpdateUserProfile } from '@/lib/hooks/useProfile';
+import { useUsdBalance } from '@/lib/web3/hooks/use-usd-balance';
 import { formatAddress } from '@/lib/format-address';
 import { cn } from '@/lib/utils';
 
@@ -82,10 +83,7 @@ export function ConnectedWalletInfo() {
     address: address as `0x${string}`,
   });
   const { chain: currentChain } = useCurrentChain();
-  const { data: usdcBalance, isPending: usdcBalanceIsPending } = useBalance({
-    address: address as `0x${string}`,
-    token: USDC_ADDRESS as `0x${string}`,
-  });
+  const { usdBalance, isPending: usdBalanceIsPending } = useUsdBalance();
 
   const { toast } = useToast();
   const { data: profile, isLoading: profileLoading } = useUserProfile();
@@ -221,24 +219,24 @@ export function ConnectedWalletInfo() {
               <div className="space-y-1">
                 <LabelLike>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  USDC Balance
+                  USD Token Balance
                 </LabelLike>
                 <InputLike>
                   <p className="text-sm text-foreground">
-                    {usdcBalanceIsPending ? (
+                    {usdBalanceIsPending ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         Loading...
                       </span>
-                    ) : usdcBalance ? (
-                      `${parseFloat(usdcBalance.formatted).toFixed(2)} USDC`
+                    ) : usdBalance ? (
+                      `${parseFloat(usdBalance).toFixed(2)} ${USD_TOKEN}`
                     ) : (
-                      '0.00 USDC'
+                      `0.00 ${USD_TOKEN}`
                     )}
                   </p>
                 </InputLike>
                 <p className="text-xs text-muted-foreground">
-                  Your USDC balance available for contributions.
+                  Your {USD_TOKEN} balance available for contributions.
                 </p>
               </div>
             </div>
