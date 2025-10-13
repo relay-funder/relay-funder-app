@@ -9,19 +9,32 @@ const FLAG_CONFIG = {
     envVar: 'NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY',
     default: false,
   },
+  HUMAN_PASSPORT: {
+    envVar: 'NEXT_PUBLIC_ENABLE_HUMAN_PASSPORT',
+    default: false,
+  },
 } as const;
 
+function verifyEnvFlag(
+  value: string | undefined,
+  defaultValue: boolean,
+): boolean {
+  return value === 'true' || value === '1' || defaultValue;
+}
+
 // Initialize flags from environment variables or defaults
-const FLAGS = Object.fromEntries(
-  Object.entries(FLAG_CONFIG).map(([key, config]) => {
-    const envValue = process.env[config.envVar];
-    if (envValue !== undefined) {
-      // Parse string values to boolean
-      return [key, envValue === 'true' || envValue === '1'];
-    }
-    return [key, config.default];
-  }),
-) as Record<keyof typeof FLAG_CONFIG, boolean>;
+// not possible to use process.env[config.envVar], it would return undefined for all flags
+const FLAGS = {
+  DEBUG: verifyEnvFlag(process.env.NEXT_PUBLIC_DEBUG, false),
+  ROUNDS_VISIBILITY: verifyEnvFlag(
+    process.env.NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY,
+    false,
+  ),
+  HUMAN_PASSPORT: verifyEnvFlag(
+    process.env.NEXT_PUBLIC_ENABLE_HUMAN_PASSPORT,
+    false,
+  ),
+} as Record<keyof typeof FLAG_CONFIG, boolean>;
 
 export type FeatureFlag = keyof typeof FLAGS;
 
