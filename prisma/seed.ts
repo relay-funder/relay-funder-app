@@ -1,8 +1,7 @@
-import { config } from 'dotenv';
 import { PrismaClient } from '../.generated/prisma/client';
 import { CampaignStatus } from '../types/campaign';
 import shortUUID from 'short-uuid';
-import { subDays, addDays } from 'date-fns';
+import { subDays, addDays, addMinutes } from 'date-fns';
 import { notify } from '../lib/api/event-feed';
 import {
   deployCampaignContract,
@@ -10,15 +9,25 @@ import {
 } from '../lib/seed/contract-deployment';
 import { USER_FLAGS } from '../lib/constant/user-flags';
 import { normalizeAddress } from '../lib/normalize-address';
-// Load environment variables
-config({ path: '.env.local' });
+// Environment variables should already be loaded by Docker container
 
 // Check for dummy mode via environment variable or command line argument
 const isDummyMode =
   process.env.SEED_DUMMY_MODE === 'true' || process.argv.includes('--dummy');
 
+// Enable debug logging for treasury operations in development
+if (process.env.NODE_ENV !== 'production') {
+  process.env.DEBUG_WEB3 = 'true';
+}
+
+// Create PrismaClient with connection configuration
 const db = new PrismaClient({
   log: ['error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
 });
 
 // Deployment statistics tracking
@@ -26,8 +35,10 @@ interface DeploymentStats {
   totalCampaigns: number;
   successfulCampaignDeployments: number;
   successfulTreasuryDeployments: number;
+  successfulTreasuryConfigurations: number;
   failedCampaignDeployments: number;
   failedTreasuryDeployments: number;
+  failedTreasuryConfigurations: number;
   errorsByType: Record<string, number>;
   errorDetails: Array<{
     campaignTitle: string;
@@ -40,8 +51,10 @@ const deploymentStats: DeploymentStats = {
   totalCampaigns: 0,
   successfulCampaignDeployments: 0,
   successfulTreasuryDeployments: 0,
+  successfulTreasuryConfigurations: 0,
   failedCampaignDeployments: 0,
   failedTreasuryDeployments: 0,
+  failedTreasuryConfigurations: 0,
   errorsByType: {},
   errorDetails: [],
 };
@@ -161,21 +174,19 @@ async function createUsers(
   roles: string[],
   featureFlags: string[] = [],
 ) {
-  const userPromises = [];
+  const users = [];
   for (let i = 0; i < amount; i++) {
     const address = randomAddress();
-    userPromises.push(
-      db.user.create({
-        data: {
-          address,
-          rawAddress: address,
-          roles,
-          featureFlags,
-        },
-      }),
-    );
+    const user = await db.user.create({
+      data: {
+        address,
+        rawAddress: address,
+        roles,
+        featureFlags,
+      },
+    });
+    users.push(user);
   }
-  const users = await Promise.all(userPromises);
   return users;
 }
 
@@ -386,6 +397,108 @@ function selectCampaignCategory(campaignIndex: number): string {
   return categories[campaignIndex % 4]; // Ensures even distribution across all 4 categories
 }
 
+async function configureActiveCampaignTreasuries() {
+  // Find all ACTIVE campaigns with deployed treasuries that need configuration
+  const activeCampaigns = await db.campaign.findMany({
+    where: {
+      status: CampaignStatus.ACTIVE,
+      treasuryAddress: { not: null },
+      campaignAddress: { not: null },
+    },
+    select: {
+      id: true,
+      title: true,
+      startTime: true,
+      endTime: true,
+      treasuryAddress: true,
+    },
+  });
+
+  if (activeCampaigns.length === 0) {
+    console.log('   No ACTIVE campaigns with treasuries found to configure');
+    return;
+  }
+
+  console.log(
+    `   Found ${activeCampaigns.length} ACTIVE campaigns to configure treasuries for`,
+  );
+
+  const { createTreasuryManager } = await import('../lib/treasury/interface');
+  const treasuryManager = await createTreasuryManager();
+
+  // Get platform admin signer for configuration
+  const platformAdminKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+  const platformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH;
+  const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
+
+  if (!platformAdminKey || !platformHash || !rpcUrl) {
+    console.log(
+      '   ⚠️  Missing required environment variables for treasury configuration, skipping',
+    );
+    return;
+  }
+
+  const ethers = await import('ethers');
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const platformAdminSigner = new ethers.Wallet(platformAdminKey, provider);
+
+  let configuredCount = 0;
+  let failedCount = 0;
+
+  for (const campaign of activeCampaigns) {
+    try {
+      console.log(`   🔧 Configuring treasury for "${campaign.title}"`);
+
+      // Ensure startTime is in the future (at least 2 minutes ahead for testing)
+      const now = new Date();
+      const futureStartTime = new Date(now.getTime() + 2 * 60 * 1000); // 2 minutes from now
+      const currentStartTime = new Date(campaign.startTime);
+
+      if (currentStartTime <= now) {
+        console.log(`     📅 Updating startTime to future for treasury configuration`);
+        await db.campaign.update({
+          where: { id: campaign.id },
+          data: { startTime: futureStartTime },
+        });
+      }
+
+      // Configure the treasury
+      const configResult = await treasuryManager.configureTreasury(
+        campaign.treasuryAddress!,
+        campaign.id,
+        platformAdminSigner,
+      );
+
+      if (configResult.success) {
+        console.log(`     ✅ Treasury configured successfully`);
+        configuredCount++;
+      } else {
+        console.log(
+          `     ❌ Treasury configuration failed: ${configResult.error}`,
+        );
+        failedCount++;
+      }
+
+      // Small delay between configurations to avoid RPC rate limits
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(
+        `     💥 Error configuring treasury for "${campaign.title}":`,
+        error,
+      );
+      failedCount++;
+    }
+  }
+
+  console.log(
+    `   📊 Treasury configuration complete: ${configuredCount} successful, ${failedCount} failed`,
+  );
+
+  // Update deployment statistics
+  deploymentStats.successfulTreasuryConfigurations = configuredCount;
+  deploymentStats.failedTreasuryConfigurations = failedCount;
+}
+
 async function main() {
   // Log dummy mode status
   if (isDummyMode) {
@@ -547,7 +660,7 @@ async function main() {
         "Celo's prezenti grant program is committed to maintaining grassroots grant funding to reputable members of the celo community.",
       descriptionUrl: 'https://relayfunder.com',
       matchingPool: 12500, // Realistic funding cap between 10,000-15,000
-      startDate: subDays(new Date(), 5), // Started 5 days ago (active)
+      startDate: addMinutes(new Date(), 5), // Starts in 5 minutes (will be active soon)
       endDate: addDays(new Date(), 25), // Ends in 25 days
       applicationStart: subDays(new Date(), 15),
       applicationClose: subDays(new Date(), 1),
@@ -651,6 +764,7 @@ async function main() {
           startTime: campaign.startTime,
           endTime: campaign.endTime,
         },
+        db,
         isDummyMode,
       );
 
@@ -671,6 +785,8 @@ async function main() {
       // ACTIVE campaigns should have both contracts deployed
       console.log(`   Deploying both contracts (status: ACTIVE)`);
 
+      // For ACTIVE campaigns, deploy contracts but don't configure treasury immediately
+      // The treasury configuration should happen as a separate step after validation
       const deployResult = await deployAllContracts(
         {
           id: campaign.id,
@@ -680,32 +796,24 @@ async function main() {
           startTime: campaign.startTime,
           endTime: campaign.endTime,
         },
+        db,
         isDummyMode,
+        true, // skipTreasuryConfig
       );
 
+      // For now, skip treasury configuration to avoid the revert issue
+      // The treasury will be deployed but not configured
       if (deployResult.campaignContract.success) {
         campaignAddress = deployResult.campaignContract.campaignAddress;
         transactionHash = deployResult.campaignContract.transactionHash;
         deploymentStats.successfulCampaignDeployments++;
         console.log(`   Campaign contract deployed successfully`);
 
+        // Handle treasury deployment (deployed but not configured)
         if (deployResult.treasuryContract?.success) {
           treasuryAddress = deployResult.treasuryContract.treasuryAddress;
           deploymentStats.successfulTreasuryDeployments++;
-          console.log(
-            `   Treasury contract deployed and configured successfully`,
-          );
-
-          // After successful treasury configuration, update campaign startTime to be in the past
-          await db.campaign.update({
-            where: { id: campaign.id },
-            data: {
-              startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // Set to 1 day ago
-            },
-          });
-          console.log(
-            `   Updated campaign startTime to past for ACTIVE status`,
-          );
+          console.log(`   Treasury contract deployed (not configured)`);
         } else {
           deploymentStats.failedTreasuryDeployments++;
           const errorType =
@@ -1067,6 +1175,10 @@ async function main() {
       );
     }
   }
+
+  // Configure treasuries for ACTIVE campaigns
+  console.log('\n🏦 Configuring treasuries for ACTIVE campaigns...');
+  await configureActiveCampaignTreasuries();
 
   // Add favorites for test creators so they have campaigns in their favorites list
   console.log('\n⭐ Adding favorites for test creators...');

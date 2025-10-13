@@ -117,6 +117,7 @@ interface CampaignData {
  */
 export async function deployCampaignContract(
   campaignData: CampaignData,
+  db: { campaign: { update: (args: { where: { id: number }, data: { startTime: Date; endTime: Date } }) => Promise<unknown> } },
   isDummy: boolean = false,
 ): Promise<CampaignContractDeployment> {
   try {
@@ -278,10 +279,8 @@ export async function deployCampaignContract(
 
     // Update database with actual on-chain timing for treasury configuration
     // The campaign contract enforces minimum launch offset and duration, so we need to sync the DB
-    const { PrismaClient } = await import('../../.generated/prisma/client');
-    const prisma = new PrismaClient();
     try {
-      await prisma.campaign.update({
+      await db.campaign.update({
         where: { id: campaignData.id },
         data: {
           startTime: new Date(launchTime * 1000),
@@ -292,8 +291,9 @@ export async function deployCampaignContract(
         console.log(
           `  Updated database with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
         );
-    } finally {
-      await prisma.$disconnect();
+    } catch (dbError) {
+      console.warn('  Failed to update database with on-chain timing:', dbError);
+      // Continue anyway - this is not critical for contract deployment
     }
 
     return {
@@ -334,6 +334,7 @@ export async function deployTreasuryContract(
   campaignId: number,
   campaignAddress: string,
   isDummy: boolean = false,
+  skipConfig: boolean = false,
 ): Promise<TreasuryContractDeployment> {
   try {
     debug &&
@@ -398,22 +399,27 @@ export async function deployTreasuryContract(
       console.log(`  Treasury contract deployed at: ${deployResult.address}`);
     debug && console.log(`  Transaction hash: ${deployResult.transactionHash}`);
 
-    // Configure treasury with campaign parameters
-    debug && console.log('  Configuring treasury...');
-    const configResult = await treasuryManager.configureTreasury(
-      deployResult.address,
-      campaignId,
-      platformAdminSigner,
-    );
-
-    if (!configResult.success) {
-      throw new Error(
-        `Treasury configuration failed: ${configResult.error}. Treasury deployed but not configured.`,
+    // Configure treasury with campaign parameters (unless skipped)
+    if (!skipConfig) {
+      debug && console.log('  Configuring treasury...');
+      const configResult = await treasuryManager.configureTreasury(
+        deployResult.address,
+        campaignId,
+        platformAdminSigner,
       );
-    }
 
-    debug && console.log('  Treasury configured successfully');
-    debug && console.log(`  Configuration tx: ${configResult.transactionHash}`);
+      if (!configResult.success) {
+        throw new Error(
+          `Treasury configuration failed: ${configResult.error}. Treasury deployed but not configured.`,
+        );
+      }
+
+      debug && console.log('  Treasury configured successfully');
+      debug &&
+        console.log(`  Configuration tx: ${configResult.transactionHash}`);
+    } else {
+      debug && console.log('  Skipping treasury configuration as requested');
+    }
 
     return {
       treasuryAddress: deployResult.address,
@@ -450,7 +456,9 @@ export async function deployTreasuryContract(
  */
 export async function deployAllContracts(
   campaignData: CampaignData,
+  db: { campaign: { update: (args: { where: { id: number }, data: { startTime: Date; endTime: Date } }) => Promise<unknown> } },
   isDummy: boolean = false,
+  skipTreasuryConfig: boolean = false,
 ): Promise<{
   campaignContract: CampaignContractDeployment;
   treasuryContract?: TreasuryContractDeployment;
@@ -458,7 +466,11 @@ export async function deployAllContracts(
   console.log(`Deploying all contracts for: ${campaignData.title}`);
 
   // Deploy campaign contract first
-  const campaignContract = await deployCampaignContract(campaignData, isDummy);
+  const campaignContract = await deployCampaignContract(
+    campaignData,
+    db,
+    isDummy,
+  );
 
   if (!campaignContract.success) {
     debug &&
@@ -479,6 +491,7 @@ export async function deployAllContracts(
     campaignData.id,
     campaignContract.campaignAddress,
     isDummy,
+    skipTreasuryConfig,
   );
 
   return {
