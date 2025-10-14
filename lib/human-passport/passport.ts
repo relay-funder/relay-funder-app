@@ -15,9 +15,11 @@ import {
   PASSPORT_SCORER_ID,
 } from '@/lib/constant';
 import { RetryFetchError, retryFetchJson } from '@/lib/utils/retry';
-import type {
-  PassportScoreResponse,
-  PassportStampsResponse,
+import {
+  PassportScoreResponseSchema,
+  PassportStampsResponseSchema,
+  type PassportScoreResponse,
+  type PassportStampsResponse,
 } from '@/lib/api/types';
 import { ApiUpstreamError } from '@/lib/api/error';
 
@@ -66,6 +68,14 @@ export async function getPassportScore(
       defaultInit,
     );
 
+    const parsed = PassportScoreResponseSchema.safeParse(result);
+
+    if (!parsed.success) {
+      throw new ApiUpstreamError(
+        `getPassportScore: invalid upstream response: ${parsed.error.message}`,
+      );
+    }
+
     debug &&
       console.log(
         '[Passport] Score retrieved:',
@@ -73,7 +83,7 @@ export async function getPassportScore(
         'passing:',
         result.passing_score,
       );
-    return result;
+    return parsed.data;
   } catch (error) {
     console.error('[Passport] Error getting score:', error);
     rethrowAsPassportError(error, 'getPassportScore');
@@ -114,9 +124,17 @@ export async function getPassportStamps(
       defaultInit,
     );
 
+    const parsed = PassportStampsResponseSchema.safeParse(result);
+
+    if (!parsed.success) {
+      throw new ApiUpstreamError(
+        `getPassportStamps: invalid upstream response: ${parsed.error.message}`,
+      );
+    }
+
     debug &&
       console.log('[Passport] Stamps retrieved:', result.items.length, 'items');
-    return result;
+    return parsed.data;
   } catch (error) {
     console.error('[Passport] Error getting stamps:', error);
     rethrowAsPassportError(error, 'getPassportStamps');
