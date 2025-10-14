@@ -13,7 +13,7 @@ import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
 import { PassportVerificationCard } from '@/components/passport/passport-verification-card';
-import { isFeatureEnabled } from '@/lib/flags';
+import { isFeatureEnabled } from '@/lib/flags/config';
 
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
