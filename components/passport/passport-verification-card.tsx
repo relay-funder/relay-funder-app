@@ -1,21 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { useMemo } from 'react';
+import { cva } from 'class-variance-authority';
 import {
   CheckCircle2,
   XCircle,
@@ -23,10 +9,25 @@ import {
   ShieldCheck,
   RefreshCw,
 } from 'lucide-react';
-import { usePassportScore } from '@/hooks/use-passport';
+import { usePassportScore } from '@/lib/hooks/usePassportScore';
 import { cn } from '@/lib/utils';
-import { cva } from 'class-variance-authority';
-import { useMemo } from 'react';
+import {
+  Alert,
+  AlertDescription,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+} from '@/components/ui';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface PassportVerificationCardProps {
   currentScore?: number;
