@@ -13,12 +13,13 @@ import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
 import { PassportVerificationCard } from '@/components/passport/passport-verification-card';
-import { isFeatureEnabled } from '@/lib/flags/config';
+import { useFeatureFlag } from '@/lib/flags';
 
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
   const { authenticated, isReady } = useAuth();
   const { data: profile, isPending: isProfilePending } = useUserProfile();
+  const isPassportEnabled = useFeatureFlag('HUMAN_PASSPORT');
   const onEditProfile = useCallback(() => {
     setEditProfile((prevState) => !prevState);
   }, [setEditProfile]);
@@ -36,8 +37,6 @@ export default function ProfilePage() {
       </PageConnectWallet>
     );
   }
-
-  const isPassportEnabled = isFeatureEnabled('HUMAN_PASSPORT');
 
   return (
     <PageHome header={<PageHeader />}>
