@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { Address } from 'viem';
 import { checkAuth } from '@/lib/api/auth';
+import { ApiUpstreamError } from '@/lib/api/error';
 import { handleError } from '@/lib/api/response';
 import { response } from '@/lib/api/response';
 import {
@@ -36,58 +37,29 @@ export interface GetPassportErrorResponse {
 }
 
 /**
- * POST /api/users/human-passport
+ * GET /api/users/human-passport
  *
  * Verifies a Passport score and updates the humanity score in the database
- *
- * Request body (optional):
- * - address: Ethereum address to verify (defaults to authenticated user's address)
  */
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
     // Authenticate the user
     const session = await checkAuth(['user']);
-    const authenticatedAddress = session.user.address;
-
-    if (!authenticatedAddress) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No wallet address found in session',
-        } as GetPassportErrorResponse,
-        { status: 400 },
-      );
-    }
-
-    // Get the address to verify (either from request body or use authenticated user's address)
-    const body = await req.json().catch(() => ({}));
-    const addressToVerify = body.address || authenticatedAddress;
+    const address = session.user.address as Address;
 
     // Fetch Human Passport score
     let passportData;
     try {
-      passportData = await getPassportScore(addressToVerify);
+      passportData = await getPassportScore(address);
     } catch (error) {
       if (error instanceof PassportConfigError) {
         console.error('Passport configuration error:', error.message);
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Passport verification is not configured',
-            details: 'Please contact the administrator',
-          } as GetPassportErrorResponse,
-          { status: 503 },
-        );
+        throw new ApiUpstreamError('Passport verification is not configured');
       }
       if (error instanceof PassportApiError) {
         console.error('Passport API error:', error.message, error.status);
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Failed to retrieve Passport score',
-            details: error.message,
-          } as GetPassportErrorResponse,
-          { status: error.status || 500 },
+        throw new ApiUpstreamError(
+          `Failed to retrieve Passport score: ${error.message}`,
         );
       }
       throw error;
@@ -95,13 +67,8 @@ export async function POST(req: Request) {
 
     // Check if there was an error in the Passport response
     if (passportData.error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Passport score unavailable',
-          details: passportData.error,
-        } as GetPassportErrorResponse,
-        { status: 400 },
+      throw new ApiUpstreamError(
+        `Passport score unavailable: ${passportData.error}`,
       );
     }
 
@@ -111,12 +78,12 @@ export async function POST(req: Request) {
     );
 
     // Update the humanity score in the database
-    await updateHumanityScore(addressToVerify, humanityScore);
+    await updateHumanityScore(address, humanityScore);
 
     // Return success with score details
     return response({
       success: true,
-      address: addressToVerify,
+      address: passportData.address,
       humanityScore,
       passportScore: passportData.score,
       passingScore: passportData.passing_score,
