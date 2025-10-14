@@ -28,12 +28,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { PASSPORT_SCORE_THRESHOLD } from '@/lib/constant';
 
 interface PassportVerificationCardProps {
   currentScore?: number;
 }
-
-const PASSPORT_THRESHOLD = 20;
 
 const scoreColor = cva('text-3xl font-bold', {
   variants: {
@@ -115,9 +114,9 @@ export function PassportVerificationCard({
     scoreVariant: 'high' | 'medium' | 'low';
     scoreStatus: string;
   }>(() => {
-    if (displayScore >= PASSPORT_THRESHOLD)
+    if (displayScore >= PASSPORT_SCORE_THRESHOLD)
       return { scoreVariant: 'high', scoreStatus: 'Verified Human' };
-    if (displayScore >= PASSPORT_THRESHOLD / 2)
+    if (displayScore >= PASSPORT_SCORE_THRESHOLD / 2)
       return { scoreVariant: 'medium', scoreStatus: 'Partial Verification' };
     return { scoreVariant: 'low', scoreStatus: 'Not Verified' };
   }, [displayScore]);
@@ -160,17 +159,13 @@ export function PassportVerificationCard({
                     {displayScore}
                   </p>
                   <Badge
-                    variant={
-                      displayScore >= PASSPORT_THRESHOLD
-                        ? 'default'
-                        : 'secondary'
-                    }
+                    variant={scoreVariant === 'high' ? 'default' : 'secondary'}
                     className="mt-1"
                   >
                     {scoreStatus}
                   </Badge>
                 </div>
-                {displayScore >= PASSPORT_THRESHOLD ? (
+                {scoreVariant === 'high' ? (
                   <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
                 ) : (
                   <XCircle className="h-12 w-12 text-gray-400 dark:text-gray-600" />
