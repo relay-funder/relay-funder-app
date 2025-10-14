@@ -1,26 +1,28 @@
+import { z } from 'zod';
+import { NumericString, PassportStampDataSchema } from './passport-api-v2';
+
 export * from './passport-api-v2';
 
-export interface GetPassportResponse {
-  success: boolean;
-  address: string;
-  humanityScore: number;
-  passportScore: string;
-  passingScore: boolean;
-  threshold: string;
-  lastScoreTimestamp: string;
-  expirationTimestamp: string;
-  stamps?: Record<
-    string,
-    {
-      score: string;
-      dedup: boolean;
-      expiration_date: string;
-    }
-  >;
-}
+export const GetPassportResponseSchema = z.object({
+  success: z.literal(true),
+  address: z.string(),
+  humanityScore: z.number().int().min(0),
+  passportScore: NumericString,
+  passingScore: z.boolean(),
+  threshold: NumericString,
+  lastScoreTimestamp: z.string(),
+  expirationTimestamp: z.string(),
+  stamps: z.record(PassportStampDataSchema).optional(),
+});
 
-export interface GetPassportErrorResponse {
-  success: false;
-  error: string;
-  details?: string;
-}
+export type GetPassportResponse = z.infer<typeof GetPassportResponseSchema>;
+
+export const GetPassportErrorResponseSchema = z.object({
+  success: z.literal(false),
+  error: z.string(),
+  details: z.string().optional(),
+});
+
+export type GetPassportErrorResponse = z.infer<
+  typeof GetPassportErrorResponseSchema
+>;

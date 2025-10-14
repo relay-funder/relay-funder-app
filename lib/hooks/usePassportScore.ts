@@ -2,7 +2,11 @@
 
 import { useAuth } from '@/contexts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { GetPassportErrorResponse, GetPassportResponse } from '@/lib/api/types';
+import {
+  GetPassportErrorResponseSchema,
+  GetPassportResponse,
+  GetPassportResponseSchema,
+} from '@/lib/api/types';
 
 export const PASSPORT_QUERY_KEY = 'passport_score';
 
@@ -15,14 +19,23 @@ async function verifyUserPassportScore(): Promise<GetPassportResponse> {
     headers: { 'Content-Type': 'application/json' },
   });
 
+  const json = await response.json();
+
   if (!response.ok) {
-    const error = (await response.json()) as GetPassportErrorResponse;
-    throw new Error(
-      error.details || error.error || 'Failed to verify Passport score',
-    );
+    const parsedErr = GetPassportErrorResponseSchema.safeParse(json);
+
+    const message = parsedErr.success
+      ? parsedErr.data.details || parsedErr.data.error
+      : 'Failed to verify Passport score';
+
+    throw new Error(message);
   }
 
-  return response.json();
+  const parsed = GetPassportResponseSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new Error(`Invalid Passport response: ${parsed.error.message}`);
+  }
+  return parsed.data;
 }
 
 /**
