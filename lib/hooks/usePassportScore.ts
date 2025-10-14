@@ -2,10 +2,7 @@
 
 import { useAuth } from '@/contexts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type {
-  GetPassportResponse,
-  GetPassportErrorResponse,
-} from '@/app/api/users/human-passport/route';
+import { GetPassportErrorResponse, GetPassportResponse } from '@/lib/api/types';
 
 export const PASSPORT_QUERY_KEY = 'passport_score';
 
@@ -14,7 +11,7 @@ export const PASSPORT_QUERY_KEY = 'passport_score';
  */
 async function verifyUserPassportScore(): Promise<GetPassportResponse> {
   const response = await fetch('/api/users/human-passport', {
-    method: 'GET',
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
 
