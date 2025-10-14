@@ -7,34 +7,8 @@ import {
   getPassportScore,
   convertPassportScoreToHumanityScore,
   PassportApiError,
-  PassportConfigError,
 } from '@/lib/human-passport';
 import { updateHumanityScore } from '@/lib/api/user';
-
-export interface GetPassportResponse {
-  success: boolean;
-  address: string;
-  humanityScore: number;
-  passportScore: string;
-  passingScore: boolean;
-  threshold: string;
-  lastScoreTimestamp: string;
-  expirationTimestamp: string;
-  stamps?: Record<
-    string,
-    {
-      score: string;
-      dedup: boolean;
-      expiration_date: string;
-    }
-  >;
-}
-
-export interface GetPassportErrorResponse {
-  success: false;
-  error: string;
-  details?: string;
-}
 
 /**
  * GET /api/users/human-passport
@@ -52,10 +26,6 @@ export async function GET(req: Request) {
     try {
       passportData = await getPassportScore(address);
     } catch (error) {
-      if (error instanceof PassportConfigError) {
-        console.error('Passport configuration error:', error.message);
-        throw new ApiUpstreamError('Passport verification is not configured');
-      }
       if (error instanceof PassportApiError) {
         console.error('Passport API error:', error.message, error.status);
         throw new ApiUpstreamError(
