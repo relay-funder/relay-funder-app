@@ -1,42 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-// Feature flag configuration with environment variable support
-const FLAG_CONFIG = {
-  DEBUG: { envVar: 'NEXT_PUBLIC_DEBUG', default: false },
-  ROUNDS_VISIBILITY: {
-    envVar: 'NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY',
-    default: false,
-  },
-  HUMAN_PASSPORT: {
-    envVar: 'NEXT_PUBLIC_ENABLE_HUMAN_PASSPORT',
-    default: false,
-  },
-} as const;
-
-function verifyEnvFlag(
-  value: string | undefined,
-  defaultValue: boolean,
-): boolean {
-  return value === 'true' || value === '1' || defaultValue;
-}
-
-// Initialize flags from environment variables or defaults
-// not possible to use process.env[config.envVar], it would return undefined for all flags
-const FLAGS = {
-  DEBUG: verifyEnvFlag(process.env.NEXT_PUBLIC_DEBUG, false),
-  ROUNDS_VISIBILITY: verifyEnvFlag(
-    process.env.NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY,
-    false,
-  ),
-  HUMAN_PASSPORT: verifyEnvFlag(
-    process.env.NEXT_PUBLIC_ENABLE_HUMAN_PASSPORT,
-    false,
-  ),
-} as Record<keyof typeof FLAG_CONFIG, boolean>;
-
-export type FeatureFlag = keyof typeof FLAGS;
+import { type FeatureFlag, FLAGS } from './config';
 
 // Hook to use feature flags in components
 export function useFeatureFlag(flag: FeatureFlag): boolean {
@@ -47,11 +12,6 @@ export function useFeatureFlag(flag: FeatureFlag): boolean {
   }, [flag]);
 
   return isEnabled;
-}
-
-// Direct access to flag values (for non-component code)
-export function isFeatureEnabled(flag: FeatureFlag): boolean {
-  return FLAGS[flag];
 }
 
 // For development: Allow overriding flags in localStorage
