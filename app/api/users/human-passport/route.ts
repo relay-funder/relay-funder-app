@@ -13,7 +13,7 @@ import { updateHumanityScore } from '@/lib/api/user';
  *
  * Verifies a Passport score and updates the humanity score in the database
  */
-export async function POST(req: Request) {
+export async function POST() {
   try {
     // Authenticate the user
     const session = await checkAuth(['user']);
