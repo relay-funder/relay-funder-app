@@ -19,16 +19,16 @@ import type {
   PassportScoreResponse,
   PassportStampsResponse,
 } from '@/lib/api/types';
-import { PassportApiError } from './error';
+import { ApiUpstreamError } from '@/lib/api/error';
 
 function rethrowAsPassportError(error: unknown, ctx: string): never {
   if (error instanceof RetryFetchError) {
-    throw new PassportApiError(`${ctx}: ${error.message}`, error.status);
+    throw new ApiUpstreamError(`${ctx}: ${error.message} - ${error.status}`);
   }
   if (error instanceof Error) {
-    throw new PassportApiError(`${ctx}: ${error.message}`);
+    throw new ApiUpstreamError(`${ctx}: ${error.message} `);
   }
-  throw new PassportApiError(`${ctx}: ${String(error)}`);
+  throw new ApiUpstreamError(`${ctx}: ${String(error)}`);
 }
 
 const defaultInit: RequestInit = {
