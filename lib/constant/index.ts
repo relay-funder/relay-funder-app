@@ -7,6 +7,12 @@ export {
   CREATOR_EVENT_POINTS,
   RECEIVER_EVENT_POINTS,
 } from './user-score-points';
+export {
+  PASSPORT_API_BASE_URL,
+  PASSPORT_API_KEY,
+  PASSPORT_SCORER_ID,
+  PASSPORT_SCORE_THRESHOLD,
+} from './human-passport';
 
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
