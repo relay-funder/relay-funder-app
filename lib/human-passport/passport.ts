@@ -16,7 +16,10 @@ import {
   PASSPORT_SCORER_ID,
 } from '@/lib/constant';
 import { RetryFetchError, retryFetchJson } from '@/lib/utils/retry';
-import type { PassportScoreResponse, PassportStampsResponse } from './types';
+import type {
+  PassportScoreResponse,
+  PassportStampsResponse,
+} from '@/lib/api/types';
 import { PassportApiError } from './error';
 
 function rethrowAsPassportError(error: unknown, ctx: string): never {
