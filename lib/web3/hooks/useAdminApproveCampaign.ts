@@ -183,64 +183,7 @@ export function useAdminApproveCampaign() {
           `TreasuryFactory contract creation failed: ${contractCreationError instanceof Error ? contractCreationError.message : 'Unknown error'}`,
         );
       }
-
-      // Implementation registration/approval should be done once during platform setup, not per deployment
-      // We just deploy using the pre-registered implementation ID 0 (KeepWhat'sRaised)
-      debug &&
-        console.log(
-          'ℹ️ [AdminApproval] Using pre-registered KeepWhatRaised implementation (ID 0)',
-        );
-
-      // Verify TreasuryFactory contract exists
-      try {
-        const factoryCode = await ethersProvider.getCode(
-          platformConfig.treasuryFactoryAddress,
-        );
-        if (factoryCode === '0x' || factoryCode === '0x0') {
-          throw new Error(
-            'TreasuryFactory contract does not exist at the specified address',
-          );
-        }
-      } catch (contractError) {
-        console.error(
-          'TreasuryFactory contract verification failed:',
-          contractError,
-        );
-        throw new Error(
-          'TreasuryFactory contract is not deployed or accessible',
-        );
-      }
-
-      // Verify deploy function exists in interface
-      const deployFragment = treasuryFactory.interface?.getFunction('deploy');
-      if (!deployFragment) {
-        throw new Error(
-          'TreasuryFactory deploy function not available in contract interface',
-        );
-      }
-
-      // Verify platform data keys are configured
-      const requiredKeys = [
-        'flatFee',
-        'cumulativeFlatFee',
-        'platformFee',
-        'vakiCommission',
-      ];
-      for (const keyName of requiredKeys) {
-        const keyHash = ethers.keccak256(ethers.toUtf8Bytes(keyName));
-        try {
-          const isValid =
-            await globalParams.checkIfPlatformDataKeyValid(keyHash);
-          if (!isValid) {
-            throw new Error(
-              `Platform data key missing: ${keyName}. Platform setup required.`,
-            );
-          }
-        } catch (keyError) {
-          throw new Error(`Platform data key verification failed: ${keyName}`);
-        }
-      }
-
+      
       // Verify campaign address is a valid contract
       const network = await ethersProvider.getNetwork();
       debug &&
