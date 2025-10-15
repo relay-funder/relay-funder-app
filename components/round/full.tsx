@@ -301,6 +301,10 @@ function RoundCampaignsList({
               mediaCount: campaigns[0].media?.length,
               hasImages: Array.isArray(campaigns[0].images),
               imagesCount: campaigns[0].images?.length,
+              hasPaymentSummary: !!campaigns[0].paymentSummary,
+              paymentSummaryKeys: campaigns[0].paymentSummary
+                ? Object.keys(campaigns[0].paymentSummary)
+                : [],
             }
           : null,
       });

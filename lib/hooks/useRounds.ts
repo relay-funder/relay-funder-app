@@ -301,6 +301,29 @@ export function useActiveRound() {
     enabled: true,
   });
 }
+
+async function fetchUpcomingRound() {
+  const response = await fetch('/api/rounds/upcoming');
+  if (!response.ok) {
+    let message = 'Failed to fetch upcoming round';
+    try {
+      const error = await response.json();
+      message = error.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const data = await response.json();
+  return data.round;
+}
+
+export function useUpcomingRound() {
+  return useQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'upcoming'],
+    queryFn: fetchUpcomingRound,
+    enabled: true,
+  });
+}
+
 export function useRound(id: number, forceUserView = false) {
   return useQuery({
     queryKey: [ROUND_QUERY_KEY, id, forceUserView],

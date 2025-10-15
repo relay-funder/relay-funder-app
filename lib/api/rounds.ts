@@ -3,15 +3,18 @@ import {
   GetRoundResponseInstance,
   GetRoundsStatsResponse,
 } from './types/rounds';
+import type { GetCampaignPaymentSummary } from './types/campaigns';
 import { ROUND_QUERY_KEY, ROUNDS_QUERY_KEY } from '../hooks/useRounds';
 import { QueryClient } from '@tanstack/react-query';
 import { ApiNotFoundError } from './error';
-import { mapCampaign } from './campaigns';
+import { mapCampaign, getPaymentSummaryList } from './campaigns';
 import { isFuture, isPast } from 'date-fns';
 
 export function mapRound(
   round: Round & {
-    roundCampaigns?: (RoundCampaigns & { Campaign: Campaign })[];
+    roundCampaigns?: (RoundCampaigns & {
+      Campaign: Campaign & { paymentSummary?: GetCampaignPaymentSummary };
+    })[];
     media?: Media[];
   },
   status?: 'PENDING' | 'APPROVED' | 'REJECTED',
@@ -43,7 +46,15 @@ export function mapRound(
       round.roundCampaigns?.map((roundCampaign) => ({
         ...roundCampaign,
         reviewedAt: roundCampaign.reviewedAt?.toISOString() ?? null,
-        campaign: mapCampaign(roundCampaign.Campaign),
+        campaign: roundCampaign.Campaign
+          ? {
+              ...mapCampaign(roundCampaign.Campaign),
+              // Preserve payment summary if it exists
+              ...(roundCampaign.Campaign.paymentSummary && {
+                paymentSummary: roundCampaign.Campaign.paymentSummary,
+              }),
+            }
+          : undefined,
       })) ?? [],
     media:
       Array.isArray(round.media) && round.media.length
@@ -86,6 +97,16 @@ export async function listRounds({
               include: {
                 images: true,
                 media: { where: { state: 'UPLOADED' } },
+                payments: {
+                  include: {
+                    user: true,
+                  },
+                  where: {
+                    status: {
+                      in: ['CONFIRMED', 'PENDING'],
+                    },
+                  },
+                },
               },
             },
           },
@@ -138,8 +159,32 @@ export async function listRounds({
     db.round.count(),
   ]);
 
+  // Calculate payment summaries for all campaigns in all rounds
+  const allCampaignIds = rounds.flatMap(
+    (round) =>
+      round.roundCampaigns?.map((rc) => rc.campaignId).filter(Boolean) || [],
+  );
+  const paymentSummaryList =
+    allCampaignIds.length > 0
+      ? await getPaymentSummaryList(allCampaignIds)
+      : {};
+
+  // Add payment summaries to campaigns in rounds
+  const roundsWithPaymentSummaries = rounds.map((round) => ({
+    ...round,
+    roundCampaigns: round.roundCampaigns?.map((rc) => ({
+      ...rc,
+      Campaign: rc.Campaign
+        ? {
+            ...rc.Campaign,
+            paymentSummary: paymentSummaryList[rc.campaignId] || {},
+          }
+        : rc.Campaign,
+    })),
+  }));
+
   return {
-    rounds: rounds.map((round) => mapRound(round)), // Remove hardcoded status
+    rounds: roundsWithPaymentSummaries.map((round) => mapRound(round)), // Remove hardcoded status
     pagination: {
       currentPage: page,
       pageSize,
@@ -165,6 +210,16 @@ export async function getRound(
             include: {
               images: true,
               media: { where: { state: 'UPLOADED' } },
+              payments: {
+                include: {
+                  user: true,
+                },
+                where: {
+                  status: {
+                    in: ['CONFIRMED', 'PENDING'],
+                  },
+                },
+              },
             },
           },
         },
@@ -186,10 +241,32 @@ export async function getRound(
       },
     },
   });
+
   if (!round) {
     throw new ApiNotFoundError(`Round with id ${id} does not exist`);
   }
-  return mapRound(round);
+
+  // Calculate payment summaries for campaigns
+  const campaignIds =
+    round.roundCampaigns?.map((rc) => rc.campaignId).filter(Boolean) || [];
+  const paymentSummaryList =
+    campaignIds.length > 0 ? await getPaymentSummaryList(campaignIds) : {};
+
+  // Add payment summaries to campaigns
+  const roundWithPaymentSummaries = {
+    ...round,
+    roundCampaigns: round.roundCampaigns?.map((rc) => ({
+      ...rc,
+      Campaign: rc.Campaign
+        ? {
+            ...rc.Campaign,
+            paymentSummary: paymentSummaryList[rc.campaignId] || {},
+          }
+        : rc.Campaign,
+    })),
+  };
+
+  return mapRound(roundWithPaymentSummaries);
 }
 export async function getStats() {
   const stats: GetRoundsStatsResponse = {
