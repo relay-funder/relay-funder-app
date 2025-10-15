@@ -61,7 +61,6 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
     [createCampaign, formState, onSubmitStep],
   );
 
-
   const onDeveloperSubmit = useCallback(
     async (event: React.MouseEvent) => {
       if (!event.shiftKey) {

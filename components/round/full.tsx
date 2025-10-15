@@ -89,7 +89,7 @@ export function RoundFull({
 
   return (
     <PageHome header={header}>
-      <div className="w-full max-w-[1600px] mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-6">
           {isAdmin && status.text === 'Ended' && (
             <RoundManageResults round={round} />
@@ -314,7 +314,7 @@ function RoundCampaignsList({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 lg:gap-6 2xl:grid-cols-4">
       {campaigns.map((campaign) => {
         const isOwnCampaign = campaign.creatorAddress === address;
 
