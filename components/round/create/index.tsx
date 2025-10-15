@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Form } from '@/components/ui';
+import { Form, Button } from '@/components/ui';
 import { enableFormDefault } from '@/lib/develop';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,6 +60,7 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
     },
     [createCampaign, formState, onSubmitStep],
   );
+
 
   const onDeveloperSubmit = useCallback(
     async (event: React.MouseEvent) => {
@@ -153,6 +154,20 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
             </RoundCreateFormPage>
           </form>
         </Form>
+
+        {/* Development-only button to pre-fill form */}
+        {process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true' && (
+          <div className="mt-6">
+            <Button
+              onClick={onDeveloperSubmit}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+            >
+              🚀 Dev: Pre-fill Form
+            </Button>
+          </div>
+        )}
       </VisibilityToggle>
       <VisibilityToggle isVisible={processing}>
         <RoundCreateProcessDisplay

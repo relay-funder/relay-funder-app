@@ -175,7 +175,7 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
                     </p>
                   </div>
                   {/* Development-only button to replicate original image shift/double-click campaign pre-fill logic */}
-                  {process.env.NODE_ENV === 'development' && (
+                  {process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true' && (
                     <div className="mt-6">
                       <Button
                         onClick={onDeveloperSubmit}

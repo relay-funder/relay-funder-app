@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { ethers } from '@/lib/web3';
 import { GlobalParamsABI } from '@/contracts/abi/GlobalParams';
-import { TreasuryFactoryABI } from '@/contracts/abi/TreasuryFactory';
 import { chainConfig, useWeb3Auth, useConnectorClient } from '@/lib/web3';
 import { enableBypassContractAdmin } from '@/lib/develop';
 import { useAuth } from '@/contexts';
@@ -153,36 +152,7 @@ export function useAdminApproveCampaign() {
           throw new Error('Not authorized as platform admin');
         }
       }
-      onStateChanged('treasuryFactory');
-
-      // Initialize TreasuryFactory contract
-      let treasuryFactory;
-      try {
-        treasuryFactory = new ethers.Contract(
-          platformConfig.treasuryFactoryAddress,
-          TreasuryFactoryABI,
-          ethersProvider,
-        ).connect(signer) as ethers.Contract & {
-          interface: {
-            getFunction: (name: string) => ethers.FunctionFragment | null;
-          };
-          deploy: (
-            platformHash: string,
-            infoAddress: string,
-            implementationId: number,
-            name: string,
-            symbol: string,
-          ) => Promise<ethers.ContractTransactionResponse>;
-        };
-      } catch (contractCreationError) {
-        console.error(
-          '❌ [AdminApproval] TreasuryFactory contract creation failed:',
-          contractCreationError,
-        );
-        throw new Error(
-          `TreasuryFactory contract creation failed: ${contractCreationError instanceof Error ? contractCreationError.message : 'Unknown error'}`,
-        );
-      }
+      onStateChanged('treasuryFactoryWait');
 
       // Verify campaign address is a valid contract
       const network = await ethersProvider.getNetwork();

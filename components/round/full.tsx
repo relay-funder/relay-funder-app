@@ -2,7 +2,6 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { DetailContainer } from '@/components/layout';
 import { Calendar, Users, DollarSign, ExternalLink } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
