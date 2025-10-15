@@ -29,4 +29,4 @@ export const celoSepolia = {
   testnet: true,
 } as unknown as typeof celo & { id: number };
 
-export { celo, celoSepolia as defaultChain };
+export { celo as defaultChain, celo };
