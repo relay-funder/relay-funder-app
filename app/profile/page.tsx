@@ -12,11 +12,14 @@ import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
+import { PassportVerificationCard } from '@/components/passport/passport-verification-card';
+import { useFeatureFlag } from '@/lib/flags';
 
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
   const { authenticated, isReady } = useAuth();
   const { data: profile, isPending: isProfilePending } = useUserProfile();
+  const isPassportEnabled = useFeatureFlag('HUMAN_PASSPORT');
   const onEditProfile = useCallback(() => {
     setEditProfile((prevState) => !prevState);
   }, [setEditProfile]);
@@ -54,6 +57,13 @@ export default function ProfilePage() {
 
           {/* User Score Card */}
           <UserScoreCard />
+
+          {/* Passport Verification Card */}
+          {isPassportEnabled && (
+            <PassportVerificationCard
+              currentScore={profile?.humanityScore ?? 0}
+            />
+          )}
 
           {/* User Profile Form */}
           {(editProfile || !profile) && (
