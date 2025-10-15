@@ -20,7 +20,8 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Create a round to organize and fund multiple campaigns through quadratic funding.
+          Create a round to organize and fund multiple campaigns through
+          quadratic funding.
         </p>
 
         <div>
@@ -44,7 +45,8 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Create a compelling title and description that will attract the right campaigns to your round.
+          Create a compelling title and description that will attract the right
+          campaigns to your round.
         </p>
 
         <div>
@@ -76,13 +78,12 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Set the total funding pool available for quadratic funding distribution.
+          Set the total funding pool available for quadratic funding
+          distribution.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-foreground">
-            Matching Pool:
-          </h4>
+          <h4 className="mb-2 font-medium text-foreground">Matching Pool:</h4>
           <ul className="space-y-1 text-sm text-muted-foreground">
             <li>This amount will be matched to successful campaigns</li>
             <li>Consider your total budget and funding goals</li>
@@ -100,11 +101,14 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Set the application period and funding round dates for your quadratic funding round.
+          Set the application period and funding round dates for your quadratic
+          funding round.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-foreground">Application Period:</h4>
+          <h4 className="mb-2 font-medium text-foreground">
+            Application Period:
+          </h4>
           <ul className="space-y-1 text-sm text-muted-foreground">
             <li>When campaigns can apply to join the round</li>
             <li>Allow sufficient time for review and promotion</li>
@@ -134,7 +138,8 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Upload a logo image that represents your round and will be displayed across the platform.
+          Upload a logo image that represents your round and will be displayed
+          across the platform.
         </p>
 
         <div>
@@ -150,7 +155,8 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
         <div>
           <h4 className="mb-2 font-medium text-foreground">Pro Tip:</h4>
           <p className="text-sm text-muted-foreground">
-            A compelling logo can significantly increase engagement and attract more campaigns to your round.
+            A compelling logo can significantly increase engagement and attract
+            more campaigns to your round.
           </p>
         </div>
       </div>

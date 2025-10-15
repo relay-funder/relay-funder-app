@@ -64,7 +64,10 @@ function transformApplicationEndTime(value: string) {
 
 export const RoundFormSchema = z
   .object({
-    title: z.string().min(1, { message: 'Title is required' }).max(100, { message: 'Title must be 100 characters or less' }),
+    title: z
+      .string()
+      .min(1, { message: 'Title is required' })
+      .max(100, { message: 'Title must be 100 characters or less' }),
     description: z
       .string()
       .min(10, { message: 'Description is required' })

@@ -72,7 +72,7 @@ export function RoundCreateFormDescription() {
             </FormLabel>
             <FormControl>
               <Textarea
-                className="mt-1 min-h-[120px] resize-none bg-background border-input"
+                className="mt-1 min-h-[120px] resize-none border-input bg-background"
                 placeholder="This round focuses on supporting innovative campaigns that create positive social impact. Campaigns will be funded through quadratic funding based on community engagement. Include details about your goals, target audience, and eligibility criteria."
                 maxLength={DESCRIPTION_MAX_LENGTH}
                 {...field}

@@ -30,6 +30,8 @@ export const celoSepolia = {
 } as unknown as typeof celo & { id: number };
 
 // Use Celo mainnet in production, Sepolia in staging/development
-const isProduction = process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+const isProduction =
+  process.env.NODE_ENV === 'production' &&
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
 export const defaultChain = isProduction ? celo : celoSepolia;
 export { celo };

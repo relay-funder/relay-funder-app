@@ -183,7 +183,7 @@ export function useAdminApproveCampaign() {
           `TreasuryFactory contract creation failed: ${contractCreationError instanceof Error ? contractCreationError.message : 'Unknown error'}`,
         );
       }
-      
+
       // Verify campaign address is a valid contract
       const network = await ethersProvider.getNetwork();
       debug &&

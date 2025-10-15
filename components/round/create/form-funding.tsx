@@ -29,7 +29,8 @@ export function RoundCreateFormFunding() {
               />
             </FormControl>
             <FormDescription>
-              Initial funds in USD provided by the round manager for quadratic funding distribution.
+              Initial funds in USD provided by the round manager for quadratic
+              funding distribution.
             </FormDescription>
             <FormMessage />
           </FormItem>
