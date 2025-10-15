@@ -19,12 +19,12 @@ function validateStartTimeNotInPast(value: string) {
   const isToday = startDate.toDateString() === now.toDateString();
 
   if (isToday) {
-    // Allow selecting today - the transformation will set appropriate future time during submission
+    // Allow selecting today - the transformation will set to 1 hour from now during submission
     return true;
   }
 
   // For future dates, require minimum time buffer
-  const bufferTime = 5 * 60 * 1000; // 5 minutes for all envs
+  const bufferTime = 60 * 60 * 1000; // 1 hour for all envs
   const earliestAllowed = new Date(now.getTime() + bufferTime);
 
   return startDate >= earliestAllowed;
@@ -54,7 +54,7 @@ export const CampaignFormSchema = z
         message: 'Invalid date format',
       })
       .refine(validateStartTimeNotInPast, {
-        message: 'Start time must be at least 5 minutes in the future',
+        message: 'Start time must be at least 1 hour in the future',
       }),
     endTime: z.string().refine(validateTimes, {
       message: 'Invalid date format',
