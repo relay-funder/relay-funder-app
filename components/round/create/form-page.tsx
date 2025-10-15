@@ -1,8 +1,13 @@
-import { Button } from '@/components/ui';
-import { useMemo, useState } from 'react';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui';
+import { useMemo } from 'react';
 import { RoundCreateFormStates } from './form-states';
-import { cn } from '@/lib/utils';
-import { Info, X } from 'lucide-react';
+import { DetailContainer } from '@/components/layout';
 
 export function RoundCreateFormPage({
   state,
@@ -15,24 +20,18 @@ export function RoundCreateFormPage({
   children: React.ReactNode;
   onStateChanged?: (arg0: keyof typeof RoundCreateFormStates) => void;
 }) {
-  const [showInfo, setShowInfo] = useState(false);
   const buttons = useMemo(() => {
+    // Standard navigation buttons for all pages
     const next = onStateChanged && RoundCreateFormStates[state].next && (
-      <Button
-        key="next"
-        size={'lg'}
-        type="submit"
-        className={cn(showInfo && 'hidden')}
-      >
+      <Button key="next" size="lg" type="submit">
         {RoundCreateFormStates[state].next.label}
       </Button>
     );
     const prev = onStateChanged && RoundCreateFormStates[state].prev && (
       <Button
         key="prev"
-        variant={'secondary'}
-        size={'lg'}
-        className={cn(showInfo && 'hidden')}
+        variant="secondary"
+        size="lg"
         onClick={(event: React.MouseEvent) => {
           event?.preventDefault(); // prevent submit
           if (RoundCreateFormStates[state].prev?.target) {
@@ -43,78 +42,107 @@ export function RoundCreateFormPage({
         {RoundCreateFormStates[state].prev.label}
       </Button>
     );
-    const info = state !== 'introduction' && (
-      <Button
-        key="info"
-        size={'lg'}
-        type="submit"
-        variant={showInfo ? 'default' : 'ghost'}
-        className="block md:hidden"
-        onClick={(event: React.MouseEvent) => {
-          event?.preventDefault(); // prevent submit
-          setShowInfo((prevState) => !prevState);
-        }}
-      >
-        {showInfo ? <X /> : <Info />}
-      </Button>
-    );
-    return [info, prev, next];
-  }, [state, onStateChanged, showInfo]);
+    return [prev, next];
+  }, [state, onStateChanged]);
+
   if (state !== page) {
     return null;
   }
-  return (
-    <div className={cn('grid', 'grid-cols-1', 'md:grid-cols-2')}>
-      <div
-        className={cn(
-          showInfo && 'hidden',
-          'w-full',
-          'space-y-6 overflow-y-auto p-1',
-          'md:overflow-y-auto md:p-6',
-          'h-[calc(100svh-200px)]',
-          // header, container, buttons
-          'md:h-[calc(100svh-202px-40px-50px)]',
-        )}
-      >
-        <div className="flex h-full flex-col">
-          {/* Form inputs, must not be wrapped in <div>*/}
-          {children}
-        </div>
-      </div>
-      <div
-        className={cn(
-          'w-full max-w-full',
-          'prose prose-sm',
-          'overflow-y-auto p-1',
 
-          'md:prose-lg md:overflow-y-hidden md:p-6',
-          showInfo ? 'h-[calc(100svh-200px)]' : 'hidden',
-          'md:block',
-          'md:max-h-[calc(100svh-202px-40px-50px)]',
-        )}
-      >
-        <h2>{RoundCreateFormStates[page].title}</h2>
-        <div
-          className={cn(
-            'overflow-y-visible',
-            'md:overflow-y-auto',
-            'h-[calc(50svh-100px-50px)]',
-            // 200: header, 40: container, 50 buttons, 40 title, 48 prose-padding
-            'md:h-[calc(100svh-202px-40px-50px-40px-48px)]',
-          )}
-        >
-          {RoundCreateFormStates[page].description}
+  // Use single column layout for introduction page only
+  if (page === 'introduction') {
+    return (
+      <DetailContainer variant="wide" padding="md">
+        <div className="mx-auto max-w-2xl">
+          <Card className="rounded-lg border bg-card shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-center text-2xl font-bold tracking-tight">
+                {RoundCreateFormStates[page].title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">{children}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-8 flex items-center justify-center gap-4">
+          {buttons}
+        </div>
+      </DetailContainer>
+    );
+  }
+
+  // Use two-column layout with guides for all other pages
+  return (
+    <DetailContainer variant="wide" padding="md">
+      {/* Desktop: Two-column layout */}
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8">
+        {/* Form Section */}
+        <div>
+          <Card className="rounded-lg border bg-card shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold tracking-tight">
+                {RoundCreateFormStates[page].title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">{children}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Information Section */}
+        <div>
+          <Card className="rounded-lg border bg-card shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">
+                Guide & Tips
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none text-foreground">
+                {RoundCreateFormStates[page].description}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-      <div
-        className={cn(
-          'w-full',
-          'flex h-[50px] grid-cols-1 justify-center pt-2 align-bottom',
-          'md:col-span-2',
-        )}
-      >
+
+      {/* Mobile: Stacked layout */}
+      <div className="space-y-6 lg:hidden">
+        {/* Form Section */}
+        <Card className="rounded-lg border bg-white shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {RoundCreateFormStates[page].title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">{children}</div>
+          </CardContent>
+        </Card>
+
+        {/* Information Section - Always visible on mobile */}
+        <Card className="rounded-lg border bg-card shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold">
+              Guide & Tips
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none text-foreground">
+              {RoundCreateFormStates[page].description}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="mt-8 flex items-center justify-center gap-4">
         {buttons}
       </div>
-    </div>
+    </DetailContainer>
   );
 }

@@ -18,7 +18,7 @@ export function RoundCreateFormFunding() {
         name="matchingPool"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Matching Pool Amount</FormLabel>
+            <FormLabel>Matching Pool Amount (USD)</FormLabel>
             <FormControl>
               <Input
                 type="number"
@@ -29,7 +29,7 @@ export function RoundCreateFormFunding() {
               />
             </FormControl>
             <FormDescription>
-              Initial funds provided by the round manager.
+              Initial funds in USD provided by the round manager for quadratic funding distribution.
             </FormDescription>
             <FormMessage />
           </FormItem>

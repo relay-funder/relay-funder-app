@@ -11,7 +11,6 @@ import { RoundCreateProcessDisplay } from './process-display';
 import { RoundCreateFormStates } from './form-states';
 import { RoundCreateFormPage } from './form-page';
 import { uniqueName, uniqueDescription } from '@/lib/generate-strings';
-import Image from 'next/image';
 import { RoundCreateFormMedia } from './form-media';
 import { RoundCreateFormDescription } from './form-description';
 import { RoundCreateFormFunding } from './form-funding';
@@ -23,7 +22,6 @@ import {
   roundFormDefaultValues,
 } from './form';
 import { useRoundFormCreate } from './use-form-create';
-import { cn } from '@/lib/utils';
 
 export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
   const [state, setState] = useState<keyof typeof CreateProcessStates>('idle');
@@ -114,40 +112,8 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
               page="introduction"
               onStateChanged={setFormState}
             >
-              <div className="flex justify-end">
-                <div className="hidden md:block md:justify-end">
-                  <Image
-                    src="/images/round-create-introduction.jpg"
-                    width={512}
-                    height={768}
-                    className="max-w-[400px]"
-                    alt="Create an engaging and vibrant illustration depicting a diverse group of people collaborating on a project. Include elements that represent creativity, funding, and community support, such as lightbulbs, coins, and hands coming together. The background should convey a sense of progress and innovation, with a timeline graphic showing the steps from submission to payout."
-                    onDoubleClick={onDeveloperSubmit}
-                  />
-                </div>
-              </div>
-              <div
-                className={cn(
-                  'w-full max-w-full',
-                  'prose prose-sm',
-                  'overflow-y-auto p-1',
-
-                  'h-[calc(100svh-200px)]',
-                  'md:hidden',
-                )}
-              >
-                <h2>{RoundCreateFormStates.introduction.title}</h2>
-                <div
-                  className={cn(
-                    'overflow-y-visible',
-                    'md:overflow-y-auto',
-                    'h-[calc(50svh-100px-50px)]',
-                    // 200: header, 40: container, 50 buttons, 40 title, 48 prose-padding
-                    'md:h-[calc(100svh-202px-40px-50px-40px-48px)]',
-                  )}
-                >
-                  {RoundCreateFormStates.introduction.description}
-                </div>
+              <div className="prose prose-sm max-w-none text-muted-foreground">
+                {RoundCreateFormStates.introduction.description}
               </div>
             </RoundCreateFormPage>
             <RoundCreateFormPage
@@ -156,13 +122,6 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
               onStateChanged={setFormState}
             >
               <RoundCreateFormDescription />
-            </RoundCreateFormPage>
-            <RoundCreateFormPage
-              state={formState}
-              page="media"
-              onStateChanged={setFormState}
-            >
-              <RoundCreateFormMedia />
             </RoundCreateFormPage>
             <RoundCreateFormPage
               state={formState}
@@ -177,6 +136,13 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
               onStateChanged={setFormState}
             >
               <RoundCreateFormTimeline />
+            </RoundCreateFormPage>
+            <RoundCreateFormPage
+              state={formState}
+              page="media"
+              onStateChanged={setFormState}
+            >
+              <RoundCreateFormMedia />
             </RoundCreateFormPage>
             <RoundCreateFormPage
               state={formState}
