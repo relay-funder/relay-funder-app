@@ -1,37 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/server/db';
+import { checkAuth } from '@/lib/api/auth';
+import { response, handleError } from '@/lib/api/response';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userAddress = searchParams.get('userAddress');
+    const session = await checkAuth(['user']);
 
-    if (!userAddress) {
-      return NextResponse.json(
-        { error: 'User address is required' },
-        { status: 400 },
-      );
-    }
-
-    const favorites = await prisma.favorite.findMany({
+    const favorites = await db.favorite.findMany({
       where: {
-        userAddress,
+        userAddress: session.user.address,
       },
       include: {
         campaign: {
           include: {
             images: true,
+            media: {
+              where: { state: 'UPLOADED' },
+              orderBy: { createdAt: 'asc' },
+            },
           },
         },
       },
     });
 
-    return NextResponse.json({ favorites });
-  } catch (error) {
-    console.error('Error fetching user favorites:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch user favorites' },
-      { status: 500 },
-    );
+    return response({ favorites });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

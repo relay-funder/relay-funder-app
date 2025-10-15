@@ -1,79 +1,80 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { adminAddress } from '@/lib/constant';
+import { db } from '@/server/db';
+import { checkAuth, checkContractAdmin } from '@/lib/api/auth';
+import {
+  ApiParameterError,
+  ApiNotFoundError,
+  ApiIntegrityError,
+} from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import {
+  PostCampaignsWithIdApproveBody,
+  CampaignsWithIdParams,
+  PostCampaignApproveResponse,
+} from '@/lib/api/types';
 import { CampaignStatus } from '@/types/campaign';
+import { getCampaign } from '@/lib/api/campaigns';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ campaignId: string }> },
-) {
+import { notify } from '@/lib/api/event-feed';
+import { getUser } from '@/lib/api/user';
+
+export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
+    const session = await checkAuth(['admin']);
+    await checkContractAdmin(session);
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('Admin user not found');
+    }
+
     const campaignId = parseInt((await params).campaignId);
-
     if (!campaignId) {
-      return NextResponse.json(
-        { error: 'Campaign ID is required' },
-        { status: 400 },
-      );
+      throw new ApiParameterError('campaignId is required');
     }
-
-    const { adminAddress: requestAddress, treasuryAddress } = await req.json();
-
-    // Verify admin
-    if (
-      !requestAddress ||
-      requestAddress.toLowerCase() !== adminAddress?.toLowerCase()
-    ) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access only' },
-        { status: 401 },
-      );
-    }
+    const { treasuryAddress }: PostCampaignsWithIdApproveBody =
+      await req.json();
 
     if (!treasuryAddress) {
-      return NextResponse.json(
-        { error: 'Treasury address is required' },
-        { status: 400 },
-      );
+      throw new ApiParameterError('treasuryAddress is required');
     }
-
     // Get campaign info from database
-    const campaign = await prisma.campaign.findUnique({
+    const campaign = await db.campaign.findUnique({
       where: { id: campaignId },
     });
 
     if (!campaign) {
-      return NextResponse.json(
-        { error: 'Campaign not found' },
-        { status: 404 },
-      );
+      throw new ApiNotFoundError('Campaign not found');
     }
 
     if (!campaign.campaignAddress) {
-      return NextResponse.json(
-        { error: 'Campaign address not found' },
-        { status: 400 },
-      );
+      throw new ApiIntegrityError('Campaign address not found');
+    }
+    const creator = await getUser(campaign.creatorAddress);
+    if (!creator) {
+      throw new ApiNotFoundError('Campaign Creator not found');
     }
 
     // Update campaign status and treasury address in database
-    const updatedCampaign = await prisma.campaign.update({
+    await db.campaign.update({
       where: { id: campaignId },
       data: {
         status: CampaignStatus.ACTIVE,
         treasuryAddress,
       },
     });
-
-    return NextResponse.json({
-      campaign: updatedCampaign,
+    await notify({
+      receiverId: creator.id,
+      creatorId: user.id,
+      data: {
+        type: 'CampaignApprove',
+        campaignId,
+        campaignTitle: campaign.title,
+      },
     });
-  } catch (error) {
-    console.error('Error updating campaign status:', error);
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : 'Failed to update campaign status';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+
+    return response({
+      campaign: await getCampaign(campaignId),
+    } as PostCampaignApproveResponse);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

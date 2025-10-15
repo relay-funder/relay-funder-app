@@ -1,0 +1,109 @@
+import { useCallback, useMemo } from 'react';
+import {
+  getCsrfToken,
+  getSession,
+  signIn as nextAuthSignIn,
+} from 'next-auth/react';
+import { SiweMessage } from 'siwe';
+import { ethers, useAccount, useSignMessage } from '@/lib/web3';
+import { PROJECT_NAME } from '@/lib/constant';
+
+import { debugWeb3UseAuth as debug } from '@/lib/debug';
+import { loginCallbackUrl } from '@/server/auth/providers/login-callback-url';
+
+async function fetchNonce() {
+  try {
+    return await getCsrfToken();
+  } catch (error) {
+    console.error('Failure fetching nonce (next-auth csrf-token)');
+  }
+  return;
+}
+export function useSignInToBackend() {
+  const callbackUrl = useMemo(() => {
+    return loginCallbackUrl();
+  }, []);
+  const { signMessageAsync } = useSignMessage();
+  const account = useAccount();
+
+  const signInToBackend = useCallback(async () => {
+    // this callback relies on wagmi being connected
+    // so it must not be called directly within a event also calling
+    // connect (useConnect) but wait for the connection to be available
+    const { address, chainId } = account;
+
+    debug &&
+      console.log('web3/hooks/use-signin-to-backend', {
+        address,
+        chainId,
+        domain: window.location.host,
+        origin: window.location.origin,
+        callbackUrl,
+      });
+    if (!address || typeof chainId !== 'number') {
+      throw new Error(
+        'web3/hooks/use-signin-to-backend: missing address or chainId',
+      );
+    }
+
+    const nonce = await fetchNonce();
+    if (!nonce) {
+      throw new Error(
+        'web3/hooks/use-signin-to-backend: Failed to fetch nonce for signature',
+      );
+    }
+    // Create SIWE message with pre-fetched nonce and sign with wallet
+    const message = new SiweMessage({
+      domain: window.location.host,
+      address: ethers.getAddress(address),
+      statement: `${PROJECT_NAME} - Please sign this message to log in to the app.`,
+      uri: window.location.origin,
+      version: '1',
+      chainId,
+      nonce,
+    });
+    const preparedMessage = message.prepareMessage();
+
+    if (typeof signMessageAsync !== 'function') {
+      throw new Error(
+        'web3/hooks/use-signin-to-backend: Wagmi signMessageAsync not found',
+      );
+    }
+    const signature = await signMessageAsync({
+      message: preparedMessage,
+    });
+
+    debug &&
+      console.log('web3/hooks/use-signin-to-backend: login to next-auth');
+    const authResult = await nextAuthSignIn('siwe', {
+      redirect: false,
+      message: JSON.stringify(preparedMessage),
+      signature,
+      callbackUrl,
+    });
+    if (authResult?.ok && !authResult.error) {
+      const session = await getSession();
+      console.info(
+        'web3/hooks/use-signin-to-backend: user signed in',
+        session?.user?.name,
+        session?.user?.address,
+      );
+    } else if (authResult?.error) {
+      const errorMessage =
+        'web3/hooks/use-signin-to-backend:' +
+        ' An error occurred while signin in.' +
+        ` Code: ${authResult.status} - ${authResult.error}` +
+        ` (Domain: ${window.location.host})`;
+      console.error('Authentication failed:', {
+        status: authResult.status,
+        error: authResult.error,
+        domain: window.location.host,
+        callbackUrl,
+        vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV,
+      });
+      throw new Error(errorMessage);
+    }
+    return callbackUrl;
+  }, [callbackUrl, signMessageAsync, account]);
+  return signInToBackend;
+}

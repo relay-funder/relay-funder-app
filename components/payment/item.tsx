@@ -1,40 +1,116 @@
-import { type Payment } from '@/types/campaign';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui';
-import { PaymentLink } from './link';
-export function PaymentItem({ payment }: { payment: Payment }) {
+import type { PaymentSummaryContribution } from '@/lib/api/types';
+import { UserInlineName } from '../user/inline-name';
+import { FormattedDate } from '../formatted-date';
+import { DbCampaign } from '@/types/campaign';
+import { useRemovePayment } from '@/lib/hooks/usePayments';
+import { useCallback, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
+import { cn } from '@/lib/utils';
+import { Button, Card, CardContent, CardFooter } from '../ui';
+import { Trash, ExternalLink } from 'lucide-react';
+import { useAuth } from '@/contexts';
+import { chainConfig } from '@/lib/web3';
+
+export function PaymentItem({
+  payment,
+  campaign,
+}: {
+  payment: PaymentSummaryContribution;
+  campaign: DbCampaign;
+}) {
+  const { toast } = useToast();
+  const [hidden, setHidden] = useState(false);
+  const { isAdmin } = useAuth();
+  const { mutateAsync: removePayment, isPending: isRemovingPayment } =
+    useRemovePayment();
+  const refetchCampaign = useRefetchCampaign(campaign.id);
+  const canRemove = isAdmin;
+  const onRemove = useCallback(async () => {
+    try {
+      await removePayment({ campaignId: campaign.id, paymentId: payment.id });
+      setHidden(true);
+      refetchCampaign();
+    } catch (error) {
+      console.error('Error removing payment:', error);
+      toast({
+        title: 'Error',
+        description: `Failed remove payment: ${error instanceof Error ? error.message : 'Unknown Error'}`,
+        variant: 'destructive',
+      });
+    }
+  }, [removePayment, refetchCampaign, campaign, payment, toast]);
+
+  const hasExplorerLink = payment.transactionHash;
+  const explorerUrl = hasExplorerLink
+    ? `${chainConfig.blockExplorerUrl}/tx/${payment.transactionHash}`
+    : undefined;
+
+  const handleRowClick = useCallback(() => {
+    if (explorerUrl) {
+      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    }
+  }, [explorerUrl]);
+
   return (
-    <div
-      key={payment.id}
-      className="flex items-center justify-between rounded-lg bg-white p-4 shadow"
+    <Card
+      className={cn(
+        hidden && 'hidden',
+        hasExplorerLink &&
+          'cursor-pointer transition-colors hover:bg-accent/50',
+      )}
+      onClick={hasExplorerLink ? handleRowClick : undefined}
     >
-      <div className="flex items-center gap-4">
-        <Avatar>
-          <AvatarImage
-            src={`https://avatar.vercel.sh/${payment.user.address}`}
-          />
-          <AvatarFallback>
-            {payment.isAnonymous
-              ? 'A'
-              : payment.user.address.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="font-medium">
-            {payment.isAnonymous
-              ? 'Anonymous Donor'
-              : `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`}
-          </p>
-          <p className="text-sm text-gray-500">
-            {new Date(payment.createdAt).toLocaleDateString()}
-          </p>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className="flex-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                <UserInlineName user={payment.user} />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">
+                  <span className="hidden sm:inline">•</span>
+                  <FormattedDate date={payment.date} />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
+                  <span className="text-base font-medium text-foreground sm:text-sm">
+                    $
+                    {(() => {
+                      // Format with at least 1 decimal place
+                      return payment.amount % 1 === 0
+                        ? payment.amount.toFixed(1)
+                        : payment.amount.toString();
+                    })()}
+                  </span>
+                  <span className="text-xs text-muted-foreground sm:text-sm">
+                    {payment.token === 'USD' ? 'Credit Card' : payment.token}
+                  </span>
+                </div>
+                {hasExplorerLink && (
+                  <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="text-right">
-        <p className="font-medium">
-          {payment.amount} {payment.token}
-        </p>
-        <PaymentLink payment={payment} />
-      </div>
-    </div>
+      </CardContent>
+      {canRemove && (
+        <CardFooter className="px-4 py-3 sm:px-6">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            disabled={isRemovingPayment}
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+          >
+            <Trash className="h-3 w-3" />
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   );
 }

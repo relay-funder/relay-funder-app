@@ -1,74 +1,241 @@
 import { cn } from '@/lib/utils';
+import { ReadMoreOrLess } from './read-more-or-less';
+import {
+  Card,
+  CardContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Button,
+} from '@/components/ui';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import Image from 'next/image';
+import { Media } from '@/types/campaign';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, EyeOff, Eye } from 'lucide-react';
+import { useToggleHideCampaignUpdate } from '@/lib/hooks/useUpdates';
 
 interface TimelineItemProps {
+  id: number;
   date: Date;
   title: string;
   content: string;
+  media?: Media[];
+  mediaOrder?: string[];
   isLast?: boolean;
+  creatorAddress?: string;
+  isHidden?: boolean;
+  campaignId: number;
 }
 
 export function TimelineItem({
+  id,
   date,
   title,
   content,
-  isLast,
+  media,
+  isHidden,
+  campaignId,
 }: TimelineItemProps) {
+  const { mutateAsync: toggleHide, isPending } = useToggleHideCampaignUpdate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images =
+    media?.filter(
+      (item) =>
+        typeof item.url === 'string' && item.mimeType.startsWith('image/'),
+    ) || [];
+
+  const handleToggleHide = async () => {
+    try {
+      await toggleHide({ campaignId, updateId: id });
+    } catch (error) {
+      console.error('Failed to toggle hide:', error);
+    }
+  };
+
   return (
-    <div className="group relative grid grid-cols-5 gap-4 py-6">
-      {/* Vertical Line */}
-      {!isLast && (
-        <div className="absolute left-[50px] top-[70px] h-[calc(100%-32px)] w-[2px] bg-gradient-to-b from-green-500/50 to-blue-500/10 transition-colors duration-500 group-hover:from-blue-600/50 group-hover:to-blue-600/10 sm:left-[120px]" />
-      )}
-
-      {/* Circle Marker */}
-      {/* <div className="absolute left-0 sm:left-[52px] top-[24px] h-4 w-4 rounded-full border-2 border-blue-500 bg-white shadow-sm group-hover:border-blue-600 transition-colors duration-500" /> */}
-
-      {/* Date */}
-      <div className="col-span-1 pr-8 pt-[24px] text-right text-sm font-medium text-gray-500">
-        {new Date(date).toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })}
-      </div>
-
-      {/* Content */}
-      <div className="col-span-4 rounded-lg border border-gray-200 p-6 transition-all duration-200 hover:shadow-lg">
-        <div className="space-y-3">
-          <h3 className="text-xl font-bold text-gray-900 transition-colors duration-500 group-hover:text-blue-600">
-            {title}
-          </h3>
-          <div className="prose max-w-none">
-            <p className="whitespace-pre-wrap leading-relaxed text-gray-600">
-              {content}
-            </p>
+    <Card id={`update-${id}`} className="scroll-mt-4">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-semibold text-foreground">
+                {title}
+              </h3>
+              <div className="flex items-center gap-2">
+                {typeof isHidden === 'boolean' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleToggleHide}
+                    disabled={isPending}
+                    className="h-6 px-2 text-xs"
+                  >
+                    {isHidden ? (
+                      <Eye className="h-3 w-3" />
+                    ) : (
+                      <EyeOff className="h-3 w-3" />
+                    )}
+                    {isHidden ? 'Unhide' : 'Hide'}
+                  </Button>
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {new Date(date).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+            </div>
+            <div className="prose mt-2 max-w-none">
+              <ReadMoreOrLess
+                className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground"
+                collapsedClassName="line-clamp-3"
+              >
+                {content}
+              </ReadMoreOrLess>
+            </div>
+            {media && media.length > 0 && (
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {media.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`relative h-32 w-full ${item.mimeType.startsWith('image/') ? 'cursor-pointer' : ''}`}
+                    onClick={
+                      item.mimeType.startsWith('image/')
+                        ? () => {
+                            const idx = images.findIndex(
+                              (img) => img.id === item.id,
+                            );
+                            if (idx !== -1) {
+                              setCurrentIndex(idx);
+                              setIsOpen(true);
+                            }
+                          }
+                        : undefined
+                    }
+                  >
+                    {typeof item.url !== 'string' ? (
+                      <></>
+                    ) : item.mimeType.startsWith('image/') ? (
+                      <Image
+                        src={item.url}
+                        alt={item.caption || 'Campaign update image'}
+                        fill
+                        className="rounded-lg object-cover"
+                      />
+                    ) : item.mimeType.startsWith('video/') ? (
+                      <video
+                        src={item.url}
+                        className="h-full w-full rounded-lg object-cover"
+                        controls
+                      />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogContent className="h-[80vh] w-full max-w-4xl p-0">
+                <VisuallyHidden>
+                  <DialogHeader>
+                    <DialogTitle>Image Viewer</DialogTitle>
+                  </DialogHeader>
+                </VisuallyHidden>
+                {images.length > 0 && (
+                  <div className="relative h-full w-full">
+                    <Image
+                      src={images[currentIndex].url as string}
+                      alt={
+                        images[currentIndex].caption || 'Campaign update image'
+                      }
+                      fill
+                      className="object-contain"
+                    />
+                    {images.length > 1 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 transform p-2"
+                          onClick={() =>
+                            setCurrentIndex(
+                              (prev) =>
+                                (prev - 1 + images.length) % images.length,
+                            )
+                          }
+                        >
+                          <ChevronLeft className="h-6 w-6" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 transform p-2"
+                          onClick={() =>
+                            setCurrentIndex(
+                              (prev) => (prev + 1) % images.length,
+                            )
+                          }
+                        >
+                          <ChevronRight className="h-6 w-6" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+                {images.length > 0 && images[currentIndex].caption && (
+                  <DialogFooter className="p-4">
+                    <p className="text-sm text-muted-foreground">
+                      {images[currentIndex].caption}
+                    </p>
+                  </DialogFooter>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
 interface TimelineProps {
   items: Array<{
-    id: string;
+    id: number;
     title: string;
     content: string;
     createdAt: Date;
+    media?: Media[];
+    mediaOrder?: string[];
+    isHidden?: boolean;
   }>;
   className?: string;
+  creatorAddress?: string;
+  campaignId: number;
 }
 
-export function Timeline({ items, className }: TimelineProps) {
+export function Timeline({
+  items,
+  className,
+  creatorAddress,
+  campaignId,
+}: TimelineProps) {
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('space-y-4', className)}>
       {items.map((item, index) => (
         <TimelineItem
           key={item.id}
+          id={item.id}
           date={item.createdAt}
           title={item.title}
           content={item.content}
+          media={item.media}
           isLast={index === items.length - 1}
+          creatorAddress={creatorAddress}
+          campaignId={campaignId}
+          isHidden={item.isHidden}
         />
       ))}
     </div>

@@ -1,33 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/server/db';
+import { ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { RoundsWithIdParams } from '@/lib/api/types';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { getRound } from '@/lib/api/rounds';
+import { auth } from '@/server/auth';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const id = (await params).id; // Get the ID from the query parameters
-
+export async function GET(req: Request, { params }: RoundsWithIdParams) {
   try {
-    const round = await prisma.round.findUnique({
-      where: { id: Number(id) }, // Fetch the round by ID
+    // public endpoint
+    // when signed in, session & admin declare how much relation data is fetched
+    // default is only approved
+    // as admin, get any state
+    // as user only get any-state when campaign is created by user
+    const { searchParams } = new URL(req.url);
+    const forceUserView = searchParams.get('forceUserView') === 'true';
+
+    const session = await auth();
+    // If forceUserView is true, always use user-only mode regardless of admin status
+    const admin = forceUserView ? false : await isAdmin();
+
+    const id = (await params).id;
+    const round = await getRound(parseInt(id), admin, session?.user.address);
+
+    return response({ round });
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+
+export async function DELETE(req: Request, { params }: RoundsWithIdParams) {
+  try {
+    await checkAuth(['admin']);
+    const roundId = parseInt((await params).id);
+    if (!roundId) {
+      throw new ApiParameterError('roundId is required');
+    }
+    const round = await db.round.findUnique({
+      where: { id: roundId },
     });
 
     if (!round) {
-      return NextResponse.json({ error: 'Round not found' }, { status: 404 }); // Handle not found
+      throw new ApiNotFoundError('Round not found');
     }
 
-    return NextResponse.json(round, {
-      status: 200,
-    }); // Return the round as JSON
-  } catch (error) {
-    console.error('error fetching round: ', error);
-    NextResponse.json(
-      { error: 'Failed to fetch round' },
-      {
-        status: 500,
-      },
-    ); // Handle errors
-  } finally {
-    await prisma.$disconnect(); // Disconnect Prisma Client
+    await db.round.delete({ where: { id: roundId } });
+    return response({
+      ok: true,
+    });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

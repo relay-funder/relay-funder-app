@@ -1,151 +1,53 @@
-import { createPublicClient, http } from 'viem';
-import { celoAlfajores } from 'viem/chains';
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { DbCampaign } from '@/types/campaign';
-import { chainConfig } from '@/config/chain';
+import { db } from '@/server/db';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import {
+  ApiParameterError,
+  ApiUpstreamError,
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+} from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+
 import { CampaignStatus } from '@/types/campaign';
+import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
+import { PatchCampaignResponse, PostCampaignsResponse } from '@/lib/api/types';
+import { fileToUrl } from '@/lib/storage';
+import { debugApi as debug } from '@/lib/debug';
+import { getUser } from '@/lib/api/user';
+import {
+  isValidCategoryId,
+  VALID_CATEGORY_IDS,
+} from '@/lib/constant/categories';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterCreateCampaign,
+  userLimiterCreateCampaign,
+} from '@/lib/rate-limit';
 
-const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-const RPC_URL = chainConfig.rpcUrl;
-
-async function uploadToCloudinary(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append(
-    'upload_preset',
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '',
-  );
-
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  if (!cloudName) {
-    throw new Error('Cloudinary cloud name is not configured');
-  }
-
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-  if (!uploadPreset) {
-    throw new Error('Cloudinary upload preset is not configured');
-  }
-
-  console.log('Uploading to Cloudinary with:', {
-    cloudName,
-    uploadPreset,
-    fileName: file.name,
-    fileSize: file.size,
-    fileType: file.type,
-  });
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: 'POST',
-      body: formData,
-    },
-  );
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error('Cloudinary upload failed:', {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData,
-    });
-    throw new Error(`Cloudinary upload failed: ${errorData}`);
-  }
-
-  const data = await response.json();
-  console.log('Cloudinary upload successful:', data);
-  return data.secure_url;
-}
-
-async function getPublicClient() {
-  if (!FACTORY_ADDRESS || !RPC_URL) {
-    throw new Error('Campaign factory address or RPC URL not configured');
-  }
-
-  return createPublicClient({
-    chain: {
-      ...celoAlfajores,
-      contracts: {
-        multicall3: {
-          address: '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
-          blockCreated: 14353601,
-        },
-      },
-    },
-    transport: http(RPC_URL),
-    batch: {
-      multicall: {
-        batchSize: 1024,
-        wait: 16,
-      },
-    },
-  });
-}
-
-async function getCampaignCreatedEvents(
-  client: ReturnType<typeof createPublicClient>,
-) {
-  return client.getLogs({
-    address: FACTORY_ADDRESS as `0x${string}`,
-    event: {
-      type: 'event',
-      name: 'CampaignInfoFactoryCampaignCreated',
-      inputs: [
-        { type: 'bytes32', name: 'identifierHash', indexed: true },
-        { type: 'address', name: 'campaignInfoAddress', indexed: true },
-      ],
-    },
-    fromBlock: 0n,
-    toBlock: 'latest',
-  });
-}
-
-type CampaignCreatedEvent = {
-  args: {
-    identifierHash: `0x${string}`;
-    campaignInfoAddress: `0x${string}`;
-  };
+const statusMap: Record<string, CampaignStatus> = {
+  draft: CampaignStatus.DRAFT,
+  pending_approval: CampaignStatus.PENDING_APPROVAL,
+  active: CampaignStatus.ACTIVE,
+  disabled: CampaignStatus.DISABLED,
+  completed: CampaignStatus.COMPLETED,
+  failed: CampaignStatus.FAILED,
 };
 
-function formatCampaignData(
-  dbCampaign: DbCampaign,
-  event: CampaignCreatedEvent | undefined,
-) {
-  if (!event || !event.args) {
-    console.error('No matching event found for campaign:', {
-      campaignId: dbCampaign.id,
-      campaignAddress: dbCampaign.campaignAddress,
-    });
-    return null;
-  }
-
-  return {
-    id: dbCampaign.id,
-    title: dbCampaign.title,
-    description: dbCampaign.description,
-    status: dbCampaign.status,
-    address: dbCampaign.campaignAddress,
-    owner: dbCampaign.creatorAddress,
-    launchTime: Math.floor(
-      new Date(dbCampaign.startTime).getTime() / 1000,
-    ).toString(),
-    deadline: Math.floor(
-      new Date(dbCampaign.endTime).getTime() / 1000,
-    ).toString(),
-    goalAmount: dbCampaign.fundingGoal,
-    totalRaised: '0',
-    images: dbCampaign.images,
-    slug: dbCampaign.slug,
-    location: dbCampaign.location,
-    category: dbCampaign.category,
-    treasuryAddress: dbCampaign.treasuryAddress,
-  };
-}
-
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const formData = await request.formData();
+    await checkIpLimit(req.headers, ipLimiterCreateCampaign);
+
+    const session = await checkAuth(['user']);
+    const creatorAddress = session.user.address;
+
+    await checkUserLimit(creatorAddress, userLimiterCreateCampaign);
+
+    const user = await getUser(creatorAddress);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
+    const formData = await req.formData();
 
     // Extract form fields
     const title = formData.get('title') as string;
@@ -153,30 +55,24 @@ export async function POST(request: Request) {
     const fundingGoal = formData.get('fundingGoal') as string;
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
-    const creatorAddress = formData.get('creatorAddress') as string;
     const statusRaw = formData.get('status') as string;
-    const statusMap: Record<string, CampaignStatus> = {
-      draft: CampaignStatus.DRAFT,
-      pending_approval: CampaignStatus.PENDING_APPROVAL,
-      active: CampaignStatus.ACTIVE,
-      completed: CampaignStatus.COMPLETED,
-      failed: CampaignStatus.FAILED,
-    };
+
     const status = statusMap[statusRaw] || CampaignStatus.DRAFT;
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
 
-    console.log('Creating campaign with data:', {
-      title,
-      description,
-      fundingGoal,
-      startTime,
-      endTime,
-      creatorAddress,
-      status,
-      location,
-    });
+    debug &&
+      console.log('Creating campaign with data:', {
+        title,
+        description,
+        fundingGoal,
+        startTime,
+        endTime,
+        creatorAddress,
+        status,
+        location,
+      });
 
     if (
       !title ||
@@ -186,9 +82,13 @@ export async function POST(request: Request) {
       !endTime ||
       !creatorAddress
     ) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 },
+      throw new ApiParameterError('missing required fields');
+    }
+
+    // Validate category if provided
+    if (category && !isValidCategoryId(category)) {
+      throw new ApiParameterError(
+        `Invalid category "${category}". Only allowed: ${VALID_CATEGORY_IDS.join(', ')}`,
       );
     }
 
@@ -201,25 +101,18 @@ export async function POST(request: Request) {
     const slug = `${baseSlug}-${uniqueSuffix}`;
 
     let imageUrl = null;
+    let mimeType = 'application/octet-stream';
     if (bannerImage) {
       try {
-        imageUrl = await uploadToCloudinary(bannerImage);
+        imageUrl = await fileToUrl(bannerImage);
+        mimeType = bannerImage.type;
       } catch (imageError) {
         console.error('Error uploading image:', imageError);
-        return NextResponse.json(
-          {
-            error: 'Image upload failed',
-            details:
-              imageError instanceof Error
-                ? imageError.message
-                : 'Unknown error',
-          },
-          { status: 422 },
-        );
+        throw new ApiUpstreamError('Image upload failed');
       }
     }
 
-    const campaign = await prisma.campaign.create({
+    const campaign = await db.campaign.create({
       data: {
         title,
         description,
@@ -231,144 +124,131 @@ export async function POST(request: Request) {
         location: location || undefined,
         category: category || undefined,
         slug,
-        images: imageUrl
-          ? {
-              create: {
-                imageUrl,
-                isMainImage: true,
-              },
-            }
-          : undefined,
-      },
-      include: {
-        images: true,
       },
     });
+    if (imageUrl) {
+      const media = await db.media.create({
+        data: {
+          url: imageUrl,
+          mimeType,
+          state: 'UPLOADED',
+          campaign: { connect: { id: campaign.id } },
+          createdBy: { connect: { id: user.id } },
+        },
+      });
+      await db.campaign.update({
+        where: { id: campaign.id },
+        data: {
+          mediaOrder: [media.id],
+        },
+      });
+    }
+    debug && console.log('Campaign created successfully:', campaign);
 
-    console.log('Campaign created successfully:', campaign);
-
-    return NextResponse.json({ campaignId: campaign.id }, { status: 201 });
-  } catch (error) {
-    console.error('Failed to create campaign. Details:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined,
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Failed to create campaign',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    );
+    return response({ campaignId: campaign.id } as PostCampaignsResponse);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(req: Request) {
   try {
-    const body = await request.json();
-    const { status, transactionHash, campaignAddress, campaignId } = body;
-
-    const campaign = await prisma.campaign.update({
+    const session = await checkAuth(['user']);
+    const asAdmin = await isAdmin();
+    const body = await req.json();
+    const {
+      status: statusRaw,
+      transactionHash,
+      campaignAddress,
+      campaignId,
+    } = body;
+    if (!campaignId) {
+      throw new ApiParameterError('campaignId is required');
+    }
+    const status = statusMap[statusRaw] || undefined;
+    if (
+      ![
+        CampaignStatus.FAILED,
+        CampaignStatus.PENDING_APPROVAL,
+        CampaignStatus.DRAFT,
+        CampaignStatus.DISABLED,
+        undefined,
+      ].includes(status)
+    ) {
+      // its only possible to set the whitelisted status to prevent api-calls that
+      // make the campaign active.
+      throw new ApiParameterError('Requested status update not allowed');
+    }
+    const instance = await db.campaign.findUnique({
       where: {
         id: parseInt(campaignId),
       },
-      data: {
-        status,
-        transactionHash,
-        campaignAddress,
-      },
     });
+    if (!instance) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
+    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
+      throw new ApiAuthNotAllowed('User cannot modify this campaign');
+    }
+    // Only update fields that changed; avoid unique constraint conflicts
+    const data: Record<string, unknown> = {};
+    if (typeof status !== 'undefined') data.status = status;
+    if (transactionHash) data.transactionHash = transactionHash;
+    // Only set campaignAddress if it's not already set or matches current
+    if (
+      campaignAddress &&
+      (!instance.campaignAddress ||
+        instance.campaignAddress === campaignAddress)
+    ) {
+      data.campaignAddress = campaignAddress;
+    }
 
-    return NextResponse.json(campaign);
-  } catch (error) {
-    console.error('Failed to update campaign:', error);
-    return NextResponse.json(
-      { error: 'Failed to update campaign' },
-      { status: 500 },
-    );
+    if (Object.keys(data).length > 0) {
+      try {
+        await db.campaign.update({
+          where: { id: instance.id },
+          data,
+        });
+      } catch (e: unknown) {
+        // Swallow unique constraint error on campaignAddress to prevent duplicate failures
+        // Client can refetch; backend create-onchain already persisted values
+        console.error('PATCH /api/campaigns update error', e);
+      }
+    }
+
+    return response({
+      campaign: await getCampaign(instance.id),
+    } as PatchCampaignResponse);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'active';
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const rounds =
+      (searchParams.get('rounds') || 'false') === 'true' ? true : false;
     const skip = (page - 1) * pageSize;
-
-    const [dbCampaigns, totalCount] = await Promise.all([
-      prisma.campaign.findMany({
-        where: {
-          status: {
-            in:
-              status === 'active'
-                ? [CampaignStatus.ACTIVE]
-                : [
-                    CampaignStatus.PENDING_APPROVAL,
-                    CampaignStatus.COMPLETED,
-                    CampaignStatus.ACTIVE,
-                  ],
-          },
-        },
-        include: {
-          images: true,
-        },
-        skip,
-        take: pageSize,
-        orderBy: {
-          createdAt: 'desc',
-        },
-      }),
-      prisma.campaign.count({
-        where: {
-          status: {
-            in:
-              status === 'active'
-                ? [CampaignStatus.ACTIVE]
-                : [
-                    CampaignStatus.PENDING_APPROVAL,
-                    CampaignStatus.COMPLETED,
-                    CampaignStatus.ACTIVE,
-                  ],
-          },
-        },
-      }),
-    ]);
-
-    const client = await getPublicClient();
-    // @ts-expect-error - client issue
-    const events = await getCampaignCreatedEvents(client);
-
-    const combinedCampaigns = dbCampaigns
-      .filter((campaign) => campaign.transactionHash)
-      .map((dbCampaign) => {
-        const event = events.find(
-          (onChainCampaign) =>
-            onChainCampaign.args?.campaignInfoAddress?.toLowerCase() ===
-            dbCampaign.campaignAddress?.toLowerCase(),
-        ) as CampaignCreatedEvent | undefined;
-        return formatCampaignData(dbCampaign, event);
-      })
-      .filter(Boolean);
-
-    return NextResponse.json({
-      campaigns: combinedCampaigns,
-      pagination: {
-        currentPage: page,
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
+    }
+    // status active should be enforced if access-token is not admin
+    const admin = await isAdmin();
+    return response(
+      await listCampaigns({
+        admin,
+        status,
+        page,
         pageSize,
-        totalPages: Math.ceil(totalCount / pageSize),
-        totalItems: totalCount,
-        hasMore: skip + pageSize < totalCount,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 },
+        rounds,
+        skip,
+      }),
     );
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

@@ -6,7 +6,7 @@ volumes:
   pgdata:
 
 x-app-environment: &app-environment
-  DATABASE_URL: postgres://${POSTGRES_USER:-akashic}:${POSTGRES_PASSWORD:-akashic}@database:5432/${POSTGRES_DB:-akashic_dev}
+  DATABASE_URL: postgres://${POSTGRES_USER:-relayfunder}:${POSTGRES_PASSWORD:-relayfunder}@database:5432/${POSTGRES_DB:-relayfunder_dev}
   NODE_ENV: development
 
 services:
@@ -14,14 +14,14 @@ services:
     image: postgres:latest
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-akashic}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-akashic}
-      POSTGRES_DB: ${POSTGRES_DB:-akashic_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-relayfunder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-relayfunder}
+      POSTGRES_DB: ${POSTGRES_DB:-relayfunder_dev}
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-akashic} -d ${POSTGRES_DB:-akashic_dev}",
+          "pg_isready -U ${POSTGRES_USER:-relayfunder} -d ${POSTGRES_DB:-relayfunder_dev}",
         ]
       interval: 10s
       timeout: 5s
@@ -50,12 +50,13 @@ services:
       context: .
       target: devrunner
     depends_on:
-      database:
-        condition: service_healthy
+      - database
     ports:
       - "${DEV_APP_PORT:-3000}:3000"
+      - "${PRISMA_STUDIO_PORT:-5555}:5555"
     volumes:
       - ./:/app
+      - ./lib/sentry-dev.ts:/app/lib/sentry.ts
       # - ./dev_modules/app/node_modules:/app/node_modules
       - ./dev_modules/app/.next:/app/.next
       - ./dev_modules/pnpm_store:/app/.pnpm-store

@@ -1,27 +1,31 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useSidebar } from '@/contexts';
+import { useAuth, useSidebar } from '@/contexts';
 import { usePathname } from 'next/navigation';
-import { Settings } from 'lucide-react';
+import { User } from 'lucide-react';
 import { transition } from './sidebar-constants';
 
 export function PageNavMenuSettings() {
   const { isOpen } = useSidebar();
   const pathname = usePathname();
-
+  const { authenticated } = useAuth();
+  if (!authenticated) {
+    return null;
+  }
   return (
-    <nav className="flex-1 space-y-1 px-3">
+    <nav className="flex-1 space-y-1 p-3">
       <Link
-        href="/settings"
+        href="/profile"
         className={cn(
-          'flex items-center rounded-lg px-1 py-4 text-gray-800 hover:bg-gray-100 hover:text-gray-900',
+          'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground',
           transition,
           isOpen ? 'px-4' : 'px-[9px]',
-          pathname === '/settings' && 'flex-grow bg-green-200 text-gray-900',
+          pathname === '/profile' &&
+            'flex-grow bg-secondary text-secondary-foreground',
         )}
       >
         <div className="flex items-center">
-          <Settings className="h-6 w-6" />
+          <User className="h-6 w-6" />
         </div>
         <span
           className={cn(
@@ -30,7 +34,7 @@ export function PageNavMenuSettings() {
             isOpen ? 'w-auto opacity-100' : 'w-0 opacity-0',
           )}
         >
-          Settings
+          Profile
         </span>
       </Link>
     </nav>

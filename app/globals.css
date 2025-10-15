@@ -1,64 +1,273 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Relay Design System - Web3 × Humanitarian Aesthetic */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Base - Light elegant meets earth */
+    --background: 0 0% 98%;
+    --foreground: 220 15% 15%;
+    --surface: 210 20% 95%;
+    --surface-alt: 210 15% 92%;
+    --surface-elevated: 210 20% 88%;
+
+    /* Typography hierarchy - Enhanced contrast */
+    --text-primary: 220 20% 8%;
+    --text-secondary: 220 15% 25%;
+    --text-muted: 220 12% 40%;
+    --text-subtle: 220 8% 60%;
+
+    /* Web3 × Humanitarian palette - Enhanced contrast */
+    --quantum-blue: 210 100% 45%; /* Primary tech - darker for better contrast */
+    --bio-green: 150 65% 40%; /* Life/growth - darker for better contrast */
+    --solar-orange: 25 95% 50%; /* Hope/energy - darker for better contrast */
+    --accent: 210 5% 50%;
+    --accent-light: 210 3% 45%;
+    --accent-dark: 210 8% 25%;
+
+    /* Interactive states - Enhanced contrast */
+    --hover: 210 100% 40%;
+    --active: 210 100% 35%;
+    --focus: 210 90% 45%;
+
+    /* Component tokens */
+    --card: 210 20% 96%;
+    --card-foreground: 220 15% 15%;
+    --border: 220 15% 85%;
+    --border-light: 220 10% 88%;
+    --ring: 210 100% 65%;
+
+    /* Light-style shadows and glows */
+    --shadow-subtle: 0 1px 3px 0 hsl(220 15% 15% / 0.1);
+    --shadow-medium:
+      0 4px 12px 0 hsl(220 15% 15% / 0.08), 0 0 0 1px hsl(210 100% 65% / 0.05);
+    --shadow-large:
+      0 12px 24px -4px hsl(220 15% 15% / 0.08),
+      0 0 0 1px hsl(210 100% 65% / 0.1);
+    --shadow-glow:
+      0 0 20px hsl(210 100% 65% / 0.2), 0 0 40px hsl(210 100% 65% / 0.08);
+    --shadow-glow-green: 0 0 20px hsl(150 65% 55% / 0.2);
+    --shadow-glow-orange: 0 0 20px hsl(25 95% 65% / 0.2);
+
+    /* Animation and motion */
+    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-kinetic: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+
+    /* Layout */
     --radius: 0.5rem;
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
+    --radius-large: 1rem;
+    --max-width: 1400px;
+
+    /* Legacy compatibility */
+    --primary: 220 15% 12%;
+    --primary-foreground: 45 5% 98%;
+    --secondary: 220 8% 92%;
+    --secondary-foreground: 220 15% 12%;
+    --muted: 220 8% 92%;
+    --muted-foreground: 220 8% 45%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 12%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 45 5% 98%;
+    --input: 220 15% 88%;
+    --accent-compat: 220 8% 92%;
+    --accent-foreground: 220 15% 12%;
+
+    /* Web3 gradients and textures */
+    --gradient-quantum: linear-gradient(
+      135deg,
+      hsl(210 100% 65%),
+      hsl(195 100% 70%)
+    );
+    --gradient-bio: linear-gradient(135deg, hsl(150 65% 55%), hsl(120 55% 60%));
+    --gradient-solar: linear-gradient(135deg, hsl(25 95% 65%), hsl(40 90% 70%));
+    --gradient-mesh:
+      radial-gradient(ellipse at top, hsl(210 100% 65% / 0.1), transparent),
+      radial-gradient(ellipse at bottom, hsl(150 65% 55% / 0.1), transparent);
+    --bg-quantum: hsl(210 100% 65%);
+    --bg-bio: hsl(150 65% 55%);
+    --bg-solar: hsl(25 95% 65%);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Chart colors for compatibility */
+    --chart-1: 210 100% 65%;
+    --chart-2: 150 65% 55%;
+    --chart-3: 25 95% 65%;
+    --chart-4: 280 85% 65%;
     --chart-5: 340 75% 55%;
+  }
+
+  .dark {
+    /* Base - Dark elegant with subtle blue undertones - lighter than relay-funder-web example */
+    --background: 215 25% 15%;
+    --foreground: 210 20% 95%;
+    --surface: 215 25% 17%;
+    --surface-alt: 215 25% 19%;
+    --surface-elevated: 215 25% 18%;
+
+    /* Typography hierarchy - Dark theme */
+    --text-primary: 210 20% 95%;
+    --text-secondary: 210 15% 80%;
+    --text-muted: 220 12% 65%;
+    --text-subtle: 220 8% 45%;
+
+    /* Web3 × Humanitarian palette - Dark theme enhanced brightness */
+    --quantum-blue: 210 100% 65%; /* Brighter for dark theme */
+    --bio-green: 150 60% 55%; /* Brighter for dark theme */
+    --solar-orange: 25 90% 60%; /* Brighter for dark theme */
+    --accent: 210 100% 65%;
+    --accent-light: 210 85% 75%;
+    --accent-dark: 210 100% 55%;
+
+    /* Interactive states - Dark theme */
+    --hover: 210 100% 70%;
+    --active: 210 100% 60%;
+    --focus: 210 90% 65%;
+
+    /* Component tokens - Dark theme */
+    --card: 215 25% 18%;
+    --card-foreground: 210 20% 95%;
+    --border: 215 20% 25%;
+    --border-light: 215 18% 23%;
+    --ring: 210 100% 70%;
+
+    /* Dark-style shadows and glows - adjusted for lighter blue-gray background */
+    --shadow-subtle: 0 1px 3px 0 hsl(220 20% 8% / 0.4);
+    --shadow-medium:
+      0 4px 12px 0 hsl(220 20% 8% / 0.3), 0 0 0 1px hsl(210 100% 65% / 0.1);
+    --shadow-large:
+      0 12px 24px -4px hsl(220 20% 8% / 0.35),
+      0 0 0 1px hsl(210 100% 65% / 0.15);
+    --shadow-glow:
+      0 0 20px hsl(210 100% 65% / 0.4), 0 0 40px hsl(210 100% 65% / 0.15);
+    --shadow-glow-green: 0 0 20px hsl(150 60% 55% / 0.3);
+    --shadow-glow-orange: 0 0 20px hsl(25 90% 60% / 0.3);
+
+    /* Web3 gradients and textures - Dark theme */
+    --gradient-quantum: linear-gradient(
+      135deg,
+      hsl(210 100% 65%),
+      hsl(195 100% 70%)
+    );
+    --gradient-bio: linear-gradient(135deg, hsl(150 60% 55%), hsl(120 55% 60%));
+    --gradient-solar: linear-gradient(135deg, hsl(25 90% 60%), hsl(40 85% 65%));
+    --gradient-mesh:
+      radial-gradient(ellipse at top, hsl(210 100% 65% / 0.15), transparent),
+      radial-gradient(ellipse at bottom, hsl(150 60% 55% / 0.15), transparent);
+    --bg-quantum: hsl(210 100% 65%);
+    --bg-bio: hsl(150 60% 55%);
+    --bg-solar: hsl(25 90% 60%);
+
+    /* Legacy compatibility - Dark theme */
+    --primary: 210 20% 95%;
+    --primary-foreground: 215 25% 15%;
+    --secondary: 215 25% 18%;
+    --secondary-foreground: 210 20% 95%;
+    --muted: 215 25% 17%;
+    --muted-foreground: 220 12% 65%;
+    --popover: 215 25% 17%;
+    --popover-foreground: 210 20% 95%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 210 20% 95%;
+    --input: 215 25% 18%;
+    --accent-compat: 215 25% 18%;
+    --accent-foreground: 210 20% 95%;
+
+    /* Sidebar dark theme */
+    --sidebar-background: 215 25% 15%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 210 100% 65%;
+    --sidebar-primary-foreground: 215 25% 15%;
+    --sidebar-accent: 215 25% 18%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 215 20% 25%;
+    --sidebar-ring: 210 100% 70%;
+
+    /* Chart colors for compatibility */
+    --chart-1: 210 100% 65%;
+    --chart-2: 150 60% 55%;
+    --chart-3: 25 90% 60%;
+    --chart-4: 280 85% 65%;
+    --chart-5: 340 75% 55%;
+  }
+  /* ... other layers ... */
+}
+
+@layer components {
+  /* Typography */
+  .text-hero {
+    @apply font-display text-4xl font-light leading-[0.95] tracking-tight md:text-5xl lg:text-7xl;
+  }
+  .text-section-title {
+    @apply font-display text-2xl font-semibold leading-tight md:text-4xl;
+  }
+  .text-body-large {
+    @apply font-body text-lg font-light leading-relaxed md:text-xl;
+  }
+  .text-caption {
+    @apply font-mono uppercase tracking-wider text-foreground;
+  }
+  .text-quote {
+    @apply font-serif italic text-bio;
+  }
+
+  /* Interactive elements */
+  .btn-quantum {
+    @apply rounded-lg bg-quantum px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-quantum/90 hover:shadow-glow focus:ring-2 focus:ring-quantum/50;
+  }
+  .btn-bio {
+    @apply rounded-lg bg-bio px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-bio/90 hover:shadow-glow-green focus:ring-2 focus:ring-bio/50;
+  }
+  .btn-solar {
+    @apply rounded-lg bg-solar px-6 py-3 font-semibold text-white transition-all duration-200 hover:bg-solar/90 hover:shadow-glow-orange focus:ring-2 focus:ring-solar/50;
+  }
+
+  /* Cards and containers */
+  .web3-card {
+    @apply rounded-lg border border-border bg-card p-6 shadow-medium transition-all duration-200 hover:border-quantum/20 hover:shadow-large;
+  }
+  .mesh-bg {
+    background: var(--gradient-mesh);
+  }
+
+  /* Animations */
+  @keyframes floatSubtle {
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(0.5deg);
+    }
+  }
+
+  @keyframes pulseGlow {
+    0%,
+    100% {
+      box-shadow: var(--shadow-glow);
+    }
+    50% {
+      box-shadow: var(--shadow-glow), var(--shadow-glow-green);
+    }
+  }
+
+  .animate-float-subtle {
+    animation: floatSubtle 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
   }
 }
 
@@ -67,6 +276,6 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-body text-foreground antialiased;
   }
 }

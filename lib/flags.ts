@@ -2,10 +2,26 @@
 
 import { useEffect, useState } from 'react';
 
-// Simple feature flags implementation
-const FLAGS = {
-  ENABLE_ROUNDS: process.env.NEXT_PUBLIC_ENABLE_ROUNDS === 'true',
-};
+// Feature flag configuration with environment variable support
+const FLAG_CONFIG = {
+  DEBUG: { envVar: 'NEXT_PUBLIC_DEBUG', default: false },
+  ROUNDS_VISIBILITY: {
+    envVar: 'NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY',
+    default: false,
+  },
+} as const;
+
+// Initialize flags from environment variables or defaults
+const FLAGS = Object.fromEntries(
+  Object.entries(FLAG_CONFIG).map(([key, config]) => {
+    const envValue = process.env[config.envVar];
+    if (envValue !== undefined) {
+      // Parse string values to boolean
+      return [key, envValue === 'true' || envValue === '1'];
+    }
+    return [key, config.default];
+  }),
+) as Record<keyof typeof FLAG_CONFIG, boolean>;
 
 export type FeatureFlag = keyof typeof FLAGS;
 

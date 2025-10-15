@@ -1,35 +1,61 @@
 'use client';
 
-import { useRef, useTransition } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+  Input,
+  Textarea,
+} from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
-import { useAccount } from '@/contexts';
+import { useAuth } from '@/contexts';
+import { useCreateCampaignUpdate } from '@/lib/hooks/useUpdates';
+import { UpdateFormMedia } from './update-form-media';
 
 interface CampaignUpdateFormProps {
   creatorAddress: string;
-  onSubmit: (formData: FormData, userAddress: string) => Promise<void>;
+  campaignId?: number;
+  onSuccess?: () => void;
 }
+const campaignUpdateFormSchema = z.object({
+  title: z.string().min(1, { message: 'Title is required' }),
+  content: z.string().min(1, { message: 'Content is required' }),
+  media: z.any().optional(),
+});
+type CampaignUpdateFormValues = z.infer<typeof campaignUpdateFormSchema>;
 
 export function CampaignUpdateForm({
   creatorAddress,
-  onSubmit,
+  campaignId,
+  onSuccess,
 }: CampaignUpdateFormProps) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
-  const { address: userAddress } = useAccount();
+  const { mutateAsync: createCampaignUpdate, isPending } =
+    useCreateCampaignUpdate();
+  const { address: userAddress } = useAuth();
 
-  const isOwner = userAddress?.toLowerCase() === creatorAddress?.toLowerCase();
+  const form = useForm<CampaignUpdateFormValues>({
+    resolver: zodResolver(campaignUpdateFormSchema),
+    defaultValues: {
+      title: '',
+      content: '',
+      media: [],
+    },
+  });
+
+  const isOwner = userAddress === creatorAddress;
 
   if (!isOwner) {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const handleSubmit = form.handleSubmit(async (values) => {
     if (!userAddress) {
       toast({
         variant: 'destructive',
@@ -39,41 +65,75 @@ export function CampaignUpdateForm({
       return;
     }
 
-    startTransition(async () => {
-      try {
-        await onSubmit(new FormData(e.currentTarget), userAddress);
-        formRef.current?.reset();
-        toast({
-          title: 'Success!',
-          description: 'Campaign update posted successfully.',
-        });
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description:
-            error instanceof Error ? error.message : 'Failed to post update',
-        });
+    try {
+      if (!campaignId) {
+        throw new Error('Campaign not specified');
       }
-    });
-  };
+
+      await createCampaignUpdate({
+        campaignId,
+        title: values.title.trim(),
+        content: values.content.trim(),
+        media: values.media || [],
+      });
+
+      form.reset();
+      toast({
+        title: 'Success!',
+        description: 'Campaign update posted successfully.',
+      });
+      onSuccess?.();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to post update',
+      });
+    }
+  });
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Input name="title" placeholder="Update Title" required />
-      </div>
-      <div>
-        <Textarea
-          name="content"
-          placeholder="Share your campaign progress..."
-          required
-          className="min-h-[150px]"
+    <Form {...form}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input
+                  placeholder="Update Title"
+                  disabled={isPending}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <Button type="submit" disabled={isPending} className="w-full">
-        {isPending ? 'Posting...' : 'Post Update'}
-      </Button>
-    </form>
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Textarea
+                  placeholder="Share your campaign progress..."
+                  className="min-h-[150px]"
+                  disabled={isPending}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <UpdateFormMedia />
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? 'Posting...' : 'Post Update'}
+        </Button>
+      </form>
+    </Form>
   );
 }

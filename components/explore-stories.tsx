@@ -1,28 +1,29 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
 import { CampaignList } from '@/components/campaign/list';
 import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
-import { PageHeaderSearch } from '@/components/page/header-search';
-import { PageHome } from '@/components/page/home';
+import { RoundSpotlight } from '@/components/home/round-spotlight';
+import { PageLayout } from '@/components/page/layout';
+import { Web3ContextProvider } from '@/lib/web3/context-provider';
+import { useSearchParams } from 'next/navigation';
 
 export function ExploreStories() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('create')) {
+      setShowCampaignCreate(true);
+    }
+  }, [searchParams]);
   return (
-    <PageHome
-      header={
-        <PageHeaderSearch
-          onCreate={() => setShowCampaignCreate(true)}
-          createTitle="Create Story"
-          placeholder="Search Stories"
-          onSearchChanged={(search: string) => setSearchTerm(search)}
-        />
-      }
+    <PageLayout
+      searchPlaceholder="Search Campaigns"
+      onSearchChanged={(search: string) => setSearchTerm(search)}
     >
       {showCampaignCreate ? (
         <div className="mb-8">
@@ -33,19 +34,23 @@ export function ExploreStories() {
           >
             ← Back to Stories
           </Button>
-          <CampaignCreate />
+          <Web3ContextProvider>
+            <CampaignCreate />
+          </Web3ContextProvider>
         </div>
       ) : (
         <>
           <HomeExplore />
+          <RoundSpotlight />
           <HomeCategorySelect onSelected={setSelectedCategory} />
 
           <CampaignList
             searchTerm={searchTerm}
             categoryFilter={selectedCategory}
+            withRounds={false}
           />
         </>
       )}
-    </PageHome>
+    </PageLayout>
   );
 }

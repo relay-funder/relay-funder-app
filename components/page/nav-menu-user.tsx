@@ -1,21 +1,55 @@
 import Image from 'next/image';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts';
 import { useAuth } from '@/contexts';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { transition } from './sidebar-constants';
+import { useSession } from 'next-auth/react';
+
 function shortenAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
+function shortenEmail(email: string) {
+  return `${email.slice(0, 6)}...${email.slice(-6)}`;
+}
+function shortenName(name: string) {
+  return `${name.slice(0, 6)}...${name.slice(-6)}`;
+}
 export function PageNavMenuUser() {
   const { isOpen } = useSidebar();
+  const session = useSession();
   const { login, logout, authenticated, address } = useAuth();
+  const name = useMemo(() => {
+    if (
+      typeof session?.data?.user?.email === 'string' &&
+      session?.data?.user?.email.length
+    ) {
+      return {
+        short: shortenEmail(session.data.user.email),
+        full: session.data.user.email,
+      };
+    }
+    if (
+      typeof session?.data?.user?.name === 'string' &&
+      session?.data?.user?.name.length
+    ) {
+      return {
+        short: shortenName(session.data.user.name),
+        full: session.data.user.name,
+      };
+    }
+    if (typeof address === 'string') {
+      return { short: shortenAddress(address), full: address };
+    }
+    return { short: 'User', full: 'User' };
+  }, [address, session]);
   return (
-    <nav className="flex-1 space-y-1 px-3">
+    <nav className="flex-1 space-y-1 p-3">
       <div
         className={cn(
-          'flex items-center rounded-lg px-1 py-4 text-gray-800 hover:bg-gray-100 hover:text-gray-900',
+          'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground md:py-6',
           transition,
           isOpen ? 'px-4' : 'px-[9px]',
         )}
@@ -49,21 +83,28 @@ export function PageNavMenuUser() {
           {!authenticated ? (
             <Button
               variant="ghost"
-              className="pl-3 text-sm font-semibold text-black"
+              className="pl-3 text-sm font-semibold text-foreground"
               onClick={login}
             >
               Connect Wallet
             </Button>
           ) : (
             <div className="flex items-center justify-center gap-2 px-2">
-              {address ? shortenAddress(address) : 'User'}
-              <LogOut
-                className="h-5 w-5 cursor-pointer text-gray-400 transition-colors group-hover:text-red-600"
-                onClick={async () => {
-                  await logout();
-                  window.location.href = '/';
-                }}
-              />
+              <span
+                className="overflow-ellipsis whitespace-nowrap"
+                title={name.full}
+              >
+                {name.short}
+              </span>
+              <span title="Logout">
+                <LogOut
+                  className="h-5 w-5 cursor-pointer text-muted-foreground transition-colors group-hover:text-red-600"
+                  onClick={async () => {
+                    await logout();
+                    window.location.href = '/';
+                  }}
+                />
+              </span>
             </div>
           )}
         </span>

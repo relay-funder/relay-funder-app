@@ -1,36 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { getCampaign } from '@/lib/api/campaigns';
+import { db } from '@/server/db';
+import { checkAuth } from '@/lib/api/auth';
+import {
+  ApiParameterError,
+  ApiNotFoundError,
+  ApiIntegrityError,
+} from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { CampaignsWithIdParams, GetCampaignResponse } from '@/lib/api/types';
 
-export async function PATCH(req: NextRequest) {
+export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
-    const campaignId = req.nextUrl.searchParams.get('campaignId');
-    const body = await req.json();
-    const { status, transactionHash, campaignAddress } = body;
-
-    if (!campaignId) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Campaign ID is required' }),
-        { status: 400 },
-      );
+    const { campaignId: campaignIdOrSlug } = await params;
+    const instance = await getCampaign(campaignIdOrSlug);
+    if (!instance) {
+      throw new ApiNotFoundError('Campaign not found');
     }
 
-    const campaign = await prisma.campaign.update({
-      where: {
-        id: parseInt(campaignId),
-      },
-      data: {
-        status,
-        transactionHash,
-        campaignAddress,
-      },
+    return response({
+      campaign: instance,
+    } as GetCampaignResponse);
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
+  try {
+    const session = await checkAuth(['user']);
+    const campaignId = parseInt((await params).campaignId);
+    if (!campaignId) {
+      throw new ApiParameterError('campaignId is required');
+    }
+    const campaign = await db.campaign.findUnique({
+      where: { id: campaignId },
     });
 
-    return new NextResponse(JSON.stringify(campaign), { status: 200 });
-  } catch (error) {
-    console.error('Failed to update campaign:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Failed to update campaign' }),
-      { status: 500 },
-    );
+    if (!campaign) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
+    if (campaign.status === 'ACTIVE') {
+      throw new ApiIntegrityError('cannot delete a active campaign');
+    }
+    if (campaign.creatorAddress !== session.user.address) {
+      await checkAuth(['admin']);
+    }
+
+    await db.campaign.delete({ where: { id: campaignId } });
+    return response({
+      ok: true,
+    });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

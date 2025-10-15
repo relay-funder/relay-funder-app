@@ -1,19 +1,23 @@
 'use client';
-
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTransition } from 'react';
 import { useRef } from 'react';
+import { useCreateComment } from '@/lib/hooks/useComments';
+import { DbCampaign } from '@/types/campaign';
+import { useRefetchCampaign } from '@/lib/hooks/useCampaigns';
 
 interface CommentFormProps {
-  onSubmit: (formData: FormData, userAddress: string) => Promise<void>;
+  campaign: DbCampaign;
 }
 
-export function CommentForm({ onSubmit }: CommentFormProps) {
+export function CommentForm({ campaign }: CommentFormProps) {
   const [isPending, startTransition] = useTransition();
   const { address } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
+  const { mutateAsync: createComment } = useCreateComment();
+  const refetchCampaign = useRefetchCampaign(campaign.id);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,7 +36,11 @@ export function CommentForm({ onSubmit }: CommentFormProps) {
 
     startTransition(async () => {
       try {
-        await onSubmit(formData, walletAddress);
+        await createComment({
+          campaignId: campaign.id,
+          content: formData.get('content')?.toString() ?? '',
+        });
+        refetchCampaign();
         // Clear the form using ref
         formRef.current?.reset();
       } catch (error) {
@@ -45,13 +53,26 @@ export function CommentForm({ onSubmit }: CommentFormProps) {
       }
     });
   };
-
+  if (campaign.creatorAddress === address) {
+    return (
+      <div className="space-y-4 p-4">
+        <h2 className="font-display text-2xl font-bold text-foreground">
+          Your Campaign Comments
+        </h2>
+        <p className="text-muted-foreground">
+          {campaign._count?.comments}{' '}
+          {campaign._count?.comments === 1 ? 'Comment' : 'Comments'} entered by
+          users for your Campaign.
+        </p>
+      </div>
+    );
+  }
   return (
     <form ref={formRef} onSubmit={handleSubmit}>
-      <div className="rounded-lg bg-white p-4 shadow">
+      <div className="rounded-lg bg-card p-4 shadow">
         <textarea
           name="content"
-          className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full rounded-md border border-border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="Write a comment..."
           rows={4}
           required

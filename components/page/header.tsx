@@ -9,7 +9,7 @@ export function PageHeader({
   tags,
   children,
 }: {
-  title: string;
+  title?: string;
   message?: string;
   featured?: boolean;
   tags?: string[];
@@ -24,11 +24,13 @@ export function PageHeader({
         </div>,
       );
     }
-    items.push(
-      <h1 key="title" className="text-lg font-semibold sm:text-4xl">
-        {title}
-      </h1>,
-    );
+    if (typeof title === 'string') {
+      items.push(
+        <h1 key="title" className="text-xl font-semibold sm:text-4xl">
+          {title}
+        </h1>,
+      );
+    }
     return items;
   }, [message, title]);
   const navLine = useMemo(() => {
@@ -57,22 +59,25 @@ export function PageHeader({
     return items;
   }, [featured, tags, headLine]);
   return (
-    <header className="mx-auto inline items-center justify-between p-8">
-      {/* campaigns[slug] ^px-4 py-8 */}
-      {/* campaigns[slug] <div className="space-y-4 pb-2> */}
-      <div className="flex min-h-[100px] flex-wrap items-center gap-4 md:min-h-0">
-        {/* campaigns[slug] <div className="flex items-center gap-2 py-1"> */}
-        <div className="mb-8 flex flex-row items-center gap-2 py-1 md:mb-2 md:ml-4">
-          <BackButton />
-          {navLine}
+    <header className="mt-1 inline items-center justify-between sm:mt-4 sm:p-8">
+      {/* Mobile: constrained container, Desktop: original layout */}
+      <div className="mx-auto max-w-5xl px-4 py-2 sm:mx-0 sm:max-w-none sm:px-0 sm:py-0">
+        {/* campaigns[slug] ^px-4 py-8 */}
+        {/* campaigns[slug] <div className="space-y-4 pb-2> */}
+        <div className="flex min-h-[32px] flex-wrap items-center gap-2 sm:min-h-[75px] sm:gap-4 md:min-h-0">
+          {/* campaigns[slug] <div className="flex items-center gap-2 py-1"> */}
+          <div className="mb-1 flex flex-row items-center gap-2 py-1 sm:mb-8 md:mb-2 md:ml-4">
+            <BackButton />
+            {navLine}
+          </div>
         </div>
-      </div>
-      <div>
-        <div className="ml-2 flex flex-col md:ml-4 md:content-start">
-          {navLine[0] !== headLine && headLine}
-          {children ? (
-            <div className="flex items-center py-2">{children}</div>
-          ) : null}
+        <div>
+          <div className="ml-2 flex flex-col md:ml-4 md:content-start">
+            {navLine[0] !== headLine && headLine}
+            {children ? (
+              <div className="flex items-center py-1 sm:py-2">{children}</div>
+            ) : null}
+          </div>
         </div>
       </div>
     </header>

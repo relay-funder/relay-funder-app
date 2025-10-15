@@ -1,81 +1,195 @@
-import { ethers } from 'ethers';
-import { erc20Abi } from 'viem';
-import { USDC_ADDRESS } from '@/lib/constant';
-import { ConnectedWallet } from '@privy-io/react-auth';
-
-const debug = process.env.NODE_ENV !== 'production';
+import { ethers, erc20Abi } from '@/lib/web3';
+import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
+import { DonationProcessStates } from '@/types/campaign';
+import { debugWeb3 as debug } from '@/lib/debug';
+import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
+import type { Chain, Client, Transport } from 'viem';
 
 export async function requestTransaction({
-  wallet,
+  client,
   address,
   amount,
+  tipAmount = '0',
+  onStateChanged,
 }: {
-  wallet: ConnectedWallet;
+  client: Client<Transport, Chain>;
   address: string;
   amount: string;
+  tipAmount?: string;
+  onStateChanged: (arg0: keyof typeof DonationProcessStates) => void;
 }) {
-  const privyProvider = await wallet.getEthereumProvider();
-  const walletProvider = new ethers.providers.Web3Provider(privyProvider);
-  const signer = walletProvider.getSigner();
-  const userAddress = await signer.getAddress();
-  if (!wallet || !wallet.isConnected()) {
+  if (!client) {
     throw new Error('Wallet not connected');
   }
-  if (!USDC_ADDRESS || !ethers.utils.isAddress(USDC_ADDRESS as string)) {
-    throw new Error('USDC_ADDRESS is missing or invalid');
+
+  const ethersProvider = new ethers.BrowserProvider(client);
+  const signer = await ethersProvider.getSigner();
+  const userAddress = signer.address;
+  if (!USD_ADDRESS || !ethers.isAddress(USD_ADDRESS as string)) {
+    throw new Error('USD_ADDRESS is missing or invalid');
   }
-  if (!userAddress || !ethers.utils.isAddress(userAddress)) {
+  if (!userAddress || !ethers.isAddress(userAddress)) {
     throw new Error('User address is missing or invalid');
   }
   if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
     throw new Error('Donation amount is missing or invalid');
   }
-  if (!address || !ethers.utils.isAddress(address)) {
+  if (!address || !ethers.isAddress(address)) {
     throw new Error('Treasury address is missing or invalid');
   }
   // Initialize contracts
-  debug && console.log('Initializing USDC contract...');
-  const usdcContract = new ethers.Contract(
-    USDC_ADDRESS as string,
+  debug && console.log('Initializing USDX contract...');
+  const usdContract = new ethers.Contract(
+    USD_ADDRESS as string,
     erc20Abi,
     signer,
   );
-  const amountInUSDC = ethers.utils.parseUnits(
-    amount || '0',
-    process.env.NEXT_PUBLIC_PLEDGE_TOKEN_DECIMALS,
-  );
-  debug && console.log('Amount in USDC:', amountInUSDC.toString());
 
-  // First approve the treasury to spend USDC
+  const pledgeAmountInUSD = ethers.parseUnits(amount || '0', USD_DECIMALS);
+  const tipAmountInUSD = ethers.parseUnits(tipAmount || '0', USD_DECIMALS);
+  const totalAmount = pledgeAmountInUSD + tipAmountInUSD;
+
+  debug && console.log('Pledge amount in USD:', pledgeAmountInUSD.toString());
+  debug && console.log('Tip amount in USD:', tipAmountInUSD.toString());
+  debug && console.log('Total amount in USD:', totalAmount.toString());
+
+  // Generate pledge ID as per shell script pattern (must be done first)
+  const pledgeId = ethers.keccak256(
+    ethers.toUtf8Bytes(`pledge-${Date.now()}-${userAddress}`),
+  );
+  debug && console.log('Generated pledge ID:', pledgeId);
+
+  // Register pledge ID with treasury via backend API (privileged operation)
+  // The backend uses platform admin credentials to call setPaymentGatewayFee
+  // This is required by KeepWhatsRaised BEFORE the backer's pledge transaction
+  debug && console.log('Registering pledge ID with treasury via backend...');
+  onStateChanged('registerPledge');
+
+  let registerData;
+  try {
+    const registerResponse = await fetch('/api/pledges/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        treasuryAddress: address,
+        pledgeId: pledgeId,
+        gatewayFee: 0, // No gateway fee for direct wallet pledges
+      }),
+    });
+
+    if (!registerResponse.ok) {
+      let errorMessage = 'Failed to register pledge with backend';
+      let errorDetails = '';
+
+      try {
+        const errorData = await registerResponse.json();
+        errorMessage = errorData.error || errorMessage;
+        errorDetails = errorData.details || '';
+      } catch {
+        // JSON parse failed, use default message
+      }
+
+      // Log detailed error for debugging
+      console.error('Pledge registration failed:', {
+        status: registerResponse.status,
+        statusText: registerResponse.statusText,
+        error: errorMessage,
+        details: errorDetails,
+      });
+
+      // Throw error with user-friendly message
+      const fullError = errorDetails
+        ? `${errorMessage}\nDetails: ${errorDetails}`
+        : errorMessage;
+      throw new Error(fullError);
+    }
+
+    registerData = await registerResponse.json();
+
+    if (!registerData.success) {
+      throw new Error('Pledge registration did not return success status');
+    }
+
+    debug &&
+      console.log('Pledge ID registered successfully:', {
+        pledgeId: registerData.pledgeId,
+        transactionHash: registerData.transactionHash,
+        blockNumber: registerData.blockNumber,
+      });
+  } catch (registerError) {
+    // Log the full error for debugging
+    console.error('❌ Pledge registration failed:', registerError);
+
+    // Extract user-friendly error message
+    let userMessage =
+      'Failed to register pledge with treasury. Please try again.';
+    if (registerError instanceof Error) {
+      // Check for specific error types
+      if (registerError.message.includes('pending')) {
+        userMessage =
+          'A transaction is already pending. Please wait a moment and try again.';
+      } else if (registerError.message.includes('timeout')) {
+        userMessage =
+          'Registration timeout. Please check your connection and try again.';
+      } else if (registerError.message.includes('nonce')) {
+        userMessage =
+          'Transaction conflict detected. Please wait a moment and try again.';
+      } else {
+        userMessage = registerError.message;
+      }
+    }
+
+    // Re-throw with clear message - this will stop the donation flow
+    throw new Error(`Pledge Registration Failed: ${userMessage}`);
+  }
+
+  // Initialize treasury contract for pledge transaction
+  const treasuryContract = new ethers.Contract(
+    address!,
+    KeepWhatsRaisedABI,
+    signer,
+  );
+
+  // First approve the treasury to spend USD (pledge + tip)
   debug && console.log('Treasury address:', address);
-  debug && console.log('Approving USDC spend...');
-  const approveTx = await usdcContract.approve(address, amountInUSDC);
+  debug && console.log('Approving USDX spend...');
+  onStateChanged('approveUsdtContract');
+  const approveTx = await usdContract.approve(address, totalAmount);
   debug && console.log('Approval transaction hash:', approveTx.hash);
+  onStateChanged('waitForUsdtContractConfirmation');
   await approveTx.wait();
-  debug && console.log('USDC approval confirmed');
+  debug && console.log('USDX approval confirmed');
 
   // Make the pledge transaction
-  debug && console.log('Initializing treasury contract...');
-  const treasuryABI = [
-    'function pledgeWithoutAReward(address backer, uint256 pledgeAmount) external returns (bool)',
-  ];
-  const treasuryContract = new ethers.Contract(address!, treasuryABI, signer);
-
   debug && console.log('Estimating gas for pledge transaction...');
-  const estimatedGas = await treasuryContract.estimateGas.pledgeWithoutAReward(
-    userAddress,
-    amountInUSDC,
-  );
+  let estimatedGas = 220000n;
+  try {
+    estimatedGas = await treasuryContract.pledgeWithoutAReward.estimateGas(
+      pledgeId,
+      userAddress,
+      pledgeAmountInUSD,
+      tipAmountInUSD,
+    );
+  } catch (gasEstimateError) {
+    debug &&
+      console.warn('Gas estimation failed, using default:', estimatedGas);
+  }
   debug && console.log('Estimated gas:', estimatedGas.toString());
 
   debug && console.log('Sending pledge transaction...');
+  onStateChanged('pledgeContract');
   const tx = await treasuryContract.pledgeWithoutAReward(
+    pledgeId,
     userAddress,
-    amountInUSDC,
+    pledgeAmountInUSD,
+    tipAmountInUSD,
     {
-      gasLimit: estimatedGas.mul(120).div(100),
+      gasLimit: (estimatedGas * 120n) / 100n, // 20% buffer for gas
     },
   );
   debug && console.log('Pledge transaction hash:', tx.hash);
+  onStateChanged('waitForPledgeContractConfirmation');
   return tx;
 }

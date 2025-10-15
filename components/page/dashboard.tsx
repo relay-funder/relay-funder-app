@@ -1,18 +1,28 @@
 import { type ReactNode } from 'react';
-export function PageDashboard({ children }: { children: ReactNode }) {
+import { ContentArea, FullWidthContainer } from '@/components/layout';
+
+export function PageDashboard({
+  children,
+  title = 'Dashboard',
+  actions,
+}: {
+  children: ReactNode;
+  title?: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
     <>
-      <header className="mx-auto inline items-center justify-between p-8">
-        <div>
-          <div className="ml-2 flex flex-col md:ml-4 md:content-start">
-            <div className="mb-8 pl-2 pt-2 text-3xl font-bold md:pt-5">
-              Dashboard
-            </div>
-          </div>
-        </div>
-      </header>
-      <div className="flex min-h-screen w-full flex-col bg-gray-50">
-        <div className="container mx-auto max-w-7xl p-5">{children}</div>
+      <div className="w-full border-b border-border bg-card">
+        <FullWidthContainer variant="default" padding="sm">
+          <ContentArea title={title} actions={actions} spacing="tight">
+            <div></div>
+          </ContentArea>
+        </FullWidthContainer>
+      </div>
+      <div className="flex min-h-[calc(100svh-200px)] w-full flex-col bg-background">
+        <FullWidthContainer variant="default" padding="sm">
+          {children}
+        </FullWidthContainer>
       </div>
     </>
   );

@@ -1,4 +1,6 @@
 import { type ReactNode } from 'react';
+import { FullWidthContainer } from '@/components/layout';
+
 export function PageHome({
   header,
   children,
@@ -6,13 +8,14 @@ export function PageHome({
   header: ReactNode;
   children: ReactNode;
 }) {
-  // flex flex-col items-center justify-center
   return (
     <>
       {header}
-      <div className="flex min-h-screen w-full flex-col bg-gray-50">
-        <main className="container mx-auto max-w-7xl px-2 py-8 md:px-4">
-          {children}
+      <div className="flex min-h-screen w-full flex-col bg-background">
+        <main className="w-full">
+          <FullWidthContainer variant="default" padding="sm">
+            {children}
+          </FullWidthContainer>
         </main>
       </div>
     </>

@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { CampaignImage } from '@/types/campaign';
+import { db } from '@/server/db';
+import { response, handleError } from '@/lib/api/response';
 
 // Get featured collections
 export async function GET() {
   try {
     // For now, we'll just return the most recent collections with items
     // In a real implementation, you might have a "featured" flag or curated list
-    const collections = await prisma.collection.findMany({
+    const collections = await db.collection.findMany({
       take: 6,
       where: {
         campaigns: {
@@ -20,7 +19,7 @@ export async function GET() {
           include: {
             campaign: {
               include: {
-                images: true,
+                media: { where: { state: 'UPLOADED' } },
               },
             },
           },
@@ -49,21 +48,27 @@ export async function GET() {
               title: campaign.title,
               description: campaign.description,
               slug: campaign.slug,
-              image:
-                campaign.images.find((img: CampaignImage) => img.isMainImage)
-                  ?.imageUrl || '/images/placeholder.svg',
+              media: campaign.media.length
+                ? campaign.media
+                : [
+                    {
+                      id: 'placeholder',
+                      url: '/images/placeholder',
+                      mimeType: 'image/svg',
+                    },
+                  ],
+              mediaOrder:
+                campaign.media.length && campaign.mediaOrder
+                  ? campaign.mediaOrder
+                  : ['placeholder'],
             },
           };
         }),
       };
     });
 
-    return NextResponse.json({ collections: collectionsWithDetails });
-  } catch (error) {
-    console.error('Error fetching featured collections:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch featured collections' },
-      { status: 500 },
-    );
+    return response({ collections: collectionsWithDetails });
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

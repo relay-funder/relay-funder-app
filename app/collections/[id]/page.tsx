@@ -8,16 +8,14 @@ import { CollectionDetailNoAuth } from '@/components/collection/detail-noauth';
 import { CollectionDetailNotFound } from '@/components/collection/detail-not-found';
 import { CollectionDetailActions } from '@/components/collection/detail-actions';
 import { CollectionItemList } from '@/components/collection/item-list';
+import { FullWidthContainer, ContentArea } from '@/components/layout';
 
 export default function CollectionDetailsPage() {
   const params = useParams();
   const { id } = params as { id: string };
-  const { address, authenticated } = useAuth();
+  const { authenticated } = useAuth();
 
-  const { data: collection, isPending: loading } = useCollectionQuery(
-    id,
-    address,
-  );
+  const { data: collection, isPending: loading } = useCollectionQuery(id);
 
   if (loading) {
     return <CollectionDetailLoading />;
@@ -32,12 +30,18 @@ export default function CollectionDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <CollectionDetailActions collection={collection} />
-      {collection.description && (
-        <p className="mb-8 max-w-3xl text-gray-600">{collection.description}</p>
-      )}
-      <CollectionItemList collection={collection} />
+    <div className="flex min-h-screen w-full flex-col bg-gray-50">
+      <main className="w-full">
+        <FullWidthContainer variant="edge-to-edge" padding="sm">
+          <ContentArea
+            actions={<CollectionDetailActions collection={collection} />}
+            subtitle={collection.description}
+            spacing="normal"
+          >
+            <CollectionItemList collection={collection} />
+          </ContentArea>
+        </FullWidthContainer>
+      </main>
     </div>
   );
 }

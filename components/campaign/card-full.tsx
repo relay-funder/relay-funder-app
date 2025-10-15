@@ -1,56 +1,51 @@
-import { useMemo } from 'react';
-import { CampaignDisplay } from '@/types/campaign';
+'use client';
+
+import type { DbCampaign } from '@/types/campaign';
 import Link from 'next/link';
 
-import { Card, CardContent, Progress, Button } from '@/components/ui';
-import { Users, Clock, MapPin, Target, Mail } from 'lucide-react';
+import { Card, CardContent, Button } from '@/components/ui';
+import { Users, Clock, MapPin, Target, Rocket } from 'lucide-react';
 
-import { CampaignShareDialog } from '@/components/campaign/share-dialog';
+import { ShareDialog } from '@/components/share-dialog';
 import { FavoriteButton } from '@/components/favorite-button';
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
+import { CampaignProgress } from './progress';
+import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { TreasuryBalanceCompact } from './treasury-balance';
+import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 
-export function CampaignCardFull({ campaign }: { campaign: CampaignDisplay }) {
-  const raisedAmount = useMemo(() => {
-    return (
-      campaign.payments?.reduce((sum: number, payment) => {
-        const amount = Number(payment.amount) || 0;
-        return sum + amount;
-      }, 0) ?? 0
-    );
-  }, [campaign.payments]);
-  const goalAmount = useMemo(
-    () => Number(campaign.fundingGoal) || 0,
-    [campaign.fundingGoal],
-  );
-  const progress = useMemo(() => {
-    if (goalAmount === 0) {
-      return 0;
-    }
-    return Math.min((raisedAmount / goalAmount) * 100, 100);
-  }, [raisedAmount, goalAmount]);
-  const paymentCount = useMemo(() => {
-    return campaign.payments?.length || 0;
-  }, [campaign.payments]);
+export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
+  const { contributorCount, contributorPendingCount } =
+    useCampaignStatsFromInstance({
+      campaign,
+    });
+  const {
+    hasRounds,
+    listingSummary: roundsListingSummary,
+    title: roundsTitle,
+  } = useCampaignRounds({ campaign });
+
   return (
     <Card className="sticky top-8">
       <CardContent className="space-y-6 p-6">
-        <div className="space-y-2">
-          <div className="text-4xl font-bold text-green-600">
-            ${raisedAmount.toLocaleString()}
-          </div>
-          <Progress value={progress} className="h-3 rounded-full" />
-          <p className="text-gray-600">
-            pledged of ${goalAmount.toLocaleString()} goal
-          </p>
-        </div>
+        <CampaignProgress campaign={campaign} />
+
+        {campaign.treasuryAddress && (
+          <TreasuryBalanceCompact treasuryAddress={campaign.treasuryAddress} />
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-gray-500" />
-              <span className="text-2xl font-bold">{paymentCount}</span>
+              <span
+                className="text-2xl font-bold"
+                title={`Pending Contributors: ${contributorPendingCount}`}
+              >
+                {contributorCount}
+              </span>
             </div>
-            <p className="text-sm text-gray-600">backers</p>
+            <p className="text-sm text-gray-600">contributors</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -62,22 +57,19 @@ export function CampaignCardFull({ campaign }: { campaign: CampaignDisplay }) {
             <p className="text-sm text-gray-600">days left</p>
           </div>
         </div>
-
-        <Link href={`/campaigns/${campaign.slug}/donation`}>
-          <Button className="mt-4 h-12 w-full text-lg" size="lg">
-            Back this project
-          </Button>
-        </Link>
+        <div className="mt-4 space-y-3">
+          <Link href={`/campaigns/${campaign.slug}/donation`}>
+            <Button className="h-12 w-full text-lg" size="lg">
+              <span className="flex items-center gap-2">
+                Support this campaign
+              </span>
+            </Button>
+          </Link>
+        </div>
 
         <div className="flex justify-center gap-2">
           <FavoriteButton campaignId={campaign.id} />
-          <CampaignShareDialog
-            campaignTitle={campaign.title}
-            campaignSlug={campaign.slug}
-          />
-          <Button variant="outline" size="icon" className="rounded-full">
-            <Mail className="h-4 w-4" />
-          </Button>
+          <ShareDialog campaign={campaign} />
         </div>
 
         <div className="space-y-4 border-t pt-4">
@@ -88,10 +80,22 @@ export function CampaignCardFull({ campaign }: { campaign: CampaignDisplay }) {
           <div className="flex items-center gap-3 text-gray-600">
             <Target className="h-5 w-5" />
             <span>
-              Project will be funded on{' '}
+              Campaign will be funded on{' '}
               {new Date(campaign.endTime).toLocaleDateString()}
             </span>
           </div>
+          {hasRounds && (
+            <>
+              <div
+                className="flex items-center gap-3 text-gray-600"
+                title={roundsTitle}
+              >
+                <Rocket className="h-5 w-5" />
+
+                {roundsListingSummary}
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

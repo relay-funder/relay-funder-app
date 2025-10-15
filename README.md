@@ -1,12 +1,12 @@
 <div align="center">
-  <img src="public/akashic-logo.png" alt="Akashic Logo" />
+  <img src="public/relay-funder-logo.png" alt="RelayFunder Logo" />
 </div>
 
-# 🌍 Akashic
+# 🌍 Relay Funder
 
-**Akashic** is an open-source platform that helps displaced communities preserve their cultural heritage and fund creative work using Web3 technologies. Refugee creators can upload stories, art, and multimedia—then launch funding campaigns powered by NFTs and smart contracts.
+**Relay Funder** is an open-source platform that helps displaced communities preserve their cultural heritage and fund creative work using Web3 technologies. Refugee creators can upload stories, art, and multimedia—then launch funding campaigns powered by NFTs and smart contracts.
 
-By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-driven funding protocols, Akashic ensures these cultural narratives are owned by the people who create them—and remain accessible across borders and generations.
+By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-driven funding protocols, Relay Funder ensures these cultural narratives are owned by the people who create them—and remain accessible across borders and generations.
 
 > Refugees are not just survivors—they are custodians of culture.
 
@@ -21,7 +21,7 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 
    ```bash
    git clone <repository-url>
-   cd akashic
+   cd relay-funder-app
    pnpm install
    ```
 
@@ -33,7 +33,22 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 
    Edit `.env.local` and populate the required variables. Refer to `env.template` for all available options and their descriptions.
 
-3. **Start Development Environment:**
+### Pinata Setup (IPFS File Storage)
+
+To use Pinata for decentralized file storage:
+
+1. **Create Account**: Sign up at [Pinata Cloud](https://app.pinata.cloud/)
+2. **Get API Key**: Generate a JWT token in the API Keys section with `pinFileToIPFS` and `pinList` permissions
+3. **Create Gateway**: Set up a gateway in your Pinata dashboard
+4. **Configure Environment**: Set these variables in your `.env.local`:
+
+   ```bash
+   FILE_STORAGE_PROVIDER="PINATA"
+   PINATA_API_JWT_ACCESS_TOKEN="your_jwt_token"
+   NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
+   ```
+
+5. **Start Development Environment:**
 
    ```bash
    docker compose up
@@ -44,14 +59,14 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
    - PostgreSQL database
    - Next.js development server (accessible at [http://localhost:3000](http://localhost:3000))
 
-4. **Initialize Database (in a new terminal):**
+6. **Initialize Database (in a new terminal):**
 
    ```bash
    docker compose exec app pnpm prisma migrate dev
    docker compose exec app pnpm prisma db seed
    ```
 
-5. **Setup Development Wallet**
+7. **Setup Development Wallet**
 
 Create a browser profile and install a Wallet like metamask
 
@@ -60,7 +75,7 @@ copy your account-address into the form and claim CELO
 
 ## Enhanced Development Setup
 
-In order to efficently and securely develop akashic, there is a app-shell
+In order to efficently and securely develop relay-funder-app, there is a app-shell
 available that uses the same environment as the next-application. While it is
 possible to do things pnpm install in the host and execute some scripts (eg pnpm
 prisma db migrate) directly from the host (`docker compose exec app COMMAND`) it
@@ -97,8 +112,13 @@ echo "DEV_APP_PORT=1234" >> .env
 
 ### Development Container
 
-In order to run commands, use the shell service: `docker compose run --rm
-app-shell /bin/bash` This will start the required services (database,app) and
+In order to run commands, use the shell service:
+
+```bash
+docker compose run --rm app-shell /bin/bash
+```
+
+This will start the required services (database,app) and
 drop you in a shell that has the correct node version, pnpm et al installed. Its
 a alpine-based minimal container with some development tools. You are root in
 that container, you may install more software (`apk add`) which is gone once you
@@ -113,11 +133,33 @@ prefixed with `aka-app` so you immediately see that you are not in your host.
 
 Sometimes it is required to inquire the postgres database directly. If you
 prefer a desktop-tool, just expose the port of the database-container to your
-host, but ideally all you need is a browser. To start the pgadmin database tool,
+host, but ideally all you need is a browser.
+
+#### Prisma Studio (Database Browser)
+
+Prisma Studio provides a visual interface to browse and edit your database data:
+
+**Option 1: Direct Docker Exec**
+
+```bash
+docker compose exec app pnpm prisma studio --port 5555
+```
+
+**Option 2: Via App Shell**
+
+```bash
+docker compose run --rm app-shell pnpm prisma studio --port 5555
+```
+
+After starting Prisma Studio, navigate to [http://localhost:5555](http://localhost:5555) to access the database browser interface.
+
+#### pgAdmin (Alternative Database Tool)
+
+To start the pgadmin database tool,
 run `docker compose --profile develop up -d`. after a few seconds navigate to
 https://localhost:3001 (PGADMIN_PORT) and see a login, the default is
 `admin@local.host` with the password `admin`. After you are signed in, connect
-to a server host: `database`, username&password `akashic`. Now you can browse
+to a server host: `database`, username&password `relay-funder-app`. Now you can browse
 the table schema, show and modify the data and execute queries.
 
 ## Database Setup Troubleshooting
@@ -166,6 +208,7 @@ Control Prisma database logging verbosity with the `PRISMA_LOG_LEVELS` environme
 **Available levels:** `error` (default), `warn`, `info`, `query`
 
 **Example for development debugging:**
+
 ```bash
 PRISMA_LOG_LEVELS=error,warn,query
 ```
@@ -178,6 +221,7 @@ PRISMA_LOG_LEVELS=error,warn,query
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
 - `pnpm prisma ...` - Run Prisma CLI commands
+- `pnpm prisma studio` - Launch Prisma Studio database browser (port 5555)
 
 ## Docker Commands (Development Only)
 

@@ -1,6 +1,6 @@
 import path from 'path';
 
-export default {
+const viteConfig = {
   plugins: [],
   test: {
     globals: true,
@@ -11,3 +11,5 @@ export default {
     },
   },
 };
+
+export default viteConfig;

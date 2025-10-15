@@ -1,7 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-arm64-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
-  output   = "../.generated/prisma/client"
+  output        = "../.generated/prisma/client"
 }
 
 datasource db {
@@ -9,76 +9,199 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  DISABLED
+  COMPLETED
+  FAILED
+  PAUSED
+  CANCELLED
+}
+
+enum RoundStatus {
+  CREATED
+  OPEN
+  ACTIVE
+  ENDED
+  CLOSED
+}
+
+enum PaymentType {
+  BUY
+  SELL
+}
+
+enum PaymentRefundState {
+  NONE
+  REQUESTED
+  PROCESSED
+  APPROVED
+}
+
+enum RecipientStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Status {
+  NOT_STARTED
+  ACTIVE
+  CLOSED
+}
+
+enum MediaState {
+  CREATED
+  UPLOADED
+  BLOCKED
+}
+
+enum WithdrawState {
+  REQUESTED
+  APPROVED
+  REJECTED
+  EXECUTED
+}
+
 model Campaign {
-  id              Int              @id @default(autoincrement())
+  id              Int                  @id @default(autoincrement())
   title           String
   description     String
   fundingGoal     String
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
-  status          CampaignStatus   @default(DRAFT)
+  status          CampaignStatus       @default(DRAFT)
   transactionHash String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  campaignAddress String?          @unique
-  slug            String           @unique
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  campaignAddress String?              @unique
+  slug            String               @unique
   location        String?
   treasuryAddress String?
   category        String?
+  collections     CampaignCollection[]
   images          CampaignImage[]
   updates         CampaignUpdate[]
   comments        Comment[]
+  favorites       Favorite[]
   payments        Payment[]
   RoundCampaigns  RoundCampaigns[]
-  collections     CampaignCollection[]
-  favorites       Favorite[]
+  featuredStart   DateTime?
+  featuredEnd     DateTime?
+
+  roundContributions RoundContribution[]
+  withdrawals        Withdrawal[]
+  media              Media[]
+  mediaOrder         Json?
 
   @@index([creatorAddress])
   @@index([category])
+  @@index([featuredStart, createdAt])
 }
 
-enum CampaignStatus {
-  DRAFT
-  PENDING_APPROVAL
-  ACTIVE
-  COMPLETED
-  FAILED
-}
-
+// deprecated
 model CampaignImage {
   id          Int      @id @default(autoincrement())
   imageUrl    String
   isMainImage Boolean  @default(false)
   campaignId  Int
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model Media {
+  id          String     @id @default(uuid())
+  createdAt   DateTime   @default(now())
+  createdBy   User?      @relation(name: "MediaCreatedBy", fields: [createdById], references: [id])
+  createdById Int?
+  state       MediaState @default(CREATED)
+  url         String
+  caption     String?
+  mimeType    String
+
+  campaignId Int?
+  campaign   Campaign?       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  updateId   Int?
+  update     CampaignUpdate? @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  roundId    Int?
+  round      Round?          @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([updateId])
+  @@index([roundId])
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  address   String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
-  collections Collection[]
+  id                   Int             @id @default(autoincrement())
+  address              String          @unique // normalized (lowercased) address
+  rawAddress           String // original case sensitive address
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  prevSigninAt         DateTime?
+  lastSigninAt         DateTime?
+  lastSignoutAt        DateTime?
+  roles                String[]
+  featureFlags         String[]
+  crowdsplitCustomerId String?
+  email                String?
+  username             String?         @unique
+  firstName            String?
+  lastName             String?
+  bio                  String?
+  recipientWallet      String?
+  humanityScore        Int             @default(0)
+  collections          Collection[]
+  payments             Payment[]
+  paymentMethods       PaymentMethod[]
+  createdMedia         Media[]         @relation(name: "MediaCreatedBy")
+  eventFeedRead        DateTime?
+
+  withdrawals   Withdrawal[] @relation(name: "WithdrawalCreatedBy")
+  approvals     Withdrawal[] @relation(name: "WithdrawalApprovedBy")
+  eventFeed     EventFeed[]  @relation(name: "FeedReceiver")
+  eventsCreated EventFeed[]  @relation(name: "FeedCreatedBy")
 }
 
 model Payment {
-  id              Int      @id @default(autoincrement())
+  id              Int                @id @default(autoincrement())
   amount          String
   token           String
-  status          String   @default("pending")
+  status          String             @default("pending")
+  type            PaymentType
   transactionHash String?
-  isAnonymous     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isAnonymous     Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
   campaignId      Int
   userId          Int
-  campaign        Campaign @relation(fields: [campaignId], references: [id])
-  user            User     @relation(fields: [userId], references: [id])
+  externalId      String?
+  metadata        Json?
+  provider        String?
+  refundState     PaymentRefundState @default(NONE)
+  campaign        Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  RoundContribution RoundContribution[]
 
   @@index([campaignId])
   @@index([userId])
+  @@index([externalId])
+}
+
+model PaymentMethod {
+  id         Int      @id @default(autoincrement())
+  provider   String
+  externalId String
+  type       String
+  userId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([externalId])
 }
 
 model Comment {
@@ -88,7 +211,7 @@ model Comment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   campaignId  Int
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
   @@index([userAddress])
@@ -102,68 +225,69 @@ model CampaignUpdate {
   updatedAt      DateTime @updatedAt
   campaignId     Int
   creatorAddress String
+  isHidden       Boolean  @default(false)
   campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  media          Media[]
+  mediaOrder     Json?
 
   @@index([campaignId])
 }
 
-enum RecipientStatus {
-  PENDING   // Initial state, DB record created, awaiting transaction
-  APPROVED  // Transaction successful, DB updated
-  REJECTED  // Manually rejected by admin
-  // Add other statuses like FAILED if needed
-}
-
 model Round {
-  id               Int              @id @default(autoincrement())
-  poolId           BigInt?          @unique
-  strategyAddress  String
-  profileId        String
-  managerAddress   String
-  transactionHash  String?          @unique
-  title            String
-  description      String
-  tags             String[]         @default([])
-  matchingPool     Decimal
-  tokenAddress     String
-  tokenDecimals    Int
-  applicationStart DateTime
-  applicationClose DateTime
-  startDate        DateTime
-  endDate          DateTime
-  blockchain       String
-  logoUrl          String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  roundCampaigns   RoundCampaigns[]
+  id                Int              @id @default(autoincrement())
+  title             String
+  description       String
+  descriptionUrl    String?
+  tags              String[]         @default([])
+  matchingPool      Decimal
+  applicationStart  DateTime
+  applicationClose  DateTime
+  startDate         DateTime
+  endDate           DateTime
+  blockchain        String
+  logoUrl           String? // deprecated
+  createdAt         DateTime         @default(now())
+  managerAddress    String
+  fundWalletAddress String?
+  poolId            BigInt?          @unique
+  updatedAt         DateTime         @updatedAt
+  roundCampaigns    RoundCampaigns[]
+  media             Media[]
+  mediaOrder        Json?
+  approvedResult    Json?
+  status            RoundStatus      @default(CREATED)
 }
 
 model RoundCampaigns {
   id                       Int             @id @default(autoincrement())
+  createdAt                DateTime        @default(now())
+  approvedAt               DateTime?
   roundId                  Int
   campaignId               Int
-  status                   RecipientStatus @default(PENDING)
+  reviewedAt               DateTime?
+  onchainRecipientId       String?
   recipientAddress         String?
   submittedByWalletAddress String?
   txHash                   String?
-  onchainRecipientId       String?
-  reviewedAt               DateTime?
-  Campaign                 Campaign        @relation(fields: [campaignId], references: [id])
-  Round                    Round           @relation(fields: [roundId], references: [id])
+  status                   RecipientStatus @default(PENDING)
+  Campaign                 Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  Round                    Round           @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  roundContributions RoundContribution[]
 
   @@unique([roundId, campaignId])
 }
 
 model Collection {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  // this should be called userAddress
   userId      String
-  user        User     @relation(fields: [userId], references: [address])
-
-  campaigns CampaignCollection[]
+  campaigns   CampaignCollection[]
+  user        User                 @relation(fields: [userId], references: [address], onDelete: Cascade)
 
   @@unique([userId, name])
   @@index([userId])
@@ -172,10 +296,9 @@ model Collection {
 model CampaignCollection {
   campaignId   Int
   collectionId String
-  assignedAt   DateTime @default(now())
-
-  campaign   Campaign   @relation(fields: [campaignId], references: [id])
-  collection Collection @relation(fields: [collectionId], references: [id])
+  assignedAt   DateTime   @default(now())
+  campaign     Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
   @@id([campaignId, collectionId])
 }
@@ -190,4 +313,58 @@ model Favorite {
   @@unique([userAddress, campaignId])
   @@index([userAddress])
   @@index([campaignId])
+}
+
+model RoundContribution {
+  id              Int            @id @default(autoincrement())
+  createdAt       DateTime       @default(now())
+  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId      Int
+  roundCampaign   RoundCampaigns @relation(fields: [roundCampaignId], references: [id], onDelete: Cascade)
+  roundCampaignId Int
+  payment         Payment        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId       Int
+  humanityScore   Int
+}
+
+model Withdrawal {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+  createdBy       User     @relation(name: "WithdrawalCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById     Int
+  approvedBy      User?    @relation(name: "WithdrawalApprovedBy", fields: [approvedById], references: [id])
+  approvedById    Int?
+  amount          String
+  token           String
+  notes           String?
+  transactionHash String?
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId Int
+}
+
+model EventFeed {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation(name: "FeedCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById Int
+  receiver    User     @relation(name: "FeedReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId  Int
+  type        String
+  message     String
+  data        Json?
+  eventUuid   String   @default(uuid())
+
+  @@index([receiverId, createdAt])
+  @@index([receiverId, type])
+  @@index([eventUuid])
+}
+
+model RateLimit {
+  identifier  String   @id // Format: "prefix:user" or "prefix:ip" example: "create-campaign:user" or "/api/campaigns:POST:
+  requests    Int      @default(1)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([windowStart])
 }

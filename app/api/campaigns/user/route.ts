@@ -1,216 +1,144 @@
-import { createPublicClient, http } from 'viem';
-import { celoAlfajores } from 'viem/chains';
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { chainConfig } from '@/config/chain';
-import { CampaignStatus } from '@/types/campaign';
+import { db } from '@/server/db';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { response, handleError } from '@/lib/api/response';
+import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+  ApiUpstreamError,
+} from '@/lib/api/error';
+import { PatchUserCampaignResponse } from '@/lib/api/types';
+import { fileToUrl } from '@/lib/storage';
+import { getUser } from '@/lib/api/user';
+import {
+  isValidCategoryId,
+  VALID_CATEGORY_IDS,
+} from '@/lib/constant/categories';
 
-const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY;
-const RPC_URL = chainConfig.rpcUrl;
-
-type DbCampaign = {
-  id: number;
-  description: string;
-  title: string;
-  fundingGoal: string;
-  startTime: Date;
-  endTime: Date;
-  creatorAddress: string;
-  status: string;
-  transactionHash: string | null;
-  campaignAddress: string | null;
-  treasuryAddress: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  images: {
-    id: number;
-    imageUrl: string;
-    isMainImage: boolean;
-    campaignId: number;
-  }[];
-};
-
-export async function GET(request: Request) {
+export async function GET(req: Request) {
   try {
-    if (!FACTORY_ADDRESS || !RPC_URL) {
-      throw new Error('Campaign factory address or RPC URL not configured');
+    const session = await checkAuth(['user']);
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status') || 'active';
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const rounds =
+      (searchParams.get('rounds') || 'false') === 'true' ? true : false;
+    const skip = (page - 1) * pageSize;
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
     }
-
-    const { searchParams } = new URL(request.url);
-    const creatorAddress = searchParams.get('address');
-    console.log('Creator address:', creatorAddress);
-
-    if (!creatorAddress) {
-      return NextResponse.json(
-        { error: 'Wallet address is required' },
-        { status: 400 },
-      );
-    }
-
-    const client = createPublicClient({
-      chain: celoAlfajores,
-      transport: http(RPC_URL),
-    });
-
-    // First, fetch all campaigns from the database
-    const dbCampaigns = await prisma.campaign.findMany({
-      where: {
-        creatorAddress,
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        fundingGoal: true,
-        startTime: true,
-        endTime: true,
-        creatorAddress: true,
-        status: true,
-        transactionHash: true,
-        campaignAddress: true,
-        treasuryAddress: true,
-        createdAt: true,
-        updatedAt: true,
-        images: true,
-      },
-    });
-
-    // Get campaign created events
-    const events = await client.getLogs({
-      address: FACTORY_ADDRESS as `0x${string}`,
-      event: {
-        type: 'event',
-        name: 'CampaignInfoFactoryCampaignCreated',
-        inputs: [
-          { type: 'bytes32', name: 'identifierHash', indexed: true },
-          { type: 'address', name: 'campaignInfoAddress', indexed: true },
-          { type: 'address', name: 'owner' },
-          { type: 'uint256', name: 'launchTime' },
-          { type: 'uint256', name: 'deadline' },
-          { type: 'uint256', name: 'goalAmount' },
-        ],
-      },
-      fromBlock: 0n,
-      toBlock: 'latest',
-    });
-
-    // Combine data from events and database
-    const combinedCampaigns = dbCampaigns.map((dbCampaign: DbCampaign) => {
-      // For campaigns without transaction hash (draft, etc), use database values
-      if (!dbCampaign.transactionHash) {
-        return {
-          ...dbCampaign,
-          address: dbCampaign.campaignAddress || '',
-          owner: dbCampaign.creatorAddress,
-          launchTime: Math.floor(
-            new Date(dbCampaign.startTime).getTime() / 1000,
-          ).toString(),
-          deadline: Math.floor(
-            new Date(dbCampaign.endTime).getTime() / 1000,
-          ).toString(),
-          goalAmount: dbCampaign.fundingGoal,
-          totalRaised: '0',
-        };
-      }
-
-      // For campaigns with transaction hash, try to get blockchain data
-      const event = events.find(
-        (e) =>
-          e.transactionHash?.toLowerCase() ===
-          dbCampaign.transactionHash?.toLowerCase(),
-      );
-
-      if (event && event.args) {
-        return {
-          ...dbCampaign,
-          address: dbCampaign.campaignAddress || '',
-          owner: event.args.owner || dbCampaign.creatorAddress,
-          launchTime: String(
-            event.args.launchTime ||
-              Math.floor(new Date(dbCampaign.startTime).getTime() / 1000),
-          ),
-          deadline: String(
-            event.args.deadline ||
-              Math.floor(new Date(dbCampaign.endTime).getTime() / 1000),
-          ),
-          goalAmount: event.args.goalAmount
-            ? (Number(event.args.goalAmount) / 1e18).toString()
-            : dbCampaign.fundingGoal,
-          totalRaised: '0',
-        };
-      }
-
-      // Fallback to database values if event parsing fails
-      return {
-        ...dbCampaign,
-        address: dbCampaign.campaignAddress || '',
-        owner: dbCampaign.creatorAddress,
-        launchTime: Math.floor(
-          new Date(dbCampaign.startTime).getTime() / 1000,
-        ).toString(),
-        deadline: Math.floor(
-          new Date(dbCampaign.endTime).getTime() / 1000,
-        ).toString(),
-        goalAmount: dbCampaign.fundingGoal,
-        totalRaised: '0',
-      };
-    });
-
-    return NextResponse.json({ campaigns: combinedCampaigns });
-  } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 },
+    // status active should be enforced if access-token is not admin
+    const admin = await isAdmin();
+    return response(
+      await listCampaigns({
+        creatorAddress: session.user.address,
+        admin,
+        status,
+        page,
+        pageSize,
+        rounds,
+        skip,
+      }),
     );
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(req: Request) {
   try {
-    const body = await request.json();
-    const { campaignId, status, transactionHash, campaignAddress } = body;
+    const session = await checkAuth(['user']);
+    const asAdmin = await isAdmin();
+    const formData = await req.formData();
+
+    // Extract form fields
+    const campaignId = formData.get('campaignId') as string;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+
+    const location = formData.get('location') as string;
+    const category = formData.get('category') as string;
+    const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
-      return NextResponse.json(
-        { error: 'Campaign ID is required' },
-        { status: 400 },
+      throw new ApiParameterError('campaignId is required');
+    }
+    if (!title || !description) {
+      throw new ApiParameterError('missing required fields');
+    }
+
+    // Validate category if provided
+    if (category && !isValidCategoryId(category)) {
+      throw new ApiParameterError(
+        `Invalid category "${category}". Only allowed: ${VALID_CATEGORY_IDS.join(', ')}`,
       );
     }
-
-    type UpdateData = {
-      status?: CampaignStatus;
-      transactionHash?: string;
-      campaignAddress?: string;
-    };
-
-    const updateData: UpdateData = {};
-    if (status) {
-      const statusMap: Record<string, CampaignStatus> = {
-        draft: CampaignStatus.DRAFT,
-        pending_approval: CampaignStatus.PENDING_APPROVAL,
-        active: CampaignStatus.ACTIVE,
-        completed: CampaignStatus.COMPLETED,
-        failed: CampaignStatus.FAILED,
-      };
-      updateData.status = statusMap[status] || CampaignStatus.DRAFT;
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
     }
-    if (transactionHash) updateData.transactionHash = transactionHash;
-    if (campaignAddress) updateData.campaignAddress = campaignAddress;
-
-    const campaign = await prisma.campaign.update({
+    const instance = await db.campaign.findUnique({
       where: {
-        id: Number(campaignId),
+        id: parseInt(campaignId),
       },
-      data: updateData,
     });
+    if (!instance) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
+    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
+      throw new ApiAuthNotAllowed('User cannot modify this campaign');
+    }
 
-    return NextResponse.json(campaign);
-  } catch (error) {
-    console.error('Failed to update campaign:', error);
-    return NextResponse.json(
-      { error: 'Failed to update campaign' },
-      { status: 500 },
-    );
+    let imageUrl = null;
+    let mimeType = 'application/octet-stream';
+
+    if (bannerImage) {
+      try {
+        imageUrl = await fileToUrl(bannerImage);
+        mimeType = bannerImage.type;
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
+      }
+    }
+    await db.campaign.update({
+      where: {
+        id: instance.id,
+      },
+      data: {
+        title,
+        description,
+        location,
+        category,
+      },
+    });
+    if (imageUrl) {
+      const campaignMedia = await db.media.findMany({
+        where: { campaignId: instance.id },
+      });
+      const media = await db.media.create({
+        data: {
+          url: imageUrl,
+          mimeType,
+          state: 'UPLOADED',
+          campaign: { connect: { id: instance.id } },
+          createdBy: { connect: { id: user.id } },
+        },
+      });
+      await db.campaign.update({
+        where: { id: instance.id },
+        data: {
+          mediaOrder: [media.id, ...campaignMedia.map(({ id }) => id)],
+        },
+      });
+    }
+
+    return response({
+      campaign: await getCampaign(instance.id),
+    } as PatchUserCampaignResponse);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

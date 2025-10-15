@@ -1,126 +1,224 @@
-import { prisma } from '@/lib/prisma';
-import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/server/db';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+  ApiUpstreamError,
+} from '@/lib/api/error';
+import { response, handleError } from '@/lib/api/response';
+import { listRounds } from '@/lib/api/rounds';
+import { fileToUrl } from '@/lib/storage';
+import { PatchRoundResponse, PostRoundsResponse } from '@/lib/api/types';
+import { getUser } from '@/lib/api/user';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const rounds = await prisma.round.findMany(); // Fetch all rounds from the database
-    return NextResponse.json(rounds, {
-      status: 200,
-    }); // Return the rounds as JSON
-  } catch (error) {
-    console.error('Error fetching rounds: ', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch rounds' },
-      { status: 500 },
-    ); // Handle errors
-  } finally {
-    await prisma.$disconnect(); // Disconnect Prisma Client
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const skip = (page - 1) * pageSize;
+    const forceUserView = searchParams.get('forceUserView') === 'true';
+    if (pageSize > 10) {
+      throw new ApiParameterError('Maximum Page size exceeded');
+    }
+
+    // Check if user is admin to determine campaign filtering
+    // If forceUserView is true, always use user-only mode regardless of admin status
+    const admin = forceUserView ? false : await isAdmin();
+
+    // Get current user's address for including their own campaigns
+    let userAddress: string | null = null;
+    try {
+      const session = await checkAuth(['user']);
+      userAddress = session.user.address;
+    } catch {
+      // User not authenticated, continue without user address
+    }
+
+    return response(
+      await listRounds({ page, pageSize, skip, admin, userAddress }),
+    );
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
-// New POST handler
-export async function POST(req: NextRequest) {
-  let body;
+export async function POST(req: Request) {
   try {
-    body = await req.json(); // Parse the JSON body
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); // Handle invalid JSON
-  }
+    const session = await checkAuth(['admin']);
+    const creatorAddress = session.user.address;
+    const formData = await req.formData();
+    // Extract form fields
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const matchingPool = parseInt(formData.get('matchingPool') as string);
+    const startTime = formData.get('startTime') as string;
+    const endTime = formData.get('endTime') as string;
+    const applicationStartTime = formData.get('applicationStartTime') as string;
+    const applicationEndTime = formData.get('applicationEndTime') as string;
+    const tags =
+      (formData.get('tags') as string)
+        ?.split(',')
+        .map((tag) => decodeURIComponent(tag)) ?? [];
+    const status = formData.get('status') as string;
 
-  const {
-    title,
-    description,
-    tags,
-    matchingPool,
-    applicationStart,
-    applicationClose,
-    startDate,
-    endDate,
-    status,
-    blockchain,
-    logoUrl,
-  } = body;
+    const logo = formData.get('logo') as File | null;
 
-  // Check if any required fields are missing
-  if (
-    !title ||
-    !description ||
-    !tags ||
-    !matchingPool ||
-    !applicationStart ||
-    !applicationClose ||
-    !startDate ||
-    !endDate ||
-    !blockchain ||
-    !logoUrl
-  ) {
-    return NextResponse.json(
-      { error: 'Missing required fields' },
-      { status: 400 },
-    );
-  }
+    // Check if any required fields are missing
+    if (
+      !title ||
+      !description ||
+      !tags ||
+      !matchingPool ||
+      !applicationStartTime ||
+      !applicationEndTime ||
+      !startTime ||
+      !endTime
+    ) {
+      throw new ApiParameterError('Missing required parameters');
+    }
 
-  // Validate status against enum values
-  const validStatuses = ['NOT_STARTED', 'ACTIVE', 'CLOSED'];
-  if (status && !validStatuses.includes(status)) {
-    return NextResponse.json(
-      { error: 'Invalid status value' },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const newRound = await prisma.round.create({
+    // Validate status against enum values
+    const validStatuses = ['NOT_STARTED', 'ACTIVE', 'CLOSED'];
+    if (status && !validStatuses.includes(status)) {
+      throw new ApiParameterError('Invalid status value');
+    }
+    const user = await getUser(session.user.address);
+    if (!user) {
+      throw new ApiNotFoundError('User not found');
+    }
+    let logoUrl = null;
+    let mimeType = 'application/octet-stream';
+    if (logo) {
+      try {
+        logoUrl = await fileToUrl(logo);
+        mimeType = logo.type;
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
+      }
+    }
+    const newRound = await db.round.create({
       data: {
         title: title,
         description: description,
-        tags: tags as string[],
-        matchingPool: parseInt(matchingPool),
-        applicationStart: new Date(applicationStart),
-        applicationClose: new Date(applicationClose),
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        blockchain,
+        tags,
+        matchingPool: matchingPool,
+        applicationStart: new Date(applicationStartTime),
+        applicationClose: new Date(applicationEndTime),
+        startDate: new Date(startTime),
+        endDate: new Date(endTime),
+        blockchain: 'CELO',
         logoUrl,
-        strategyAddress: body.strategyAddress || '0x0',
-        profileId: body.profileId || 'default-profile',
-        managerAddress: body.managerAddress || '0x0',
-        tokenAddress: body.tokenAddress || '0x0',
-        tokenDecimals: body.tokenDecimals || 18,
+        managerAddress: creatorAddress,
       },
     });
-    return NextResponse.json(newRound, { status: 201 });
-  } catch (error) {
-    console.error('Error creating round: ', (error as unknown as Error).stack);
-    return NextResponse.json(
-      { error: 'Failed to create round' },
-      { status: 500 },
-    );
+    if (logoUrl) {
+      const media = await db.media.create({
+        data: {
+          url: logoUrl,
+          mimeType,
+          state: 'UPLOADED',
+          round: { connect: { id: newRound.id } },
+          createdBy: { connect: { id: user.id } },
+        },
+      });
+      await db.round.update({
+        where: { id: newRound.id },
+        data: {
+          mediaOrder: [media.id],
+        },
+      });
+    }
+    const responseData: PostRoundsResponse = { roundId: newRound.id, logoUrl };
+    return response(responseData);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }
 
-export async function PUT(req: NextRequest) {
-  const { id, title, description, tags, matchingPool, startDate, endDate } =
-    await req.json();
-
+export async function PATCH(req: Request) {
   try {
-    const updatedRound = await prisma.round.update({
+    const session = await checkAuth(['admin']);
+    const formData = await req.formData();
+    // Extract form fields
+    const id = parseInt(formData.get('roundId') as string);
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const matchingPool = parseInt(formData.get('matchingPool') as string);
+    const startTime = formData.get('startTime') as string;
+    const endTime = formData.get('endTime') as string;
+    const applicationStartTime = formData.get('applicationStartTime') as string;
+    const applicationEndTime = formData.get('applicationEndTime') as string;
+    const tags = formData.get('tags') as string;
+    const descriptionUrl = (formData.get('descriptionUrl') as string) || null;
+
+    const logo = formData.get('logo') as File | null;
+    const instance = await db.round.findUnique({ where: { id } });
+    if (!instance) {
+      throw new ApiNotFoundError('Round not found');
+    }
+    if (!session.user.id) {
+      throw new ApiNotFoundError('Invalid session user');
+    }
+    const user = await getUser(session.user.address);
+    if (!user?.featureFlags.includes('ROUND_MANAGER')) {
+      if (instance.managerAddress !== session.user.address) {
+        throw new ApiAuthNotAllowed(
+          'Only the creator of the round may modify it',
+        );
+      }
+    }
+    let logoUrl = undefined;
+    let mimeType = 'application/octet-stream';
+    if (logo) {
+      try {
+        logoUrl = await fileToUrl(logo);
+        mimeType = logo.type;
+      } catch (imageError) {
+        console.error('Error uploading image:', imageError);
+        throw new ApiUpstreamError('Image upload failed');
+      }
+    }
+    const updatedRound = await db.round.update({
       where: { id },
       data: {
         title,
         description,
-        tags,
-        matchingPool: parseInt(matchingPool, 10),
-        applicationStart: new Date(startDate),
-        applicationClose: new Date(endDate),
+        descriptionUrl,
+        tags: tags.split(','),
+        matchingPool: matchingPool,
+        startDate: new Date(startTime),
+        endDate: new Date(endTime),
+        applicationStart: new Date(applicationStartTime),
+        applicationClose: new Date(applicationEndTime),
+        logoUrl,
       },
     });
-    return NextResponse.json(updatedRound, { status: 200 });
-  } catch (error) {
-    console.error('Error updating rounds: ', (error as unknown as Error).stack);
-    return NextResponse.json(
-      { error: 'Failed to update round' },
-      { status: 500 },
-    );
+    if (logoUrl) {
+      const roundMedia = await db.media.findMany({ where: { roundId: id } });
+      const media = await db.media.create({
+        data: {
+          url: logoUrl,
+          mimeType,
+          state: 'UPLOADED',
+          round: { connect: { id } },
+        },
+      });
+      await db.round.update({
+        where: { id },
+        data: {
+          mediaOrder: [media.id, ...roundMedia.map(({ id }) => id)],
+        },
+      });
+    }
+    const responseData: PatchRoundResponse = {
+      roundId: updatedRound.id,
+      logoUrl: updatedRound.logoUrl,
+    };
+    return response(responseData);
+  } catch (error: unknown) {
+    return handleError(error);
   }
 }

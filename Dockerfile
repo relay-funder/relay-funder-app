@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM node:20-alpine3.20 AS devrunner
 RUN apk add --no-cache libc6-compat git \
-    jq bash zip mc expect curl python3 openssl
+    jq bash zip mc expect curl python3 openssl \
+    postgresql
 
 WORKDIR /app
 
@@ -12,7 +13,7 @@ RUN npm install -g tsx
 RUN git config --global --add safe.directory /app
 
 RUN touch /root/.bashrc \
-    && echo 'PS1="aka-app \w # "' \
+    && echo 'PS1="rf-app \w # "' \
     >> /root/.bashrc
 
 VOLUME /app

@@ -1,22 +1,32 @@
 'use client';
 
-import { Campaign } from '@/types/campaign';
 import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
 import { useInView } from 'react-intersection-observer';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { CampaignItem } from '@/components/campaign/item';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CollectionAddDialog } from '@/components/collection/add-dialog';
-
+import { ResponsiveGrid } from '@/components/layout';
+import { LoadMoreButton } from '@/components/shared/load-more-button';
+import { INFINITE_SCROLL_CONFIG } from '@/lib/constant';
+import type { DbCampaign, CampaignItemProps } from '@/types/campaign';
 interface CampaignListProps {
   searchTerm: string;
   categoryFilter?: string | null;
+  statusFilter?: string;
+  pageSize?: number;
+  withRounds?: boolean;
+  item?: React.ComponentType<CampaignItemProps>;
 }
 
 export function CampaignList({
   searchTerm,
   categoryFilter,
+  statusFilter = undefined,
+  pageSize = 10,
+  withRounds = false,
+  item: ItemComponent = (props) => <CampaignCard {...props} type="standard" />,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
   const {
@@ -26,13 +36,25 @@ export function CampaignList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteCampaigns();
+  } = useInfiniteCampaigns(statusFilter, pageSize, withRounds);
+
+  // Check if we've reached the auto-scroll limit
+  const currentPageCount = data?.pages.length ?? 0;
+  const shouldAutoFetch =
+    currentPageCount < INFINITE_SCROLL_CONFIG.MAX_AUTO_PAGES;
+  const shouldShowLoadMore = !shouldAutoFetch && hasNextPage;
 
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage && shouldAutoFetch) {
       fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, shouldAutoFetch]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Filter campaigns based on search term and category
   const filteredCampaigns = data?.pages.map((page) => ({
@@ -52,9 +74,12 @@ export function CampaignList({
     }),
   }));
 
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
+  const [selectedCampaign, setSelectedCampaign] = useState<DbCampaign | null>(
     null,
   );
+  const onSelectIntern = useCallback(async (campaign: DbCampaign) => {
+    setSelectedCampaign(campaign);
+  }, []);
 
   if (loading && !data) {
     return <CampaignLoading minimal={true} />;
@@ -65,20 +90,18 @@ export function CampaignList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6">
+      <ResponsiveGrid variant="cards" gap="md">
         {filteredCampaigns?.map((page) =>
-          page.campaigns.map((campaign: Campaign) => (
-            <CampaignItem
+          page.campaigns.map((campaign) => (
+            <ItemComponent
               key={campaign.id}
               campaign={campaign}
-              onSelect={() => {
-                setSelectedCampaign(campaign);
-              }}
+              onSelect={onSelectIntern}
             />
           )),
         )}
-      </div>
+      </ResponsiveGrid>
       {selectedCampaign ? (
         <CollectionAddDialog
           campaign={selectedCampaign}
@@ -90,8 +113,17 @@ export function CampaignList({
       {/* Loading indicator */}
       {isFetchingNextPage && <CampaignLoading minimal={true} />}
 
-      {/* Intersection observer target */}
-      <div ref={ref} className="h-10" />
+      {/* Load more button when auto-fetch limit reached */}
+      {shouldShowLoadMore && (
+        <LoadMoreButton
+          onLoadMore={handleLoadMore}
+          hasMore={hasNextPage}
+          isLoading={isFetchingNextPage}
+        />
+      )}
+
+      {/* Intersection observer target - only active when auto-fetching */}
+      {shouldAutoFetch && <div ref={ref} className="h-10" />}
     </div>
   );
 }

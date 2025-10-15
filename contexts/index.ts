@@ -1,4 +1,3 @@
-export { useAccount, AccountProvider } from './AccountContext';
 export { useAuth, AuthProvider } from './AuthContext';
 export { useEnvironment, EnvironmentProvider } from './EnvironmentContext';
 export { useCollection, CollectionProvider } from './CollectionContext';
@@ -8,3 +7,4 @@ export {
   useFeatureFlag,
   FeatureFlagsProvider,
 } from './FeatureFlagsContext';
+export { useTheme, ThemeProvider } from './ThemeContext';
