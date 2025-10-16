@@ -455,7 +455,9 @@ async function configureActiveCampaignTreasuries() {
       const currentStartTime = new Date(campaign.startTime);
 
       if (currentStartTime <= now) {
-        console.log(`     📅 Updating startTime to future for treasury configuration`);
+        console.log(
+          `     📅 Updating startTime to future for treasury configuration`,
+        );
         await db.campaign.update({
           where: { id: campaign.id },
           data: { startTime: futureStartTime },

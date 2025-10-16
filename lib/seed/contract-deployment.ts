@@ -117,7 +117,14 @@ interface CampaignData {
  */
 export async function deployCampaignContract(
   campaignData: CampaignData,
-  db: { campaign: { update: (args: { where: { id: number }, data: { startTime: Date; endTime: Date } }) => Promise<unknown> } },
+  db: {
+    campaign: {
+      update: (args: {
+        where: { id: number };
+        data: { startTime: Date; endTime: Date };
+      }) => Promise<unknown>;
+    };
+  },
   isDummy: boolean = false,
 ): Promise<CampaignContractDeployment> {
   try {
@@ -292,7 +299,10 @@ export async function deployCampaignContract(
           `  Updated database with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
         );
     } catch (dbError) {
-      console.warn('  Failed to update database with on-chain timing:', dbError);
+      console.warn(
+        '  Failed to update database with on-chain timing:',
+        dbError,
+      );
       // Continue anyway - this is not critical for contract deployment
     }
 
@@ -456,7 +466,14 @@ export async function deployTreasuryContract(
  */
 export async function deployAllContracts(
   campaignData: CampaignData,
-  db: { campaign: { update: (args: { where: { id: number }, data: { startTime: Date; endTime: Date } }) => Promise<unknown> } },
+  db: {
+    campaign: {
+      update: (args: {
+        where: { id: number };
+        data: { startTime: Date; endTime: Date };
+      }) => Promise<unknown>;
+    };
+  },
   isDummy: boolean = false,
   skipTreasuryConfig: boolean = false,
 ): Promise<{

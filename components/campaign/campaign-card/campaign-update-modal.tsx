@@ -30,7 +30,7 @@ export function CampaignUpdateModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto bg-card">
         <DialogHeader>
           <DialogTitle>Post Update</DialogTitle>
           <DialogDescription>

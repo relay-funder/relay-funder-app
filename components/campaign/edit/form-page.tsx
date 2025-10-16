@@ -161,7 +161,7 @@ export function CampaignEditFormPage({
     return (
       <DetailContainer variant="wide" padding="md">
         <div className="mx-auto max-w-2xl">
-          <Card className="rounded-lg border bg-white shadow-sm">
+          <Card className="rounded-lg border bg-card shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-center text-2xl font-bold tracking-tight">
                 {CampaignEditFormStates[page].title}
@@ -188,7 +188,7 @@ export function CampaignEditFormPage({
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8">
         {/* Form Section */}
         <div>
-          <Card className="rounded-lg border bg-white shadow-sm">
+          <Card className="rounded-lg border bg-card shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-bold tracking-tight">
                 {CampaignEditFormStates[page].title}
@@ -202,14 +202,14 @@ export function CampaignEditFormPage({
 
         {/* Information Section */}
         <div>
-          <Card className="rounded-lg border bg-white shadow-sm">
+          <Card className="rounded-lg border bg-card shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold">
                 Guide & Tips
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm max-w-none text-gray-700">
+              <div className="prose prose-sm max-w-none text-foreground">
                 {CampaignEditFormStates[page].description}
               </div>
             </CardContent>
@@ -220,7 +220,7 @@ export function CampaignEditFormPage({
       {/* Mobile: Stacked layout */}
       <div className="space-y-6 lg:hidden">
         {/* Form Section */}
-        <Card className="rounded-lg border bg-white shadow-sm">
+        <Card className="rounded-lg border bg-card shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl font-bold tracking-tight">
               {CampaignEditFormStates[page].title}
@@ -232,14 +232,14 @@ export function CampaignEditFormPage({
         </Card>
 
         {/* Information Section - Always visible on mobile */}
-        <Card className="rounded-lg border bg-white shadow-sm">
+        <Card className="rounded-lg border bg-card shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold">
               Guide & Tips
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm max-w-none text-gray-700">
+            <div className="prose prose-sm max-w-none text-foreground">
               {CampaignEditFormStates[page].description}
             </div>
           </CardContent>

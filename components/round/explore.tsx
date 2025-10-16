@@ -46,7 +46,7 @@ export function RoundExplore({
           >
             ← Back to Rounds
           </Button>
-          <RoundCreate />
+          <RoundCreate onCreated={() => setShowRoundCreate(false)} />
         </div>
       ) : (
         <>

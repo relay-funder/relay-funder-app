@@ -7,7 +7,6 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui';
-import { USD_TOKEN } from '@/lib/constant';
 
 interface CampaignCreateFormFundingProps {
   isOnChainDeployed?: boolean;
@@ -25,14 +24,14 @@ export function CampaignCreateFormFunding({
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-sm font-medium text-foreground">
-              Funding Goal ({USD_TOKEN})
+              Funding Goal (USD)
             </FormLabel>
             <FormControl>
               <Input
                 type="number"
                 step="0.01"
                 className="mt-1"
-                placeholder="1000.00"
+                placeholder="1000"
                 disabled={isOnChainDeployed}
                 {...field}
               />

@@ -19,16 +19,16 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Welcome to Campaign Editing',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Update your campaign details to better connect with supporters and
           improve your presentation.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">
+          <h4 className="mb-2 font-medium text-foreground">
             Edit Process Overview:
           </h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Make your updates</li>
             <li>Submit changes for review</li>
             <li>Get approved and go live</li>
@@ -44,24 +44,24 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Title and Description',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Update your campaign title and description to better connect with
           potential supporters.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Title Tips:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Title Tips:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Keep it concise and use action words</li>
             <li>Include your main goal or benefit</li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">
+          <h4 className="mb-2 font-medium text-foreground">
             Description Structure:
           </h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Start with the problem and explain your solution</li>
             <li>Show impact and end with a clear call to action</li>
           </ul>
@@ -76,14 +76,16 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Location and Category',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Update your campaign location and category to help supporters find
           your project.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Why This Matters:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">
+            Why This Matters:
+          </h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Location helps local supporters connect with your project</li>
             <li>
               Category improves discoverability and targets the right audience
@@ -92,8 +94,8 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Choose Wisely:</h4>
-          <p className="text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Choose Wisely:</h4>
+          <p className="text-sm text-muted-foreground">
             Select the category that best represents your project&apos;s main
             focus area.
           </p>
@@ -108,21 +110,21 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Funding Goal',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Set your funding goal and choose your funding model.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Funding Tips:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Funding Tips:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Set a realistic goal based on your project needs</li>
             <li>Consider all costs including materials and fees</li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Important:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Important:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Funding goal cannot be changed after deployment</li>
             <li>Choose carefully based on your project requirements</li>
           </ul>
@@ -137,21 +139,21 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Campaign Timeline',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Set your campaign start and end dates.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Timeline Tips:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Timeline Tips:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Allow enough time to reach your funding goal</li>
             <li>Consider seasonal factors and holidays</li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Important:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Important:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Dates cannot be changed after deployment</li>
             <li>Plan your timeline carefully</li>
           </ul>
@@ -166,21 +168,23 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Media',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Update your campaign image to better represent your project.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Image Guidelines:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">
+            Image Guidelines:
+          </h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Use high-quality images that represent your project</li>
             <li>Avoid cluttered backgrounds and focus on your main subject</li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Pro Tip:</h4>
-          <p className="text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Pro Tip:</h4>
+          <p className="text-sm text-muted-foreground">
             A compelling image can significantly increase engagement and attract
             more supporters to your campaign.
           </p>
@@ -195,13 +199,13 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
     title: 'Review & Submit',
     description: (
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Review your updated campaign preview and submit your changes.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Your Options:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Your Options:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>
               <strong>Save (draft)</strong> - Save changes without submitting
               for review
@@ -217,8 +221,8 @@ export const CampaignEditFormStates: Record<string, EditFormState> = {
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-gray-900">Quick Check:</h4>
-          <ul className="space-y-1 text-sm text-gray-600">
+          <h4 className="mb-2 font-medium text-foreground">Quick Check:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>Review all changes and ensure accuracy</li>
             <li>Go back to edit any section if needed</li>
           </ul>

@@ -119,6 +119,7 @@ async function updateRound(variables: IUpdateRound) {
 interface ICreateRound {
   title: string;
   description: string;
+  descriptionUrl?: string;
   matchingPool: number;
   startTime: string;
   endTime: string;
@@ -130,6 +131,7 @@ interface ICreateRound {
 async function createRound({
   title,
   description,
+  descriptionUrl,
   matchingPool,
   startTime,
   endTime,
@@ -141,13 +143,16 @@ async function createRound({
   const formDataToSend = new FormData();
   formDataToSend.append('title', title);
   formDataToSend.append('description', description);
+  if (descriptionUrl) {
+    formDataToSend.append('descriptionUrl', descriptionUrl);
+  }
   formDataToSend.append('matchingPool', `${matchingPool}`);
   formDataToSend.append('startTime', startTime);
   formDataToSend.append('endTime', endTime);
   formDataToSend.append('applicationStartTime', applicationStartTime);
   formDataToSend.append('applicationEndTime', applicationEndTime);
   formDataToSend.append(
-    'tag',
+    'tags',
     tags?.map((tag: string) => encodeURIComponent(tag)).join(',') ?? '',
   );
   if (logo) {
@@ -157,6 +162,7 @@ async function createRound({
     method: 'POST',
     body: formDataToSend,
   });
+
   if (!response.ok) {
     let errorMsg = 'Failed to save round';
     try {
@@ -167,6 +173,7 @@ async function createRound({
     } catch {}
     throw new Error(errorMsg);
   }
+
   const data = await response.json();
   return data as PostRoundsResponse;
 }
@@ -301,6 +308,50 @@ export function useActiveRound() {
     enabled: true,
   });
 }
+
+async function fetchUpcomingRound() {
+  const response = await fetch('/api/rounds/upcoming');
+  if (!response.ok) {
+    let message = 'Failed to fetch upcoming round';
+    try {
+      const error = await response.json();
+      message = error.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const data = await response.json();
+  return data.round;
+}
+
+export function useUpcomingRound() {
+  return useQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'upcoming'],
+    queryFn: fetchUpcomingRound,
+    enabled: true,
+  });
+}
+
+export function useUpcomingRounds() {
+  return useQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'upcoming-list'],
+    queryFn: async () => {
+      const response = await fetch('/api/rounds');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch rounds');
+      }
+      const data = await response.json();
+      // Filter for rounds that haven't started yet (upcoming) and are not hidden
+      const now = new Date();
+      return data.rounds.filter(
+        (round: GetRoundResponseInstance) =>
+          new Date(round.startTime) > now && (round.isHidden !== true),
+      );
+    },
+    enabled: true,
+  });
+}
+
 export function useRound(id: number, forceUserView = false) {
   return useQuery({
     queryKey: [ROUND_QUERY_KEY, id, forceUserView],

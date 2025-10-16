@@ -2,7 +2,6 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
-import { DetailContainer } from '@/components/layout';
 import { Calendar, Users, DollarSign, ExternalLink } from 'lucide-react';
 import { Card, Badge } from '@/components/ui';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
@@ -90,7 +89,7 @@ export function RoundFull({
 
   return (
     <PageHome header={header}>
-      <DetailContainer variant="standard" padding="md">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-6">
           {isAdmin && status.text === 'Ended' && (
             <RoundManageResults round={round} />
@@ -243,7 +242,7 @@ export function RoundFull({
             onClosed={() => setShowApplyDialog(false)}
           />
         )}
-      </DetailContainer>
+      </div>
     </PageHome>
   );
 }
@@ -301,6 +300,10 @@ function RoundCampaignsList({
               mediaCount: campaigns[0].media?.length,
               hasImages: Array.isArray(campaigns[0].images),
               imagesCount: campaigns[0].images?.length,
+              hasPaymentSummary: !!campaigns[0].paymentSummary,
+              paymentSummaryKeys: campaigns[0].paymentSummary
+                ? Object.keys(campaigns[0].paymentSummary)
+                : [],
             }
           : null,
       });
@@ -311,7 +314,7 @@ function RoundCampaignsList({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 lg:gap-6 2xl:grid-cols-4">
       {campaigns.map((campaign) => {
         const isOwnCampaign = campaign.creatorAddress === address;
 
