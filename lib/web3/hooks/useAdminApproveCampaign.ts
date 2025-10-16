@@ -152,7 +152,6 @@ export function useAdminApproveCampaign() {
           throw new Error('Not authorized as platform admin');
         }
       }
-      onStateChanged('treasuryFactoryWait');
 
       // Verify campaign address is a valid contract
       const network = await ethersProvider.getNetwork();
