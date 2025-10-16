@@ -194,7 +194,9 @@ async function createCampaign({
   formDataToSend.append('title', title);
   formDataToSend.append('description', description);
   formDataToSend.append('fundingGoal', fundingGoal);
-  formDataToSend.append('selectedRoundId', `${selectedRoundId}`);
+  if (selectedRoundId != null && selectedRoundId > 0) {
+    formDataToSend.append('selectedRoundId', `${selectedRoundId}`);
+  }
   formDataToSend.append('startTime', startTime);
   formDataToSend.append('endTime', endTime);
   formDataToSend.append('status', status);

@@ -93,7 +93,7 @@ export function useCampaignFormCreate({
         const newCampaign = await createCampaign(data);
 
         // If a round is selected, add the campaign to the round
-        if (data.selectedRoundId) {
+        if (data.selectedRoundId && data.selectedRoundId > 0) {
           try {
             await createRoundCampaign({
               roundId: data.selectedRoundId,

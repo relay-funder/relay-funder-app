@@ -83,6 +83,9 @@ export async function POST(req: Request) {
     let endTimeValue: Date | undefined = undefined;
     if (selectedRoundId) {
       const roundId = parseInt(selectedRoundId);
+      if (isNaN(roundId) || roundId <= 0) {
+        throw new ApiParameterError('selectedRoundId must be a valid positive integer');
+      }
       const round = await getRound(roundId);
       if (!round) {
         throw new ApiParameterError('invalid selectedRoundId');
