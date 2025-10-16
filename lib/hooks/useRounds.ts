@@ -341,10 +341,11 @@ export function useUpcomingRounds() {
         throw new Error(error.error || 'Failed to fetch rounds');
       }
       const data = await response.json();
-      // Filter for rounds that haven't started yet (upcoming)
+      // Filter for rounds that haven't started yet (upcoming) and are not hidden
       const now = new Date();
       return data.rounds.filter(
-        (round: GetRoundResponseInstance) => new Date(round.startTime) > now,
+        (round: GetRoundResponseInstance) =>
+          new Date(round.startTime) > now && (round.isHidden !== true),
       );
     },
     enabled: true,
