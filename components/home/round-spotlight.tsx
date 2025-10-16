@@ -21,11 +21,13 @@ export function RoundSpotlight() {
     error: upcomingError,
   } = useUpcomingRound();
 
-  // Use active round if available, otherwise use upcoming round
-  const round = activeRound || upcomingRound;
-  const isLoading = activeLoading || upcomingLoading;
-  const error = activeError || upcomingError;
-  const isUpcoming = !activeRound && !!upcomingRound;
+  // Determine the selected round first (active takes priority)
+  const selectedRound = activeRound ?? upcomingRound;
+  const round = selectedRound;
+  const isLoading =
+    selectedRound === activeRound ? activeLoading : upcomingLoading;
+  const error = selectedRound === activeRound ? activeError : upcomingError;
+  const isUpcoming = selectedRound === upcomingRound;
 
   // Calculate days left for countdown (only for active rounds)
   const daysLeft = useMemo(() => {
