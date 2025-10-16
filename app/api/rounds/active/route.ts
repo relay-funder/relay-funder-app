@@ -1,4 +1,3 @@
-import { db } from '@/server/db';
 import { response, handleError } from '@/lib/api/response';
 import { getActiveRound, mapRound } from '@/lib/api/rounds';
 
