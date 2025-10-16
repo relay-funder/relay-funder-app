@@ -170,6 +170,7 @@ interface ICreateCampaign {
   title: string;
   description: string;
   fundingGoal: string;
+  selectedRoundId: number | null;
   startTime: string;
   endTime: string;
   status?: string;
@@ -181,6 +182,7 @@ async function createCampaign({
   title,
   description,
   fundingGoal,
+  selectedRoundId,
   startTime,
   endTime,
   status = 'draft',
@@ -192,6 +194,7 @@ async function createCampaign({
   formDataToSend.append('title', title);
   formDataToSend.append('description', description);
   formDataToSend.append('fundingGoal', fundingGoal);
+  formDataToSend.append('selectedRoundId', `${selectedRoundId}`);
   formDataToSend.append('startTime', startTime);
   formDataToSend.append('endTime', endTime);
   formDataToSend.append('status', status);
