@@ -104,6 +104,7 @@ export function CampaignUpdateForm({
               <FormControl>
                 <Input
                   placeholder="Update Title"
+                  className="mt-1 bg-background"
                   disabled={isPending}
                   {...field}
                 />
@@ -120,7 +121,7 @@ export function CampaignUpdateForm({
               <FormControl>
                 <Textarea
                   placeholder="Share your campaign progress..."
-                  className="min-h-[150px]"
+                  className="mt-1 min-h-[150px] resize-none bg-background"
                   disabled={isPending}
                   {...field}
                 />

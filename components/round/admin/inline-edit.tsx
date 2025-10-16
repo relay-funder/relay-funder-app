@@ -136,7 +136,7 @@ export function RoundAdminInlineEdit({
                   id="round-url"
                   value={descriptionUrl}
                   onChange={(e) => setDescriptionUrl(e.target.value)}
-                  placeholder="https://example.com/round"
+                  placeholder="https://example.com"
                 />
               </div>
 

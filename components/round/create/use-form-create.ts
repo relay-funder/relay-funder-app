@@ -7,6 +7,7 @@ import { RoundFormSchemaType } from './form';
 export function useRoundFormCreate({
   onStateChanged,
   onError,
+  onCreated,
 }: {
   onCreated?: () => void;
   onStateChanged: (arg0: keyof typeof CreateProcessStates) => void;
@@ -31,7 +32,11 @@ export function useRoundFormCreate({
         if (data.title.startsWith('QA:throw:createRoundContract')) {
           throw new Error('Create round contract failure');
         }
-        onStateChanged('done');
+        if (onCreated) {
+          onCreated();
+        } else {
+          onStateChanged('done');
+        }
         return newRound;
       } catch (error) {
         onStateChanged('failed');
@@ -40,7 +45,7 @@ export function useRoundFormCreate({
         );
       }
     },
-    [authenticated, createRound, onError, onStateChanged],
+    [authenticated, createRound, onError, onStateChanged, onCreated],
   );
   return { mutateAsync };
 }

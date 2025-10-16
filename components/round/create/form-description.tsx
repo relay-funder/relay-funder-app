@@ -64,6 +64,25 @@ export function RoundCreateFormDescription() {
       />
       <FormField
         control={form.control}
+        name="descriptionUrl"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-sm font-medium text-foreground">
+              Round URL (Optional)
+            </FormLabel>
+            <FormControl>
+              <Input
+                placeholder="https://example.com"
+                className="mt-1"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
         name="description"
         render={({ field }) => (
           <FormItem>
@@ -72,7 +91,7 @@ export function RoundCreateFormDescription() {
             </FormLabel>
             <FormControl>
               <Textarea
-                className="mt-1 min-h-[120px] resize-none border-input bg-background"
+                className="mt-1 min-h-[120px] resize-none bg-background"
                 placeholder="This round focuses on supporting innovative campaigns that create positive social impact. Campaigns will be funded through quadratic funding based on community engagement. Include details about your goals, target audience, and eligibility criteria."
                 maxLength={DESCRIPTION_MAX_LENGTH}
                 {...field}

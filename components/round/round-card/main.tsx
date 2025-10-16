@@ -141,7 +141,7 @@ export function RoundCard({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <DollarSign className="h-4 w-4" />
-                <span>Funding Goal</span>
+                <span>Matching Pool</span>
               </div>
               <p className="text-lg font-semibold">
                 ${round.matchingPool?.toLocaleString() ?? '0'}

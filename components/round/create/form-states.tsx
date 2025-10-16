@@ -71,7 +71,7 @@ export const RoundCreateFormStates: Record<string, CreateFormState> = {
     ),
     next: { label: 'Next', submit: false, target: 'funding' },
     prev: { label: 'Back', target: 'introduction' },
-    fields: ['title', 'description'],
+    fields: ['title', 'description', 'descriptionUrl'],
   },
   funding: {
     title: 'Funding',

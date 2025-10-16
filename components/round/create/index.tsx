@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Form, Button } from '@/components/ui';
-import { enableFormDefault } from '@/lib/develop';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateProcessStates } from '@/types/round';
@@ -10,7 +10,6 @@ import { VisibilityToggle } from '@/components/visibility-toggle';
 import { RoundCreateProcessDisplay } from './process-display';
 import { RoundCreateFormStates } from './form-states';
 import { RoundCreateFormPage } from './form-page';
-import { uniqueName, uniqueDescription } from '@/lib/generate-strings';
 import { RoundCreateFormMedia } from './form-media';
 import { RoundCreateFormDescription } from './form-description';
 import { RoundCreateFormFunding } from './form-funding';
@@ -29,9 +28,15 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
   const [formState, setFormState] =
     useState<keyof typeof RoundCreateFormStates>('introduction');
   const processing = state !== 'idle';
+  const router = useRouter();
+  const onCreateSuccess = useCallback(() => {
+    // Redirect to admin rounds overview after successful creation
+    router.push('/admin/rounds');
+  }, [router]);
+
   const { mutateAsync: createCampaign } = useRoundFormCreate({
     onStateChanged: setState,
-    onCreated,
+    onCreated: onCreated || onCreateSuccess,
     onError: setError,
   });
 
@@ -61,38 +66,68 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
     [createCampaign, formState, onSubmitStep],
   );
 
-  const onDeveloperSubmit = useCallback(
-    async (event: React.MouseEvent) => {
-      if (!event.shiftKey) {
-        return;
-      }
-      if (!enableFormDefault) {
-        return;
-      }
-      form.setValue('title', uniqueName());
-      form.setValue('description', uniqueDescription());
-      form.setValue('matchingPool', Math.round(Math.random() * 1000));
-      form.setValue('startTime', new Date().toISOString().slice(0, 16));
-      form.setValue(
-        'endTime',
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 16),
+  const onDeveloperSubmit = useCallback(async () => {
+    // Only allow in development environment
+    if (process.env.NODE_ENV !== 'development') {
+      console.warn(
+        '🚫 Developer prefill is only available in development mode',
       );
-      form.setValue(
-        'applicationStartTime',
-        new Date().toISOString().slice(0, 16),
-      );
-      form.setValue(
-        'applicationEndTime',
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 16),
-      );
-      setFormState('summary');
-    },
-    [form],
-  );
+      return;
+    }
+
+    // Generate meaningful title and description for humanitarian quadratic funding
+    const roundTitles = [
+      'Humanitarian Tech Innovation Round',
+      'Global Impact Open Source Fund',
+      'Community-Driven Humanitarian Solutions',
+      'Open Source for Social Good',
+      'Tech for Humanity Matching Round',
+      'Empower Communities Through Code',
+      'Digital Tools for Humanitarian Aid',
+      'Open Source Humanitarian Challenge',
+    ];
+
+    const roundDescriptions = [
+      'This quadratic funding round supports open source projects that create meaningful impact in humanitarian efforts. Projects focused on education, health, disaster response, and community development will receive matching funds based on community engagement and support.',
+      "Join us in funding innovative open source solutions that address critical humanitarian challenges. Through quadratic funding, community donations are amplified to support projects making a real difference in people's lives worldwide.",
+      'Empowering communities through technology. This round funds open source projects that provide digital tools and platforms for humanitarian organizations, disaster response teams, and social impact initiatives.',
+      'Supporting the open source ecosystem that drives humanitarian innovation. Projects selected through community voting will receive matching funds to accelerate development of tools that save lives and improve communities.',
+      "A dedicated funding round for projects that leverage technology to address humanitarian needs. From educational platforms to disaster management systems, we're looking for open source solutions that create lasting positive change.",
+    ];
+
+    const randomTitle =
+      roundTitles[Math.floor(Math.random() * roundTitles.length)];
+    const randomDescription =
+      roundDescriptions[Math.floor(Math.random() * roundDescriptions.length)];
+
+    form.setValue('title', randomTitle);
+    form.setValue('description', randomDescription);
+    form.setValue('descriptionUrl', 'https://example.com');
+    form.setValue('matchingPool', Math.round(Math.random() * 1000) + 100); // Ensure > 0
+
+    // Set proper timeline according to validation rules:
+    // applicationEndTime <= startTime (applications close before round starts)
+    const now = new Date();
+    const applicationStartTime = now.toISOString().slice(0, 16);
+    const applicationEndTime = new Date(
+      now.getTime() + 29 * 24 * 60 * 60 * 1000,
+    )
+      .toISOString()
+      .slice(0, 16); // 29 days
+    const startTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 16); // 30 days
+    const endTime = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 16); // 60 days
+
+    form.setValue('applicationStartTime', applicationStartTime);
+    form.setValue('applicationEndTime', applicationEndTime);
+    form.setValue('startTime', startTime);
+    form.setValue('endTime', endTime);
+
+    setFormState('summary');
+  }, [form]);
 
   const onFailureRetry = useCallback(async () => {
     setState('setup');
@@ -112,8 +147,23 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
               page="introduction"
               onStateChanged={setFormState}
             >
-              <div className="prose prose-sm max-w-none text-muted-foreground">
-                {RoundCreateFormStates.introduction.description}
+              <div className="space-y-4">
+                <div className="prose prose-sm max-w-none text-muted-foreground">
+                  {RoundCreateFormStates.introduction.description}
+                </div>
+                {/* Development-only button to pre-fill form */}
+                {process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true' && (
+                  <div className="mt-6">
+                    <Button
+                      onClick={onDeveloperSubmit}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      🚀 Dev: Pre-fill Form
+                    </Button>
+                  </div>
+                )}
               </div>
             </RoundCreateFormPage>
             <RoundCreateFormPage
@@ -153,20 +203,6 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
             </RoundCreateFormPage>
           </form>
         </Form>
-
-        {/* Development-only button to pre-fill form */}
-        {process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true' && (
-          <div className="mt-6">
-            <Button
-              onClick={onDeveloperSubmit}
-              variant="outline"
-              size="sm"
-              className="text-xs"
-            >
-              🚀 Dev: Pre-fill Form
-            </Button>
-          </div>
-        )}
       </VisibilityToggle>
       <VisibilityToggle isVisible={processing}>
         <RoundCreateProcessDisplay

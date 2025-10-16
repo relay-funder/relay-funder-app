@@ -1,10 +1,12 @@
 'use client';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { CampaignUpdateForm } from '@/components/campaign/update-form';
+import { CampaignUpdateModal } from '@/components/campaign/campaign-card/campaign-update-modal';
 import { Timeline } from '@/components/timeline';
+import { Button } from '@/components/ui/button';
 import { type DbCampaign } from '@/types/campaign';
 import { useInfiniteCampaignUpdates } from '@/lib/hooks/useUpdates';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function CampaignDetailTabUpdates({
   campaign,
@@ -12,6 +14,8 @@ export function CampaignDetailTabUpdates({
   campaign: DbCampaign;
 }) {
   const { ref, inView } = useInView();
+  const { address } = useAuth();
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const {
     data,
     isLoading,
@@ -20,6 +24,11 @@ export function CampaignDetailTabUpdates({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteCampaignUpdates(campaign.id);
+
+  const isOwner =
+    address &&
+    campaign.creatorAddress &&
+    address.toLowerCase() === campaign.creatorAddress.toLowerCase();
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -49,13 +58,6 @@ export function CampaignDetailTabUpdates({
 
   return (
     <div className="max-w-3xl space-y-6">
-      {campaign.creatorAddress && (
-        <CampaignUpdateForm
-          campaignId={campaign.id}
-          creatorAddress={campaign.creatorAddress}
-        />
-      )}
-
       {error ? (
         <div className="mx-auto max-w-3xl">
           <div className="rounded-lg border border-destructive/20 bg-destructive/5 py-12 text-center">
@@ -69,6 +71,16 @@ export function CampaignDetailTabUpdates({
         </div>
       ) : updates.length > 0 ? (
         <>
+          {isOwner && (
+            <div className="flex justify-start">
+              <Button
+                onClick={() => setIsUpdateModalOpen(true)}
+                variant="outline"
+              >
+                Post Update
+              </Button>
+            </div>
+          )}
           <Timeline
             items={timelineItems}
             className="w-full"
@@ -100,9 +112,29 @@ export function CampaignDetailTabUpdates({
           <p className="text-sm text-muted-foreground">
             Check back later for updates on this campaign&apos;s progress.
           </p>
+          {isOwner && (
+            <div className="mt-6">
+              <Button
+                onClick={() => setIsUpdateModalOpen(true)}
+                variant="outline"
+                size="lg"
+              >
+                Post Update
+              </Button>
+            </div>
+          )}
         </div>
       )}
+
       {!error && <div ref={ref} className="h-10" />}
+
+      {isOwner && (
+        <CampaignUpdateModal
+          campaign={campaign}
+          open={isUpdateModalOpen}
+          onOpenChange={setIsUpdateModalOpen}
+        />
+      )}
     </div>
   );
 }

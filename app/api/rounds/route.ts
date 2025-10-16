@@ -52,6 +52,7 @@ export async function POST(req: Request) {
     // Extract form fields
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
+    const descriptionUrl = (formData.get('descriptionUrl') as string) || null;
     const matchingPool = parseInt(formData.get('matchingPool') as string);
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
       data: {
         title: title,
         description: description,
+        descriptionUrl,
         tags,
         matchingPool: matchingPool,
         applicationStart: new Date(applicationStartTime),

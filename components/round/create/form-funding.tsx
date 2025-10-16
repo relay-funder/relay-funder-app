@@ -25,7 +25,12 @@ export function RoundCreateFormFunding() {
                 min="0"
                 step="any"
                 placeholder="e.g., 10000"
-                {...field}
+                value={field.value || ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? parseFloat(e.target.value) : 0,
+                  )
+                }
               />
             </FormControl>
             <FormDescription>

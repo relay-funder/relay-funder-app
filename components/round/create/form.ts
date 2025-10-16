@@ -72,6 +72,12 @@ export const RoundFormSchema = z
       .string()
       .min(10, { message: 'Description is required' })
       .max(2000, { message: 'Description must be 2000 characters or less' }),
+    descriptionUrl: z
+      .string()
+      .optional()
+      .refine((val) => !val || /^https?:\/\/.+/.test(val), {
+        message: 'Must be a valid URL starting with http:// or https://',
+      }),
     matchingPool: z.coerce
       .number()
       .min(0.01, { message: 'Matching pool must be greater than 0.' })
@@ -119,6 +125,7 @@ export type RoundFormSchemaType = z.infer<typeof RoundFormSchema>;
 export const roundFormDefaultValues: RoundFormSchemaType = {
   title: '',
   description: '',
+  descriptionUrl: '',
   matchingPool: 0,
   // Application period: now to 29 days from now (closes 1 day before round starts)
   applicationStartTime: new Date().toISOString().slice(0, 10),

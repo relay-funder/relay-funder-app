@@ -113,7 +113,7 @@ export function RoundCreateFormPage({
       {/* Mobile: Stacked layout */}
       <div className="space-y-6 lg:hidden">
         {/* Form Section */}
-        <Card className="rounded-lg border bg-white shadow-sm">
+        <Card className="rounded-lg border bg-card shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl font-bold tracking-tight">
               {RoundCreateFormStates[page].title}
