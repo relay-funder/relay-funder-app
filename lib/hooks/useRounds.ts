@@ -74,7 +74,7 @@ async function fetchRoundPage({
 }
 
 async function fetchRoundStats() {
-  const url = `/api/rounds/stats`;
+  const url = `/api/admin/rounds/stats`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
@@ -97,7 +97,7 @@ interface IUpdateRound {
   logo: File | null;
 }
 async function updateRound(variables: IUpdateRound) {
-  const response = await fetch('/api/rounds', {
+  const response = await fetch('/api/admin/rounds', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -158,7 +158,7 @@ async function createRound({
   if (logo) {
     formDataToSend.append('logo', logo);
   }
-  const response = await fetch('/api/rounds', {
+  const response = await fetch('/api/admin/rounds', {
     method: 'POST',
     body: formDataToSend,
   });
@@ -182,7 +182,7 @@ interface IRemoveRound {
   roundId: number;
 }
 async function removeRound(variables: IRemoveRound) {
-  const response = await fetch(`/api/rounds/${variables.roundId}`, {
+  const response = await fetch(`/api/admin/rounds/${variables.roundId}`, {
     method: 'DELETE',
     body: JSON.stringify(variables),
   });
@@ -239,10 +239,13 @@ async function updateRoundCampaign(variables: IUpdateRoundCampaign) {
   formDataToSend.append('roundId', `${variables.roundId}`);
   formDataToSend.append('campaignId', `${variables.campaignId}`);
   formDataToSend.append('status', variables.status);
-  const response = await fetch(`/api/rounds/${variables.roundId}/campaigns`, {
-    method: 'PATCH',
-    body: formDataToSend,
-  });
+  const response = await fetch(
+    `/api/admin/rounds/${variables.roundId}/campaigns`,
+    {
+      method: 'PATCH',
+      body: formDataToSend,
+    },
+  );
   if (!response.ok) {
     let errorMsg = 'Failed to update round-campaign';
     try {
