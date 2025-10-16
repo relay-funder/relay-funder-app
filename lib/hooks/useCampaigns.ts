@@ -170,7 +170,7 @@ interface ICreateCampaign {
   title: string;
   description: string;
   fundingGoal: string;
-  selectedRoundId?: number;
+  selectedRoundId: number | null;
   startTime: string;
   endTime: string;
   status?: string;
