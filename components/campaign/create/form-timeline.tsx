@@ -1,5 +1,5 @@
-import React from 'react';
-import { useFormContext } from 'react-hook-form';
+import React, { useEffect } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   Input,
   FormField,
@@ -7,7 +7,21 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Alert,
+  AlertDescription,
+  Skeleton,
 } from '@/components/ui';
+import { useUpcomingRounds, useUpcomingRound } from '@/lib/hooks/useRounds';
+import { GetRoundResponseInstance } from '@/lib/api/types';
+import {
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 
 interface CampaignCreateFormTimelineProps {
   isOnChainDeployed?: boolean;
@@ -17,7 +31,81 @@ export function CampaignCreateFormTimeline({
   isOnChainDeployed = false,
 }: CampaignCreateFormTimelineProps) {
   const form = useFormContext();
-  const startTimeValue = form.watch('startTime');
+  const startTimeValue = useWatch({ control: form.control, name: 'startTime' });
+  const selectedRoundId = useWatch({
+    control: form.control,
+    name: 'selectedRoundId',
+  });
+
+  const { data: upcomingRounds, isLoading: roundsLoading } =
+    useUpcomingRounds();
+  const { data: upcomingRound } = useUpcomingRound();
+
+  // Pre-select the upcoming round when it loads (only once)
+  useEffect(() => {
+    if (upcomingRound && !roundsLoading && !form.getValues('selectedRoundId')) {
+      form.setValue('selectedRoundId', upcomingRound.id, {
+        shouldDirty: false,
+        shouldTouch: false,
+      });
+    }
+  }, [upcomingRound, roundsLoading, form]);
+
+  // Auto-populate dates when a round is selected
+  useEffect(() => {
+    if (selectedRoundId && upcomingRounds) {
+      const selectedRound = upcomingRounds.find(
+        (round: GetRoundResponseInstance) => round.id === selectedRoundId,
+      );
+
+      if (selectedRound) {
+        const startDate = new Date(selectedRound.startTime);
+        const endDate = new Date(selectedRound.endTime);
+        const startDateString = startDate.toISOString().slice(0, 10);
+        const endDateString = endDate.toISOString().slice(0, 10);
+
+        // Only update if values are different to prevent unnecessary re-renders
+        const currentStartTime = form.getValues('startTime');
+        const currentEndTime = form.getValues('endTime');
+
+        if (currentStartTime !== startDateString) {
+          form.setValue('startTime', startDateString, {
+            shouldDirty: false,
+            shouldTouch: false,
+          });
+        }
+        if (currentEndTime !== endDateString) {
+          form.setValue('endTime', endDateString, {
+            shouldDirty: false,
+            shouldTouch: false,
+          });
+        }
+      }
+    }
+  }, [selectedRoundId, upcomingRounds, form]);
+
+  // Clear dates when round selection is cleared
+  useEffect(() => {
+    if (!selectedRoundId && upcomingRounds) {
+      // Only clear if there are rounds available (user explicitly deselected)
+      // Don't clear if no rounds are available (fallback to manual)
+      const currentStartTime = form.getValues('startTime');
+      const currentEndTime = form.getValues('endTime');
+
+      if (currentStartTime !== '') {
+        form.setValue('startTime', '', {
+          shouldDirty: false,
+          shouldTouch: false,
+        });
+      }
+      if (currentEndTime !== '') {
+        form.setValue('endTime', '', {
+          shouldDirty: false,
+          shouldTouch: false,
+        });
+      }
+    }
+  }, [selectedRoundId, upcomingRounds, form]);
 
   // Check if start time is too close to current time
   const getStartTimeWarning = () => {
@@ -40,7 +128,7 @@ export function CampaignCreateFormTimeline({
       const now = new Date();
       const minutesDifference =
         (startDate.getTime() - now.getTime()) / (1000 * 60);
-      const isDev = process.env.NODE_ENV === 'development';
+      const isDev = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
       const isToday = startDate.toDateString() === now.toDateString();
 
       // Don't show warnings for today's date since it will be transformed to a future time
@@ -82,80 +170,197 @@ export function CampaignCreateFormTimeline({
 
   const startTimeWarning = getStartTimeWarning();
 
+  const hasUpcomingRounds = upcomingRounds && upcomingRounds.length > 0;
+  const useManualDates = !selectedRoundId;
+
   return (
-    <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="startTime"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-sm font-medium text-foreground">
-              Campaign Start Date
-            </FormLabel>
-            <FormControl>
-              <Input
-                type="date"
-                className="mt-1"
-                disabled={isOnChainDeployed}
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-            {startTimeWarning && (
-              <div
-                className={`rounded-lg border p-3 text-sm ${
-                  startTimeWarning.type === 'error'
-                    ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300'
-                    : startTimeWarning.type === 'warning'
-                      ? 'border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-300'
-                      : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">
-                    {startTimeWarning.type === 'error' && '❌'}
-                    {startTimeWarning.type === 'warning' && '⚠️'}
-                    {startTimeWarning.type === 'info' && 'ℹ️'}
-                  </span>
-                  <span className="font-medium">
-                    {startTimeWarning.message}
-                  </span>
-                </div>
-              </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium text-foreground">
+          Campaign Timeline
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Choose your campaign scheduling option.
+        </p>
+      </div>
+
+      {/* Timeline Selection */}
+      {roundsLoading ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      ) : hasUpcomingRounds && !useManualDates ? (
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="selectedRoundId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Select a Funding Round
+                </FormLabel>
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(parseInt(value));
+                  }}
+                  value={field.value?.toString()}
+                  disabled={isOnChainDeployed}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a funding round" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {upcomingRounds.map((round: GetRoundResponseInstance) => (
+                      <SelectItem key={round.id} value={round.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <div>
+                            <div className="font-medium">{round.title}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(round.startTime).toLocaleDateString()} -{' '}
+                              {new Date(round.endTime).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+                {isOnChainDeployed && (
+                  <p className="text-sm text-solar">
+                    Timeline option cannot be changed after campaign deployment
+                  </p>
+                )}
+              </FormItem>
             )}
-            {isOnChainDeployed && (
-              <p className="text-sm text-solar">
-                Start date cannot be changed after campaign deployment
-              </p>
+          />
+
+          {/* Manual dates option */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => form.setValue('selectedRoundId', undefined)}
+              className="text-sm text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+              disabled={isOnChainDeployed}
+            >
+              Or set custom dates manually
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Manual Date Selection - Original Interface */
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-medium text-foreground">
+                Campaign Dates
+              </h4>
+              {hasUpcomingRounds && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (upcomingRound) {
+                      form.setValue('selectedRoundId', upcomingRound.id, {
+                        shouldDirty: false,
+                        shouldTouch: false,
+                      });
+                    }
+                  }}
+                  className="text-sm text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                  disabled={isOnChainDeployed}
+                >
+                  Switch to round
+                </button>
+              )}
+            </div>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="startTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Campaign Start Date
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    className="mt-1"
+                    disabled={isOnChainDeployed}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+                {startTimeWarning && (
+                  <Alert variant="destructive" className="mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {startTimeWarning.message}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {isOnChainDeployed && (
+                  <p className="text-sm text-solar">
+                    Start date cannot be changed after campaign deployment
+                  </p>
+                )}
+              </FormItem>
             )}
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="endTime"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-sm font-medium text-foreground">
-              Campaign End Date
-            </FormLabel>
-            <FormControl>
-              <Input
-                type="date"
-                className="mt-1"
-                disabled={isOnChainDeployed}
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-            {isOnChainDeployed && (
-              <p className="text-sm text-solar">
-                End date cannot be changed after campaign deployment
-              </p>
+          />
+          <FormField
+            control={form.control}
+            name="endTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Campaign End Date
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    className="mt-1"
+                    disabled={isOnChainDeployed}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+                {isOnChainDeployed && (
+                  <p className="text-sm text-solar">
+                    End date cannot be changed after campaign deployment
+                  </p>
+                )}
+              </FormItem>
             )}
-          </FormItem>
-        )}
-      />
+          />
+        </div>
+      )}
+
+      {/* Round Dates Display - When round selected */}
+      {selectedRoundId && upcomingRounds && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Campaign runs from{' '}
+            <span className="font-medium">
+              {(() => {
+                const selectedRound = upcomingRounds.find(
+                  (round: GetRoundResponseInstance) =>
+                    round.id === selectedRoundId,
+                );
+                if (!selectedRound) return '';
+                return `${new Date(selectedRound.startTime).toLocaleDateString()} to ${new Date(selectedRound.endTime).toLocaleDateString()}`;
+              })()}
+            </span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

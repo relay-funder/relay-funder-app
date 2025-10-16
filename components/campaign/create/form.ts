@@ -43,11 +43,12 @@ export const CampaignFormSchema = z
     fundingGoal: z.string().refine(
       (value: string) => {
         const fValue = parseFloat(value);
-        return !isNaN(fValue);
+        return !isNaN(fValue) && fValue > 0;
       },
-      { message: 'Invalid funding Goal' },
+      { message: 'Funding goal must be greater than zero' },
     ),
     fundingModel: z.string(),
+    selectedRoundId: z.number().optional(),
     startTime: z
       .string()
       .refine(validateTimes, {
@@ -140,6 +141,7 @@ export const campaignFormDefaultValues: CampaignFormSchemaType = {
   description: '',
   fundingGoal: '',
   fundingModel: 'flexible',
+  selectedRoundId: undefined, // Will be set to upcoming round if available
   startTime: (() => {
     const now = new Date();
     return now.toISOString().slice(0, 10); // Today in YYYY-MM-DD format for date input

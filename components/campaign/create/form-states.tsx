@@ -170,25 +170,31 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
     description: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Set your campaign start and end dates. Most successful campaigns run
-          for 30-60 days.
+          Choose structured funding rounds for community matching, or set custom
+          dates for your campaign.
         </p>
 
         <div>
-          <h4 className="mb-2 font-medium text-foreground">Start Date Tips:</h4>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>Allow time to prepare promotional materials</li>
-            <li>Ensure you&apos;re ready to actively promote your campaign</li>
-          </ul>
+          <h4 className="mb-2 font-medium text-foreground">
+            Rounds vs Custom:
+          </h4>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div>
+              <strong className="text-foreground">Rounds:</strong> Fixed
+              schedule with matching funds, requires round approval
+            </div>
+            <div>
+              <strong className="text-foreground">Custom:</strong> Flexible
+              timing, 30-60 days recommended for success
+            </div>
+          </div>
         </div>
 
         <div>
-          <h4 className="mb-2 font-medium text-foreground">
-            Duration Guidelines:
-          </h4>
+          <h4 className="mb-2 font-medium text-foreground">Quick Tips:</h4>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>30 days: Good for simple projects</li>
-            <li>45-60 days: Better for complex campaigns</li>
+            <li>Allow preparation time before launch</li>
+            <li>Switch between options anytime before submission</li>
           </ul>
         </div>
       </div>
