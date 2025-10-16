@@ -72,7 +72,7 @@ export function CampaignCreateFormDescription() {
             </FormLabel>
             <FormControl>
               <Textarea
-                className="mt-1 min-h-[120px] resize-none"
+                className="mt-1 min-h-[120px] resize-none bg-background"
                 placeholder="Imagine a world where every child has access to quality education. Our project aims to build a library in an underserved community, providing resources and a safe space for learning. With your support, we can make this dream a reality!"
                 maxLength={DESCRIPTION_MAX_LENGTH}
                 {...field}

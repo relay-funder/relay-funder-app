@@ -40,22 +40,24 @@ export function RoundCreateFormSummary() {
         endTime: values.endTime,
         applicationStartTime: values.applicationStartTime,
         applicationEndTime: values.applicationEndTime,
-        creatorAddress: session?.data?.user.address,
-        status: 'CREATING',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        tags: [],
+        tags: values.tags,
         blockchain: '',
-        managerAddress: session?.data?.user.address,
-        media: [
-          {
-            id: 'unsaved',
-            url: logoUrl,
-            mimeType: 'image/unknown',
-            caption: null,
-          },
-        ],
-        mediaOrder: ['unsaved'],
+        managerAddress: session?.data?.user.address || '',
+        isHidden: false,
+        media: logoUrl
+          ? [
+              {
+                id: 'unsaved',
+                url: logoUrl,
+                mimeType: 'image/unknown',
+                caption: null,
+              },
+            ]
+          : [],
+        mediaOrder: logoUrl ? ['unsaved'] : null,
+        roundCampaigns: [],
       } as GetRoundResponseInstance;
     } catch {
       return undefined;
@@ -66,9 +68,16 @@ export function RoundCreateFormSummary() {
   }
   return (
     <div className="pb-2">
-      <h2 className={cn('flex justify-self-center text-lg')}>Preview</h2>
+      <h2 className={cn('flex justify-self-center text-lg font-semibold')}>
+        Round Preview
+      </h2>
       <div className="flex max-w-[400px] justify-self-center">
-        <RoundCard round={round} type="standard" />
+        <RoundCard
+          round={round}
+          type="enhanced"
+          forceUserView={true}
+          displayOptions={{ showActionButton: false }}
+        />
       </div>
     </div>
   );

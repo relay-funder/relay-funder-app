@@ -15,6 +15,8 @@ import {
 } from '@/components/ui';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { useUpdateRoundBasic } from '@/lib/hooks/useRoundEditBasic';
+import { useToggleRoundVisibility } from '@/lib/hooks/useToggleRoundVisibility';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function RoundAdminInlineEdit({
   round,
@@ -39,9 +41,23 @@ export function RoundAdminInlineEdit({
   const [open, setOpen] = useState(false);
 
   const { mutateAsync: updateBasic } = useUpdateRoundBasic();
+  const { mutateAsync: toggleVisibility, isPending: isToggling } =
+    useToggleRoundVisibility();
 
   const onOpenChange = useCallback((open: boolean) => setOpen(open), []);
   const onCancel = useCallback(() => setOpen(false), []);
+
+  const handleToggleVisibility = useCallback(async () => {
+    try {
+      await toggleVisibility({
+        roundId: round.id,
+        isHidden: !round.isHidden,
+      });
+    } catch (error) {
+      // Error is handled by the mutation
+      console.error('Failed to toggle round visibility:', error);
+    }
+  }, [round.id, round.isHidden, toggleVisibility]);
 
   const onReset = useCallback(() => {
     setTitle(round.title ?? '');
@@ -93,74 +109,95 @@ export function RoundAdminInlineEdit({
   ]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Edit Basic Info</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Basic Info</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="round-title">Title</Label>
-              <Input
-                id="round-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Round Title"
-              />
+    <div className="flex gap-2">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Edit Basic Info</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Basic Info</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="round-title">Title</Label>
+                <Input
+                  id="round-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Round Title"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="round-url">URL</Label>
+                <Input
+                  id="round-url"
+                  value={descriptionUrl}
+                  onChange={(e) => setDescriptionUrl(e.target.value)}
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="round-description">Description</Label>
+                <Textarea
+                  id="round-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your round..."
+                  rows={5}
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="round-logo">Logo</Label>
+                <Input
+                  id="round-logo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setLogo(file);
+                  }}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="round-url">URL</Label>
-              <Input
-                id="round-url"
-                value={descriptionUrl}
-                onChange={(e) => setDescriptionUrl(e.target.value)}
-                placeholder="https://example.com/round"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="round-description">Description</Label>
-              <Textarea
-                id="round-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your round..."
-                rows={5}
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="round-logo">Logo</Label>
-              <Input
-                id="round-logo"
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  setLogo(file);
-                }}
-              />
-            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={onReset} disabled={saving}>
+                Reset
+              </Button>
+              <Button variant="outline" onClick={onCancel} disabled={saving}>
+                Cancel
+              </Button>
+              <Button onClick={onSave} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={onReset} disabled={saving}>
-              Reset
-            </Button>
-            <Button variant="outline" onClick={onCancel} disabled={saving}>
-              Cancel
-            </Button>
-            <Button onClick={onSave} disabled={saving}>
-              {saving ? 'Saving…' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </div>
-      </DialogContent>
-    </Dialog>
+      <Button
+        variant="outline"
+        onClick={handleToggleVisibility}
+        disabled={isToggling}
+        className="flex items-center gap-2"
+      >
+        {round.isHidden ? (
+          <>
+            <Eye className="h-4 w-4" />
+            Show Round
+          </>
+        ) : (
+          <>
+            <EyeOff className="h-4 w-4" />
+            Hide Round
+          </>
+        )}
+      </Button>
+    </div>
   );
 }

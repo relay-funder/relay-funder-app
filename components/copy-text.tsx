@@ -26,8 +26,8 @@ export function CopyText({
   description = 'Text has been copied to your clipboard',
   tooltip,
   text,
-  className = 'rounded-full p-1 transition-colors hover:bg-gray-100',
-  variant = 'default',
+  className = 'rounded-full p-1 transition-colors hover:bg-primary/10',
+  variant = 'outline',
   size = 'icon',
 }: CopyTextProps) {
   const { toast } = useToast();

@@ -4,17 +4,13 @@ import { mapRound } from '@/lib/api/rounds';
 
 export async function GET() {
   try {
-    // Find the latest active round based on date criteria only (matching the UI logic)
-    // A round is "active" if: start date <= now < end date
+    // Find the next upcoming round (earliest round that hasn't started yet)
     const now = new Date();
-    const activeRound = await db.round.findFirst({
+    const upcomingRound = await db.round.findFirst({
       where: {
         isHidden: false, // Exclude hidden rounds
         startDate: {
-          lte: now, // Round has started
-        },
-        endDate: {
-          gt: now, // Round hasn't ended
+          gt: now, // Round hasn't started yet
         },
       },
       include: {
@@ -30,15 +26,15 @@ export async function GET() {
         },
       },
       orderBy: {
-        createdAt: 'desc', // Get the latest active round
+        startDate: 'asc', // Get the earliest upcoming round
       },
     });
 
-    if (!activeRound) {
+    if (!upcomingRound) {
       return response({ round: null });
     }
 
-    return response({ round: mapRound(activeRound) });
+    return response({ round: mapRound(upcomingRound) });
   } catch (error: unknown) {
     return handleError(error);
   }

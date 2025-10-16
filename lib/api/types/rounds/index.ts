@@ -44,6 +44,7 @@ export interface GetRoundResponseInstance {
   createdAt: string;
   managerAddress: string;
   updatedAt: string;
+  isHidden: boolean;
   roundCampaigns?: GetRoundCampaignResponseInstance[];
   recipientStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   roundCampaignId?: number;

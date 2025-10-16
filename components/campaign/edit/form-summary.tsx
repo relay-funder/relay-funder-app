@@ -50,10 +50,10 @@ export function CampaignEditFormSummary({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        <h3 className="mb-4 text-lg font-semibold text-foreground">
           Campaign Preview
         </h3>
-        <p className="mb-6 text-sm text-gray-600">
+        <p className="mb-6 text-sm text-muted-foreground">
           This is how your updated campaign will appear to supporters.
         </p>
       </div>
