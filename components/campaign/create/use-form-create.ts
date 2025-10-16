@@ -99,7 +99,6 @@ export function useCampaignFormCreate({
               roundId: data.selectedRoundId,
               campaignId: newCampaign.campaignId,
               applicationReason: 'Campaign created with round selection',
-              status: 'PENDING', // Will require separate admin approval
             });
           } catch (roundError) {
             console.error('Failed to add campaign to round:', roundError);

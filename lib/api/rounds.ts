@@ -81,17 +81,26 @@ export async function listRounds({
   skip = 0,
   admin = false,
   userAddress = null,
+  upcomingOnly = false,
 }: {
   page?: number;
   pageSize?: number;
   skip?: number;
   admin?: boolean;
   userAddress?: string | null;
+  upcomingOnly?: boolean;
 }) {
+  const filterStartTime = upcomingOnly
+    ? { applicationClose: { gt: new Date() } }
+    : {};
+  const where = admin
+    ? { ...filterStartTime }
+    : { isHidden: false, ...filterStartTime }; // Exclude hidden rounds for non-admins
+
   const [rounds, totalCount] = await Promise.all([
     db.round.findMany({
       skip,
-      where: admin ? {} : { isHidden: false }, // Exclude hidden rounds for non-admins
+      where,
       include: {
         media: { where: { state: 'UPLOADED' } },
         roundCampaigns: {
@@ -172,7 +181,7 @@ export async function listRounds({
       },
     }),
     db.round.count({
-      where: admin ? {} : { isHidden: false }, // Exclude hidden rounds for non-admins
+      where,
     }),
   ]);
 
@@ -395,7 +404,7 @@ export async function getUpcomingRound() {
   const upcomingRound = await db.round.findFirst({
     where: {
       isHidden: false, // Exclude hidden rounds
-      startDate: {
+      applicationClose: {
         gt: now, // Round hasn't started yet
       },
     },

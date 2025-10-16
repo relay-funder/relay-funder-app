@@ -323,7 +323,7 @@ async function fetchUpcomingRound() {
     throw new Error(message);
   }
   const data = await response.json();
-  return data.round;
+  return data.round as GetRoundResponseInstance;
 }
 
 export function useUpcomingRound() {
@@ -338,18 +338,13 @@ export function useUpcomingRounds() {
   return useQuery({
     queryKey: [ROUNDS_QUERY_KEY, 'upcoming-list'],
     queryFn: async () => {
-      const response = await fetch('/api/rounds');
+      const response = await fetch('/api/rounds/?upcomingOnly=true');
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch rounds');
       }
       const data = await response.json();
-      // Filter for rounds that haven't started yet (upcoming) and are not hidden
-      const now = new Date();
-      return data.rounds.filter(
-        (round: GetRoundResponseInstance) =>
-          new Date(round.startTime) > now && round.isHidden !== true,
-      );
+      return data.rounds as GetRoundResponseInstance[];
     },
     enabled: true,
   });
