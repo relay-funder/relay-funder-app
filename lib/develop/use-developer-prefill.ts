@@ -22,10 +22,12 @@ export function useDeveloperPrefill(
   setFormState: (state: string) => void,
 ) {
   const onDeveloperSubmit = useCallback(async () => {
-    // Only allow in development environment
-    if (process.env.NODE_ENV !== 'development') {
+    // Allow when dev tools are explicitly enabled
+    const isDevToolsEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
+
+    if (!isDevToolsEnabled) {
       console.warn(
-        '🚫 Developer prefill is only available in development mode',
+        '🚫 Developer prefill is only available when dev tools are enabled',
       );
       return;
     }
@@ -37,6 +39,7 @@ export function useDeveloperPrefill(
 
     try {
       console.log('🔄 Starting developer prefill...');
+      console.log('Environment check:', { isDevToolsEnabled, DEV_TOOLS: process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS });
 
       // Get demo campaign data optimized for preview (guaranteed to be valid)
       const demoData = getDemoCampaignDataForPreview();
@@ -82,6 +85,10 @@ export function useDeveloperPrefill(
       console.log('✅ Form validation passed');
 
       console.log('📝 Applying data to form...');
+
+      // Reset form to clear any existing validation errors and dirty state
+      form.reset();
+
       // Apply demo data to form - convert ISO strings back to date input format (YYYY-MM-DD)
       // The transformation functions will handle converting back to ISO when submitting
       form.setValue('title', validatedData.title);
@@ -102,6 +109,13 @@ export function useDeveloperPrefill(
         startTime: demoData.startTime,
         endTime: demoData.endTime,
       });
+
+      // Check if form is now valid
+      const isFormValid = await form.trigger();
+      console.log('Form validation after prefill:', isFormValid);
+      if (!isFormValid) {
+        console.error('Form validation errors:', form.formState.errors);
+      }
 
       // Clear timeout before advancing
       clearTimeout(timeoutId);
