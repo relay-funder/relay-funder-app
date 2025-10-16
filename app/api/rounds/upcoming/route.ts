@@ -1,5 +1,5 @@
 import { response, handleError } from '@/lib/api/response';
-import { getUpcommingRound, mapRound } from '@/lib/api/rounds';
+import { getUpcomingRound, mapRound } from '@/lib/api/rounds';
 
 export async function GET() {
   try {
