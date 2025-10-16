@@ -390,7 +390,7 @@ export function roundIsActive(round: GetRoundResponseInstance) {
   return true;
 }
 
-export async function getUpcommingRound() {
+export async function getUpcomingRound() {
   const now = new Date();
   const upcomingRound = await db.round.findFirst({
     where: {
