@@ -197,19 +197,46 @@ export async function PATCH(req: Request) {
       },
     });
     if (logoUrl) {
-      const roundMedia = await db.media.findMany({ where: { roundId: id } });
-      const media = await db.media.create({
-        data: {
-          url: logoUrl,
-          mimeType,
-          state: 'UPLOADED',
-          round: { connect: { id } },
-        },
+      // For rounds, logo should be a single media item
+      // Get the current mediaOrder to identify which media item to update
+      const currentRound = await db.round.findUnique({
+        where: { id },
+        select: { mediaOrder: true },
       });
+
+      let media;
+      if (
+        currentRound?.mediaOrder &&
+        Array.isArray(currentRound.mediaOrder) &&
+        currentRound.mediaOrder.length > 0
+      ) {
+        // Update the existing media item that's currently first in mediaOrder (used by UI)
+        const mediaIdToUpdate = (currentRound.mediaOrder as string[])[0];
+        media = await db.media.update({
+          where: { id: mediaIdToUpdate },
+          data: {
+            url: logoUrl,
+            mimeType,
+            state: 'UPLOADED',
+          },
+        });
+      } else {
+        // No existing media, create new media entry for the logo
+        media = await db.media.create({
+          data: {
+            url: logoUrl,
+            mimeType,
+            state: 'UPLOADED',
+            round: { connect: { id } },
+          },
+        });
+      }
+
+      // Set mediaOrder to only contain the logo media
       await db.round.update({
         where: { id },
         data: {
-          mediaOrder: [media.id, ...roundMedia.map(({ id }) => id)],
+          mediaOrder: [media.id],
         },
       });
     }
