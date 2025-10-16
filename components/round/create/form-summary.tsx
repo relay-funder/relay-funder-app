@@ -45,6 +45,7 @@ export function RoundCreateFormSummary() {
         tags: values.tags,
         blockchain: '',
         managerAddress: session?.data?.user.address || '',
+        isHidden: false,
         media: logoUrl
           ? [
               {

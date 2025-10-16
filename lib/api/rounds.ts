@@ -27,11 +27,13 @@ export function mapRound(
     applicationClose,
     poolId,
     logoUrl,
+    isHidden,
     ...roundWithoutDeprecated
   } = round;
   return {
     ...roundWithoutDeprecated,
     descriptionUrl: round.descriptionUrl ?? null,
+    isHidden,
     // hydration conversion Decimal->Number and BigInt->Number
     matchingPool: Number(round.matchingPool),
     poolId: poolId ? Number(poolId) : null,
@@ -89,6 +91,7 @@ export async function listRounds({
   const [rounds, totalCount] = await Promise.all([
     db.round.findMany({
       skip,
+      where: admin ? {} : { isHidden: false }, // Exclude hidden rounds for non-admins
       include: {
         media: { where: { state: 'UPLOADED' } },
         roundCampaigns: {
@@ -114,9 +117,44 @@ export async function listRounds({
             ? {} // Admin sees all campaigns
             : userAddress
               ? {
-                  OR: [
-                    // Include approved campaigns
+                  AND: [
+                    // Exclude hidden rounds for non-admins
+                    { Round: { isHidden: false } },
                     {
+                      OR: [
+                        // Include approved campaigns
+                        {
+                          status: 'APPROVED',
+                          Campaign: {
+                            status: {
+                              in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                            },
+                          },
+                        },
+                        // Include user's own campaigns (any status)
+                        {
+                          Campaign: {
+                            creatorAddress: userAddress,
+                            status: {
+                              in: [
+                                'ACTIVE',
+                                'COMPLETED',
+                                'FAILED',
+                                'PENDING_APPROVAL',
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                }
+              : {
+                  AND: [
+                    // Exclude hidden rounds for non-admins
+                    { Round: { isHidden: false } },
+                    {
+                      // Non-authenticated users see only approved campaigns
                       status: 'APPROVED',
                       Campaign: {
                         status: {
@@ -124,30 +162,7 @@ export async function listRounds({
                         },
                       },
                     },
-                    // Include user's own campaigns (any status)
-                    {
-                      Campaign: {
-                        creatorAddress: userAddress,
-                        status: {
-                          in: [
-                            'ACTIVE',
-                            'COMPLETED',
-                            'FAILED',
-                            'PENDING_APPROVAL',
-                          ],
-                        },
-                      },
-                    },
                   ],
-                }
-              : {
-                  // Non-authenticated users see only approved campaigns
-                  status: 'APPROVED',
-                  Campaign: {
-                    status: {
-                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
-                    },
-                  },
                 },
         },
       },
@@ -156,7 +171,9 @@ export async function listRounds({
         createdAt: 'desc',
       },
     }),
-    db.round.count(),
+    db.round.count({
+      where: admin ? {} : { isHidden: false }, // Exclude hidden rounds for non-admins
+    }),
   ]);
 
   // Calculate payment summaries for all campaigns in all rounds
@@ -226,16 +243,24 @@ export async function getRound(
         where: admin
           ? {}
           : {
-              OR: [
+              AND: [
+                // Exclude hidden rounds for non-admins
+                { Round: { isHidden: false } },
                 {
-                  status: 'APPROVED',
-                  Campaign: {
-                    status: {
-                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                  OR: [
+                    {
+                      status: 'APPROVED',
+                      Campaign: {
+                        status: {
+                          in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                        },
+                      },
                     },
-                  },
+                    {
+                      Campaign: { creatorAddress: sessionAddress ?? undefined },
+                    },
+                  ],
                 },
-                { Campaign: { creatorAddress: sessionAddress ?? undefined } },
               ],
             },
       },
@@ -317,6 +342,7 @@ export async function prefetchActiveRound(queryClient: QueryClient) {
   const now = new Date();
   const activeRound = await db.round.findFirst({
     where: {
+      isHidden: false, // Exclude hidden rounds
       startDate: {
         lte: now, // Round has started
       },

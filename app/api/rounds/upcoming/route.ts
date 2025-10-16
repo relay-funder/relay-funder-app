@@ -8,6 +8,7 @@ export async function GET() {
     const now = new Date();
     const upcomingRound = await db.round.findFirst({
       where: {
+        isHidden: false, // Exclude hidden rounds
         startDate: {
           gt: now, // Round hasn't started yet
         },
