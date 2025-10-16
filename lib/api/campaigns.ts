@@ -88,11 +88,16 @@ function buildCampaignWhere({
 }): Prisma.CampaignWhereInput {
   const statusList = buildStatusList({ admin, status, creatorAddress });
 
+  // Apply transactionHash filter only for non-admin users in production when not including draft campaigns
+  const shouldApplyTransactionFilter = !(
+    admin ||
+    process.env.NODE_ENV === 'development' ||
+    statusList.includes(CampaignStatus.DRAFT)
+  );
+
   return {
     status: { in: statusList },
-    ...(admin || process.env.NODE_ENV === 'development'
-      ? {}
-      : { transactionHash: { not: null } }),
+    ...(shouldApplyTransactionFilter ? { transactionHash: { not: null } } : {}),
     creatorAddress,
   };
 }

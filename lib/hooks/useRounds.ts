@@ -345,7 +345,7 @@ export function useUpcomingRounds() {
       const now = new Date();
       return data.rounds.filter(
         (round: GetRoundResponseInstance) =>
-          new Date(round.startTime) > now && (round.isHidden !== true),
+          new Date(round.startTime) > now && round.isHidden !== true,
       );
     },
     enabled: true,
