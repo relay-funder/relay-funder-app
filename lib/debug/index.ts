@@ -1,4 +1,6 @@
-export const debug = process.env.NODE_ENV !== 'production';
+import { IS_PRODUCTION } from '@/lib/constant';
+
+export const debug = !IS_PRODUCTION;
 export const debugWeb3 = debug;
 export const debugWeb3UseAuth = debugWeb3;
 export const debugWeb3ContextProvider = debugWeb3;
