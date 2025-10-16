@@ -1,4 +1,5 @@
 import { PrismaClient } from '@/.generated/prisma/client';
+import { IS_PRODUCTION } from '@/lib/constant';
 
 export {
   Decimal,
@@ -19,4 +20,4 @@ const globalForPrisma = globalThis as unknown as {
 
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
+if (!IS_PRODUCTION) globalForPrisma.prisma = db;

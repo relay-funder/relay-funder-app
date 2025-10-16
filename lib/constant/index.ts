@@ -54,3 +54,7 @@ export const PINATA_API_JWT_ACCESS_TOKEN =
   process.env.PINATA_API_JWT_ACCESS_TOKEN;
 export const NEXT_PUBLIC_PINATA_GATEWAY_URL =
   process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL ?? '';
+
+export const IS_PRODUCTION =
+  process.env.NODE_ENV === 'production' &&
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';

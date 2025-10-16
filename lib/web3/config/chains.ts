@@ -1,4 +1,5 @@
 // 3297-> 4513
+import { IS_PRODUCTION } from '@/lib/constant';
 import { celo } from 'viem/chains';
 
 export const celoSepolia = {
@@ -30,8 +31,5 @@ export const celoSepolia = {
 } as unknown as typeof celo & { id: number };
 
 // Use Celo mainnet in production, Sepolia in staging/development
-const isProduction =
-  process.env.NODE_ENV === 'production' &&
-  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
-export const defaultChain = isProduction ? celo : celoSepolia;
+export const defaultChain = IS_PRODUCTION ? celo : celoSepolia;
 export { celo };

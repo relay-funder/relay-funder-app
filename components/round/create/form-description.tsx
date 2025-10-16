@@ -9,13 +9,16 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui';
+
+import {
+  ROUND_TITLE_MAX_LENGTH,
+  ROUND_DESCRIPTION_MAX_LENGTH,
+} from '@/lib/constant/form';
+
 export function RoundCreateFormDescription() {
   const form = useFormContext();
   const [titleCharCount, setTitleCharCount] = useState(0);
   const [descriptionCharCount, setDescriptionCharCount] = useState(0);
-
-  const TITLE_MAX_LENGTH = 100;
-  const DESCRIPTION_MAX_LENGTH = 2000;
 
   // Update character counts when form values change
   useEffect(() => {
@@ -47,15 +50,15 @@ export function RoundCreateFormDescription() {
               <Input
                 placeholder="Empowering Change: Round 1 - Fund Social Impact Campaigns"
                 className="mt-1"
-                maxLength={TITLE_MAX_LENGTH}
+                maxLength={ROUND_TITLE_MAX_LENGTH}
                 {...field}
               />
             </FormControl>
             <div className="flex justify-end">
               <span
-                className={`text-xs ${getCharCountColor(titleCharCount, TITLE_MAX_LENGTH)}`}
+                className={`text-xs ${getCharCountColor(titleCharCount, ROUND_TITLE_MAX_LENGTH)}`}
               >
-                {titleCharCount}/{TITLE_MAX_LENGTH}
+                {titleCharCount}/{ROUND_TITLE_MAX_LENGTH}
               </span>
             </div>
             <FormMessage />
@@ -93,15 +96,15 @@ export function RoundCreateFormDescription() {
               <Textarea
                 className="mt-1 min-h-[120px] resize-none bg-background"
                 placeholder="This round focuses on supporting innovative campaigns that create positive social impact. Campaigns will be funded through quadratic funding based on community engagement. Include details about your goals, target audience, and eligibility criteria."
-                maxLength={DESCRIPTION_MAX_LENGTH}
+                maxLength={ROUND_DESCRIPTION_MAX_LENGTH}
                 {...field}
               />
             </FormControl>
             <div className="flex justify-end">
               <span
-                className={`text-xs ${getCharCountColor(descriptionCharCount, DESCRIPTION_MAX_LENGTH)}`}
+                className={`text-xs ${getCharCountColor(descriptionCharCount, ROUND_DESCRIPTION_MAX_LENGTH)}`}
               >
-                {descriptionCharCount}/{DESCRIPTION_MAX_LENGTH}
+                {descriptionCharCount}/{ROUND_DESCRIPTION_MAX_LENGTH}
               </span>
             </div>
             <FormMessage />

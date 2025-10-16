@@ -5,11 +5,19 @@ export async function GET() {
   try {
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const globalParams = process.env.NEXT_PUBLIC_GLOBAL_PARAMS as `0x${string}`;
-    const treasuryFactory = process.env.NEXT_PUBLIC_TREASURY_FACTORY as `0x${string}`;
-    const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
+    const treasuryFactory = process.env
+      .NEXT_PUBLIC_TREASURY_FACTORY as `0x${string}`;
+    const campaignInfoFactory = process.env
+      .NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
     const platformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`;
 
-    if (!rpcUrl || !globalParams || !treasuryFactory || !campaignInfoFactory || !platformHash) {
+    if (
+      !rpcUrl ||
+      !globalParams ||
+      !treasuryFactory ||
+      !campaignInfoFactory ||
+      !platformHash
+    ) {
       console.warn('[platform/status] Missing env', {
         hasRpcUrl: !!rpcUrl,
         hasGlobalParams: !!globalParams,
@@ -59,8 +67,14 @@ export async function GET() {
     let isImplementationApproved = false;
 
     try {
-      treasuryImplementation = await tf.getTreasuryImplementation(platformHash, implementationId);
-      isImplementationApproved = await tf.isTreasuryImplementationApproved(platformHash, implementationId);
+      treasuryImplementation = await tf.getTreasuryImplementation(
+        platformHash,
+        implementationId,
+      );
+      isImplementationApproved = await tf.isTreasuryImplementationApproved(
+        platformHash,
+        implementationId,
+      );
     } catch (treasuryError) {
       console.error('Failed to check treasury implementation:', treasuryError);
     }
