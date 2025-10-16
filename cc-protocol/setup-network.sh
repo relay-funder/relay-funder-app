@@ -80,11 +80,11 @@ fi
 echo ""
 echo "2️⃣  Configuring KeepWhatsRaised treasury implementation..."
 
-echo "   Registering implementation (ID: 0)..."
+echo "   Registering implementation (ID: ${NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID:-0})..."
 cast send "$NEXT_PUBLIC_TREASURY_FACTORY" \
   "registerTreasuryImplementation(bytes32,uint256,address)" \
   "$NEXT_PUBLIC_PLATFORM_HASH" \
-  0 \
+  "${NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID:-0}" \
   "$KWR_IMPL" \
   --rpc-url "$NEXT_PUBLIC_RPC_URL" \
   --private-key "$PLATFORM_ADMIN_PRIVATE_KEY" \

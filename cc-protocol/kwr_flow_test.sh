@@ -205,8 +205,8 @@ for KEY in "$FLAT_FEE_KEY" "$CUM_FLAT_FEE_KEY" "$PLATFORM_FEE_KEY" "$VAKI_COMMIS
   fi
 done
 
-# Register and approve KeepWhatsRaised implementation (implementation ID 0)
-KWR_IMPLEMENTATION_ID=${KEEP_WHATS_RAISED_IMPLEMENTATION_ID:-0}
+# Register and approve KeepWhatsRaised implementation (configurable implementation ID)
+KWR_IMPLEMENTATION_ID=${NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID:-0}
 if [[ -n "${KEEP_WHATS_RAISED_IMPLEMENTATION:-}" ]]; then
   echo "Registering KWR implementation (id=$KWR_IMPLEMENTATION_ID)..."
   cast send "$TREASURY_FACTORY" \
@@ -258,8 +258,8 @@ fi
 echo "Campaign deployed at: $CAMPAIGN_ADDR"
 
 echo "Deploying KeepWhatsRaised treasury..."
-# KeepWhatsRaised uses implementation ID 0
-KWR_IMPLEMENTATION_ID=${KEEP_WHATS_RAISED_IMPLEMENTATION_ID:-0}
+# KeepWhatsRaised uses configurable implementation ID
+KWR_IMPLEMENTATION_ID=${NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID:-0}
 # Use explicit pending nonce for platform admin to avoid sequencer race
 sleep 1
 PLAT_NONCE_HEX=$(cast rpc eth_getTransactionCount "$PLATFORM_ADMIN_ADDR" pending --rpc-url "$RPC_URL" | tr -d '"')
