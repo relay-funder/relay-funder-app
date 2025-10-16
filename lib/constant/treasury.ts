@@ -47,7 +47,7 @@ export const FEE_KEYS = {
   VAKI_COMMISSION: 'vakiCommission',
 } as const;
 
-// Treasury implementation IDs
+// Treasury implementation IDs (configurable via environment variable)
 export const TREASURY_IMPLEMENTATIONS = {
-  KEEP_WHATS_RAISED: 0,
+  KEEP_WHATS_RAISED: parseInt(process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '0'),
 } as const;

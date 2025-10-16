@@ -53,8 +53,8 @@ export async function GET() {
       provider,
     );
 
-    // Check KeepWhatsRaised implementation (ID: 1) for production
-    const implementationId = 1;
+    // Check treasury implementation (configurable via env var, defaults to 1 for production)
+    const implementationId = parseInt(process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '1');
     let treasuryImplementation = null;
     let isImplementationApproved = false;
 
