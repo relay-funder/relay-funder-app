@@ -389,3 +389,61 @@ export function roundIsActive(round: GetRoundResponseInstance) {
   }
   return true;
 }
+
+export async function getUpcomingRound() {
+  const now = new Date();
+  const upcomingRound = await db.round.findFirst({
+    where: {
+      isHidden: false, // Exclude hidden rounds
+      startDate: {
+        gt: now, // Round hasn't started yet
+      },
+    },
+    include: {
+      media: { where: { state: 'UPLOADED' } },
+      _count: {
+        select: {
+          roundCampaigns: {
+            where: {
+              status: 'APPROVED',
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      startDate: 'asc', // Get the earliest upcoming round
+    },
+  });
+  return upcomingRound;
+}
+export async function getActiveRound() {
+  const now = new Date();
+  const activeRound = await db.round.findFirst({
+    where: {
+      isHidden: false, // Exclude hidden rounds
+      startDate: {
+        lte: now, // Round has started
+      },
+      endDate: {
+        gt: now, // Round hasn't ended
+      },
+    },
+    include: {
+      media: { where: { state: 'UPLOADED' } },
+      _count: {
+        select: {
+          roundCampaigns: {
+            where: {
+              status: 'APPROVED',
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc', // Get the latest active round
+    },
+  });
+  return activeRound;
+}

@@ -5,11 +5,19 @@ export async function GET() {
   try {
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const globalParams = process.env.NEXT_PUBLIC_GLOBAL_PARAMS as `0x${string}`;
-    const treasuryFactory = process.env.NEXT_PUBLIC_TREASURY_FACTORY as `0x${string}`;
-    const campaignInfoFactory = process.env.NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
+    const treasuryFactory = process.env
+      .NEXT_PUBLIC_TREASURY_FACTORY as `0x${string}`;
+    const campaignInfoFactory = process.env
+      .NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
     const platformHash = process.env.NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`;
 
-    if (!rpcUrl || !globalParams || !treasuryFactory || !campaignInfoFactory || !platformHash) {
+    if (
+      !rpcUrl ||
+      !globalParams ||
+      !treasuryFactory ||
+      !campaignInfoFactory ||
+      !platformHash
+    ) {
       console.warn('[platform/status] Missing env', {
         hasRpcUrl: !!rpcUrl,
         hasGlobalParams: !!globalParams,
@@ -53,14 +61,20 @@ export async function GET() {
       provider,
     );
 
-    // Check KeepWhatsRaised implementation (ID: 1) for production
-    const implementationId = 1;
+    // Check treasury implementation (configurable via env var, defaults to 1 for production)
+    const implementationId = parseInt(process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '1');
     let treasuryImplementation = null;
     let isImplementationApproved = false;
 
     try {
-      treasuryImplementation = await tf.getTreasuryImplementation(platformHash, implementationId);
-      isImplementationApproved = await tf.isTreasuryImplementationApproved(platformHash, implementationId);
+      treasuryImplementation = await tf.getTreasuryImplementation(
+        platformHash,
+        implementationId,
+      );
+      isImplementationApproved = await tf.isTreasuryImplementationApproved(
+        platformHash,
+        implementationId,
+      );
     } catch (treasuryError) {
       console.error('Failed to check treasury implementation:', treasuryError);
     }

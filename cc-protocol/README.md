@@ -82,7 +82,7 @@ From `util/env.foundry`:
 - `NEXT_PUBLIC_PLATFORM_HASH` - Platform identifier hash
 - `NEXT_PUBLIC_PLATFORM_ADMIN` - Platform admin wallet address
 - `KEEP_WHATS_RAISED_IMPLEMENTATION` - KeepWhatsRaised implementation address
-- `KEEP_WHATS_RAISED_IMPLEMENTATION_ID` - Implementation ID for KeepWhatsRaised (defaults to 0)
+- `NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID` - Implementation ID for treasury deployment (defaults to 0 for staging, 1 for production)
 
 #### Script Configuration:
 

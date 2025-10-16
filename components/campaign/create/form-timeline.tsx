@@ -19,6 +19,7 @@ import {
 import { useUpcomingRounds, useUpcomingRound } from '@/lib/hooks/useRounds';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { CheckCircle, AlertCircle } from 'lucide-react';
+import { FormattedDate } from '@/components/formatted-date';
 
 interface CampaignCreateFormTimelineProps {
   isOnChainDeployed?: boolean;
@@ -220,8 +221,8 @@ export function CampaignCreateFormTimeline({
                           <div>
                             <div className="font-medium">{round.title}</div>
                             <div className="text-xs text-muted-foreground">
-                              {new Date(round.startTime).toLocaleDateString()} -{' '}
-                              {new Date(round.endTime).toLocaleDateString()}
+                              <FormattedDate date={new Date(round.startTime)} />{' '}
+                              - <FormattedDate date={new Date(round.endTime)} />
                             </div>
                           </div>
                         </div>
