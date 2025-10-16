@@ -18,10 +18,7 @@ import {
 } from '@/components/ui';
 import { useUpcomingRounds, useUpcomingRound } from '@/lib/hooks/useRounds';
 import { GetRoundResponseInstance } from '@/lib/api/types';
-import {
-  CheckCircle,
-  AlertCircle,
-} from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 interface CampaignCreateFormTimelineProps {
   isOnChainDeployed?: boolean;
