@@ -2,7 +2,7 @@
 
 ## Overview
 
-Relay Funder App is a Next.js 15 fundraising platform for open source projects built with TypeScript, Prisma, PostgreSQL, and Web3 integration. The project uses Docker for development, pnpm as the package manager, and features a comprehensive Web3 integration with multiple wallet adapters (Privy, Silk, and Dummy for testing).
+Relay Funder App is a Next.js 15 fundraising platform for refugee communities and humanitarian projects built with TypeScript, Prisma, PostgreSQL, and Web3 integration. The project uses Docker for development, pnpm as the package manager, and features a comprehensive Web3 integration with multiple wallet adapters (Privy, Silk, and Dummy for testing).
 
 ### Technology Stack
 

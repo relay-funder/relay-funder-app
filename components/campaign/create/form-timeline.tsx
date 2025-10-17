@@ -156,6 +156,14 @@ export function CampaignCreateFormTimeline({
     }
 
     form.setValue('selectedRoundId', upcomingRound.id);
+    form.setValue(
+      'startTime',
+      new Date(upcomingRound.startTime).toISOString().slice(0, 10),
+    );
+    form.setValue(
+      'endTime',
+      new Date(upcomingRound.endTime).toISOString().slice(0, 10),
+    );
   }, [form, upcomingRound]);
 
   const handleRoundChange = useCallback(
@@ -164,14 +172,23 @@ export function CampaignCreateFormTimeline({
         return;
       }
       if (value === '' || value === '0') {
-        form.setValue('startTime', '');
-        form.setValue('endTime', '');
         return;
       }
 
-      form.setValue('selectedRoundId', parseInt(value));
+      const round = upcomingRounds?.find(({ id }) => id === parseInt(value));
+      if (round) {
+        form.setValue('selectedRoundId', round.id);
+        form.setValue(
+          'startTime',
+          new Date(round.startTime).toISOString().slice(0, 10),
+        );
+        form.setValue(
+          'endTime',
+          new Date(round.endTime).toISOString().slice(0, 10),
+        );
+      }
     },
-    [form, hasManualTimes],
+    [form, hasManualTimes, upcomingRounds],
   );
   const handleStartTimeChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {

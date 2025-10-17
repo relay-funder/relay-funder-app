@@ -88,11 +88,11 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
     ];
 
     const roundDescriptions = [
-      'This quadratic funding round supports open source projects that create meaningful impact in humanitarian efforts. Projects focused on education, health, disaster response, and community development will receive matching funds based on community engagement and support.',
-      "Join us in funding innovative open source solutions that address critical humanitarian challenges. Through quadratic funding, community donations are amplified to support projects making a real difference in people's lives worldwide.",
-      'Empowering communities through technology. This round funds open source projects that provide digital tools and platforms for humanitarian organizations, disaster response teams, and social impact initiatives.',
-      'Supporting the open source ecosystem that drives humanitarian innovation. Projects selected through community voting will receive matching funds to accelerate development of tools that save lives and improve communities.',
-      "A dedicated funding round for projects that leverage technology to address humanitarian needs. From educational platforms to disaster management systems, we're looking for open source solutions that create lasting positive change.",
+      'This quadratic funding round supports projects that create meaningful impact in humanitarian efforts. Projects focused on education, health, disaster response, and community development will receive matching funds based on community engagement and support.',
+      "Join us in funding innovative solutions that address critical humanitarian challenges. Through quadratic funding, community donations are amplified to support projects making a real difference in people's lives worldwide.",
+      'Empowering communities through technology. This round funds projects that provide digital tools and platforms for humanitarian organizations, disaster response teams, and social impact initiatives.',
+      'Supporting the ecosystem that drives humanitarian innovation. Projects selected through community voting will receive matching funds to accelerate development of tools that save lives and improve communities.',
+      "A dedicated funding round for projects that leverage technology to address humanitarian needs. From educational platforms to disaster management systems, we're looking for solutions that create lasting positive change.",
     ];
 
     const randomTitle =

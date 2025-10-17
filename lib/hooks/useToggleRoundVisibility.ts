@@ -11,7 +11,7 @@ async function toggleRoundVisibility({
   roundId,
   isHidden,
 }: ToggleRoundVisibilityInput) {
-  const response = await fetch(`/api/rounds/${roundId}/visibility`, {
+  const response = await fetch(`/api/admin/rounds/${roundId}/visibility`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ isHidden }),

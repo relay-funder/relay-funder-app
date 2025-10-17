@@ -222,6 +222,54 @@ export const TreasuryFactoryABI = [
     stateMutability: 'nonpayable',
   },
   {
+    type: 'function',
+    name: 'getTreasuryImplementation',
+    inputs: [
+      {
+        name: 'platformHash',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'implementationId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'isTreasuryImplementationApproved',
+    inputs: [
+      {
+        name: 'platformHash',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'implementationId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
     type: 'event',
     name: 'TreasuryFactoryBytecodeChunkAdded',
     inputs: [
