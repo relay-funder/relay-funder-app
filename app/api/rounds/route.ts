@@ -10,6 +10,7 @@ export async function GET(req: Request) {
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const skip = (page - 1) * pageSize;
     const forceUserView = searchParams.get('forceUserView') === 'true';
+    const upcomingOnly = searchParams.get('upcomingOnly') === 'true';
     if (pageSize > 10) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
@@ -28,7 +29,14 @@ export async function GET(req: Request) {
     }
 
     return response(
-      await listRounds({ page, pageSize, skip, admin, userAddress }),
+      await listRounds({
+        page,
+        pageSize,
+        skip,
+        admin,
+        userAddress,
+        upcomingOnly,
+      }),
     );
   } catch (error: unknown) {
     return handleError(error);

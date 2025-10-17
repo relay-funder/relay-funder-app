@@ -24,6 +24,7 @@ import {
   ipLimiterCreateCampaign,
   userLimiterCreateCampaign,
 } from '@/lib/rate-limit';
+import { getRound } from '@/lib/api/rounds';
 
 const statusMap: Record<string, CampaignStatus> = {
   draft: CampaignStatus.DRAFT,
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const fundingGoal = formData.get('fundingGoal') as string;
+    const selectedRoundId = formData.get('selectedRoundId') as string;
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
     const statusRaw = formData.get('status') as string;
@@ -74,15 +76,41 @@ export async function POST(req: Request) {
         location,
       });
 
-    if (
-      !title ||
-      !description ||
-      !fundingGoal ||
-      !startTime ||
-      !endTime ||
-      !creatorAddress
-    ) {
+    if (!title || !description || !fundingGoal || !creatorAddress) {
       throw new ApiParameterError('missing required fields');
+    }
+    let startTimeValue: Date | undefined = undefined;
+    let endTimeValue: Date | undefined = undefined;
+    if (selectedRoundId) {
+      const roundId = parseInt(selectedRoundId);
+      if (isNaN(roundId) || roundId <= 0) {
+        throw new ApiParameterError('selectedRoundId must be a valid positive integer');
+      }
+      const round = await getRound(roundId);
+      if (!round) {
+        throw new ApiParameterError('invalid selectedRoundId');
+      }
+      startTimeValue = new Date(round.startTime);
+      endTimeValue = new Date(round.endTime);
+      if (!(await isAdmin())) {
+        // check round state for non-admins
+        if (round.isHidden) {
+          throw new ApiParameterError('Invalid selected round');
+        }
+        if (startTimeValue < new Date()) {
+          // possibly a sanity offset needed
+          throw new ApiParameterError('Invalid selected round');
+        }
+      }
+    } else {
+      if (!startTime || !endTime) {
+        throw new ApiParameterError('missing required fields');
+      }
+      startTimeValue = new Date(startTime);
+      endTimeValue = new Date(endTime);
+    }
+    if (!startTimeValue || !endTimeValue) {
+      throw new ApiParameterError('missing start and end time');
     }
 
     // Validate category if provided
@@ -117,8 +145,8 @@ export async function POST(req: Request) {
         title,
         description,
         fundingGoal,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        startTime: startTimeValue,
+        endTime: endTimeValue,
         creatorAddress,
         status,
         location: location || undefined,

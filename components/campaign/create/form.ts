@@ -48,7 +48,7 @@ export const CampaignFormSchema = z
       { message: 'Funding goal must be greater than zero' },
     ),
     fundingModel: z.string(),
-    selectedRoundId: z.number().optional(),
+    selectedRoundId: z.number().nullable(),
     startTime: z
       .string()
       .refine(validateTimes, {
@@ -141,7 +141,7 @@ export const campaignFormDefaultValues: CampaignFormSchemaType = {
   description: '',
   fundingGoal: '',
   fundingModel: 'flexible',
-  selectedRoundId: undefined, // Will be set to upcoming round if available
+  selectedRoundId: null,
   startTime: (() => {
     const now = new Date();
     return now.toISOString().slice(0, 10); // Today in YYYY-MM-DD format for date input

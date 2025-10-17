@@ -93,13 +93,12 @@ export function useCampaignFormCreate({
         const newCampaign = await createCampaign(data);
 
         // If a round is selected, add the campaign to the round
-        if (data.selectedRoundId) {
+        if (data.selectedRoundId && data.selectedRoundId > 0) {
           try {
             await createRoundCampaign({
               roundId: data.selectedRoundId,
               campaignId: newCampaign.campaignId,
               applicationReason: 'Campaign created with round selection',
-              status: 'PENDING', // Will require separate admin approval
             });
           } catch (roundError) {
             console.error('Failed to add campaign to round:', roundError);
