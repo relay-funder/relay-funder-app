@@ -5,7 +5,6 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Clock, Calendar, DollarSign } from 'lucide-react';
@@ -20,6 +19,7 @@ import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { RoundMainImageAvatar } from './main-image-avatar';
+import { useConfirm } from '@/hooks/use-confirm';
 
 export function RoundCardMinimal({
   round,
@@ -39,6 +39,8 @@ export function RoundCardMinimal({
   const { toast } = useToast();
   const { mutateAsync: removeRoundCampaign, isPending: isRemoving } =
     useRemoveRoundCampaign();
+  const { confirm } = useConfirm();
+
   const canRemove = useMemo(() => {
     if (!campaign) {
       return false;
@@ -55,28 +57,65 @@ export function RoundCardMinimal({
     return true;
   }, [round, campaign, address, isAdmin]);
 
-  const handleRemove = useCallback(async () => {
-    if (!campaign) return;
+  const handleRemove = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!campaign) return;
 
-    try {
-      await removeRoundCampaign({
-        campaignId: campaign.id,
-        roundId: round.id,
+      const confirmed = await confirm({
+        title: 'Are you absolutely sure?',
+        description: (
+          <>
+            This action cannot be undone. This will permanently remove the
+            campaign &quot;
+            <span className="font-semibold">
+              {campaign?.title ?? 'Untitled Campaign'}
+            </span>
+            &quot; from the round &quot;
+            <span className="font-semibold">
+              {round.title ?? 'Untitled Round'}
+            </span>
+            &quot;.
+          </>
+        ),
+        onConfirm: async () => {
+          await removeRoundCampaign({
+            campaignId: campaign.id,
+            roundId: round.id,
+          });
+        },
+        confirmText: 'Remove',
+        confirmVariant: 'destructive',
+        isConfirming: isRemoving,
       });
 
-      toast({
-        title: 'Success',
-        description: 'Campaign removed from round successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Failed to remove campaign',
-        variant: 'destructive',
-      });
-    }
-  }, [campaign, round.id, removeRoundCampaign, toast]);
+      if (confirmed) {
+        toast({
+          title: 'Success',
+          description: 'Campaign removed from round successfully',
+        });
+      } else if (isRemoving) {
+        // If `isRemoving` is true, it means the user clicked 'Remove' in the dialog
+        // but the promise resolved to false, likely due to an error in onConfirm
+        toast({
+          title: 'Error',
+          description: 'Failed to remove campaign',
+          variant: 'destructive',
+        });
+      }
+    },
+    [
+      campaign,
+      round.id,
+      round.title,
+      removeRoundCampaign,
+      toast,
+      confirm,
+      isRemoving,
+    ],
+  );
+
   if (!round || !round.id) {
     return (
       <Card className="flex h-full flex-col overflow-hidden rounded-lg border p-4 shadow-sm">
@@ -177,11 +216,7 @@ export function RoundCardMinimal({
             </Button>
             {canRemove && (
               <Button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleRemove();
-                }}
+                onClick={handleRemove}
                 variant="ghost"
                 size="sm"
                 disabled={isRemoving}
