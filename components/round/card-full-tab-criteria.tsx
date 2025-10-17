@@ -45,9 +45,8 @@ export function RoundCardTabCriteria({
               <h4 className="font-medium">Project Requirements</h4>
               {projectRequirementOpenSource && (
                 <p className="text-sm text-muted-foreground">
-                  Your campaign must align with the round&apos;s humanitarian
-                  goals and community impact objectives. Specific requirements
-                  may apply.
+                  Your campaign must be open source and align with the
+                  round&apos;s goals. Specific requirements may apply.
                 </p>
               )}
             </div>
