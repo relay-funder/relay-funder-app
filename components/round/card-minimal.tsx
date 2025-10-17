@@ -39,7 +39,7 @@ export function RoundCardMinimal({
   const { toast } = useToast();
   const { mutateAsync: removeRoundCampaign, isPending: isRemoving } =
     useRemoveRoundCampaign();
-  const canWithdraw = useMemo(() => {
+  const canRemove = useMemo(() => {
     if (!campaign) {
       return false;
     }
@@ -175,7 +175,7 @@ export function RoundCardMinimal({
                 {status.text === 'Ended' ? 'View Results' : 'View Round'}
               </span>
             </Button>
-            {canWithdraw && (
+            {canRemove && (
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -190,10 +190,10 @@ export function RoundCardMinimal({
                 {isRemoving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Withdrawing...
+                    Removing...
                   </>
                 ) : (
-                  'Withdraw'
+                  'Remove'
                 )}
               </Button>
             )}
