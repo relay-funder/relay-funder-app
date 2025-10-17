@@ -1,6 +1,6 @@
 {
   "name": "relayfunder",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "engines": {
     "node": "20.x"
