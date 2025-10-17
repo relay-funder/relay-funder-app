@@ -22,7 +22,7 @@ export function useDeveloperPrefill(
   setFormState: (state: string) => void,
 ) {
   const onDeveloperSubmit = useCallback(async () => {
-    // Allow when dev tools are explicitly enabled
+    // Only allow when dev tools are explicitly enabled
     const isDevToolsEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
 
     if (!isDevToolsEnabled) {
@@ -51,6 +51,8 @@ export function useDeveloperPrefill(
 
       console.log('📄 Demo data generated:', {
         title: demoData.title.substring(0, 50) + '...',
+        description: demoData.description?.substring(0, 50) + '...',
+        descriptionLength: demoData.description?.length,
         category: demoData.category,
         fundingGoal: demoData.fundingGoal,
         startTime: demoData.startTime,
@@ -74,11 +76,14 @@ export function useDeveloperPrefill(
       console.log('🔍 Validating form data...');
       console.log('Form data to validate:', {
         title: formData.title?.substring(0, 30),
+        description: formData.description?.substring(0, 50) + '...',
+        descriptionLength: formData.description?.length,
         fundingGoal: formData.fundingGoal,
         startTime: formData.startTime,
         endTime: formData.endTime,
         location: formData.location,
         category: formData.category,
+        selectedRoundId: formData.selectedRoundId,
       });
 
       // This will throw if data is somehow invalid (defensive programming)

@@ -264,10 +264,12 @@ function generateValidDemoCampaignData(): DemoCampaignData {
  * Each call generates new data that meets current validation requirements
  */
 function getFreshDemoData(): DemoCampaignData[] {
-  // Only generate demo data in development environment
-  if (process.env.NODE_ENV !== 'development') {
+  // Only generate demo data when dev tools are explicitly enabled
+  const isDevToolsEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
+
+  if (!isDevToolsEnabled) {
     console.warn(
-      '🚫 Demo data generation is only available in development mode',
+      '🚫 Demo data generation is only available when dev tools are enabled',
     );
     return [];
   }
@@ -328,7 +330,7 @@ export function getDemoCampaignDataForPreview(): DemoCampaignData & {
     const nextWeek = new Date(tomorrow.getTime() + 7 * 24 * 60 * 60 * 1000);
     return {
       title: 'Demo Campaign',
-      description: 'This is a demo campaign for testing purposes.',
+      description: 'This is a demo campaign for testing purposes. It provides realistic sample data to help developers quickly populate forms and test functionality without having to manually enter all the required fields.',
       fundingGoal: 1000,
       fundingModel: 'flexible',
       startTime: tomorrow.toISOString().slice(0, 10), // Tomorrow
