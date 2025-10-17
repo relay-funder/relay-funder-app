@@ -19,7 +19,8 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: 'Relay Funder',
-  description: 'Fundraising platform for refugee communities and humanitarian projects',
+  description:
+    'Fundraising platform for refugee communities and humanitarian projects',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
