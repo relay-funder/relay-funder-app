@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { response, handleError } from '@/lib/api/response';
+import { TREASURY_IMPLEMENTATIONS } from '@/lib/constant/treasury';
 
 export async function GET() {
   try {
@@ -51,7 +52,7 @@ export async function GET() {
       console.error('Failed to get platform admin:', adminError);
     }
 
-    // Check TreasuryFactory for implementation registration/approval
+    // Check TreasuryFactory for implementation
     const tf = new ethers.Contract(
       treasuryFactory,
       [
@@ -61,10 +62,8 @@ export async function GET() {
       provider,
     );
 
-    // Check treasury implementation (configurable via env var, defaults to 1 for production)
-    const implementationId = parseInt(
-      process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '1',
-    );
+    // Get treasury implementation ID (configurable via env var, defaults to value from constants)
+    const implementationId = TREASURY_IMPLEMENTATIONS.KEEP_WHATS_RAISED;
     let treasuryImplementation = null;
     let isImplementationApproved = false;
 

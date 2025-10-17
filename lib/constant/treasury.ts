@@ -49,7 +49,7 @@ export const FEE_KEYS = {
 
 // Treasury implementation IDs (configurable via environment variable)
 export const TREASURY_IMPLEMENTATIONS = {
-  KEEP_WHATS_RAISED: parseInt(
+  KEEP_WHATS_RAISED: Number(
     process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '0',
   ),
 } as const;
