@@ -252,6 +252,9 @@ export function useUpdateAdminUserFlags() {
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
       });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
+      });
     },
   });
 }
@@ -290,6 +293,9 @@ export function useUpdateAdminUserRoles() {
       queryClient.invalidateQueries({ queryKey: [ADMIN_USERS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
       });
     },
   });
