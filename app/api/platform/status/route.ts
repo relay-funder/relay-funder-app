@@ -62,7 +62,9 @@ export async function GET() {
     );
 
     // Check treasury implementation (configurable via env var, defaults to 1 for production)
-    const implementationId = parseInt(process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '1');
+    const implementationId = parseInt(
+      process.env.NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID || '1',
+    );
     let treasuryImplementation = null;
     let isImplementationApproved = false;
 

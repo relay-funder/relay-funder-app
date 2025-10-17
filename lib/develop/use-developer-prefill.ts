@@ -23,7 +23,8 @@ export function useDeveloperPrefill(
 ) {
   const onDeveloperSubmit = useCallback(async () => {
     // Only allow when dev tools are explicitly enabled
-    const isDevToolsEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
+    const isDevToolsEnabled =
+      process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
 
     if (!isDevToolsEnabled) {
       console.warn(
@@ -39,7 +40,10 @@ export function useDeveloperPrefill(
 
     try {
       console.log('🔄 Starting developer prefill...');
-      console.log('Environment check:', { isDevToolsEnabled, DEV_TOOLS: process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS });
+      console.log('Environment check:', {
+        isDevToolsEnabled,
+        DEV_TOOLS: process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS,
+      });
 
       // Get demo campaign data optimized for preview (guaranteed to be valid)
       const demoData = getDemoCampaignDataForPreview();

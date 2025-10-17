@@ -330,7 +330,8 @@ export function getDemoCampaignDataForPreview(): DemoCampaignData & {
     const nextWeek = new Date(tomorrow.getTime() + 7 * 24 * 60 * 60 * 1000);
     return {
       title: 'Demo Campaign',
-      description: 'This is a demo campaign for testing purposes. It provides realistic sample data to help developers quickly populate forms and test functionality without having to manually enter all the required fields.',
+      description:
+        'This is a demo campaign for testing purposes. It provides realistic sample data to help developers quickly populate forms and test functionality without having to manually enter all the required fields.',
       fundingGoal: 1000,
       fundingModel: 'flexible',
       startTime: tomorrow.toISOString().slice(0, 10), // Tomorrow

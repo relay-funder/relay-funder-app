@@ -17,7 +17,9 @@ export function PageConnectWallet({ children }: { children: ReactNode }) {
       >
         <div className="flex justify-center">
           <div className="text-center">
-            <h2 className="mb-4 text-2xl font-bold text-foreground">Connect Your Wallet</h2>
+            <h2 className="mb-4 text-2xl font-bold text-foreground">
+              Connect Your Wallet
+            </h2>
             <p className="mb-6 text-muted-foreground">{children}</p>
             <Button
               variant="outline"
