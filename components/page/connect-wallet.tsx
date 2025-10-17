@@ -7,7 +7,7 @@ import Image from 'next/image';
 export function PageConnectWallet({ children }: { children: ReactNode }) {
   const { login } = useAuth();
   return (
-    <div className="flex w-full flex-col bg-gray-50">
+    <div className="flex w-full flex-col bg-background">
       <main
         className={cn(
           'container mx-auto flex h-[calc(100vh-200px)]',
@@ -17,11 +17,11 @@ export function PageConnectWallet({ children }: { children: ReactNode }) {
       >
         <div className="flex justify-center">
           <div className="text-center">
-            <h2 className="mb-4 text-2xl font-bold">Connect Your Wallet</h2>
-            <p className="text-muted-foreground">{children}</p>
+            <h2 className="mb-4 text-2xl font-bold text-foreground">Connect Your Wallet</h2>
+            <p className="mb-6 text-muted-foreground">{children}</p>
             <Button
               variant="outline"
-              className="bg-purple-50 font-semibold text-purple-600 hover:bg-purple-100"
+              className="bg-accent/50 font-semibold text-accent-foreground hover:bg-accent"
               onClick={login}
             >
               Connect Wallet
