@@ -1,7 +1,7 @@
 /**
  * Add hook to update round basic fields via FormData to match PATCH API
  *
- * The backend PATCH /api/rounds endpoint expects multipart/form-data with:
+ * The backend PATCH /api/admin/rounds endpoint expects multipart/form-data with:
  * - roundId
  * - title
  * - description
@@ -69,7 +69,7 @@ async function updateRoundBasic(input: UpdateRoundBasicInput) {
     form.append('logo', input.logo);
   }
 
-  const res = await fetch('/api/rounds', {
+  const res = await fetch('/api/admin/rounds', {
     method: 'PATCH',
     body: form,
   });

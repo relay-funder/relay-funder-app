@@ -5,6 +5,7 @@ import Providers from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
+import { ConfirmProvider } from '@/contexts/ConfirmContext';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -37,11 +38,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <PageMainLayout>{children}</PageMainLayout>
-          <Toaster />
-          <EnvironmentBadge />
-        </Providers>
+        <ConfirmProvider>
+          <Providers>
+            <PageMainLayout>{children}</PageMainLayout>
+            <Toaster />
+            <EnvironmentBadge />
+          </Providers>
+        </ConfirmProvider>
       </body>
     </html>
   );

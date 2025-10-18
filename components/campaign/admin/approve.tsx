@@ -61,15 +61,11 @@ export function CampaignAdminApproveButton({
           if (!campaign.campaignAddress) {
             throw new Error('Invalid campaign, missing campaignAddress');
           }
-          const treasuryAddress = await adminApproveWeb3Campaign(
+          await adminApproveWeb3Campaign(
             campaign.id,
             campaign.campaignAddress,
             onStateChanged,
           );
-          await adminApproveCampaign({
-            campaignId: campaign.id,
-            treasuryAddress,
-          });
         }
         onStateChanged('done');
       } catch (error) {

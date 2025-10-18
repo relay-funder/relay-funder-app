@@ -369,6 +369,24 @@ export function AdminUserEditForm({ address }: { address: string }) {
 
           <FormField
             control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Last name"
+                    {...field}
+                    value={field.value ?? ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="recipientWallet"
             render={({ field }) => (
               <FormItem className="md:col-span-2">

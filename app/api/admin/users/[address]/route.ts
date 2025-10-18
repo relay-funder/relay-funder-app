@@ -33,7 +33,7 @@ export async function GET(req: Request, { params }: UserWithAddressParams) {
 
 export async function PATCH(req: Request, { params }: UserWithAddressParams) {
   try {
-    await checkAuth(['admin']);
+    const session = await checkAuth(['admin']);
     const { address } = await params;
     const { email, username, firstName, lastName, bio, recipientWallet } =
       PatchUserRouteBodySchema.parse(await req.json());
@@ -42,7 +42,11 @@ export async function PATCH(req: Request, { params }: UserWithAddressParams) {
     if (!instance) {
       throw new ApiNotFoundError('User not found');
     }
-    if (!instance.featureFlags.includes('USER_MODERATOR')) {
+    const admin = await getUser(session.user.address);
+    if (!admin) {
+      throw new ApiNotFoundError('Admin User not found');
+    }
+    if (!admin.featureFlags.includes('USER_MODERATOR')) {
       throw new ApiAuthNotAllowed('Admin needs USER_MODERATOR flag');
     }
     if (email) {
