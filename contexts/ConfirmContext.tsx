@@ -26,7 +26,6 @@ interface ConfirmDialogOptions {
   confirmText?: string;
   cancelText?: string;
   confirmVariant?: 'default' | 'destructive';
-  isConfirming?: boolean; // New prop to indicate pending state
 }
 
 interface ConfirmContextType {
@@ -42,6 +41,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
   const [options, setOptions] = useState<ConfirmDialogOptions | null>(null);
   const [resolvePromise, setResolvePromise] =
     useState<(value: boolean) => void>();
+  const [isPending, setIsPending] = useState(false);
 
   const confirm = useCallback(
     (opts: ConfirmDialogOptions): Promise<boolean> => {
@@ -62,6 +62,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
 
   const handleConfirm = useCallback(async () => {
     if (options && resolvePromise) {
+      setIsPending(true);
       try {
         await options.onConfirm();
         resolvePromise(true);
@@ -69,6 +70,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
         console.error('Confirmation action failed:', error);
         resolvePromise(false); // Indicate failure
       } finally {
+        setIsPending(false);
         setIsOpen(false);
         setOptions(null);
       }
@@ -106,21 +108,18 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={handleCancel}
-              disabled={options?.isConfirming}
-            >
+            <AlertDialogCancel onClick={handleCancel} disabled={isPending}>
               {options?.cancelText}
             </AlertDialogCancel>
             <Button
               variant={options?.confirmVariant}
               onClick={handleConfirm}
-              disabled={options?.isConfirming}
+              disabled={isPending}
             >
-              {options?.isConfirming ? (
+              {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {options.confirmText}ing...
+                  {options?.confirmText}ing...
                 </>
               ) : (
                 options?.confirmText
