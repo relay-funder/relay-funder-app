@@ -13,7 +13,7 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,7 @@ export function RoundCardMinimal({
   const { mutateAsync: removeRoundCampaign, isPending: isRemoving } =
     useRemoveRoundCampaign();
   const { confirm } = useConfirm();
+  const attemptedRef = useRef(false);
 
   const canRemove = useMemo(() => {
     if (!campaign) {
@@ -63,6 +64,8 @@ export function RoundCardMinimal({
       e.stopPropagation();
       if (!campaign) return;
 
+      attemptedRef.current = false;
+
       const confirmed = await confirm({
         title: 'Are you absolutely sure?',
         description: (
@@ -80,6 +83,7 @@ export function RoundCardMinimal({
           </>
         ),
         onConfirm: async () => {
+          attemptedRef.current = true;
           await removeRoundCampaign({
             campaignId: campaign.id,
             roundId: round.id,
@@ -87,7 +91,6 @@ export function RoundCardMinimal({
         },
         confirmText: 'Remove',
         confirmVariant: 'destructive',
-        isConfirming: isRemoving,
       });
 
       if (confirmed) {
@@ -95,25 +98,17 @@ export function RoundCardMinimal({
           title: 'Success',
           description: 'Campaign removed from round successfully',
         });
-      } else if (isRemoving) {
-        // If `isRemoving` is true, it means the user clicked 'Remove' in the dialog
-        // but the promise resolved to false, likely due to an error in onConfirm
+      } else if (attemptedRef.current) {
         toast({
           title: 'Error',
           description: 'Failed to remove campaign',
           variant: 'destructive',
         });
       }
+
+      attemptedRef.current = false;
     },
-    [
-      campaign,
-      round.id,
-      round.title,
-      removeRoundCampaign,
-      toast,
-      confirm,
-      isRemoving,
-    ],
+    [campaign, round.id, round.title, removeRoundCampaign, toast, confirm],
   );
 
   if (!round || !round.id) {
