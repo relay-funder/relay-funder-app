@@ -81,8 +81,9 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
     if (options && resolvePromise) {
       options.onCancel?.();
       resolvePromise(false);
+      setOptions(null);
+      setIsOpen(false);
     }
-    setOptions(null);
   }, [options, resolvePromise]);
 
   const value = useMemo(() => ({ confirm }), [confirm]);
@@ -93,10 +94,8 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
       <AlertDialog
         open={isOpen}
         onOpenChange={(open) => {
-          if (!open) {
+          if (!open && options) {
             handleCancel();
-          } else {
-            setIsOpen(true);
           }
         }}
       >
