@@ -10,18 +10,46 @@ interface ICreateCampaignUpdate {
   campaignId: number;
   title: string;
   content: string;
+  media: File[];
+}
+
+interface IToggleHideCampaignUpdate {
+  campaignId: number;
+  updateId: number;
 }
 async function createCampaignUpdate(variables: ICreateCampaignUpdate) {
-  const { campaignId, title, content } = variables;
+  const { campaignId, title, content, media } = variables;
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('content', content);
+  media.forEach((file) => {
+    formData.append('media', file);
+  });
   const response = await fetch(`/api/campaigns/${campaignId}/updates`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, content }),
+    body: formData,
   });
 
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to create update');
+  }
+
+  return response.json();
+}
+
+async function toggleHideCampaignUpdate(variables: IToggleHideCampaignUpdate) {
+  const { campaignId, updateId } = variables;
+  const response = await fetch(
+    `/api/campaigns/${campaignId}/updates/${updateId}/hide`,
+    {
+      method: 'PATCH',
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to toggle hide update');
   }
 
   return response.json();
@@ -73,6 +101,22 @@ export function useCreateCampaignUpdate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createCampaignUpdate,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          CAMPAIGNS_UPDATES_QUERY_KEY,
+          'infinite',
+          variables.campaignId,
+        ],
+      });
+    },
+  });
+}
+
+export function useToggleHideCampaignUpdate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: toggleHideCampaignUpdate,
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [

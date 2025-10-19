@@ -2,7 +2,7 @@
 
 ## Overview
 
-Relay Funder App is a Next.js 15 fundraising platform for open source projects built with TypeScript, Prisma, PostgreSQL, and Web3 integration. The project uses Docker for development, pnpm as the package manager, and features a comprehensive Web3 integration with multiple wallet adapters (Privy, Silk, and Dummy for testing).
+Relay Funder App is a Next.js 15 fundraising platform for refugee communities and humanitarian projects built with TypeScript, Prisma, PostgreSQL, and Web3 integration. The project uses Docker for development, pnpm as the package manager, and features a comprehensive Web3 integration with multiple wallet adapters (Privy, Silk, and Dummy for testing).
 
 ### Technology Stack
 
@@ -33,7 +33,7 @@ Relay Funder App is a Next.js 15 fundraising platform for open source projects b
 
 1. **Campaign Management**: Create, edit, and manage fundraising campaigns
 2. **Web3 Integration**: Wallet connectivity with multiple adapters (Privy, Silk, Dummy)
-3. **Dual Payment System**: Support for both crypto (USDC) and credit card payments
+3. **Dual Payment System**: Support for both crypto (USDT) and credit card payments
 4. **Admin Dashboard**: Administrative functionality for campaign approval and management
 5. **Collections & Rounds**: Curated campaign collections and quadratic funding rounds
 6. **Real-time Notifications**: In-app notification system for user actions
@@ -622,12 +622,14 @@ import { getUser, updateUserRoles } from '@/lib/api/user';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ address: string }> }) {
   try {
-    await checkAuth(['admin']);
+    const session = await checkAuth(['admin']);
     const { address } = await params;
     const { roles } = await req.json();
 
     const instance = await getUser(address);
     if (!instance) throw new ApiNotFoundError('User not found');
+    const admin = await getUser(session.user.address);
+    if (!admin) throw new ApiNotFoundError('Admin User not found');
     if (!instance.featureFlags.includes('USER_MODERATOR')) throw new ApiAuthNotAllowed('Admin needs USER_MODERATOR flag');
 
     if (!Array.isArray(roles)) throw new ApiParameterError('Roles needs to be an array');

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { CreateProcessStates } from '@/types/campaign';
 import { useCreateCampaign, useUpdateCampaign } from '@/lib/hooks/useCampaigns';
+import { useCreateRoundCampaign } from '@/lib/hooks/useRounds';
 import {
   IOnCreateCampaignConfirmed,
   useCreateCampaignContract,
@@ -23,6 +24,7 @@ export function useCampaignFormCreate({
 
   const { mutateAsync: createCampaign } = useCreateCampaign();
   const { mutateAsync: updateCampaign } = useUpdateCampaign();
+  const { mutateAsync: createRoundCampaign } = useCreateRoundCampaign();
 
   const onConfirmed = useCallback(
     async ({
@@ -90,6 +92,21 @@ export function useCampaignFormCreate({
         }
         const newCampaign = await createCampaign(data);
 
+        // If a round is selected, add the campaign to the round
+        if (data.selectedRoundId && data.selectedRoundId > 0) {
+          try {
+            await createRoundCampaign({
+              roundId: data.selectedRoundId,
+              campaignId: newCampaign.campaignId,
+              applicationReason: 'Campaign created with round selection',
+            });
+          } catch (roundError) {
+            console.error('Failed to add campaign to round:', roundError);
+            // Don't fail the entire campaign creation, just log the error
+            // The campaign was created successfully, just not added to the round
+          }
+        }
+
         // If saving as draft, skip blockchain transaction
         if (data._saveAsDraft) {
           if (onSuccess) {
@@ -121,6 +138,7 @@ export function useCampaignFormCreate({
       authenticated,
       createCampaign,
       createCampaignContract,
+      createRoundCampaign,
       onCreated,
       onSuccess,
       onError,

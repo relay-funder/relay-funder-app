@@ -8,13 +8,16 @@ import { CampaignDonationWalletTip } from './tip';
 import { CampaignDonationWalletProcess } from './process';
 import { CampaignDonationAnonymous } from '../anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
+import { USD_TOKEN } from '@/lib/constant';
 
 export function CampaignDonationWalletDetails({
   campaign,
 }: {
   campaign: DbCampaign;
 }) {
-  const [selectedToken, setSelectedToken] = useState('USDC');
+  const [selectedToken, setSelectedToken] = useState<'USDC' | 'USDT'>(
+    USD_TOKEN,
+  );
   const [amount, setAmount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
   const [donationAnonymous, setDonationAnonymous] = useState(false);

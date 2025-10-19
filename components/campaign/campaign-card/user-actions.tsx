@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   Pause,
   Play,
+  View,
+  MessageSquare,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -34,6 +36,9 @@ import {
 } from '@/types/admin';
 import { WithdrawalDialog } from '../withdrawal-dialog';
 import { useCampaignTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { CampaignUpdateModal } from './campaign-update-modal';
+import { FormattedDate } from '@/components/formatted-date';
+import { useInfiniteCampaignUpdates } from '@/lib/hooks/useUpdates';
 
 interface CampaignCardUserActionsProps {
   campaign: DbCampaign;
@@ -67,10 +72,15 @@ export function CampaignCardUserActions({
   const { mutateAsync: adminDisableCampaign } = useAdminDisableCampaign();
   const { mutateAsync: adminEnableCampaign } = useAdminEnableCampaign();
 
+  // Fetch updates for latest update display
+  const { data: updatesData } = useInfiniteCampaignUpdates(campaign.id);
+  const latestUpdate = updatesData?.pages.flatMap((page) => page.updates)[0];
+
   // Confirmation dialog states
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [showEnableConfirm, setShowEnableConfirm] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   const onStateChanged = useCallback(
     (state: keyof typeof AdminRemoveProcessStates) => {
@@ -205,6 +215,8 @@ export function CampaignCardUserActions({
 
   // Determine button states based on campaign status
   const canEdit = campaign?.slug && campaign.status !== 'COMPLETED';
+  const canView = Boolean(campaign?.slug);
+  const canUpdate = Boolean(campaign?.slug);
   const canRemove =
     campaign.status === 'PENDING_APPROVAL' ||
     campaign.status === 'DRAFT' ||
@@ -236,7 +248,19 @@ export function CampaignCardUserActions({
             Edit
           </Button>
         </Link>
-
+        {canView && (
+          <Link href={`/campaigns/${campaign.slug}`}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canView}
+              className="h-8 w-full px-2 py-1 text-xs"
+            >
+              <View className="mr-2 h-3 w-3" />
+              View
+            </Button>
+          </Link>
+        )}
         {/* Right column: Disable or Remove button */}
         {canRemove && (
           <Button
@@ -288,6 +312,23 @@ export function CampaignCardUserActions({
           <div className="h-8 w-full" />
         )}
       </div>
+
+      {/* Post Update button */}
+      <Button
+        onClick={() => setShowUpdateModal(true)}
+        size="sm"
+        variant="outline"
+        disabled={!canUpdate}
+        className="h-8 w-full px-2 py-1 text-xs"
+      >
+        <MessageSquare className="mr-2 h-3 w-3" />
+        Post Update
+      </Button>
+      {latestUpdate && (
+        <p className="text-center text-xs text-muted-foreground">
+          Last update <FormattedDate date={latestUpdate.createdAt} relative />
+        </p>
+      )}
 
       {/* Full-width Withdrawal button - ALWAYS shown */}
       <WithdrawalDialog
@@ -424,6 +465,13 @@ export function CampaignCardUserActions({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Update Modal */}
+      <CampaignUpdateModal
+        campaign={campaign}
+        open={showUpdateModal}
+        onOpenChange={setShowUpdateModal}
+      />
     </div>
   );
 }

@@ -54,7 +54,7 @@ export function useAdminDeployTreasury() {
           );
         }
 
-        // Deploy treasury using correct TreasuryFactory interface with CampaignInfo address
+        // Deploy treasury using configurable implementation ID
         const tx = await treasuryFactory.deploy(
           params.platformBytes, // platformHash
           params.campaignAddress, // infoAddress (must be CampaignInfo contract)

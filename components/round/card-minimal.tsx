@@ -5,7 +5,6 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Clock, Calendar, DollarSign } from 'lucide-react';
@@ -14,12 +13,13 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { RoundMainImageAvatar } from './main-image-avatar';
+import { useConfirm } from '@/hooks/use-confirm';
 
 export function RoundCardMinimal({
   round,
@@ -39,7 +39,10 @@ export function RoundCardMinimal({
   const { toast } = useToast();
   const { mutateAsync: removeRoundCampaign, isPending: isRemoving } =
     useRemoveRoundCampaign();
-  const canWithdraw = useMemo(() => {
+  const { confirm } = useConfirm();
+  const attemptedRef = useRef(false);
+
+  const canRemove = useMemo(() => {
     if (!campaign) {
       return false;
     }
@@ -55,28 +58,59 @@ export function RoundCardMinimal({
     return true;
   }, [round, campaign, address, isAdmin]);
 
-  const handleRemove = useCallback(async () => {
-    if (!campaign) return;
+  const handleRemove = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!campaign) return;
 
-    try {
-      await removeRoundCampaign({
-        campaignId: campaign.id,
-        roundId: round.id,
+      attemptedRef.current = false;
+
+      const confirmed = await confirm({
+        title: 'Are you absolutely sure?',
+        description: (
+          <>
+            This action cannot be undone. This will permanently remove the
+            campaign &quot;
+            <span className="font-semibold">
+              {campaign?.title ?? 'Untitled Campaign'}
+            </span>
+            &quot; from the round &quot;
+            <span className="font-semibold">
+              {round.title ?? 'Untitled Round'}
+            </span>
+            &quot;.
+          </>
+        ),
+        onConfirm: async () => {
+          attemptedRef.current = true;
+          await removeRoundCampaign({
+            campaignId: campaign.id,
+            roundId: round.id,
+          });
+        },
+        confirmText: 'Remove',
+        confirmVariant: 'destructive',
       });
 
-      toast({
-        title: 'Success',
-        description: 'Campaign removed from round successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Failed to remove campaign',
-        variant: 'destructive',
-      });
-    }
-  }, [campaign, round.id, removeRoundCampaign, toast]);
+      if (confirmed) {
+        toast({
+          title: 'Success',
+          description: 'Campaign removed from round successfully',
+        });
+      } else if (attemptedRef.current) {
+        toast({
+          title: 'Error',
+          description: 'Failed to remove campaign',
+          variant: 'destructive',
+        });
+      }
+
+      attemptedRef.current = false;
+    },
+    [campaign, round.id, round.title, removeRoundCampaign, toast, confirm],
+  );
+
   if (!round || !round.id) {
     return (
       <Card className="flex h-full flex-col overflow-hidden rounded-lg border p-4 shadow-sm">
@@ -175,13 +209,9 @@ export function RoundCardMinimal({
                 {status.text === 'Ended' ? 'View Results' : 'View Round'}
               </span>
             </Button>
-            {canWithdraw && (
+            {canRemove && (
               <Button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleRemove();
-                }}
+                onClick={handleRemove}
                 variant="ghost"
                 size="sm"
                 disabled={isRemoving}
@@ -190,10 +220,10 @@ export function RoundCardMinimal({
                 {isRemoving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Withdrawing...
+                    Removing...
                   </>
                 ) : (
-                  'Withdraw'
+                  'Remove'
                 )}
               </Button>
             )}

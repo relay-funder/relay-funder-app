@@ -74,7 +74,7 @@ async function fetchRoundPage({
 }
 
 async function fetchRoundStats() {
-  const url = `/api/rounds/stats`;
+  const url = `/api/admin/rounds/stats`;
   const response = await fetch(url);
   if (!response.ok) {
     const error = await response.json();
@@ -97,7 +97,7 @@ interface IUpdateRound {
   logo: File | null;
 }
 async function updateRound(variables: IUpdateRound) {
-  const response = await fetch('/api/rounds', {
+  const response = await fetch('/api/admin/rounds', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -119,6 +119,7 @@ async function updateRound(variables: IUpdateRound) {
 interface ICreateRound {
   title: string;
   description: string;
+  descriptionUrl?: string;
   matchingPool: number;
   startTime: string;
   endTime: string;
@@ -130,6 +131,7 @@ interface ICreateRound {
 async function createRound({
   title,
   description,
+  descriptionUrl,
   matchingPool,
   startTime,
   endTime,
@@ -141,22 +143,26 @@ async function createRound({
   const formDataToSend = new FormData();
   formDataToSend.append('title', title);
   formDataToSend.append('description', description);
+  if (descriptionUrl) {
+    formDataToSend.append('descriptionUrl', descriptionUrl);
+  }
   formDataToSend.append('matchingPool', `${matchingPool}`);
   formDataToSend.append('startTime', startTime);
   formDataToSend.append('endTime', endTime);
   formDataToSend.append('applicationStartTime', applicationStartTime);
   formDataToSend.append('applicationEndTime', applicationEndTime);
   formDataToSend.append(
-    'tag',
+    'tags',
     tags?.map((tag: string) => encodeURIComponent(tag)).join(',') ?? '',
   );
   if (logo) {
     formDataToSend.append('logo', logo);
   }
-  const response = await fetch('/api/rounds', {
+  const response = await fetch('/api/admin/rounds', {
     method: 'POST',
     body: formDataToSend,
   });
+
   if (!response.ok) {
     let errorMsg = 'Failed to save round';
     try {
@@ -167,6 +173,7 @@ async function createRound({
     } catch {}
     throw new Error(errorMsg);
   }
+
   const data = await response.json();
   return data as PostRoundsResponse;
 }
@@ -175,7 +182,7 @@ interface IRemoveRound {
   roundId: number;
 }
 async function removeRound(variables: IRemoveRound) {
-  const response = await fetch(`/api/rounds/${variables.roundId}`, {
+  const response = await fetch(`/api/admin/rounds/${variables.roundId}`, {
     method: 'DELETE',
     body: JSON.stringify(variables),
   });
@@ -232,10 +239,13 @@ async function updateRoundCampaign(variables: IUpdateRoundCampaign) {
   formDataToSend.append('roundId', `${variables.roundId}`);
   formDataToSend.append('campaignId', `${variables.campaignId}`);
   formDataToSend.append('status', variables.status);
-  const response = await fetch(`/api/rounds/${variables.roundId}/campaigns`, {
-    method: 'PATCH',
-    body: formDataToSend,
-  });
+  const response = await fetch(
+    `/api/admin/rounds/${variables.roundId}/campaigns`,
+    {
+      method: 'PATCH',
+      body: formDataToSend,
+    },
+  );
   if (!response.ok) {
     let errorMsg = 'Failed to update round-campaign';
     try {
@@ -301,6 +311,45 @@ export function useActiveRound() {
     enabled: true,
   });
 }
+
+async function fetchUpcomingRound() {
+  const response = await fetch('/api/rounds/upcoming');
+  if (!response.ok) {
+    let message = 'Failed to fetch upcoming round';
+    try {
+      const error = await response.json();
+      message = error.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const data = await response.json();
+  return data.round as GetRoundResponseInstance;
+}
+
+export function useUpcomingRound() {
+  return useQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'upcoming'],
+    queryFn: fetchUpcomingRound,
+    enabled: true,
+  });
+}
+
+export function useUpcomingRounds() {
+  return useQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'upcoming-list'],
+    queryFn: async () => {
+      const response = await fetch('/api/rounds/?upcomingOnly=true');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch rounds');
+      }
+      const data = await response.json();
+      return data.rounds as GetRoundResponseInstance[];
+    },
+    enabled: true,
+  });
+}
+
 export function useRound(id: number, forceUserView = false) {
   return useQuery({
     queryKey: [ROUND_QUERY_KEY, id, forceUserView],

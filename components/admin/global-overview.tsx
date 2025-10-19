@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui';
 import { useCampaignStats } from '@/lib/hooks/useCampaigns';
 import { Users, Coins, Calendar, TrendingUp } from 'lucide-react';
 import { ResponsiveGrid } from '@/components/layout';
+import { USD_TOKEN } from '@/lib/constant';
 
 /**
  * AdminGlobalOverview Component
@@ -47,7 +48,7 @@ export function AdminGlobalOverview() {
                 <div className="mt-1 h-8 animate-pulse rounded bg-muted" />
               ) : (
                 <h3 className="whitespace-nowrap text-sm font-bold md:text-xl">
-                  {stats?.totalRaised.toFixed(2) ?? 0} USDC
+                  {stats?.totalRaised.toFixed(2) ?? 0} {USD_TOKEN}
                 </h3>
               )}
             </div>

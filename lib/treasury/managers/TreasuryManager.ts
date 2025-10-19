@@ -8,7 +8,7 @@ import {
   TREASURY_DELAYS,
   TREASURY_CONFIG,
   TREASURY_GAS_LIMITS,
-  USDC_CONFIG,
+  USD_CONFIG,
   TREASURY_IMPLEMENTATIONS,
   FEE_KEYS,
 } from '@/lib/constant/treasury';
@@ -23,6 +23,7 @@ import {
   TreasuryBalance,
   TreasuryConfigurationResult,
 } from '../interface';
+import { USD_TOKEN } from '@/lib/constant';
 
 /**
  * Treasury manager for KeepWhat'sRaised contracts
@@ -74,7 +75,7 @@ export class TreasuryManager extends TreasuryInterface {
         );
       }
 
-      // Deploy treasury using correct TreasuryFactory interface with CampaignInfo address
+      // Deploy treasury using configurable implementation ID
       const tx = await treasuryFactory.deploy(
         params.platformBytes, // platformHash
         params.campaignAddress, // infoAddress (must be CampaignInfo contract)
@@ -208,8 +209,8 @@ export class TreasuryManager extends TreasuryInterface {
 
       // Config struct
       const MIN_WITHDRAWAL_FEE_EXEMPTION = ethers.parseUnits(
-        USDC_CONFIG.MIN_WITHDRAWAL_FEE_EXEMPTION,
-        USDC_CONFIG.DECIMALS,
+        USD_CONFIG.MIN_WITHDRAWAL_FEE_EXEMPTION,
+        USD_CONFIG.DECIMALS,
       );
 
       // Fee keys
@@ -229,11 +230,11 @@ export class TreasuryManager extends TreasuryInterface {
       // Fee values
       const FLAT_FEE_VALUE = ethers.parseUnits(
         process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0',
-        USDC_CONFIG.DECIMALS,
+        USD_CONFIG.DECIMALS,
       );
       const CUM_FLAT_FEE_VALUE = ethers.parseUnits(
         process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0',
-        USDC_CONFIG.DECIMALS,
+        USD_CONFIG.DECIMALS,
       );
       const PLATFORM_FEE_BPS = parseInt(
         process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0',
@@ -249,7 +250,7 @@ export class TreasuryManager extends TreasuryInterface {
       const deadline = Math.floor(new Date(campaign.endTime).getTime() / 1000);
       const goalAmount = ethers.parseUnits(
         campaign.fundingGoal,
-        USDC_CONFIG.DECIMALS,
+        USD_CONFIG.DECIMALS,
       );
 
       // Validate converted timestamps
@@ -280,7 +281,7 @@ export class TreasuryManager extends TreasuryInterface {
         );
       debug &&
         console.log(
-          `  Goal Amount: ${goalAmount.toString()} (${campaign.fundingGoal} USDC)`,
+          `  Goal Amount: ${goalAmount.toString()} (${campaign.fundingGoal} USD)`,
         );
 
       // Build structs as objects with named fields (required for ethers.js JSON ABI)
@@ -313,58 +314,34 @@ export class TreasuryManager extends TreasuryInterface {
       debug && console.log('Treasury fee configuration:');
       debug &&
         console.log(
-          `  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`,
+          `  FLAT_FEE_VALUE: ${FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(FLAT_FEE_VALUE, USD_CONFIG.DECIMALS)} USD)`,
         );
       debug &&
         console.log(
-          `  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USDC_CONFIG.DECIMALS)} USDC)`,
+          `  CUM_FLAT_FEE_VALUE: ${CUM_FLAT_FEE_VALUE.toString()} (${ethers.formatUnits(CUM_FLAT_FEE_VALUE, USD_CONFIG.DECIMALS)} USD)`,
         );
       debug && console.log(`  PLATFORM_FEE_BPS: ${PLATFORM_FEE_BPS}`);
       debug && console.log(`  VAKI_COMMISSION_BPS: ${VAKI_COMMISSION_BPS}`);
-      debug &&
-        console.log(
-          'Full configuration structs:',
-          JSON.stringify(
-            {
-              config: {
-                minimumWithdrawalForFeeExemption:
-                  MIN_WITHDRAWAL_FEE_EXEMPTION.toString(),
-                withdrawalDelay: TREASURY_DELAYS.WITHDRAWAL_DELAY,
-                refundDelay: TREASURY_DELAYS.REFUND_DELAY,
-                configLockPeriod: TREASURY_DELAYS.CONFIG_LOCK_PERIOD,
-                isColombianCreator: TREASURY_CONFIG.IS_COLOMBIAN,
-              },
-              campaignData: {
-                launchTime,
-                deadline,
-                goalAmount: goalAmount.toString(),
-              },
-              feeKeys: {
-                flatFeeKey: FLAT_FEE_KEY,
-                cumulativeFlatFeeKey: CUM_FLAT_FEE_KEY,
-                grossPercentageFeeKeys: [PLATFORM_FEE_KEY, VAKI_COMMISSION_KEY],
-              },
-              feeValues: {
-                flatFeeValue: FLAT_FEE_VALUE.toString(),
-                cumulativeFlatFeeValue: CUM_FLAT_FEE_VALUE.toString(),
-                grossPercentageFeeValues: [
-                  PLATFORM_FEE_BPS,
-                  VAKI_COMMISSION_BPS,
-                ],
-              },
-            },
-            null,
-            2,
-          ),
-        );
 
       // Wait for deployment transaction to be processed
-      debug && console.log('  Waiting 2 seconds before configuration...');
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      debug && console.log('  Waiting 5 seconds before configuration...');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // Get current nonce to ensure proper transaction ordering
-      const nonce = await signer.getNonce('pending');
-      debug && console.log(`  Using nonce: ${nonce}`);
+      // Check if treasury is already configured
+      debug && console.log('  Checking if treasury is already configured...');
+      const currentLaunchTime = await treasuryContract.getLaunchTime();
+      if (currentLaunchTime > 0) {
+        debug &&
+          console.log(
+            '  Treasury is already configured, skipping configuration',
+          );
+        return {
+          success: true,
+          transactionHash: '',
+        };
+      }
+
+      debug && console.log('  Configuring treasury...');
 
       const tx = await treasuryContract.configureTreasury(
         configStruct,
@@ -373,22 +350,27 @@ export class TreasuryManager extends TreasuryInterface {
         feeValuesStruct,
         {
           gasLimit: TREASURY_GAS_LIMITS.CONFIGURE,
-          nonce,
-          type: 0, // Use legacy transaction type (like shell script --legacy flag)
         },
       );
 
       debug && console.log(`  Transaction submitted: ${tx.hash}`);
-      const receipt = await tx.wait();
-      debug &&
-        console.log(
-          `  Transaction confirmed in block: ${receipt?.blockNumber}`,
-        );
+      debug && console.log(`  Transaction data: ${tx.data}`);
 
-      return {
-        success: true,
-        transactionHash: tx.hash,
-      };
+      try {
+        const receipt = await tx.wait();
+        debug &&
+          console.log(
+            `  Transaction confirmed in block: ${receipt?.blockNumber}`,
+          );
+
+        return {
+          success: true,
+          transactionHash: tx.hash,
+        };
+      } catch (waitError: unknown) {
+        console.error('  Transaction wait error:', waitError);
+        throw waitError;
+      }
     } catch (error) {
       console.error('Error configuring treasury:', error);
       return {
@@ -452,13 +434,13 @@ export class TreasuryManager extends TreasuryInterface {
         params.signer,
       );
 
-      const amountWei = ethers.parseUnits(params.amount, USDC_CONFIG.DECIMALS);
+      const amountWei = ethers.parseUnits(params.amount, USD_CONFIG.DECIMALS);
 
       debug && console.log('Withdrawal parameters:');
       debug && console.log(`  Treasury: ${params.treasuryAddress}`);
       debug &&
         console.log(
-          `  Amount: ${params.amount} USDC (${amountWei.toString()} wei)`,
+          `  Amount: ${params.amount} USD (${amountWei.toString()} wei)`,
         );
       debug && console.log(`  Recipient: ${params.recipient}`);
       debug &&
@@ -543,16 +525,16 @@ export class TreasuryManager extends TreasuryInterface {
       ]);
 
       return {
-        available: ethers.formatUnits(availableAmount, USDC_CONFIG.DECIMALS),
-        totalPledged: ethers.formatUnits(totalRaised, USDC_CONFIG.DECIMALS),
-        currency: 'USDC',
+        available: ethers.formatUnits(availableAmount, USD_CONFIG.DECIMALS),
+        totalPledged: ethers.formatUnits(totalRaised, USD_CONFIG.DECIMALS),
+        currency: USD_TOKEN,
       };
     } catch (error) {
       console.error('Error getting crypto treasury balance:', error);
       return {
         available: '0',
         totalPledged: '0',
-        currency: 'USDC',
+        currency: USD_TOKEN,
       };
     }
   }

@@ -3,15 +3,18 @@ import {
   GetRoundResponseInstance,
   GetRoundsStatsResponse,
 } from './types/rounds';
+import type { GetCampaignPaymentSummary } from './types/campaigns';
 import { ROUND_QUERY_KEY, ROUNDS_QUERY_KEY } from '../hooks/useRounds';
 import { QueryClient } from '@tanstack/react-query';
 import { ApiNotFoundError } from './error';
-import { mapCampaign } from './campaigns';
+import { mapCampaign, getPaymentSummaryList } from './campaigns';
 import { isFuture, isPast } from 'date-fns';
 
 export function mapRound(
   round: Round & {
-    roundCampaigns?: (RoundCampaigns & { Campaign: Campaign })[];
+    roundCampaigns?: (RoundCampaigns & {
+      Campaign: Campaign & { paymentSummary?: GetCampaignPaymentSummary };
+    })[];
     media?: Media[];
   },
   status?: 'PENDING' | 'APPROVED' | 'REJECTED',
@@ -24,11 +27,13 @@ export function mapRound(
     applicationClose,
     poolId,
     logoUrl,
+    isHidden,
     ...roundWithoutDeprecated
   } = round;
   return {
     ...roundWithoutDeprecated,
     descriptionUrl: round.descriptionUrl ?? null,
+    isHidden,
     // hydration conversion Decimal->Number and BigInt->Number
     matchingPool: Number(round.matchingPool),
     poolId: poolId ? Number(poolId) : null,
@@ -43,7 +48,15 @@ export function mapRound(
       round.roundCampaigns?.map((roundCampaign) => ({
         ...roundCampaign,
         reviewedAt: roundCampaign.reviewedAt?.toISOString() ?? null,
-        campaign: mapCampaign(roundCampaign.Campaign),
+        campaign: roundCampaign.Campaign
+          ? {
+              ...mapCampaign(roundCampaign.Campaign),
+              // Preserve payment summary if it exists
+              ...(roundCampaign.Campaign.paymentSummary && {
+                paymentSummary: roundCampaign.Campaign.paymentSummary,
+              }),
+            }
+          : undefined,
       })) ?? [],
     media:
       Array.isArray(round.media) && round.media.length
@@ -68,16 +81,26 @@ export async function listRounds({
   skip = 0,
   admin = false,
   userAddress = null,
+  upcomingOnly = false,
 }: {
   page?: number;
   pageSize?: number;
   skip?: number;
   admin?: boolean;
   userAddress?: string | null;
+  upcomingOnly?: boolean;
 }) {
+  const filterStartTime = upcomingOnly
+    ? { applicationClose: { gt: new Date() } }
+    : {};
+  const where = admin
+    ? { ...filterStartTime }
+    : { isHidden: false, ...filterStartTime }; // Exclude hidden rounds for non-admins
+
   const [rounds, totalCount] = await Promise.all([
     db.round.findMany({
       skip,
+      where,
       include: {
         media: { where: { state: 'UPLOADED' } },
         roundCampaigns: {
@@ -86,6 +109,16 @@ export async function listRounds({
               include: {
                 images: true,
                 media: { where: { state: 'UPLOADED' } },
+                payments: {
+                  include: {
+                    user: true,
+                  },
+                  where: {
+                    status: {
+                      in: ['CONFIRMED', 'PENDING'],
+                    },
+                  },
+                },
               },
             },
           },
@@ -93,9 +126,44 @@ export async function listRounds({
             ? {} // Admin sees all campaigns
             : userAddress
               ? {
-                  OR: [
-                    // Include approved campaigns
+                  AND: [
+                    // Exclude hidden rounds for non-admins
+                    { Round: { isHidden: false } },
                     {
+                      OR: [
+                        // Include approved campaigns
+                        {
+                          status: 'APPROVED',
+                          Campaign: {
+                            status: {
+                              in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                            },
+                          },
+                        },
+                        // Include user's own campaigns (any status)
+                        {
+                          Campaign: {
+                            creatorAddress: userAddress,
+                            status: {
+                              in: [
+                                'ACTIVE',
+                                'COMPLETED',
+                                'FAILED',
+                                'PENDING_APPROVAL',
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                }
+              : {
+                  AND: [
+                    // Exclude hidden rounds for non-admins
+                    { Round: { isHidden: false } },
+                    {
+                      // Non-authenticated users see only approved campaigns
                       status: 'APPROVED',
                       Campaign: {
                         status: {
@@ -103,30 +171,7 @@ export async function listRounds({
                         },
                       },
                     },
-                    // Include user's own campaigns (any status)
-                    {
-                      Campaign: {
-                        creatorAddress: userAddress,
-                        status: {
-                          in: [
-                            'ACTIVE',
-                            'COMPLETED',
-                            'FAILED',
-                            'PENDING_APPROVAL',
-                          ],
-                        },
-                      },
-                    },
                   ],
-                }
-              : {
-                  // Non-authenticated users see only approved campaigns
-                  status: 'APPROVED',
-                  Campaign: {
-                    status: {
-                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
-                    },
-                  },
                 },
         },
       },
@@ -135,11 +180,37 @@ export async function listRounds({
         createdAt: 'desc',
       },
     }),
-    db.round.count(),
+    db.round.count({
+      where,
+    }),
   ]);
 
+  // Calculate payment summaries for all campaigns in all rounds
+  const allCampaignIds = rounds.flatMap(
+    (round) =>
+      round.roundCampaigns?.map((rc) => rc.campaignId).filter(Boolean) || [],
+  );
+  const paymentSummaryList =
+    allCampaignIds.length > 0
+      ? await getPaymentSummaryList(allCampaignIds)
+      : {};
+
+  // Add payment summaries to campaigns in rounds
+  const roundsWithPaymentSummaries = rounds.map((round) => ({
+    ...round,
+    roundCampaigns: round.roundCampaigns?.map((rc) => ({
+      ...rc,
+      Campaign: rc.Campaign
+        ? {
+            ...rc.Campaign,
+            paymentSummary: paymentSummaryList[rc.campaignId] || {},
+          }
+        : rc.Campaign,
+    })),
+  }));
+
   return {
-    rounds: rounds.map((round) => mapRound(round)), // Remove hardcoded status
+    rounds: roundsWithPaymentSummaries.map((round) => mapRound(round)), // Remove hardcoded status
     pagination: {
       currentPage: page,
       pageSize,
@@ -165,31 +236,71 @@ export async function getRound(
             include: {
               images: true,
               media: { where: { state: 'UPLOADED' } },
+              payments: {
+                include: {
+                  user: true,
+                },
+                where: {
+                  status: {
+                    in: ['CONFIRMED', 'PENDING'],
+                  },
+                },
+              },
             },
           },
         },
         where: admin
           ? {}
           : {
-              OR: [
+              AND: [
+                // Exclude hidden rounds for non-admins
+                { Round: { isHidden: false } },
                 {
-                  status: 'APPROVED',
-                  Campaign: {
-                    status: {
-                      in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                  OR: [
+                    {
+                      status: 'APPROVED',
+                      Campaign: {
+                        status: {
+                          in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                        },
+                      },
                     },
-                  },
+                    {
+                      Campaign: { creatorAddress: sessionAddress ?? undefined },
+                    },
+                  ],
                 },
-                { Campaign: { creatorAddress: sessionAddress ?? undefined } },
               ],
             },
       },
     },
   });
+
   if (!round) {
     throw new ApiNotFoundError(`Round with id ${id} does not exist`);
   }
-  return mapRound(round);
+
+  // Calculate payment summaries for campaigns
+  const campaignIds =
+    round.roundCampaigns?.map((rc) => rc.campaignId).filter(Boolean) || [];
+  const paymentSummaryList =
+    campaignIds.length > 0 ? await getPaymentSummaryList(campaignIds) : {};
+
+  // Add payment summaries to campaigns
+  const roundWithPaymentSummaries = {
+    ...round,
+    roundCampaigns: round.roundCampaigns?.map((rc) => ({
+      ...rc,
+      Campaign: rc.Campaign
+        ? {
+            ...rc.Campaign,
+            paymentSummary: paymentSummaryList[rc.campaignId] || {},
+          }
+        : rc.Campaign,
+    })),
+  };
+
+  return mapRound(roundWithPaymentSummaries);
 }
 export async function getStats() {
   const stats: GetRoundsStatsResponse = {
@@ -240,6 +351,7 @@ export async function prefetchActiveRound(queryClient: QueryClient) {
   const now = new Date();
   const activeRound = await db.round.findFirst({
     where: {
+      isHidden: false, // Exclude hidden rounds
       startDate: {
         lte: now, // Round has started
       },
@@ -285,4 +397,62 @@ export function roundIsActive(round: GetRoundResponseInstance) {
     return false;
   }
   return true;
+}
+
+export async function getUpcomingRound() {
+  const now = new Date();
+  const upcomingRound = await db.round.findFirst({
+    where: {
+      isHidden: false, // Exclude hidden rounds
+      applicationClose: {
+        gt: now, // Round hasn't started yet
+      },
+    },
+    include: {
+      media: { where: { state: 'UPLOADED' } },
+      _count: {
+        select: {
+          roundCampaigns: {
+            where: {
+              status: 'APPROVED',
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      startDate: 'asc', // Get the earliest upcoming round
+    },
+  });
+  return upcomingRound;
+}
+export async function getActiveRound() {
+  const now = new Date();
+  const activeRound = await db.round.findFirst({
+    where: {
+      isHidden: false, // Exclude hidden rounds
+      startDate: {
+        lte: now, // Round has started
+      },
+      endDate: {
+        gt: now, // Round hasn't ended
+      },
+    },
+    include: {
+      media: { where: { state: 'UPLOADED' } },
+      _count: {
+        select: {
+          roundCampaigns: {
+            where: {
+              status: 'APPROVED',
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc', // Get the latest active round
+    },
+  });
+  return activeRound;
 }

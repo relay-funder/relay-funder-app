@@ -35,7 +35,9 @@ export const chainConfig = {
     process.env.NEXT_PUBLIC_RPC_URL || defaultChain.rpcUrls.default.http[0],
   blockExplorerUrl:
     defaultChain.blockExplorers?.default?.url ||
-    'https://celo-sepolia.blockscout.com',
+    (defaultChain.id === 42220
+      ? 'https://celo.blockscout.com'
+      : 'https://celo-sepolia.blockscout.com'),
 
   // Reference to the actual chain object for provider configurations
   defaultChain,

@@ -9,7 +9,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Clock, Calendar, Users, DollarSign } from 'lucide-react';
+import { Clock, Calendar, Users, DollarSign, EyeOff } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { FormattedDate } from '@/components/formatted-date';
 import { useMemo } from 'react';
 import { useRoundStatus } from '../use-status';
@@ -98,9 +104,23 @@ export function RoundCard({
               <h2 className="line-clamp-2 font-display text-lg font-semibold leading-tight text-foreground">
                 {round.title ?? 'Untitled Round'}
               </h2>
-              <Badge variant={status.variant} className="shrink-0 text-xs">
-                {status.text}
-              </Badge>
+              <div className="flex shrink-0 items-center gap-2">
+                {isAdmin && round.isHidden && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Hidden from public</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                <Badge variant={status.variant} className="text-xs">
+                  {status.text}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
@@ -121,7 +141,7 @@ export function RoundCard({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <DollarSign className="h-4 w-4" />
-                <span>Funding Goal</span>
+                <span>Matching Pool</span>
               </div>
               <p className="text-lg font-semibold">
                 ${round.matchingPool?.toLocaleString() ?? '0'}

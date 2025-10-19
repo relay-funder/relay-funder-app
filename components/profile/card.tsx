@@ -11,7 +11,10 @@ import {
 } from '@/components/ui';
 import { UserRound, Pencil, LogOut, Mail, User, Clock } from 'lucide-react';
 import { FormattedDate } from '@/components/formatted-date';
+import { CopyAddress } from '@/components/copy-text';
 import { useAuth } from '@/contexts';
+import { formatAddress } from '@/lib/format-address';
+
 export function ProfileCard({
   profile,
   onEdit,
@@ -25,6 +28,8 @@ export function ProfileCard({
     await logout();
     router.push('/');
   }, [logout, router]);
+
+  const formattedAddress = formatAddress(address ?? '');
 
   return (
     <Card className="rounded-lg border bg-card shadow-sm">
@@ -60,7 +65,8 @@ export function ProfileCard({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="h-4 w-4" />
-                  <span className="break-all">{address}</span>
+                  <span className="break-all">{formattedAddress}</span>
+                  <CopyAddress address={address} variant="ghost" />
                 </div>
 
                 {profile?.email && (

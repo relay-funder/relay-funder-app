@@ -143,13 +143,13 @@ export function transformStartTime(value: string): string {
 
     const now = new Date();
 
-    // If selected date is today, set to 5 minutes from now
+    // If selected date is today, set to 1 hour from now
     // If selected date is in the future, set to start of day
     const isToday = parsedDate.toDateString() === now.toDateString();
 
     if (isToday) {
-      // Today: set to 5 minutes from now
-      return formatISO(addMinutes(now, 5));
+      // Today: set to 1 hour from now
+      return formatISO(addMinutes(now, 60));
     } else {
       // Future date: set to start of day in UTC
       return formatISO(startOfDay(parsedDate));

@@ -8,13 +8,13 @@ This directory contains shell scripts that simulate the KeepWhatsRaised treasury
 2. **jq installed** for JSON parsing (`brew install jq` on macOS)
 3. **python3 available** for mathematical calculations
 4. **Environment configuration** - Copy `util/env.foundry.template` to `util/env.foundry` and fill in your actual values
-5. **Funded wallets** - Ensure test wallets have sufficient ETH for gas and USDC for pledging
+5. **Funded wallets** - Ensure test wallets have sufficient ETH for gas and USDT for pledging
 
 ## KeepWhatsRaised Treasury Flow
 
 ### Script: `kwr_flow_test.sh`
 
-Simulates a complete KeepWhatsRaised campaign lifecycle from creation to fund withdrawal using small test amounts (0.1 USDC pledges).
+Simulates a complete KeepWhatsRaised campaign lifecycle from creation to fund withdrawal using small test amounts (0.1 USDT pledges).
 
 #### Flow Steps:
 
@@ -24,7 +24,7 @@ Simulates a complete KeepWhatsRaised campaign lifecycle from creation to fund wi
 4. **Treasury Deployment** - Platform admin deploys KeepWhatsRaised treasury contract via `TreasuryFactory`
 5. **Treasury Configuration** - Configure withdrawal delays (1 hour), refund delays (2 hours), configuration lock period (30 minutes), Colombian flag, fee exemption threshold (0.5 USDC), and campaign parameters
 6. **Campaign Launch Wait** - Waits for campaign launch time with detailed countdown logging
-7. **Pledge Flow** - Backer approves USDC and makes pledge with comprehensive balance verification
+7. **Pledge Flow** - Backer approves USDT and makes pledge with comprehensive balance verification
 8. **Balance Verification** - Shows before/after balances for backer, treasury totals, and available amounts
 9. **Interactive Pause** - Allows verification of pledge success before proceeding to withdrawal
 10. **Withdrawal Approval** - Platform admin approves fund withdrawal
@@ -58,7 +58,7 @@ bash util/kwr_flow_test.sh
 
 #### Key Features:
 
-- **Small test amounts** - Uses 0.1 USDC pledges (allows 50+ tests with 5 USDC balance)
+- **Small test amounts** - Uses 0.1 USDT pledges (allows 50+ tests with 5 USDT balance)
 - **Comprehensive logging** - Shows all balances, addresses, and timing information
 - **Interactive verification** - Pauses after pledge to allow manual inspection
 - **Unique campaigns** - Each run creates a new campaign with unique identifier
@@ -74,27 +74,27 @@ From `util/env.foundry`:
 - `PROTOCOL_ADMIN_PRIVATE_KEY` - Protocol admin wallet private key
 - `CREATOR_PRIVATE_KEY` - Campaign creator wallet private key
 - `BACKER_PRIVATE_KEY` - Backer wallet private key
-- `NEXT_PUBLIC_USDC_ADDRESS` - USDC token contract address (6 decimals)
-- `NEXT_PUBLIC_USDC_DECIMALS` - USDC decimal places (6)
+- `NEXT_PUBLIC_USDT_ADDRESS` - USDT token contract address (6 decimals)
+- `NEXT_PUBLIC_USDT_DECIMALS` - USDT decimal places (6)
 - `NEXT_PUBLIC_GLOBAL_PARAMS` - GlobalParams contract address
 - `NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY` - CampaignInfoFactory contract address
 - `NEXT_PUBLIC_TREASURY_FACTORY` - TreasuryFactory contract address
 - `NEXT_PUBLIC_PLATFORM_HASH` - Platform identifier hash
 - `NEXT_PUBLIC_PLATFORM_ADMIN` - Platform admin wallet address
 - `KEEP_WHATS_RAISED_IMPLEMENTATION` - KeepWhatsRaised implementation address
-- `KEEP_WHATS_RAISED_IMPLEMENTATION_ID` - Implementation ID for KeepWhatsRaised (defaults to 0)
+- `NEXT_PUBLIC_TREASURY_IMPLEMENTATION_ID` - Implementation ID for treasury deployment (defaults to 0 for staging, 1 for production)
 
 #### Script Configuration:
 
 - **Campaign Duration**: 120 seconds (2 minutes for quick testing)
 - **Launch Offset**: 20 seconds from creation
-- **Pledge Amount**: 0.1 USDC per test
-- **Campaign Goal**: 1 USDC (easily achievable)
+- **Pledge Amount**: 0.1 USDT per test
+- **Campaign Goal**: 1 USDT (easily achievable)
 - **Withdrawal Delay**: 1 hour (reduced from 7 days for testing)
-- **Fee Exemption Threshold**: 0.5 USDC
+- **Fee Exemption Threshold**: 0.5 USDT
 - **Platform Fees**:
-  - Flat Fee: 0.001 USDC per pledge
-  - Cumulative Flat Fee: 0.002 USDC (applied once when threshold exceeded)
+  - Flat Fee: 0.001 USDT per pledge
+  - Cumulative Flat Fee: 0.002 USDT (applied once when threshold exceeded)
   - Platform Fee: 10% (1000 basis points)
   - Vaki Commission: 6% (600 basis points)
 
@@ -121,7 +121,7 @@ Using RPC: https://alfajores-forno.celo-testnet.org
 CampaignInfoFactory: 0x3c95449E75C9e3F2C10FF1225f139293D0fb45D3
 TreasuryFactory:     0x9F42bF9e482de836972C9bde5618F8A88a325BCd
 GlobalParams:        0xed944522b41CC8B790eb0825720C98D336a8484C
-USDC:                0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B (decimals=6)
+USDT:                0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e (decimals=6)
 Platform Hash:       0x8dfe5499a94ebda35ae3d6c7b6c32b140c2cb04687d76f2cc3564ada0ef5dce6
 Creator:             0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70
 Backer:              0x7667Dd0a5D94736BEA1932Cf3441a4BA32A9BD70
@@ -144,12 +144,12 @@ Waiting 7 seconds for campaign launch...
   ... 7/7 seconds elapsed
 Campaign should now be live!
 
-Backer USDC balance before pledge: 14.24648 USDC
-About to pledge: 0.1 USDC (+ 0 tip)
-Backer USDC balance after pledge: 14.24648 USDC
-Treasury total raised: 0.1 USDC
-Treasury available for withdrawal: 0.084 USDC
-Treasury USDC token balance: 0.1 USDC
+Backer USDT balance before pledge: 14.24648 USDT
+About to pledge: 0.1 USDT (+ 0 tip)
+Backer USDT balance after pledge: 14.24648 USDT
+Treasury total raised: 0.1 USDT
+Treasury available for withdrawal: 0.084 USDT
+Treasury USDT token balance: 0.1 USDT
 
 === PLEDGE VERIFICATION COMPLETE ===
 Press Enter to continue with withdrawal test, or Ctrl+C to stop here...

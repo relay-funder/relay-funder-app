@@ -24,14 +24,14 @@ export function CampaignCreateFormFunding({
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-sm font-medium text-foreground">
-              Funding Goal (USDC)
+              Funding Goal (USD)
             </FormLabel>
             <FormControl>
               <Input
                 type="number"
                 step="0.01"
                 className="mt-1"
-                placeholder="1000.00"
+                placeholder="1000"
                 disabled={isOnChainDeployed}
                 {...field}
               />
@@ -54,17 +54,6 @@ export function CampaignCreateFormFunding({
           <input type="hidden" {...field} value="flexible" />
         )}
       />
-
-      {/* Information about funding model */}
-      <div className="rounded-lg border bg-muted p-4">
-        <h3 className="font-display font-semibold text-foreground">
-          🎨 Flexible Funding
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          You&apos;ll receive all funds raised at the end of your campaign,
-          regardless of whether you reach your funding goal.
-        </p>
-      </div>
     </div>
   );
 }

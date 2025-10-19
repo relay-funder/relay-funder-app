@@ -73,22 +73,20 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
 
   const form = useForm<CampaignFormSchemaType>({
     resolver: zodResolver(CampaignFormSchema),
-    defaultValues: async () => {
-      return {
-        ...campaign,
-        location: campaign.location ?? '',
-        category:
-          categories.find((category) => category.id === campaign.category)
-            ?.id ?? '',
-        fundingGoal: campaign.fundingGoal || '',
-        fundingModel: 'flexible', // Default funding model
-        startTime: campaign.startTime
-          ? new Date(campaign.startTime).toISOString().slice(0, 10)
-          : '',
-        endTime: campaign.endTime
-          ? new Date(campaign.endTime).toISOString().slice(0, 10)
-          : '',
-      };
+    defaultValues: {
+      ...campaign,
+      location: campaign.location ?? '',
+      category:
+        categories.find((category) => category.id === campaign.category)?.id ??
+        '',
+      fundingGoal: campaign.fundingGoal || '',
+      fundingModel: 'flexible', // Default funding model
+      startTime: campaign.startTime
+        ? new Date(campaign.startTime).toISOString().slice(0, 10)
+        : '',
+      endTime: campaign.endTime
+        ? new Date(campaign.endTime).toISOString().slice(0, 10)
+        : '',
     },
   });
   const onSubmitStep = useCallback(async () => {

@@ -121,12 +121,15 @@ export type CampaignUpdate = {
   updatedAt: Date;
   campaignId: number;
   creatorAddress: string;
+  media?: Media[];
+  mediaOrder?: string[];
+  isHidden?: boolean;
 };
 
 export type DbPayment = {
   id: number;
   amount: string; // Stored as string to preserve precision
-  token: string; // Standard: "USDC" (Circle's native multi-chain token on Celo)
+  token: string; // Standard: "USDT" (Tethers's native multi-chain token on Celo)
   status: string; // 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
   type: 'BUY' | 'SELL';
   transactionHash: string | null;
@@ -142,7 +145,7 @@ export type DbPayment = {
 export type Payment = {
   paymentId: number;
   amount: string; // Stored as string to preserve precision
-  token?: string; // e.g., "USDC"
+  token?: string; // e.g., "USDT"
   type?: 'BUY' | 'SELL';
   status?: string; // 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
   transactionHash?: string | null;
@@ -250,16 +253,16 @@ export const DonationProcessStates = {
   registerPledge: 'registerPledge',
 
   /**
-   * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDC.
+   * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDX.
    * This action will require confirmation from the user within their wallet.
    */
-  approveUsdcContract: 'approveUsdcContract',
+  approveUsdtContract: 'approveUsdtContract',
 
   /**
    * The contract has been executed, and the application is waiting for blockchain confirmation.
    * No user interaction is required during this phase, but it can take some time.
    */
-  waitForUsdcContractConfirmation: 'waitForUsdcContractConfirmation',
+  waitForUsdtContractConfirmation: 'waitForUsdtContractConfirmation',
 
   /**
    * The wallet is asked to execute the treasury pledge contract.

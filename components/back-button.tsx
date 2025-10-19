@@ -7,6 +7,10 @@ export default function BackButton() {
   const pathname = usePathname();
   const router = useRouter();
   const back = useCallback(() => {
+    if (typeof pathname === 'string' && pathname === '/profile') {
+      router.push('/');
+      return;
+    }
     if (typeof pathname === 'string' && pathname.startsWith('/profile')) {
       router.push(pathname.replace(/\/[^\/]*$/, ''));
       return;

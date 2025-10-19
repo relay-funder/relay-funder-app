@@ -225,6 +225,7 @@ model CampaignUpdate {
   updatedAt      DateTime @updatedAt
   campaignId     Int
   creatorAddress String
+  isHidden       Boolean  @default(false)
   campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   media          Media[]
   mediaOrder     Json?
@@ -255,6 +256,7 @@ model Round {
   mediaOrder        Json?
   approvedResult    Json?
   status            RoundStatus      @default(CREATED)
+  isHidden          Boolean          @default(false)
 }
 
 model RoundCampaigns {
@@ -352,9 +354,11 @@ model EventFeed {
   type        String
   message     String
   data        Json?
+  eventUuid   String   @default(uuid())
 
   @@index([receiverId, createdAt])
   @@index([receiverId, type])
+  @@index([eventUuid])
 }
 
 model RateLimit {
@@ -365,4 +369,3 @@ model RateLimit {
 
   @@index([windowStart])
 }
-

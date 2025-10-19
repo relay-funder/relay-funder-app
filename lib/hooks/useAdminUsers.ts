@@ -10,6 +10,7 @@ import type {
   PatchUserRouteBody,
 } from '@/lib/api/types/admin';
 import { PaginatedResponse } from '@/lib/api/types';
+import { ADMIN_USER_OVERVIEW_QUERY_KEY } from '@/lib/hooks/useAdminUserOverview';
 
 export const ADMIN_USERS_QUERY_KEY = 'admin_users';
 export const ADMIN_USER_QUERY_KEY = 'admin_user';
@@ -234,6 +235,9 @@ export function useUpdateAdminUser() {
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
       });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
+      });
     },
   });
 }
@@ -247,6 +251,9 @@ export function useUpdateAdminUserFlags() {
       queryClient.invalidateQueries({ queryKey: [ADMIN_USERS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
       });
     },
   });
@@ -286,6 +293,9 @@ export function useUpdateAdminUserRoles() {
       queryClient.invalidateQueries({ queryKey: [ADMIN_USERS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
       });
     },
   });

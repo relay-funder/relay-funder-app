@@ -18,18 +18,24 @@ export function RoundCreateFormFunding() {
         name="matchingPool"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Matching Pool Amount</FormLabel>
+            <FormLabel>Matching Pool Amount (USD)</FormLabel>
             <FormControl>
               <Input
                 type="number"
                 min="0"
                 step="any"
                 placeholder="e.g., 10000"
-                {...field}
+                value={field.value || ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? parseFloat(e.target.value) : 0,
+                  )
+                }
               />
             </FormControl>
             <FormDescription>
-              Initial funds provided by the round manager.
+              Initial funds in USD provided by the round manager for quadratic
+              funding distribution.
             </FormDescription>
             <FormMessage />
           </FormItem>
