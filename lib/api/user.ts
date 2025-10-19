@@ -343,8 +343,8 @@ export async function listAdminEventFeed({
         'address', u.address,
         'username', u.username,
         'firstName', u."firstName",
-        'lastName', u."lastName",
-        ) AS createdBy
+        'lastName', u."lastName"
+      ) AS createdBy
     FROM grouped g
     JOIN "EventFeed" ef ON ef.id = g.selected_id
     LEFT JOIN "User" u ON ef."createdById" = u.id
