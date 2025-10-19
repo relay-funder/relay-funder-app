@@ -72,7 +72,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
       } finally {
         setIsPending(false);
         setIsOpen(false);
-        setOptions(null);
+        setTimeout(() => setOptions(null), 200);
       }
     }
   }, [options, resolvePromise]);
@@ -81,8 +81,8 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
     if (options && resolvePromise) {
       options.onCancel?.();
       resolvePromise(false);
-      setOptions(null);
       setIsOpen(false);
+      setTimeout(() => setOptions(null), 200);
     }
   }, [options, resolvePromise]);
 
