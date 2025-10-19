@@ -80,7 +80,6 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
       options.onCancel?.();
       resolvePromise(false);
     }
-    setIsOpen(false);
     setOptions(null);
   }, [options, resolvePromise]);
 
@@ -89,7 +88,16 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <ConfirmContext.Provider value={value}>
       {children}
-      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancel();
+          } else {
+            setIsOpen(true);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{options?.title}</AlertDialogTitle>
