@@ -5,6 +5,7 @@ import React, {
   useMemo,
   createContext,
   ReactNode,
+  useRef,
 } from 'react';
 import {
   AlertDialog,
@@ -42,9 +43,13 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
   const [resolvePromise, setResolvePromise] =
     useState<(value: boolean) => void>();
   const [isPending, setIsPending] = useState(false);
+  const cleanupTimeoutRef = useRef<NodeJS.Timeout>();
 
   const confirm = useCallback(
     (opts: ConfirmDialogOptions): Promise<boolean> => {
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+      }
       return new Promise((resolve) => {
         setOptions({
           ...opts,
@@ -72,7 +77,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
       } finally {
         setIsPending(false);
         setIsOpen(false);
-        setTimeout(() => setOptions(null), 200);
+        cleanupTimeoutRef.current = setTimeout(() => setOptions(null), 200);
       }
     }
   }, [options, resolvePromise]);
@@ -82,7 +87,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
       options.onCancel?.();
       resolvePromise(false);
       setIsOpen(false);
-      setTimeout(() => setOptions(null), 200);
+      cleanupTimeoutRef.current = setTimeout(() => setOptions(null), 200);
     }
   }, [options, resolvePromise]);
 
