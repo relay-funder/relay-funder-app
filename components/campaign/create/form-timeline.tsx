@@ -288,7 +288,7 @@ export function CampaignCreateFormTimeline({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium text-foreground">
-                  Select a Funding Round ({field.value})
+                  Select a Funding Round
                 </FormLabel>
                 <Select
                   onValueChange={handleRoundChange}
