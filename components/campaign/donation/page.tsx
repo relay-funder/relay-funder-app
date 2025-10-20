@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { PageHome } from '@/components/page/home';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from '@/components/campaign/loading';
-import { useAuth } from '@/contexts';
+import { DonationProvider, useAuth } from '@/contexts';
 import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
@@ -44,20 +44,22 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
       <PageHeaderSticky message="Campaign" title="" />
       <main className="w-full">
         <DetailContainer variant="standard" padding="md">
-          <div className="rounded-lg border bg-card p-8 shadow-sm">
-            <div className="grid gap-8 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <CampaignDonationForm campaign={campaign} />
-              </div>
-              <div className="space-y-4 lg:col-span-1">
-                <CampaignDonationSummary campaign={campaign} />
-                <CampaignMatchingFundsHighlight
-                  campaign={campaign}
-                  variant="compact"
-                />
+          <DonationProvider>
+            <div className="rounded-lg border bg-card p-8 shadow-sm">
+              <div className="grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                  <CampaignDonationForm campaign={campaign} />
+                </div>
+                <div className="space-y-4 lg:col-span-1">
+                  <CampaignDonationSummary campaign={campaign} />
+                  <CampaignMatchingFundsHighlight
+                    campaign={campaign}
+                    variant="compact"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </DonationProvider>
         </DetailContainer>
       </main>
     </>
