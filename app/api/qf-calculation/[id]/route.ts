@@ -14,11 +14,9 @@ export async function GET(req: Request, { params }: RoundsWithIdParams) {
     debug && console.log(`Starting QF calculation for round ${id}...`);
     const { distribution, totalAllocated } = await getRoundQFDistribution(id);
     debug &&
-      Object.entries(distribution).forEach(
-        ([id, { title, matchingAmount }]) => {
-          console.log(`${id}: ${title} - ${matchingAmount}`);
-        },
-      );
+      distribution.forEach(({ id, title, matchingAmount }) => {
+        console.log(`${id}: ${title} - ${matchingAmount}`);
+      });
     debug && console.log(`Total allocated: ${totalAllocated}`);
     return response({ distribution, totalAllocated });
   } catch (error: unknown) {
