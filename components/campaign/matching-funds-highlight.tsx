@@ -10,11 +10,11 @@ import {
   Card,
   CardContent,
 } from '@/components/ui';
+import { HowMatchingWorksDialog } from '@/components/how-matching-works-dialog';
 import { TrendingUp, HelpCircle } from 'lucide-react';
 
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 import { useCampaignMatching } from '@/lib/hooks/useCampaignMatching';
-import { HowMatchingWorksDialog } from './how-matching-works-dialog';
 
 export function CampaignMatchingFundsHighlight({
   campaign,
