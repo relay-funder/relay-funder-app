@@ -2,91 +2,17 @@ import { formatUnits, parseUnits } from 'viem';
 import { describe, test, expect, vi } from 'vitest';
 import { calculateQFDistribution } from './calculate-qf-distribution';
 import type { QFCalculationResult, QFCampaign } from '../types';
+import {
+  precision10Results,
+  precision1Results,
+  precision3Results,
+  precisionCampaigns,
+} from '../mocks';
+import { USDC_DECIMALS } from '@/lib/constant';
 
 vi.mock('@/lib/debug', () => ({
   debugApi: false,
 }));
-
-const USDC_DECIMALS = 6; // USDC
-
-// Reusable campaigns for precision tests
-const precisionCampaigns: QFCampaign[] = [
-  {
-    id: 1,
-    title: 'Two equal backers (10,10)',
-    status: 'ACTIVE',
-    contributions: [],
-    aggregatedContributionsByUser: {
-      1: parseUnits('10', USDC_DECIMALS),
-      2: parseUnits('10', USDC_DECIMALS),
-    },
-  },
-  {
-    id: 2,
-    title: 'Single larger backer (25)',
-    status: 'ACTIVE',
-    contributions: [],
-    aggregatedContributionsByUser: {
-      3: parseUnits('25', USDC_DECIMALS),
-    },
-  },
-  {
-    id: 3,
-    title: 'Many tiny backers (1x4)',
-    status: 'ACTIVE',
-    contributions: [],
-    aggregatedContributionsByUser: {
-      4: parseUnits('1', USDC_DECIMALS),
-      5: parseUnits('1', USDC_DECIMALS),
-      6: parseUnits('1', USDC_DECIMALS),
-      7: parseUnits('1', USDC_DECIMALS),
-    },
-  },
-  {
-    id: 4,
-    title: 'Three medium backers (3x3)',
-    status: 'ACTIVE',
-    contributions: [],
-    aggregatedContributionsByUser: {
-      8: parseUnits('3', USDC_DECIMALS),
-      9: parseUnits('3', USDC_DECIMALS),
-      10: parseUnits('3', USDC_DECIMALS),
-    },
-  },
-  {
-    id: 5,
-    title: 'Single odd backer (7)',
-    status: 'ACTIVE',
-    contributions: [],
-    aggregatedContributionsByUser: {
-      11: parseUnits('7', USDC_DECIMALS),
-    },
-  },
-];
-
-const precision1Results: Record<string, string> = {
-  '1': '348',
-  '2': '217.4',
-  '3': '139.1',
-  '4': '234.7',
-  '5': '60.8',
-};
-
-const precision3Results: Record<string, string> = {
-  '1': '347.805',
-  '2': '217.415',
-  '3': '139.145',
-  '4': '234.794',
-  '5': '60.841',
-};
-
-const precision10Results: Record<string, string> = {
-  '1': '347.803066',
-  '2': '217.415093',
-  '3': '139.145659',
-  '4': '234.794525',
-  '5': '60.841657',
-};
 
 describe('calculateQFDistribution', () => {
   test('should calculate QF distribution with equal contributions', () => {
