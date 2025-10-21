@@ -1,6 +1,6 @@
 import { getFeatureFlagString } from '@/lib/flags';
 
-export type PaymentMethodOption = 'daimo-only' | 'crypto-only' | 'both';
+export type PaymentMethodOption = 'daimo-only' | 'crypto-only' | 'daimo-and-crypto';
 
 export interface PaymentTabsVisibility {
   showDaimoPay: boolean;
@@ -15,7 +15,7 @@ export interface PaymentTabsVisibility {
  * Controlled by NEXT_PUBLIC_PAYMENT_METHODS environment variable:
  * - 'daimo-only': Show only Daimo Pay
  * - 'crypto-only': Show only Crypto Wallet
- * - 'both' (default): Show both options with tabs
+ * - 'daimo-and-crypto' (default): Show both options with tabs
  */
 export function usePaymentTabsVisibility(): PaymentTabsVisibility {
   const paymentMethod = getFeatureFlagString(
@@ -35,7 +35,7 @@ export function usePaymentTabsVisibility(): PaymentTabsVisibility {
         showCryptoWallet: true,
         defaultTab: 'wallet',
       };
-    case 'both':
+    case 'daimo-and-crypto':
     default:
       return {
         showDaimoPay: true,

@@ -5,7 +5,7 @@ export const FLAGS = {
   DEBUG: process.env.NEXT_PUBLIC_DEBUG === 'true',
   ROUNDS_VISIBILITY:
     process.env.NEXT_PUBLIC_ENABLE_ROUNDS_VISIBILITY === 'true',
-  PAYMENT_METHODS: process.env.NEXT_PUBLIC_PAYMENT_METHODS || 'both',
+  PAYMENT_METHODS: process.env.NEXT_PUBLIC_PAYMENT_METHODS || 'daimo-and-crypto',
 } as const;
 
 export type FeatureFlag = keyof typeof FLAGS;
