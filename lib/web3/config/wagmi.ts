@@ -1,6 +1,6 @@
 import { http, type Config, type CreateConfigParameters } from 'wagmi';
 import { chainConfig } from './chain';
-import { defaultChain, celo } from './chains';
+import { defaultChain, celo, daimoPayChains } from './chains';
 
 // Add type declaration for wagmi config
 declare module 'wagmi' {
@@ -9,15 +9,28 @@ declare module 'wagmi' {
   }
 }
 
+// Build base chains (include celo only when needed)
+const baseChains = [defaultChain];
+if (defaultChain.id !== celo.id) {
+  baseChains.push(celo);
+}
+
+// Combine with Daimo Pay chains and dedupe by chain.id
+const allChains = [...baseChains, ...daimoPayChains];
+const dedupedChains = allChains.filter(
+  (chain, index, self) => self.findIndex((c) => c.id === chain.id) === index,
+) as [(typeof allChains)[0], ...typeof allChains]; // Ensure at least one chain
+
+// Create transports mapping each chain.id to http() transport
+// Use custom RPC url for defaultChain, standard http() for others
+const transports: Record<number, ReturnType<typeof http>> = {};
+dedupedChains.forEach((chain) => {
+  transports[chain.id] =
+    chain.id === defaultChain.id ? http(chainConfig.rpcUrl) : http();
+});
+
 export const config: CreateConfigParameters = {
-  chains: [defaultChain],
-  transports: {
-    [defaultChain.id]: http(chainConfig.rpcUrl),
-  },
+  chains: dedupedChains,
+  transports,
   ssr: true,
 };
-// once we switch to celo, avoid errors
-if (defaultChain.id !== celo.id) {
-  (config.chains as unknown as unknown[]).push(celo);
-  config.transports[celo.id] = http(chainConfig.rpcUrl);
-}

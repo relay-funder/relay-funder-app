@@ -45,7 +45,7 @@ export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
 export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
-export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [1, 5, 10, 20, 50];
+export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [5, 10, 25, 50, 100];
 
 export const FILE_STORAGE_PROVIDER =
   process.env.FILE_STORAGE_PROVIDER ?? 'LOCAL';
@@ -54,6 +54,23 @@ export const PINATA_API_JWT_ACCESS_TOKEN =
   process.env.PINATA_API_JWT_ACCESS_TOKEN;
 export const NEXT_PUBLIC_PINATA_GATEWAY_URL =
   process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL ?? '';
+
+// Daimo Pay configuration - appId is public for client-side, webhook secret is server-side only
+export const DAIMO_PAY_APP_ID = process.env.NEXT_PUBLIC_DAIMO_PAY_APP_ID ?? '';
+export const DAIMO_PAY_WEBHOOK_SECRET =
+  process.env.DAIMO_PAY_WEBHOOK_SECRET ?? '';
+
+// Daimo Pay specific constants
+export {
+  DAIMO_PAY_USDC_ADDRESS,
+  DAIMO_PAY_USDT_ADDRESS,
+  DAIMO_PAY_CHAIN_ID,
+  DAIMO_PAY_CHAIN_NAME,
+  DAIMO_PAY_TOKEN_SYMBOL,
+  DAIMO_PAY_MIN_AMOUNT,
+  DAIMO_PAY_INITIAL_RESET_DELAY,
+  DAIMO_PAY_DEBOUNCE_DELAY,
+} from './daimo';
 
 export const IS_PRODUCTION =
   process.env.NODE_ENV === 'production' &&

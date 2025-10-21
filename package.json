@@ -26,6 +26,8 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@daimo/pay": "^1.17.5",
+    "@daimo/pay-common": "^1.17.5",
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.16.3",
     "@radix-ui/react-alert-dialog": "^1.1.15",
