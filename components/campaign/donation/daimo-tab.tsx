@@ -8,13 +8,19 @@ import { CampaignDonationWalletTip } from './wallet/tip';
 import { CampaignDonationAnonymous } from './anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DaimoPayProvider } from '@daimo/pay';
+import { CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
+  const router = useRouter();
   const [selectedToken, setSelectedToken] = useState('USDC');
   const [amount, setAmount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
   const [donationAnonymous, setDonationAnonymous] = useState(false);
   const [email, setEmail] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   const handleAmountChanged = useCallback((newAmount: string) => {
     setAmount(newAmount);
@@ -28,10 +34,53 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setEmail(newEmail);
   }, []);
 
+  const handlePaymentCompleted = useCallback(() => {
+    setProcessing(false);
+    setPaymentCompleted(true);
+  }, []);
+
+  const handlePaymentBounced = useCallback(() => {
+    setProcessing(false);
+    setPaymentCompleted(false);
+  }, []);
+
+  const handleViewCampaign = useCallback(() => {
+    router.push(`/campaigns/${campaign.slug}`);
+  }, [router, campaign.slug]);
+
+  const handleDonateAgain = useCallback(() => {
+    setPaymentCompleted(false);
+    setProcessing(false);
+  }, []);
+
   return (
     <DaimoPayProvider theme="auto">
       <div className="relative flex flex-col gap-6">
-        <VisibilityToggle isVisible={!processing}>
+        {/* Success Display */}
+        {paymentCompleted && (
+          <div className="mt-4 space-y-4 rounded-lg border border-green-200 bg-green-50 p-6 text-center dark:border-green-800 dark:bg-green-950">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-green-600 dark:text-green-400" />
+            <div className="space-y-2">
+              <p className="font-display text-lg font-semibold text-foreground">
+                Donation Complete!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Your donation has been successfully completed. Thank you for
+                your support!
+              </p>
+            </div>
+            <div className="flex flex-col justify-center gap-2 sm:flex-row">
+              <Button onClick={handleViewCampaign} variant="default">
+                View Campaign
+              </Button>
+              <Button onClick={handleDonateAgain} variant="outline">
+                Donate Again
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <VisibilityToggle isVisible={!processing && !paymentCompleted}>
           <div className="space-y-6">
             <CampaignDonationWalletAmount
               onAmountChanged={handleAmountChanged}
@@ -58,16 +107,18 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
           </div>
         </VisibilityToggle>
 
-        <DaimoPayButtonComponent
-          campaign={campaign}
-          amount={amount}
-          tipAmount={tipAmount}
-          email={email}
-          anonymous={donationAnonymous}
-          onPaymentStartedCallback={() => setProcessing(true)}
-          onPaymentCompletedCallback={() => setProcessing(false)}
-          onPaymentBouncedCallback={() => setProcessing(false)}
-        />
+        <VisibilityToggle isVisible={!paymentCompleted}>
+          <DaimoPayButtonComponent
+            campaign={campaign}
+            amount={amount}
+            tipAmount={tipAmount}
+            email={email}
+            anonymous={donationAnonymous}
+            onPaymentStartedCallback={() => setProcessing(true)}
+            onPaymentCompletedCallback={handlePaymentCompleted}
+            onPaymentBouncedCallback={handlePaymentBounced}
+          />
+        </VisibilityToggle>
       </div>
     </DaimoPayProvider>
   );
