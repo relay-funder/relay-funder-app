@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useDaimoPayUI } from '@daimo/pay';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
-import {
-  DAIMO_PAY_INITIAL_RESET_DELAY,
-  DAIMO_PAY_DEBOUNCE_DELAY,
-} from '@/lib/constant/daimo';
+import { DAIMO_PAY_DEBOUNCE_DELAY } from '@/lib/constant/daimo';
 import { debugHook as debug } from '@/lib/debug';
 
 interface UseDaimoResetParams {

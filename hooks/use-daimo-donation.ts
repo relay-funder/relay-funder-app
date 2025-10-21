@@ -1,11 +1,14 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts';
 import { type DbCampaign } from '@/types/campaign';
-import {
-  useCreatePayment,
-  useUpdatePaymentStatus,
-} from '@/lib/hooks/usePayments';
+import { useCreatePayment } from '@/lib/hooks/usePayments';
 import { debugHook as debug } from '@/lib/debug';
+
+interface DaimoPayEvent {
+  id?: string;
+  paymentId?: string;
+  [key: string]: unknown;
+}
 
 export function useDaimoDonationCallback({
   campaign,
@@ -24,12 +27,11 @@ export function useDaimoDonationCallback({
 }) {
   const { authenticated } = useAuth();
   const { mutateAsync: createPayment } = useCreatePayment();
-  const { mutateAsync: updatePaymentStatus } = useUpdatePaymentStatus();
 
   const poolAmount = parseFloat(amount) || 0;
 
   const onPaymentStarted = useCallback(
-    async (event: any) => {
+    async (event: DaimoPayEvent) => {
       debug && console.log('Daimo Pay: Payment started', event);
 
       if (!authenticated) {
@@ -77,7 +79,7 @@ export function useDaimoDonationCallback({
     ],
   );
 
-  const onPaymentCompleted = useCallback(async (event: any) => {
+  const onPaymentCompleted = useCallback(async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment completed', event);
 
     // Payment status will be updated via webhook
@@ -88,7 +90,7 @@ export function useDaimoDonationCallback({
       );
   }, []);
 
-  const onPaymentBounced = useCallback(async (event: any) => {
+  const onPaymentBounced = useCallback(async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment bounced', event);
 
     // Payment status will be updated via webhook
