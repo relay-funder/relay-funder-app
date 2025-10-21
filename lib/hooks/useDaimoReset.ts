@@ -123,15 +123,7 @@ export function useDaimoReset({
     validatedTreasuryAddress,
     pledgeCallData,
     totalAmount,
-    // Only include primitive values from metadata to avoid object reference changes
-    metadata.campaignId,
-    metadata.pledgeId,
-    metadata.email,
-    metadata.anonymous,
-    metadata.tipAmount,
-    metadata.baseAmount,
-    metadata.token,
-    metadata.chain,
+    metadata,
   ]);
 
   // Cleanup on unmount
