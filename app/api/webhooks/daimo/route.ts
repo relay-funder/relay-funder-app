@@ -39,18 +39,20 @@ export async function POST(req: Request) {
       // Clone the request to check body without consuming it
       const clonedReq = req.clone();
       const bodyText = await clonedReq.text();
-      
+
       debug && console.log('Daimo Pay webhook body length:', bodyText.length);
-      
+
       if (!bodyText || bodyText.trim() === '') {
-        console.warn('Daimo Pay webhook: Received empty body (possible duplicate/retry)');
+        console.warn(
+          'Daimo Pay webhook: Received empty body (possible duplicate/retry)',
+        );
         // Return 200 to prevent retries
         return NextResponse.json(
           { acknowledged: true, message: 'Empty body - possible retry' },
           { status: 200 },
         );
       }
-      
+
       rawPayload = await req.json();
       debug && console.log('Daimo Pay webhook parsed payload:', rawPayload);
     } catch (parseError) {
@@ -148,9 +150,8 @@ export async function POST(req: Request) {
     }
 
     // Map Daimo Pay status to our internal status
-    // Based on webhook documentation, we use the payment.status field
-    let newStatus: string;
     const daimoStatus = payload.payment.status;
+    let newStatus: string;
 
     switch (daimoStatus) {
       case 'payment_completed':
@@ -167,12 +168,10 @@ export async function POST(req: Request) {
     }
 
     // Prevent status regression: don't downgrade from terminal states
-    // This handles out-of-order event delivery
     const currentStatus = payment.status;
-    if (
-      (currentStatus === 'confirmed' || currentStatus === 'failed') &&
-      newStatus === 'confirming'
-    ) {
+    const terminalStates = ['confirmed', 'failed'];
+
+    if (terminalStates.includes(currentStatus) && newStatus === 'confirming') {
       debug &&
         console.log(
           `Ignoring status downgrade from ${currentStatus} to ${newStatus} for payment ${payment.id}`,
@@ -199,36 +198,39 @@ export async function POST(req: Request) {
     }
 
     // Build comprehensive metadata object
-    const existingMetadata = payment.metadata as Record<string, unknown> || {};
+    const existingMetadata =
+      (payment.metadata as Record<string, unknown>) || {};
     const daimoMetadata = {
       ...existingMetadata,
       // Payment processor identification
       paymentProcessor: 'daimo',
       daimoPaymentId: payload.paymentId,
       daimoEventType: payload.type,
-      
+
       // Source transaction (what user actually paid)
       sourceChainId: payload.payment.source?.chainId,
-      sourceChainName: payload.payment.source?.chainId === '42220' ? 'Celo' : 'Unknown',
+      sourceChainName:
+        payload.payment.source?.chainId === '42220' ? 'Celo' : 'Unknown',
       sourceToken: payload.payment.source?.tokenSymbol,
       sourceTokenAddress: payload.payment.source?.tokenAddress,
       sourceAmount: payload.payment.source?.amountUnits,
       sourceTxHash: payload.payment.source?.txHash,
       actualPayerAddress: payload.payment.source?.payerAddress,
-      
+
       // Destination transaction (what was delivered)
       destinationChainId: payload.payment.destination?.chainId,
-      destinationChainName: payload.payment.destination?.chainId === '10' ? 'Optimism' : 'Unknown',
+      destinationChainName:
+        payload.payment.destination?.chainId === '10' ? 'Optimism' : 'Unknown',
       destinationToken: payload.payment.destination?.tokenSymbol,
       destinationTokenAddress: payload.payment.destination?.tokenAddress,
       destinationAmount: payload.payment.destination?.amountUnits,
       destinationTxHash: payload.payment.destination?.txHash,
       destinationAddress: payload.payment.destination?.destinationAddress,
-      
+
       // Payment display info
       displayValue: payload.payment.display?.paymentValue,
       displayCurrency: payload.payment.display?.currency,
-      
+
       // Timestamps
       daimoCreatedAt: payload.payment.createdAt,
       webhookProcessedAt: new Date().toISOString(),
@@ -309,7 +311,6 @@ export async function POST(req: Request) {
           'Error sending Daimo Pay notification:',
           notificationError,
         );
-        // Don't fail the webhook because of notification errors
       }
     }
 

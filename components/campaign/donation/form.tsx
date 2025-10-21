@@ -11,14 +11,6 @@ import { Button } from '@/components/ui';
 import { usePaymentTabsVisibility } from '@/hooks/use-payment-tabs-visibility';
 
 export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
-  return (
-    <Web3ContextProvider>
-      <CampaignDonationFormInner campaign={campaign} />
-    </Web3ContextProvider>
-  );
-}
-
-function CampaignDonationFormInner({ campaign }: { campaign: DbCampaign }) {
   const { authenticated, login } = useAuth();
   const { showDaimoPay, showCryptoWallet, defaultTab } =
     usePaymentTabsVisibility();
@@ -73,22 +65,32 @@ function CampaignDonationFormInner({ campaign }: { campaign: DbCampaign }) {
           </TabsList>
 
           <TabsContent value="daimo">
-            <DaimoPayTab campaign={campaign} />
+            <Web3ContextProvider>
+              <DaimoPayTab campaign={campaign} />
+            </Web3ContextProvider>
           </TabsContent>
 
           <TabsContent value="wallet">
-            <CampaignDonationWalletTab campaign={campaign} />
+            <Web3ContextProvider>
+              <CampaignDonationWalletTab campaign={campaign} />
+            </Web3ContextProvider>
           </TabsContent>
         </Tabs>
       ) : showDaimoPay ? (
         // Only Daimo Pay enabled - show directly without tabs
-        <DaimoPayTab campaign={campaign} />
+        <Web3ContextProvider>
+          <DaimoPayTab campaign={campaign} />
+        </Web3ContextProvider>
       ) : showCryptoWallet ? (
         // Only Crypto Wallet enabled - show directly without tabs
-        <CampaignDonationWalletTab campaign={campaign} />
+        <Web3ContextProvider>
+          <CampaignDonationWalletTab campaign={campaign} />
+        </Web3ContextProvider>
       ) : (
         // No payment methods enabled - this shouldn't happen but fallback to Daimo Pay
-        <DaimoPayTab campaign={campaign} />
+        <Web3ContextProvider>
+          <DaimoPayTab campaign={campaign} />
+        </Web3ContextProvider>
       )}
     </div>
   );

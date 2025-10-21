@@ -18,7 +18,9 @@ export interface PaymentTabsVisibility {
  * - 'both' (default): Show both options with tabs
  */
 export function usePaymentTabsVisibility(): PaymentTabsVisibility {
-  const paymentMethod = getFeatureFlagString('PAYMENT_METHODS') as PaymentMethodOption;
+  const paymentMethod = getFeatureFlagString(
+    'PAYMENT_METHODS',
+  ) as PaymentMethodOption;
 
   switch (paymentMethod) {
     case 'daimo-only':

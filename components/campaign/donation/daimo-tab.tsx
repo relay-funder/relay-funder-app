@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { DaimoPayButtonComponent } from './daimo-button';
 import { CampaignDonationWalletAmount } from './wallet/amount';
@@ -14,20 +14,23 @@ import { useRouter } from 'next/navigation';
 
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const router = useRouter();
-  const [selectedToken, setSelectedToken] = useState('USDC');
+  const [selectedToken, setSelectedToken] = useState('USD'); // Will be updated by config (USDC or USDT)
   const [amount, setAmount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
   const [donationAnonymous, setDonationAnonymous] = useState(false);
   const [email, setEmail] = useState('');
   const [processing, setProcessing] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [tipCalculated, setTipCalculated] = useState(false);
 
   const handleAmountChanged = useCallback((newAmount: string) => {
     setAmount(newAmount);
+    setTipCalculated(false); // Reset tip calculation flag when amount changes
   }, []);
 
   const handleTipAmountChanged = useCallback((newTipAmount: string) => {
     setTipAmount(newTipAmount);
+    setTipCalculated(true); // Mark tip as calculated
   }, []);
 
   const handleEmailChanged = useCallback((newEmail: string) => {
@@ -52,6 +55,13 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setPaymentCompleted(false);
     setProcessing(false);
   }, []);
+
+  // Trigger initial tip calculation when component mounts
+  useEffect(() => {
+    if (amount === '0') {
+      setTipCalculated(true); // Allow button to render with 0 amount initially
+    }
+  }, [amount]);
 
   return (
     <DaimoPayProvider theme="auto">
@@ -108,16 +118,19 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
         </VisibilityToggle>
 
         <VisibilityToggle isVisible={!paymentCompleted}>
-          <DaimoPayButtonComponent
-            campaign={campaign}
-            amount={amount}
-            tipAmount={tipAmount}
-            email={email}
-            anonymous={donationAnonymous}
-            onPaymentStartedCallback={() => setProcessing(true)}
-            onPaymentCompletedCallback={handlePaymentCompleted}
-            onPaymentBouncedCallback={handlePaymentBounced}
-          />
+          {/* Only render Daimo Pay button after tip calculation is complete */}
+          {tipCalculated && (
+            <DaimoPayButtonComponent
+              campaign={campaign}
+              amount={amount}
+              tipAmount={tipAmount}
+              email={email}
+              anonymous={donationAnonymous}
+              onPaymentStartedCallback={() => setProcessing(true)}
+              onPaymentCompletedCallback={handlePaymentCompleted}
+              onPaymentBouncedCallback={handlePaymentBounced}
+            />
+          )}
         </VisibilityToggle>
       </div>
     </DaimoPayProvider>

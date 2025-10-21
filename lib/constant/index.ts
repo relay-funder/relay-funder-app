@@ -60,6 +60,17 @@ export const DAIMO_PAY_APP_ID = process.env.NEXT_PUBLIC_DAIMO_PAY_APP_ID ?? '';
 export const DAIMO_PAY_WEBHOOK_SECRET =
   process.env.DAIMO_PAY_WEBHOOK_SECRET ?? '';
 
+// Daimo Pay specific constants
+export {
+  DAIMO_PAY_USDC_ADDRESS,
+  DAIMO_PAY_CHAIN_ID,
+  DAIMO_PAY_CHAIN_NAME,
+  DAIMO_PAY_TOKEN_SYMBOL,
+  DAIMO_PAY_MIN_AMOUNT,
+  DAIMO_PAY_INITIAL_RESET_DELAY,
+  DAIMO_PAY_DEBOUNCE_DELAY,
+} from './daimo';
+
 export const IS_PRODUCTION =
   process.env.NODE_ENV === 'production' &&
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';

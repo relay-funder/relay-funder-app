@@ -1,6 +1,16 @@
-// 3297-> 4513
 import { IS_PRODUCTION } from '@/lib/constant';
-import { celo } from 'viem/chains';
+import {
+  mainnet,
+  arbitrum,
+  base,
+  bsc,
+  celo,
+  linea,
+  polygon,
+  optimism,
+  scroll,
+  worldchain,
+} from 'viem/chains';
 
 export const celoSepolia = {
   id: 11142220,
@@ -32,4 +42,19 @@ export const celoSepolia = {
 
 // Use Celo mainnet in production, Sepolia in staging/development
 export const defaultChain = IS_PRODUCTION ? celo : celoSepolia;
+
+// Daimo Pay required networks - centralized configuration
+export const daimoPayChains = [
+  mainnet,
+  arbitrum,
+  base,
+  bsc,
+  celo,
+  linea,
+  polygon,
+  optimism,
+  scroll,
+  worldchain,
+];
+
 export { celo };
