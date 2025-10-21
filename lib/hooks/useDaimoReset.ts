@@ -60,19 +60,26 @@ export function useDaimoReset({
       return;
     }
 
-    // First call: longer delay to ensure tip calculation propagates
-    // Subsequent calls: shorter debounce for smooth experience
-    const delay = hasCalledResetPaymentRef.current
-      ? DAIMO_PAY_DEBOUNCE_DELAY
-      : DAIMO_PAY_INITIAL_RESET_DELAY;
-
+    // Handle first render: skip reset, just record initial params
     if (!hasCalledResetPaymentRef.current) {
       debug &&
-        console.log('Daimo Pay: First call - scheduling resetPayment', {
-          delay,
-          totalAmount,
-        });
+        console.log(
+          'Daimo Pay: First render - recording initial params without reset',
+          {
+            totalAmount,
+          },
+        );
+      hasCalledResetPaymentRef.current = true;
+      lastResetParamsRef.current = currentParamsKey;
+      return;
     }
+
+    // Subsequent changes: use debounced reset
+    debug &&
+      console.log('Daimo Pay: Scheduling debounced resetPayment', {
+        totalAmount,
+        delay: DAIMO_PAY_DEBOUNCE_DELAY,
+      });
 
     debounceTimeoutRef.current = setTimeout(() => {
       // Double-check parameters haven't changed during timeout
@@ -84,12 +91,9 @@ export function useDaimoReset({
         return;
       }
 
-      const isFirstCall = !hasCalledResetPaymentRef.current;
-
       debug &&
         console.log('Daimo Pay: Calling resetPayment', {
           totalAmount,
-          isFirstCall,
           metadata,
         });
 
@@ -104,13 +108,12 @@ export function useDaimoReset({
           metadata,
         });
 
-        hasCalledResetPaymentRef.current = true;
         lastResetParamsRef.current = currentParamsKey;
         debug && console.log('Daimo Pay: resetPayment completed');
       } catch (error) {
         console.error('Daimo Pay: resetPayment error:', error);
       }
-    }, delay);
+    }, DAIMO_PAY_DEBOUNCE_DELAY);
 
     return () => {
       if (debounceTimeoutRef.current) {

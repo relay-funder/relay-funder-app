@@ -15,7 +15,12 @@ export async function POST(req: Request) {
       console.log('Daimo Pay webhook called:', {
         method: req.method,
         url: req.url,
-        headers: Object.fromEntries(req.headers.entries()),
+        headers: Object.fromEntries(
+          Array.from(req.headers.entries()).map(([key, value]) => [
+            key,
+            key.toLowerCase() === 'authorization' ? '[REDACTED]' : value,
+          ]),
+        ),
       });
 
     // Verify Daimo Pay webhook authentication
@@ -167,14 +172,14 @@ export async function POST(req: Request) {
         break;
     }
 
-    // Prevent status regression: don't downgrade from terminal states
+    // Prevent status regression: don't change status from terminal states
     const currentStatus = payment.status;
     const terminalStates = ['confirmed', 'failed'];
 
-    if (terminalStates.includes(currentStatus) && newStatus === 'confirming') {
+    if (terminalStates.includes(currentStatus) && newStatus !== currentStatus) {
       debug &&
         console.log(
-          `Ignoring status downgrade from ${currentStatus} to ${newStatus} for payment ${payment.id}`,
+          `Ignoring status change from ${currentStatus} to ${newStatus} for payment ${payment.id}`,
         );
       return response({
         acknowledged: true,

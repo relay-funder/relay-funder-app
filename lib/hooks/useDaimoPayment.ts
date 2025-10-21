@@ -24,6 +24,7 @@ interface DaimoPaymentData {
   pledgeCallData: `0x${string}` | null;
   totalAmount: string;
   validatedTreasuryAddress: `0x${string}` | null;
+  validatedRefundAddress: `0x${string}` | null;
   metadata: Record<string, string>;
   isValid: boolean;
   config: ReturnType<typeof getDaimoPayConfig>;
@@ -67,6 +68,29 @@ export function useDaimoPayment({
       return null;
     }
   }, [address, campaign.treasuryAddress]);
+
+  // Validate refund address with fallback to treasury address
+  // Ensures non-null, network-valid address for Daimo Pay refunds
+  const validatedRefundAddress = useMemo(() => {
+    // First priority: user's connected wallet address
+    if (address) {
+      try {
+        return getAddress(address);
+      } catch (error) {
+        console.warn(
+          'Daimo Pay: Invalid user address format, using treasury fallback:',
+          error,
+        );
+      }
+    }
+
+    // Fallback: campaign treasury address (already validated for network)
+    if (validatedTreasuryAddress) {
+      return validatedTreasuryAddress;
+    }
+
+    return null;
+  }, [address, validatedTreasuryAddress]);
 
   // Generate contract call data
   const pledgeCallData = useMemo(() => {
@@ -130,6 +154,7 @@ export function useDaimoPayment({
     pledgeCallData,
     totalAmount,
     validatedTreasuryAddress,
+    validatedRefundAddress,
     metadata,
     isValid,
     config,

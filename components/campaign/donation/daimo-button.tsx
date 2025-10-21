@@ -221,12 +221,41 @@ export function DaimoPayButtonComponent({
     );
   }
 
+  // Runtime validation for DAIMO_PAY_APP_ID
+  if (!DAIMO_PAY_APP_ID || DAIMO_PAY_APP_ID.trim() === '') {
+    return (
+      <div className="w-full rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm font-medium text-red-800">
+          Daimo Pay configuration error: App ID is missing.
+        </p>
+        <p className="mt-1 text-xs text-red-600">
+          Please contact support if this issue persists.
+        </p>
+      </div>
+    );
+  }
+
+  // Ensure refund address is available (should be non-null due to fallback logic)
+  if (!paymentData.validatedRefundAddress) {
+    return (
+      <div className="w-full rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm font-medium text-red-800">
+          Daimo Pay configuration error: Refund address unavailable.
+        </p>
+        <p className="mt-1 text-xs text-red-600">
+          Please ensure your wallet is connected or contact support.
+        </p>
+      </div>
+    );
+  }
+
   debug &&
     console.log('Daimo Pay: Rendering button with final values', {
       totalAmount: paymentData.totalAmount,
       baseAmount: amount,
       tipAmount,
       treasuryAddress: paymentData.validatedTreasuryAddress,
+      refundAddress: paymentData.validatedRefundAddress,
     });
 
   return (
@@ -239,6 +268,7 @@ export function DaimoPayButtonComponent({
         toAddress={paymentData.validatedTreasuryAddress!}
         toUnits={paymentData.totalAmount}
         toCallData={paymentData.pledgeCallData!}
+        refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
         onPaymentStarted={handlePaymentStarted}
         onPaymentCompleted={handlePaymentCompleted}

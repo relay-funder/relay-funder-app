@@ -3,6 +3,7 @@ import { getAddress } from 'viem';
 import { USD_TOKEN } from '@/lib/constant';
 import {
   DAIMO_PAY_USDC_ADDRESS,
+  DAIMO_PAY_USDT_ADDRESS,
   DAIMO_PAY_CHAIN_ID,
   DAIMO_PAY_CHAIN_NAME,
 } from '@/lib/constant/daimo';
@@ -22,6 +23,7 @@ export interface DaimoPayConfig {
 
 /**
  * Get Daimo Pay configuration - uses USDT if USD_TOKEN=USDT, otherwise USDC
+ * Primary token is USDT for production, USDC supported for development/testing
  * Both tokens are on Optimism mainnet since Daimo Pay only works on mainnet
  */
 export function getDaimoPayConfig(): DaimoPayConfig {
@@ -33,22 +35,28 @@ export function getDaimoPayConfig(): DaimoPayConfig {
   const configuredToken = getAddress(tokenConfig.token);
   const configuredChain = tokenConfig.chainId;
 
-  // Validate against original hardcoded values (for USDC only)
+  // Validate token address against expected values (USDT primary, USDC fallback)
   const isTokenValid =
-    useUSDT ||
-    configuredToken.toLowerCase() === DAIMO_PAY_USDC_ADDRESS.toLowerCase();
+    (useUSDT &&
+      configuredToken.toLowerCase() === DAIMO_PAY_USDT_ADDRESS.toLowerCase()) ||
+    (!useUSDT &&
+      configuredToken.toLowerCase() === DAIMO_PAY_USDC_ADDRESS.toLowerCase());
   const isChainValid = configuredChain === DAIMO_PAY_CHAIN_ID;
 
-  // Generate warning if using USDT instead of original USDC configuration
+  // Generate warning if using USDC instead of USDT (since USDT is now primary)
   let tokenMismatchWarning: string | undefined;
-  if (useUSDT) {
-    tokenMismatchWarning = `Using USDT on Optimism instead of USDC. Ensure your CCP contracts expect USDT (${configuredToken}).`;
+  if (!useUSDT) {
+    tokenMismatchWarning = `Using USDC on Optimism instead of USDT. Consider switching to USDT for production (${DAIMO_PAY_USDT_ADDRESS}).`;
   }
 
   if (!isTokenValid) {
+    const expectedAddress = useUSDT
+      ? DAIMO_PAY_USDT_ADDRESS
+      : DAIMO_PAY_USDC_ADDRESS;
     console.error('Daimo Pay token configuration mismatch:', {
       configured: configuredToken,
-      expected: DAIMO_PAY_USDC_ADDRESS,
+      expected: expectedAddress,
+      token: useUSDT ? 'USDT' : 'USDC',
     });
   }
 

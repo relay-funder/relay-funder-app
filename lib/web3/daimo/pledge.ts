@@ -1,5 +1,6 @@
 import { keccak256, toBytes, encodeFunctionData } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
+import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
 
 /**
  * Generate a unique pledge ID for Daimo Pay transactions
@@ -50,7 +51,7 @@ export function isPledgeDataValid(
   callData: `0x${string}` | null,
   address: string | undefined,
   totalAmount: number,
-  minAmount: number = 0.1,
+  minAmount: number = DAIMO_PAY_MIN_AMOUNT,
 ): boolean {
   return !!(
     pledgeId &&

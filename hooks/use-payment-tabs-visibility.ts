@@ -1,6 +1,9 @@
 import { getFeatureFlagString } from '@/lib/flags';
 
-export type PaymentMethodOption = 'daimo-only' | 'crypto-only' | 'daimo-and-crypto';
+export type PaymentMethodOption =
+  | 'daimo-only'
+  | 'crypto-only'
+  | 'daimo-and-crypto';
 
 export interface PaymentTabsVisibility {
   showDaimoPay: boolean;
