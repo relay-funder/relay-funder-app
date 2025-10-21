@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { DaimoPayButton } from '@daimo/pay';
 import { DbCampaign } from '@/types/campaign';
 import { DAIMO_PAY_APP_ID } from '@/lib/constant';
@@ -51,6 +51,15 @@ export function DaimoPayButtonComponent({
   const { toast } = useToast();
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
+
+  // Create dynamic intent with campaign name and location
+  const dynamicIntent = useMemo(() => {
+    const baseName = campaign.title?.trim() ? campaign.title : 'Campaign';
+    const location = campaign.location?.trim()
+      ? ` in ${campaign.location}`
+      : '';
+    return `Contribute to ${baseName}${location}`;
+  }, [campaign.title, campaign.location]);
 
   // Use custom hooks for payment management
   const paymentData = useDaimoPayment({
@@ -256,13 +265,14 @@ export function DaimoPayButtonComponent({
       tipAmount,
       treasuryAddress: paymentData.validatedTreasuryAddress,
       refundAddress: paymentData.validatedRefundAddress,
+      intent: dynamicIntent,
     });
 
   return (
     <div className="w-full">
       <DaimoPayButton
         appId={DAIMO_PAY_APP_ID}
-        intent="Donate now"
+        intent={dynamicIntent}
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
         toAddress={paymentData.validatedTreasuryAddress!}

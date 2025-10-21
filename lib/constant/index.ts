@@ -45,7 +45,7 @@ export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
 export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
-export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [1, 5, 10, 20, 50];
+export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [5, 10, 25, 50, 100];
 
 export const FILE_STORAGE_PROVIDER =
   process.env.FILE_STORAGE_PROVIDER ?? 'LOCAL';

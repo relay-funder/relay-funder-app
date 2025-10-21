@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { DaimoPayButtonComponent } from './daimo-button';
 import { CampaignDonationWalletAmount } from './wallet/amount';
@@ -21,16 +21,17 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const [email, setEmail] = useState('');
   const [processing, setProcessing] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
-  const [tipCalculated, setTipCalculated] = useState(false);
-
   const handleAmountChanged = useCallback((newAmount: string) => {
     setAmount(newAmount);
-    setTipCalculated(false); // Reset tip calculation flag when amount changes
+    // Calculate tip immediately when amount changes
+    const DEFAULT_PERCENTAGE = 5;
+    const tip = (DEFAULT_PERCENTAGE / 100) * parseFloat(newAmount || '0');
+    const formattedTip = tip.toFixed(2);
+    setTipAmount(formattedTip);
   }, []);
 
   const handleTipAmountChanged = useCallback((newTipAmount: string) => {
     setTipAmount(newTipAmount);
-    setTipCalculated(true); // Mark tip as calculated
   }, []);
 
   const handleEmailChanged = useCallback((newEmail: string) => {
@@ -56,12 +57,7 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setProcessing(false);
   }, []);
 
-  // Trigger initial tip calculation when component mounts
-  useEffect(() => {
-    if (amount === '0') {
-      setTipCalculated(true); // Allow button to render with 0 amount initially
-    }
-  }, [amount]);
+  // Let the tip component handle the calculation to avoid conflicts
 
   return (
     <DaimoPayProvider theme="auto">
@@ -118,19 +114,36 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
         </VisibilityToggle>
 
         <VisibilityToggle isVisible={!paymentCompleted}>
-          {/* Only render Daimo Pay button after tip calculation is complete */}
-          {tipCalculated && (
-            <DaimoPayButtonComponent
-              campaign={campaign}
-              amount={amount}
-              tipAmount={tipAmount}
-              email={email}
-              anonymous={donationAnonymous}
-              onPaymentStartedCallback={() => setProcessing(true)}
-              onPaymentCompletedCallback={handlePaymentCompleted}
-              onPaymentBouncedCallback={handlePaymentBounced}
-            />
+          {/* Total Amount Display */}
+          {parseFloat(amount || '0') > 0 && (
+            <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">
+                  Total Amount:
+                </span>
+                <span className="text-lg font-bold text-foreground">
+                  $
+                  {(
+                    parseFloat(amount || '0') + parseFloat(tipAmount || '0')
+                  ).toFixed(2)}
+                </span>
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Campaign: ${amount} • Platform tip: ${tipAmount}
+              </div>
+            </div>
           )}
+
+          <DaimoPayButtonComponent
+            campaign={campaign}
+            amount={amount}
+            tipAmount={tipAmount}
+            email={email}
+            anonymous={donationAnonymous}
+            onPaymentStartedCallback={() => setProcessing(true)}
+            onPaymentCompletedCallback={handlePaymentCompleted}
+            onPaymentBouncedCallback={handlePaymentBounced}
+          />
         </VisibilityToggle>
       </div>
     </DaimoPayProvider>
