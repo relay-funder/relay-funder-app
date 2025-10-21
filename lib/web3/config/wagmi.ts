@@ -19,7 +19,7 @@ if (defaultChain.id !== celo.id) {
 const allChains = [...baseChains, ...daimoPayChains];
 const dedupedChains = allChains.filter(
   (chain, index, self) => self.findIndex((c) => c.id === chain.id) === index,
-) as [typeof allChains[0], ...typeof allChains]; // Ensure at least one chain
+) as [(typeof allChains)[0], ...typeof allChains]; // Ensure at least one chain
 
 // Create transports mapping each chain.id to http() transport
 // Use custom RPC url for defaultChain, standard http() for others
