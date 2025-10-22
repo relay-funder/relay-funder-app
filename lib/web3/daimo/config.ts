@@ -1,4 +1,4 @@
-import { optimismUSDC, optimismUSDT } from '@daimo/pay-common';
+import { celoUSDC, celoUSDT } from '@daimo/pay-common';
 import { getAddress } from 'viem';
 import { USD_TOKEN } from '@/lib/constant';
 import {
@@ -24,12 +24,12 @@ export interface DaimoPayConfig {
 /**
  * Get Daimo Pay configuration - uses USDT if USD_TOKEN=USDT, otherwise USDC
  * Primary token is USDT for production, USDC supported for development/testing
- * Both tokens are on Optimism mainnet since Daimo Pay only works on mainnet
+ * Both tokens are on Celo to match CCP treasury contract deployment
  */
 export function getDaimoPayConfig(): DaimoPayConfig {
   // Select token based on environment configuration
   const useUSDT = USD_TOKEN === 'USDT';
-  const tokenConfig = useUSDT ? optimismUSDT : optimismUSDC;
+  const tokenConfig = useUSDT ? celoUSDT : celoUSDC;
   const tokenSymbol = useUSDT ? 'USDT' : 'USDC';
 
   const configuredToken = getAddress(tokenConfig.token);
@@ -46,7 +46,7 @@ export function getDaimoPayConfig(): DaimoPayConfig {
   // Generate warning if using USDC instead of USDT (since USDT is now primary)
   let tokenMismatchWarning: string | undefined;
   if (!useUSDT) {
-    tokenMismatchWarning = `Using USDC on Optimism instead of USDT. Consider switching to USDT for production (${DAIMO_PAY_USDT_ADDRESS}).`;
+    tokenMismatchWarning = `Using USDC on Celo instead of USDT. Consider switching to USDT for production (${DAIMO_PAY_USDT_ADDRESS}).`;
   }
 
   if (!isTokenValid) {
@@ -69,7 +69,7 @@ export function getDaimoPayConfig(): DaimoPayConfig {
 
   return {
     chainId: configuredChain,
-    chainName: DAIMO_PAY_CHAIN_NAME, // Always Optimism
+    chainName: DAIMO_PAY_CHAIN_NAME, // Celo mainnet
     tokenAddress: configuredToken,
     tokenSymbol,
     isValid: isTokenValid && isChainValid,
