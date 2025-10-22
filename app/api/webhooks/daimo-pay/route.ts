@@ -215,6 +215,21 @@ export async function POST(req: Request) {
       });
     }
 
+    // Prevent transitions between different terminal states (both priority === 2)
+    if (currentPriority === 2 && newPriority === 2 && currentStatus !== newStatus) {
+      debug &&
+        console.log(
+          `Daimo Pay: Blocking terminal state flip ${currentStatus} -> ${newStatus}`,
+        );
+      return response({
+        acknowledged: true,
+        paymentId: payment.id,
+        daimoPaymentId: payload.paymentId,
+        status: currentStatus,
+        message: 'State transition blocked (out-of-order webhook)',
+      });
+    }
+
     // Allow same-state updates (idempotency)
     if (currentStatus === newStatus) {
       debug && console.log('Daimo Pay: Idempotent update, status unchanged');
