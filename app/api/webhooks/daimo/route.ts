@@ -251,39 +251,24 @@ export async function POST(req: Request) {
         );
       }
 
-      // For other event types (completed, bounced, refunded), check timing
-      console.error('🚨 Possible causes:');
-      console.error(
-        '  1. Button callback (onPaymentStarted) failed to create payment',
+      // For other event types (completed, bounced, refunded)
+      // If we see ANY recent payment_started events for this paymentId, it's a race condition
+      console.warn('⚠️ Payment not found for non-started event');
+      console.warn(
+        '⚠️ This usually means payment creation is still in progress',
       );
-      console.error(
-        '  2. Webhook arrived before button callback completed (race condition)',
+      console.warn('⚠️ Treating as race condition - Daimo will retry');
+
+      return NextResponse.json(
+        {
+          acknowledged: true,
+          message: 'Payment creation in progress - race condition',
+          note: `${payload.type} webhook arrived before payment exists in DB`,
+          shouldRetry: true,
+          eventType: payload.type,
+        },
+        { status: 200 },
       );
-      console.error('  3. Identifier mismatch between button and webhook');
-
-      const webhookTimestamp = new Date(
-        payload.payment.createdAt || Date.now(),
-      );
-      const timeSinceCreation = Date.now() - webhookTimestamp.getTime();
-
-      if (timeSinceCreation < 5000) {
-        console.warn('⚠️ Recent webhook - possible race condition');
-        console.warn('⚠️ Returning 200 with retry suggestion');
-        return NextResponse.json(
-          {
-            acknowledged: false,
-            message: 'Payment not found - possible race condition',
-            shouldRetry: true,
-          },
-          { status: 200 },
-        );
-      }
-
-      return response({
-        acknowledged: true,
-        message: 'Payment not found',
-        shouldRetry: false,
-      });
     }
 
     // Map Daimo Pay status to our internal status

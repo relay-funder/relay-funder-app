@@ -8,7 +8,10 @@ export async function GET(req: Request) {
     const transactionHash = searchParams.get('transactionHash');
 
     if (!transactionHash) {
-      return NextResponse.json({ error: 'Missing transactionHash parameter' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing transactionHash parameter' },
+        { status: 400 },
+      );
     }
 
     console.log(

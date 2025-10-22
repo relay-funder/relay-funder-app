@@ -8,7 +8,10 @@ export async function GET(req: Request) {
     const daimoPaymentId = searchParams.get('paymentId');
 
     if (!daimoPaymentId) {
-      return NextResponse.json({ error: 'Missing paymentId parameter' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing paymentId parameter' },
+        { status: 400 },
+      );
     }
 
     const payment = await db.payment.findFirst({
