@@ -94,6 +94,7 @@ export async function POST(req: Request) {
           type: data.type ?? 'BUY',
           user: { connect: { id: user.id } },
           campaign: { connect: { id: campaign.id } },
+          provider: data.provider || null,
           metadata: {
             userEmail: emailForPayment,
           },

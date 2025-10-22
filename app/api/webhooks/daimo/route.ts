@@ -232,6 +232,26 @@ export async function POST(req: Request) {
         '🚨 Daimo Pay webhook: Payment not found for paymentId:',
         payload.paymentId,
       );
+      console.error('🚨 Event type:', payload.type);
+
+      // For payment_started events, this is almost ALWAYS a race condition
+      // The webhook arrives before/during database commit
+      if (payload.type === 'payment_started') {
+        console.warn('⚠️ payment_started webhook - RACE CONDITION DETECTED');
+        console.warn('⚠️ Webhook arrived before payment creation completed');
+        console.warn('⚠️ Returning 200 to acknowledge, Daimo will retry');
+        return NextResponse.json(
+          {
+            acknowledged: true,
+            message: 'Payment creation in progress - race condition',
+            note: 'payment_started webhooks often arrive before DB commit',
+            shouldRetry: true,
+          },
+          { status: 200 },
+        );
+      }
+
+      // For other event types (completed, bounced, refunded), check timing
       console.error('🚨 Possible causes:');
       console.error(
         '  1. Button callback (onPaymentStarted) failed to create payment',
@@ -241,14 +261,12 @@ export async function POST(req: Request) {
       );
       console.error('  3. Identifier mismatch between button and webhook');
 
-      // Check if this is a very recent webhook that might be racing
       const webhookTimestamp = new Date(
         payload.payment.createdAt || Date.now(),
       );
       const timeSinceCreation = Date.now() - webhookTimestamp.getTime();
 
       if (timeSinceCreation < 5000) {
-        // Less than 5 seconds old
         console.warn('⚠️ Recent webhook - possible race condition');
         console.warn('⚠️ Returning 200 with retry suggestion');
         return NextResponse.json(
