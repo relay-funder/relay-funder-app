@@ -94,7 +94,9 @@ export function DaimoPayButtonComponent({
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
+      console.log('🚀 Daimo Pay: handlePaymentStarted called in button component');
       debug && console.log('Daimo Pay: Payment started', event);
+      debug && console.log('Daimo Pay: Event structure:', JSON.stringify(event, null, 2));
       try {
         if (!email.trim()) {
           toast({
@@ -115,19 +117,30 @@ export function DaimoPayButtonComponent({
         }
 
         if (!profile?.email || profile.email.trim() === '') {
-          await updateProfileEmail.mutateAsync({ email });
+          console.log('🚀 Daimo Pay: Updating profile email before payment creation');
+          try {
+            await updateProfileEmail.mutateAsync({ email });
+            console.log('✅ Daimo Pay: Profile email updated successfully');
+          } catch (emailError) {
+            console.error('🚨 Daimo Pay: Failed to update profile email:', emailError);
+            // Don't throw here, continue with payment creation
+          }
         }
 
+        console.log('🚀 Daimo Pay: Calling daimoOnPaymentStarted');
         await daimoOnPaymentStarted(event);
         onPaymentStarted?.(event);
         onPaymentStartedCallback?.();
       } catch (error) {
         console.error('Error in payment started handler:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         toast({
-          title: 'Payment Error',
-          description: 'Failed to initialize payment. Please try again.',
+          title: 'Payment Initialization Failed',
+          description: `Failed to initialize payment: ${errorMessage}. Please try again.`,
           variant: 'destructive',
         });
+        // Re-throw to potentially abort Daimo Pay flow if possible
+        throw error;
       }
     },
     [

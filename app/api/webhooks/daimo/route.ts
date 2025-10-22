@@ -149,9 +149,10 @@ export async function POST(req: Request) {
     });
 
     if (!payment) {
-      console.warn(
-        'Payment not found for Daimo Pay webhook:',
+      console.error(
+        '🚨 Daimo Pay webhook: Payment not found for paymentId:',
         payload.paymentId,
+        '- This indicates payment record creation failed during onPaymentStarted'
       );
       // Return 200 to acknowledge webhook even if payment not found
       // This prevents Daimo Pay from retrying indefinitely
