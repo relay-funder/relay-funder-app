@@ -7,6 +7,10 @@ import { debugHook as debug } from '@/lib/debug';
 interface DaimoPayEvent {
   id?: string;
   paymentId?: string;
+  payment?: {
+    id: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 

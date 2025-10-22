@@ -11,7 +11,7 @@ import { useAccount } from 'wagmi';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
-import { debugHook as debug } from '@/lib/debug';
+import { debugComponentData as debug } from '@/lib/debug';
 
 interface DaimoPayEvent {
   paymentId?: string;
