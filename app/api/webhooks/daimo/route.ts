@@ -138,6 +138,18 @@ export async function POST(req: Request) {
     }
 
     // Find payment by transaction hash (which we set to the Daimo payment ID)
+    console.log('🔍 Daimo Pay webhook: Searching for payment with transactionHash:', payload.paymentId);
+    console.log('🔍 Daimo Pay webhook: Full payload for debugging:', {
+      paymentId: payload.paymentId,
+      type: payload.type,
+      chainId: payload.chainId,
+      txHash: payload.txHash,
+      payment: payload.payment ? {
+        id: payload.payment.id,
+        status: payload.payment.status,
+      } : null,
+    });
+
     const payment = await db.payment.findFirst({
       where: {
         transactionHash: payload.paymentId,
@@ -147,6 +159,13 @@ export async function POST(req: Request) {
         campaign: true,
       },
     });
+
+    console.log('🔍 Daimo Pay webhook: Payment lookup result:', payment ? {
+      id: payment.id,
+      transactionHash: payment.transactionHash,
+      status: payment.status,
+      createdAt: payment.createdAt,
+    } : 'NOT FOUND');
 
     if (!payment) {
       console.error(
