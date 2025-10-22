@@ -1,0 +1,75 @@
+name: Auto Version Bump on Staging after Main Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  version_bump:
+    if: github.event.head_commit.message == 'Merge pull request' # Only run on actual merge commits
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write # Required for creating pull requests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: staging  # Checkout the staging branch
+          fetch-depth: 0
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Get current version and calculate new version
+        id: get_version
+        run: |
+          PACKAGE_JSON_PATH="package.json"
+
+          if [ ! -f "$PACKAGE_JSON_PATH" ]; then
+            echo "Error: ${PACKAGE_JSON_PATH} not found!"
+            exit 1
+          fi
+
+          CURRENT_VERSION=$(jq -r '.version' "$PACKAGE_JSON_PATH")
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: Could not read 'version' from ${PACKAGE_JSON_PATH}."
+            exit 1
+          fi
+
+          NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. '{$3++; print $1"."$2"."$3}')
+
+          echo "Current version: $CURRENT_VERSION"
+          echo "New version: $NEW_VERSION"
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package.json and commit
+        run: |
+          PACKAGE_JSON_PATH="package.json"
+          NEW_VERSION="${{ steps.get_version.outputs.NEW_VERSION }}"
+
+          jq ".version = \"${NEW_VERSION}\"" "$PACKAGE_JSON_PATH" > "$PACKAGE_JSON_PATH.tmp" && mv "$PACKAGE_JSON_PATH.tmp" "$PACKAGE_JSON_PATH"
+
+          git add "$PACKAGE_JSON_PATH"
+          git commit -m "chore(release): Bump version to ${NEW_VERSION} after main merge"
+
+      - name: Push changes to staging
+        run: git push origin staging
+
+      - name: Create Pull Request to main
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Release ${{ steps.get_version.outputs.NEW_VERSION }}"
+          body: "Automated release pull request after merging to main."
+          head: staging
+          base: main
+          commit-message: "chore(release): Create release PR"
