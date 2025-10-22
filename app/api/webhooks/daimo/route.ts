@@ -137,22 +137,7 @@ export async function POST(req: Request) {
       throw new ApiParameterError('Missing type in webhook payload');
     }
 
-    console.log('═══════════════════════════════════════════════');
-    console.log('🔍 DAIMO WEBHOOK: Starting payment lookup');
-    console.log('🔍 Environment:', process.env.NODE_ENV);
-    console.log('🔍 Search criteria:');
-    console.log('🔍   Field: transactionHash');
-    console.log('🔍   Value:', payload.paymentId);
-    console.log('🔍   Type:', typeof payload.paymentId);
-    console.log('🔍   Length:', payload.paymentId?.length);
-    console.log('🔍 Daimo Pay webhook: IDENTIFIER MATCHING CHECK');
-    console.log('🔍 Lookup key: transactionHash');
-    console.log('🔍 Lookup value:', payload.paymentId);
-    console.log(
-      '🔍 Expected to find payment created by onPaymentStarted callback',
-    );
-    console.log('═══════════════════════════════════════════════');
-
+    // Find payment by Daimo payment ID (stored in transactionHash)
     const payment = await db.payment.findFirst({
       where: {
         transactionHash: payload.paymentId,
@@ -163,121 +148,25 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log('═══════════════════════════════════════════════');
-    if (payment) {
-      console.log('✅ DAIMO WEBHOOK: Payment FOUND');
-      console.log('✅ Payment ID:', payment.id);
-      console.log('✅ Stored transactionHash:', payment.transactionHash);
-      console.log('✅ Current status:', payment.status);
-      console.log('✅ Created at:', payment.createdAt);
-    } else {
-      console.error('🚨 DAIMO WEBHOOK: Payment NOT FOUND');
-      console.error('🚨 Searched for transactionHash:', payload.paymentId);
-
-      // Try to find ANY recent Daimo payments for debugging
-      const recentDaimoPayments = await db.payment.findMany({
-        where: {
-          provider: 'daimo',
-          createdAt: {
-            gte: new Date(Date.now() - 60000), // Last 60 seconds
-          },
-        },
-        select: {
-          id: true,
-          transactionHash: true,
-          status: true,
-          provider: true,
-          createdAt: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: 5,
-      });
-
-      console.error(
-        '🔍 Recent Daimo payments (last 60s):',
-        recentDaimoPayments.length > 0
-          ? JSON.stringify(recentDaimoPayments, null, 2)
-          : 'NONE FOUND',
-      );
-
-      // Try to find payments with similar transactionHash (in case of encoding issues)
-      const similarPayments = await db.payment.findMany({
-        where: {
-          transactionHash: {
-            contains: payload.paymentId.substring(0, 10), // First 10 chars
-          },
-        },
-        select: {
-          id: true,
-          transactionHash: true,
-          status: true,
-          createdAt: true,
-        },
-        take: 3,
-      });
-
-      console.error(
-        '🔍 Payments with similar transactionHash:',
-        similarPayments.length > 0
-          ? JSON.stringify(similarPayments, null, 2)
-          : 'NONE FOUND',
-      );
-    }
-    console.log('═══════════════════════════════════════════════');
-
+    // Handle race condition: webhook arrived before payment creation
     if (!payment) {
-      console.error(
-        '🚨 Daimo Pay webhook: Payment not found for paymentId:',
-        payload.paymentId,
-      );
-      console.error('🚨 Event type:', payload.type);
-
-      // For payment_started events, this is almost ALWAYS a race condition
-      // The webhook arrives before/during database commit
-      if (payload.type === 'payment_started') {
-        console.warn('⚠️ payment_started webhook - RACE CONDITION DETECTED');
-        console.warn('⚠️ Webhook arrived before payment creation completed');
-        console.warn('⚠️ Returning 409 Conflict with Retry-After header');
-        return NextResponse.json(
-          {
-            error: 'Conflict',
-            message: 'Payment dependency not yet available',
-            reason:
-              'payment_started webhook arrived before payment record exists in database',
-            retryable: true,
-          },
-          {
-            status: 409, // Conflict - dependency not yet present
-            headers: {
-              'Retry-After': '2', // Suggest retry after 2 seconds
-            },
-          },
+      debug &&
+        console.log(
+          'Daimo Pay webhook: Payment not yet available for',
+          payload.paymentId,
         );
-      }
 
-      // For other event types (completed, bounced, refunded)
-      // Payment should exist for these events - this is a dependency conflict
-      console.warn('⚠️ Payment dependency not found for event:', payload.type);
-      console.warn(
-        '⚠️ Payment record should exist before completion/bounce/refund events',
-      );
-      console.warn('⚠️ Returning 409 Conflict with Retry-After header');
-
+      // Return 409 Conflict to trigger Daimo's retry mechanism
+      const retryAfter = payload.type === 'payment_started' ? '2' : '3';
       return NextResponse.json(
         {
           error: 'Conflict',
           message: 'Payment dependency not yet available',
-          reason: `${payload.type} event arrived before payment record exists in database`,
           retryable: true,
-          eventType: payload.type,
         },
         {
-          status: 409, // Conflict - dependency not yet present
-          headers: {
-            'Retry-After': '3', // Suggest retry after 3 seconds for later events
-          },
+          status: 409,
+          headers: { 'Retry-After': retryAfter },
         },
       );
     }
@@ -313,53 +202,27 @@ export async function POST(req: Request) {
 
     // Prevent backward state transitions (webhooks arriving out of order)
     if (newPriority < currentPriority) {
-      console.warn('═══════════════════════════════════════════════');
-      console.warn('⚠️ DAIMO WEBHOOK: State transition BLOCKED');
-      console.warn('⚠️ Payment ID:', payment.id);
-      console.warn(
-        '⚠️ Current status:',
-        currentStatus,
-        `(priority: ${currentPriority})`,
-      );
-      console.warn(
-        '⚠️ Attempted status:',
-        newStatus,
-        `(priority: ${newPriority})`,
-      );
-      console.warn('⚠️ Event type:', payload.type);
-      console.warn(
-        '⚠️ Reason: Cannot transition backwards (webhook out of order)',
-      );
-      console.warn('═══════════════════════════════════════════════');
-
+      debug &&
+        console.log(
+          `Daimo Pay: Blocking state regression ${currentStatus} -> ${newStatus}`,
+        );
       return response({
         acknowledged: true,
         paymentId: payment.id,
         daimoPaymentId: payload.paymentId,
-        eventType: payload.type,
-        currentStatus,
-        attemptedStatus: newStatus,
-        message:
-          'Webhook acknowledged but state transition blocked (out-of-order event)',
-        reason:
-          'Cannot transition from higher priority state to lower priority state',
+        status: currentStatus,
+        message: 'State transition blocked (out-of-order webhook)',
       });
     }
 
     // Allow same-state updates (idempotency)
     if (currentStatus === newStatus) {
-      console.log(
-        'ℹ️ Status already set to',
-        newStatus,
-        '- acknowledging duplicate event',
-      );
+      debug && console.log('Daimo Pay: Idempotent update, status unchanged');
       return response({
         acknowledged: true,
         paymentId: payment.id,
         daimoPaymentId: payload.paymentId,
-        eventType: payload.type,
         status: currentStatus,
-        message: 'Event acknowledged (idempotent - status already correct)',
       });
     }
 
