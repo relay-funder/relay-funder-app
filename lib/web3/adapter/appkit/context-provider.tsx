@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { WagmiProvider, type Config } from 'wagmi';
+import { WagmiProvider } from 'wagmi';
 
 import { debugWeb3ContextProvider as debug } from '@/lib/debug';
 import { config, createModal } from './config';
