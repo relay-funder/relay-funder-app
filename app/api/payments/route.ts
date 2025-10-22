@@ -61,75 +61,71 @@ export async function POST(req: Request) {
       },
     });
 
-    // create roundContribution
-    if (Array.isArray(campaign.rounds)) {
-      for (const round of campaign.rounds) {
-        if (typeof round.roundCampaignId !== 'number') continue;
+    // Return response to avoid to avoid webhook race condition
+    const paymentId = payment.id;
+    
+    // Process round contributions and notifications asynchronously (don't await)
+    // This allows webhooks to find the payment immediately while we handle non-critical operations
+    // Using Promise.resolve().then() ensures these operations complete even if connection closes
+    Promise.resolve().then(async () => {
+      try {
+        // Create round contributions
+        if (Array.isArray(campaign.rounds)) {
+          for (const round of campaign.rounds) {
+            if (typeof round.roundCampaignId !== 'number') continue;
 
-        // Check if round is active (approved and within date range)
-        if (
-          round.status !== 'APPROVED' ||
-          !round.startTime ||
-          !round.endTime ||
-          new Date() < new Date(round.startTime) ||
-          new Date() > new Date(round.endTime)
-        ) {
-          continue;
+            // Check if round is active (approved and within date range)
+            if (
+              round.status !== 'APPROVED' ||
+              !round.startTime ||
+              !round.endTime ||
+              new Date() < new Date(round.startTime) ||
+              new Date() > new Date(round.endTime)
+            ) {
+              continue;
+            }
+
+            try {
+              await db.roundContribution.create({
+                data: {
+                  campaign: { connect: { id: campaign.id } },
+                  roundCampaign: { connect: { id: round.roundCampaignId } },
+                  payment: { connect: { id: paymentId } },
+                  humanityScore: user.humanityScore,
+                },
+              });
+            } catch (roundError) {
+              console.error('Failed to create round contribution:', roundError);
+            }
+          }
         }
 
-        try {
-          await db.roundContribution.create({
-            data: {
-              campaign: { connect: { id: campaign.id } },
-              roundCampaign: { connect: { id: round.roundCampaignId } },
-              payment: { connect: { id: payment.id } },
-              humanityScore: user.humanityScore,
-            },
-          });
-        } catch (roundError) {
-          console.error('Failed to create round contribution:', roundError);
-          // Don't throw - round contributions are optional
-        }
+        // Send notification
+        const numericAmount = parseFloat(payment.amount);
+        const formattedAmount = formatCrypto(numericAmount, payment.token);
+        const donorName = data.isAnonymous
+          ? 'anon'
+          : getUserNameFromInstance(user) || user.address || 'unknown';
+        
+        await notify({
+          receiverId: creator.id,
+          creatorId: user.id,
+          data: {
+            type: 'CampaignPayment',
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            paymentId: paymentId,
+            formattedAmount,
+            donorName,
+          },
+        });
+      } catch (asyncError) {
+        console.error('Async payment processing error:', asyncError);
+        // Errors here don't affect payment creation success
       }
-    }
-    // Fetch payment with user for notification
-    const paymentWithUser = await db.payment.findUnique({
-      where: { id: payment.id },
-      include: { user: true },
     });
-    if (!paymentWithUser) {
-      throw new ApiNotFoundError('Payment not found');
-    }
 
-    // Send notification (don't fail payment creation if notification fails)
-    try {
-      const numericAmount = parseFloat(paymentWithUser.amount);
-      const formattedAmount = formatCrypto(
-        numericAmount,
-        paymentWithUser.token,
-      );
-      const donorName = paymentWithUser.isAnonymous
-        ? 'anon'
-        : getUserNameFromInstance(paymentWithUser.user) ||
-          paymentWithUser.user?.address ||
-          'unknown';
-      await notify({
-        receiverId: creator.id,
-        creatorId: user.id,
-        data: {
-          type: 'CampaignPayment',
-          campaignId: campaign.id,
-          campaignTitle: campaign.title,
-          paymentId: payment.id,
-          formattedAmount,
-          donorName,
-        },
-      });
-    } catch (notificationError) {
-      console.error('Failed to send payment notification:', notificationError);
-      // Don't throw - notification failure shouldn't fail payment creation
-    }
-    return response({ paymentId: payment.id });
+    return response({ paymentId });
   } catch (error: unknown) {
     return handleError(error);
   }

@@ -94,27 +94,11 @@ export function DaimoPayButtonComponent({
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      console.log(
-        '🚀 Daimo Pay: handlePaymentStarted called in button component',
-      );
-      console.log(
-        '🚀 Daimo Pay: Daimo Pay SDK triggered onPaymentStarted callback',
-      );
-      console.log('🚀 Daimo Pay: Email validation - email value:', email);
-      console.log(
-        '🚀 Daimo Pay: Email validation - email.trim():',
-        email?.trim(),
-      );
       debug && console.log('Daimo Pay: Payment started', event);
-      debug &&
-        console.log(
-          'Daimo Pay: Event structure:',
-          JSON.stringify(event, null, 2),
-        );
+      
       try {
         // Validate email first (matches crypto wallet pattern)
         if (!email.trim()) {
-          console.log('🚨 Daimo Pay: Email validation failed - empty email');
           toast({
             title: 'Email required',
             description: 'Please enter your email address to continue.',
@@ -124,7 +108,6 @@ export function DaimoPayButtonComponent({
         }
 
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          console.log('🚨 Daimo Pay: Email validation failed - invalid format');
           toast({
             title: 'Invalid email',
             description: 'Please enter a valid email address.',
@@ -133,36 +116,21 @@ export function DaimoPayButtonComponent({
           throw new Error('Invalid email format');
         }
 
-        console.log('✅ Daimo Pay: Email validation passed');
-
         // Only update profile if user doesn't already have an email set
         if (!profile?.email || profile.email.trim() === '') {
-          console.log(
-            '🚀 Daimo Pay: Updating profile email before payment creation',
-          );
           try {
             await updateProfileEmail.mutateAsync({ email });
-            console.log('✅ Daimo Pay: Profile email updated successfully');
           } catch (emailError) {
-            console.error(
-              '🚨 Daimo Pay: Failed to update profile email:',
-              emailError,
-            );
+            console.error('Failed to update profile email:', emailError);
             // Don't throw here, continue with payment creation
           }
         }
 
-        console.log('🚀 Daimo Pay: Calling daimoOnPaymentStarted');
         await daimoOnPaymentStarted(event);
         onPaymentStarted?.(event);
         onPaymentStartedCallback?.();
       } catch (error) {
-        console.error('🚨 Daimo Pay: Error in payment started handler:', error);
-        console.error('🚨 Daimo Pay: Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          type: typeof error,
-        });
+        console.error('Daimo Pay: Payment initialization failed:', error);
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         toast({
@@ -170,7 +138,6 @@ export function DaimoPayButtonComponent({
           description: `Failed to initialize payment: ${errorMessage}. Please try again.`,
           variant: 'destructive',
         });
-        // Re-throw to potentially abort Daimo Pay flow if possible
         throw error;
       }
     },
