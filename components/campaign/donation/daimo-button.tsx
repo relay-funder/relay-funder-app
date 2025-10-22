@@ -94,9 +94,10 @@ export function DaimoPayButtonComponent({
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      console.log(
-        '🚀 Daimo Pay: handlePaymentStarted called in button component',
-      );
+      console.log('🚀 Daimo Pay: handlePaymentStarted called in button component');
+      console.log('🚀 Daimo Pay: Daimo Pay SDK triggered onPaymentStarted callback');
+      console.log('🚀 Daimo Pay: Email validation - email value:', email);
+      console.log('🚀 Daimo Pay: Email validation - email.trim():', email?.trim());
       debug && console.log('Daimo Pay: Payment started', event);
       debug &&
         console.log(
@@ -106,6 +107,7 @@ export function DaimoPayButtonComponent({
       try {
         // Validate email first (matches crypto wallet pattern)
         if (!email.trim()) {
+          console.log('🚨 Daimo Pay: Email validation failed - empty email');
           toast({
             title: 'Email required',
             description: 'Please enter your email address to continue.',
@@ -115,6 +117,7 @@ export function DaimoPayButtonComponent({
         }
 
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          console.log('🚨 Daimo Pay: Email validation failed - invalid format');
           toast({
             title: 'Invalid email',
             description: 'Please enter a valid email address.',
@@ -122,6 +125,8 @@ export function DaimoPayButtonComponent({
           });
           throw new Error('Invalid email format');
         }
+
+        console.log('✅ Daimo Pay: Email validation passed');
 
         // Only update profile if user doesn't already have an email set
         if (!profile?.email || profile.email.trim() === '') {
@@ -145,7 +150,12 @@ export function DaimoPayButtonComponent({
         onPaymentStarted?.(event);
         onPaymentStartedCallback?.();
       } catch (error) {
-        console.error('Error in payment started handler:', error);
+        console.error('🚨 Daimo Pay: Error in payment started handler:', error);
+        console.error('🚨 Daimo Pay: Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          type: typeof error,
+        });
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         toast({
@@ -259,6 +269,7 @@ export function DaimoPayButtonComponent({
 
   // Runtime validation for DAIMO_PAY_APP_ID
   if (!DAIMO_PAY_APP_ID || DAIMO_PAY_APP_ID.trim() === '') {
+    console.error('🚨 Daimo Pay: App ID is missing - Daimo Pay will not work');
     return (
       <div className="w-full rounded-lg border border-red-200 bg-red-50 p-4">
         <p className="text-sm font-medium text-red-800">
@@ -293,7 +304,13 @@ export function DaimoPayButtonComponent({
       treasuryAddress: paymentData.validatedTreasuryAddress,
       refundAddress: paymentData.validatedRefundAddress,
       intent: dynamicIntent,
+      appId: DAIMO_PAY_APP_ID,
+      isValid: paymentData.isValid,
+      config: paymentData.config,
     });
+
+  console.log('🚀 Daimo Pay: Button rendering with appId:', DAIMO_PAY_APP_ID);
+  console.log('🚀 Daimo Pay: Registering callbacks - onPaymentStarted function:', typeof handlePaymentStarted);
 
   return (
     <div className="w-full">
@@ -307,7 +324,10 @@ export function DaimoPayButtonComponent({
         toCallData={paymentData.pledgeCallData!}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
-        onPaymentStarted={handlePaymentStarted}
+        onPaymentStarted={(event) => {
+          console.log('🚀 Daimo Pay: DaimoPayButton onPaymentStarted triggered with event:', event);
+          return handlePaymentStarted(event);
+        }}
         onPaymentCompleted={handlePaymentCompleted}
         onPaymentBounced={handlePaymentBounced}
       />

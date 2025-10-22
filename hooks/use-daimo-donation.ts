@@ -36,8 +36,12 @@ export function useDaimoDonationCallback({
 
   const onPaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      console.log('🚀 Daimo Pay: onPaymentStarted callback triggered');
-      console.log('🚀 Daimo Pay: Full event structure:', JSON.stringify(event, null, 2));
+      console.log('🚀 Daimo Pay: useDaimoDonationCallback.onPaymentStarted triggered');
+      console.log(
+        '🚀 Daimo Pay: Full event structure:',
+        JSON.stringify(event, null, 2),
+      );
+      console.log('🚀 Daimo Pay: Hook params - authenticated:', authenticated, 'userEmail:', userEmail);
       debug && console.log('Daimo Pay: Payment started', event);
 
       if (!authenticated) {
