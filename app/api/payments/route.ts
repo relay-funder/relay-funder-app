@@ -7,8 +7,7 @@ import {
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
-import { getCampaign } from '@/lib/api/campaigns';
-import { roundIsActive } from '@/lib/api/rounds';
+import { getCampaignForPayment } from '@/lib/api/campaigns';
 import {
   PatchPaymentBodyRouteSchema,
   PostPaymentBodyRouteSchema,
@@ -54,7 +53,7 @@ export async function POST(req: Request) {
     }
     console.log('✅ Payment API: Email validated:', emailForPayment);
 
-    const campaign = await getCampaign(data.campaignId);
+    const campaign = await getCampaignForPayment(data.campaignId);
     if (!campaign) {
       console.error(
         '🚨 Payment API: Campaign not found for ID:',
@@ -125,7 +124,14 @@ export async function POST(req: Request) {
           console.log('⏭️ Skipping round - invalid roundCampaignId:', round);
           continue;
         }
-        if (!roundIsActive(round)) {
+        // Check if round is active (approved and within date range)
+        if (
+          round.status !== 'APPROVED' ||
+          !round.startTime ||
+          !round.endTime ||
+          new Date() < new Date(round.startTime) ||
+          new Date() > new Date(round.endTime)
+        ) {
           console.log('⏭️ Skipping round - not active:', round.roundCampaignId);
           continue;
         }
