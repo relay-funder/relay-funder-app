@@ -59,8 +59,9 @@ export function useDaimoDonationCallback({
         daimoPaymentId,
       );
       debug && console.log('Creating Daimo Pay payment record...');
+      let paymentId: number | undefined;
       try {
-        const { paymentId } = await createPayment({
+        const result = await createPayment({
           amount: amount,
           poolAmount,
           token: selectedToken,
@@ -70,6 +71,7 @@ export function useDaimoDonationCallback({
           transactionHash: daimoPaymentId, // Use Daimo payment ID as transaction hash for webhook matching
           userEmail,
         });
+        paymentId = result.paymentId;
 
         console.log(
           '✅ Daimo Pay: Payment record created successfully with ID:',
