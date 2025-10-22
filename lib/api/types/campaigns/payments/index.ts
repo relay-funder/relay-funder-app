@@ -15,6 +15,8 @@ export const PostPaymentBodyRouteSchema = z.object({
   transactionHash: z.string(),
   campaignId: z.number(),
   userEmail: z.string().email().optional(),
+  poolAmount: z.number().optional(),
+  provider: z.string().optional(),
 });
 export const PatchPaymentBodyRouteSchema = z.object({
   paymentId: z.number(),

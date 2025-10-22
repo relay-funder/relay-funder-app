@@ -137,18 +137,21 @@ export async function POST(req: Request) {
       throw new ApiParameterError('Missing type in webhook payload');
     }
 
-    // Find payment by transaction hash (which we set to the Daimo payment ID)
-    console.log('🔍 Daimo Pay webhook: Searching for payment with transactionHash:', payload.paymentId);
-    console.log('🔍 Daimo Pay webhook: Full payload for debugging:', {
-      paymentId: payload.paymentId,
-      type: payload.type,
-      chainId: payload.chainId,
-      txHash: payload.txHash,
-      payment: payload.payment ? {
-        id: payload.payment.id,
-        status: payload.payment.status,
-      } : null,
-    });
+    console.log('═══════════════════════════════════════════════');
+    console.log('🔍 DAIMO WEBHOOK: Starting payment lookup');
+    console.log('🔍 Environment:', process.env.NODE_ENV);
+    console.log('🔍 Search criteria:');
+    console.log('🔍   Field: transactionHash');
+    console.log('🔍   Value:', payload.paymentId);
+    console.log('🔍   Type:', typeof payload.paymentId);
+    console.log('🔍   Length:', payload.paymentId?.length);
+    console.log('🔍 Daimo Pay webhook: IDENTIFIER MATCHING CHECK');
+    console.log('🔍 Lookup key: transactionHash');
+    console.log('🔍 Lookup value:', payload.paymentId);
+    console.log(
+      '🔍 Expected to find payment created by onPaymentStarted callback',
+    );
+    console.log('═══════════════════════════════════════════════');
 
     const payment = await db.payment.findFirst({
       where: {
@@ -160,22 +163,109 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log('🔍 Daimo Pay webhook: Payment lookup result:', payment ? {
-      id: payment.id,
-      transactionHash: payment.transactionHash,
-      status: payment.status,
-      createdAt: payment.createdAt,
-    } : 'NOT FOUND');
+    console.log('═══════════════════════════════════════════════');
+    if (payment) {
+      console.log('✅ DAIMO WEBHOOK: Payment FOUND');
+      console.log('✅ Payment ID:', payment.id);
+      console.log('✅ Stored transactionHash:', payment.transactionHash);
+      console.log('✅ Current status:', payment.status);
+      console.log('✅ Created at:', payment.createdAt);
+    } else {
+      console.error('🚨 DAIMO WEBHOOK: Payment NOT FOUND');
+      console.error('🚨 Searched for transactionHash:', payload.paymentId);
+
+      // Try to find ANY recent Daimo payments for debugging
+      const recentDaimoPayments = await db.payment.findMany({
+        where: {
+          provider: 'daimo',
+          createdAt: {
+            gte: new Date(Date.now() - 60000), // Last 60 seconds
+          },
+        },
+        select: {
+          id: true,
+          transactionHash: true,
+          status: true,
+          provider: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 5,
+      });
+
+      console.error(
+        '🔍 Recent Daimo payments (last 60s):',
+        recentDaimoPayments.length > 0
+          ? JSON.stringify(recentDaimoPayments, null, 2)
+          : 'NONE FOUND',
+      );
+
+      // Try to find payments with similar transactionHash (in case of encoding issues)
+      const similarPayments = await db.payment.findMany({
+        where: {
+          transactionHash: {
+            contains: payload.paymentId.substring(0, 10), // First 10 chars
+          },
+        },
+        select: {
+          id: true,
+          transactionHash: true,
+          status: true,
+          createdAt: true,
+        },
+        take: 3,
+      });
+
+      console.error(
+        '🔍 Payments with similar transactionHash:',
+        similarPayments.length > 0
+          ? JSON.stringify(similarPayments, null, 2)
+          : 'NONE FOUND',
+      );
+    }
+    console.log('═══════════════════════════════════════════════');
 
     if (!payment) {
       console.error(
         '🚨 Daimo Pay webhook: Payment not found for paymentId:',
         payload.paymentId,
-        '- This indicates payment record creation failed during onPaymentStarted',
       );
-      // Return 200 to acknowledge webhook even if payment not found
-      // This prevents Daimo Pay from retrying indefinitely
-      return response({ acknowledged: true, message: 'Payment not found' });
+      console.error('🚨 Possible causes:');
+      console.error(
+        '  1. Button callback (onPaymentStarted) failed to create payment',
+      );
+      console.error(
+        '  2. Webhook arrived before button callback completed (race condition)',
+      );
+      console.error('  3. Identifier mismatch between button and webhook');
+
+      // Check if this is a very recent webhook that might be racing
+      const webhookTimestamp = new Date(
+        payload.payment.createdAt || Date.now(),
+      );
+      const timeSinceCreation = Date.now() - webhookTimestamp.getTime();
+
+      if (timeSinceCreation < 5000) {
+        // Less than 5 seconds old
+        console.warn('⚠️ Recent webhook - possible race condition');
+        console.warn('⚠️ Returning 200 with retry suggestion');
+        return NextResponse.json(
+          {
+            acknowledged: false,
+            message: 'Payment not found - possible race condition',
+            shouldRetry: true,
+          },
+          { status: 200 },
+        );
+      }
+
+      return response({
+        acknowledged: true,
+        message: 'Payment not found',
+        shouldRetry: false,
+      });
     }
 
     // Map Daimo Pay status to our internal status

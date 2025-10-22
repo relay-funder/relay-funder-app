@@ -94,10 +94,17 @@ export function DaimoPayButtonComponent({
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      console.log('🚀 Daimo Pay: handlePaymentStarted called in button component');
-      console.log('🚀 Daimo Pay: Daimo Pay SDK triggered onPaymentStarted callback');
+      console.log(
+        '🚀 Daimo Pay: handlePaymentStarted called in button component',
+      );
+      console.log(
+        '🚀 Daimo Pay: Daimo Pay SDK triggered onPaymentStarted callback',
+      );
       console.log('🚀 Daimo Pay: Email validation - email value:', email);
-      console.log('🚀 Daimo Pay: Email validation - email.trim():', email?.trim());
+      console.log(
+        '🚀 Daimo Pay: Email validation - email.trim():',
+        email?.trim(),
+      );
       debug && console.log('Daimo Pay: Payment started', event);
       debug &&
         console.log(
@@ -310,7 +317,10 @@ export function DaimoPayButtonComponent({
     });
 
   console.log('🚀 Daimo Pay: Button rendering with appId:', DAIMO_PAY_APP_ID);
-  console.log('🚀 Daimo Pay: Registering callbacks - onPaymentStarted function:', typeof handlePaymentStarted);
+  console.log(
+    '🚀 Daimo Pay: Registering callbacks - onPaymentStarted function:',
+    typeof handlePaymentStarted,
+  );
 
   return (
     <div className="w-full">
@@ -325,7 +335,10 @@ export function DaimoPayButtonComponent({
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
         onPaymentStarted={(event) => {
-          console.log('🚀 Daimo Pay: DaimoPayButton onPaymentStarted triggered with event:', event);
+          console.log(
+            '🚀 Daimo Pay: DaimoPayButton onPaymentStarted triggered with event:',
+            event,
+          );
           return handlePaymentStarted(event);
         }}
         onPaymentCompleted={handlePaymentCompleted}

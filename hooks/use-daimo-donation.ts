@@ -36,12 +36,19 @@ export function useDaimoDonationCallback({
 
   const onPaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      console.log('🚀 Daimo Pay: useDaimoDonationCallback.onPaymentStarted triggered');
+      console.log(
+        '🚀 Daimo Pay: useDaimoDonationCallback.onPaymentStarted triggered',
+      );
       console.log(
         '🚀 Daimo Pay: Full event structure:',
         JSON.stringify(event, null, 2),
       );
-      console.log('🚀 Daimo Pay: Hook params - authenticated:', authenticated, 'userEmail:', userEmail);
+      console.log(
+        '🚀 Daimo Pay: Hook params - authenticated:',
+        authenticated,
+        'userEmail:',
+        userEmail,
+      );
       debug && console.log('Daimo Pay: Payment started', event);
 
       if (!authenticated) {
@@ -62,14 +69,31 @@ export function useDaimoDonationCallback({
         throw new Error('Daimo Pay event missing payment ID');
       }
 
+      // Test staging connectivity and auth
+      try {
+        const pingResponse = await fetch('/api/payments/ping', {
+          method: 'POST',
+        });
+        if (pingResponse.ok) {
+          const pingData = await pingResponse.json();
+          console.log('✅ Staging connectivity test passed:', pingData);
+        } else {
+          console.error('🚨 Staging connectivity test FAILED');
+        }
+      } catch (pingError) {
+        console.error('🚨 Cannot reach payment API:', pingError);
+      }
+
       // Create payment record when payment starts
-      console.log(
-        '🚀 Daimo Pay: Creating payment record with daimoPaymentId:',
-        daimoPaymentId,
-      );
-      debug && console.log('Creating Daimo Pay payment record...');
       let paymentId: number | undefined;
       try {
+        console.log('═══════════════════════════════════════════════');
+        console.log('🚀 DAIMO BUTTON CALLBACK: Starting payment creation');
+        console.log('🚀 Environment:', process.env.NODE_ENV);
+        console.log('🚀 Daimo Payment ID to store:', daimoPaymentId);
+        console.log('🚀 Will store in field: transactionHash');
+        console.log('═══════════════════════════════════════════════');
+
         const result = await createPayment({
           amount: amount,
           poolAmount,
@@ -79,15 +103,49 @@ export function useDaimoDonationCallback({
           status: 'confirming',
           transactionHash: daimoPaymentId, // Use Daimo payment ID as transaction hash for webhook matching
           userEmail,
+          provider: 'daimo', // Add this line
         });
         paymentId = result.paymentId;
 
+        console.log('═══════════════════════════════════════════════');
+        console.log('✅ DAIMO BUTTON CALLBACK: Payment created SUCCESSFULLY');
+        console.log('✅ Database Payment ID:', paymentId);
+        console.log('✅ Stored transactionHash:', daimoPaymentId);
         console.log(
-          '✅ Daimo Pay: Payment record created successfully with ID:',
-          paymentId,
-          'mapped to Daimo payment ID:',
+          '✅ Webhook should search for transactionHash =',
           daimoPaymentId,
         );
+        console.log('═══════════════════════════════════════════════');
+
+        // Verify the payment was actually saved
+        const verifyResponse = await fetch(
+          `/api/payments/verify?transactionHash=${encodeURIComponent(daimoPaymentId)}`,
+        );
+        if (verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          console.log(
+            '✅ VERIFICATION: Payment found in database immediately after creation',
+          );
+          console.log(
+            '✅ VERIFICATION DATA:',
+            JSON.stringify(verifyData, null, 2),
+          );
+        } else {
+          console.error(
+            '🚨 VERIFICATION FAILED: Payment NOT found immediately after creation!',
+          );
+          console.error(
+            '🚨 This indicates a critical issue with payment storage',
+          );
+        }
+
+        console.log('🔗 Daimo Pay: IDENTIFIER SET FOR WEBHOOK MATCHING');
+        console.log('🔗 Field: transactionHash');
+        console.log('🔗 Value:', daimoPaymentId);
+        console.log(
+          '🔗 This identifier will be used by webhook to confirm payment',
+        );
+
         debug &&
           console.log(
             'Daimo Pay payment record created with ID:',
@@ -96,11 +154,18 @@ export function useDaimoDonationCallback({
             daimoPaymentId,
           );
       } catch (paymentError) {
+        console.error('═══════════════════════════════════════════════');
+        console.error('🚨 DAIMO BUTTON CALLBACK: Payment creation FAILED');
+        console.error('🚨 Error:', paymentError);
         console.error(
-          '🚨 Daimo Pay: Failed to create payment record:',
-          paymentError,
+          '🚨 Error message:',
+          paymentError instanceof Error ? paymentError.message : 'Unknown',
         );
-        console.error('🚨 Daimo Pay: Payment creation params:', {
+        console.error(
+          '🚨 Error stack:',
+          paymentError instanceof Error ? paymentError.stack : 'N/A',
+        );
+        console.error('🚨 Payment creation params:', {
           amount,
           poolAmount,
           token: selectedToken,
@@ -110,6 +175,7 @@ export function useDaimoDonationCallback({
           transactionHash: daimoPaymentId,
           userEmail,
         });
+        console.error('═══════════════════════════════════════════════');
         // Re-throw the error to prevent Daimo Pay from continuing
         throw new Error(
           `Payment record creation failed: ${paymentError instanceof Error ? paymentError.message : 'Unknown error'}`,

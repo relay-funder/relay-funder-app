@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   try {
     console.log('🚀 Payment API: POST request received');
     const session = await checkAuth(['user']);
-    console.log('✅ Payment API: Authentication passed for user:', session.user.address);
+    console.log(
+      '✅ Payment API: Authentication passed for user:',
+      session.user.address,
+    );
     const data = PostPaymentBodyRouteSchema.parse(await req.json());
     console.log('✅ Payment API: Request data validated:', {
       amount: data.amount,
@@ -31,7 +34,10 @@ export async function POST(req: Request) {
 
     const user = await getUser(session.user.address);
     if (!user) {
-      console.error('🚨 Payment API: User not found for address:', session.user.address);
+      console.error(
+        '🚨 Payment API: User not found for address:',
+        session.user.address,
+      );
       throw new ApiNotFoundError('User not found');
     }
     console.log('✅ Payment API: User found:', user.id);
@@ -39,7 +45,9 @@ export async function POST(req: Request) {
     // Use email from request or fallback to user profile email
     const emailForPayment = data.userEmail || user.email;
     if (!emailForPayment || emailForPayment.trim() === '') {
-      console.error('🚨 Payment API: Email validation failed - no email provided');
+      console.error(
+        '🚨 Payment API: Email validation failed - no email provided',
+      );
       throw new ApiParameterError(
         'Email is required for donation. Please provide a valid email address.',
       );
@@ -48,14 +56,20 @@ export async function POST(req: Request) {
 
     const campaign = await getCampaign(data.campaignId);
     if (!campaign) {
-      console.error('🚨 Payment API: Campaign not found for ID:', data.campaignId);
+      console.error(
+        '🚨 Payment API: Campaign not found for ID:',
+        data.campaignId,
+      );
       throw new ApiNotFoundError('Campaign not found');
     }
     console.log('✅ Payment API: Campaign found:', campaign.id);
 
     const creator = await getUser(campaign.creatorAddress);
     if (!creator) {
-      console.error('🚨 Payment API: Campaign creator not found for address:', campaign.creatorAddress);
+      console.error(
+        '🚨 Payment API: Campaign creator not found for address:',
+        campaign.creatorAddress,
+      );
       throw new ApiNotFoundError('Campaign Creator not found');
     }
     console.log('✅ Payment API: Creator found:', creator.id);
@@ -86,7 +100,10 @@ export async function POST(req: Request) {
         },
       });
     } catch (dbError) {
-      console.error('🚨 Payment API: Database error during payment creation:', dbError);
+      console.error(
+        '🚨 Payment API: Database error during payment creation:',
+        dbError,
+      );
       throw dbError;
     }
 
@@ -97,7 +114,10 @@ export async function POST(req: Request) {
       createdAt: payment.createdAt,
     });
     // create roundContribution
-    console.log('📊 Creating round contributions for campaign rounds:', campaign.rounds?.length || 0);
+    console.log(
+      '📊 Creating round contributions for campaign rounds:',
+      campaign.rounds?.length || 0,
+    );
     if (Array.isArray(campaign.rounds)) {
       for (const round of campaign.rounds) {
         if (typeof round.roundCampaignId !== 'number') {
@@ -108,7 +128,10 @@ export async function POST(req: Request) {
           console.log('⏭️ Skipping round - not active:', round.roundCampaignId);
           continue;
         }
-        console.log('📝 Creating round contribution for round:', round.roundCampaignId);
+        console.log(
+          '📝 Creating round contribution for round:',
+          round.roundCampaignId,
+        );
         try {
           await db.roundContribution.create({
             data: {
@@ -118,7 +141,10 @@ export async function POST(req: Request) {
               humanityScore: user.humanityScore,
             },
           });
-          console.log('✅ Round contribution created for round:', round.roundCampaignId);
+          console.log(
+            '✅ Round contribution created for round:',
+            round.roundCampaignId,
+          );
         } catch (roundError) {
           console.error('🚨 Failed to create round contribution:', roundError);
           // Don't throw - round contributions are optional
@@ -137,7 +163,10 @@ export async function POST(req: Request) {
     console.log('📢 Sending payment notification');
     try {
       const numericAmount = parseFloat(paymentWithUser.amount);
-      const formattedAmount = formatCrypto(numericAmount, paymentWithUser.token);
+      const formattedAmount = formatCrypto(
+        numericAmount,
+        paymentWithUser.token,
+      );
       const donorName = paymentWithUser.isAnonymous
         ? 'anon'
         : getUserNameFromInstance(paymentWithUser.user) ||
@@ -157,7 +186,10 @@ export async function POST(req: Request) {
       });
       console.log('✅ Payment notification sent successfully');
     } catch (notificationError) {
-      console.error('🚨 Failed to send payment notification:', notificationError);
+      console.error(
+        '🚨 Failed to send payment notification:',
+        notificationError,
+      );
       // Don't throw - notification failure shouldn't fail payment creation
     }
     return response({ paymentId: payment.id });
