@@ -300,22 +300,66 @@ export async function POST(req: Request) {
         break;
     }
 
-    // Prevent status regression: don't change status from terminal states
-    const currentStatus = payment.status;
-    const terminalStates = ['confirmed', 'failed'];
+    // Define state transition hierarchy (higher = more final)
+    const statusPriority: Record<string, number> = {
+      confirming: 1, // Initial state
+      confirmed: 2, // Terminal success state
+      failed: 2, // Terminal failure state
+    };
 
-    if (terminalStates.includes(currentStatus) && newStatus !== currentStatus) {
-      debug &&
-        console.log(
-          `Ignoring status change from ${currentStatus} to ${newStatus} for payment ${payment.id}`,
-        );
+    const currentStatus = payment.status;
+    const currentPriority = statusPriority[currentStatus] || 0;
+    const newPriority = statusPriority[newStatus] || 0;
+
+    // Prevent backward state transitions (webhooks arriving out of order)
+    if (newPriority < currentPriority) {
+      console.warn('═══════════════════════════════════════════════');
+      console.warn('⚠️ DAIMO WEBHOOK: State transition BLOCKED');
+      console.warn('⚠️ Payment ID:', payment.id);
+      console.warn(
+        '⚠️ Current status:',
+        currentStatus,
+        `(priority: ${currentPriority})`,
+      );
+      console.warn(
+        '⚠️ Attempted status:',
+        newStatus,
+        `(priority: ${newPriority})`,
+      );
+      console.warn('⚠️ Event type:', payload.type);
+      console.warn(
+        '⚠️ Reason: Cannot transition backwards (webhook out of order)',
+      );
+      console.warn('═══════════════════════════════════════════════');
+
+      return response({
+        acknowledged: true,
+        paymentId: payment.id,
+        daimoPaymentId: payload.paymentId,
+        eventType: payload.type,
+        currentStatus,
+        attemptedStatus: newStatus,
+        message:
+          'Webhook acknowledged but state transition blocked (out-of-order event)',
+        reason:
+          'Cannot transition from higher priority state to lower priority state',
+      });
+    }
+
+    // Allow same-state updates (idempotency)
+    if (currentStatus === newStatus) {
+      console.log(
+        'ℹ️ Status already set to',
+        newStatus,
+        '- acknowledging duplicate event',
+      );
       return response({
         acknowledged: true,
         paymentId: payment.id,
         daimoPaymentId: payload.paymentId,
         eventType: payload.type,
         status: currentStatus,
-        message: 'Event acknowledged but status not changed (already terminal)',
+        message: 'Event acknowledged (idempotent - status already correct)',
       });
     }
 
