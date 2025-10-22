@@ -4,6 +4,8 @@ import { SiweProvider } from '@/server/auth/providers';
 import { db } from '@/server/db';
 import { jwt } from '@/server/auth/jwt';
 import { session } from '@/server/auth/session';
+import { AUTH_SESSION_LIFETIME } from '@/lib/constant/server';
+import { ONE_DAY_S } from '@/lib/constant/time';
 
 /**
  * Module augmentation for `next-auth` types.
@@ -83,5 +85,7 @@ export const authConfig = {
   },
   session: {
     strategy: 'jwt',
+    // maximum age the session is valid, in seconds
+    maxAge: AUTH_SESSION_LIFETIME * ONE_DAY_S,
   },
 } satisfies NextAuthConfig;

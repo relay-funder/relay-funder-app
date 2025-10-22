@@ -5,6 +5,7 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { QueryClient } from '@tanstack/react-query';
 import type {
   GetCampaignResponseInstance,
@@ -29,20 +30,14 @@ interface PaginatedCampaignResponse extends PaginatedResponse {
 async function fetchCampaigns(status?: string) {
   const url = status ? `/api/campaigns?status=${status}` : '/api/campaigns';
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaigns');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaigns');
   const data = await response.json();
   return data.campaigns;
 }
 async function fetchCampaign(slug: string | number) {
   const url = `/api/campaigns/${slug}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaign');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign');
   const data = await response.json();
   return data as GetCampaignResponse;
 }
@@ -60,10 +55,7 @@ async function fetchCampaignPayments({
 }) {
   const url = `/api/campaigns/${id}/payments?status=${status}&page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaign');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign payments');
   const data = (await response.json()) as GetCampaignPaymentsResponse;
   return data?.payments ?? [];
 }
@@ -76,10 +68,7 @@ async function fetchCampaignPage({
 }) {
   const url = `/api/campaigns?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaigns');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaigns');
   const data = await response.json();
   return data as PaginatedCampaignResponse;
 }
@@ -92,10 +81,7 @@ async function fetchUserCampaignPage({
 }) {
   const url = `/api/campaigns/user?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaigns');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign payments');
   const data = await response.json();
   return data as PaginatedCampaignResponse;
 }
@@ -106,10 +92,7 @@ async function fetchCampaignStats(scope?: 'user' | 'global') {
   }
   const url = `/api/campaigns/stats${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaign');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign');
   const data = await response.json();
   return data as GetCampaignsStatsResponse;
 }
@@ -127,10 +110,7 @@ async function updateCampaign(variables: IUpdateCampaign) {
     body: JSON.stringify(variables),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update campaign');
-  }
+  await handleApiErrors(response, 'Failed to update campaign');
 
   const data = await response.json();
   return data as PatchCampaignResponse;
@@ -158,10 +138,7 @@ async function updateCampaignData(variables: IUpdateCampaignData) {
     body: formDataToSend,
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update campaign');
-  }
+  await handleApiErrors(response, 'Failed to update campaign data');
 
   const data = await response.json();
   return data as PatchCampaignResponse;
@@ -209,16 +186,7 @@ async function createCampaign({
     method: 'POST',
     body: formDataToSend,
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to save campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to save campaign');
   const data = await response.json();
   return data as PostCampaignsResponse;
 }
@@ -238,16 +206,7 @@ async function approveCampaign(variables: IApproveCampaign) {
       body: JSON.stringify(variables),
     },
   );
-  if (!response.ok) {
-    let errorMsg = 'Failed to approve campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to approve campaign');
   const data = await response.json();
   return data as PostCampaignApproveResponse;
 }
@@ -263,16 +222,7 @@ async function disableCampaign(variables: IDisableCampaign) {
       body: JSON.stringify(variables),
     },
   );
-  if (!response.ok) {
-    let errorMsg = 'Failed to disable campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to disable campaign');
   return response.json();
 }
 
@@ -284,16 +234,7 @@ async function enableCampaign(variables: IDisableCampaign) {
       body: JSON.stringify(variables),
     },
   );
-  if (!response.ok) {
-    let errorMsg = 'Failed to enable campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to enable campaign');
   return response.json();
 }
 async function removeCampaign(variables: IDisableCampaign) {
@@ -301,16 +242,7 @@ async function removeCampaign(variables: IDisableCampaign) {
     method: 'DELETE',
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to remove campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to remove campaign');
   return response.json();
 }
 
@@ -337,12 +269,7 @@ async function updateCampaignTransactionApi(
     },
   );
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      `Failed to update campaign transaction: ${errorData.error || 'Unknown error'}`,
-    );
-  }
+  await handleApiErrors(response, 'Failed to update campaign transaction');
 
   return response.json();
 }

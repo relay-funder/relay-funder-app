@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type {
   PostCampaignWithdrawRouteResponse,
   GetCampaignWithdrawRouteResponse,
@@ -33,17 +34,7 @@ async function requestWithdrawal({
       ...(transactionHash && { transactionHash }),
     }),
   });
-
-  if (!response.ok) {
-    let errorMsg = 'Failed to request withdrawal';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to request withdrawal');
 
   const data = (await response.json()) as PostCampaignWithdrawRouteResponse;
   return data;

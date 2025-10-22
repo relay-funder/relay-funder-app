@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts';
 import { ScoreEvent, GetScoreEventsResponse } from '@/lib/api/types';
+import { handleApiErrors } from '@/lib/api/error';
 
 async function fetchUserScoreEventsPage({
   pageParam = 1,
@@ -21,10 +22,7 @@ async function fetchUserScoreEventsPage({
   }
 
   const response = await fetch(`/api/users/me/score/events?${params}`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch score events');
-  }
+  await handleApiErrors(response, 'Failed to fetch score events');
   return response.json();
 }
 
