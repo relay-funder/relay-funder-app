@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Script to increase package version in package.json, commit it, and push to staging.
+
+set -e # Exit immediately if a command exits with a non-zero status
+
+# --- Configuration ---
+BRANCH_TO_UPDATE="staging"
+PACKAGE_JSON_PATH="package.json"
+# Attempt to automatically detect GitHub repository URL from git remote 'origin'
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || true) # Use || true to prevent script exit on error if no remote named 'origin'
+
+if [[ "${REMOTE_URL}" =~ ^git@github\.com:([^/]+/[^/]+)\.git$ ]]; then
+    GITHUB_REPO_URL="https://github.com/${BASH_REMATCH[1]}"
+elif [[ "${REMOTE_URL}" =~ ^https://github\.com/([^/]+/[^/]+)(\.git)?$ ]]; then
+    GITHUB_REPO_URL="https://github.com/${BASH_REMATCH[1]}"
+else
+    echo "Warning: Could not automatically detect GitHub repository URL from git remote 'origin'." >&2
+    echo "Please ensure your 'origin' remote points to a GitHub repository, or manually set GITHUB_REPO_URL in the script." >&2
+    GITHUB_REPO_URL="" # Keep it empty if detection fails
+fi
+
+# --- Functions ---
+
+# Function to display script usage
+usage() {
+    echo "Usage: $0 [--major|--minor|--patch]"
+    echo "  --major: Increase the major version (e.g., 1.2.3 -> 2.0.0)"
+    echo "  --minor: Increase the minor version (e.g., 1.2.3 -> 1.3.0)"
+    echo "  --patch: Increase the patch version (e.g., 1.2.3 -> 1.2.4) - This is the default."
+    exit 1
+}
+
+# Function to check if jq is installed
+check_jq_installed() {
+    if ! command -v jq &> /dev/null
+    then
+        echo "Error: 'jq' is not installed. Please install it to run this script."
+        echo "  On Debian/Ubuntu: sudo apt-get install jq"
+        echo "  On macOS: brew install jq"
+        exit 1
+    fi
+}
+
+# Function to get the current version from package.json
+get_current_version() {
+    jq -r '.version' "${PACKAGE_JSON_PATH}"
+}
+
+# Function to bump the version
+bump_version() {
+    local current_version=$1
+    local version_type=$2
+    local new_version
+
+    case "$version_type" in
+        "major")
+            new_version=$(echo "$current_version" | awk -F. '{$1++; $2=0; $3=0; print $1"."$2"."$3}')
+            ;;
+        "minor")
+            new_version=$(echo "$current_version" | awk -F. '{$2++; $3=0; print $1"."$2"."$3}')
+            ;;
+        "patch")
+            new_version=$(echo "$current_version" | awk -F. '{$3++; print $1"."$2"."$3}')
+            ;;
+        *)
+            echo "Error: Invalid version type: $version_type"
+            exit 1
+            ;;
+    esac
+    echo "$new_version"
+}
+
+# --- Main Script ---
+
+# Check for jq
+check_jq_installed
+
+# Default version type
+VERSION_TYPE="patch"
+
+# Parse command-line arguments
+for arg in "$@"
+do
+    case "$arg" in
+        --major)
+            VERSION_TYPE="major"
+            shift
+            ;;
+        --minor)
+            VERSION_TYPE="minor"
+            shift
+            ;;
+        --patch)
+            VERSION_TYPE="patch"
+            shift
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+echo "Starting version bump process for ${VERSION_TYPE}..."
+
+# 1. Stash any uncommitted changes
+if ! git diff-index --quiet HEAD --; then
+    echo "Stashing current changes..."
+    git stash push -m "Pre-version-bump stash"
+fi
+
+# 2. Checkout the specified branch
+echo "Checking out branch: ${BRANCH_TO_UPDATE}..."
+git checkout "${BRANCH_TO_UPDATE}"
+
+# 3. Pull the latest changes
+echo "Pulling latest changes from origin/${BRANCH_TO_UPDATE}..."
+git pull origin "${BRANCH_TO_UPDATE}"
+
+# 4. Get current version
+current_version=$(get_current_version)
+if [ -z "$current_version" ]; then
+    echo "Error: Could not read 'version' from ${PACKAGE_JSON_PATH}."
+    exit 1
+fi
+echo "Current version: ${current_version}"
+
+# 5. Bump the version
+new_version=$(bump_version "$current_version" "$VERSION_TYPE")
+echo "New version: ${new_version}"
+
+# 6. Update package.json
+echo "Updating ${PACKAGE_JSON_PATH} with new version..."
+jq ".version = \"${new_version}\"" "${PACKAGE_JSON_PATH}" > "${PACKAGE_JSON_PATH}.tmp" && mv "${PACKAGE_JSON_PATH}.tmp" "${PACKAGE_JSON_PATH}"
+
+# 7. Create a commit with just the package.json change
+echo "Committing version bump..."
+
+# Display changes to package.json before committing
+echo "--- Proposed changes to ${PACKAGE_JSON_PATH} ---"
+git diff -- "${PACKAGE_JSON_PATH}"
+echo "------------------------------------------"
+read -p "Review the changes above. Press Enter to continue with the commit, or Ctrl+C to abort."
+
+git add "${PACKAGE_JSON_PATH}"
+git commit -m "Release ${new_version}"
+
+echo "Version bump and commit successful."
+
+# 8. Unstash changes if any were stashed
+if git stash list | grep -q "Pre-version-bump stash"; then
+    echo "Unstashing previous changes..."
+    git stash pop
+fi
+
+echo "Script finished."
+
+# 9. Generate GitHub PR link
+if [ -n "${GITHUB_REPO_URL}" ]; then
+    PR_TITLE="Release ${new_version}"
+    # URL encode the title
+    ENCODED_PR_TITLE=$(printf %s "${PR_TITLE}" | sed 's/ /%20/g')
+
+    echo ""
+    echo "--------------------------------------------------------"
+    echo "GitHub Pull Request Link (staging -> main):"
+    echo "${GITHUB_REPO_URL}/compare/main...staging?expand=1&title=${ENCODED_PR_TITLE}"
+fi
