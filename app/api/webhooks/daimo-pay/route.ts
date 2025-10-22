@@ -216,7 +216,11 @@ export async function POST(req: Request) {
     }
 
     // Prevent transitions between different terminal states (both priority === 2)
-    if (currentPriority === 2 && newPriority === 2 && currentStatus !== newStatus) {
+    if (
+      currentPriority === 2 &&
+      newPriority === 2 &&
+      currentStatus !== newStatus
+    ) {
       debug &&
         console.log(
           `Daimo Pay: Blocking terminal state flip ${currentStatus} -> ${newStatus}`,
