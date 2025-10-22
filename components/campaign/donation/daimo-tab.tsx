@@ -23,11 +23,6 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const handleAmountChanged = useCallback((newAmount: string) => {
     setAmount(newAmount);
-    // Calculate tip immediately when amount changes
-    const DEFAULT_PERCENTAGE = 5;
-    const tip = (DEFAULT_PERCENTAGE / 100) * parseFloat(newAmount || '0');
-    const formattedTip = tip.toFixed(2);
-    setTipAmount(formattedTip);
   }, []);
 
   const handleTipAmountChanged = useCallback((newTipAmount: string) => {
@@ -56,8 +51,6 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setPaymentCompleted(false);
     setProcessing(false);
   }, []);
-
-  // Let the tip component handle the calculation to avoid conflicts
 
   return (
     <DaimoPayProvider theme="auto">
