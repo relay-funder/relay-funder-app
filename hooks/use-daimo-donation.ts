@@ -36,19 +36,28 @@ export function useDaimoDonationCallback({
       debug && console.log('Daimo Pay: Payment started', event);
 
       if (!authenticated) {
-        console.error('🚨 Daimo Pay: User not authenticated, cannot create payment');
+        console.error(
+          '🚨 Daimo Pay: User not authenticated, cannot create payment',
+        );
         throw new Error('Not signed in');
       }
 
       // Extract Daimo payment ID - this will be used to match webhooks
-      const daimoPaymentId = event?.payment?.id || event?.id || event?.paymentId;
+      const daimoPaymentId =
+        event?.payment?.id || event?.id || event?.paymentId;
       if (!daimoPaymentId) {
-        console.error('Daimo Pay event missing payment ID. Event structure:', JSON.stringify(event, null, 2));
+        console.error(
+          'Daimo Pay event missing payment ID. Event structure:',
+          JSON.stringify(event, null, 2),
+        );
         throw new Error('Daimo Pay event missing payment ID');
       }
 
       // Create payment record when payment starts
-      console.log('🚀 Daimo Pay: Creating payment record with daimoPaymentId:', daimoPaymentId);
+      console.log(
+        '🚀 Daimo Pay: Creating payment record with daimoPaymentId:',
+        daimoPaymentId,
+      );
       debug && console.log('Creating Daimo Pay payment record...');
       try {
         const { paymentId } = await createPayment({
@@ -62,7 +71,10 @@ export function useDaimoDonationCallback({
           userEmail,
         });
 
-        console.log('✅ Daimo Pay: Payment record created successfully with ID:', paymentId);
+        console.log(
+          '✅ Daimo Pay: Payment record created successfully with ID:',
+          paymentId,
+        );
         debug &&
           console.log(
             'Daimo Pay payment record created with ID:',
@@ -71,7 +83,10 @@ export function useDaimoDonationCallback({
             daimoPaymentId,
           );
       } catch (paymentError) {
-        console.error('🚨 Daimo Pay: Failed to create payment record:', paymentError);
+        console.error(
+          '🚨 Daimo Pay: Failed to create payment record:',
+          paymentError,
+        );
         console.error('🚨 Daimo Pay: Payment creation params:', {
           amount,
           poolAmount,
@@ -83,7 +98,9 @@ export function useDaimoDonationCallback({
           userEmail,
         });
         // Re-throw the error to prevent Daimo Pay from continuing
-        throw new Error(`Payment record creation failed: ${paymentError instanceof Error ? paymentError.message : 'Unknown error'}`);
+        throw new Error(
+          `Payment record creation failed: ${paymentError instanceof Error ? paymentError.message : 'Unknown error'}`,
+        );
       }
 
       return { paymentId, daimoPaymentId };

@@ -1,8 +1,4 @@
-import {
-  createConfig,
-  http,
-  type Config,
-} from 'wagmi';
+import { createConfig, http, type Config } from 'wagmi';
 import { chainConfig } from './chain';
 import { defaultChain, celo, daimoPayChains } from './chains';
 
