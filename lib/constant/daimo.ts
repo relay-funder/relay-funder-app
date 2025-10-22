@@ -1,10 +1,11 @@
 // Daimo Pay Configuration Constants
+// Using Celo as destination network to match CCP treasury contracts
 export const DAIMO_PAY_USDC_ADDRESS =
-  '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as const; // USDC on Optimism
+  '0xcebA9300f2b948710d2653dD7B07f33A8B32118C' as const; // USDC on Celo
 export const DAIMO_PAY_USDT_ADDRESS =
-  '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58' as const; // USDT on Optimism
-export const DAIMO_PAY_CHAIN_ID = 10 as const; // Optimism
-export const DAIMO_PAY_CHAIN_NAME = 'Optimism' as const;
+  '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e' as const; // USDT on Celo
+export const DAIMO_PAY_CHAIN_ID = 42220 as const; // Celo Mainnet
+export const DAIMO_PAY_CHAIN_NAME = 'Celo' as const;
 export const DAIMO_PAY_TOKEN_SYMBOL = 'USDT' as const; // Updated to USDT as primary
 export const DAIMO_PAY_MIN_AMOUNT = 0.1 as const;
 

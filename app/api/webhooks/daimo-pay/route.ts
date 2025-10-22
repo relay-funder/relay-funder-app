@@ -268,18 +268,14 @@ export async function POST(req: Request) {
 
       // Source transaction (what user actually paid)
       sourceChainId: payload.payment.source?.chainId,
-      sourceChainName:
-        payload.payment.source?.chainId === '42220' ? 'Celo' : 'Unknown',
       sourceToken: payload.payment.source?.tokenSymbol,
       sourceTokenAddress: payload.payment.source?.tokenAddress,
       sourceAmount: payload.payment.source?.amountUnits,
       sourceTxHash: payload.payment.source?.txHash,
       actualPayerAddress: payload.payment.source?.payerAddress,
 
-      // Destination transaction (what was delivered)
+      // Destination transaction (what was delivered to Celo)
       destinationChainId: payload.payment.destination?.chainId,
-      destinationChainName:
-        payload.payment.destination?.chainId === '10' ? 'Optimism' : 'Unknown',
       destinationToken: payload.payment.destination?.tokenSymbol,
       destinationTokenAddress: payload.payment.destination?.tokenAddress,
       destinationAmount: payload.payment.destination?.amountUnits,
