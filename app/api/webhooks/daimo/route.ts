@@ -239,35 +239,46 @@ export async function POST(req: Request) {
       if (payload.type === 'payment_started') {
         console.warn('⚠️ payment_started webhook - RACE CONDITION DETECTED');
         console.warn('⚠️ Webhook arrived before payment creation completed');
-        console.warn('⚠️ Returning 200 to acknowledge, Daimo will retry');
+        console.warn('⚠️ Returning 409 Conflict with Retry-After header');
         return NextResponse.json(
           {
-            acknowledged: true,
-            message: 'Payment creation in progress - race condition',
-            note: 'payment_started webhooks often arrive before DB commit',
-            shouldRetry: true,
+            error: 'Conflict',
+            message: 'Payment dependency not yet available',
+            reason:
+              'payment_started webhook arrived before payment record exists in database',
+            retryable: true,
           },
-          { status: 200 },
+          {
+            status: 409, // Conflict - dependency not yet present
+            headers: {
+              'Retry-After': '2', // Suggest retry after 2 seconds
+            },
+          },
         );
       }
 
       // For other event types (completed, bounced, refunded)
-      // If we see ANY recent payment_started events for this paymentId, it's a race condition
-      console.warn('⚠️ Payment not found for non-started event');
+      // Payment should exist for these events - this is a dependency conflict
+      console.warn('⚠️ Payment dependency not found for event:', payload.type);
       console.warn(
-        '⚠️ This usually means payment creation is still in progress',
+        '⚠️ Payment record should exist before completion/bounce/refund events',
       );
-      console.warn('⚠️ Treating as race condition - Daimo will retry');
+      console.warn('⚠️ Returning 409 Conflict with Retry-After header');
 
       return NextResponse.json(
         {
-          acknowledged: true,
-          message: 'Payment creation in progress - race condition',
-          note: `${payload.type} webhook arrived before payment exists in DB`,
-          shouldRetry: true,
+          error: 'Conflict',
+          message: 'Payment dependency not yet available',
+          reason: `${payload.type} event arrived before payment record exists in database`,
+          retryable: true,
           eventType: payload.type,
         },
-        { status: 200 },
+        {
+          status: 409, // Conflict - dependency not yet present
+          headers: {
+            'Retry-After': '3', // Suggest retry after 3 seconds for later events
+          },
+        },
       );
     }
 
