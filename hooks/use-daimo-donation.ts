@@ -37,6 +37,7 @@ export function useDaimoDonationCallback({
   const onPaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
       console.log('🚀 Daimo Pay: onPaymentStarted callback triggered');
+      console.log('🚀 Daimo Pay: Full event structure:', JSON.stringify(event, null, 2));
       debug && console.log('Daimo Pay: Payment started', event);
 
       if (!authenticated) {
@@ -80,6 +81,8 @@ export function useDaimoDonationCallback({
         console.log(
           '✅ Daimo Pay: Payment record created successfully with ID:',
           paymentId,
+          'mapped to Daimo payment ID:',
+          daimoPaymentId,
         );
         debug &&
           console.log(

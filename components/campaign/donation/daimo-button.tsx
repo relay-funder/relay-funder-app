@@ -104,13 +104,14 @@ export function DaimoPayButtonComponent({
           JSON.stringify(event, null, 2),
         );
       try {
+        // Validate email first (matches crypto wallet pattern)
         if (!email.trim()) {
           toast({
             title: 'Email required',
             description: 'Please enter your email address to continue.',
             variant: 'destructive',
           });
-          return;
+          throw new Error('Email required');
         }
 
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -119,9 +120,10 @@ export function DaimoPayButtonComponent({
             description: 'Please enter a valid email address.',
             variant: 'destructive',
           });
-          return;
+          throw new Error('Invalid email format');
         }
 
+        // Only update profile if user doesn't already have an email set
         if (!profile?.email || profile.email.trim() === '') {
           console.log(
             '🚀 Daimo Pay: Updating profile email before payment creation',
