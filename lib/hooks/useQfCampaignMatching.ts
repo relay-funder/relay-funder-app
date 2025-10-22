@@ -1,19 +1,19 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { QFCalculationResult } from '@/lib/qf-calculation/types';
-import { QFCalculationError } from '@/lib/qf-calculation/error';
+import { QfCalculationError } from '@/lib/qf/error';
+import { QfCampaignMatchingSchema } from '@/lib/qf';
 
-export const MATCHING_CALCULATION_QUERY_KEY = 'matching_calculation';
+export const QF_CAMPAIGN_MATCHING_QUERY_KEY = 'qf_campaign_matching';
 
-async function fetchRoundMatchingCalculation(id: number) {
-  const url = `/api/qf-calculation/${id}`;
+async function fetchCampaignMatching(roundId: number, campaignId: number) {
+  const url = `/api/rounds/${roundId}/campaigns/${campaignId}/qf-matching`;
 
   try {
     const response = await fetch(url);
 
     if (!response.ok) {
-      let errorMessage = 'Failed to fetch round matching calculation';
+      let errorMessage = 'Failed to fetch campaign matching calculation';
       let errorDetails: unknown;
 
       try {
@@ -28,25 +28,25 @@ async function fetchRoundMatchingCalculation(id: number) {
         // Response wasn't JSON, use default message
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
-      throw new QFCalculationError(errorMessage, response.status, errorDetails);
+      throw new QfCalculationError(errorMessage, response.status, errorDetails);
     }
 
     try {
-      const data = await response.json();
-      return data as QFCalculationResult;
+      const data = QfCampaignMatchingSchema.parse(await response.json());
+      return data;
     } catch (error) {
-      throw new QFCalculationError(
+      throw new QfCalculationError(
         'Invalid response format: Expected JSON data',
         response.status,
       );
     }
   } catch (error) {
     // Re-throw our custom errors
-    if (error instanceof QFCalculationError) throw error;
+    if (error instanceof QfCalculationError) throw error;
 
     // Handle network errors and other unexpected errors
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new QFCalculationError(
+      throw new QfCalculationError(
         'Network error: Unable to connect to server',
       );
     }
@@ -54,25 +54,27 @@ async function fetchRoundMatchingCalculation(id: number) {
     // Handle any other unexpected errors
     const message =
       error instanceof Error ? error.message : 'Unknown error occurred';
-    throw new QFCalculationError(`Unexpected error: ${message}`);
+    throw new QfCalculationError(`Unexpected error: ${message}`);
   }
 }
 
-export function useMatchingCalculation({
+export function useQfCampaignMatching({
   roundId,
+  campaignId,
   enabled = true,
 }: {
   roundId: number;
+  campaignId: number;
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: [MATCHING_CALCULATION_QUERY_KEY, roundId],
-    queryFn: () => fetchRoundMatchingCalculation(roundId),
+    queryKey: [QF_CAMPAIGN_MATCHING_QUERY_KEY, roundId, campaignId],
+    queryFn: () => fetchCampaignMatching(roundId, campaignId),
     enabled,
     retry: (failureCount, error) => {
-      // Don't retry on client errors (4xx) or custom QF errors
+      // Don't retry on client errors (4xx) or custom Qf errors
       if (
-        error instanceof QFCalculationError &&
+        error instanceof QfCalculationError &&
         error.status &&
         error.status >= 400 &&
         error.status < 500

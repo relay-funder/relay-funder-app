@@ -1,6 +1,6 @@
 import { Prisma, db } from '@/server/db';
 
-export const roundForQFSelect = {
+export const roundForQfSelect = {
   id: true,
   title: true,
   matchingPool: true,
@@ -40,6 +40,6 @@ export const roundForQFSelect = {
 export async function getRoundForCalculationQuery(id: number) {
   return db.round.findUnique({
     where: { id },
-    select: roundForQFSelect,
+    select: roundForQfSelect,
   });
 }
