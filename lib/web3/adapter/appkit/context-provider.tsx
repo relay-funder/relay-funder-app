@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { WagmiProvider, type Config } from 'wagmi';
+import { WagmiProvider } from 'wagmi';
 
 import { debugWeb3ContextProvider as debug } from '@/lib/debug';
 import { config, createModal } from './config';
@@ -35,7 +35,7 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     return null;
   }
   return (
-    <WagmiProvider config={config as Config}>
+    <WagmiProvider config={config}>
       <Web3Context.Provider value={value}>{children}</Web3Context.Provider>
     </WagmiProvider>
   );

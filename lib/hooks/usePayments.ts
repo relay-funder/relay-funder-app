@@ -21,6 +21,7 @@ interface ICreatePaymentApi {
   transactionHash: string;
   isAnonymous: boolean;
   userEmail?: string;
+  provider?: string;
 }
 
 async function createPayment(variables: ICreatePaymentApi): Promise<Payment> {

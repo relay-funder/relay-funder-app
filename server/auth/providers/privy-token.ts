@@ -1,7 +1,8 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { type User } from 'next-auth';
-import { PRIVY_APP_ID, PRIVY_APP_SECRET } from '@/lib/constant';
+import { PRIVY_APP_ID } from '@/lib/constant';
+import { PRIVY_APP_SECRET } from '@/lib/constant/server';
 import { PrivyClient } from '@privy-io/server-auth';
 import { setupUser, handleError } from './common';
 

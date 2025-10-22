@@ -479,6 +479,49 @@ export async function getPaymentSummary(id: number) {
   return paymentSummary;
 }
 
+/**
+ * Lightweight campaign fetch for payment creation
+ * Only fetches essential fields needed for validation
+ */
+export async function getCampaignForPayment(campaignId: number) {
+  const instance = await db.campaign.findUnique({
+    where: { id: campaignId },
+    select: {
+      id: true,
+      title: true,
+      creatorAddress: true,
+      // Only fetch round IDs and dates for round contribution creation
+      RoundCampaigns: {
+        select: {
+          id: true,
+          status: true,
+          Round: {
+            select: {
+              startDate: true,
+              endDate: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!instance) {
+    return null;
+  }
+
+  // Map to minimal format for round contribution logic
+  return {
+    ...instance,
+    rounds: instance.RoundCampaigns.map((rc) => ({
+      roundCampaignId: rc.id,
+      status: rc.status,
+      startTime: rc.Round.startDate,
+      endTime: rc.Round.endDate,
+    })),
+  };
+}
+
 export async function getCampaign(campaignIdOrSlug: string | number) {
   let where = undefined as Prisma.CampaignWhereUniqueInput | undefined;
   if (!isNaN(Number(campaignIdOrSlug))) {

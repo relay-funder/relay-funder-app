@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+  type ChangeEvent,
+} from 'react';
 import { Input, Label } from '@/components/ui';
 import { Info } from 'lucide-react';
 
@@ -20,29 +26,37 @@ export function CampaignDonationWalletTip({
   onTipAmountChanged,
 }: CampaignDonationWalletTipProps) {
   const [percentage, setPercentage] = useState(DEFAULT_PERCENTAGE);
+  const [displayPercentage, setDisplayPercentage] =
+    useState(DEFAULT_PERCENTAGE);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Debounced effect for tip calculation
   useEffect(() => {
-    const tip = (percentage / 100) * parseFloat(amount || '0');
-    onTipAmountChanged(tip.toFixed(2));
-  }, [percentage, amount, onTipAmountChanged]);
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
 
-  const handleTipAmountChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const newTipAmount = event.target.value;
-      onTipAmountChanged(newTipAmount);
-      const newPercentage =
-        (parseFloat(newTipAmount || '0') / parseFloat(amount || '1')) * 100;
-      setPercentage(
-        Math.min(MAX_PERCENTAGE, Math.max(MIN_PERCENTAGE, newPercentage)),
-      );
-    },
-    [onTipAmountChanged, amount],
-  );
+    // Set new timeout for debounced calculation
+    debounceTimeoutRef.current = setTimeout(() => {
+      const tip = (percentage / 100) * parseFloat(amount || '0');
+      const formattedTip = tip.toFixed(2);
+      onTipAmountChanged(formattedTip);
+    }, 300); // 300ms debounce delay
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [percentage, amount, onTipAmountChanged]); // Include all dependencies
 
   const handlePercentageChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const newPercentage = Number(event.target.value);
-      setPercentage(newPercentage);
+      setDisplayPercentage(newPercentage); // Update display immediately
+      setPercentage(newPercentage); // This will trigger debounced calculation
     },
     [],
   );
@@ -60,24 +74,22 @@ export function CampaignDonationWalletTip({
             type="range"
             min={MIN_PERCENTAGE}
             max={MAX_PERCENTAGE}
-            value={percentage}
+            value={displayPercentage}
             onChange={handlePercentageChange}
             className="flex-1 accent-quantum dark:accent-quantum"
           />
           <span className="text-sm font-medium text-foreground">
-            {percentage}%
+            {displayPercentage}%
           </span>
         </div>
         <div className="max-w-sm">
           <div className="relative">
             <Input
-              type="number"
+              type="text"
               value={tipAmount}
-              onChange={handleTipAmountChange}
-              placeholder="Enter tip amount"
-              className="h-10 pr-20 text-sm"
-              min="0"
-              step="0.01"
+              readOnly
+              placeholder="Tip calculated from percentage"
+              className="h-10 cursor-not-allowed bg-muted pr-20 text-sm"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
               {selectedToken}
