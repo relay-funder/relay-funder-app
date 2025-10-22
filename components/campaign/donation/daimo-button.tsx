@@ -95,7 +95,7 @@ export function DaimoPayButtonComponent({
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
       debug && console.log('Daimo Pay: Payment started', event);
-      
+
       try {
         // Validate email first (matches crypto wallet pattern)
         if (!email.trim()) {

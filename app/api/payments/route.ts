@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
     // Return response to avoid to avoid webhook race condition
     const paymentId = payment.id;
-    
+
     // Process round contributions and notifications asynchronously (don't await)
     // This allows webhooks to find the payment immediately while we handle non-critical operations
     // Using Promise.resolve().then() ensures these operations complete even if connection closes
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
         const donorName = data.isAnonymous
           ? 'anon'
           : getUserNameFromInstance(user) || user.address || 'unknown';
-        
+
         await notify({
           receiverId: creator.id,
           creatorId: user.id,

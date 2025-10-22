@@ -66,10 +66,7 @@ export function useDaimoDonationCallback({
         });
 
         debug &&
-          console.log(
-            'Daimo Pay payment record created:',
-            result.paymentId,
-          );
+          console.log('Daimo Pay payment record created:', result.paymentId);
 
         return { paymentId: result.paymentId, daimoPaymentId };
       } catch (paymentError) {
