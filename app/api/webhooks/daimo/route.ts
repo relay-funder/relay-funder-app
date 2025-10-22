@@ -5,7 +5,7 @@ import { response, handleError } from '@/lib/api/response';
 import { notify } from '@/lib/api/event-feed';
 import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
-import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant';
+import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
 import { debugApi as debug } from '@/lib/debug';
 
@@ -59,7 +59,11 @@ export async function POST(req: Request) {
       }
 
       rawPayload = await req.json();
-      debug && console.log('Daimo Pay webhook parsed payload:', rawPayload);
+      debug &&
+        console.log('Daimo Pay webhook parsed payload:', {
+          type: rawPayload?.type,
+          paymentId: rawPayload?.paymentId,
+        });
     } catch (parseError) {
       console.error('Daimo Pay webhook: JSON parse error:', parseError);
       // Return 200 to prevent retries

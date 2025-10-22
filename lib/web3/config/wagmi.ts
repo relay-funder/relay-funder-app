@@ -1,4 +1,9 @@
-import { http, type Config, type CreateConfigParameters } from 'wagmi';
+import {
+  createConfig,
+  http,
+  type Config,
+  type CreateConfigParameters,
+} from 'wagmi';
 import { chainConfig } from './chain';
 import { defaultChain, celo, daimoPayChains } from './chains';
 
@@ -29,8 +34,8 @@ dedupedChains.forEach((chain) => {
     chain.id === defaultChain.id ? http(chainConfig.rpcUrl) : http();
 });
 
-export const config: CreateConfigParameters = {
+export const config: Config = createConfig({
   chains: dedupedChains,
   transports,
   ssr: true,
-};
+});

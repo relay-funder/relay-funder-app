@@ -1,4 +1,4 @@
-import { keccak256, toBytes, encodeFunctionData } from 'viem';
+import { keccak256, toBytes, encodeFunctionData, parseUnits } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
 
@@ -18,8 +18,8 @@ export function generatePledgeId(
 /**
  * Convert amount to token units (6 decimals for both USDC and USDT)
  */
-export function toTokenUnits(amount: number): bigint {
-  return BigInt(Math.floor(amount * 1_000_000)); // 6 decimals for USDC/USDT
+export function toTokenUnits(amount: string | number): bigint {
+  return parseUnits(amount.toString(), 6);
 }
 
 /**

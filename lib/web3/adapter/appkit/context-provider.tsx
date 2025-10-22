@@ -35,7 +35,7 @@ export function Web3ContextProvider({ children }: { children: ReactNode }) {
     return null;
   }
   return (
-    <WagmiProvider config={config as Config}>
+    <WagmiProvider config={config}>
       <Web3Context.Provider value={value}>{children}</Web3Context.Provider>
     </WagmiProvider>
   );
