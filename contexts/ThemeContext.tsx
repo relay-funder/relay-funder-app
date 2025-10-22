@@ -12,20 +12,22 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check localStorage for saved theme preference
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme') as Theme;
-      return stored || 'system';
-    }
-    return 'system';
-  });
-
+  const [theme, setTheme] = useState<Theme>('system'); // Initialize with default value
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Load theme from localStorage after mounting
+    const storedTheme = localStorage.getItem('theme') as Theme;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    }
+    setMounted(true); // Ensure mounted is set to true after initial load
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return; // Don't execute theme logic on first render
+
     const root = window.document.documentElement;
 
     // Remove previous theme classes
@@ -50,7 +52,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     // Save theme preference to localStorage
     localStorage.setItem('theme', theme);
-  }, [theme]);
+  }, [theme, mounted]);
 
   // Listen for OS theme changes when in system mode
   useEffect(() => {
