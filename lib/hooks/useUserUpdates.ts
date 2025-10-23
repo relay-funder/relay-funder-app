@@ -1,4 +1,5 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 
 interface UpdateCampaign {
   id: number;
@@ -50,10 +51,7 @@ async function fetchUserUpdates({
 }) {
   const url = `/api/users/updates?page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch updates');
-  }
+  await handleApiErrors(response, 'Failed to fetch updates');
   const data = await response.json();
   return data as PaginatedUpdatesResponse;
 }

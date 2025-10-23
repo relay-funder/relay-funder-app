@@ -3,6 +3,14 @@ import {
   defaultShouldDehydrateQuery,
   isServer,
 } from '@tanstack/react-query';
+import { ApiAuthError } from './api/error';
+
+function shouldThrowOnError(error: Error) {
+  if (error instanceof ApiAuthError) {
+    return true;
+  }
+  return false;
+}
 
 export function makeQueryClient() {
   return new QueryClient({
@@ -12,12 +20,16 @@ export function makeQueryClient() {
         gcTime: 5 * 60 * 1000, // 5 minutes
         refetchOnWindowFocus: false,
         retry: 1,
+        throwOnError: shouldThrowOnError,
       },
       dehydrate: {
         // include pending queries in dehydration
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === 'pending',
+      },
+      mutations: {
+        throwOnError: shouldThrowOnError,
       },
     },
   });

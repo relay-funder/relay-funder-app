@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts';
 import { useQuery } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 
 export const USER_SCORE_QUERY_KEY = 'user_score';
 
@@ -11,10 +12,7 @@ export type UserScore = {
 
 async function fetchUserScore(): Promise<UserScore> {
   const response = await fetch('/api/users/me/score');
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user score');
-  }
+  await handleApiErrors(response, 'Failed to fetch user score');
   return response.json();
 }
 

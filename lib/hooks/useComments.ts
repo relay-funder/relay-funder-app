@@ -3,6 +3,7 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { GetCampaignCommentResponseInstance } from '@/lib/api/types';
 import { PaginatedResponse } from '@/lib/api/types/common';
 export const CAMPAIGNS_COMMENTS_QUERY_KEY = 'campaigns_comments';
@@ -21,10 +22,7 @@ async function createComment(variables: ICreateComment) {
     },
   );
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create comment');
-  }
+  await handleApiErrors(response, 'Failed to create comment');
 
   return response.json();
 }
@@ -42,10 +40,7 @@ async function removeComment(variables: IRemoveComment) {
     },
   );
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to remove comment');
-  }
+  await handleApiErrors(response, 'Failed to remove comment');
 
   return response.json();
 }
@@ -63,10 +58,7 @@ async function reportComment(variables: IReportComment) {
     },
   );
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to report comment');
-  }
+  await handleApiErrors(response, 'Failed to report comment');
 
   return response.json();
 }
@@ -86,10 +78,7 @@ async function fetchCommentPage({
 }) {
   const url = `/api/campaigns/${campaignId}/comments?page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch comments');
-  }
+  await handleApiErrors(response, 'Failed to fetch comments');
   const data = await response.json();
   return data as PaginatedCommentResponse;
 }

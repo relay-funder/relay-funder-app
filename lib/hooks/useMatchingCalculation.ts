@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { QFCalculationResult } from '@/lib/qf-calculation/types';
 import { QFCalculationError } from '@/lib/qf-calculation/error';
+import { handleApiErrors } from '@/lib/api/error';
 
 export const MATCHING_CALCULATION_QUERY_KEY = 'matching_calculation';
 
@@ -11,24 +12,12 @@ async function fetchRoundMatchingCalculation(id: number) {
 
   try {
     const response = await fetch(url);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch round matching calculation';
-      let errorDetails: unknown;
-
-      try {
-        const errorData = await response.json();
-        if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-        if (errorData.details) {
-          errorDetails = errorData.details;
-        }
-      } catch {
-        // Response wasn't JSON, use default message
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      handleApiErrors(response, 'Failed to fetch round matching calculation');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new QFCalculationError(error.message, response.status);
       }
-      throw new QFCalculationError(errorMessage, response.status, errorDetails);
     }
 
     try {

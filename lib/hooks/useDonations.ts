@@ -1,4 +1,5 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 
 interface DonationCampaign {
   id: number;
@@ -67,10 +68,7 @@ async function fetchUserDonations({
 }) {
   const url = `/api/users/donations?page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch donations');
-  }
+  await handleApiErrors(response, 'Failed to fetch donations');
   const data = await response.json();
   return data as PaginatedDonationsResponse;
 }
@@ -78,10 +76,7 @@ async function fetchUserDonations({
 async function fetchDonationStats() {
   const url = `/api/users/donations?page=1&pageSize=1`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch donation stats');
-  }
+  await handleApiErrors(response, 'Failed to fetch donation stats');
   const data = await response.json();
   return data.stats as DonationStats;
 }

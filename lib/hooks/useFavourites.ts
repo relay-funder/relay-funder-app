@@ -1,25 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Favourite } from '@/types';
 import { useAuth } from '@/contexts';
+import { handleApiErrors } from '@/lib/api/error';
 
 const FAVOURITE_QUERY_KEY = 'favourite';
 const FAVOURITE_CHECK_QUERY_KEY = 'favourite_check';
 
 async function fetchUserFavourites(): Promise<Favourite[]> {
   const response = await fetch(`/api/favorites/user`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user favourites');
-  }
+  await handleApiErrors(response, 'Failed to fetch user favourites');
   const data = await response.json();
   return data.favorites;
 }
 async function checkUserFavourite(campaignId: number): Promise<boolean> {
   const response = await fetch(`/api/favorites?campaignId=${campaignId}`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user favourites');
-  }
+  await handleApiErrors(response, 'Failed to fetch user favourites');
+
   const data = await response.json();
   return data.isFavorite ?? false;
 }
@@ -53,11 +49,7 @@ export function useUpdateFavourite() {
           campaignId,
         }),
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update favourite');
-      }
+      await handleApiErrors(response, 'Failed to update favourite');
 
       return response.json();
     },
