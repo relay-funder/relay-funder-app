@@ -72,7 +72,6 @@ export function RoundApplyDialog({
       const allCampaigns = campaignData.pages.reduce((acc, page) => {
         return acc.concat(page.campaigns);
       }, [] as DbCampaign[]);
-
       const activeCampaigns = allCampaigns.filter((campaign: DbCampaign) => {
         return campaign.status === 'ACTIVE';
       });
@@ -199,7 +198,10 @@ export function RoundApplyDialog({
                     onValueChange={onCampaignSelected}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose a campaign to apply..." />
+                      <SelectValue
+                        className="text-left"
+                        placeholder="Choose a campaign to apply..."
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {userCampaigns.map((campaign: DbCampaign) => (
@@ -207,11 +209,11 @@ export function RoundApplyDialog({
                           key={campaign.id}
                           value={campaign.id.toString()}
                         >
-                          <div className="flex flex-col">
+                          <div className="flex flex-col items-start">
                             <span className="font-medium">
-                              {campaign.title}
+                              {campaign.title.substring(0, 64)}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs">
                               {campaign.category} • {campaign.status}
                             </span>
                           </div>
@@ -221,9 +223,13 @@ export function RoundApplyDialog({
                   </Select>
                 </div>
 
-                {selectedCampaign && currentlyAppliedMessage && (
+                {selectedCampaign && currentlyAppliedMessage ? (
                   <p className="text-xs text-muted-foreground">
                     {currentlyAppliedMessage}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Currently not applied to any round.
                   </p>
                 )}
 
@@ -262,7 +268,7 @@ export function RoundApplyDialog({
             </div>
 
             {selectedCampaign && (
-              <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+              <div className="space-y-2 rounded-lg bg-card p-4">
                 <h4 className="font-medium">Applying Campaign:</h4>
                 <p className="text-sm font-semibold">
                   {selectedCampaign.title}
