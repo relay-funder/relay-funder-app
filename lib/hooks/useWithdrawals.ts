@@ -40,6 +40,13 @@ async function requestWithdrawal({
   return data;
 }
 
+async function fetchWithdrawApproval(campaignId?: string | number) {
+  if (!campaignId) throw new Error('Campaign ID is required');
+  const response = await fetch(`/api/campaigns/${campaignId}/withdraw`);
+  await handleApiErrors(response, 'Failed to check withdrawal approval');
+  const data = (await response.json()) as GetCampaignWithdrawRouteResponse;
+  return data;
+}
 /**
  * useRequestWithdrawal
  * User-facing hook to request a withdrawal for a campaign.
@@ -91,15 +98,7 @@ export function useRequestWithdrawal() {
 export function useWithdrawalApproval(campaignId: number | string | undefined) {
   return useQuery({
     queryKey: [WITHDRAWALS_QUERY_KEY, 'approval', campaignId],
-    queryFn: async () => {
-      if (!campaignId) throw new Error('Campaign ID is required');
-      const response = await fetch(`/api/campaigns/${campaignId}/withdraw`);
-      if (!response.ok) {
-        throw new Error('Failed to check withdrawal approval');
-      }
-      const data = (await response.json()) as GetCampaignWithdrawRouteResponse;
-      return data;
-    },
+    queryFn: async () => fetchWithdrawApproval(campaignId),
     enabled: !!campaignId,
   });
 }
