@@ -1,7 +1,7 @@
 import type { GetCampaignResponse } from '@/lib/api/types';
 import { formatUSD } from '@/lib/format-usd';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
-import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { DbCampaign } from '@/types/campaign';
 import { useMemo } from 'react';
 
