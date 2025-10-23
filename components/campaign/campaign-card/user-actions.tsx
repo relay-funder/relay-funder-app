@@ -35,7 +35,7 @@ import {
   AdminDisableProcessStates,
 } from '@/types/admin';
 import { WithdrawalDialog } from '../withdrawal-dialog';
-import { useCampaignTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { CampaignUpdateModal } from './campaign-update-modal';
 import { FormattedDate } from '@/components/formatted-date';
 import { useInfiniteCampaignUpdates } from '@/lib/hooks/useUpdates';

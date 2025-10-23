@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import type { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
-import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import {
   useRequestWithdrawal,
