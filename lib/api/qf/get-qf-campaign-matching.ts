@@ -1,4 +1,4 @@
-import { ApiNotFoundError } from '@/lib/api/error';
+import { ApiParameterError } from '@/lib/api/error';
 import { debugQf as debug } from '@/lib/debug';
 import { calculateQfDistribution, QfCampaignMatching } from '@/lib/qf';
 import { getQfRoundState } from './get-qf-state';
@@ -37,7 +37,7 @@ export async function getQfCampaignMatching(
   );
 
   if (!campaignDistribution) {
-    throw new ApiNotFoundError('Campaign matching amount not found');
+    throw new ApiParameterError('Campaign matching amount not found');
   }
 
   debug &&
