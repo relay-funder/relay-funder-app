@@ -1,60 +1,31 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { QfCalculationError } from '@/lib/qf/error';
-import { QfCampaignMatchingSchema } from '@/lib/qf';
+import { ONE_MINUTE_MS } from '@/lib/constant/time';
+import { type QfCampaignMatching, QfCampaignMatchingSchema } from '@/lib/qf';
+import {
+  createQfErrorHandler,
+  handleQfApiResponse,
+  qfRetryConfig,
+} from '@/lib/hooks/utils/error-handler';
 
-export const QF_CAMPAIGN_MATCHING_QUERY_KEY = 'qf_campaign_matching';
+export const QUERY_KEY_QF_CAMPAIGN_MATCHING = 'qf_campaign_matching';
 
-async function fetchCampaignMatching(roundId: number, campaignId: number) {
+async function fetchCampaignMatching(
+  roundId: number,
+  campaignId: number,
+): Promise<QfCampaignMatching> {
   const url = `/api/rounds/${roundId}/campaigns/${campaignId}/qf-matching`;
 
   try {
     const response = await fetch(url);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch campaign matching calculation';
-      let errorDetails: unknown;
-
-      try {
-        const errorData = await response.json();
-        if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-        if (errorData.details) {
-          errorDetails = errorData.details;
-        }
-      } catch {
-        // Response wasn't JSON, use default message
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      throw new QfCalculationError(errorMessage, response.status, errorDetails);
-    }
-
-    try {
-      const data = QfCampaignMatchingSchema.parse(await response.json());
-      return data;
-    } catch (error) {
-      throw new QfCalculationError(
-        'Invalid response format: Expected JSON data',
-        response.status,
-      );
-    }
+    return await handleQfApiResponse(
+      response,
+      'Failed to fetch campaign matching calculation',
+      QfCampaignMatchingSchema,
+    );
   } catch (error) {
-    // Re-throw our custom errors
-    if (error instanceof QfCalculationError) throw error;
-
-    // Handle network errors and other unexpected errors
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new QfCalculationError(
-        'Network error: Unable to connect to server',
-      );
-    }
-
-    // Handle any other unexpected errors
-    const message =
-      error instanceof Error ? error.message : 'Unknown error occurred';
-    throw new QfCalculationError(`Unexpected error: ${message}`);
+    return createQfErrorHandler()(error);
   }
 }
 
@@ -68,21 +39,11 @@ export function useQfCampaignMatching({
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: [QF_CAMPAIGN_MATCHING_QUERY_KEY, roundId, campaignId],
+    queryKey: [QUERY_KEY_QF_CAMPAIGN_MATCHING, roundId, campaignId],
     queryFn: () => fetchCampaignMatching(roundId, campaignId),
     enabled,
-    retry: (failureCount, error) => {
-      // Don't retry on client errors (4xx) or custom Qf errors
-      if (
-        error instanceof QfCalculationError &&
-        error.status &&
-        error.status >= 400 &&
-        error.status < 500
-      ) {
-        return false;
-      }
-      // Retry up to 3 times for network errors
-      return failureCount < 3;
-    },
+    staleTime: 1 * ONE_MINUTE_MS, // 1 minute - campaign matching might change more frequently
+    gcTime: 5 * ONE_MINUTE_MS, // 5 minutes garbage collection
+    ...qfRetryConfig,
   });
 }

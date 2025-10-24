@@ -1,65 +1,108 @@
+import { isAddress } from 'viem';
 import { z } from 'zod';
 
-// UserID can be a number (internal ID) or a string (crypto address)
-export type UserID = number | string;
+export const UserIdSchema = z.number().or(z.string());
+export type UserID = z.infer<typeof UserIdSchema>;
 
-interface QfCampaignBase {
-  id: number;
-  title: string;
-  nUniqueContributors: number;
-  nContributions: number;
-}
+export const UserAddressSchema = z
+  .string()
+  .length(42, 'Address is required (42 characters)')
+  .refine((val) => isAddress(val), {
+    message: 'Invalid address format - must be a valid Ethereum address',
+  });
 
-interface QfRoundBase {
-  id: number;
-  title: string;
-  matchingPool: string;
-  campaigns: QfCampaign[];
-}
+export type UserAddress = z.infer<typeof UserAddressSchema>;
 
-export interface QfCampaign extends QfCampaignBase {
-  status: string;
-  aggregatedContributionsByUser: Record<UserID, string>;
-}
+export const UserAddressTestSchema = z
+  .string()
+  .startsWith('0x', '(test)Address must start with 0x');
+export type UserAddressTest = z.infer<typeof UserAddressSchema>;
 
-export interface QfRound extends QfRoundBase {
-  blockchain: string;
-  status: string;
-}
+const QfCampaignBaseSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  nUniqueContributors: z.number(),
+  nContributions: z.number(),
+});
 
-export interface QfRoundState extends QfRoundBase {
-  token: string;
-  tokenDecimals: number;
-}
-export interface QfDistributionItem extends QfCampaignBase {
-  matchingAmount: string;
-}
+export const QfCampaignSchema = z.object({
+  ...QfCampaignBaseSchema.shape,
+  status: z.string(),
+  aggregatedContributionsByUser: z.record(UserIdSchema, z.string()),
+});
 
-export type QfDistribution = QfDistributionItem[];
+export type QfCampaign = z.infer<typeof QfCampaignSchema>;
 
-export interface QfCalculationResult {
-  totalAllocated: string;
-  distribution: QfDistribution;
-}
+const QfRoundBaseSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  matchingPool: z.string(),
+  campaigns: z.array(QfCampaignSchema),
+});
 
-export interface QfSimulationContribution {
-  campaignId: number;
-  token: string;
-  amount: string;
-}
+export const QfRoundSchema = z.object({
+  ...QfRoundBaseSchema.shape,
+  blockchain: z.string(),
+  status: z.string(),
+});
 
-export interface QfSimulationBody {
-  contributions: QfSimulationContribution[];
-  contributorId: UserID;
-}
+export type QfRound = z.infer<typeof QfRoundSchema>;
 
-export interface QfSimulationResult {
-  baselineDistribution: QfCalculationResult;
-  simulatedDistribution: QfCalculationResult;
-  deltaDistribution: QfDistribution;
-}
+export const QfRoundStateSchema = z.object({
+  ...QfRoundBaseSchema.shape,
+  token: z.string(),
+  tokenDecimals: z.number(),
+});
+
+export type QfRoundState = z.infer<typeof QfRoundStateSchema>;
+
+export const QfDistributionItemSchema = z.object({
+  ...QfCampaignBaseSchema.shape,
+  matchingAmount: z.string(),
+});
+
+export type QfDistributionItem = z.infer<typeof QfDistributionItemSchema>;
+
+export const QfDistributionSchema = z.array(QfDistributionItemSchema);
+
+export type QfDistribution = z.infer<typeof QfDistributionSchema>;
+
+export const QfCalculationResultSchema = z.object({
+  totalAllocated: z.string(),
+  distribution: QfDistributionSchema,
+});
+
+export type QfCalculationResult = z.infer<typeof QfCalculationResultSchema>;
+
+export const QfSimulationContributionSchema = z.object({
+  campaignId: z.number(),
+  token: z.string(),
+  amount: z.string(),
+});
+
+export type QfSimulationContribution = z.infer<
+  typeof QfSimulationContributionSchema
+>;
+
+export const QfSimulationBodySchema = z.object({
+  contributions: z.array(QfSimulationContributionSchema),
+  contributorId: UserIdSchema,
+  contributorAddress: UserAddressTestSchema,
+});
+
+export type QfSimulationBody = z.infer<typeof QfSimulationBodySchema>;
+
+export const QfSimulationResultSchema = z.object({
+  baselineDistribution: QfCalculationResultSchema,
+  simulatedDistribution: QfCalculationResultSchema,
+  deltaDistribution: QfDistributionSchema,
+});
+
+export type QfSimulationResult = z.infer<typeof QfSimulationResultSchema>;
 
 export const QfCampaignMatchingSchema = z.object({
+  id: z.number(),
+  title: z.string(),
   matchingAmount: z.string(),
   nUniqueContributors: z.number(),
   nContributions: z.number(),
