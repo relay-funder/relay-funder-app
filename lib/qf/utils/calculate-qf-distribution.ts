@@ -49,11 +49,16 @@ import { truncateToTokenPrecision } from './token-amount';
  * - `distribution`: array of QfDistribution items with campaign id, title and matchingAmountformatted string (e.g., "123.45") in token units.
  * - `totalAllocated`: string of the sum of all formatted allocations.
  *
- * @param campaigns - The set of campaigns with per‑user aggregated contributions.
- * @param matchingPool - Total matching pool in smallest token units (bigint).
- * @param tokenDecimals - Token decimals (default 6 for USDC).
- * @param precision - How many decimals to keep when allocating (default 0 for whole tokens).
- * @returns QfCalculationResult with distribution array of human‑readable matching amounts and total.
+ * @param state - The QF round state containing campaigns and matching pool
+ * @param precision - How many decimals to keep when allocating (default 0 for whole tokens)
+ * @returns QfCalculationResult with distribution array of human‑readable matching amounts and total
+ *
+ * @example
+ * ```typescript
+ * const result = calculateQfDistribution(roundState, 2);
+ * console.log(result.totalAllocated); // "1000.00"
+ * console.log(result.distribution[0].matchingAmount); // "500.00"
+ * ```
  */
 export function calculateQfDistribution(
   state: QfRoundState,
@@ -81,7 +86,11 @@ export function calculateQfDistribution(
         console.log(
           `[QF Calc] Single campaign with contributions - allocating entire matching pool`,
         );
-      const matchingAmount = state.matchingPool;
+      const matchingPool = formatUnits(
+        parseUnits(state.matchingPool, tokenDecimals),
+        tokenDecimals,
+      );
+      const matchingAmount = matchingPool;
       distribution.push({
         id: campaign.id,
         title: campaign.title,
