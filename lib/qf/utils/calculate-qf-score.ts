@@ -1,3 +1,4 @@
+import { debugQf as debug } from '@/lib/debug';
 import { sqrtBigInt } from './bigint';
 
 /**
@@ -17,9 +18,21 @@ import { sqrtBigInt } from './bigint';
 export function calculateQfScore(amounts: bigint[]): bigint {
   let sumSqrt = 0n;
 
+  debug &&
+    console.log(
+      `[QF Score] Calculating QF score for amounts: ${amounts.join(', ')}`,
+    );
+
   for (const amount of amounts) {
     sumSqrt += sqrtBigInt(amount);
   }
 
-  return sumSqrt * sumSqrt;
+  const result = sumSqrt * sumSqrt;
+
+  debug &&
+    console.log(
+      `[QF Score] Result: ${result} (sumSqrt: ${sumSqrt} * sumSqrt: ${sumSqrt})`,
+    );
+
+  return result;
 }

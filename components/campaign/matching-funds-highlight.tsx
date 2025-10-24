@@ -10,11 +10,11 @@ import {
   Card,
   CardContent,
 } from '@/components/ui';
+import { HowMatchingWorksDialog } from '@/components/how-matching-works-dialog';
 import { TrendingUp, HelpCircle } from 'lucide-react';
 
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
-import { useCampaignMatching } from '@/lib/hooks/useCampaignMatching';
-import { HowMatchingWorksDialog } from './how-matching-works-dialog';
+import { useQfCampaignMatching } from '@/lib/hooks/useQfCampaignMatching';
 
 export function CampaignMatchingFundsHighlight({
   campaign,
@@ -23,7 +23,7 @@ export function CampaignMatchingFundsHighlight({
   campaign: DbCampaign;
   variant?: 'default' | 'compact';
 }) {
-  const { hasRounds, activeRounds, futureRounds } = useCampaignRounds({
+  const { activeRounds, futureRounds } = useCampaignRounds({
     campaign,
   });
 
@@ -37,23 +37,25 @@ export function CampaignMatchingFundsHighlight({
   const hasMatchingPool = latestRound?.matchingPool > 0;
 
   const {
-    data: estimatedMatch,
+    data: matching,
     isPending,
     isError,
-  } = useCampaignMatching({
+  } = useQfCampaignMatching({
     roundId: latestRound?.id,
     campaignId: campaign.id,
     enabled: hasMatchingPool && !isUpcomingRound,
   });
 
+  const matchingAmount = matching?.matchingAmount;
+
   // Only show if campaign has active or future rounds (matching funding)
-  if (!hasRounds || (activeRounds.length === 0 && futureRounds.length === 0)) {
+  if (!latestRound) {
     return null;
   }
 
   const formattedMatchingPool = latestRound.matchingPool.toLocaleString();
 
-  const estimateValue = estimatedMatch ? parseFloat(estimatedMatch) : 0;
+  const estimateValue = matchingAmount ? parseFloat(matchingAmount) : 0;
   const formattedEstimate =
     estimateValue === Math.floor(estimateValue)
       ? estimateValue.toLocaleString()
@@ -97,7 +99,7 @@ export function CampaignMatchingFundsHighlight({
               <span className="text-sm font-semibold text-muted-foreground">
                 Available when round starts
               </span>
-            ) : isError || !estimatedMatch ? (
+            ) : isError || !matching ? (
               <span className="text-sm font-semibold text-muted-foreground">
                 TBD
               </span>
@@ -150,7 +152,7 @@ export function CampaignMatchingFundsHighlight({
                 Available when round starts
               </span>
             </div>
-          ) : isError || !estimatedMatch ? (
+          ) : isError || !matching ? (
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-semibold text-muted-foreground">
                 TBD

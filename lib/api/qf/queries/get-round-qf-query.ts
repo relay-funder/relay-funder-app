@@ -1,6 +1,6 @@
 import { Prisma, db } from '@/server/db';
 
-export const roundForQFSelect = {
+export const roundForQfSelect = {
   id: true,
   title: true,
   matchingPool: true,
@@ -22,7 +22,12 @@ export const roundForQFSelect = {
               amount: true,
               token: true,
               status: true,
-              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  address: true,
+                },
+              },
             },
             where: {
               status: 'confirmed',
@@ -37,9 +42,15 @@ export const roundForQFSelect = {
   },
 } satisfies Prisma.RoundSelect;
 
+/**
+ * Database query to fetch round data for QF calculation.
+ *
+ * @param id - Round id (database primary key).
+ * @returns Round data with campaigns and confirmed payments, or null if not found.
+ */
 export async function getRoundForCalculationQuery(id: number) {
   return db.round.findUnique({
     where: { id },
-    select: roundForQFSelect,
+    select: roundForQfSelect,
   });
 }

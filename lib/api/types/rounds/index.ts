@@ -10,6 +10,12 @@ export interface RoundsWithRoundIdParams {
     roundId: string;
   }>;
 }
+export interface RoundsWithIdAndCampaignIdParams {
+  params: Promise<{
+    id: string;
+    campaignId: string;
+  }>;
+}
 export interface GetRoundsStatsResponse {
   totalRounds: number;
   totalRaised: number;

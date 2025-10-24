@@ -2,7 +2,7 @@
  * Treasury-related constants
  */
 
-import { USD_TOKEN, USDC_DECIMALS, USDT_DECIMALS } from '.';
+import { USD_TOKEN, USDC_DECIMALS, USDT_DECIMALS } from './tokens';
 
 // Time delays in seconds
 export const TREASURY_DELAYS = {
