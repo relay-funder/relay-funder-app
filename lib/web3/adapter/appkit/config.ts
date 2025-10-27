@@ -170,7 +170,6 @@ export function createModal() {
       // ],
       emailShowWallets: true, // default to true
     },
-    manualWCControl: true,
     themeVariables: {
       '--w3m-accent': '#000000',
       '--w3m-border-radius-master': '1px',
