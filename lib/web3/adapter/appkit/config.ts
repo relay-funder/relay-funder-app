@@ -54,10 +54,10 @@ export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
 });
-// @ts-expect-error fixing-error-in-appkit
-wagmiAdapter.clearConnections = () => {};
-// @ts-expect-error fixing-error-in-appkit
-wagmiAdapter.addConnection = () => {};
+// // @ts-expect-error fixing-error-in-appkit
+// wagmiAdapter.clearConnections = () => {};
+// // @ts-expect-error fixing-error-in-appkit
+// wagmiAdapter.addConnection = () => {};
 
 export const config = wagmiAdapter.wagmiConfig;
 
@@ -153,8 +153,7 @@ export function createModal() {
     adapters: [wagmiAdapter],
     projectId,
     networks,
-    defaultNetwork: celo,
-
+    defaultNetwork: defaultChain,
     metadata,
     themeMode: 'light',
     features: {
@@ -171,6 +170,7 @@ export function createModal() {
       // ],
       emailShowWallets: true, // default to true
     },
+    manualWCControl: true,
     themeVariables: {
       '--w3m-accent': '#000000',
       '--w3m-border-radius-master': '1px',
