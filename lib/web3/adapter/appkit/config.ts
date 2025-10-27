@@ -79,6 +79,7 @@ export const siweConfig = createSIWEConfig({
     statement: 'Please sign with your account',
   }),
   createMessage: ({ address, nonce, chainId }: SIWECreateMessageArgs) => {
+    console.log('siweConfig::createMessage', { address, nonce, chainId });
     const message = new SiweMessage({
       domain: window.location.host,
       // use rawAddress, will get normalized in api
