@@ -46,7 +46,7 @@
     "@radix-ui/react-toast": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.1.6",
     "@radix-ui/react-visually-hidden": "^1.2.3",
-    "@reown/appkit": "^1.8.12",
+    "@reown/appkit": "link:@reown/appkit@1.8.12",
     "@reown/appkit-adapter-wagmi": "^1.8.12",
     "@reown/appkit-siwe": "^1.8.12",
     "@sentry/nextjs": "^9.46.0",
@@ -120,7 +120,8 @@
   "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a",
   "pnpm": {
     "overrides": {
-      "@walletconnect/ethereum-provider": "@walletconnect/ethereum-provider@2.22.4"
+      "@walletconnect/ethereum-provider": "npm:@walletconnect/ethereum-provider@2.22.4",
+      "@reown/appkit": "npm:@reown/appkit@1.8.12"
     }
   }
 }
