@@ -3,7 +3,11 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import type { AppKitNetwork } from '@reown/appkit/networks';
 import { defaultChain, celo, daimoPayChains } from '@/lib/web3/config/chains';
 
-import { PROJECT_NAME, REOWN_CLOUD_PROJECT_ID } from '@/lib/constant';
+import {
+  DAIMO_PAY_APP_ID,
+  PROJECT_NAME,
+  REOWN_CLOUD_PROJECT_ID,
+} from '@/lib/constant';
 import { getCsrfToken, getSession, signIn, signOut } from 'next-auth/react';
 
 export { chainConfig } from '@/lib/web3/config/chain';
@@ -34,11 +38,14 @@ if (defaultChain.id !== celo.id) {
 
 // Combine existing and Daimo networks, removing duplicates
 const allNetworks = [...existingNetworks];
-daimoPayChains.forEach((network) => {
-  if (!allNetworks.some((existing) => existing.id === network.id)) {
-    allNetworks.push(network);
-  }
-});
+
+if (DAIMO_PAY_APP_ID && DAIMO_PAY_APP_ID.trim() !== '') {
+  daimoPayChains.forEach((network) => {
+    if (!allNetworks.some((existing) => existing.id === network.id)) {
+      allNetworks.push(network);
+    }
+  });
+}
 
 export const networks = allNetworks as [AppKitNetwork, ...AppKitNetwork[]];
 
