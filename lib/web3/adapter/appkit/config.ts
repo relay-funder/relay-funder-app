@@ -146,6 +146,7 @@ export function createModal() {
     adapters: [wagmiAdapter],
     projectId,
     networks,
+    defaultNetwork: celo,
     metadata,
     themeMode: 'light',
     features: {
