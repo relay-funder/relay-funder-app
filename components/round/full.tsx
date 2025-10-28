@@ -23,6 +23,7 @@ import { RoundManageResults } from './manage-results';
 import { RoundAdminInlineEdit } from './admin/inline-edit';
 import { RoundApplyDialog } from './apply-dialog';
 import { Button } from '@/components/ui';
+import { RoundQfPreview } from './qf-preview';
 
 export function RoundFull({
   id,
@@ -85,15 +86,16 @@ export function RoundFull({
     notFound();
   }
 
+  const isEnded = status.text === 'Ended';
+  const isActive = status.text === 'Active';
+
   const header = <PageHeader />;
 
   return (
     <PageHome header={header}>
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          {isAdmin && status.text === 'Ended' && (
-            <RoundManageResults round={round} />
-          )}
+          {isAdmin && isEnded && <RoundManageResults round={round} />}
           {/* Round Info Section - Compact Layout with Large Logo */}
           <div className="space-y-6">
             {/* Round Header with Large Logo and Status */}
@@ -233,6 +235,11 @@ export function RoundFull({
               </Card>
             )}
           </div>
+
+          {/* QF Preview - Only for active rounds */}
+          {isAdmin && round.matchingPool > 0 && isActive && (
+            <RoundQfPreview round={round} isAdmin={isAdmin} />
+          )}
         </div>
 
         {/* Apply Dialog */}
