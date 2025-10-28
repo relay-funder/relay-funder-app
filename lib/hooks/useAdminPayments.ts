@@ -3,6 +3,7 @@ import {
   useInfiniteQuery,
   type QueryKey,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { PaginatedResponse } from '@/lib/api/types';
 
 /**
@@ -138,14 +139,7 @@ async function fetchAdminPaymentsPage({
     filters,
   });
   const response = await fetch(url);
-  if (!response.ok) {
-    let msg = 'Failed to fetch admin payments';
-    try {
-      const err = await response.json();
-      msg = err?.error || msg;
-    } catch {}
-    throw new Error(msg);
-  }
+  await handleApiErrors(response, 'Failed to fetch admin payments');
   const data = (await response.json()) as PaginatedAdminPaymentsResponse;
   return data;
 }

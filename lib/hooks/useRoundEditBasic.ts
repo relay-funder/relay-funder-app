@@ -19,6 +19,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ROUNDS_QUERY_KEY, ROUND_QUERY_KEY } from './useRounds';
+import { handleApiErrors } from '@/lib/api/error';
 
 export interface UpdateRoundBasicInput {
   roundId: number;
@@ -69,22 +70,12 @@ async function updateRoundBasic(input: UpdateRoundBasicInput) {
     form.append('logo', input.logo);
   }
 
-  const res = await fetch('/api/admin/rounds', {
+  const response = await fetch('/api/admin/rounds', {
     method: 'PATCH',
     body: form,
   });
-
-  if (!res.ok) {
-    let message = 'Failed to update round';
-    try {
-      const err = await res.json();
-      message = err?.error || err?.details || message;
-    } catch {
-      // ignore parsing error and fallback to default message
-    }
-    throw new Error(message);
-  }
-  return res.json();
+  await handleApiErrors(response, 'Failed to update round');
+  return response.json();
 }
 
 export function useUpdateRoundBasic() {

@@ -12,6 +12,7 @@ import type {
   GetRoundsStatsResponse,
 } from '@/lib/api/types';
 import { resetCampaign } from './useCampaigns';
+import { handleApiErrors } from '@/lib/api/error';
 import type { PaginatedResponse } from '@/lib/api/types/common';
 
 export const ROUNDS_QUERY_KEY = 'rounds';
@@ -26,10 +27,7 @@ interface PaginatedRoundsResponse extends PaginatedResponse {
 async function fetchRounds(status?: string) {
   const url = status ? `/api/rounds?status=${status}` : '/api/rounds';
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch rounds');
-  }
+  await handleApiErrors(response, 'Failed to fetch rounds');
   const data = await response.json();
   return data.rounds;
 }
@@ -41,10 +39,7 @@ async function fetchRound(id: number, forceUserView = false) {
 
   const url = `/api/rounds/${id}${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch round');
-  }
+  await handleApiErrors(response, 'Failed to fetch round');
   const data = await response.json();
   return data as GetRoundResponse;
 }
@@ -65,10 +60,7 @@ async function fetchRoundPage({
 
   const url = `/api/rounds?${params.toString()}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch rounds');
-  }
+  await handleApiErrors(response, 'Failed to fetch rounds');
   const data = await response.json();
   return data as PaginatedRoundsResponse;
 }
@@ -76,10 +68,7 @@ async function fetchRoundPage({
 async function fetchRoundStats() {
   const url = `/api/admin/rounds/stats`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch round');
-  }
+  await handleApiErrors(response, 'Failed to fetch round');
   const data = await response.json();
   return data as GetRoundsStatsResponse;
 }
@@ -107,11 +96,7 @@ async function updateRound(variables: IUpdateRound) {
         .join(','),
     }),
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update round');
-  }
+  await handleApiErrors(response, 'Failed to update round');
 
   const data = await response.json();
   return data as PatchRoundResponse;
@@ -162,17 +147,7 @@ async function createRound({
     method: 'POST',
     body: formDataToSend,
   });
-
-  if (!response.ok) {
-    let errorMsg = 'Failed to save round';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to save round');
 
   const data = await response.json();
   return data as PostRoundsResponse;
@@ -186,16 +161,7 @@ async function removeRound(variables: IRemoveRound) {
     method: 'DELETE',
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to remove round';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to remove round');
   return response.json();
 }
 
@@ -217,16 +183,7 @@ async function createRoundCampaign(variables: ICreateRoundCampaign) {
     method: 'POST',
     body: formDataToSend,
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to create round-campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to create round-campaign');
   return response.json();
 }
 interface IUpdateRoundCampaign {
@@ -246,16 +203,7 @@ async function updateRoundCampaign(variables: IUpdateRoundCampaign) {
       body: formDataToSend,
     },
   );
-  if (!response.ok) {
-    let errorMsg = 'Failed to update round-campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to update round-campaign');
   return response.json();
 }
 interface IRemoveRoundCampaign {
@@ -270,16 +218,7 @@ async function removeRoundCampaign(variables: IRemoveRoundCampaign) {
     method: 'DELETE',
     body: formDataToSend,
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to remove round-campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to remove round-campaign');
   return response.json();
 }
 export function useRounds(status?: string) {
@@ -292,14 +231,7 @@ export function useRounds(status?: string) {
 
 async function fetchActiveRound() {
   const response = await fetch('/api/rounds/active');
-  if (!response.ok) {
-    let message = 'Failed to fetch active round';
-    try {
-      const error = await response.json();
-      message = error.error || message;
-    } catch {}
-    throw new Error(message);
-  }
+  await handleApiErrors(response, 'Failed to fetch active round');
   const data = await response.json();
   return data.round;
 }
@@ -314,14 +246,7 @@ export function useActiveRound() {
 
 async function fetchUpcomingRound() {
   const response = await fetch('/api/rounds/upcoming');
-  if (!response.ok) {
-    let message = 'Failed to fetch upcoming round';
-    try {
-      const error = await response.json();
-      message = error.error || message;
-    } catch {}
-    throw new Error(message);
-  }
+  await handleApiErrors(response, 'Failed to fetch upcoming round');
   const data = await response.json();
   return data.round as GetRoundResponseInstance;
 }
