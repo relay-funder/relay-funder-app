@@ -54,10 +54,6 @@ export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
 });
-// // @ts-expect-error fixing-error-in-appkit
-// wagmiAdapter.clearConnections = () => {};
-// // @ts-expect-error fixing-error-in-appkit
-// wagmiAdapter.addConnection = () => {};
 
 export const config = wagmiAdapter.wagmiConfig;
 
