@@ -7,6 +7,7 @@ import {
   GetPassportResponse,
   GetPassportResponseSchema,
 } from '@/lib/api/types';
+import { PROFILE_QUERY_KEY } from '@/lib/hooks/useProfile';
 
 export const PASSPORT_QUERY_KEY = 'passport_score';
 
@@ -49,7 +50,7 @@ export function usePassportScore() {
     queryKey: [PASSPORT_QUERY_KEY],
     queryFn: async () => {
       const data = await verifyUserPassportScore();
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: [PROFILE_QUERY_KEY] });
       return data;
     },
     enabled: authenticated,
