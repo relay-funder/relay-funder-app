@@ -14,7 +14,7 @@ export function convertPassportScoreToHumanityScore(
   scoreString: string,
 ): number {
   const score = parseFloat(scoreString);
-  if (isNaN(score)) {
+  if (!Number.isFinite(score)) {
     debug &&
       console.warn(
         '[Passport] Invalid score string, returning 0:',
@@ -22,7 +22,7 @@ export function convertPassportScoreToHumanityScore(
       );
     return 0;
   }
-  const rounded = Math.round(score);
+  const rounded = Math.max(Math.round(score), 0);
   debug &&
     console.log('[Passport] Converted score:', scoreString, '->', rounded);
   return rounded;

@@ -71,7 +71,11 @@ function VerifyButton({ compact = false }: { compact?: boolean }) {
 
   const isLoading = isFetching || isPending;
 
-  const hasBeenVerified = verificationData !== null;
+  // Note: this success comes from the passport score response
+  // so it's the verification set by the Scorer with id -> PASSPORT_SCORER_ID
+  // if we wanna easily change it through env variables,
+  // we can validate based on comparing the verificationData.passportScore with a set value in the envs
+  const hasBeenVerified = verificationData?.success === true;
 
   const verifyPassport = () => {
     refetch();
