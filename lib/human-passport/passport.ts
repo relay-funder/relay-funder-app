@@ -1,4 +1,4 @@
-'server only';
+import 'server-only';
 
 /**
  * Human Passport API Client
