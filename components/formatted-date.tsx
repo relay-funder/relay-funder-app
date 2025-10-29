@@ -13,7 +13,6 @@ export function FormattedDate({
   options?: Intl.DateTimeFormatOptions;
   relative?: boolean;
 }) {
-  console.log({ date, timestamp });
   const { formattedDate, relativeDate } = useDate(date, timestamp, options);
   if (relative) {
     return (
