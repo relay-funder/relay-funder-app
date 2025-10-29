@@ -7,7 +7,7 @@ on:
 
 jobs:
   version_bump:
-    if: github.event.head_commit.message == 'Merge pull request' # Only run on actual merge commits
+    if: startsWith(github.event.head_commit.message, 'Merge pull request') # Only run on actual merge commits
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,10 +15,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          ref: staging  # Checkout the staging branch
+          ref: staging # Checkout the staging branch
           fetch-depth: 0
+
+      - name: Merge main into staging
+        run: |
+          git merge origin/main --no-edit
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -63,13 +67,13 @@ jobs:
 
       - name: Push changes to staging
         run: git push origin staging
-
       - name: Create Pull Request to main
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Release ${{ steps.get_version.outputs.NEW_VERSION }}"
-          body: "Automated release pull request after merging to main."
-          head: staging
-          base: main
-          commit-message: "chore(release): Create release PR"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head staging \
+            --title "Release ${{ steps.get_version.outputs.NEW_VERSION }}" \
+            --body "Automated release pull request after merging to main." || \
+          echo "PR already exists or creation failed"

@@ -80,20 +80,21 @@ check_jq_installed
 VERSION_TYPE="patch"
 
 # Parse command-line arguments
-for arg in "$@"
-do
-    case "$arg" in
+if [ $# -gt 1 ]; then
+    echo "Error: Only one version bump type can be specified."
+    usage
+fi
+
+if [ $# -eq 1 ]; then
+    case "$1" in
         --major)
             VERSION_TYPE="major"
-            shift
             ;;
         --minor)
             VERSION_TYPE="minor"
-            shift
             ;;
         --patch)
             VERSION_TYPE="patch"
-            shift
             ;;
         *)
             usage
@@ -145,12 +146,17 @@ read -p "Review the changes above. Press Enter to continue with the commit, or C
 git add "${PACKAGE_JSON_PATH}"
 git commit -m "Release ${new_version}"
 
+echo "Pushing version bump to origin/${BRANCH_TO_UPDATE}..."
+git push origin "${BRANCH_TO_UPDATE}"
+
 echo "Version bump and commit successful."
 
 # 8. Unstash changes if any were stashed
-if git stash list | grep -q "Pre-version-bump stash"; then
+if git stash list | head -1 | grep -q "Pre-version-bump stash"; then
     echo "Unstashing previous changes..."
     git stash pop
+else
+    echo "No stashed changes to restore."
 fi
 
 echo "Script finished."
