@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { usePassportScore } from '@/lib/hooks/usePassportScore';
 import { cn } from '@/lib/utils';
+import { FormattedDate } from '@/components/formatted-date';
 import {
   Alert,
   AlertDescription,
@@ -34,7 +35,7 @@ interface PassportVerificationCardProps {
   currentScore?: number;
 }
 
-const scoreColor = cva('text-3xl font-bold', {
+const scoreTextColor = cva('text-3xl font-bold', {
   variants: {
     score: {
       high: 'text-green-600 dark:text-green-400',
@@ -138,7 +139,11 @@ export function PassportVerificationCard({
             </div>
             <div className="flex items-center sm:gap-2 md:gap-4">
               <div
-                className={`relative flex h-16 w-16 items-center justify-center rounded-full ${scoreBadgeColor({ score: scoreVariant }).replace('text-', 'bg-').replace('dark:text-', 'dark:bg-')} group-data-[state=open]:hidden`}
+                className={cn(
+                  'relative flex h-16 w-16 items-center justify-center rounded-full',
+                  'group-data-[state=open]:hidden',
+                  scoreBadgeColor({ score: scoreVariant }),
+                )}
               >
                 <span className={`text-3xl font-bold text-neutral-600`}>
                   {displayScore}
@@ -155,7 +160,7 @@ export function PassportVerificationCard({
                   <p className="text-sm text-muted-foreground">
                     Current Humanity Score
                   </p>
-                  <p className={scoreColor({ score: scoreVariant })}>
+                  <p className={scoreTextColor({ score: scoreVariant })}>
                     {displayScore}
                   </p>
                   <Badge
@@ -277,11 +282,15 @@ export function PassportVerificationCard({
                           <span className="text-muted-foreground">
                             Expires:
                           </span>
-                          <span className="font-medium">
-                            {new Date(
-                              verificationData.expirationTimestamp,
-                            ).toLocaleDateString()}
-                          </span>
+                          <FormattedDate
+                            className="font-medium"
+                            date={verificationData.expirationTimestamp}
+                            options={{
+                              year: 'numeric',
+                              month: 'numeric',
+                              day: 'numeric',
+                            }}
+                          />
                         </div>
                       </div>
                     </AccordionContent>

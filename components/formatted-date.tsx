@@ -1,19 +1,30 @@
 import { useDate } from '@/hooks/use-date';
 
 export function FormattedDate({
+  className,
   date,
   timestamp,
   options,
   relative = false,
 }: {
-  date?: Date;
+  className?: string;
+  date?: Date | string;
   timestamp?: string;
   options?: Intl.DateTimeFormatOptions;
   relative?: boolean;
 }) {
+  console.log({ date, timestamp });
   const { formattedDate, relativeDate } = useDate(date, timestamp, options);
   if (relative) {
-    return <span title={formattedDate}>{relativeDate}</span>;
+    return (
+      <span className={className} title={formattedDate}>
+        {relativeDate}
+      </span>
+    );
   }
-  return <span title={relativeDate}>{formattedDate}</span>;
+  return (
+    <span className={className} title={relativeDate}>
+      {formattedDate}
+    </span>
+  );
 }
