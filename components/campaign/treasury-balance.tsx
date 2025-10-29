@@ -1,5 +1,5 @@
 import { formatUSD } from '@/lib/format-usd';
-import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Wallet } from 'lucide-react';
