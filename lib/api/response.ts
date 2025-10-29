@@ -9,12 +9,16 @@ import {
   ApiConflictError,
   ApiRateLimitError,
 } from './error';
+import { IS_PRODUCTION } from '@/lib/constant';
 
 export async function response(data: unknown) {
   return NextResponse.json(data, { status: 200 });
 }
 
 export async function handleError(error: unknown) {
+  if (IS_PRODUCTION) {
+    console.log('API::handleError', error);
+  }
   if (error instanceof ApiAuthError) {
     return notAuthorized(error);
   }
@@ -28,7 +32,10 @@ export async function handleError(error: unknown) {
     return NextResponse.json(
       {
         success: false,
-        error: 'ApplicationError, data integrity failure: ' + error?.message,
+        error:
+          'ApplicationError, data integrity failure: ' + IS_PRODUCTION
+            ? ''
+            : error?.message,
       },
       { status: 500 },
     );
@@ -37,7 +44,10 @@ export async function handleError(error: unknown) {
     return NextResponse.json(
       {
         success: false,
-        error: 'ApplicationError, data conflict: ' + error?.message,
+        error:
+          'ApplicationError, data conflict: ' + IS_PRODUCTION
+            ? ''
+            : error?.message,
       },
       { status: 409 },
     );
@@ -46,7 +56,10 @@ export async function handleError(error: unknown) {
     return NextResponse.json(
       {
         success: false,
-        error: 'ApplicationError, invalid parameters: ' + error?.message,
+        error:
+          'ApplicationError, invalid parameters: ' + IS_PRODUCTION
+            ? ''
+            : error?.message,
         details: error.details,
       },
       { status: 400 },
@@ -56,7 +69,10 @@ export async function handleError(error: unknown) {
     return NextResponse.json(
       {
         success: false,
-        error: 'ApplicationError, instance not found: ' + error?.message,
+        error:
+          'ApplicationError, instance not found: ' + IS_PRODUCTION
+            ? ''
+            : error?.message,
       },
       { status: 404 },
     );
@@ -65,8 +81,15 @@ export async function handleError(error: unknown) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Service Error, upstream failure: ' + error?.message,
-        details: error instanceof Error ? error.message : String(error),
+        error:
+          'Service Error, upstream failure: ' + IS_PRODUCTION
+            ? ''
+            : error?.message,
+        details: IS_PRODUCTION
+          ? ''
+          : error instanceof Error
+            ? error.message
+            : String(error),
       },
       { status: 503 },
     );
@@ -74,6 +97,9 @@ export async function handleError(error: unknown) {
   let message = 'Unknown Error';
   if (error instanceof Error && 'message' in error) {
     message = error.message;
+  }
+  if (IS_PRODUCTION) {
+    message = 'General Error';
   }
   return NextResponse.json(
     { success: false, error: 'ApplicationError: ' + message },
@@ -89,8 +115,7 @@ export async function notAuthorized(cause?: Error) {
     {
       success: false,
       error: 'Not authorized',
-      details:
-        process.env.NODE_ENV === 'production' ? undefined : cause?.message,
+      details: IS_PRODUCTION ? undefined : cause?.message,
     },
     { status: 401 },
   );
@@ -104,8 +129,7 @@ export async function notAllowed(cause: Error) {
     {
       success: false,
       error: 'No permission to access resource',
-      details:
-        process.env.NODE_ENV === 'production' ? undefined : cause?.message,
+      details: IS_PRODUCTION ? undefined : cause?.message,
     },
     { status: 403 },
   );
@@ -118,7 +142,7 @@ export async function rateLimited(cause: ApiRateLimitError) {
     {
       success: false,
       error: 'Rate Limited',
-      details: cause?.message,
+      details: IS_PRODUCTION ? undefined : cause?.message,
     },
     {
       status: 429,
