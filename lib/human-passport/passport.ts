@@ -1,3 +1,5 @@
+'server only';
+
 /**
  * Human Passport API Client
  *
@@ -14,7 +16,7 @@ import {
   PASSPORT_API_KEY,
   PASSPORT_SCORER_ID,
 } from '@/lib/constant';
-import { RetryFetchError, retryFetchJson } from '@/lib/utils/retry';
+import { RetryFetchError, retryFetchJsonWithSchema } from '@/lib/utils/retry';
 import {
   PassportScoreResponseSchema,
   PassportStampsResponseSchema,
@@ -63,18 +65,11 @@ export async function getPassportScore(
   const url = `${PASSPORT_API_BASE_URL}${endpoint}`;
 
   try {
-    const result = await retryFetchJson<PassportScoreResponse>(
+    const result = await retryFetchJsonWithSchema(
+      PassportScoreResponseSchema,
       url,
       defaultInit,
     );
-
-    const parsed = PassportScoreResponseSchema.safeParse(result);
-
-    if (!parsed.success) {
-      throw new ApiUpstreamError(
-        `getPassportScore: invalid upstream response: ${parsed.error.message}`,
-      );
-    }
 
     debug &&
       console.log(
@@ -83,7 +78,7 @@ export async function getPassportScore(
         'passing:',
         result.passing_score,
       );
-    return parsed.data;
+    return result;
   } catch (error) {
     console.error('[Passport] Error getting score:', error);
     rethrowAsPassportError(error, 'getPassportScore');
@@ -119,22 +114,15 @@ export async function getPassportStamps(
   const url = `${PASSPORT_API_BASE_URL}${endpoint}`;
 
   try {
-    const result = await retryFetchJson<PassportStampsResponse>(
+    const result = await retryFetchJsonWithSchema(
+      PassportStampsResponseSchema,
       url,
       defaultInit,
     );
 
-    const parsed = PassportStampsResponseSchema.safeParse(result);
-
-    if (!parsed.success) {
-      throw new ApiUpstreamError(
-        `getPassportStamps: invalid upstream response: ${parsed.error.message}`,
-      );
-    }
-
     debug &&
       console.log('[Passport] Stamps retrieved:', result.items.length, 'items');
-    return parsed.data;
+    return result;
   } catch (error) {
     console.error('[Passport] Error getting stamps:', error);
     rethrowAsPassportError(error, 'getPassportStamps');
