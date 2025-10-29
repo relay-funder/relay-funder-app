@@ -54,7 +54,9 @@ export async function retryFetchJson<T>(
         throw error;
       }
 
-      if (attempt > maxRetries) throw error;
+      if (attempt > maxRetries) {
+        throw error;
+      }
 
       const delay = calculateDelay(attempt, baseDelay);
       await sleep(delay);
