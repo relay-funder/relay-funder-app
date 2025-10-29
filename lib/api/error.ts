@@ -1,5 +1,41 @@
 import { RateLimitInfo } from '@/lib/rate-limit/types';
 
+export async function handleApiErrors(
+  response: Response,
+  defaultMessage: string,
+) {
+  if (!response.ok) {
+    let errorMessage;
+    try {
+      errorMessage = await response.json();
+    } catch {
+      errorMessage = { error: `${defaultMessage} (HTTP ${response.status})` };
+    }
+    const baseMessage = errorMessage?.error || defaultMessage;
+    const fullMessage = errorMessage?.details
+      ? `${baseMessage}\nDetails: ${JSON.stringify(errorMessage.details, null, 2)}`
+      : baseMessage;
+
+    switch (response.status) {
+      case 401:
+        throw new ApiAuthError(fullMessage);
+      case 403:
+        throw new ApiAuthNotAllowed(fullMessage);
+      case 404:
+        throw new ApiNotFoundError(fullMessage);
+      case 409:
+        throw new ApiConflictError(fullMessage);
+      case 422:
+        throw new ApiParameterError(baseMessage, errorMessage?.details);
+      case 429:
+        throw new ApiRateLimitError(fullMessage);
+      default:
+        throw new Error(fullMessage);
+    }
+  }
+  return response;
+}
+
 /**
  * AuthError
  * Error to be thrown from route functions, used for consistent error responses

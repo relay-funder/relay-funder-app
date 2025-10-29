@@ -18,6 +18,7 @@ import {
 } from './useAdminConfigureTreasury';
 import { useAdminDeployTreasury } from './useAdminDeployTreasury';
 import { useAdminApproveCampaign as useAdminApproveCampaignApi } from '@/lib/hooks/useCampaigns';
+import { handleApiErrors } from '@/lib/api/error';
 
 // Add platform config
 const platformConfig = {
@@ -207,13 +208,7 @@ export function useAdminApproveCampaign() {
           'Content-Type': 'application/json',
         },
       });
-
-      if (!campaignResponse.ok) {
-        const errorData = await campaignResponse.json();
-        throw new Error(
-          `Failed to fetch campaign: ${errorData.error || 'Unknown error'}`,
-        );
-      }
+      await handleApiErrors(campaignResponse, 'Failed to fetch campaign');
 
       const { campaign } = await campaignResponse.json();
 
