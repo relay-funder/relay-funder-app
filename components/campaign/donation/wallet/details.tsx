@@ -3,23 +3,22 @@
 import { useState } from 'react';
 
 import { DbCampaign } from '@/types/campaign';
+import { useDonationContext } from '@/contexts';
 import { CampaignDonationWalletAmount } from './amount';
 import { CampaignDonationWalletTip } from './tip';
 import { CampaignDonationWalletProcess } from './process';
 import { CampaignDonationAnonymous } from '../anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
-import { USD_TOKEN } from '@/lib/constant';
 
 export function CampaignDonationWalletDetails({
   campaign,
 }: {
   campaign: DbCampaign;
 }) {
-  const [selectedToken, setSelectedToken] = useState<'USDC' | 'USDT'>(
-    USD_TOKEN,
-  );
-  const [amount, setAmount] = useState('0');
-  const [tipAmount, setTipAmount] = useState('0');
+  const { donation, setAmount, setToken, setTipAmount } = useDonationContext();
+
+  const { tipAmount, amount, token } = donation;
+
   const [donationAnonymous, setDonationAnonymous] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [email, setEmail] = useState('');
@@ -30,9 +29,9 @@ export function CampaignDonationWalletDetails({
         <div className="space-y-6">
           <CampaignDonationWalletAmount
             onAmountChanged={setAmount}
-            onTokenChanged={setSelectedToken}
+            onTokenChanged={setToken}
             amount={amount}
-            selectedToken={selectedToken}
+            selectedToken={token}
             email={email}
             onEmailChanged={setEmail}
           />
@@ -42,7 +41,7 @@ export function CampaignDonationWalletDetails({
             <CampaignDonationWalletTip
               tipAmount={tipAmount}
               amount={amount}
-              selectedToken={selectedToken}
+              selectedToken={token}
               onTipAmountChanged={setTipAmount}
             />
             <CampaignDonationAnonymous
@@ -57,7 +56,7 @@ export function CampaignDonationWalletDetails({
         amount={amount}
         tipAmount={tipAmount}
         donationToRelayFunder={0}
-        selectedToken={selectedToken}
+        selectedToken={token}
         anonymous={donationAnonymous}
         email={email}
         onProcessing={setProcessing}
