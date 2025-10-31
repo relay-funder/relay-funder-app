@@ -124,7 +124,7 @@ export function EmailCapture({
         <CardDescription>
           {profile?.email
             ? 'Update your contact information for this donation.'
-            : 'We need your email to send you donation updates and receipts.'}
+            : 'Your email allows us to send donation receipts, tax documents, and updates on how your contribution is making an impact.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -147,9 +147,9 @@ export function EmailCapture({
             <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
               <Shield className="h-4 w-4 flex-shrink-0" />
               <span>
-                We won&apos;t spam you and the email won&apos;t be publicly
-                visible. Your email will only be used for donation receipts and
-                important campaign updates.
+                Your email stays private and secure. We&apos;ll use it to send
+                donation receipts, tax documents, and updates on how your
+                contribution is creating real impact.
               </span>
             </div>
           </div>
