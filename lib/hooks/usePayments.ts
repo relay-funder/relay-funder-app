@@ -61,7 +61,7 @@ async function removePayment(variables: IRemovePayment) {
       body: JSON.stringify(variables),
     },
   );
-  await handleApiErrors(response, 'Failed to remove comment');
+  await handleApiErrors(response, 'Failed to remove payment');
 
   return response.json();
 }
