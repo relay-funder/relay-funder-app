@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 
 export const PROFILE_QUERY_KEY = 'profile';
 
@@ -41,10 +42,7 @@ async function updateUserProfileEmail(
     },
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update user profile email');
-  }
+  await handleApiErrors(response, 'Failed to update user profile email');
   const data = await response.json();
   return data.user;
 }
@@ -59,19 +57,14 @@ async function updateUserProfile(
     },
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update user profile');
-  }
+  await handleApiErrors(response, 'Failed to update user profile');
+
   const data = await response.json();
   return data.user;
 }
 async function fetchUserProfile(): Promise<IUserProfileApi> {
   const response = await fetch(`/api/users/me`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user profile');
-  }
+  await handleApiErrors(response, 'Failed to fetch user profile');
   const data = await response.json();
   return data;
 }

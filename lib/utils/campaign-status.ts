@@ -19,13 +19,22 @@ export function isCampaignActive(campaign?: DbCampaign): boolean {
 }
 
 /**
- * Check if a campaign is donatable (active + has transaction hash)
+ * Check if a campaign has started based on start time
+ */
+export function isCampaignStarted(campaign?: DbCampaign): boolean {
+  if (!campaign) return false;
+  return new Date(campaign.startTime).getTime() <= Date.now();
+}
+
+/**
+ * Check if a campaign is donatable (active + has transaction hash + has started)
  */
 export function isCampaignDonatable(campaign?: DbCampaign): boolean {
   if (!campaign) return false;
   return (
     campaign.status === CampaignStatus.ACTIVE &&
-    campaign.transactionHash !== null
+    campaign.transactionHash !== null &&
+    isCampaignStarted(campaign)
   );
 }
 

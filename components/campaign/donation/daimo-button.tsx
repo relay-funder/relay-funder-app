@@ -290,8 +290,8 @@ export function DaimoPayButtonComponent({
   );
 
   return (
-    <div className="w-full">
-      <DaimoPayButton
+    <div className="mb-6 w-full">
+      <DaimoPayButton.Custom
         appId={DAIMO_PAY_APP_ID}
         intent={dynamicIntent}
         toChain={paymentData.config.chainId}
@@ -310,7 +310,18 @@ export function DaimoPayButtonComponent({
         }}
         onPaymentCompleted={handlePaymentCompleted}
         onPaymentBounced={handlePaymentBounced}
-      />
+      >
+        {({ show }) => (
+          <Button variant="default" className="w-full" size="lg" onClick={show}>
+            Contribute to{' '}
+            <b>
+              {campaign.title.substring(0, 64)}
+              {campaign.title.length > 64 && '...'}
+            </b>{' '}
+            in {campaign.location}
+          </Button>
+        )}
+      </DaimoPayButton.Custom>
     </div>
   );
 }

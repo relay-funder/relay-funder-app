@@ -36,10 +36,18 @@ function transformEndTime(value: string) {
 
 export const CampaignFormSchema = z
   .object({
-    title: z.string().min(5, { message: 'Title must not be empty' }),
+    title: z
+      .string()
+      .min(1, { message: 'Title is required' })
+      .refine((value) => value.length >= 5, {
+        message: 'Title must be at least 5 characters long',
+      }),
     description: z
       .string()
-      .min(50, { message: 'Description must not be empty' }),
+      .min(1, { message: 'Description is required' })
+      .refine((value) => value.length >= 50, {
+        message: 'Description must be at least 50 characters long',
+      }),
     fundingGoal: z.string().refine(
       (value: string) => {
         const fValue = parseFloat(value);

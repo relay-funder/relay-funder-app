@@ -53,7 +53,7 @@ export function ReadMoreOrLess({
         (collapsed ? (
           <button
             onClick={onToggleCollapsed}
-            className="text-sm text-foreground hover:text-accent-foreground hover:underline focus:underline focus:outline-none"
+            className="text-sm text-foreground hover:underline focus:underline focus:outline-none"
           >
             Read more
           </button>

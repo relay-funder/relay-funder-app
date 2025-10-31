@@ -1,5 +1,7 @@
 import { Address, Hash } from '@/lib/web3/types';
 
+export * from './utils/types';
+
 //Define the missing interfaces
 export interface RecipientInitializeData {
   metadataRequired: boolean;

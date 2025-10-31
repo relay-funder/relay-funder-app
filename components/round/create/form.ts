@@ -70,8 +70,13 @@ export const RoundFormSchema = z
       .max(100, { message: 'Title must be 100 characters or less' }),
     description: z
       .string()
-      .min(10, { message: 'Description is required' })
-      .max(2000, { message: 'Description must be 2000 characters or less' }),
+      .min(1, { message: 'Description is required' })
+      .refine((value) => value.length >= 10, {
+        message: 'Description must be at least 10 characters long',
+      })
+      .refine((value) => value.length <= 2000, {
+        message: 'Description must be 2000 characters or less',
+      }),
     descriptionUrl: z
       .string()
       .optional()

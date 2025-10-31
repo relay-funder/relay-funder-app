@@ -10,3 +10,4 @@ export const debugLib = debug;
 export const debugComponentData = debug;
 export const debugAuth = debug;
 export const debugHook = debug;
+export const debugQf = process.env.NEXT_PUBLIC_DEBUG_QF === 'true' || false;

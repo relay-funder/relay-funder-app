@@ -429,15 +429,17 @@ function CampaignList() {
 **Custom Hook Pattern (PREFERRED):**
 
 ```typescript
+// Create dedicated fetch functions
+async function fetchCampaigns() {
+  const response = await fetch('/api/campaigns');
+  handleApiErrors(response,'Failed to fetch campaigns');
+  return response.json();
+},
 // ✅ Create reusable custom hooks in lib/hooks/
 export function useCampaigns() {
   return useQuery({
     queryKey: ['campaigns'],
-    queryFn: async () => {
-      const response = await fetch('/api/campaigns');
-      if (!response.ok) throw new Error('Failed to fetch campaigns');
-      return response.json();
-    },
+    queryFn: fetchCampaigns
   });
 }
 ```
@@ -445,7 +447,7 @@ export function useCampaigns() {
 **For Mutations:**
 
 ```typescript
-// ✅ Use useMutation for POST/PUT/DELETE
+// ✅ Use useMutation for POST/PUT/DELETE (also prefer dedicated fetch functions)
 const createMutation = useMutation({
   mutationFn: (data) =>
     fetch('/api/campaigns', { method: 'POST', body: JSON.stringify(data) }),

@@ -3,6 +3,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { PaginatedResponse } from '@/lib/api/types/common';
 import type { NotificationData } from '@/lib/notification';
 
@@ -70,16 +71,7 @@ export async function fetchAdminEventFeedPage({
   });
 
   const response = await fetch(url);
-  if (!response.ok) {
-    let message = 'Failed to fetch admin event feed';
-    try {
-      const err = await response.json();
-      message = err?.error || message;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
-  }
+  await handleApiErrors(response, 'Failed to fetch admin event feed');
 
   const data = (await response.json()) as PaginatedEventFeedResponse;
   return data;
@@ -128,17 +120,7 @@ async function markAdminEventFeedRead() {
     method: 'POST',
   });
 
-  if (!response.ok) {
-    let message = 'Failed to mark admin event feed as read';
-    try {
-      const err = await response.json();
-      message = err?.error || message;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
-  }
-
+  await handleApiErrors(response, 'Failed to mark admin event feed as read');
   return response.json() as Promise<{ success: boolean }>;
 }
 

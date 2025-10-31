@@ -150,7 +150,7 @@ export function CampaignDonationWalletProcess({
   return (
     <>
       <Button
-        className="w-full"
+        className="mb-6 w-full"
         size="lg"
         disabled={isButtonDisabled}
         onClick={onDonateStart}

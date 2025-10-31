@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CAMPAIGNS_QUERY_KEY, resetCampaign } from '@/lib/hooks/useCampaigns';
+import { handleApiErrors } from '@/lib/api/error';
 import type {
   PatchAdminCampaignFeaturedRouteBody,
   PatchAdminCampaignFeaturedRouteResponse,
@@ -30,14 +31,7 @@ async function patchAdminCampaignFeatured({
     body: JSON.stringify(body),
   });
 
-  if (!response.ok) {
-    let errorMsg = 'Failed to update campaign featured dates';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to update campaign featured dates');
 
   const result =
     (await response.json()) as PatchAdminCampaignFeaturedRouteResponse;

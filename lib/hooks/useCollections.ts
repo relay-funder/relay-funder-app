@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { Collection } from '@/types';
 import { QueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts';
@@ -9,29 +10,20 @@ const FEATURED_COLLECTIONS_QUERY_KEY = 'featured_collections';
 async function fetchFeaturedCollections() {
   const url = `/api/collections/featured`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch featured collections');
-  }
+  await handleApiErrors(response, 'Failed to fetch featured collections');
   const data = await response.json();
   return data.collections ?? [];
 }
 
 async function fetchCollection(collectionId: string): Promise<Collection> {
   const response = await fetch(`/api/collections/${collectionId}`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user collection');
-  }
+  await handleApiErrors(response, 'Failed to fetch user collection');
   const data = await response.json();
   return data.collection;
 }
 async function fetchUserCollections(): Promise<Collection[]> {
   const response = await fetch(`/api/collections`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch user collections');
-  }
+  await handleApiErrors(response, 'Failed to fetch user collections');
   const data = await response.json();
   return data.collections ?? [];
 }
@@ -82,10 +74,7 @@ export function useCreateCollection() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create collection');
-      }
+      await handleApiErrors(response, 'Failed to create collection');
 
       const data = await response.json();
       return data?.collection;
@@ -119,10 +108,7 @@ export function useCreateItemInCollection() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create collection item');
-      }
+      await handleApiErrors(response, 'Failed to add item to collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
@@ -155,10 +141,7 @@ export function useDeleteItemFromCollection() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete item from collection');
-      }
+      await handleApiErrors(response, 'Failed to remove item from collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
@@ -181,10 +164,7 @@ export function useDeleteCollection() {
         method: 'DELETE',
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete collection');
-      }
+      await handleApiErrors(response, 'Failed to delete collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
@@ -230,10 +210,7 @@ export function useUpdateCollection() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update collection');
-      }
+      await handleApiErrors(response, 'Failed to update collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });

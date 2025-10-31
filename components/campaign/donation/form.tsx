@@ -53,14 +53,14 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
       {showDaimoPay && showCryptoWallet ? (
         // Both payment methods enabled - show tabs
         <Tabs defaultValue={defaultTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="mb-6 grid w-full grid-cols-2">
             <TabsTrigger value="daimo" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
-              Daimo Pay
+              Pay Cross-chain
             </TabsTrigger>
             <TabsTrigger value="wallet" className="flex items-center gap-2">
               <Wallet className="h-4 w-4" />
-              Crypto Wallet
+              Pay Direct
             </TabsTrigger>
           </TabsList>
 

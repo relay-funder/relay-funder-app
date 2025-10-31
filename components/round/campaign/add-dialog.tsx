@@ -209,7 +209,7 @@ export function RoundAddDialog({
                               <span className="font-medium">
                                 {campaign.title}
                               </span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs">
                                 {campaign.category} • {campaign.status}
                               </span>
                             </div>

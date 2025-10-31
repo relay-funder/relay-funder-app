@@ -7,6 +7,7 @@ import {
 import type { PaginatedResponse } from '@/lib/api/types/common';
 import { useUserProfile, PROFILE_QUERY_KEY } from './useProfile';
 import { NotificationData } from '@/lib/notification';
+import { handleApiErrors } from '@/lib/api/error';
 
 export const EVENT_FEED_QUERY_KEY = 'event_feed';
 export const EVENT_FEED_REFETCH_INTERVAL = 90000; // 90 seconds
@@ -72,16 +73,7 @@ export async function fetchEventFeedPage({
   });
 
   const response = await fetch(url);
-  if (!response.ok) {
-    let message = 'Failed to fetch event feed';
-    try {
-      const err = await response.json();
-      message = err?.error || message;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
-  }
+  await handleApiErrors(response, 'Failed to fetch event feed');
 
   const data = (await response.json()) as PaginatedEventFeedResponse;
   return data;
@@ -129,17 +121,7 @@ async function markEventFeedRead() {
   const response = await fetch('/api/event-feed', {
     method: 'POST',
   });
-
-  if (!response.ok) {
-    let message = 'Failed to mark event feed as read';
-    try {
-      const err = await response.json();
-      message = err?.error || message;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
-  }
+  await handleApiErrors(response, 'Failed to mark event feed as read');
 
   return response.json() as Promise<{ success: boolean }>;
 }

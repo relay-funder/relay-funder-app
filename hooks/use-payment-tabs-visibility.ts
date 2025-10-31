@@ -1,3 +1,4 @@
+import { DAIMO_PAY_APP_ID } from '@/lib/constant';
 import { getFeatureFlagString } from '@/lib/flags';
 
 export type PaymentMethodOption =
@@ -24,7 +25,14 @@ export function usePaymentTabsVisibility(): PaymentTabsVisibility {
   const paymentMethod = getFeatureFlagString(
     'PAYMENT_METHODS',
   ) as PaymentMethodOption;
-
+  const isDaimoConfigured = DAIMO_PAY_APP_ID !== '';
+  if (!isDaimoConfigured) {
+    return {
+      showDaimoPay: false,
+      showCryptoWallet: true,
+      defaultTab: 'wallet',
+    };
+  }
   switch (paymentMethod) {
     case 'daimo-only':
       return {

@@ -34,12 +34,7 @@ export function PaymentSwitchWalletNetwork() {
   }, [switchNetwork, toast]);
   if (!ready) {
     return (
-      <Button
-        variant="secondary"
-        size="sm"
-        disabled={true}
-        className="w-full text-black"
-      >
+      <Button variant="secondary" size="sm" disabled={true} className="w-full">
         <Loader2 /> Connecting to Wallet
       </Button>
     );
@@ -49,10 +44,10 @@ export function PaymentSwitchWalletNetwork() {
   }
   return (
     <Button
-      variant="secondary"
+      variant="default"
       size="sm"
       onClick={handleNetworkSwitch}
-      className="w-full text-black"
+      className="w-full"
     >
       Switch Network
     </Button>

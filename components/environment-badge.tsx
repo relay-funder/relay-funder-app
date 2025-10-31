@@ -37,6 +37,8 @@ export function EnvironmentBadge() {
     }
   };
 
+  if (env === 'production') return null;
+
   if (isLoading) return null;
 
   return (
