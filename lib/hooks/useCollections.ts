@@ -141,7 +141,7 @@ export function useDeleteItemFromCollection() {
         }),
       });
 
-      await handleApiErrors(response, 'Failed to add item to collection');
+      await handleApiErrors(response, 'Failed to remove item from collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
