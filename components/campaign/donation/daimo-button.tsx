@@ -290,7 +290,7 @@ export function DaimoPayButtonComponent({
   );
 
   return (
-    <div className="w-full">
+    <div className="mb-6 w-full">
       <DaimoPayButton.Custom
         appId={DAIMO_PAY_APP_ID}
         intent={dynamicIntent}
