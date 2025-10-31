@@ -210,7 +210,7 @@ export function useUpdateCollection() {
         }),
       });
 
-      await handleApiErrors(response, 'Failed to delete collection');
+      await handleApiErrors(response, 'Failed to update collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
