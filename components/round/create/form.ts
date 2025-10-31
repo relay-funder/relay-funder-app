@@ -67,12 +67,7 @@ export const RoundFormSchema = z
     title: z
       .string()
       .min(1, { message: 'Title is required' })
-      .refine((value) => value.length >= 1, {
-        message: 'Title must be at least 1 character long',
-      })
-      .refine((value) => value.length <= 100, {
-        message: 'Title must be 100 characters or less',
-      }),
+      .max(100, { message: 'Title must be 100 characters or less' }),
     description: z
       .string()
       .min(1, { message: 'Description is required' })
