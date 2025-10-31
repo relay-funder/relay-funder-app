@@ -34,12 +34,26 @@ export const CampaignFormSchema = z
   .object({
     title: z
       .string()
-      .min(5, { message: 'Title must not be empty' })
-      .max(100, { message: 'Title must be 100 characters or less' }),
+      .min(1, { message: 'Title is required' })
+      .refine(
+        (value) => value.length >= 5,
+        { message: 'Title must be at least 5 characters long' }
+      )
+      .refine(
+        (value) => value.length <= 100,
+        { message: 'Title must be 100 characters or less' }
+      ),
     description: z
       .string()
-      .min(50, { message: 'Description must not be empty' })
-      .max(2000, { message: 'Description must be 2000 characters or less' }),
+      .min(1, { message: 'Description is required' })
+      .refine(
+        (value) => value.length >= 50,
+        { message: 'Description must be at least 50 characters long' }
+      )
+      .refine(
+        (value) => value.length <= 2000,
+        { message: 'Description must be 2000 characters or less' }
+      ),
     fundingGoal: z.string().refine(
       (value: string) => {
         const fValue = parseFloat(value);
