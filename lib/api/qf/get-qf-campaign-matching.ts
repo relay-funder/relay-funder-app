@@ -37,7 +37,9 @@ export async function getQfCampaignMatching(
   );
 
   if (!campaignDistribution) {
-    throw new ApiParameterError('Campaign matching amount not found');
+    throw new ApiParameterError(
+      `Campaign ${campaignId} not found in round ${roundId} distribution`,
+    );
   }
 
   debug &&
