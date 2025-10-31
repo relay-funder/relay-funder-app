@@ -164,7 +164,7 @@ export function useDeleteCollection() {
         method: 'DELETE',
       });
 
-      await handleApiErrors(response, 'Failed to remove item from collection');
+      await handleApiErrors(response, 'Failed to delete collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
