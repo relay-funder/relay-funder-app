@@ -108,7 +108,7 @@ export function useCreateItemInCollection() {
         }),
       });
 
-      await handleApiErrors(response, 'Failed to update collection');
+      await handleApiErrors(response, 'Failed to add item to collection');
       queryClient.invalidateQueries({
         queryKey: [COLLECTIONS_QUERY_KEY, collectionId],
       });
