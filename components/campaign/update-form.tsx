@@ -27,17 +27,15 @@ const campaignUpdateFormSchema = z.object({
   title: z
     .string()
     .min(1, { message: 'Title is required' })
-    .refine(
-      (value) => value.length >= 1,
-      { message: 'Title must be at least 1 character long' }
-    ),
+    .refine((value) => value.length >= 1, {
+      message: 'Title must be at least 1 character long',
+    }),
   content: z
     .string()
     .min(1, { message: 'Content is required' })
-    .refine(
-      (value) => value.length >= 1,
-      { message: 'Content must be at least 1 character long' }
-    ),
+    .refine((value) => value.length >= 1, {
+      message: 'Content must be at least 1 character long',
+    }),
   media: z.any().optional(),
 });
 type CampaignUpdateFormValues = z.infer<typeof campaignUpdateFormSchema>;
