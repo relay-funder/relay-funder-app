@@ -31,8 +31,6 @@ class CampaignDetailsApiUser(HttpUser):
         """
         Performs the API call to GET /api/campaigns and populates the identifier list.
         """
-        # Set the flag immediately to prevent other users in this process from trying
-        CampaignDetailsApiUser._identifiers_fetched = True
 
         print("INFO: Starting setup to fetch public campaign identifiers...")
 
@@ -46,8 +44,10 @@ class CampaignDetailsApiUser(HttpUser):
 
             if response.status_code != 200:
                 print(
-                    f"ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}"
+                    f"ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}. Retrying later."
                 )
+                CampaignDetailsApiUser._campaign_identifiers = []
+                CampaignDetailsApiUser._identifiers_fetched = False
                 return
 
             data = response.json()
@@ -62,14 +62,22 @@ class CampaignDetailsApiUser(HttpUser):
 
                 if identifiers:
                     CampaignDetailsApiUser._campaign_identifiers = identifiers
+                    CampaignDetailsApiUser._identifiers_fetched = True
                     print(
                         f"INFO: Successfully fetched {len(identifiers)} active campaign identifiers."
                     )
                 else:
-                    print("WARNING: Campaign list was empty or missing identifiers.")
+                    print(
+                        "WARNING: Campaign list was empty or missing identifiers. Retrying later."
+                    )
+                    CampaignDetailsApiUser._campaign_identifiers = []
+                    CampaignDetailsApiUser._identifiers_fetched = False
 
         except Exception as e:
-            print(f"CRITICAL ERROR: Exception during campaign identifier setup: {e}")
+            print(
+                f"CRITICAL ERROR: Exception during campaign identifier setup: {e}. Retrying later."
+            )
+            CampaignDetailsApiUser._campaign_identifiers = []
             # Reset flag if critical failure occurred, allowing retry by next user
             CampaignDetailsApiUser._identifiers_fetched = False
 

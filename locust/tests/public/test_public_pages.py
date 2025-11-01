@@ -1,5 +1,6 @@
 import random
 import json
+import threading
 from locust import HttpUser, task, between
 
 
@@ -15,22 +16,23 @@ class PublicWebsiteUser(HttpUser):
     # Class-level list to store valid campaign slugs
     _campaign_slugs = []
     _slugs_fetched = False
+    _slugs_lock = threading.Lock()
+    _slug_fetch_attempts = 0
+    MAX_SLUG_FETCH_ATTEMPTS = 3
     MAX_CAMPAIGNS_TO_FETCH = 10
 
     def on_start(self):
         """
         Called when a user starts. Ensures campaign slugs are fetched once per worker process.
         """
-        if not PublicWebsiteUser._slugs_fetched:
-            self._fetch_campaign_slugs()
+        with PublicWebsiteUser._slugs_lock:
+            if not PublicWebsiteUser._slugs_fetched:
+                self._fetch_campaign_slugs()
 
     def _fetch_campaign_slugs(self):
         """
         Performs the API call to GET /api/campaigns and populates the slug list.
         """
-        # Set the flag immediately to prevent other users in this process from trying
-        PublicWebsiteUser._slugs_fetched = True
-
         print("INFO: Starting setup to fetch public campaign slugs for page tests...")
 
         try:
@@ -41,9 +43,20 @@ class PublicWebsiteUser(HttpUser):
             )
 
             if response.status_code != 200:
-                print(
-                    f"ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}"
-                )
+                PublicWebsiteUser._slug_fetch_attempts += 1
+                PublicWebsiteUser._campaign_slugs = []  # Clear slugs regardless
+                if (
+                    PublicWebsiteUser._slug_fetch_attempts
+                    < PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS
+                ):
+                    PublicWebsiteUser._slugs_fetched = False
+                    print(
+                        f"ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}. Attempt {PublicWebsiteUser._slug_fetch_attempts}/{PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS}. Retrying later."
+                    )
+                else:
+                    print(
+                        f"CRITICAL ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}. Max attempts reached ({PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS}). Setup aborted."
+                    )
                 return
 
             data = response.json()
@@ -57,24 +70,47 @@ class PublicWebsiteUser(HttpUser):
 
                 if slugs:
                     PublicWebsiteUser._campaign_slugs = slugs
+                    PublicWebsiteUser._slugs_fetched = True
+                    PublicWebsiteUser._slug_fetch_attempts = 0
                     print(
                         f"INFO: Successfully fetched {len(slugs)} campaign slugs for page tests."
                     )
                 else:
-                    print(
-                        "WARNING: Campaign list was empty or missing slugs. Detail page tests may fail."
-                    )
+                    PublicWebsiteUser._slug_fetch_attempts += 1
+                    PublicWebsiteUser._campaign_slugs = []  # Clear slugs regardless
+                    if (
+                        PublicWebsiteUser._slug_fetch_attempts
+                        < PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS
+                    ):
+                        PublicWebsiteUser._slugs_fetched = False
+                        print(
+                            f"WARNING: Campaign list was empty or missing slugs. Attempt {PublicWebsiteUser._slug_fetch_attempts}/{PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS}. Retrying later."
+                        )
+                    else:
+                        print(
+                            f"CRITICAL ERROR: Campaign list was empty or missing slugs. Max attempts reached ({PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS}). Setup aborted."
+                        )
 
         except Exception as e:
-            print(f"CRITICAL ERROR: Exception during campaign slug setup: {e}")
-            # Reset flag if critical failure occurred, allowing retry by next user
-            PublicWebsiteUser._slugs_fetched = False
+            PublicWebsiteUser._slug_fetch_attempts += 1
+            PublicWebsiteUser._campaign_slugs = []
+            if (
+                PublicWebsiteUser._slug_fetch_attempts
+                < PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS
+            ):
+                PublicWebsiteUser._slugs_fetched = False
+                print(
+                    f"CRITICAL ERROR: Exception during campaign slug setup: {e}. Attempt {PublicWebsiteUser._slug_fetch_attempts}/{PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS}. Retrying later."
+                )
+            else:
+                print(
+                    f"CRITICAL ERROR: Exception during campaign slug setup: {e}. Max attempts reached ({PublicWebsiteUser.MAX_SLUG_FETCH_ATTEMPTS}). Setup aborted."
+                )
 
     def _get_random_slug(self):
         """Returns a random campaign slug from the fetched list or a placeholder."""
         if not PublicWebsiteUser._campaign_slugs:
-            # Fallback to a placeholder slug if setup failed
-            return random.choice(["placeholder-slug-1", "placeholder-slug-2"])
+            raise Exception("No campaign slugs available for testing.")
         return random.choice(PublicWebsiteUser._campaign_slugs)
 
     @task(5)  # Higher weight for the root page

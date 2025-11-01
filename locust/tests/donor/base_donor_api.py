@@ -34,8 +34,6 @@ class BaseDonorApiUser(AuthenticatedUser):
         """
         Performs the API call to GET /api/campaigns and populates the ID list.
         """
-        # Set the flag immediately to prevent other users in this process from trying
-        BaseDonorApiUser._ids_fetched = True
         print("INFO: Starting setup to fetch campaign IDs for donor API tests...")
 
         try:
@@ -49,6 +47,8 @@ class BaseDonorApiUser(AuthenticatedUser):
                 print(
                     f"ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}"
                 )
+                BaseDonorApiUser._campaign_ids = []
+                BaseDonorApiUser._ids_fetched = False
                 return
 
             data = response.json()
@@ -62,6 +62,7 @@ class BaseDonorApiUser(AuthenticatedUser):
 
                 if ids:
                     BaseDonorApiUser._campaign_ids = ids
+                    BaseDonorApiUser._ids_fetched = True
                     print(
                         f"INFO: Successfully fetched {len(ids)} campaign IDs for donor API tests."
                     )
@@ -69,9 +70,12 @@ class BaseDonorApiUser(AuthenticatedUser):
                     print(
                         "WARNING: Campaign list was empty or missing IDs. Donor tasks may fail."
                     )
+                    BaseDonorApiUser._campaign_ids = []
+                    BaseDonorApiUser._ids_fetched = False
 
         except Exception as e:
             print(f"CRITICAL ERROR: Exception during campaign ID setup: {e}")
+            BaseDonorApiUser._campaign_ids = []
             BaseDonorApiUser._ids_fetched = False
 
     def _get_random_campaign_id(self):

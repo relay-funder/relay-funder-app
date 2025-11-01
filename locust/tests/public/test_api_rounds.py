@@ -24,8 +24,11 @@ class RoundsApiUser(HttpUser):
         if response.status_code == 200:
             try:
                 data = response.json()
-                # Assuming the response is a list of rounds or an object with a 'data' key containing a list
-                rounds = data.get("data", data)
+                rounds = []
+                if isinstance(data, dict):
+                    rounds = data.get("data", [])
+                elif isinstance(data, list):
+                    rounds = data
                 self.public_round_ids = [
                     round_data["id"]
                     for round_data in rounds

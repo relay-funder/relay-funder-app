@@ -32,9 +32,6 @@ class DonorWebsiteUser(AuthenticatedUser):
         """
         Performs the API call to GET /api/campaigns and populates the slug list.
         """
-        # Set the flag immediately to prevent other users in this process from trying
-        DonorWebsiteUser._slugs_fetched = True
-
         print("INFO: Starting setup to fetch campaign slugs for donor page tests...")
 
         try:
@@ -48,6 +45,8 @@ class DonorWebsiteUser(AuthenticatedUser):
                 print(
                     f"ERROR: Failed to fetch campaign list during setup. Status: {response.status_code}"
                 )
+                DonorWebsiteUser._campaign_slugs = []
+                DonorWebsiteUser._slugs_fetched = False
                 return
 
             data = response.json()
@@ -61,6 +60,7 @@ class DonorWebsiteUser(AuthenticatedUser):
 
                 if slugs:
                     DonorWebsiteUser._campaign_slugs = slugs
+                    DonorWebsiteUser._slugs_fetched = True
                     print(
                         f"INFO: Successfully fetched {len(slugs)} campaign slugs for donor page tests."
                     )
@@ -68,10 +68,13 @@ class DonorWebsiteUser(AuthenticatedUser):
                     print(
                         "WARNING: Campaign list was empty or missing slugs. Detail page tests may fail."
                     )
+                    DonorWebsiteUser._campaign_slugs = []
+                    DonorWebsiteUser._slugs_fetched = False
 
         except Exception as e:
             print(f"CRITICAL ERROR: Exception during campaign slug setup: {e}")
             # Reset flag if critical failure occurred, allowing retry by next user
+            DonorWebsiteUser._campaign_slugs = []
             DonorWebsiteUser._slugs_fetched = False
 
     def _get_random_slug(self):
