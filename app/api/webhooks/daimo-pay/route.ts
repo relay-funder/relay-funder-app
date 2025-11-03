@@ -181,16 +181,17 @@ export async function POST(req: Request) {
         );
       }
 
-      // Find or create user by address
+      // Find or create user by address (normalized)
       let user = await db.user.findUnique({
-        where: { address: userAddress },
+        where: { address: userAddress.toLowerCase() },
       });
 
       if (!user) {
         // Create user if doesn't exist
         user = await db.user.create({
           data: {
-            address: userAddress,
+            address: userAddress.toLowerCase(), // normalized address
+            rawAddress: userAddress, // original case-sensitive address
             email: userEmail || null,
           },
         });
@@ -469,7 +470,7 @@ export async function POST(req: Request) {
       Promise.resolve().then(async () => {
         try {
           const executionResult = await executeGatewayPledge(payment.id);
-          
+
           debug &&
             console.log(
               `Daimo Pay: Pledge execution completed for payment ${payment.id}:`,

@@ -74,8 +74,8 @@ export async function executeGatewayPledge(
       pledgeId: metadata.onChainPledgeId as string,
       transactionHash: metadata.treasuryTxHash as string,
       blockNumber: 0, // Not available for already-executed pledges
-      pledgeAmount: ((metadata.pledgeAmount as string) || '0'),
-      tipAmount: ((metadata.tipAmount as string) || '0'),
+      pledgeAmount: (metadata.pledgeAmount as string) || '0',
+      tipAmount: (metadata.tipAmount as string) || '0',
     };
   }
 
@@ -218,7 +218,9 @@ export async function executeGatewayPledge(
   // Contract transfers both to treasury, tips tracked separately in contract state
   if (currentAllowance < totalAmountUnits) {
     debug &&
-      console.log('[Execute Gateway] Approving treasury for total amount (pledge + tip)');
+      console.log(
+        '[Execute Gateway] Approving treasury for total amount (pledge + tip)',
+      );
 
     const approveTx = await usdContract.approve(
       payment.campaign.treasuryAddress,
@@ -279,7 +281,10 @@ export async function executeGatewayPledge(
   const receipt = await Promise.race([
     tx.wait(),
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Transaction timeout after 60s')), 60000),
+      setTimeout(
+        () => reject(new Error('Transaction timeout after 60s')),
+        60000,
+      ),
     ),
   ]);
 
@@ -351,4 +356,3 @@ export async function executeGatewayPledge(
 
   return result;
 }
-

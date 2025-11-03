@@ -60,8 +60,7 @@ export function useDaimoDonationCallback({
         throw new Error('Daimo Pay event missing payment ID');
       }
 
-      debug &&
-        console.log('Daimo Pay: Payment ID extracted:', daimoPaymentId);
+      debug && console.log('Daimo Pay: Payment ID extracted:', daimoPaymentId);
       debug &&
         console.log(
           'Daimo Pay: Payment record will be created by webhook (payment_started event)',

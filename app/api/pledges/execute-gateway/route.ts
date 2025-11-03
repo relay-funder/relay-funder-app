@@ -29,7 +29,8 @@ export async function POST(req: Request) {
 
     const { paymentId } = validatedData;
 
-    debug && console.log('[Execute Gateway API] Processing payment:', { paymentId });
+    debug &&
+      console.log('[Execute Gateway API] Processing payment:', { paymentId });
 
     // Execute the pledge using shared logic
     const result = await executeGatewayPledge(paymentId);
@@ -40,4 +41,3 @@ export async function POST(req: Request) {
     return handleError(error);
   }
 }
-

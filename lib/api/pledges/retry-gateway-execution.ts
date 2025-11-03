@@ -47,7 +47,8 @@ export async function getFailedGatewayPledges() {
  * @returns Execution result
  */
 export async function retryGatewayPledge(paymentId: string) {
-  debug && console.log('[Retry Helper] Retrying pledge for payment:', paymentId);
+  debug &&
+    console.log('[Retry Helper] Retrying pledge for payment:', paymentId);
 
   try {
     const result = await executeGatewayPledge(paymentId);
@@ -114,4 +115,3 @@ export async function retryAllFailedPledges() {
     results,
   };
 }
-
