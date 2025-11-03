@@ -138,15 +138,18 @@ export async function POST(req: Request) {
       throw new ApiParameterError('Missing type in webhook payload');
     }
 
+    // Define payment include shape for type consistency
+    const paymentInclude = {
+      user: true,
+      campaign: true,
+    } satisfies Prisma.PaymentInclude;
+
     // Find or create payment based on event type
     let payment = await db.payment.findFirst({
       where: {
         transactionHash: payload.paymentId,
       },
-      include: {
-        user: true,
-        campaign: true,
-      },
+      include: paymentInclude,
     });
 
     // Create payment on payment_started if it doesn't exist
@@ -218,10 +221,7 @@ export async function POST(req: Request) {
             createdAt: new Date().toISOString(),
           },
         },
-        include: {
-          user: true,
-          campaign: true,
-        },
+        include: paymentInclude,
       });
 
       debug &&
@@ -391,10 +391,7 @@ export async function POST(req: Request) {
     const updatedPayment = await db.payment.update({
       where: { id: payment.id },
       data: baseUpdateData,
-      include: {
-        user: true,
-        campaign: true,
-      },
+      include: paymentInclude,
     });
 
     debug &&
