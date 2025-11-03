@@ -4,6 +4,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { PaginatedResponse } from '@/lib/api/types';
 import { resetCampaign } from './useCampaigns';
 
@@ -96,14 +97,7 @@ async function fetchAdminWithdrawalsPage({
     filters,
   });
   const response = await fetch(url);
-  if (!response.ok) {
-    let errorMsg = 'Failed to fetch admin withdrawals';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to fetch admin withdrawals');
   const data = await response.json();
   return data as PaginatedWithdrawalsResponse;
 }
@@ -219,18 +213,7 @@ async function approveWithdrawal({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ withdrawalId, transactionHash, notes }),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to approve withdrawal';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${
-            errorData.details ? ': ' + errorData.details : ''
-          }`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to approve withdrawal');
   return response.json();
 }
 
@@ -258,14 +241,7 @@ export const ADMIN_WITHDRAWAL_QUERY_KEY = 'admin_withdrawal';
 // GET /api/admin/withdrawals/:id
 async function fetchAdminWithdrawal(id: number) {
   const response = await fetch(`/api/admin/withdrawals/${id}`);
-  if (!response.ok) {
-    let errorMsg = 'Failed to fetch withdrawal';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to fetch withdrawal');
   const result = await response.json();
   return result.withdrawal;
 }
@@ -297,14 +273,7 @@ async function patchAdminWithdrawal({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to update withdrawal';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to update withdrawal');
   return response.json();
 }
 
@@ -336,14 +305,7 @@ async function removeAdminWithdrawal({ id }: RemoveAdminWithdrawalVariables) {
   const response = await fetch(`/api/admin/withdrawals/${id}`, {
     method: 'DELETE',
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to delete withdrawal';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to delete withdrawal');
   return response.json();
 }
 

@@ -1,5 +1,12 @@
 'use client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui';
 import { type DbCampaign } from '@/types/campaign';
 import { CampaignDetailTabUpdates } from './detail-tab-updates';
 import { CampaignDetailTabComments } from './detail-tab-comments';
@@ -27,45 +34,98 @@ export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
   });
 
   const showRoundsTab = isRoundsVisibilityEnabled || isAdmin;
+
+  // Define available tabs with their labels and counts
+  const tabOptions = [
+    {
+      value: 'updates',
+      label: 'Updates',
+      count: campaign._count?.updates ?? 0,
+    },
+    {
+      value: 'transactions',
+      label: 'Transactions',
+      count: contributorCount - contributorPendingCount,
+    },
+    {
+      value: 'comments',
+      label: 'Comments',
+      count: campaign._count?.comments ?? 0,
+    },
+    ...(showRoundsTab
+      ? [
+          {
+            value: 'rounds',
+            label: 'Rounds',
+            count: campaign.rounds?.length ?? 0,
+          },
+        ]
+      : []),
+  ];
+
+  const getCurrentTabLabel = () => {
+    const currentTab = tabOptions.find((tab) => tab.value === activeTab);
+    return currentTab
+      ? `${currentTab.label} (${currentTab.count})`
+      : 'Select section';
+  };
+
   const gridCols = showRoundsTab
-    ? 'grid-cols-2 sm:grid-cols-4'
+    ? 'grid-cols-1 sm:grid-cols-4'
     : 'grid-cols-1 sm:grid-cols-3';
 
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Mobile: Dropdown Select */}
+        <div className="mb-4 block sm:hidden">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select section">
+                {getCurrentTabLabel()}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {tabOptions.map((tab) => (
+                <SelectItem key={tab.value} value={tab.value}>
+                  {tab.label} ({tab.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Traditional Tabs */}
         <TabsList
-          className={`grid h-auto w-full gap-1 rounded-md bg-muted p-1 pb-[3px] ${gridCols} sm:gap-0`}
+          className={`hidden h-auto w-full gap-2 rounded-md bg-muted p-2 pb-[6px] sm:grid ${gridCols} sm:gap-0 sm:p-1 sm:pb-[3px]`}
         >
           <TabsTrigger
             value="updates"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-2 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
             <span>Updates</span>
             <span className="ml-1">({campaign._count?.updates ?? 0})</span>
           </TabsTrigger>
           <TabsTrigger
             value="transactions"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-2 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
-            <span className="hidden sm:inline">Transactions</span>
-            <span className="sm:hidden">Trans.</span>
+            <span>Transactions</span>
             <span className="ml-1">
               ({contributorCount - contributorPendingCount})
             </span>
           </TabsTrigger>
           <TabsTrigger
             value="comments"
-            className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+            className="rounded-sm px-2 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
           >
-            <span className="hidden sm:inline">Comments</span>
-            <span className="sm:hidden">Comm.</span>
+            <span>Comments</span>
             <span className="ml-1">({campaign._count?.comments ?? 0})</span>
           </TabsTrigger>
           {showRoundsTab && (
             <TabsTrigger
               value="rounds"
-              className="rounded-sm px-1 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
+              className="rounded-sm px-2 py-2 text-xs font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-2 sm:py-1.5 sm:text-sm"
             >
               <span>Rounds</span>
               <span className="ml-1">({campaign.rounds?.length ?? 0})</span>

@@ -4,6 +4,7 @@ import { DonationProcessStates } from '@/types/campaign';
 import { debugWeb3 as debug } from '@/lib/debug';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import type { Chain, Client, Transport } from 'viem';
+import { handleApiErrors } from '@/lib/api/error';
 
 export async function requestTransaction({
   client,
@@ -78,33 +79,10 @@ export async function requestTransaction({
         gatewayFee: 0, // No gateway fee for direct wallet pledges
       }),
     });
-
-    if (!registerResponse.ok) {
-      let errorMessage = 'Failed to register pledge with backend';
-      let errorDetails = '';
-
-      try {
-        const errorData = await registerResponse.json();
-        errorMessage = errorData.error || errorMessage;
-        errorDetails = errorData.details || '';
-      } catch {
-        // JSON parse failed, use default message
-      }
-
-      // Log detailed error for debugging
-      console.error('Pledge registration failed:', {
-        status: registerResponse.status,
-        statusText: registerResponse.statusText,
-        error: errorMessage,
-        details: errorDetails,
-      });
-
-      // Throw error with user-friendly message
-      const fullError = errorDetails
-        ? `${errorMessage}\nDetails: ${errorDetails}`
-        : errorMessage;
-      throw new Error(fullError);
-    }
+    await handleApiErrors(
+      registerResponse,
+      'Failed to register pledge with backend',
+    );
 
     registerData = await registerResponse.json();
 

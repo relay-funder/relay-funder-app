@@ -4,6 +4,7 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query';
 import type { GetCampaignUpdatesResponse } from '@/lib/api/types';
+import { handleApiErrors } from '@/lib/api/error';
 export const CAMPAIGNS_UPDATES_QUERY_KEY = 'campaigns_updates';
 
 interface ICreateCampaignUpdate {
@@ -29,11 +30,7 @@ async function createCampaignUpdate(variables: ICreateCampaignUpdate) {
     method: 'POST',
     body: formData,
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create update');
-  }
+  await handleApiErrors(response, 'Failed to create update');
 
   return response.json();
 }
@@ -46,11 +43,7 @@ async function toggleHideCampaignUpdate(variables: IToggleHideCampaignUpdate) {
       method: 'PATCH',
     },
   );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to toggle hide update');
-  }
+  await handleApiErrors(response, 'Failed to toggle hide update');
 
   return response.json();
 }
@@ -68,10 +61,7 @@ async function fetchUpdatePage({
 }) {
   const url = `/api/campaigns/${campaignId}/updates?page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch updates');
-  }
+  await handleApiErrors(response, 'Failed to fetch updates');
   const data = await response.json();
   return data as PaginatedUpdateResponse;
 }

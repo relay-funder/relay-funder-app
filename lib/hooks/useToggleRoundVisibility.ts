@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { ROUNDS_QUERY_KEY, ROUND_QUERY_KEY } from './useRounds';
+import { handleApiErrors } from '@/lib/api/error';
 
 interface ToggleRoundVisibilityInput {
   roundId: number;
@@ -16,15 +17,7 @@ async function toggleRoundVisibility({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ isHidden }),
   });
-
-  if (!response.ok) {
-    let message = 'Failed to update round visibility';
-    try {
-      const error = await response.json();
-      message = error.error || message;
-    } catch {}
-    throw new Error(message);
-  }
+  await handleApiErrors(response, 'Failed to update round visibility');
 
   return response.json();
 }

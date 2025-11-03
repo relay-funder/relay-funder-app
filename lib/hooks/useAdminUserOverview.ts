@@ -1,6 +1,7 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AdminUserOverviewResponse } from '@/lib/api/types';
+import { handleApiErrors } from '@/lib/api/error';
 
 export type AdminUserOverviewFetchOptions = {
   baseUrl?: string;
@@ -33,18 +34,9 @@ async function fetchAdminUserOverview(
     ...(opts?.cookie ? { cookie: opts.cookie } : {}),
   } as Record<string, string> | undefined;
 
-  const res = await fetch(url, { ...init, headers });
-  if (!res.ok) {
-    let message = 'Failed to fetch admin user overview';
-    try {
-      const err = await res.json();
-      message = err?.error || message;
-    } catch {
-      // ignore JSON parse error and use default message
-    }
-    throw new Error(message);
-  }
-  return (await res.json()) as AdminUserOverviewResponse;
+  const response = await fetch(url, { ...init, headers });
+  await handleApiErrors(response, 'Failed to fetch admin user overview');
+  return (await response.json()) as AdminUserOverviewResponse;
 }
 
 export async function prefetchAdminUserOverview(

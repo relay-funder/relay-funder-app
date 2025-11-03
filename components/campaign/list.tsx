@@ -42,6 +42,7 @@ export function CampaignList({
   const currentPageCount = data?.pages.length ?? 0;
   const shouldAutoFetch =
     currentPageCount < INFINITE_SCROLL_CONFIG.MAX_AUTO_PAGES;
+  const shouldRenderSentinel = shouldAutoFetch && hasNextPage;
   const shouldShowLoadMore = !shouldAutoFetch && hasNextPage;
 
   useEffect(() => {
@@ -123,7 +124,7 @@ export function CampaignList({
       )}
 
       {/* Intersection observer target - only active when auto-fetching */}
-      {shouldAutoFetch && <div ref={ref} className="h-10" />}
+      {shouldRenderSentinel && <div ref={ref} className="h-10" />}
     </div>
   );
 }
