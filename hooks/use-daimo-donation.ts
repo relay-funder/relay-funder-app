@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts';
 import { type DbCampaign } from '@/types/campaign';
-import { useCreatePayment } from '@/lib/hooks/usePayments';
 import { debugHook as debug } from '@/lib/debug';
 
 interface DaimoPayEvent {
@@ -14,6 +13,19 @@ interface DaimoPayEvent {
   [key: string]: unknown;
 }
 
+/**
+ * Hook for Daimo Pay donation callbacks.
+ *
+ * NOTE: Payment record creation has been moved to the webhook handler.
+ * The client no longer creates payment records to avoid race conditions
+ * between payment creation and Daimo settlement.
+ *
+ * Flow:
+ * 1. User initiates payment via Daimo
+ * 2. onPaymentStarted: Log payment ID only (no DB write)
+ * 3. Webhook receives payment_started: Creates payment record
+ * 4. Webhook receives payment_completed: Updates payment and executes pledge
+ */
 export function useDaimoDonationCallback({
   campaign,
   amount,
@@ -30,9 +42,6 @@ export function useDaimoDonationCallback({
   userEmail?: string;
 }) {
   const { authenticated } = useAuth();
-  const { mutateAsync: createPayment } = useCreatePayment();
-
-  const poolAmount = parseFloat(amount) || 0;
 
   const onPaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
@@ -43,7 +52,7 @@ export function useDaimoDonationCallback({
         throw new Error('Not signed in');
       }
 
-      // Extract Daimo payment ID - this will be used to match webhooks
+      // Extract Daimo payment ID for logging/tracking
       const daimoPaymentId =
         event?.payment?.id || event?.id || event?.paymentId;
       if (!daimoPaymentId) {
@@ -51,41 +60,18 @@ export function useDaimoDonationCallback({
         throw new Error('Daimo Pay event missing payment ID');
       }
 
-      // Create payment record when payment starts
-      try {
-        const result = await createPayment({
-          amount: amount,
-          poolAmount,
-          token: selectedToken,
-          campaignId: campaign.id,
-          isAnonymous: isAnonymous,
-          status: 'confirming',
-          transactionHash: daimoPaymentId,
-          userEmail,
-          provider: 'daimo',
-        });
-
-        debug &&
-          console.log('Daimo Pay payment record created:', result.paymentId);
-
-        return { paymentId: result.paymentId, daimoPaymentId };
-      } catch (paymentError) {
-        console.error('Daimo Pay: Payment creation failed:', paymentError);
-        throw new Error(
-          `Payment record creation failed: ${paymentError instanceof Error ? paymentError.message : 'Unknown error'}`,
+      debug &&
+        console.log('Daimo Pay: Payment ID extracted:', daimoPaymentId);
+      debug &&
+        console.log(
+          'Daimo Pay: Payment record will be created by webhook (payment_started event)',
         );
-      }
+
+      // Return payment ID for UI tracking only
+      // No database write happens here - webhook handles it
+      return { daimoPaymentId };
     },
-    [
-      authenticated,
-      createPayment,
-      amount,
-      poolAmount,
-      selectedToken,
-      campaign.id,
-      isAnonymous,
-      userEmail,
-    ],
+    [authenticated],
   );
 
   const onPaymentCompleted = useCallback(async (event: DaimoPayEvent) => {
