@@ -7,6 +7,7 @@ import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
+import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
 
 export async function POST(req: Request) {
@@ -367,6 +368,38 @@ export async function POST(req: Request) {
           notificationError,
         );
       }
+    }
+
+    // Execute on-chain pledge for gateway payments
+    // Only trigger when payment is newly confirmed (not duplicate events)
+    if (
+      newStatus === 'confirmed' &&
+      currentStatus !== 'confirmed' &&
+      payment.provider === 'daimo'
+    ) {
+      debug &&
+        console.log(
+          `Daimo Pay: Triggering pledge execution for payment ${payment.id}`,
+        );
+
+      // Fire-and-forget: don't await pledge execution
+      // If execution fails, payment remains "confirmed" for manual retry
+      Promise.resolve().then(async () => {
+        try {
+          const executionResult = await executeGatewayPledge(payment.id);
+          
+          debug &&
+            console.log(
+              `Daimo Pay: Pledge execution completed for payment ${payment.id}:`,
+              executionResult,
+            );
+        } catch (executionError) {
+          console.error(
+            `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
+            executionError,
+          );
+        }
+      });
     }
 
     debug &&

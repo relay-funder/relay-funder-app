@@ -1,18 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/server/db';
-import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
-import { ethers, erc20Abi } from '@/lib/web3';
-import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
-import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
-import { calculateDaimoGatewayFee } from '@/lib/web3/calculate-gateway-fee';
+import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
 import { z } from 'zod';
-import type {
-  ExecuteGatewayPledgeRequest,
-  ExecuteGatewayPledgeResponse,
-  GatewayPledgeMetadata,
-} from '@/lib/api/types/pledges';
+import type { ExecuteGatewayPledgeRequest } from '@/lib/api/types/pledges';
 
 const ExecuteGatewayPledgeSchema = z.object({
   paymentId: z.string().min(1, 'Payment ID is required'),
@@ -21,21 +11,15 @@ const ExecuteGatewayPledgeSchema = z.object({
 /**
  * POST /api/pledges/execute-gateway
  *
- * Internal endpoint to execute a gateway pledge using setFeeAndPledge.
- * This endpoint is called by the Daimo Pay webhook after payment_completed.
+ * API endpoint wrapper for executing gateway pledges.
+ * Can be used for manual retry of failed executions.
  *
- * CRITICAL: Tips stay in admin wallet, only pledge amount is transferred to treasury.
- *
- * Flow:
- * 1. Validate payment exists and is confirmed
- * 2. Check admin wallet has sufficient balance
- * 3. Approve treasury to spend pledge amount (NOT tip)
- * 4. Execute setFeeAndPledge with admin as token source
- * 5. Update payment metadata with execution details
+ * The actual logic is in lib/api/pledges/execute-gateway-pledge.ts
+ * and is shared with the webhook handler.
  */
 export async function POST(req: Request) {
   try {
-    debug && console.log('[Execute Gateway] Starting pledge execution');
+    debug && console.log('[Execute Gateway API] Starting pledge execution');
 
     // Validate request body
     const body = await req.json();
@@ -45,341 +29,14 @@ export async function POST(req: Request) {
 
     const { paymentId } = validatedData;
 
-    debug &&
-      console.log('[Execute Gateway] Processing payment:', { paymentId });
+    debug && console.log('[Execute Gateway API] Processing payment:', { paymentId });
 
-    // Load payment with related data
-    const payment = await db.payment.findUnique({
-      where: { id: paymentId },
-      include: {
-        user: true,
-        campaign: {
-          include: {
-            creator: true,
-          },
-        },
-      },
-    });
-
-    if (!payment) {
-      throw new ApiParameterError(`Payment not found: ${paymentId}`);
-    }
-
-    // Validate payment is ready for execution
-    if (payment.status !== 'confirmed') {
-      throw new ApiParameterError(
-        `Payment must be confirmed before execution. Current status: ${payment.status}`,
-      );
-    }
-
-    if (payment.provider !== 'daimo') {
-      throw new ApiParameterError(
-        `Only Daimo payments can be executed via gateway. Provider: ${payment.provider}`,
-      );
-    }
-
-    // Check if already executed
-    const metadata = payment.metadata as Record<string, unknown>;
-    if (metadata?.onChainPledgeId) {
-      debug &&
-        console.log('[Execute Gateway] Pledge already executed:', {
-          onChainPledgeId: metadata.onChainPledgeId,
-        });
-      return response({
-        success: true,
-        message: 'Pledge already executed',
-        pledgeId: metadata.onChainPledgeId as string,
-        transactionHash: metadata.treasuryTxHash as string,
-      });
-    }
-
-    // Extract amounts from payment
-    const totalAmount = parseFloat(payment.amount);
-    const tipAmount = parseFloat((metadata?.tipAmount as string) || '0');
-    const pledgeAmount = totalAmount - tipAmount;
-
-    debug &&
-      console.log('[Execute Gateway] Payment amounts:', {
-        totalAmount,
-        pledgeAmount,
-        tipAmount,
-        tip_stays_in_admin_wallet: true,
-      });
-
-    if (pledgeAmount <= 0) {
-      throw new ApiParameterError(
-        'Invalid pledge amount: must be greater than zero',
-      );
-    }
-
-    // Verify required environment variables
-    const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
-    const adminPrivateKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
-
-    if (!rpcUrl || !adminPrivateKey) {
-      console.error('[Execute Gateway] Missing environment variables');
-      throw new ApiParameterError(
-        'Server configuration error: missing RPC or admin credentials',
-      );
-    }
-
-    if (!payment.campaign.treasuryAddress) {
-      throw new ApiParameterError(
-        'Campaign does not have a treasury address configured',
-      );
-    }
-
-    // Initialize provider and admin signer
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
-
-    debug &&
-      console.log('[Execute Gateway] Admin wallet:', {
-        address: adminSigner.address,
-        treasuryAddress: payment.campaign.treasuryAddress,
-      });
-
-    // Initialize contracts
-    const usdContract = new ethers.Contract(
-      USD_ADDRESS as string,
-      erc20Abi,
-      adminSigner,
-    );
-
-    const treasuryContract = new ethers.Contract(
-      payment.campaign.treasuryAddress,
-      KeepWhatsRaisedABI,
-      adminSigner,
-    );
-
-    // Check admin wallet balance
-    const adminBalance = await usdContract.balanceOf(adminSigner.address);
-    const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
-
-    debug &&
-      console.log('[Execute Gateway] Admin wallet balance:', {
-        balance: adminBalanceFormatted,
-        required: totalAmount,
-        hasEnough: parseFloat(adminBalanceFormatted) >= totalAmount,
-      });
-
-    if (adminBalance < ethers.parseUnits(totalAmount.toString(), USD_DECIMALS)) {
-      throw new ApiUpstreamError(
-        `Insufficient admin wallet balance. Required: ${totalAmount} USDT, Available: ${adminBalanceFormatted} USDT`,
-      );
-    }
-
-    // Convert amounts to token units
-    const pledgeAmountUnits = ethers.parseUnits(
-      pledgeAmount.toString(),
-      USD_DECIMALS,
-    );
-    const tipAmountUnits = ethers.parseUnits(
-      tipAmount.toString(),
-      USD_DECIMALS,
-    );
-
-    // Calculate gateway fee (2% of pledge amount)
-    const gatewayFee = calculateDaimoGatewayFee(
-      pledgeAmount.toString(),
-      USD_DECIMALS,
-    );
-
-    debug &&
-      console.log('[Execute Gateway] Calculated amounts:', {
-        pledgeAmountUnits: pledgeAmountUnits.toString(),
-        tipAmountUnits: tipAmountUnits.toString(),
-        gatewayFee: gatewayFee.toString(),
-        gatewayFeeFormatted: ethers.formatUnits(gatewayFee, USD_DECIMALS),
-      });
-
-    // Generate unique pledge ID
-    const pledgeId = ethers.keccak256(
-      ethers.toUtf8Bytes(
-        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
-      ),
-    );
-
-    debug &&
-      console.log('[Execute Gateway] Generated pledge ID:', { pledgeId });
-
-    // Check current allowance
-    const currentAllowance = await usdContract.allowance(
-      adminSigner.address,
-      payment.campaign.treasuryAddress,
-    );
-
-    debug &&
-      console.log('[Execute Gateway] Current allowance:', {
-        current: ethers.formatUnits(currentAllowance, USD_DECIMALS),
-        required: pledgeAmount,
-      });
-
-    // CRITICAL: Only approve pledge amount, NOT tip
-    // Tips stay in admin wallet
-    if (currentAllowance < pledgeAmountUnits) {
-      debug &&
-        console.log('[Execute Gateway] Approving treasury for pledge amount');
-
-      const approveTx = await usdContract.approve(
-        payment.campaign.treasuryAddress,
-        pledgeAmountUnits,
-        {
-          maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-          maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-        },
-      );
-
-      debug &&
-        console.log('[Execute Gateway] Approval transaction:', {
-          hash: approveTx.hash,
-        });
-
-      await approveTx.wait();
-
-      debug && console.log('[Execute Gateway] Approval confirmed');
-    }
-
-    // Get nonce for transaction ordering
-    const nonce = await provider.getTransactionCount(
-      adminSigner.address,
-      'pending',
-    );
-
-    debug && console.log('[Execute Gateway] Using nonce:', nonce);
-
-    // Execute setFeeAndPledge
-    // IMPORTANT: Contract will transfer pledge amount from admin wallet to treasury
-    // Tips remain in admin wallet
-    debug && console.log('[Execute Gateway] Executing setFeeAndPledge');
-
-    const tx = await treasuryContract.setFeeAndPledge(
-      pledgeId,
-      payment.user.address, // backer (NFT recipient)
-      pledgeAmountUnits, // pledge amount only
-      tipAmountUnits, // tip metadata (not transferred)
-      gatewayFee, // 2% gateway fee
-      [], // no rewards
-      false, // isPledgeForAReward
-      {
-        nonce,
-        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-      },
-    );
-
-    debug &&
-      console.log('[Execute Gateway] Transaction submitted:', {
-        hash: tx.hash,
-        from: adminSigner.address,
-        to: payment.campaign.treasuryAddress,
-      });
-
-    // Wait for confirmation with timeout
-    const receipt = await Promise.race([
-      tx.wait(),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error('Transaction timeout after 60s')),
-          60000,
-        ),
-      ),
-    ]);
-
-    debug &&
-      console.log('[Execute Gateway] Transaction confirmed:', {
-        blockNumber: receipt.blockNumber,
-        status: receipt.status,
-        gasUsed: receipt.gasUsed?.toString(),
-      });
-
-    if (receipt.status !== 1) {
-      throw new ApiUpstreamError(
-        `Transaction reverted. Hash: ${tx.hash}`,
-      );
-    }
-
-    // Get final admin wallet balance
-    const finalAdminBalance = await usdContract.balanceOf(adminSigner.address);
-    const finalAdminBalanceFormatted = ethers.formatUnits(
-      finalAdminBalance,
-      USD_DECIMALS,
-    );
-
-    debug &&
-      console.log('[Execute Gateway] Final admin wallet balance:', {
-        before: adminBalanceFormatted,
-        after: finalAdminBalanceFormatted,
-        difference: (
-          parseFloat(adminBalanceFormatted) -
-          parseFloat(finalAdminBalanceFormatted)
-        ).toFixed(6),
-        expectedDifference: pledgeAmount,
-        tipRemaining: tipAmount,
-      });
-
-    // Update payment metadata with execution details
-    const executionMetadata: GatewayPledgeMetadata = {
-      onChainPledgeId: pledgeId,
-      treasuryTxHash: tx.hash,
-      executionTimestamp: new Date().toISOString(),
-      adminWalletBalanceBefore: adminBalanceFormatted,
-      adminWalletBalanceAfter: finalAdminBalanceFormatted,
-    };
-
-    await db.payment.update({
-      where: { id: payment.id },
-      data: {
-        metadata: {
-          ...(payment.metadata as Record<string, unknown>),
-          ...executionMetadata,
-        },
-      },
-    });
-
-    debug &&
-      console.log('[Execute Gateway] Payment metadata updated:', {
-        paymentId: payment.id,
-        pledgeId,
-      });
-
-    const result: ExecuteGatewayPledgeResponse = {
-      success: true,
-      pledgeId,
-      transactionHash: tx.hash,
-      blockNumber: receipt.blockNumber as number,
-      pledgeAmount: pledgeAmount.toString(),
-      tipAmount: tipAmount.toString(),
-    };
-
-    debug && console.log('[Execute Gateway] Execution complete:', result);
+    // Execute the pledge using shared logic
+    const result = await executeGatewayPledge(paymentId);
 
     return response(result);
   } catch (error: unknown) {
-    console.error('[Execute Gateway] Error:', error);
-
-    // Extract meaningful error messages
-    let errorMessage = 'Failed to execute gateway pledge';
-    let errorCode = 'UNKNOWN_ERROR';
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-
-      if ('code' in error) {
-        errorCode = String(error.code);
-      }
-
-      // Provide user-friendly messages for common errors
-      if (errorCode === 'INSUFFICIENT_FUNDS') {
-        errorMessage = 'Insufficient funds in admin wallet';
-      } else if (errorCode === 'NONCE_EXPIRED') {
-        errorMessage = 'Transaction nonce conflict. Please retry.';
-      } else if (errorMessage.includes('timeout')) {
-        errorMessage =
-          'Transaction confirmation timeout. Pledge may still be processing.';
-      }
-    }
-
+    console.error('[Execute Gateway API] Error:', error);
     return handleError(error);
   }
 }
