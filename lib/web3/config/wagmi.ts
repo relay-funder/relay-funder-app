@@ -1,6 +1,7 @@
 import { createConfig, http, type Config } from 'wagmi';
 import { chainConfig } from './chain';
 import { defaultChain, celo, daimoPayChains } from './chains';
+import { DAIMO_PAY_APP_ID } from '@/lib/constant';
 
 // Add type declaration for wagmi config
 declare module 'wagmi' {
@@ -16,7 +17,14 @@ if (defaultChain.id !== celo.id) {
 }
 
 // Combine with Daimo Pay chains and dedupe by chain.id
-const allChains = [...baseChains, ...daimoPayChains];
+const allChains = [...baseChains];
+if (DAIMO_PAY_APP_ID && DAIMO_PAY_APP_ID.trim() !== '') {
+  daimoPayChains.forEach((chain) => {
+    if (!allChains.some((existing) => existing.id === chain.id)) {
+      allChains.push(chain as (typeof allChains)[0]);
+    }
+  });
+}
 const dedupedChains = allChains.filter(
   (chain, index, self) => self.findIndex((c) => c.id === chain.id) === index,
 ) as [(typeof allChains)[0], ...typeof allChains]; // Ensure at least one chain

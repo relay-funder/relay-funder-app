@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 
 export const ROUND_RESULTS_QUERY_KEY = 'round_results';
 
@@ -26,19 +27,13 @@ export function useGenerateRoundResults() {
         throw new Error('Invalid roundId');
       }
       const url = `/api/admin/rounds/${roundId}/results/generate?fmt=${fmt}&minHumanityScore=${minHumanityScore}`;
-      const res = await fetch(url, { method: 'POST' });
-      if (!res.ok) {
-        let details = '';
-        try {
-          const err = await res.json();
-          details = err?.details || err?.error || '';
-        } catch {}
-        throw new Error(details || 'Failed to generate results');
-      }
+      const response = await fetch(url, { method: 'POST' });
+      await handleApiErrors(response, 'Failed to generate results');
+
       if (fmt === 'csv') {
-        return await res.text();
+        return await response.text();
       }
-      return await res.json();
+      return await response.json();
     },
   });
 }
@@ -55,18 +50,15 @@ export function useApprovedRoundResults(roundId: number) {
       if (!roundId || roundId <= 0) {
         throw new Error('Invalid roundId');
       }
-      const res = await fetch(`/api/admin/rounds/${roundId}/results/approve`, {
-        method: 'GET',
-      });
-      if (!res.ok) {
-        let details = '';
-        try {
-          const err = await res.json();
-          details = err?.details || err?.error || '';
-        } catch {}
-        throw new Error(details || 'Failed to fetch approved results');
-      }
-      const data = await res.json();
+      const response = await fetch(
+        `/api/admin/rounds/${roundId}/results/approve`,
+        {
+          method: 'GET',
+        },
+      );
+      await handleApiErrors(response, 'Failed to fetch approved results');
+
+      const data = await response.json();
       return (data?.approvedResult ?? null) as unknown;
     },
     enabled: !!roundId && roundId > 0,
@@ -96,31 +88,24 @@ export function useApproveRoundResults() {
         throw new Error('Provide file or json to approve');
       }
 
-      let res: Response;
+      let response: Response;
       if (file) {
         const form = new FormData();
         form.append('file', file);
-        res = await fetch(`/api/admin/rounds/${roundId}/results/approve`, {
+        response = await fetch(`/api/admin/rounds/${roundId}/results/approve`, {
           method: 'POST',
           body: form,
         });
       } else {
-        res = await fetch(`/api/admin/rounds/${roundId}/results/approve`, {
+        response = await fetch(`/api/admin/rounds/${roundId}/results/approve`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(json),
         });
       }
+      await handleApiErrors(response, 'Failed to approve results');
 
-      if (!res.ok) {
-        let details = '';
-        try {
-          const err = await res.json();
-          details = err?.details || err?.error || '';
-        } catch {}
-        throw new Error(details || 'Failed to approve results');
-      }
-      return await res.json();
+      return await response.json();
     },
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignCardAdminActions } from '../card-admin-actions';
 import { CampaignCardDisplayOptions } from './types';
+import { isCampaignStarted } from '@/lib/utils/campaign-status';
+import { FormattedDate } from '@/components/formatted-date';
 
 interface CampaignStatusInfo {
   status: string;
@@ -70,7 +72,13 @@ export function CampaignCardActions({
                     height={24}
                     className="opacity-50"
                   />
-                  {campaignStatusInfo.status}
+                  {isCampaignStarted(campaign) ? (
+                    campaignStatusInfo.status
+                  ) : (
+                    <>
+                      Starts <FormattedDate date={campaign.startTime} />
+                    </>
+                  )}
                 </Button>
               ) : null}
             </div>

@@ -41,14 +41,15 @@ export function ExploreStories() {
       ) : (
         <>
           <HomeExplore />
-          <RoundSpotlight />
-          <HomeCategorySelect onSelected={setSelectedCategory} />
-
-          <CampaignList
-            searchTerm={searchTerm}
-            categoryFilter={selectedCategory}
-            withRounds={false}
-          />
+          <div className="space-y-8">
+            <HomeCategorySelect onSelected={setSelectedCategory} />
+            <CampaignList
+              searchTerm={searchTerm}
+              categoryFilter={selectedCategory}
+              withRounds={false}
+            />
+            <RoundSpotlight />
+          </div>
         </>
       )}
     </PageLayout>

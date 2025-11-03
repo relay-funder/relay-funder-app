@@ -5,7 +5,8 @@ import {
 } from '@tanstack/react-query';
 import type { Payment } from '@/types/campaign';
 import { resetCampaign } from './useCampaigns';
-import { GetCampaignPaymentResponseInstance } from '../api/types/campaigns/payments';
+import { GetCampaignPaymentResponseInstance } from '@/lib/api/types/campaigns/payments';
+import { handleApiErrors } from '@/lib/api/error';
 export const PAYMENT_QUERY_KEY = 'payment';
 import {
   CAMPAIGN_STATS_QUERY_KEY,
@@ -30,11 +31,7 @@ async function createPayment(variables: ICreatePaymentApi): Promise<Payment> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('Failed to create payment record:', error);
-    throw new Error(error.error || 'Failed to fetch user payments');
-  }
+  await handleApiErrors(response, 'Failed to create payment');
   const data = await response.json();
   return data;
 }
@@ -48,11 +45,7 @@ async function updatePaymentStatus(variables: IUpdatePaymentStatusApi) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('Failed to update payment record:', error);
-    throw new Error(error.error || 'Failed to update user payment');
-  }
+  await handleApiErrors(response, 'Failed to update user payment');
   return response.json();
 }
 interface IRemovePayment {
@@ -68,11 +61,7 @@ async function removePayment(variables: IRemovePayment) {
       body: JSON.stringify(variables),
     },
   );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to remove comment');
-  }
+  await handleApiErrors(response, 'Failed to remove payment');
 
   return response.json();
 }
@@ -90,10 +79,8 @@ async function fetchPaymentPage({
 }) {
   const url = `/api/campaigns/${campaignId}/payments?page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch payments');
-  }
+  await handleApiErrors(response, 'Failed to fetch payments');
+
   const data = await response.json();
   return data as PaginatedPaymentResponse;
 }
