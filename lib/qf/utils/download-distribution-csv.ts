@@ -1,5 +1,5 @@
 import { QfCalculationResult, QfDistributionItem } from '@/lib/qf/types';
-import { exportCsv, formatCsvField } from '@/lib/utils/csv';
+import { triggerCsvDownloadOnClient, formatCsvField } from '@/lib/utils/csv';
 
 export interface QfCsvOptions {
   filename?: string;
@@ -56,5 +56,5 @@ export function downloadQfDistributionCsv(
 
   // Create and download CSV
   const csvString = rows.join('\n');
-  exportCsv(csvString, filename);
+  triggerCsvDownloadOnClient(csvString, filename);
 }

@@ -1,4 +1,4 @@
-export function exportCsv(csvString: string, filename: string): void {
+export function triggerCsvDownloadOnClient(csvString: string, filename: string): void {
   const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
