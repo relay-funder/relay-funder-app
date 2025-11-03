@@ -138,8 +138,8 @@ export async function POST(req: Request) {
       throw new ApiParameterError('Missing type in webhook payload');
     }
 
-    // Find payment by Daimo payment ID (stored in transactionHash)
-    const payment = await db.payment.findFirst({
+    // Find or create payment based on event type
+    let payment = await db.payment.findFirst({
       where: {
         transactionHash: payload.paymentId,
       },
@@ -149,11 +149,93 @@ export async function POST(req: Request) {
       },
     });
 
-    // Handle race condition: webhook arrived before payment creation
+    // Create payment on payment_started if it doesn't exist
+    if (!payment && payload.type === 'payment_started') {
+      debug &&
+        console.log(
+          'Daimo Pay webhook: Creating payment from payment_started event',
+          payload.paymentId,
+        );
+
+      // Extract metadata from Daimo payload
+      const metadata = payload.payment.metadata;
+      const campaignId = metadata?.campaignId
+        ? parseInt(metadata.campaignId)
+        : null;
+      const userAddress = payload.payment.source?.payerAddress;
+      const tipAmount = parseFloat(metadata?.tipAmount || '0');
+      const baseAmount = parseFloat(metadata?.baseAmount || '0');
+      const totalAmount = baseAmount + tipAmount;
+      const isAnonymous = metadata?.anonymous === 'true';
+      const userEmail = metadata?.email;
+
+      if (!campaignId) {
+        throw new ApiParameterError(
+          'Missing campaignId in Daimo payment metadata',
+        );
+      }
+
+      if (!userAddress) {
+        throw new ApiParameterError(
+          'Missing payer address in Daimo payment source',
+        );
+      }
+
+      // Find or create user by address
+      let user = await db.user.findUnique({
+        where: { address: userAddress },
+      });
+
+      if (!user) {
+        // Create user if doesn't exist
+        user = await db.user.create({
+          data: {
+            address: userAddress,
+            email: userEmail || null,
+          },
+        });
+      }
+
+      // Create payment record
+      payment = await db.payment.create({
+        data: {
+          amount: totalAmount.toString(),
+          token: 'USDT',
+          status: 'confirming',
+          transactionHash: payload.paymentId,
+          provider: 'daimo',
+          isAnonymous,
+          userId: user.id,
+          campaignId,
+          metadata: {
+            daimoPaymentId: payload.paymentId,
+            pledgeAmount: baseAmount.toString(),
+            tipAmount: tipAmount.toString(),
+            userAddress,
+            userEmail,
+            createdViaWebhook: true,
+            createdAt: new Date().toISOString(),
+          },
+        },
+        include: {
+          user: true,
+          campaign: true,
+        },
+      });
+
+      debug &&
+        console.log('Daimo Pay webhook: Payment created:', {
+          paymentId: payment.id,
+          daimoPaymentId: payload.paymentId,
+          amount: totalAmount,
+        });
+    }
+
+    // Handle case where payment still doesn't exist (shouldn't happen for payment_started)
     if (!payment) {
       debug &&
         console.log(
-          'Daimo Pay webhook: Payment not yet available for',
+          'Daimo Pay webhook: Payment not found and could not be created for',
           payload.paymentId,
         );
 
@@ -162,7 +244,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: 'Conflict',
-          message: 'Payment dependency not yet available',
+          message: 'Payment not found and could not be created',
           retryable: true,
         },
         {
