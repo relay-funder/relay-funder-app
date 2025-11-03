@@ -11,7 +11,7 @@
  * @property paymentId - Internal payment record ID (from our database)
  */
 export interface ExecuteGatewayPledgeRequest {
-  paymentId: string;
+  paymentId: number;
 }
 
 /**

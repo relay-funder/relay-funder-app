@@ -28,7 +28,7 @@ import type {
  * @returns Execution result with pledge details
  */
 export async function executeGatewayPledge(
-  paymentId: string,
+  paymentId: number,
 ): Promise<ExecuteGatewayPledgeResponse> {
   debug && console.log('[Execute Gateway] Starting pledge execution');
 
@@ -37,16 +37,12 @@ export async function executeGatewayPledge(
     where: { id: paymentId },
     include: {
       user: true,
-      campaign: {
-        include: {
-          creator: true,
-        },
-      },
+      campaign: true,
     },
   });
 
   if (!payment) {
-    throw new ApiParameterError(`Payment not found: ${paymentId}`);
+    throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
   }
 
   // Validate payment is ready for execution

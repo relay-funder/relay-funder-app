@@ -10,6 +10,14 @@ import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
 import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
 
+// Type for payment with includes
+type PaymentWithIncludes = Prisma.PaymentGetPayload<{
+  include: {
+    user: true;
+    campaign: true;
+  };
+}>;
+
 export async function POST(req: Request) {
   try {
     debug &&
@@ -145,7 +153,7 @@ export async function POST(req: Request) {
     } satisfies Prisma.PaymentInclude;
 
     // Find or create payment based on event type
-    let payment = await db.payment.findFirst({
+    let payment: PaymentWithIncludes | null = await db.payment.findFirst({
       where: {
         transactionHash: payload.paymentId,
       },
@@ -201,10 +209,11 @@ export async function POST(req: Request) {
       }
 
       // Create payment record
-      payment = await db.payment.create({
+      const createdPayment = await db.payment.create({
         data: {
           amount: totalAmount.toString(),
           token: 'USDT',
+          type: 'BUY',
           status: 'confirming',
           transactionHash: payload.paymentId,
           provider: 'daimo',
@@ -221,8 +230,17 @@ export async function POST(req: Request) {
             createdAt: new Date().toISOString(),
           },
         },
+      });
+
+      // Fetch the payment with includes
+      payment = await db.payment.findUnique({
+        where: { id: createdPayment.id },
         include: paymentInclude,
       });
+
+      if (!payment) {
+        throw new ApiParameterError('Failed to fetch created payment');
+      }
 
       debug &&
         console.log('Daimo Pay webhook: Payment created:', {

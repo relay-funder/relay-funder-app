@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { ExecuteGatewayPledgeRequest } from '@/lib/api/types/pledges';
 
 const ExecuteGatewayPledgeSchema = z.object({
-  paymentId: z.string().min(1, 'Payment ID is required'),
+  paymentId: z.number().int().positive('Payment ID must be a positive integer'),
 });
 
 /**
