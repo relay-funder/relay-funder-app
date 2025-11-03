@@ -3,6 +3,11 @@ import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
+import {
+  NEXT_PUBLIC_PLATFORM_ADMIN,
+  PLATFORM_ADMIN_PRIVATE_KEY,
+  NEXT_PUBLIC_RPC_URL,
+} from '@/lib/constant/server';
 import { debugApi as debug } from '@/lib/debug';
 import type {
   ExecuteGatewayPledgeResponse,
@@ -94,13 +99,19 @@ export async function executeGatewayPledge(
   }
 
   // Verify required environment variables
-  const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
-  const adminPrivateKey = process.env.PLATFORM_ADMIN_PRIVATE_KEY;
+  const rpcUrl = NEXT_PUBLIC_RPC_URL;
+  const adminPrivateKey = PLATFORM_ADMIN_PRIVATE_KEY;
+  const adminAddress = NEXT_PUBLIC_PLATFORM_ADMIN;
 
-  if (!rpcUrl || !adminPrivateKey) {
-    console.error('[Execute Gateway] Missing environment variables');
+  if (!rpcUrl || !adminPrivateKey || !adminAddress || !USD_ADDRESS) {
+    console.error('[Execute Gateway] Missing environment variables', {
+      hasRpcUrl: !!rpcUrl,
+      hasAdminPrivateKey: !!adminPrivateKey,
+      hasAdminAddress: !!adminAddress,
+      hasUsdAddress: !!USD_ADDRESS,
+    });
     throw new ApiParameterError(
-      'Server configuration error: missing RPC or admin credentials',
+      'Server configuration error: missing RPC, admin credentials, or USD token address',
     );
   }
 
@@ -113,6 +124,17 @@ export async function executeGatewayPledge(
   // Initialize provider and admin signer
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
+
+  // Verify private key matches public address
+  if (adminSigner.address.toLowerCase() !== adminAddress.toLowerCase()) {
+    console.error('[Execute Gateway] Admin address mismatch', {
+      derivedFromKey: adminSigner.address,
+      configured: adminAddress,
+    });
+    throw new ApiParameterError(
+      'Admin private key does not match configured admin address',
+    );
+  }
 
   debug &&
     console.log('[Execute Gateway] Admin wallet:', {
