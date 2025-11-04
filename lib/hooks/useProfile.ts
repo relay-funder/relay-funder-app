@@ -30,6 +30,7 @@ interface IUserProfileApi {
   username: string;
   bio: string;
   eventFeedRead: Date;
+  humanityScore?: number;
 }
 
 async function updateUserProfileEmail(
