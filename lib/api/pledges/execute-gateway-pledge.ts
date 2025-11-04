@@ -75,20 +75,24 @@ export async function executeGatewayPledge(
     };
   }
 
-  // Extract amounts from payment
-  const totalAmount = parseFloat(payment.amount);
-  const tipAmount = parseFloat((metadata?.tipAmount as string) || '0');
-  const pledgeAmount = totalAmount - tipAmount;
+  // Extract amounts from payment and parse to token units
+  // Use bigint arithmetic to avoid floating-point precision issues
+  const totalAmountUnits = ethers.parseUnits(payment.amount, USD_DECIMALS);
+  const tipAmountUnits = ethers.parseUnits(
+    (metadata?.tipAmount as string) || '0',
+    USD_DECIMALS,
+  );
+  const pledgeAmountUnits = totalAmountUnits - tipAmountUnits;
 
   debug &&
     console.log('[Execute Gateway] Payment amounts:', {
-      totalAmount,
-      pledgeAmount,
-      tipAmount,
+      totalAmount: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+      pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+      tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
       note: 'Both pledge and tip will be transferred to treasury',
     });
 
-  if (pledgeAmount <= 0) {
+  if (pledgeAmountUnits <= 0n) {
     throw new ApiParameterError(
       'Invalid pledge amount: must be greater than zero',
     );
@@ -158,22 +162,15 @@ export async function executeGatewayPledge(
   debug &&
     console.log('[Execute Gateway] Admin wallet balance:', {
       balance: adminBalanceFormatted,
-      required: totalAmount,
-      hasEnough: parseFloat(adminBalanceFormatted) >= totalAmount,
+      required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+      hasEnough: adminBalance >= totalAmountUnits,
     });
 
-  if (adminBalance < ethers.parseUnits(totalAmount.toString(), USD_DECIMALS)) {
+  if (adminBalance < totalAmountUnits) {
     throw new ApiUpstreamError(
-      `Insufficient admin wallet balance. Required: ${totalAmount} USDT, Available: ${adminBalanceFormatted} USDT`,
+      `Insufficient admin wallet balance. Required: ${ethers.formatUnits(totalAmountUnits, USD_DECIMALS)} USDT, Available: ${adminBalanceFormatted} USDT`,
     );
   }
-
-  // Convert amounts to token units
-  const pledgeAmountUnits = ethers.parseUnits(
-    pledgeAmount.toString(),
-    USD_DECIMALS,
-  );
-  const tipAmountUnits = ethers.parseUnits(tipAmount.toString(), USD_DECIMALS);
 
   // No separate gateway fee - treasury's configured fees already handle costs
   const gatewayFee = 0n;
@@ -194,9 +191,6 @@ export async function executeGatewayPledge(
   );
 
   debug && console.log('[Execute Gateway] Generated pledge ID:', { pledgeId });
-
-  // Calculate total amount (pledge + tip) - both go to treasury
-  const totalAmountUnits = pledgeAmountUnits + tipAmountUnits;
 
   // Check current allowance
   const currentAllowance = await usdContract.allowance(
@@ -306,11 +300,11 @@ export async function executeGatewayPledge(
     console.log('[Execute Gateway] Final admin wallet balance:', {
       before: adminBalanceFormatted,
       after: finalAdminBalanceFormatted,
-      difference: (
-        parseFloat(adminBalanceFormatted) -
-        parseFloat(finalAdminBalanceFormatted)
-      ).toFixed(6),
-      expectedDifference: totalAmount,
+      difference: ethers.formatUnits(
+        adminBalance - finalAdminBalance,
+        USD_DECIMALS,
+      ),
+      expectedDifference: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
       note: 'Both pledge and tip transferred to treasury',
     });
 
@@ -344,8 +338,8 @@ export async function executeGatewayPledge(
     pledgeId,
     transactionHash: tx.hash,
     blockNumber: receipt.blockNumber as number,
-    pledgeAmount: pledgeAmount.toString(),
-    tipAmount: tipAmount.toString(),
+    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
 
   debug && console.log('[Execute Gateway] Execution complete:', result);
