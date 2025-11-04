@@ -16,15 +16,11 @@ interface DaimoPayEvent {
 /**
  * Hook for Daimo Pay donation callbacks.
  *
- * NOTE: Payment record creation has been moved to the webhook handler.
- * The client no longer creates payment records to avoid race conditions
- * between payment creation and Daimo settlement.
- *
  * Flow:
  * 1. User initiates payment via Daimo
- * 2. onPaymentStarted: Log payment ID only (no DB write)
- * 3. Webhook receives payment_started: Creates payment record
- * 4. Webhook receives payment_completed: Updates payment and executes pledge
+ * 2. onPaymentStarted: Extract payment ID for UI tracking
+ * 3. Webhook creates and confirms payment record
+ * 4. Webhook executes pledge on-chain
  */
 export function useDaimoDonationCallback({
   campaign,
@@ -61,13 +57,8 @@ export function useDaimoDonationCallback({
       }
 
       debug && console.log('Daimo Pay: Payment ID extracted:', daimoPaymentId);
-      debug &&
-        console.log(
-          'Daimo Pay: Payment record will be created by webhook (payment_started event)',
-        );
 
-      // Return payment ID for UI tracking only
-      // No database write happens here - webhook handles it
+      // Return payment ID for UI tracking
       return { daimoPaymentId };
     },
     [authenticated],
@@ -75,22 +66,10 @@ export function useDaimoDonationCallback({
 
   const onPaymentCompleted = useCallback(async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment completed', event);
-
-    // Payment status will be updated via webhook
-    // This callback is mainly for UI feedback and analytics
-    debug &&
-      console.log(
-        'Payment completion acknowledged - status update via webhook',
-      );
   }, []);
 
   const onPaymentBounced = useCallback(async (event: DaimoPayEvent) => {
     debug && console.log('Daimo Pay: Payment bounced', event);
-
-    // Payment status will be updated via webhook
-    // This callback is mainly for UI feedback and analytics
-    debug &&
-      console.log('Payment bounce acknowledged - status update via webhook');
   }, []);
 
   return {

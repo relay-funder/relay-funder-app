@@ -17,15 +17,16 @@ import type {
 /**
  * Execute a gateway pledge using setFeeAndPledge.
  *
- * This function is called by:
- * 1. Daimo Pay webhook after payment_completed
- * 2. Manual retry API endpoint
- *
- * IMPORTANT: Both pledge and tip are transferred to the treasury.
- * Tips are tracked separately in contract state and can be claimed by platform admin.
+ * Token Flow:
+ * - Admin wallet approves treasury for (pledgeAmount + tipAmount)
+ * - Contract transfers both amounts to treasury via safeTransferFrom
+ * - Tips tracked separately in contract state for later claiming
+ * - User receives pledge NFT
  *
  * @param paymentId - Internal payment record ID
- * @returns Execution result with pledge details
+ * @returns Execution result with transaction hash and amounts
+ * @throws ApiParameterError if payment invalid or already executed
+ * @throws ApiUpstreamError if insufficient balance or transaction fails
  */
 export async function executeGatewayPledge(
   paymentId: number,
@@ -89,7 +90,6 @@ export async function executeGatewayPledge(
       totalAmount: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
       pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
       tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
-      note: 'Both pledge and tip will be transferred to treasury',
     });
 
   if (pledgeAmountUnits <= 0n) {
@@ -172,7 +172,11 @@ export async function executeGatewayPledge(
     );
   }
 
-  // No separate gateway fee - treasury's configured fees already handle costs
+  /**
+   * Gateway fee: No additional fee for gateway payments.
+   * Treasury configured fees (gross percentage + protocol) apply automatically
+   * during contract execution, maintaining consistency with direct wallet pledges.
+   */
   const gatewayFee = 0n;
 
   debug &&
@@ -204,8 +208,7 @@ export async function executeGatewayPledge(
       required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     });
 
-  // Approve treasury for total amount (pledge + tip)
-  // Contract transfers both to treasury, tips tracked separately in contract state
+  // Approve treasury for total amount if needed
   if (currentAllowance < totalAmountUnits) {
     debug &&
       console.log(
@@ -231,21 +234,17 @@ export async function executeGatewayPledge(
     debug && console.log('[Execute Gateway] Approval confirmed');
   }
 
-  // Execute setFeeAndPledge
-  // IMPORTANT: Contract will transfer (pledge + tip) from admin wallet to treasury
-  // Tips are tracked separately in contract state (s_tip, s_tokenToTippedAmount)
-  // Platform admin can claim tips later with claimTip()
-  // Note: Nonce is auto-managed by ethers for safer concurrent execution
+  // Execute setFeeAndPledge - transfers pledge + tip to treasury
   debug && console.log('[Execute Gateway] Executing setFeeAndPledge');
 
   const tx = await treasuryContract.setFeeAndPledge(
     pledgeId,
-    payment.user.address, // backer (NFT recipient)
-    pledgeAmountUnits, // pledge amount only
-    tipAmountUnits, // tip amount (also transferred)
-    gatewayFee, // 0 - using treasury configured fees
-    [], // no rewards
-    false, // isPledgeForAReward
+    payment.user.address,
+    pledgeAmountUnits,
+    tipAmountUnits,
+    gatewayFee,
+    [],
+    false,
     {
       maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
       maxFeePerGas: ethers.parseUnits('100', 'gwei'),
@@ -289,7 +288,6 @@ export async function executeGatewayPledge(
         USD_DECIMALS,
       ),
       expectedDifference: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
-      note: 'Both pledge and tip transferred to treasury',
     });
 
   // Update payment metadata with execution details
