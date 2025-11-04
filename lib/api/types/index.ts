@@ -2,6 +2,7 @@ export * from './admin';
 export * from './campaigns';
 export * from './collections';
 export * from './common';
+export * from './pledges';
 export * from './qf';
 export * from './rounds';
 export * from './score-events';

@@ -118,6 +118,22 @@ export const KeepWhatsRaisedABI = [
 
   {
     type: 'function',
+    name: 'setFeeAndPledge',
+    inputs: [
+      { name: 'pledgeId', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'backer', type: 'address', internalType: 'address' },
+      { name: 'pledgeAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'tip', type: 'uint256', internalType: 'uint256' },
+      { name: 'fee', type: 'uint256', internalType: 'uint256' },
+      { name: 'reward', type: 'bytes32[]', internalType: 'bytes32[]' },
+      { name: 'isPledgeForAReward', type: 'bool', internalType: 'bool' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+
+  {
+    type: 'function',
     name: 'configureTreasury',
     inputs: [
       {
