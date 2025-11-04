@@ -3,8 +3,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { DaimoPayButton } from '@daimo/pay';
 import { DbCampaign } from '@/types/campaign';
-import { DAIMO_PAY_APP_ID } from '@/lib/constant';
-import { NEXT_PUBLIC_PLATFORM_ADMIN } from '@/lib/constant/server';
+import { DAIMO_PAY_APP_ID, ADMIN_ADDRESS } from '@/lib/constant';
 import { Button } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { useDaimoDonationCallback } from '@/hooks/use-daimo-donation';
@@ -276,7 +275,7 @@ export function DaimoPayButtonComponent({
       totalAmount: paymentData.totalAmount,
       baseAmount: amount,
       tipAmount,
-      adminWalletAddress: NEXT_PUBLIC_PLATFORM_ADMIN,
+      adminWalletAddress: ADMIN_ADDRESS,
       treasuryAddress: paymentData.validatedTreasuryAddress,
       refundAddress: paymentData.validatedRefundAddress,
       intent: dynamicIntent,
@@ -299,7 +298,7 @@ export function DaimoPayButtonComponent({
         intent={dynamicIntent}
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
-        toAddress={NEXT_PUBLIC_PLATFORM_ADMIN}
+        toAddress={ADMIN_ADDRESS as `0x${string}`}
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
