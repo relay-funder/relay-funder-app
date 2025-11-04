@@ -298,7 +298,7 @@ export function DaimoPayButtonComponent({
         intent={dynamicIntent}
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
-        toAddress={ADMIN_ADDRESS}
+        toAddress={ADMIN_ADDRESS as `0x${string}`}
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
