@@ -231,18 +231,11 @@ export async function executeGatewayPledge(
     debug && console.log('[Execute Gateway] Approval confirmed');
   }
 
-  // Get nonce for transaction ordering
-  const nonce = await provider.getTransactionCount(
-    adminSigner.address,
-    'pending',
-  );
-
-  debug && console.log('[Execute Gateway] Using nonce:', nonce);
-
   // Execute setFeeAndPledge
   // IMPORTANT: Contract will transfer (pledge + tip) from admin wallet to treasury
   // Tips are tracked separately in contract state (s_tip, s_tokenToTippedAmount)
   // Platform admin can claim tips later with claimTip()
+  // Note: Nonce is auto-managed by ethers for safer concurrent execution
   debug && console.log('[Execute Gateway] Executing setFeeAndPledge');
 
   const tx = await treasuryContract.setFeeAndPledge(
@@ -254,7 +247,6 @@ export async function executeGatewayPledge(
     [], // no rewards
     false, // isPledgeForAReward
     {
-      nonce,
       maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
       maxFeePerGas: ethers.parseUnits('100', 'gwei'),
     },
