@@ -3,6 +3,7 @@ import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
 import { z } from 'zod';
 import type { ExecuteGatewayPledgeRequest } from '@/lib/api/types/pledges';
+import { checkAuth } from '@/lib/api/auth';
 
 const ExecuteGatewayPledgeSchema = z.object({
   paymentId: z.number().int().positive('Payment ID must be a positive integer'),
@@ -11,14 +12,19 @@ const ExecuteGatewayPledgeSchema = z.object({
 /**
  * POST /api/pledges/execute-gateway
  *
- * API endpoint wrapper for executing gateway pledges.
- * Can be used for manual retry of failed executions.
+ * Admin-only API endpoint for manual retry of failed gateway pledge executions.
+ * 
+ * Note: The Daimo Pay webhook calls executeGatewayPledge() function directly,
+ * not this HTTP endpoint. This is only for admin manual retries.
  *
- * The actual logic is in lib/api/pledges/execute-gateway-pledge.ts
- * and is shared with the webhook handler.
+ * The actual execution logic is in lib/api/pledges/execute-gateway-pledge.ts
+ * and is shared with the Daimo Pay webhook handler.
  */
 export async function POST(req: Request) {
   try {
+    // Admin authentication required
+    await checkAuth(['admin']);
+
     debug && console.log('[Execute Gateway API] Starting pledge execution');
 
     // Validate request body
