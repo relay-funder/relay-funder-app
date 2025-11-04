@@ -17,6 +17,9 @@ export default {
       },
     },
     extend: {
+      screens: {
+        xs: '400px',
+      },
       fontFamily: {
         display: ['Space Grotesk', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
