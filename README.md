@@ -4,11 +4,10 @@
 
 # 🌍 Relay Funder
 
-**Relay Funder** is an open-source platform that helps displaced communities preserve their cultural heritage and fund creative work using Web3 technologies. Refugee creators can upload stories, art, and multimedia—then launch funding campaigns powered by NFTs and smart contracts.
+**Relay Funder** is an open-source crowdfunding infrastructure for refugee and displaced communities unlocking direct, transparent, and community-led capital flows across the Ethereum ecosystem.
 
-By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-driven funding protocols, Relay Funder ensures these cultural narratives are owned by the people who create them—and remain accessible across borders and generations.
+Relay Funder uses quadratic funding rounds where individuals and match-fund sponsors can directly support verified campaigns. Using Celo stablecoins bridged to Ethereum (USDT) Relay Funder enables transparent, auditable fund flows for humanitarian and development projects.
 
-> Refugees are not just survivors—they are custodians of culture.
 
 ## Prerequisites
 

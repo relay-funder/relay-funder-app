@@ -44,39 +44,37 @@ export function HomeCategorySelect({
   const categories = categoriesData?.categories || [];
 
   return (
-    <div className="mb-8 p-4">
-      <div className="flex flex-wrap justify-center gap-3">
+    <div className="flex flex-wrap justify-center gap-3 p-4">
+      <Button
+        key="all"
+        variant="outline"
+        className={cn(
+          'flex items-center gap-2 rounded-full px-4 py-2',
+          !selectedCategory
+            ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            : 'bg-card text-foreground hover:bg-secondary/50',
+        )}
+        onClick={() => onSelect(null)}
+      >
+        <div className="text-2xl">🌟</div>
+        All Categories
+      </Button>
+      {categories.map((category) => (
         <Button
-          key="all"
+          key={category.id}
           variant="outline"
           className={cn(
             'flex items-center gap-2 rounded-full px-4 py-2',
-            !selectedCategory
+            selectedCategory === category.id
               ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               : 'bg-card text-foreground hover:bg-secondary/50',
           )}
-          onClick={() => onSelect(null)}
+          onClick={() => onSelect(category.id)}
         >
-          <div className="text-2xl">🌟</div>
-          All Categories
+          <div className="text-2xl">{category.icon}</div>
+          {category.name}
         </Button>
-        {categories.map((category) => (
-          <Button
-            key={category.id}
-            variant="outline"
-            className={cn(
-              'flex items-center gap-2 rounded-full px-4 py-2',
-              selectedCategory === category.id
-                ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                : 'bg-card text-foreground hover:bg-secondary/50',
-            )}
-            onClick={() => onSelect(category.id)}
-          >
-            <div className="text-2xl">{category.icon}</div>
-            {category.name}
-          </Button>
-        ))}
-      </div>
+      ))}
     </div>
   );
 }

@@ -31,7 +31,7 @@ async function createPayment(variables: ICreatePaymentApi): Promise<Payment> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(variables),
   });
-  await handleApiErrors(response, 'Failed to fetch user payments');
+  await handleApiErrors(response, 'Failed to create payment');
   const data = await response.json();
   return data;
 }
@@ -61,7 +61,7 @@ async function removePayment(variables: IRemovePayment) {
       body: JSON.stringify(variables),
     },
   );
-  await handleApiErrors(response, 'Failed to remove comment');
+  await handleApiErrors(response, 'Failed to remove payment');
 
   return response.json();
 }

@@ -54,15 +54,15 @@ export function PageHeaderSearch({
       )}
 
       {/* Search */}
-      <div className="flex flex-row items-center py-1 md:ml-3">
-        <div className="relative">
+      <div className="flex grow flex-row items-center py-1 md:ml-3">
+        <div className="relative w-full">
           <Search
             className={cn(
               'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground',
             )}
           />
           <Input
-            className="w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
+            className="max-w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
             placeholder={placeholder}
             type="search"
             value={searchTerm}
@@ -70,7 +70,6 @@ export function PageHeaderSearch({
           />
         </div>
       </div>
-      <div className="grow" />
       <div className="flex flex-row items-center gap-4">
         <ThemeToggle />
         <Button

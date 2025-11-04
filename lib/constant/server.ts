@@ -9,6 +9,7 @@ export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
 // Session Lifetime until automatically logged out.
 // Number in days, might be fractional to support 0.0007=60s
-export const AUTH_SESSION_LIFETIME = Math.floor(
-  parseFloat(process.env.AUTH_SESSION_LIFETIME ?? '30'),
+// Note: Do NOT use Math.floor() as it breaks fractional day support
+export const AUTH_SESSION_LIFETIME = parseFloat(
+  process.env.AUTH_SESSION_LIFETIME ?? '30',
 );
