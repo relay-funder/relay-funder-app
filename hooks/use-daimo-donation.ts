@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts';
-import { type DbCampaign } from '@/types/campaign';
 import { debugHook as debug } from '@/lib/debug';
 
 interface DaimoPayEvent {
@@ -21,22 +20,11 @@ interface DaimoPayEvent {
  * 2. onPaymentStarted: Extract payment ID for UI tracking
  * 3. Webhook creates and confirms payment record
  * 4. Webhook executes pledge on-chain
+ *
+ * Note: Payment metadata (campaign, amount, tip) is passed to Daimo SDK separately.
+ * This hook only provides event callbacks for UI state management.
  */
-export function useDaimoDonationCallback({
-  campaign,
-  amount,
-  tipAmount = '0',
-  selectedToken,
-  isAnonymous = false,
-  userEmail,
-}: {
-  campaign: DbCampaign;
-  amount: string;
-  tipAmount?: string;
-  selectedToken: string;
-  isAnonymous?: boolean;
-  userEmail?: string;
-}) {
+export function useDaimoDonationCallback() {
   const { authenticated } = useAuth();
 
   const onPaymentStarted = useCallback(
