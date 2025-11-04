@@ -119,6 +119,7 @@ export function useDaimoReset({
     isValid,
     resetPayment,
     validatedTreasuryAddress,
+    pledgeCallData,
     totalAmount,
     metadata,
   ]);

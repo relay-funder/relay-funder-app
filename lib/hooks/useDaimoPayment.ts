@@ -6,7 +6,6 @@ import {
   generatePledgeId,
   toTokenUnits,
   encodePledgeCallData,
-  isPledgeDataValid,
 } from '@/lib/web3/daimo/pledge';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
 import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
