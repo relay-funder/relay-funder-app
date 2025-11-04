@@ -240,6 +240,17 @@ export async function POST(req: Request) {
             where: { daimoPaymentId: payload.paymentId },
             include: paymentInclude,
           });
+
+          // Verify payment was found (should exist if constraint was violated)
+          if (!payment) {
+            console.error('Daimo Pay: Unique constraint violated but payment not found', {
+              daimoPaymentId: payload.paymentId,
+              error: error.message,
+            });
+            throw new ApiParameterError(
+              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`
+            );
+          }
         } else {
           throw error;
         }
