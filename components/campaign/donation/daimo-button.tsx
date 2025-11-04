@@ -4,6 +4,7 @@ import React, { useCallback, useMemo } from 'react';
 import { DaimoPayButton } from '@daimo/pay';
 import { DbCampaign } from '@/types/campaign';
 import { DAIMO_PAY_APP_ID } from '@/lib/constant';
+import { NEXT_PUBLIC_PLATFORM_ADMIN } from '@/lib/constant/server';
 import { Button } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { useDaimoDonationCallback } from '@/hooks/use-daimo-donation';
@@ -275,13 +276,14 @@ export function DaimoPayButtonComponent({
       totalAmount: paymentData.totalAmount,
       baseAmount: amount,
       tipAmount,
+      adminWalletAddress: NEXT_PUBLIC_PLATFORM_ADMIN,
       treasuryAddress: paymentData.validatedTreasuryAddress,
       refundAddress: paymentData.validatedRefundAddress,
       intent: dynamicIntent,
       appId: DAIMO_PAY_APP_ID,
       isValid: paymentData.isValid,
       config: paymentData.config,
-      note: 'Gateway integration: pledge executed via webhook, no toCallData needed',
+      note: 'Gateway integration: Daimo sends to admin wallet, webhook executes pledge to treasury',
     });
 
   console.log('🚀 Daimo Pay: Button rendering with appId:', DAIMO_PAY_APP_ID);
@@ -297,7 +299,7 @@ export function DaimoPayButtonComponent({
         intent={dynamicIntent}
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
-        toAddress={paymentData.validatedTreasuryAddress!}
+        toAddress={NEXT_PUBLIC_PLATFORM_ADMIN}
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
