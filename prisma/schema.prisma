@@ -170,7 +170,7 @@ model Payment {
   token           String
   status          String             @default("pending")
   type            PaymentType
-  transactionHash String?
+  transactionHash String? @unique
   isAnonymous     Boolean            @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt

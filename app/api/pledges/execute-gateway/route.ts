@@ -13,7 +13,7 @@ const ExecuteGatewayPledgeSchema = z.object({
  * POST /api/pledges/execute-gateway
  *
  * Admin-only API endpoint for manual retry of failed gateway pledge executions.
- * 
+ *
  * Note: The Daimo Pay webhook calls executeGatewayPledge() function directly,
  * not this HTTP endpoint. This is only for admin manual retries.
  *
