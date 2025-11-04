@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, Prisma } from '@/server/db';
-import { ApiParameterError } from '@/lib/api/error';
+import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { notify } from '@/lib/api/event-feed';
 import { getUserNameFromInstance } from '@/lib/api/user';
@@ -192,20 +192,15 @@ export async function POST(req: Request) {
         );
       }
 
-      // Find or create user by address (normalized)
-      let user = await db.user.findUnique({
+      // Find user by address (normalized)
+      const user = await db.user.findUnique({
         where: { address: userAddress.toLowerCase() },
       });
 
       if (!user) {
-        // Create user if doesn't exist
-        user = await db.user.create({
-          data: {
-            address: userAddress.toLowerCase(), // normalized address
-            rawAddress: userAddress, // original case-sensitive address
-            email: userEmail || null,
-          },
-        });
+        throw new ApiNotFoundError(
+          `User not found for address ${userAddress}. User must exist before making payments.`,
+        );
       }
 
       // Create payment record
