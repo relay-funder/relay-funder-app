@@ -83,14 +83,7 @@ export function DaimoPayButtonComponent({
     onPaymentStarted: daimoOnPaymentStarted,
     onPaymentCompleted: daimoOnPaymentCompleted,
     onPaymentBounced: daimoOnPaymentBounced,
-  } = useDaimoDonationCallback({
-    campaign,
-    amount,
-    tipAmount,
-    selectedToken: paymentData.config.tokenSymbol,
-    isAnonymous: anonymous,
-    userEmail: email,
-  });
+  } = useDaimoDonationCallback();
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {

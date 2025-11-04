@@ -453,6 +453,56 @@ cast send $TREASURY_ADDRESS \
   --private-key $PLATFORM_ADMIN_PRIVATE_KEY
 ```
 
+## Payment Gateway Integration
+
+### Overview
+
+The application supports payment gateways like Daimo Pay through an admin wallet intermediary pattern. This allows users to pay from any chain/token while the platform handles conversion and pledge execution.
+
+### Daimo Pay + CCP Integration
+
+```
+1. User pays via Daimo (any chain/token)
+   └─> Daimo bridges to Celo
+
+2. Daimo transfers USDT to NEXT_PUBLIC_PLATFORM_ADMIN wallet
+   └─> pledge amount + tip
+
+3. Webhook receives payment_started event
+   └─> Creates payment record in database
+
+4. Webhook receives payment_completed event
+   └─> Updates payment status to "confirmed"
+   └─> Triggers pledge execution
+
+5. Backend calls setFeeAndPledge via admin wallet
+   └─> (Pledge + Tip) → Treasury (via transferFrom)
+   └─> Tips tracked separately in contract (s_tip)
+   └─> User receives NFT
+```
+
+### Tips Handling
+
+- `setFeeAndPledge` approves (pledge + tip) amount
+- Contract transfers (pledge + tip) from admin → treasury via `safeTransferFrom(admin, treasury, pledge + tip)`
+- Tips are tracked separately in contract state: `s_tip`, `s_tokenToTippedAmount[tokenId]`
+- Platform admin can claim accumulated tips later using `claimTip()` function
+- Same behavior as direct wallet pledges - maintains consistency
+
+### Manual Retry
+
+If pledge execution fails, use the retry helper:
+
+```typescript
+import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
+
+// Retry single payment
+await retryGatewayPledge(paymentId);
+
+// Retry all failed pledges
+await retryAllFailedPledges();
+```
+
 ## 📞 Support & Resources
 
 - **CC Protocol Setup Guide**: Available in `cc-protocol/CCP-STAGING-SETUP.md`
