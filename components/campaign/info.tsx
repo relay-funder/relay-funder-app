@@ -36,7 +36,7 @@ export function CampaignInfoDialog({
   campaign?: DbCampaign;
   children?: React.ReactNode;
 }) {
-  const { address: userAddress } = useAuth();
+  const { address: userAddress, isAdmin } = useAuth();
   const { amountGoal } = useCampaignStatsFromInstance({
     campaign,
   });
@@ -287,6 +287,42 @@ export function CampaignInfoDialog({
                         </span>
                       </div>
                     ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {/* Admin Links */}
+          {isAdmin && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="mb-4 text-sm font-medium text-foreground">
+                  {'Admin Only Links'}
+                </h3>
+                <div className="space-y-3">
+                  <div
+                    key={campaign.id}
+                    className="flex items-center justify-between"
+                  >
+                    <Link
+                      href={`/campaigns/${campaign.id}`}
+                      className="truncate text-sm text-foreground hover:text-gray-700 hover:underline"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div
+                    key={campaign.id}
+                    className="flex items-center justify-between"
+                  >
+                    <Link
+                      href={`/campaigns/${campaign.id}/edit`}
+                      className="truncate text-sm text-foreground hover:text-gray-700 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -43,6 +43,9 @@ export async function POST(req: Request, { params }: RoundsWithIdParams) {
         throw new ApiParameterError('Cannot set status');
       }
     }
+    if (new Date() > new Date(round.endDate)) {
+      throw new ApiParameterError('Cannot apply campaign to ended round');
+    }
     const roundCampaign = {
       campaignId,
       submittedByWalletAddress: creatorAddress,
@@ -83,6 +86,9 @@ export async function DELETE(req: Request, { params }: RoundsWithIdParams) {
 
     if (!round) {
       throw new ApiNotFoundError('Round not found');
+    }
+    if (new Date() > new Date(round.endDate)) {
+      throw new ApiParameterError('Cannot delete campaign from ended round');
     }
     const formData = await req.formData();
     // Extract form fields
