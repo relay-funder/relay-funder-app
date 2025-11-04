@@ -170,7 +170,8 @@ model Payment {
   token           String
   status          String             @default("pending")
   type            PaymentType
-  transactionHash String? @unique
+  transactionHash String?            // Blockchain transaction hash for explorer links
+  daimoPaymentId  String? @unique   // Daimo payment ID for webhook idempotency
   isAnonymous     Boolean            @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt

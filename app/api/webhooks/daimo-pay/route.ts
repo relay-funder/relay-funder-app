@@ -155,7 +155,7 @@ export async function POST(req: Request) {
     // Find or create payment based on event type
     let payment: PaymentWithIncludes | null = await db.payment.findFirst({
       where: {
-        transactionHash: payload.paymentId,
+        daimoPaymentId: payload.paymentId,
       },
       include: paymentInclude,
     });
@@ -212,7 +212,7 @@ export async function POST(req: Request) {
             token: 'USDT',
             type: 'BUY',
             status: 'confirming',
-            transactionHash: payload.paymentId,
+            daimoPaymentId: payload.paymentId,
             provider: 'daimo',
             isAnonymous,
             userId: user.id,
@@ -237,7 +237,7 @@ export async function POST(req: Request) {
           debug &&
             console.log('Duplicate payment creation prevented by constraint');
           payment = await db.payment.findFirst({
-            where: { transactionHash: payload.paymentId },
+            where: { daimoPaymentId: payload.paymentId },
             include: paymentInclude,
           });
         } else {
