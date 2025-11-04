@@ -204,7 +204,7 @@ export async function POST(req: Request) {
       }
 
       // Create payment record
-      let createdPayment: Prisma.PaymentGetPayload<{}> | undefined;
+      let createdPayment: Awaited<ReturnType<typeof db.payment.create>> | undefined;
       try {
         createdPayment = await db.payment.create({
           data: {
