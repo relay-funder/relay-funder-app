@@ -10,6 +10,7 @@ import {
 } from '@/lib/web3/daimo/pledge';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
 import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
+import { EmailSchema } from '@/lib/api/types/common';
 
 interface UseDaimoPaymentParams {
   campaign: DbCampaign;
@@ -127,6 +128,13 @@ export function useDaimoPayment({
     [campaign.id, pledgeId, email, anonymous, tipAmount, amount, config],
   );
 
+  // Validate email format using Zod
+  const isEmailValid = useMemo(() => {
+    if (!email || !email.trim()) return false;
+    const result = EmailSchema.safeParse(email);
+    return result.success;
+  }, [email]);
+
   // Validate all parameters
   const isValid = useMemo(() => {
     return (
@@ -138,7 +146,8 @@ export function useDaimoPayment({
         DAIMO_PAY_MIN_AMOUNT,
       ) &&
       config.isValid &&
-      !!validatedTreasuryAddress
+      !!validatedTreasuryAddress &&
+      isEmailValid
     );
   }, [
     pledgeId,
@@ -147,6 +156,7 @@ export function useDaimoPayment({
     totalAmount,
     config.isValid,
     validatedTreasuryAddress,
+    isEmailValid,
   ]);
 
   return {
