@@ -44,6 +44,8 @@ export interface ExecuteGatewayPledgeResponse {
  * @property executionTimestamp - ISO timestamp when pledge was executed
  * @property adminWalletBalanceBefore - Admin wallet USDT balance before execution
  * @property adminWalletBalanceAfter - Admin wallet USDT balance after execution
+ * @property pledgeAmount - Formatted pledge amount in USD
+ * @property tipAmount - Formatted tip amount in USD
  */
 export interface GatewayPledgeMetadata {
   onChainPledgeId?: string;
@@ -51,4 +53,6 @@ export interface GatewayPledgeMetadata {
   executionTimestamp?: string;
   adminWalletBalanceBefore?: string;
   adminWalletBalanceAfter?: string;
+  pledgeAmount?: string;
+  tipAmount?: string;
 }

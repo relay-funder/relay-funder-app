@@ -297,6 +297,8 @@ export async function executeGatewayPledge(
     executionTimestamp: new Date().toISOString(),
     adminWalletBalanceBefore: adminBalanceFormatted,
     adminWalletBalanceAfter: finalAdminBalanceFormatted,
+    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
 
   await db.payment.update({
