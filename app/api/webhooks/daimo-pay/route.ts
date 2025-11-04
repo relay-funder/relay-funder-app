@@ -155,7 +155,7 @@ export async function POST(req: Request) {
     // Find or create payment based on event type
     let payment: PaymentWithIncludes | null = await db.payment.findFirst({
       where: {
-        transactionHash: payload.paymentId,
+        daimoPaymentId: payload.paymentId,
       },
       include: paymentInclude,
     });
@@ -204,42 +204,73 @@ export async function POST(req: Request) {
       }
 
       // Create payment record
-      const createdPayment = await db.payment.create({
-        data: {
-          amount: totalAmount.toString(),
-          token: 'USDT',
-          type: 'BUY',
-          status: 'confirming',
-          transactionHash: payload.paymentId,
-          provider: 'daimo',
-          isAnonymous,
-          userId: user.id,
-          campaignId,
-          metadata: {
+      let createdPayment: Awaited<ReturnType<typeof db.payment.create>> | undefined;
+      try {
+        createdPayment = await db.payment.create({
+          data: {
+            amount: totalAmount.toString(),
+            token: 'USDT',
+            type: 'BUY',
+            status: 'confirming',
             daimoPaymentId: payload.paymentId,
-            pledgeAmount: baseAmount.toString(),
-            tipAmount: tipAmount.toString(),
-            userAddress,
-            userEmail,
-            createdViaWebhook: true,
-            createdAt: new Date().toISOString(),
+            provider: 'daimo',
+            isAnonymous,
+            userId: user.id,
+            campaignId,
+            metadata: {
+              daimoPaymentId: payload.paymentId,
+              pledgeAmount: baseAmount.toString(),
+              tipAmount: tipAmount.toString(),
+              userAddress,
+              userEmail,
+              createdViaWebhook: true,
+              createdAt: new Date().toISOString(),
+            },
           },
-        },
-      });
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          // Unique constraint violation - payment already exists
+          debug &&
+            console.log('Duplicate payment creation prevented by constraint');
+          payment = await db.payment.findFirst({
+            where: { daimoPaymentId: payload.paymentId },
+            include: paymentInclude,
+          });
 
-      // Fetch the payment with includes
-      payment = await db.payment.findUnique({
-        where: { id: createdPayment.id },
-        include: paymentInclude,
-      });
+          // Verify payment was found (should exist if constraint was violated)
+          if (!payment) {
+            console.error('Daimo Pay: Unique constraint violated but payment not found', {
+              daimoPaymentId: payload.paymentId,
+              error: error.message,
+            });
+            throw new ApiParameterError(
+              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
 
-      if (!payment) {
-        throw new ApiParameterError('Failed to fetch created payment');
+      // Fetch the payment with includes (only if payment creation succeeded)
+      if (createdPayment) {
+        payment = await db.payment.findUnique({
+          where: { id: createdPayment.id },
+          include: paymentInclude,
+        });
+
+        if (!payment) {
+          throw new ApiParameterError('Failed to fetch created payment');
+        }
       }
 
       debug &&
-        console.log('Daimo Pay webhook: Payment created:', {
-          paymentId: payment.id,
+        console.log('Daimo Pay webhook: Payment created or found:', {
+          paymentId: payment!.id,
           daimoPaymentId: payload.paymentId,
           amount: totalAmount,
         });
