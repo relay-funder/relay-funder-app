@@ -259,16 +259,8 @@ export async function executeGatewayPledge(
       to: payment.campaign.treasuryAddress,
     });
 
-  // Wait for confirmation with timeout
-  const receipt = await Promise.race([
-    tx.wait(),
-    new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error('Transaction timeout after 60s')),
-        60000,
-      ),
-    ),
-  ]);
+  // Wait for confirmation
+  const receipt = await tx.wait();
 
   debug &&
     console.log('[Execute Gateway] Transaction confirmed:', {
