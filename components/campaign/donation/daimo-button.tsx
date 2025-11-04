@@ -281,6 +281,7 @@ export function DaimoPayButtonComponent({
       appId: DAIMO_PAY_APP_ID,
       isValid: paymentData.isValid,
       config: paymentData.config,
+      note: 'Gateway integration: pledge executed via webhook, no toCallData needed',
     });
 
   console.log('🚀 Daimo Pay: Button rendering with appId:', DAIMO_PAY_APP_ID);
@@ -298,7 +299,6 @@ export function DaimoPayButtonComponent({
         toToken={paymentData.config.tokenAddress}
         toAddress={paymentData.validatedTreasuryAddress!}
         toUnits={paymentData.totalAmount}
-        toCallData={paymentData.pledgeCallData!}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
         onPaymentStarted={(event) => {
