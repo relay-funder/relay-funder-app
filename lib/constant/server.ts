@@ -14,11 +14,11 @@ export const AUTH_SESSION_LIFETIME = parseFloat(
   process.env.AUTH_SESSION_LIFETIME ?? '30',
 );
 
-// Platform Admin Wallet - server-side only (for gateway pledge execution)
+// Platform Admin Wallet (for gateway pledge execution)
 export const PLATFORM_ADMIN_PRIVATE_KEY =
   process.env.PLATFORM_ADMIN_PRIVATE_KEY ?? '';
 export const NEXT_PUBLIC_PLATFORM_ADMIN =
   process.env.NEXT_PUBLIC_PLATFORM_ADMIN ?? '';
 
-// RPC Configuration - server-side only
+// RPC Configuration
 export const NEXT_PUBLIC_RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? '';
