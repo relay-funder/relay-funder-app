@@ -506,6 +506,21 @@ export async function POST(req: Request) {
       }
     }
 
+    debug &&
+      console.log(
+        `Payment ${payment.id} status updated to ${newStatus} via ${payload.type} event`,
+      );
+
+    // Prepare response data before triggering async operations
+    const responseData = {
+      acknowledged: true,
+      paymentId: payment.id,
+      daimoPaymentId: payload.paymentId,
+      eventType: payload.type,
+      status: newStatus,
+      previousStatus: currentStatus,
+    };
+
     // Execute on-chain pledge for gateway payments
     // Only trigger when payment is newly confirmed (not duplicate events)
     if (
@@ -518,8 +533,6 @@ export async function POST(req: Request) {
           `Daimo Pay: Triggering pledge execution for payment ${payment.id}`,
         );
 
-      // Fire-and-forget: don't await pledge execution
-      // If execution fails, payment remains "confirmed" for manual retry
       console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
         paymentId: payment.id,
         amount: payment.amount,
@@ -528,7 +541,10 @@ export async function POST(req: Request) {
         treasuryAddress: payment.campaign.treasuryAddress,
         note: 'Funds received in admin wallet, now executing pledge to treasury',
       });
-      Promise.resolve().then(async () => {
+      
+      // Schedule pledge execution for next event loop tick
+      // This ensures webhook completes and releases DB connections first
+      setImmediate(async () => {
         try {
           const executionResult = await executeGatewayPledge(payment.id);
 
@@ -546,19 +562,7 @@ export async function POST(req: Request) {
       });
     }
 
-    debug &&
-      console.log(
-        `Payment ${payment.id} status updated to ${newStatus} via ${payload.type} event`,
-      );
-
-    return response({
-      acknowledged: true,
-      paymentId: payment.id,
-      daimoPaymentId: payload.paymentId,
-      eventType: payload.type,
-      status: newStatus,
-      previousStatus: currentStatus,
-    });
+    return response(responseData);
   } catch (error: unknown) {
     console.error('Daimo Pay webhook error:', error);
     return handleError(error);
