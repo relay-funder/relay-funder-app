@@ -33,7 +33,7 @@ import type {
 export async function executeGatewayPledge(
   paymentId: number,
 ): Promise<ExecuteGatewayPledgeResponse> {
-  console.log('DAIMO PAY: Starting gateway pledge execution for payment:', paymentId);
+  console.log('GATEWAY PLEDGE: Starting execution for payment:', paymentId);
   debug && console.log('[Execute Gateway] Starting pledge execution');
 
   // Load payment with related data
@@ -89,7 +89,7 @@ export async function executeGatewayPledge(
   );
   const totalAmountUnits = pledgeAmountUnits + tipAmountUnits;
 
-  console.log('DAIMO PAY: Amount calculation breakdown:', {
+  console.log('GATEWAY PLEDGE: Amount calculation breakdown:', {
     paymentAmount: payment.amount,
     metadataTipAmount: (metadata?.tipAmount as string) || '0',
     metadataPledgeAmount: (metadata?.pledgeAmount as string) || 'N/A',
@@ -175,7 +175,7 @@ export async function executeGatewayPledge(
   const adminBalance = await usdContract.balanceOf(adminSigner.address);
   const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
 
-  console.log('DAIMO PAY: Admin wallet balance check:', {
+  console.log('GATEWAY PLEDGE: Admin wallet balance check:', {
     adminAddress: adminSigner.address,
     balance: adminBalanceFormatted,
     required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
@@ -201,7 +201,7 @@ export async function executeGatewayPledge(
    */
   const gatewayFee = 0n;
 
-  console.log('DAIMO PAY: Processing amounts:', {
+  console.log('GATEWAY PLEDGE: Processing amounts:', {
     totalReceived: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
@@ -226,48 +226,81 @@ export async function executeGatewayPledge(
 
   debug && console.log('[Execute Gateway] Generated pledge ID:', { pledgeId });
 
+  console.log('GATEWAY PLEDGE: Checking current allowance...');
+  
   // Check current allowance
   const currentAllowance = await usdContract.allowance(
     adminSigner.address,
     payment.campaign.treasuryAddress,
   );
 
-  debug &&
-    console.log('[Execute Gateway] Current allowance:', {
-      current: ethers.formatUnits(currentAllowance, USD_DECIMALS),
-      required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
-    });
+  console.log('GATEWAY PLEDGE: Current allowance:', {
+    adminAddress: adminSigner.address,
+    treasuryAddress: payment.campaign.treasuryAddress,
+    currentAllowance: ethers.formatUnits(currentAllowance, USD_DECIMALS),
+    requiredAllowance: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+    needsApproval: currentAllowance < totalAmountUnits,
+  });
 
   // Approve treasury for total amount if needed
   if (currentAllowance < totalAmountUnits) {
-    debug &&
-      console.log(
-        '[Execute Gateway] Approving treasury for total amount (pledge + tip)',
+    console.log('GATEWAY PLEDGE: Submitting approval transaction...');
+
+    try {
+      // Get current nonce for proper transaction sequencing
+      const nonce = await provider.getTransactionCount(adminSigner.address, 'latest');
+      
+      console.log('GATEWAY PLEDGE: Approval transaction nonce:', nonce);
+
+      const approveTx = await usdContract.approve(
+        payment.campaign.treasuryAddress,
+        totalAmountUnits,
+        {
+          nonce,
+          maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+          maxFeePerGas: ethers.parseUnits('100', 'gwei'),
+        },
       );
 
-    const approveTx = await usdContract.approve(
-      payment.campaign.treasuryAddress,
-      totalAmountUnits,
-      {
-        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-      },
-    );
-
-    debug &&
-      console.log('[Execute Gateway] Approval transaction:', {
+      console.log('GATEWAY PLEDGE: Approval transaction submitted:', {
         hash: approveTx.hash,
+        nonce,
+        from: adminSigner.address,
+        to: USD_ADDRESS,
+        spender: payment.campaign.treasuryAddress,
+        amount: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
       });
 
-    await approveTx.wait();
+      console.log('GATEWAY PLEDGE: Waiting for approval confirmation...');
 
-    debug && console.log('[Execute Gateway] Approval confirmed');
+      // Wait for 1 confirmation
+      const approvalReceipt = await approveTx.wait(1);
+
+      if (!approvalReceipt || approvalReceipt.status !== 1) {
+        throw new ApiUpstreamError(
+          `Approval transaction failed. Hash: ${approveTx.hash}`,
+        );
+      }
+
+      console.log('GATEWAY PLEDGE: Approval confirmed:', {
+        hash: approveTx.hash,
+        blockNumber: approvalReceipt.blockNumber,
+        gasUsed: approvalReceipt.gasUsed?.toString(),
+      });
+    } catch (approvalError) {
+      console.error('GATEWAY PLEDGE: Approval transaction error:', approvalError);
+      throw new ApiUpstreamError(
+        `Failed to approve treasury for token transfer: ${approvalError instanceof Error ? approvalError.message : 'Unknown error'}`,
+      );
+    }
+  } else {
+    console.log('GATEWAY PLEDGE: Existing allowance sufficient, skipping approval');
   }
 
   // Execute setFeeAndPledge - transfers pledge + tip to treasury
   debug && console.log('[Execute Gateway] Executing setFeeAndPledge');
 
-  console.log('DAIMO PAY: setFeeAndPledge parameters:', {
+  console.log('GATEWAY PLEDGE: setFeeAndPledge parameters:', {
     pledgeId,
     backer: payment.user.address,
     pledgeAmountUnits: pledgeAmountUnits.toString(),
@@ -281,38 +314,67 @@ export async function executeGatewayPledge(
     isPledgeForAReward: false,
   });
 
-  const tx = await treasuryContract.setFeeAndPledge(
-    pledgeId,
-    payment.user.address,
-    pledgeAmountUnits,
-    tipAmountUnits,
-    gatewayFee,
-    [],
-    false,
-    {
-      maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-      maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-    },
-  );
+  let tx: ethers.ContractTransactionResponse;
+  let receipt: ethers.TransactionReceipt | null;
 
-  console.log('DAIMO PAY: Transaction submitted:', {
-    hash: tx.hash,
-    from: adminSigner.address,
-    to: payment.campaign.treasuryAddress,
-    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
-    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
-  });
-  debug &&
-    console.log('[Execute Gateway] Transaction submitted:', {
+  try {
+    // Get current nonce for proper transaction sequencing
+    const pledgeNonce = await provider.getTransactionCount(adminSigner.address, 'latest');
+    
+    console.log('GATEWAY PLEDGE: Pledge transaction nonce:', pledgeNonce);
+
+    tx = await treasuryContract.setFeeAndPledge(
+      pledgeId,
+      payment.user.address,
+      pledgeAmountUnits,
+      tipAmountUnits,
+      gatewayFee,
+      [],
+      false,
+      {
+        nonce: pledgeNonce,
+        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
+      },
+    );
+
+    console.log('GATEWAY PLEDGE: Transaction submitted:', {
       hash: tx.hash,
+      nonce: pledgeNonce,
       from: adminSigner.address,
       to: payment.campaign.treasuryAddress,
+      pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+      tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
     });
+    debug &&
+      console.log('[Execute Gateway] Transaction submitted:', {
+        hash: tx.hash,
+        from: adminSigner.address,
+        to: payment.campaign.treasuryAddress,
+      });
 
-  // Wait for confirmation
-  const receipt = await tx.wait();
+    console.log('GATEWAY PLEDGE: Waiting for pledge transaction confirmation...');
 
-  console.log('DAIMO PAY: Transaction confirmed:', {
+    // Wait for 1 confirmation
+    receipt = await tx.wait(1);
+
+    if (!receipt) {
+      throw new ApiUpstreamError(
+        `No receipt received for pledge transaction. Hash: ${tx.hash}`,
+      );
+    }
+
+    if (receipt.status !== 1) {
+      throw new ApiUpstreamError(`Transaction reverted. Hash: ${tx.hash}`);
+    }
+  } catch (txError) {
+    console.error('GATEWAY PLEDGE: Pledge transaction error:', txError);
+    throw new ApiUpstreamError(
+      `Failed to execute pledge transaction: ${txError instanceof Error ? txError.message : 'Unknown error'}`,
+    );
+  }
+
+  console.log('GATEWAY PLEDGE: Transaction confirmed:', {
     hash: tx.hash,
     blockNumber: receipt.blockNumber,
     status: receipt.status ? 'SUCCESS' : 'FAILED',
@@ -325,10 +387,6 @@ export async function executeGatewayPledge(
       gasUsed: receipt.gasUsed?.toString(),
     });
 
-  if (receipt.status !== 1) {
-    throw new ApiUpstreamError(`Transaction reverted. Hash: ${tx.hash}`);
-  }
-
   // Get final admin wallet balance
   const finalAdminBalance = await usdContract.balanceOf(adminSigner.address);
   const finalAdminBalanceFormatted = ethers.formatUnits(
@@ -336,7 +394,7 @@ export async function executeGatewayPledge(
     USD_DECIMALS,
   );
 
-  console.log('DAIMO PAY: Final admin wallet balance:', {
+  console.log('GATEWAY PLEDGE: Final admin wallet balance:', {
     adminAddress: adminSigner.address,
     before: adminBalanceFormatted,
     after: finalAdminBalanceFormatted,
@@ -391,7 +449,7 @@ export async function executeGatewayPledge(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
 
-  console.log('DAIMO PAY: Pledge execution complete:', {
+  console.log('GATEWAY PLEDGE: Execution complete:', {
     paymentId,
     pledgeId,
     transactionHash: tx.hash,
