@@ -12,6 +12,7 @@ import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
