@@ -401,7 +401,7 @@ Your support can make a huge difference! Please check it out and consider contri
                     variant="ghost"
                     size="sm"
                     onClick={copyTextToClipboard}
-                    className="h-8 px-2 self-start"
+                    className="h-8 self-start px-2"
                   >
                     <Copy className="h-4 w-4" />
                     <span className="sr-only">Copy Text</span>

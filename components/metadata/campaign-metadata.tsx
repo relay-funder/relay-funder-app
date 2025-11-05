@@ -4,7 +4,7 @@ import {
   generateCampaignStructuredData,
 } from '@/lib/utils/metadata';
 
-interface CampaignMetadataOptions {
+export interface CampaignMetadataOptions {
   campaignTitle: string;
   campaignDescription: string;
   fundingGoal: string;

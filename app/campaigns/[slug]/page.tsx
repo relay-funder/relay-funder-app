@@ -74,6 +74,9 @@ export async function generateMetadata({
 
     const { mainImage, fundingGoal, totalRaised } =
       extractCampaignMetadata(campaign);
+    const createdAtDate = new Date(campaign.createdAt);
+    const isValidDate =
+      createdAtDate instanceof Date && !isNaN(createdAtDate.getTime());
 
     return getCampaignPageMetadata({
       campaignTitle: campaign.title,
@@ -82,7 +85,7 @@ export async function generateMetadata({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
-      startDate: campaign.createdAt,
+      startDate: isValidDate ? createdAtDate : undefined,
       slug,
     });
   } catch (error) {
@@ -107,25 +110,24 @@ export default async function CampaignPage({
 
   // Get campaign data for structured data
   let structuredData = null;
-  try {
-    const campaign = await getCampaign(slug);
-    if (campaign) {
-      const { mainImage, fundingGoal, totalRaised } =
-        extractCampaignMetadata(campaign);
+  const campaign = await getCampaign(slug);
+  if (campaign) {
+    const { mainImage, fundingGoal, totalRaised } =
+      extractCampaignMetadata(campaign);
+    const createdAtDate = new Date(campaign.createdAt);
+    const isValidDate =
+      createdAtDate instanceof Date && !isNaN(createdAtDate.getTime());
 
-      structuredData = getCampaignStructuredData({
-        campaignTitle: campaign.title,
-        campaignDescription: campaign.description || '',
-        fundingGoal,
-        currentRaised: totalRaised,
-        creatorAddress: campaign.creatorAddress,
-        campaignImage: mainImage,
-        startDate: campaign.createdAt,
-        slug,
-      });
-    }
-  } catch (error) {
-    // Silently fail if we can't generate structured data
+    structuredData = getCampaignStructuredData({
+      campaignTitle: campaign.title,
+      campaignDescription: campaign.description || '',
+      fundingGoal,
+      currentRaised: totalRaised,
+      creatorAddress: campaign.creatorAddress,
+      campaignImage: mainImage,
+      startDate: isValidDate ? createdAtDate : undefined,
+      slug,
+    });
   }
 
   return (

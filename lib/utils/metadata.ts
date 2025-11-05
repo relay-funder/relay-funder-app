@@ -72,7 +72,7 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
     robots = process.env.NODE_ENV === 'production' &&
     process.env.NEXT_PUBLIC_ENVIRONMENT !== 'staging'
       ? 'index,follow'
-      : 'no-index,no-follow',
+      : 'noindex, nofollow',
     keywords = ['crowdfunding', 'humanitarian', 'blockchain', 'relay funder'],
     authors,
     creator = 'Relay Funder',
@@ -316,7 +316,9 @@ export function generateCampaignStructuredData(
         value: currentRaised,
       },
     }),
-    startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
+    ...(startDate && {
+      startDate: startDate.toISOString(),
+    }),
   };
 }
 

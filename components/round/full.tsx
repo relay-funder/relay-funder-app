@@ -106,8 +106,8 @@ export function RoundFull({
                 isAdmin ? 'lg:flex-row' : 'sm:flex-row',
               )}
             >
-              <div className="xxs:flex-row xxs:items-start flex flex-col items-center gap-6">
-                <div className="xs:block hidden shrink-0">
+              <div className="flex flex-col items-center gap-6 xxs:flex-row xxs:items-start">
+                <div className="hidden shrink-0 xs:block">
                   <RoundMainImageAvatar round={round} size="large" />
                 </div>
                 <div className="shrink-0 xs:hidden">
@@ -137,7 +137,7 @@ export function RoundFull({
                 className={cn(
                   'flex gap-2',
                   isAdmin
-                    ? 'xs:flex-row xs:items-center flex-col items-start'
+                    ? 'flex-col items-start xs:flex-row xs:items-center'
                     : 'items-center',
                 )}
               >
