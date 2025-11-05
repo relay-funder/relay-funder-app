@@ -23,6 +23,8 @@ import { RoundManageResults } from './manage-results';
 import { RoundAdminInlineEdit } from './admin/inline-edit';
 import { RoundApplyDialog } from './apply-dialog';
 import { Button } from '@/components/ui';
+import { RoundQfPreview } from './qf-preview';
+import { cn } from '@/lib/utils';
 
 export function RoundFull({
   id,
@@ -85,21 +87,27 @@ export function RoundFull({
     notFound();
   }
 
+  const isEnded = status.text === 'Ended';
+  const isActive = status.text === 'Active';
+
   const header = <PageHeader />;
 
   return (
     <PageHome header={header}>
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          {isAdmin && status.text === 'Ended' && (
-            <RoundManageResults round={round} />
-          )}
+          {isAdmin && isEnded && <RoundManageResults round={round} />}
           {/* Round Info Section - Compact Layout with Large Logo */}
           <div className="space-y-6">
             {/* Round Header with Large Logo and Status */}
-            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
-              <div className="flex flex-col items-center gap-6 xxs:flex-row xxs:items-start">
-                <div className="hidden shrink-0 xs:block">
+            <div
+              className={cn(
+                'flex flex-col items-start justify-between gap-6',
+                isAdmin ? 'lg:flex-row' : 'sm:flex-row',
+              )}
+            >
+              <div className="xxs:flex-row xxs:items-start flex flex-col items-center gap-6">
+                <div className="xs:block hidden shrink-0">
                   <RoundMainImageAvatar round={round} size="large" />
                 </div>
                 <div className="shrink-0 xs:hidden">
@@ -125,7 +133,14 @@ export function RoundFull({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  'flex gap-2',
+                  isAdmin
+                    ? 'xs:flex-row xs:items-center flex-col items-start'
+                    : 'items-center',
+                )}
+              >
                 <Badge
                   variant={status.variant}
                   className="shrink-0 px-3 py-1 text-sm"
@@ -236,6 +251,11 @@ export function RoundFull({
               </Card>
             )}
           </div>
+
+          {/* QF Preview - Only for active rounds */}
+          {isAdmin && round.matchingPool > 0 && isActive && (
+            <RoundQfPreview round={round} isAdmin={isAdmin} />
+          )}
         </div>
 
         {/* Apply Dialog */}
