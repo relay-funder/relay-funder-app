@@ -18,7 +18,7 @@ export function RoundMainImageAvatar({
     }[];
     mediaOrder: string[] | null;
   };
-  size?: 'default' | 'large';
+  size?: 'default' | 'large' | 'medium';
 }) {
   const [mainImageObject, setMainImageObject] = useState<string | null>(null);
   const mainImage = useMemo(() => {
@@ -64,11 +64,13 @@ export function RoundMainImageAvatar({
   const sizeClasses = {
     default: 'h-12 w-12 border',
     large: 'h-36 w-36 border-2 shadow-lg',
+    medium: 'h-20 w-20 border-2 shadow-lg',
   };
 
   const fallbackTextClasses = {
     default: 'text-lg font-semibold',
     large: 'text-3xl font-bold',
+    medium: 'text-2xl font-semibold',
   };
 
   return (
