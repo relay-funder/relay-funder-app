@@ -11,7 +11,7 @@ import { CampaignFull } from '@/components/campaign/full';
 import type { GetCampaignResponseInstance } from '@/lib/api/types/campaigns';
 
 /**
- * Extract the main image URL from campaign media or legacy images
+ * Extract the main image URL from campaign media
  */
 function getCampaignMainImage(campaign: GetCampaignResponseInstance): string | undefined {
   // Check for new media format with mediaOrder
@@ -29,8 +29,29 @@ function getCampaignMainImage(campaign: GetCampaignResponseInstance): string | u
     }
   }
 
-
   return undefined;
+}
+
+/**
+ * Extract campaign metadata for both metadata generation and structured data
+ */
+function extractCampaignMetadata(campaign: GetCampaignResponseInstance) {
+  const mainImage = getCampaignMainImage(campaign);
+  const fundingGoal = campaign.fundingGoal || '0';
+
+  // Calculate total raised from payment summary
+  const totalRaised = campaign.paymentSummary?.token
+    ? Object.values(campaign.paymentSummary.token).reduce(
+        (total, tokenData) => total + (tokenData.confirmed || 0),
+        0
+      ).toString()
+    : '0';
+
+  return {
+    mainImage,
+    fundingGoal,
+    totalRaised,
+  };
 }
 
 export async function generateMetadata({
@@ -50,16 +71,7 @@ export async function generateMetadata({
       };
     }
 
-    const mainImage = getCampaignMainImage(campaign);
-    const fundingGoal = campaign.fundingGoal || '0';
-
-    // Calculate total raised from payment summary
-    const totalRaised = campaign.paymentSummary?.token
-      ? Object.values(campaign.paymentSummary.token).reduce(
-          (total, tokenData) => total + (tokenData.confirmed || 0),
-          0
-        ).toString()
-      : '0';
+    const { mainImage, fundingGoal, totalRaised } = extractCampaignMetadata(campaign);
 
     return getCampaignPageMetadata({
       campaignTitle: campaign.title,
@@ -95,16 +107,7 @@ export default async function CampaignPage({
   try {
     const campaign = await getCampaign(slug);
     if (campaign) {
-      const mainImage = getCampaignMainImage(campaign);
-      const fundingGoal = campaign.fundingGoal || '0';
-
-      // Calculate total raised from payment summary
-      const totalRaised = campaign.paymentSummary?.token
-        ? Object.values(campaign.paymentSummary.token).reduce(
-            (total, tokenData) => total + (tokenData.confirmed || 0),
-            0
-          ).toString()
-        : '0';
+      const { mainImage, fundingGoal, totalRaised } = extractCampaignMetadata(campaign);
 
       structuredData = getCampaignStructuredData({
         campaignTitle: campaign.title,
