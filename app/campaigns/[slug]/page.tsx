@@ -45,9 +45,9 @@ function getCampaignMainImage(campaign: GetCampaignResponseInstance): string | u
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = params;
 
   try {
     const campaign = await getCampaign(slug);
@@ -91,9 +91,9 @@ export async function generateMetadata({
 export default async function CampaignPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
+  const { slug } = params;
   const queryClient = getQueryClient();
 
   // Prefetch campaign data
