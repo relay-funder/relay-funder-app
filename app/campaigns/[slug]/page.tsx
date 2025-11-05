@@ -74,9 +74,9 @@ export async function generateMetadata({
 
     const { mainImage, fundingGoal, totalRaised } =
       extractCampaignMetadata(campaign);
-    const createdAtDate = new Date(campaign.createdAt);
+    const startTimeDate = new Date(campaign.startTime);
     const isValidDate =
-      createdAtDate instanceof Date && !isNaN(createdAtDate.getTime());
+      startTimeDate instanceof Date && !isNaN(startTimeDate.getTime());
 
     return getCampaignPageMetadata({
       campaignTitle: campaign.title,
@@ -85,7 +85,7 @@ export async function generateMetadata({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
-      startDate: isValidDate ? createdAtDate : undefined,
+      startDate: isValidDate ? startTimeDate : undefined,
       slug,
     });
   } catch (error) {
@@ -114,9 +114,9 @@ export default async function CampaignPage({
   if (campaign) {
     const { mainImage, fundingGoal, totalRaised } =
       extractCampaignMetadata(campaign);
-    const createdAtDate = new Date(campaign.createdAt);
+    const startTimeDate = new Date(campaign.startTime);
     const isValidDate =
-      createdAtDate instanceof Date && !isNaN(createdAtDate.getTime());
+      startTimeDate instanceof Date && !isNaN(startTimeDate.getTime());
 
     structuredData = getCampaignStructuredData({
       campaignTitle: campaign.title,
@@ -125,7 +125,7 @@ export default async function CampaignPage({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
-      startDate: isValidDate ? createdAtDate : undefined,
+      startDate: isValidDate ? startTimeDate : undefined,
       slug,
     });
   }
