@@ -98,7 +98,7 @@ export function RoundFull({
           <div className="space-y-6">
             {/* Round Header with Large Logo and Status */}
             <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
-              <div className="flex items-start gap-6">
+              <div className="xxs:flex-row xxs:items-start flex flex-col items-center gap-6">
                 <div className="xs:block hidden shrink-0">
                   <RoundMainImageAvatar round={round} size="large" />
                 </div>
