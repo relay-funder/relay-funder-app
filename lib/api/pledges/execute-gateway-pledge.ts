@@ -19,9 +19,11 @@ import type {
  *
  * Token Flow:
  * - Admin wallet approves treasury for (pledgeAmount + tipAmount)
- * - Contract transfers both amounts to treasury via safeTransferFrom
- * - Tips tracked separately in contract state for later claiming
- * - User receives pledge NFT
+ * - Contract calls safeTransferFrom(admin, treasury, pledgeAmount + tipAmount)
+ * - Both pledge and tip are transferred TO the treasury contract
+ * - Tips tracked separately in contract state (s_tip, s_tokenToTippedAmount)
+ * - Platform admin can later claim accumulated tips using claimTip()
+ * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
  * @param paymentId - Internal payment record ID
  * @returns Execution result with transaction hash and amounts
@@ -78,14 +80,27 @@ export async function executeGatewayPledge(
   }
 
   // Extract amounts from payment and parse to token units
-  // Use bigint arithmetic to avoid floating-point precision issues
-  const totalAmountUnits = ethers.parseUnits(payment.amount, USD_DECIMALS);
+  // payment.amount contains ONLY the pledge amount (matching direct wallet flow)
+  // Tip is stored separately in metadata
+  const pledgeAmountUnits = ethers.parseUnits(payment.amount, USD_DECIMALS);
   const tipAmountUnits = ethers.parseUnits(
     (metadata?.tipAmount as string) || '0',
     USD_DECIMALS,
   );
-  const pledgeAmountUnits = totalAmountUnits - tipAmountUnits;
+  const totalAmountUnits = pledgeAmountUnits + tipAmountUnits;
 
+  console.log('DAIMO PAY: Amount calculation breakdown:', {
+    paymentAmount: payment.amount,
+    metadataTipAmount: (metadata?.tipAmount as string) || '0',
+    metadataPledgeAmount: (metadata?.pledgeAmount as string) || 'N/A',
+    metadataTotalReceived: (metadata?.totalReceivedFromDaimo as string) || 'N/A',
+    calculatedPledgeUnits: pledgeAmountUnits.toString(),
+    calculatedTipUnits: tipAmountUnits.toString(),
+    calculatedTotalUnits: totalAmountUnits.toString(),
+    formattedPledge: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    formattedTip: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+    formattedTotal: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+  });
   debug &&
     console.log('[Execute Gateway] Payment amounts:', {
       totalAmount: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
@@ -192,7 +207,7 @@ export async function executeGatewayPledge(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
     gatewayFee: ethers.formatUnits(gatewayFee, USD_DECIMALS),
     treasuryAddress: payment.campaign.treasuryAddress,
-    note: 'Pledge amount goes to treasury, tip stays in admin wallet',
+    note: 'Both pledge and tip transferred to treasury. Tips tracked separately in contract for claiming.',
   });
   debug &&
     console.log('[Execute Gateway] Calculated amounts:', {
@@ -251,6 +266,20 @@ export async function executeGatewayPledge(
 
   // Execute setFeeAndPledge - transfers pledge + tip to treasury
   debug && console.log('[Execute Gateway] Executing setFeeAndPledge');
+
+  console.log('DAIMO PAY: setFeeAndPledge parameters:', {
+    pledgeId,
+    backer: payment.user.address,
+    pledgeAmountUnits: pledgeAmountUnits.toString(),
+    pledgeAmountFormatted: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmountUnits: tipAmountUnits.toString(),
+    tipAmountFormatted: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+    gatewayFee: gatewayFee.toString(),
+    totalToTransfer: (pledgeAmountUnits + tipAmountUnits).toString(),
+    totalToTransferFormatted: ethers.formatUnits(pledgeAmountUnits + tipAmountUnits, USD_DECIMALS),
+    reward: '[]',
+    isPledgeForAReward: false,
+  });
 
   const tx = await treasuryContract.setFeeAndPledge(
     pledgeId,

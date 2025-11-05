@@ -204,11 +204,13 @@ export async function POST(req: Request) {
       }
 
       // Create payment record
+      // IMPORTANT: Store only the base pledge amount (not including tip) to match direct wallet flow
+      // Tip is stored separately in metadata and handled by smart contract
       let createdPayment: Awaited<ReturnType<typeof db.payment.create>> | undefined;
       try {
         createdPayment = await db.payment.create({
           data: {
-            amount: totalAmount.toString(),
+            amount: baseAmount.toString(),  // Pledge amount only
             token: 'USDT',
             type: 'BUY',
             status: 'confirming',
@@ -221,6 +223,7 @@ export async function POST(req: Request) {
               daimoPaymentId: payload.paymentId,
               pledgeAmount: baseAmount.toString(),
               tipAmount: tipAmount.toString(),
+              totalReceivedFromDaimo: totalAmount.toString(),  // Track total for reconciliation
               userAddress,
               userEmail,
               createdViaWebhook: true,
