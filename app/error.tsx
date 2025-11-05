@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Sentry } from '@/lib/sentry';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 
 export default function ErrorPage({
   error,
