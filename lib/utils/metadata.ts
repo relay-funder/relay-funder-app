@@ -52,6 +52,7 @@ export interface CampaignMetadataOptions extends BaseMetadataOptions {
   currentRaised?: string;
   creatorAddress: string;
   campaignImage?: string;
+  startDate?: Date;
 }
 
 /**
@@ -282,6 +283,7 @@ export function generateCampaignStructuredData(
     creatorAddress,
     campaignImage,
     url = baseUrl,
+    startDate,
   } = options;
 
   return {
@@ -312,7 +314,7 @@ export function generateCampaignStructuredData(
         value: currentRaised,
       },
     }),
-    startDate: new Date().toISOString(),
+    startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
   };
 }
 

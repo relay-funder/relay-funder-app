@@ -14,6 +14,7 @@ interface CampaignMetadataOptions {
   slug: string;
   title?: string;
   description?: string;
+  startDate?: Date;
 }
 
 /**
@@ -30,6 +31,7 @@ export function getCampaignPageMetadata(
     creatorAddress,
     campaignImage,
     slug,
+    startDate,
   } = options;
 
   return generateCampaignMetadata({
@@ -41,6 +43,7 @@ export function getCampaignPageMetadata(
     currentRaised,
     creatorAddress,
     campaignImage,
+    startDate,
     url: `/campaigns/${slug}`,
   });
 }
@@ -57,6 +60,7 @@ export function getCampaignStructuredData(options: CampaignMetadataOptions) {
     creatorAddress,
     campaignImage,
     slug,
+    startDate,
   } = options;
 
   return generateCampaignStructuredData({
@@ -66,6 +70,7 @@ export function getCampaignStructuredData(options: CampaignMetadataOptions) {
     currentRaised,
     creatorAddress,
     campaignImage,
+    startDate,
     url: `/campaigns/${slug}`,
     title: options.title || campaignTitle,
     description: options.description || campaignDescription,

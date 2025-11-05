@@ -80,6 +80,7 @@ export async function generateMetadata({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
+      startDate: campaign.createdAt,
       slug,
     });
   } catch (error) {
@@ -116,6 +117,7 @@ export default async function CampaignPage({
         currentRaised: totalRaised,
         creatorAddress: campaign.creatorAddress,
         campaignImage: mainImage,
+        startDate: campaign.createdAt,
         slug,
       });
     }
