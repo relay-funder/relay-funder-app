@@ -457,7 +457,7 @@ export async function executeGatewayPledge(
   };
 
   console.log('GATEWAY PLEDGE: Execution complete:', {
-    paymentId,
+    paymentId: payment.id,
     pledgeId,
     transactionHash: tx.hash,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
