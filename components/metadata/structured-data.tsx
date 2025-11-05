@@ -6,6 +6,21 @@ interface StructuredDataProps {
 }
 
 /**
+ * Sanitize JSON for safe injection into script tags
+ * Prevents XSS by escaping HTML-sensitive characters
+ */
+function sanitizeJsonForScript(data: object): string {
+  return JSON.stringify(data).replace(/[<>&]/g, (char) => {
+    const escapeMap: Record<string, string> = {
+      '<': '\\u003c',
+      '>': '\\u003e',
+      '&': '\\u0026',
+    };
+    return escapeMap[char];
+  });
+}
+
+/**
  * Component for rendering JSON-LD structured data
  * Keeps structured data logic separate from page components
  */
@@ -15,7 +30,7 @@ export function StructuredData({ data, id }: StructuredDataProps) {
       id={id}
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(data),
+        __html: sanitizeJsonForScript(data),
       }}
     />
   );
