@@ -69,7 +69,9 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
     type = 'website',
     siteName = 'Relay Funder',
     locale = 'en_US',
-    robots = 'index,follow',
+    robots = process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_ENVIRONMENT !== 'staging' 
+      ? 'index,follow' 
+      : 'no-index,no-follow',
     keywords = ['crowdfunding', 'humanitarian', 'blockchain', 'relay funder'],
     authors,
     creator = 'Relay Funder',
