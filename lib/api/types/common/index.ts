@@ -14,4 +14,7 @@ export const PaginatedRequestSchema = z.object({
   pageSize: z.coerce.number(),
 });
 
+// Email validation schema - reusable across the application
+export const EmailSchema = z.string().email();
+
 export type PaginatedResponse = z.infer<typeof PaginatedResponseSchema>;

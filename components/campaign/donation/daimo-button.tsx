@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { DaimoPayButton } from '@daimo/pay';
 import { DbCampaign } from '@/types/campaign';
-import { DAIMO_PAY_APP_ID } from '@/lib/constant';
+import { DAIMO_PAY_APP_ID, ADMIN_ADDRESS } from '@/lib/constant';
 import { Button } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { useDaimoDonationCallback } from '@/hooks/use-daimo-donation';
@@ -12,6 +12,7 @@ import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
 import { debugComponentData as debug } from '@/lib/debug';
+import { EmailSchema } from '@/lib/api/types/common';
 
 interface DaimoPayEvent {
   paymentId?: string;
@@ -83,21 +84,14 @@ export function DaimoPayButtonComponent({
     onPaymentStarted: daimoOnPaymentStarted,
     onPaymentCompleted: daimoOnPaymentCompleted,
     onPaymentBounced: daimoOnPaymentBounced,
-  } = useDaimoDonationCallback({
-    campaign,
-    amount,
-    tipAmount,
-    selectedToken: paymentData.config.tokenSymbol,
-    isAnonymous: anonymous,
-    userEmail: email,
-  });
+  } = useDaimoDonationCallback();
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
       debug && console.log('Daimo Pay: Payment started', event);
 
       try {
-        // Validate email first (matches crypto wallet pattern)
+        // Validate email using Zod
         if (!email.trim()) {
           toast({
             title: 'Email required',
@@ -107,7 +101,8 @@ export function DaimoPayButtonComponent({
           throw new Error('Email required');
         }
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        const emailValidation = EmailSchema.safeParse(email);
+        if (!emailValidation.success) {
           toast({
             title: 'Invalid email',
             description: 'Please enter a valid email address.',
@@ -234,9 +229,14 @@ export function DaimoPayButtonComponent({
   }
 
   if (!paymentData.isValid) {
+    const isEmailValid = email && email.trim() && EmailSchema.safeParse(email).success;
+    const buttonText = !isEmailValid
+      ? "Enter valid email to continue"
+      : "Enter donation amount to continue";
+
     return (
       <Button disabled className="w-full" size="lg">
-        Enter donation amount to continue
+        {buttonText}
       </Button>
     );
   }
@@ -275,12 +275,14 @@ export function DaimoPayButtonComponent({
       totalAmount: paymentData.totalAmount,
       baseAmount: amount,
       tipAmount,
+      adminWalletAddress: ADMIN_ADDRESS,
       treasuryAddress: paymentData.validatedTreasuryAddress,
       refundAddress: paymentData.validatedRefundAddress,
       intent: dynamicIntent,
       appId: DAIMO_PAY_APP_ID,
       isValid: paymentData.isValid,
       config: paymentData.config,
+      note: 'Gateway integration: Daimo sends to admin wallet, webhook executes pledge to treasury',
     });
 
   console.log('🚀 Daimo Pay: Button rendering with appId:', DAIMO_PAY_APP_ID);
@@ -296,9 +298,8 @@ export function DaimoPayButtonComponent({
         intent={dynamicIntent}
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
-        toAddress={paymentData.validatedTreasuryAddress!}
+        toAddress={ADMIN_ADDRESS as `0x${string}`}
         toUnits={paymentData.totalAmount}
-        toCallData={paymentData.pledgeCallData!}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
         onPaymentStarted={(event) => {
