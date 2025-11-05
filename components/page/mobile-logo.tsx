@@ -11,23 +11,18 @@ export function MobileLogo() {
       className={cn(
         'relative z-20 md:hidden',
         'flex cursor-pointer items-center justify-start',
-        'xs:h-14 xs:w-36 size-12', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
-        'px-1 py-2', // Healthy padding around logo
+        'xs:h-14 xs:w-36', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
+        'xxs:w-32 xxs:h-14', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
+        'h-14 w-20', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
+        'xs:px-1 xs:py-2', // Healthy padding around logo
       )}
     >
       <ThemeAwareImage
-        src="/relay-funder-logo.png"
+        src="/relay-funder-logo.svg"
         alt="RelayFunder"
         width={150}
         height={38}
-        className="xs:block mx-auto hidden w-auto" // Centered within allocated area
-      />
-      <ThemeAwareImage
-        src="/relay-funder-logo-mark.png"
-        alt="RelayFunder"
-        width={150}
-        height={38}
-        className="xs:hidden mx-auto w-auto" // Centered within allocated area
+        className="object-contain"
       />
     </Link>
   );
