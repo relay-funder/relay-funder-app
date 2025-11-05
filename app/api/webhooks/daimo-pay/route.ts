@@ -7,16 +7,8 @@ import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
-import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
+import { executeGatewayPledge, PaymentWithRelations } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
-
-// Type for payment with includes
-type PaymentWithIncludes = Prisma.PaymentGetPayload<{
-  include: {
-    user: true;
-    campaign: true;
-  };
-}>;
 
 export async function POST(req: Request) {
   try {
@@ -153,7 +145,7 @@ export async function POST(req: Request) {
     } satisfies Prisma.PaymentInclude;
 
     // Find or create payment based on event type
-    let payment: PaymentWithIncludes | null = await db.payment.findFirst({
+    let payment: PaymentWithRelations | null = await db.payment.findFirst({
       where: {
         daimoPaymentId: payload.paymentId,
       },
@@ -541,25 +533,16 @@ export async function POST(req: Request) {
         treasuryAddress: payment.campaign.treasuryAddress,
         note: 'Funds received in admin wallet, now executing pledge to treasury',
       });
-      
-      // Schedule pledge execution for next event loop tick
-      // This ensures webhook completes and releases DB connections first
-      setImmediate(async () => {
-        try {
-          const executionResult = await executeGatewayPledge(payment.id);
 
-          debug &&
-            console.log(
-              `Daimo Pay: Pledge execution completed for payment ${payment.id}:`,
-              executionResult,
-            );
-        } catch (executionError) {
-          console.error(
-            `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
-            executionError,
-          );
+      // Execute pledge asynchronously - fire and forget
+      executeGatewayPledge(payment).then(
+        (result) => {
+          console.log('DAIMO PAY: Pledge execution completed successfully:', result);
+        },
+        (error) => {
+          console.error('DAIMO PAY: Pledge execution failed:', error);
         }
-      });
+      );
     }
 
     return response(responseData);

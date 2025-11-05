@@ -1,4 +1,4 @@
-import { db } from '@/server/db';
+import { db, Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
@@ -14,6 +14,14 @@ import type {
   GatewayPledgeMetadata,
 } from '@/lib/api/types/pledges';
 
+// Type for payment with includes (matches webhook type)
+export type PaymentWithRelations = Prisma.PaymentGetPayload<{
+  include: {
+    user: true;
+    campaign: true;
+  };
+}>;
+
 /**
  * Execute a gateway pledge using setFeeAndPledge.
  *
@@ -25,40 +33,16 @@ import type {
  * - Platform admin can later claim accumulated tips using claimTip()
  * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
- * @param paymentId - Internal payment record ID
+ * @param payment - Payment object with relations (user and campaign included)
  * @returns Execution result with transaction hash and amounts
  * @throws ApiParameterError if payment invalid or already executed
  * @throws ApiUpstreamError if insufficient balance or transaction fails
  */
 export async function executeGatewayPledge(
-  paymentId: number,
+  payment: PaymentWithRelations,
 ): Promise<ExecuteGatewayPledgeResponse> {
-  console.log('GATEWAY PLEDGE: Starting execution for payment:', paymentId);
+  console.log('GATEWAY PLEDGE: Starting execution for payment:', payment.id);
   debug && console.log('[Execute Gateway] Starting pledge execution');
-
-  console.log('GATEWAY PLEDGE: Loading payment from database...');
-  
-  // Load payment with related data
-  let payment;
-  try {
-    payment = await db.payment.findUnique({
-      where: { id: paymentId },
-      include: {
-        user: true,
-        campaign: true,
-      },
-    });
-    console.log('GATEWAY PLEDGE: Payment loaded successfully');
-  } catch (dbError) {
-    console.error('GATEWAY PLEDGE: Database query failed:', dbError);
-    throw new ApiUpstreamError(
-      `Failed to load payment from database: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`,
-    );
-  }
-
-  if (!payment) {
-    throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
-  }
 
   console.log('GATEWAY PLEDGE: Validating payment status...');
 

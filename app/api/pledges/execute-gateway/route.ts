@@ -1,9 +1,11 @@
 import { response, handleError } from '@/lib/api/response';
-import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
+import { executeGatewayPledge, PaymentWithRelations } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
 import { z } from 'zod';
 import type { ExecuteGatewayPledgeRequest } from '@/lib/api/types/pledges';
 import { checkAuth } from '@/lib/api/auth';
+import { db } from '@/server/db';
+import { ApiParameterError } from '@/lib/api/error';
 
 const ExecuteGatewayPledgeSchema = z.object({
   paymentId: z.number().int().positive('Payment ID must be a positive integer'),
@@ -38,8 +40,21 @@ export async function POST(req: Request) {
     debug &&
       console.log('[Execute Gateway API] Processing payment:', { paymentId });
 
+    // Load payment with required relations
+    const payment = await db.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        user: true,
+        campaign: true,
+      },
+    });
+
+    if (!payment) {
+      throw new ApiParameterError(`Payment not found: ${paymentId}`);
+    }
+
     // Execute the pledge using shared logic
-    const result = await executeGatewayPledge(paymentId);
+    const result = await executeGatewayPledge(payment as PaymentWithRelations);
 
     return response(result);
   } catch (error: unknown) {
