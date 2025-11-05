@@ -11,7 +11,6 @@ interface CampaignMetadataOptions {
   currentRaised?: string;
   creatorAddress: string;
   campaignImage?: string;
-  status: string;
   slug: string;
   title?: string;
   description?: string;
@@ -30,7 +29,6 @@ export function getCampaignPageMetadata(
     currentRaised,
     creatorAddress,
     campaignImage,
-    status,
     slug,
   } = options;
 
@@ -43,7 +41,6 @@ export function getCampaignPageMetadata(
     currentRaised,
     creatorAddress,
     campaignImage,
-    status,
     url: `/campaigns/${slug}`,
   });
 }
@@ -59,7 +56,6 @@ export function getCampaignStructuredData(options: CampaignMetadataOptions) {
     currentRaised,
     creatorAddress,
     campaignImage,
-    status,
     slug,
   } = options;
 
@@ -70,7 +66,6 @@ export function getCampaignStructuredData(options: CampaignMetadataOptions) {
     currentRaised,
     creatorAddress,
     campaignImage,
-    status,
     url: `/campaigns/${slug}`,
     title: options.title || campaignTitle,
     description: options.description || campaignDescription,

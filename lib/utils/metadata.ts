@@ -52,7 +52,6 @@ export interface CampaignMetadataOptions extends BaseMetadataOptions {
   currentRaised?: string;
   creatorAddress: string;
   campaignImage?: string;
-  status: string;
 }
 
 /**
@@ -187,7 +186,6 @@ export function generateCampaignMetadata(
     currentRaised,
     creatorAddress,
     campaignImage,
-    status,
     url = baseUrl,
     siteName = 'Relay Funder',
     locale = 'en_US',
@@ -209,39 +207,6 @@ export function generateCampaignMetadata(
     : `$${fundingGoal} funding goal`;
 
   const enhancedDescription = `${description} - ${fundingInfo}`;
-
-  // Create structured data for the campaign
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'FundraisingCampaign',
-    name: campaignTitle,
-    description: campaignDescription,
-    url,
-    image,
-    organizer: {
-      '@type': 'Organization',
-      name: 'Relay Funder',
-      url: baseUrl,
-    },
-    creator: {
-      '@type': 'Person',
-      identifier: creatorAddress,
-    },
-    targetFunding: {
-      '@type': 'MonetaryAmount',
-      currency: 'USD',
-      value: fundingGoal,
-    },
-    ...(currentRaised && {
-      raisedFunding: {
-        '@type': 'MonetaryAmount',
-        currency: 'USD',
-        value: currentRaised,
-      },
-    }),
-    status: status === 'ACTIVE' ? 'Active' : 'Inactive',
-    startDate: new Date().toISOString(), // We don't have exact dates, use current
-  };
 
   const metadata = generateMetadata({
     title,
@@ -316,7 +281,6 @@ export function generateCampaignStructuredData(
     currentRaised,
     creatorAddress,
     campaignImage,
-    status,
     url = baseUrl,
   } = options;
 
@@ -348,7 +312,6 @@ export function generateCampaignStructuredData(
         value: currentRaised,
       },
     }),
-    status: status === 'ACTIVE' ? 'Active' : 'Inactive',
     startDate: new Date().toISOString(),
   };
 }

@@ -8,11 +8,13 @@ import {
   CampaignStructuredData,
 } from '@/components/metadata';
 import { CampaignFull } from '@/components/campaign/full';
+import type { GetCampaignResponseInstance } from '@/lib/api/types/campaigns';
+import type { CampaignImage } from '@/types/campaign';
 
 /**
  * Extract the main image URL from campaign media or legacy images
  */
-function getCampaignMainImage(campaign: any): string | undefined {
+function getCampaignMainImage(campaign: GetCampaignResponseInstance): string | undefined {
   // Check for new media format with mediaOrder
   if (
     Array.isArray(campaign?.media) &&
@@ -21,11 +23,9 @@ function getCampaignMainImage(campaign: any): string | undefined {
     campaign.mediaOrder.length
   ) {
     const firstMedia = campaign.media
-      .filter(({ mimeType }: { mimeType: string }) =>
-        mimeType.startsWith('image'),
-      )
-      .find(({ id }: { id: string }) => id === campaign.mediaOrder?.at(0));
-    if (firstMedia?.url) {
+      .filter(({ mimeType }) => mimeType.startsWith('image'))
+      .find(({ id }) => id === campaign.mediaOrder?.at(0));
+    if (firstMedia?.url && typeof firstMedia.url === 'string') {
       return firstMedia.url;
     }
   }
@@ -33,8 +33,8 @@ function getCampaignMainImage(campaign: any): string | undefined {
   // Check for legacy images format
   if (Array.isArray(campaign?.images)) {
     const legacyImage =
-      campaign.images.find((img: any) => img.isMainImage) || campaign.images[0];
-    if (legacyImage?.imageUrl) {
+      campaign.images.find((img: CampaignImage) => img.isMainImage) || campaign.images[0];
+    if (legacyImage?.imageUrl && typeof legacyImage.imageUrl === 'string') {
       return legacyImage.imageUrl;
     }
   }
@@ -77,7 +77,6 @@ export async function generateMetadata({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
-      status: campaign.status,
       slug,
     });
   } catch (error) {
@@ -123,7 +122,6 @@ export default async function CampaignPage({
         currentRaised: totalRaised,
         creatorAddress: campaign.creatorAddress,
         campaignImage: mainImage,
-        status: campaign.status,
         slug,
       });
     }

@@ -1,16 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts';
 import Authenticated from '@/components/login/authenticated';
 import Login from '@/components/login';
 
-export const metadata = {
-  title: 'Login | Relay Funder',
-};
-
 export default function LoginPage() {
   const { authenticated, isReady } = useAuth();
+
+  // Set page title for browser history
+  useEffect(() => {
+    document.title = 'Login | Relay Funder';
+  }, []);
 
   // Show loading state while authentication status is being determined
   if (!isReady) {
