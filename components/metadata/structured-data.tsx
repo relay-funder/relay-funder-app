@@ -6,33 +6,19 @@ interface StructuredDataProps {
 }
 
 /**
- * Sanitize JSON for safe injection into script tags
- * Prevents XSS by escaping HTML-sensitive characters
- */
-function sanitizeJsonForScript(data: object): string {
-  return JSON.stringify(data).replace(/[<>&]/g, (char) => {
-    const escapeMap: Record<string, string> = {
-      '<': '\\u003c',
-      '>': '\\u003e',
-      '&': '\\u0026',
-    };
-    return escapeMap[char];
-  });
-}
-
-/**
  * Component for rendering JSON-LD structured data
- * Keeps structured data logic separate from page components
+ * Uses Next.js Script component's strategy for safe JSON injection
+ * Avoids dangerouslySetInnerHTML entirely
  */
 export function StructuredData({ data, id }: StructuredDataProps) {
   return (
     <Script
       id={id}
       type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: sanitizeJsonForScript(data),
-      }}
-    />
+      strategy="beforeInteractive"
+    >
+      {JSON.stringify(data)}
+    </Script>
   );
 }
 
