@@ -132,9 +132,11 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
   return (
     <Card className="bg-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Distribution Preview
+        <CardTitle className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Distribution Preview
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -189,12 +191,18 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Campaign</TableHead>
-                  <TableHead className="text-right">Contributors</TableHead>
-                  <TableHead className="text-right">Contributions</TableHead>
+                  <TableHead className="hidden text-right md:table-cell">
+                    Contributors
+                  </TableHead>
+                  <TableHead className="hidden text-right md:table-cell">
+                    Contributions
+                  </TableHead>
                   <TableHead className="text-right">Matching Amount</TableHead>
-                  <TableHead className="text-right">Share</TableHead>
+                  <TableHead className="hidden text-right md:table-cell">
+                    Share
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -213,22 +221,22 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
 
                     return (
                       <TableRow key={item.id}>
-                        <TableCell className="max-w-[120px] truncate text-sm text-muted-foreground">
+                        <TableCell className="hidden max-w-[120px] truncate text-sm text-muted-foreground sm:table-cell">
                           {item.id}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate font-medium">
                           {item.title}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="hidden text-right md:table-cell">
                           {item.nUniqueContributors}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="hidden text-right md:table-cell">
                           {item.nContributions}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
                           {formatUSD(parseFloat(item.matchingAmount))}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="hidden text-right md:table-cell">
                           <Badge variant="outline">{share.toFixed(1)}%</Badge>
                         </TableCell>
                       </TableRow>
