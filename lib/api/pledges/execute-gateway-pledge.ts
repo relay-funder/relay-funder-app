@@ -36,18 +36,31 @@ export async function executeGatewayPledge(
   console.log('GATEWAY PLEDGE: Starting execution for payment:', paymentId);
   debug && console.log('[Execute Gateway] Starting pledge execution');
 
+  console.log('GATEWAY PLEDGE: Loading payment from database...');
+  
   // Load payment with related data
-  const payment = await db.payment.findUnique({
-    where: { id: paymentId },
-    include: {
-      user: true,
-      campaign: true,
-    },
-  });
+  let payment;
+  try {
+    payment = await db.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        user: true,
+        campaign: true,
+      },
+    });
+    console.log('GATEWAY PLEDGE: Payment loaded successfully');
+  } catch (dbError) {
+    console.error('GATEWAY PLEDGE: Database query failed:', dbError);
+    throw new ApiUpstreamError(
+      `Failed to load payment from database: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`,
+    );
+  }
 
   if (!payment) {
     throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
   }
+
+  console.log('GATEWAY PLEDGE: Validating payment status...');
 
   // Validate payment is ready for execution
   if (payment.status !== 'confirmed') {
@@ -65,6 +78,7 @@ export async function executeGatewayPledge(
   // Check if already executed
   const metadata = payment.metadata as Record<string, unknown>;
   if (metadata?.onChainPledgeId) {
+    console.log('GATEWAY PLEDGE: Pledge already executed, returning cached result');
     debug &&
       console.log('[Execute Gateway] Pledge already executed:', {
         onChainPledgeId: metadata.onChainPledgeId,
@@ -78,6 +92,8 @@ export async function executeGatewayPledge(
       tipAmount: (metadata.tipAmount as string) || '0',
     };
   }
+  
+  console.log('GATEWAY PLEDGE: Payment validation complete, calculating amounts...');
 
   // Extract amounts from payment and parse to token units
   // payment.amount contains ONLY the pledge amount (matching direct wallet flow)
@@ -137,9 +153,13 @@ export async function executeGatewayPledge(
     );
   }
 
+  console.log('GATEWAY PLEDGE: Initializing RPC provider and signer...');
+  
   // Initialize provider and admin signer
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
+
+  console.log('GATEWAY PLEDGE: RPC provider initialized');
 
   // Verify private key matches public address
   if (adminSigner.address.toLowerCase() !== adminAddress.toLowerCase()) {
@@ -151,6 +171,8 @@ export async function executeGatewayPledge(
       'Admin private key does not match configured admin address',
     );
   }
+  
+  console.log('GATEWAY PLEDGE: Admin signer verified');
 
   debug &&
     console.log('[Execute Gateway] Admin wallet:', {
@@ -158,6 +180,8 @@ export async function executeGatewayPledge(
       treasuryAddress: payment.campaign.treasuryAddress,
     });
 
+  console.log('GATEWAY PLEDGE: Initializing contracts...');
+  
   // Initialize contracts
   const usdContract = new ethers.Contract(
     USD_ADDRESS as string,
@@ -171,8 +195,19 @@ export async function executeGatewayPledge(
     adminSigner,
   );
 
+  console.log('GATEWAY PLEDGE: Contracts initialized, checking admin wallet balance...');
+
   // Check admin wallet balance
-  const adminBalance = await usdContract.balanceOf(adminSigner.address);
+  let adminBalance;
+  try {
+    adminBalance = await usdContract.balanceOf(adminSigner.address);
+    console.log('GATEWAY PLEDGE: Admin balance retrieved successfully');
+  } catch (rpcError) {
+    console.error('GATEWAY PLEDGE: Failed to get admin balance from RPC:', rpcError);
+    throw new ApiUpstreamError(
+      `Failed to connect to blockchain RPC: ${rpcError instanceof Error ? rpcError.message : 'Unknown error'}`,
+    );
+  }
   const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
 
   console.log('GATEWAY PLEDGE: Admin wallet balance check:', {
@@ -247,16 +282,10 @@ export async function executeGatewayPledge(
     console.log('GATEWAY PLEDGE: Submitting approval transaction...');
 
     try {
-      // Get current nonce for proper transaction sequencing
-      const nonce = await provider.getTransactionCount(adminSigner.address, 'latest');
-      
-      console.log('GATEWAY PLEDGE: Approval transaction nonce:', nonce);
-
       const approveTx = await usdContract.approve(
         payment.campaign.treasuryAddress,
         totalAmountUnits,
         {
-          nonce,
           maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
           maxFeePerGas: ethers.parseUnits('100', 'gwei'),
         },
@@ -264,7 +293,7 @@ export async function executeGatewayPledge(
 
       console.log('GATEWAY PLEDGE: Approval transaction submitted:', {
         hash: approveTx.hash,
-        nonce,
+        nonce: approveTx.nonce,
         from: adminSigner.address,
         to: USD_ADDRESS,
         spender: payment.campaign.treasuryAddress,
@@ -318,11 +347,6 @@ export async function executeGatewayPledge(
   let receipt: ethers.TransactionReceipt | null;
 
   try {
-    // Get current nonce for proper transaction sequencing
-    const pledgeNonce = await provider.getTransactionCount(adminSigner.address, 'latest');
-    
-    console.log('GATEWAY PLEDGE: Pledge transaction nonce:', pledgeNonce);
-
     tx = await treasuryContract.setFeeAndPledge(
       pledgeId,
       payment.user.address,
@@ -332,7 +356,6 @@ export async function executeGatewayPledge(
       [],
       false,
       {
-        nonce: pledgeNonce,
         maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
         maxFeePerGas: ethers.parseUnits('100', 'gwei'),
       },
@@ -340,7 +363,7 @@ export async function executeGatewayPledge(
 
     console.log('GATEWAY PLEDGE: Transaction submitted:', {
       hash: tx.hash,
-      nonce: pledgeNonce,
+      nonce: tx.nonce,
       from: adminSigner.address,
       to: payment.campaign.treasuryAddress,
       pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
