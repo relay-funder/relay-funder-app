@@ -6,10 +6,10 @@ import {
   generatePledgeId,
   toTokenUnits,
   encodePledgeCallData,
-  isPledgeDataValid,
 } from '@/lib/web3/daimo/pledge';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
 import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
+import { EmailSchema } from '@/lib/api/types/common';
 
 interface UseDaimoPaymentParams {
   campaign: DbCampaign;
@@ -92,7 +92,8 @@ export function useDaimoPayment({
     return null;
   }, [address, validatedTreasuryAddress]);
 
-  // Generate contract call data
+  // Generate contract call data (for metadata only - not used in Daimo Pay button)
+  // Gateway payments are executed via webhooks, not client-side contract calls
   const pledgeCallData = useMemo(() => {
     if (!address || !pledgeId || !validatedTreasuryAddress) return null;
 
@@ -107,7 +108,7 @@ export function useDaimoPayment({
         tipAmountInTokenUnits,
       );
     } catch (error) {
-      console.error('Daimo Pay: Error encoding call data:', error);
+      console.error('Daimo Pay: Error encoding call data (metadata only):', error);
       return null;
     }
   }, [pledgeId, address, validatedTreasuryAddress, baseAmount, tipAmountNum]);
@@ -127,26 +128,32 @@ export function useDaimoPayment({
     [campaign.id, pledgeId, email, anonymous, tipAmount, amount, config],
   );
 
+  // Validate email format using Zod
+  const isEmailValid = useMemo(() => {
+    if (!email || !email.trim()) return false;
+    const result = EmailSchema.safeParse(email);
+    return result.success;
+  }, [email]);
+
   // Validate all parameters
+  // Note: pledgeCallData is no longer required for Daimo Pay button functionality
+  // Gateway payments are executed via webhooks, not client-side contract calls
   const isValid = useMemo(() => {
     return (
-      isPledgeDataValid(
-        pledgeId,
-        pledgeCallData,
-        address,
-        parseFloat(totalAmount),
-        DAIMO_PAY_MIN_AMOUNT,
-      ) &&
+      !!pledgeId && // pledgeId still needed for metadata
+      !!address &&
+      parseFloat(totalAmount) >= DAIMO_PAY_MIN_AMOUNT &&
       config.isValid &&
-      !!validatedTreasuryAddress
+      !!validatedTreasuryAddress &&
+      isEmailValid
     );
   }, [
     pledgeId,
-    pledgeCallData,
     address,
     totalAmount,
     config.isValid,
     validatedTreasuryAddress,
+    isEmailValid,
   ]);
 
   return {

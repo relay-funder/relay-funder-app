@@ -99,13 +99,16 @@ export function RoundFull({
           {/* Round Info Section - Compact Layout with Large Logo */}
           <div className="space-y-6">
             {/* Round Header with Large Logo and Status */}
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex items-start gap-6">
-                <div className="shrink-0">
+            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
+              <div className="xxs:flex-row xxs:items-start flex flex-col items-center gap-6">
+                <div className="xs:block hidden shrink-0">
                   <RoundMainImageAvatar round={round} size="large" />
                 </div>
+                <div className="xs:hidden shrink-0">
+                  <RoundMainImageAvatar round={round} size="medium" />
+                </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="mb-3 text-3xl font-bold leading-tight tracking-tight">
+                  <h1 className="xs:text-3xl mb-3 text-2xl font-bold leading-tight tracking-tight">
                     {round.title ?? 'Untitled Round'}
                   </h1>
                   {/* Round URL - displayed below title with clickable icon */}
@@ -115,7 +118,7 @@ export function RoundFull({
                         href={round.descriptionUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm transition-colors hover:text-foreground hover:underline"
+                        className="xs:text-sm flex items-center gap-2 text-xs transition-colors hover:text-foreground hover:underline"
                       >
                         <ExternalLink className="h-4 w-4" />
                         <span className="truncate">{round.descriptionUrl}</span>
@@ -195,7 +198,7 @@ export function RoundFull({
 
           {/* Participating Campaigns Section - Prominent Display */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="xs:flex-row flex flex-col items-center justify-between gap-2">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">
                   Participating Campaigns

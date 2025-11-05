@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
 import { db, Prisma } from '@/server/db';
-import { ApiParameterError } from '@/lib/api/error';
+import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { notify } from '@/lib/api/event-feed';
 import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
+import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
+
+// Type for payment with includes
+type PaymentWithIncludes = Prisma.PaymentGetPayload<{
+  include: {
+    user: true;
+    campaign: true;
+  };
+}>;
 
 export async function POST(req: Request) {
   try {
@@ -137,22 +146,153 @@ export async function POST(req: Request) {
       throw new ApiParameterError('Missing type in webhook payload');
     }
 
-    // Find payment by Daimo payment ID (stored in transactionHash)
-    const payment = await db.payment.findFirst({
+    // Define payment include shape for type consistency
+    const paymentInclude = {
+      user: true,
+      campaign: true,
+    } satisfies Prisma.PaymentInclude;
+
+    // Find or create payment based on event type
+    let payment: PaymentWithIncludes | null = await db.payment.findFirst({
       where: {
-        transactionHash: payload.paymentId,
+        daimoPaymentId: payload.paymentId,
       },
-      include: {
-        user: true,
-        campaign: true,
-      },
+      include: paymentInclude,
     });
 
-    // Handle race condition: webhook arrived before payment creation
+    // Create payment on payment_started if it doesn't exist
+    if (!payment && payload.type === 'payment_started') {
+      debug &&
+        console.log(
+          'Daimo Pay webhook: Creating payment from payment_started event',
+          payload.paymentId,
+        );
+
+      // Extract metadata from Daimo payload
+      const metadata = payload.payment.metadata;
+      const campaignId = metadata?.campaignId
+        ? parseInt(metadata.campaignId)
+        : null;
+      const userAddress = payload.payment.source?.payerAddress;
+      const tipAmount = parseFloat(metadata?.tipAmount || '0');
+      const baseAmount = parseFloat(metadata?.baseAmount || '0');
+      const totalAmount = baseAmount + tipAmount;
+      const isAnonymous = metadata?.anonymous === 'true';
+      const userEmail = metadata?.email;
+
+      if (!campaignId) {
+        throw new ApiParameterError(
+          'Missing campaignId in Daimo payment metadata',
+        );
+      }
+
+      if (!userAddress) {
+        throw new ApiParameterError(
+          'Missing payer address in Daimo payment source',
+        );
+      }
+
+      // Find user by address (normalized)
+      const user = await db.user.findUnique({
+        where: { address: userAddress.toLowerCase() },
+      });
+
+      if (!user) {
+        throw new ApiNotFoundError(
+          `User not found for address ${userAddress}. User must exist before making payments.`,
+        );
+      }
+
+      // Create payment record
+      // IMPORTANT: Store only the base pledge amount (not including tip) to match direct wallet flow
+      // Tip is stored separately in metadata and handled by smart contract
+      let createdPayment: Awaited<ReturnType<typeof db.payment.create>> | undefined;
+      try {
+        createdPayment = await db.payment.create({
+          data: {
+            amount: baseAmount.toString(),  // Pledge amount only
+            token: 'USDT',
+            type: 'BUY',
+            status: 'confirming',
+            daimoPaymentId: payload.paymentId,
+            provider: 'daimo',
+            isAnonymous,
+            userId: user.id,
+            campaignId,
+            metadata: {
+              daimoPaymentId: payload.paymentId,
+              pledgeAmount: baseAmount.toString(),
+              tipAmount: tipAmount.toString(),
+              totalReceivedFromDaimo: totalAmount.toString(),  // Track total for reconciliation
+              userAddress,
+              userEmail,
+              createdViaWebhook: true,
+              createdAt: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          // Unique constraint violation - payment already exists
+          debug &&
+            console.log('Duplicate payment creation prevented by constraint');
+          payment = await db.payment.findFirst({
+            where: { daimoPaymentId: payload.paymentId },
+            include: paymentInclude,
+          });
+
+          // Verify payment was found (should exist if constraint was violated)
+          if (!payment) {
+            console.error('Daimo Pay: Unique constraint violated but payment not found', {
+              daimoPaymentId: payload.paymentId,
+              error: error.message,
+            });
+            throw new ApiParameterError(
+              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      // Fetch the payment with includes (only if payment creation succeeded)
+      if (createdPayment) {
+        payment = await db.payment.findUnique({
+          where: { id: createdPayment.id },
+          include: paymentInclude,
+        });
+
+        if (!payment) {
+          throw new ApiParameterError('Failed to fetch created payment');
+        }
+      }
+
+      console.log('DAIMO PAY: Payment record created:', {
+        paymentId: payment!.id,
+        daimoPaymentId: payload.paymentId,
+        amount: totalAmount,
+        status: 'confirming',
+        userAddress: userAddress,
+        campaignId: campaignId,
+        note: 'Waiting for Daimo to send funds to admin wallet',
+      });
+      debug &&
+        console.log('Daimo Pay webhook: Payment created or found:', {
+          paymentId: payment!.id,
+          daimoPaymentId: payload.paymentId,
+          amount: totalAmount,
+        });
+    }
+
+    // Handle case where payment still doesn't exist (shouldn't happen for payment_started)
     if (!payment) {
       debug &&
         console.log(
-          'Daimo Pay webhook: Payment not yet available for',
+          'Daimo Pay webhook: Payment not found and could not be created for',
           payload.paymentId,
         );
 
@@ -161,7 +301,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: 'Conflict',
-          message: 'Payment dependency not yet available',
+          message: 'Payment not found and could not be created',
           retryable: true,
         },
         {
@@ -307,10 +447,7 @@ export async function POST(req: Request) {
     const updatedPayment = await db.payment.update({
       where: { id: payment.id },
       data: baseUpdateData,
-      include: {
-        user: true,
-        campaign: true,
-      },
+      include: paymentInclude,
     });
 
     debug &&
@@ -367,6 +504,46 @@ export async function POST(req: Request) {
           notificationError,
         );
       }
+    }
+
+    // Execute on-chain pledge for gateway payments
+    // Only trigger when payment is newly confirmed (not duplicate events)
+    if (
+      newStatus === 'confirmed' &&
+      currentStatus !== 'confirmed' &&
+      payment.provider === 'daimo'
+    ) {
+      debug &&
+        console.log(
+          `Daimo Pay: Triggering pledge execution for payment ${payment.id}`,
+        );
+
+      // Fire-and-forget: don't await pledge execution
+      // If execution fails, payment remains "confirmed" for manual retry
+      console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
+        paymentId: payment.id,
+        amount: payment.amount,
+        userAddress: payment.user.address,
+        campaignId: payment.campaign.id,
+        treasuryAddress: payment.campaign.treasuryAddress,
+        note: 'Funds received in admin wallet, now executing pledge to treasury',
+      });
+      Promise.resolve().then(async () => {
+        try {
+          const executionResult = await executeGatewayPledge(payment.id);
+
+          debug &&
+            console.log(
+              `Daimo Pay: Pledge execution completed for payment ${payment.id}:`,
+              executionResult,
+            );
+        } catch (executionError) {
+          console.error(
+            `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
+            executionError,
+          );
+        }
+      });
     }
 
     debug &&

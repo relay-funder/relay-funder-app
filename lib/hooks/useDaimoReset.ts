@@ -6,7 +6,7 @@ import { debugHook as debug } from '@/lib/debug';
 
 interface UseDaimoResetParams {
   totalAmount: string;
-  pledgeCallData: `0x${string}` | null;
+  pledgeCallData: `0x${string}` | null; // Kept for backward compatibility but no longer used
   validatedTreasuryAddress: `0x${string}` | null;
   metadata: Record<string, string>;
   isValid: boolean;
@@ -37,8 +37,7 @@ export function useDaimoReset({
     if (
       !isValid ||
       !resetPayment ||
-      !validatedTreasuryAddress ||
-      !pledgeCallData
+      !validatedTreasuryAddress
     ) {
       return;
     }
@@ -101,7 +100,6 @@ export function useDaimoReset({
           toToken: daimoConfig.tokenAddress,
           toAddress: validatedTreasuryAddress,
           toUnits: totalAmount,
-          toCallData: pledgeCallData,
           metadata,
         });
 

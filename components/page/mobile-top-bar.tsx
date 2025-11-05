@@ -11,7 +11,7 @@ export function MobileTopBar({ className }: { className?: string }) {
     <div
       className={cn(
         'relative h-16 w-full border-b border-border bg-background md:hidden',
-        'flex items-center justify-between px-4', // Ensure proper spacing
+        'xs:px-4 flex items-center justify-between px-2', // Ensure proper spacing
         className,
       )}
     >
