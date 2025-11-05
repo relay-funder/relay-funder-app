@@ -1,8 +1,8 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect } from 'react';
 import { useCollection as useCollectionQuery } from '@/lib/hooks/useCollections';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { useAuth } from '@/contexts';
 import { CollectionDetailLoading } from '@/components/collection/detail-loading';
 import { CollectionDetailNoAuth } from '@/components/collection/detail-noauth';
@@ -19,13 +19,7 @@ export default function CollectionDetailsPage() {
   const { data: collection, isPending: loading } = useCollectionQuery(id);
 
   // Set page title for browser history
-  useEffect(() => {
-    if (collection?.name) {
-      document.title = `${collection.name} | Relay Funder`;
-    } else {
-      document.title = 'Collection | Relay Funder';
-    }
-  }, [collection?.name]);
+  useMetaTitle(collection?.name ? `${collection.name} | Relay Funder` : 'Collection | Relay Funder');
 
   if (loading) {
     return <CollectionDetailLoading />;

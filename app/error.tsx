@@ -37,9 +37,7 @@ export default function ErrorPage({
   }, [isAuthError, isServerError]);
 
   // Set page title for browser history
-  useEffect(() => {
-    document.title = `${errorTitle} | Relay Funder`;
-  }, [errorTitle]);
+  useMetaTitle(`${errorTitle} | Relay Funder`);
 
   const errorMessage = useMemo(() => {
     if (isAuthError) return 'Redirecting you to sign in...';

@@ -25,13 +25,7 @@ export default function ProfilePage() {
   }, [setEditProfile]);
 
   // Set page title for browser history
-  useEffect(() => {
-    if (editProfile) {
-      document.title = 'Edit Profile | Relay Funder';
-    } else {
-      document.title = 'Profile Settings | Relay Funder';
-    }
-  }, [editProfile]);
+  useMetaTitle(editProfile ? 'Edit Profile | Relay Funder' : 'Profile Settings | Relay Funder');
 
   if (!isReady || (authenticated && isProfilePending)) {
     return <ProfilePageSkeleton />;

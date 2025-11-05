@@ -2,13 +2,11 @@
 
 import { RoundCreate } from '@/components/round/create';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
-import { useEffect } from 'react';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 
 export default function CreateRoundPage() {
   // Set page title for browser history
-  useEffect(() => {
-    document.title = 'Admin Create Round | Relay Funder';
-  }, []);
+  useMetaTitle('Admin Create Round | Relay Funder');
 
   return (
     <Web3ContextProvider>

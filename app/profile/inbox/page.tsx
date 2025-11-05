@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuth } from '@/contexts';
-import { useEffect } from 'react';
 import { PageHome } from '@/components/page/home';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { PageHeader } from '@/components/page/header';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
@@ -13,9 +13,7 @@ export default function ProfileInboxPage() {
   const { authenticated, isReady } = useAuth();
 
   // Set page title for browser history
-  useEffect(() => {
-    document.title = 'Inbox | Relay Funder';
-  }, []);
+  useMetaTitle('Inbox | Relay Funder');
 
   if (!isReady) {
     return <PageLoading>Loading your inbox…</PageLoading>;

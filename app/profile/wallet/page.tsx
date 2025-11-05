@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuth } from '@/contexts';
-import { useEffect } from 'react';
 import { PageHome } from '@/components/page/home';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { PageHeader } from '@/components/page/header';
 import { DetailContainer } from '@/components/layout';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
@@ -14,9 +14,7 @@ export default function WalletSettingsPage() {
   const { authenticated, isReady } = useAuth();
 
   // Set page title for browser history
-  useEffect(() => {
-    document.title = 'Wallet Settings | Relay Funder';
-  }, []);
+  useMetaTitle('Wallet Settings | Relay Funder');
 
   if (!isReady) {
     return <WalletPageSkeleton />;
