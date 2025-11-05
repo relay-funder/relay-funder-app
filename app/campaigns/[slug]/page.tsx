@@ -48,10 +48,23 @@ function extractCampaignMetadata(campaign: GetCampaignResponseInstance) {
         .toString()
     : '0';
 
+  const rawStartTime = campaign.startTime as Date | string | null | undefined;
+  const parsedStartDate =
+    rawStartTime instanceof Date
+      ? rawStartTime
+      : rawStartTime && typeof rawStartTime === 'string' && rawStartTime.trim().length > 0
+        ? new Date(rawStartTime)
+        : undefined;
+  const startDate =
+    parsedStartDate && !Number.isNaN(parsedStartDate.valueOf())
+      ? parsedStartDate
+      : undefined;
+
   return {
     mainImage,
     fundingGoal,
     totalRaised,
+    startDate,
   };
 }
 
@@ -72,11 +85,8 @@ export async function generateMetadata({
       };
     }
 
-    const { mainImage, fundingGoal, totalRaised } =
+    const { mainImage, fundingGoal, totalRaised, startDate } =
       extractCampaignMetadata(campaign);
-    const startTimeDate = new Date(campaign.startTime);
-    const isValidDate =
-      startTimeDate instanceof Date && !isNaN(startTimeDate.getTime());
 
     return getCampaignPageMetadata({
       campaignTitle: campaign.title,
@@ -85,7 +95,7 @@ export async function generateMetadata({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
-      startDate: isValidDate ? startTimeDate : undefined,
+      startDate,
       slug,
     });
   } catch (error) {
@@ -112,11 +122,8 @@ export default async function CampaignPage({
   let structuredData = null;
   const campaign = await getCampaign(slug);
   if (campaign) {
-    const { mainImage, fundingGoal, totalRaised } =
+    const { mainImage, fundingGoal, totalRaised, startDate } =
       extractCampaignMetadata(campaign);
-    const startTimeDate = new Date(campaign.startTime);
-    const isValidDate =
-      startTimeDate instanceof Date && !isNaN(startTimeDate.getTime());
 
     structuredData = getCampaignStructuredData({
       campaignTitle: campaign.title,
@@ -125,7 +132,7 @@ export default async function CampaignPage({
       currentRaised: totalRaised,
       creatorAddress: campaign.creatorAddress,
       campaignImage: mainImage,
-      startDate: isValidDate ? startTimeDate : undefined,
+      startDate,
       slug,
     });
   }
