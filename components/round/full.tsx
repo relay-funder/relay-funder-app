@@ -24,6 +24,7 @@ import { RoundAdminInlineEdit } from './admin/inline-edit';
 import { RoundApplyDialog } from './apply-dialog';
 import { Button } from '@/components/ui';
 import { RoundQfPreview } from './qf-preview';
+import { cn } from '@/lib/utils';
 
 export function RoundFull({
   id,
@@ -99,7 +100,12 @@ export function RoundFull({
           {/* Round Info Section - Compact Layout with Large Logo */}
           <div className="space-y-6">
             {/* Round Header with Large Logo and Status */}
-            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row">
+            <div
+              className={cn(
+                'flex flex-col items-start justify-between gap-6',
+                isAdmin ? 'lg:flex-row' : 'sm:flex-row',
+              )}
+            >
               <div className="xxs:flex-row xxs:items-start flex flex-col items-center gap-6">
                 <div className="xs:block hidden shrink-0">
                   <RoundMainImageAvatar round={round} size="large" />
@@ -127,7 +133,14 @@ export function RoundFull({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  'flex gap-2',
+                  isAdmin
+                    ? 'xs:flex-row xs:items-center flex-col items-start'
+                    : 'items-center',
+                )}
+              >
                 <Badge
                   variant={status.variant}
                   className="shrink-0 px-3 py-1 text-sm"
