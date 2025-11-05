@@ -31,6 +31,7 @@ import type {
 export async function executeGatewayPledge(
   paymentId: number,
 ): Promise<ExecuteGatewayPledgeResponse> {
+  console.log('DAIMO PAY: Starting gateway pledge execution for payment:', paymentId);
   debug && console.log('[Execute Gateway] Starting pledge execution');
 
   // Load payment with related data
@@ -159,6 +160,12 @@ export async function executeGatewayPledge(
   const adminBalance = await usdContract.balanceOf(adminSigner.address);
   const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
 
+  console.log('DAIMO PAY: Admin wallet balance check:', {
+    adminAddress: adminSigner.address,
+    balance: adminBalanceFormatted,
+    required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+    hasEnough: adminBalance >= totalAmountUnits,
+  });
   debug &&
     console.log('[Execute Gateway] Admin wallet balance:', {
       balance: adminBalanceFormatted,
@@ -179,6 +186,14 @@ export async function executeGatewayPledge(
    */
   const gatewayFee = 0n;
 
+  console.log('DAIMO PAY: Processing amounts:', {
+    totalReceived: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+    gatewayFee: ethers.formatUnits(gatewayFee, USD_DECIMALS),
+    treasuryAddress: payment.campaign.treasuryAddress,
+    note: 'Pledge amount goes to treasury, tip stays in admin wallet',
+  });
   debug &&
     console.log('[Execute Gateway] Calculated amounts:', {
       pledgeAmountUnits: pledgeAmountUnits.toString(),
@@ -251,6 +266,13 @@ export async function executeGatewayPledge(
     },
   );
 
+  console.log('DAIMO PAY: Transaction submitted:', {
+    hash: tx.hash,
+    from: adminSigner.address,
+    to: payment.campaign.treasuryAddress,
+    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+  });
   debug &&
     console.log('[Execute Gateway] Transaction submitted:', {
       hash: tx.hash,
@@ -261,6 +283,12 @@ export async function executeGatewayPledge(
   // Wait for confirmation
   const receipt = await tx.wait();
 
+  console.log('DAIMO PAY: Transaction confirmed:', {
+    hash: tx.hash,
+    blockNumber: receipt.blockNumber,
+    status: receipt.status ? 'SUCCESS' : 'FAILED',
+    gasUsed: receipt.gasUsed?.toString(),
+  });
   debug &&
     console.log('[Execute Gateway] Transaction confirmed:', {
       blockNumber: receipt.blockNumber,
@@ -279,6 +307,14 @@ export async function executeGatewayPledge(
     USD_DECIMALS,
   );
 
+  console.log('DAIMO PAY: Final admin wallet balance:', {
+    adminAddress: adminSigner.address,
+    before: adminBalanceFormatted,
+    after: finalAdminBalanceFormatted,
+    totalSpent: ethers.formatUnits(adminBalance - finalAdminBalance, USD_DECIMALS),
+    expectedSpent: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+    remaining: finalAdminBalanceFormatted,
+  });
   debug &&
     console.log('[Execute Gateway] Final admin wallet balance:', {
       before: adminBalanceFormatted,
@@ -326,6 +362,15 @@ export async function executeGatewayPledge(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
 
+  console.log('DAIMO PAY: Pledge execution complete:', {
+    paymentId,
+    pledgeId,
+    transactionHash: tx.hash,
+    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+    adminWalletRemaining: finalAdminBalanceFormatted,
+    treasuryAddress: payment.campaign.treasuryAddress,
+  });
   debug && console.log('[Execute Gateway] Execution complete:', result);
 
   return result;

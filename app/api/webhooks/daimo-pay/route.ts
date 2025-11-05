@@ -268,6 +268,15 @@ export async function POST(req: Request) {
         }
       }
 
+      console.log('DAIMO PAY: Payment record created:', {
+        paymentId: payment!.id,
+        daimoPaymentId: payload.paymentId,
+        amount: totalAmount,
+        status: 'confirming',
+        userAddress: userAddress,
+        campaignId: campaignId,
+        note: 'Waiting for Daimo to send funds to admin wallet',
+      });
       debug &&
         console.log('Daimo Pay webhook: Payment created or found:', {
           paymentId: payment!.id,
@@ -508,6 +517,14 @@ export async function POST(req: Request) {
 
       // Fire-and-forget: don't await pledge execution
       // If execution fails, payment remains "confirmed" for manual retry
+      console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
+        paymentId: payment.id,
+        amount: payment.amount,
+        userAddress: payment.user.address,
+        campaignId: payment.campaign.id,
+        treasuryAddress: payment.campaign.treasuryAddress,
+        note: 'Funds received in admin wallet, now executing pledge to treasury',
+      });
       Promise.resolve().then(async () => {
         try {
           const executionResult = await executeGatewayPledge(payment.id);
