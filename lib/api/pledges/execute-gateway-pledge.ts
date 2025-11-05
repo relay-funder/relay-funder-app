@@ -8,7 +8,6 @@ import {
   PLATFORM_ADMIN_PRIVATE_KEY,
   NEXT_PUBLIC_RPC_URL,
 } from '@/lib/constant/server';
-import { debugApi as debug } from '@/lib/debug';
 import type {
   ExecuteGatewayPledgeResponse,
   GatewayPledgeMetadata,
@@ -34,7 +33,7 @@ export async function executeGatewayPledge(
   paymentId: number,
 ): Promise<ExecuteGatewayPledgeResponse> {
   console.log('DAIMO PAY: Starting gateway pledge execution for payment:', paymentId);
-  debug && console.log('[Execute Gateway] Starting pledge execution');
+  console.log('[Execute Gateway] Starting pledge execution');
 
   // Load payment with related data
   const payment = await db.payment.findUnique({
@@ -65,10 +64,9 @@ export async function executeGatewayPledge(
   // Check if already executed
   const metadata = payment.metadata as Record<string, unknown>;
   if (metadata?.onChainPledgeId) {
-    debug &&
-      console.log('[Execute Gateway] Pledge already executed:', {
-        onChainPledgeId: metadata.onChainPledgeId,
-      });
+    console.log('[Execute Gateway] Pledge already executed:', {
+      onChainPledgeId: metadata.onChainPledgeId,
+    });
     return {
       success: true,
       pledgeId: metadata.onChainPledgeId as string,
@@ -101,12 +99,11 @@ export async function executeGatewayPledge(
     formattedTip: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
     formattedTotal: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
   });
-  debug &&
-    console.log('[Execute Gateway] Payment amounts:', {
-      totalAmount: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
-      pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
-      tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
-    });
+  console.log('[Execute Gateway] Payment amounts:', {
+    totalAmount: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+    pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+    tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+  });
 
   if (pledgeAmountUnits <= 0n) {
     throw new ApiParameterError(
@@ -152,11 +149,10 @@ export async function executeGatewayPledge(
     );
   }
 
-  debug &&
-    console.log('[Execute Gateway] Admin wallet:', {
-      address: adminSigner.address,
-      treasuryAddress: payment.campaign.treasuryAddress,
-    });
+  console.log('[Execute Gateway] Admin wallet:', {
+    address: adminSigner.address,
+    treasuryAddress: payment.campaign.treasuryAddress,
+  });
 
   // Initialize contracts
   const usdContract = new ethers.Contract(
@@ -181,12 +177,11 @@ export async function executeGatewayPledge(
     required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     hasEnough: adminBalance >= totalAmountUnits,
   });
-  debug &&
-    console.log('[Execute Gateway] Admin wallet balance:', {
-      balance: adminBalanceFormatted,
-      required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
-      hasEnough: adminBalance >= totalAmountUnits,
-    });
+  console.log('[Execute Gateway] Admin wallet balance:', {
+    balance: adminBalanceFormatted,
+    required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+    hasEnough: adminBalance >= totalAmountUnits,
+  });
 
   if (adminBalance < totalAmountUnits) {
     throw new ApiUpstreamError(
@@ -209,13 +204,12 @@ export async function executeGatewayPledge(
     treasuryAddress: payment.campaign.treasuryAddress,
     note: 'Both pledge and tip transferred to treasury. Tips tracked separately in contract for claiming.',
   });
-  debug &&
-    console.log('[Execute Gateway] Calculated amounts:', {
-      pledgeAmountUnits: pledgeAmountUnits.toString(),
-      tipAmountUnits: tipAmountUnits.toString(),
-      gatewayFee: gatewayFee.toString(),
-      note: 'Using treasury configured fees only, no additional gateway fee',
-    });
+  console.log('[Execute Gateway] Calculated amounts:', {
+    pledgeAmountUnits: pledgeAmountUnits.toString(),
+    tipAmountUnits: tipAmountUnits.toString(),
+    gatewayFee: gatewayFee.toString(),
+    note: 'Using treasury configured fees only, no additional gateway fee',
+  });
 
   // Generate unique pledge ID
   const pledgeId = ethers.keccak256(
@@ -224,7 +218,7 @@ export async function executeGatewayPledge(
     ),
   );
 
-  debug && console.log('[Execute Gateway] Generated pledge ID:', { pledgeId });
+  console.log('[Execute Gateway] Generated pledge ID:', { pledgeId });
 
   // Check current allowance
   const currentAllowance = await usdContract.allowance(
@@ -232,18 +226,16 @@ export async function executeGatewayPledge(
     payment.campaign.treasuryAddress,
   );
 
-  debug &&
-    console.log('[Execute Gateway] Current allowance:', {
-      current: ethers.formatUnits(currentAllowance, USD_DECIMALS),
-      required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
-    });
+  console.log('[Execute Gateway] Current allowance:', {
+    current: ethers.formatUnits(currentAllowance, USD_DECIMALS),
+    required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+  });
 
   // Approve treasury for total amount if needed
   if (currentAllowance < totalAmountUnits) {
-    debug &&
-      console.log(
-        '[Execute Gateway] Approving treasury for total amount (pledge + tip)',
-      );
+    console.log(
+      '[Execute Gateway] Approving treasury for total amount (pledge + tip)',
+    );
 
     const approveTx = await usdContract.approve(
       payment.campaign.treasuryAddress,
@@ -254,18 +246,17 @@ export async function executeGatewayPledge(
       },
     );
 
-    debug &&
-      console.log('[Execute Gateway] Approval transaction:', {
-        hash: approveTx.hash,
-      });
+    console.log('[Execute Gateway] Approval transaction:', {
+      hash: approveTx.hash,
+    });
 
     await approveTx.wait();
 
-    debug && console.log('[Execute Gateway] Approval confirmed');
+    console.log('[Execute Gateway] Approval confirmed');
   }
 
   // Execute setFeeAndPledge - transfers pledge + tip to treasury
-  debug && console.log('[Execute Gateway] Executing setFeeAndPledge');
+  console.log('[Execute Gateway] Executing setFeeAndPledge');
 
   console.log('DAIMO PAY: setFeeAndPledge parameters:', {
     pledgeId,
@@ -302,12 +293,11 @@ export async function executeGatewayPledge(
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   });
-  debug &&
-    console.log('[Execute Gateway] Transaction submitted:', {
-      hash: tx.hash,
-      from: adminSigner.address,
-      to: payment.campaign.treasuryAddress,
-    });
+  console.log('[Execute Gateway] Transaction submitted:', {
+    hash: tx.hash,
+    from: adminSigner.address,
+    to: payment.campaign.treasuryAddress,
+  });
 
   // Wait for confirmation
   const receipt = await tx.wait();
@@ -318,12 +308,11 @@ export async function executeGatewayPledge(
     status: receipt.status ? 'SUCCESS' : 'FAILED',
     gasUsed: receipt.gasUsed?.toString(),
   });
-  debug &&
-    console.log('[Execute Gateway] Transaction confirmed:', {
-      blockNumber: receipt.blockNumber,
-      status: receipt.status,
-      gasUsed: receipt.gasUsed?.toString(),
-    });
+  console.log('[Execute Gateway] Transaction confirmed:', {
+    blockNumber: receipt.blockNumber,
+    status: receipt.status,
+    gasUsed: receipt.gasUsed?.toString(),
+  });
 
   if (receipt.status !== 1) {
     throw new ApiUpstreamError(`Transaction reverted. Hash: ${tx.hash}`);
@@ -344,16 +333,15 @@ export async function executeGatewayPledge(
     expectedSpent: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     remaining: finalAdminBalanceFormatted,
   });
-  debug &&
-    console.log('[Execute Gateway] Final admin wallet balance:', {
-      before: adminBalanceFormatted,
-      after: finalAdminBalanceFormatted,
-      difference: ethers.formatUnits(
-        adminBalance - finalAdminBalance,
-        USD_DECIMALS,
-      ),
-      expectedDifference: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
-    });
+  console.log('[Execute Gateway] Final admin wallet balance:', {
+    before: adminBalanceFormatted,
+    after: finalAdminBalanceFormatted,
+    difference: ethers.formatUnits(
+      adminBalance - finalAdminBalance,
+      USD_DECIMALS,
+    ),
+    expectedDifference: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+  });
 
   // Update payment metadata with execution details
   const executionMetadata: GatewayPledgeMetadata = {
@@ -376,11 +364,10 @@ export async function executeGatewayPledge(
     },
   });
 
-  debug &&
-    console.log('[Execute Gateway] Payment metadata updated:', {
-      paymentId: payment.id,
-      pledgeId,
-    });
+  console.log('[Execute Gateway] Payment metadata updated:', {
+    paymentId: payment.id,
+    pledgeId,
+  });
 
   const result: ExecuteGatewayPledgeResponse = {
     success: true,
@@ -400,7 +387,7 @@ export async function executeGatewayPledge(
     adminWalletRemaining: finalAdminBalanceFormatted,
     treasuryAddress: payment.campaign.treasuryAddress,
   });
-  debug && console.log('[Execute Gateway] Execution complete:', result);
+  console.log('[Execute Gateway] Execution complete:', result);
 
   return result;
 }
