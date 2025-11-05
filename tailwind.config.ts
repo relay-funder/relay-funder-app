@@ -19,6 +19,7 @@ export default {
     extend: {
       screens: {
         xs: '400px',
+        xxs: '330px',
       },
       fontFamily: {
         display: ['Space Grotesk', 'system-ui', 'sans-serif'],
