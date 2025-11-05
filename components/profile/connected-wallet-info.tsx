@@ -265,7 +265,15 @@ export function ConnectedWalletInfo() {
           </div>
         )}
 
-        {/* Recipient Wallet Section */}
+        {/* TODO: Future Feature - Recipient Wallet Section */}
+        {/* This section allows users to set a custom recipient wallet address for campaign withdrawals */}
+        {/* Currently hidden as this feature is planned for future implementation */}
+        {/* When implementing: */}
+        {/* - Add feature flag control */}
+        {/* - Implement proper validation for recipient wallet ownership */}
+        {/* - Add confirmation dialogs for address changes */}
+        {/* - Ensure proper security measures for fund withdrawal */}
+        {/*
         <div className="space-y-4 border-t pt-6">
           <h3 className="font-display text-lg font-semibold text-foreground">
             Recipient Wallet Address
@@ -316,6 +324,7 @@ export function ConnectedWalletInfo() {
             </form>
           </Form>
         </div>
+        */}
       </CardContent>
     </Card>
   );
