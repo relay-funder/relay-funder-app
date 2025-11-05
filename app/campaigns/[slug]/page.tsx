@@ -66,8 +66,8 @@ export async function generateMetadata({
 
     if (!campaign) {
       return {
-        title: 'Campaign Not Found | Relay Funder',
-        description: 'The requested campaign could not be found.',
+        title: 'Campaign | Relay Funder',
+        description: 'View this fundraising campaign on Relay Funder.',
       };
     }
 
