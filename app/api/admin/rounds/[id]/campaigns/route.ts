@@ -29,6 +29,11 @@ export async function PATCH(req: Request, { params }: RoundsWithIdParams) {
     if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
       throw new ApiParameterError(`Invalid status ${status}`);
     }
+    if (new Date() > new Date(round.endDate)) {
+      throw new ApiParameterError(
+        'Cannot change state for campaign in ended round',
+      );
+    }
     const roundCampaign = round.roundCampaigns.find(
       (roundCampaign) => roundCampaign.campaignId === campaignId,
     );
