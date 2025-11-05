@@ -268,7 +268,7 @@ export async function POST(req: Request) {
         }
       }
 
-      console.log('📝 DAIMO PAY: Payment record created:', {
+      console.log('DAIMO PAY: Payment record created:', {
         paymentId: payment!.id,
         daimoPaymentId: payload.paymentId,
         amount: totalAmount,
@@ -517,7 +517,7 @@ export async function POST(req: Request) {
 
       // Fire-and-forget: don't await pledge execution
       // If execution fails, payment remains "confirmed" for manual retry
-      console.log('🚀 DAIMO PAY: Payment completed - triggering pledge execution:', {
+      console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
         paymentId: payment.id,
         amount: payment.amount,
         userAddress: payment.user.address,
