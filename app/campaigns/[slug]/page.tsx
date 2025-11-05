@@ -9,7 +9,6 @@ import {
 } from '@/components/metadata';
 import { CampaignFull } from '@/components/campaign/full';
 import type { GetCampaignResponseInstance } from '@/lib/api/types/campaigns';
-import type { CampaignImage } from '@/types/campaign';
 
 /**
  * Extract the main image URL from campaign media or legacy images
@@ -30,14 +29,6 @@ function getCampaignMainImage(campaign: GetCampaignResponseInstance): string | u
     }
   }
 
-  // Check for legacy images format
-  if (Array.isArray(campaign?.images)) {
-    const legacyImage =
-      campaign.images.find((img: CampaignImage) => img.isMainImage) || campaign.images[0];
-    if (legacyImage?.imageUrl && typeof legacyImage.imageUrl === 'string') {
-      return legacyImage.imageUrl;
-    }
-  }
 
   return undefined;
 }
