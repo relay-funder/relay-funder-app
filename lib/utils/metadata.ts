@@ -31,14 +31,14 @@ export function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
 
-  // Environment-based URLs
+  // Environment-based URLs - check staging first to prevent production NODE_ENV override
+  if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging') {
+    return 'https://staging.app.relayfunder.com';
+  }
+
   const environment = process.env.NODE_ENV;
   if (environment === 'production') {
     return 'https://app.relayfunder.com';
-  }
-
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging') {
-    return 'https://staging.app.relayfunder.com';
   }
 
   // Local development
