@@ -1,6 +1,5 @@
 import { db } from '@/server/db';
-import { executeGatewayPledge, PaymentWithRelations } from './execute-gateway-pledge';
-import { ApiParameterError } from '@/lib/api/error';
+import { executeGatewayPledge } from './execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
 
 /**
@@ -52,20 +51,7 @@ export async function retryGatewayPledge(paymentId: number) {
     console.log('[Retry Helper] Retrying pledge for payment:', paymentId);
 
   try {
-    // Load payment with required relations
-    const payment = await db.payment.findUnique({
-      where: { id: paymentId },
-      include: {
-        user: true,
-        campaign: true,
-      },
-    });
-
-    if (!payment) {
-      throw new ApiParameterError(`Payment not found: ${paymentId}`);
-    }
-
-    const result = await executeGatewayPledge(payment as PaymentWithRelations);
+    const result = await executeGatewayPledge(paymentId);
 
     debug &&
       console.log('[Retry Helper] Retry successful:', {

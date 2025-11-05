@@ -7,8 +7,16 @@ import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
-import { executeGatewayPledge, PaymentWithRelations } from '@/lib/api/pledges/execute-gateway-pledge';
+import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { debugApi as debug } from '@/lib/debug';
+
+// Type for payment with includes
+type PaymentWithIncludes = Prisma.PaymentGetPayload<{
+  include: {
+    user: true;
+    campaign: true;
+  };
+}>;
 
 export async function POST(req: Request) {
   try {
@@ -145,28 +153,11 @@ export async function POST(req: Request) {
     } satisfies Prisma.PaymentInclude;
 
     // Find or create payment based on event type
-    let payment: PaymentWithRelations | null = await db.payment.findFirst({
+    let payment: PaymentWithIncludes | null = await db.payment.findFirst({
       where: {
         daimoPaymentId: payload.paymentId,
       },
       include: paymentInclude,
-    });
-
-    console.log('DAIMO PAY: Payment query result:', {
-      eventType: payload.type,
-      daimoPaymentId: payload.paymentId,
-      paymentFound: !!payment,
-      paymentId: payment?.id,
-      paymentDaimoId: payment?.daimoPaymentId,
-      paymentStatus: payment?.status,
-      hasUser: !!payment?.user,
-      userId: payment?.user?.id,
-      userAddress: payment?.user?.address,
-      hasCampaign: !!payment?.campaign,
-      campaignId: payment?.campaign?.id,
-      campaignTitle: payment?.campaign?.title,
-      treasuryAddress: payment?.campaign?.treasuryAddress,
-      campaignUpdatedAt: payment?.campaign?.updatedAt,
     });
 
     // Create payment on payment_started if it doesn't exist
@@ -515,21 +506,6 @@ export async function POST(req: Request) {
       }
     }
 
-    debug &&
-      console.log(
-        `Payment ${payment.id} status updated to ${newStatus} via ${payload.type} event`,
-      );
-
-    // Prepare response data before triggering async operations
-    const responseData = {
-      acknowledged: true,
-      paymentId: payment.id,
-      daimoPaymentId: payload.paymentId,
-      eventType: payload.type,
-      status: newStatus,
-      previousStatus: currentStatus,
-    };
-
     // Execute on-chain pledge for gateway payments
     // Only trigger when payment is newly confirmed (not duplicate events)
     if (
@@ -542,6 +518,8 @@ export async function POST(req: Request) {
           `Daimo Pay: Triggering pledge execution for payment ${payment.id}`,
         );
 
+      // Fire-and-forget: don't await pledge execution
+      // If execution fails, payment remains "confirmed" for manual retry
       console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
         paymentId: payment.id,
         amount: payment.amount,
@@ -550,44 +528,37 @@ export async function POST(req: Request) {
         treasuryAddress: payment.campaign.treasuryAddress,
         note: 'Funds received in admin wallet, now executing pledge to treasury',
       });
+      Promise.resolve().then(async () => {
+        try {
+          const executionResult = await executeGatewayPledge(payment.id);
 
-      // Execute pledge asynchronously - fire and forget
-      // Validate that campaign has treasury address before proceeding
-      if (!payment.campaign.treasuryAddress) {
-        console.error('DAIMO PAY: Cannot execute pledge - campaign missing treasury address:', {
-          campaignId: payment.campaign.id,
-          campaignTitle: payment.campaign.title,
-          treasuryAddress: payment.campaign.treasuryAddress,
-          action: 'Configure treasury contract for this campaign to enable Daimo Pay pledges',
-        });
-        console.log('DAIMO PAY: Skipping pledge execution - campaign not configured');
-        return;
-      }
-
-      console.log('DAIMO PAY: About to execute pledge for payment:', {
-        paymentId: payment.id,
-        campaignId: payment.campaign?.id,
-        campaignTitle: payment.campaign?.title,
-        treasuryAddress: payment.campaign?.treasuryAddress,
-        pledgeAmount: payment.amount,
-      });
-
-      executeGatewayPledge(payment).then(
-        (result) => {
-          console.log('DAIMO PAY: Pledge execution completed successfully:', result);
-        },
-        (error) => {
-          console.error('DAIMO PAY: Pledge execution failed:', error);
-          console.error('DAIMO PAY: Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          });
+          debug &&
+            console.log(
+              `Daimo Pay: Pledge execution completed for payment ${payment.id}:`,
+              executionResult,
+            );
+        } catch (executionError) {
+          console.error(
+            `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
+            executionError,
+          );
         }
-      );
+      });
     }
 
-    return response(responseData);
+    debug &&
+      console.log(
+        `Payment ${payment.id} status updated to ${newStatus} via ${payload.type} event`,
+      );
+
+    return response({
+      acknowledged: true,
+      paymentId: payment.id,
+      daimoPaymentId: payload.paymentId,
+      eventType: payload.type,
+      status: newStatus,
+      previousStatus: currentStatus,
+    });
   } catch (error: unknown) {
     console.error('Daimo Pay webhook error:', error);
     return handleError(error);
