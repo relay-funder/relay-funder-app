@@ -19,7 +19,11 @@ export default function CollectionDetailsPage() {
   const { data: collection, isPending: loading } = useCollectionQuery(id);
 
   // Set page title for browser history
-  useMetaTitle(collection?.name ? `${collection.name} | Relay Funder` : 'Collection | Relay Funder');
+  useMetaTitle(
+    collection?.name
+      ? `${collection.name} | Relay Funder`
+      : 'Collection | Relay Funder',
+  );
 
   if (loading) {
     return <CollectionDetailLoading />;

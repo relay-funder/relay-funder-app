@@ -32,7 +32,10 @@ import type {
 export async function executeGatewayPledge(
   paymentId: number,
 ): Promise<ExecuteGatewayPledgeResponse> {
-  console.log('DAIMO PAY: Starting gateway pledge execution for payment:', paymentId);
+  console.log(
+    'DAIMO PAY: Starting gateway pledge execution for payment:',
+    paymentId,
+  );
   console.log('[Execute Gateway] Starting pledge execution');
 
   // Load payment with related data
@@ -91,7 +94,8 @@ export async function executeGatewayPledge(
     paymentAmount: payment.amount,
     metadataTipAmount: (metadata?.tipAmount as string) || '0',
     metadataPledgeAmount: (metadata?.pledgeAmount as string) || 'N/A',
-    metadataTotalReceived: (metadata?.totalReceivedFromDaimo as string) || 'N/A',
+    metadataTotalReceived:
+      (metadata?.totalReceivedFromDaimo as string) || 'N/A',
     calculatedPledgeUnits: pledgeAmountUnits.toString(),
     calculatedTipUnits: tipAmountUnits.toString(),
     calculatedTotalUnits: totalAmountUnits.toString(),
@@ -267,7 +271,10 @@ export async function executeGatewayPledge(
     tipAmountFormatted: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
     gatewayFee: gatewayFee.toString(),
     totalToTransfer: (pledgeAmountUnits + tipAmountUnits).toString(),
-    totalToTransferFormatted: ethers.formatUnits(pledgeAmountUnits + tipAmountUnits, USD_DECIMALS),
+    totalToTransferFormatted: ethers.formatUnits(
+      pledgeAmountUnits + tipAmountUnits,
+      USD_DECIMALS,
+    ),
     reward: '[]',
     isPledgeForAReward: false,
   });
@@ -329,7 +336,10 @@ export async function executeGatewayPledge(
     adminAddress: adminSigner.address,
     before: adminBalanceFormatted,
     after: finalAdminBalanceFormatted,
-    totalSpent: ethers.formatUnits(adminBalance - finalAdminBalance, USD_DECIMALS),
+    totalSpent: ethers.formatUnits(
+      adminBalance - finalAdminBalance,
+      USD_DECIMALS,
+    ),
     expectedSpent: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     remaining: finalAdminBalanceFormatted,
   });

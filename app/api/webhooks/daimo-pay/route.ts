@@ -206,11 +206,13 @@ export async function POST(req: Request) {
       // Create payment record
       // IMPORTANT: Store only the base pledge amount (not including tip) to match direct wallet flow
       // Tip is stored separately in metadata and handled by smart contract
-      let createdPayment: Awaited<ReturnType<typeof db.payment.create>> | undefined;
+      let createdPayment:
+        | Awaited<ReturnType<typeof db.payment.create>>
+        | undefined;
       try {
         createdPayment = await db.payment.create({
           data: {
-            amount: baseAmount.toString(),  // Pledge amount only
+            amount: baseAmount.toString(), // Pledge amount only
             token: 'USDT',
             type: 'BUY',
             status: 'confirming',
@@ -223,7 +225,7 @@ export async function POST(req: Request) {
               daimoPaymentId: payload.paymentId,
               pledgeAmount: baseAmount.toString(),
               tipAmount: tipAmount.toString(),
-              totalReceivedFromDaimo: totalAmount.toString(),  // Track total for reconciliation
+              totalReceivedFromDaimo: totalAmount.toString(), // Track total for reconciliation
               userAddress,
               userEmail,
               createdViaWebhook: true,
@@ -246,12 +248,15 @@ export async function POST(req: Request) {
 
           // Verify payment was found (should exist if constraint was violated)
           if (!payment) {
-            console.error('Daimo Pay: Unique constraint violated but payment not found', {
-              daimoPaymentId: payload.paymentId,
-              error: error.message,
-            });
+            console.error(
+              'Daimo Pay: Unique constraint violated but payment not found',
+              {
+                daimoPaymentId: payload.paymentId,
+                error: error.message,
+              },
+            );
             throw new ApiParameterError(
-              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`
+              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`,
             );
           }
         } else {
@@ -520,14 +525,17 @@ export async function POST(req: Request) {
 
       // Fire-and-forget: don't await pledge execution
       // If execution fails, payment remains "confirmed" for manual retry
-      console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
-        paymentId: payment.id,
-        amount: payment.amount,
-        userAddress: payment.user.address,
-        campaignId: payment.campaign.id,
-        treasuryAddress: payment.campaign.treasuryAddress,
-        note: 'Funds received in admin wallet, now executing pledge to treasury',
-      });
+      console.log(
+        'DAIMO PAY: Payment completed - triggering pledge execution:',
+        {
+          paymentId: payment.id,
+          amount: payment.amount,
+          userAddress: payment.user.address,
+          campaignId: payment.campaign.id,
+          treasuryAddress: payment.campaign.treasuryAddress,
+          note: 'Funds received in admin wallet, now executing pledge to treasury',
+        },
+      );
       Promise.resolve().then(async () => {
         try {
           const executionResult = await executeGatewayPledge(payment.id);

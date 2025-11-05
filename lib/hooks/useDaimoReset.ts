@@ -34,11 +34,7 @@ export function useDaimoReset({
       debounceTimeoutRef.current = null;
     }
 
-    if (
-      !isValid ||
-      !resetPayment ||
-      !validatedTreasuryAddress
-    ) {
+    if (!isValid || !resetPayment || !validatedTreasuryAddress) {
       return;
     }
 

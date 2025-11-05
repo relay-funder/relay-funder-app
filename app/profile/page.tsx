@@ -8,7 +8,7 @@ import { UserScoreCard } from '@/components/profile/user-score-card';
 import { ProfileAdditionalSettings } from '@/components/profile/additional-settings';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { ProfilePageSkeleton } from '@/components/profile/page-skeleton';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
@@ -25,7 +25,11 @@ export default function ProfilePage() {
   }, [setEditProfile]);
 
   // Set page title for browser history
-  useMetaTitle(editProfile ? 'Edit Profile | Relay Funder' : 'Profile Settings | Relay Funder');
+  useMetaTitle(
+    editProfile
+      ? 'Edit Profile | Relay Funder'
+      : 'Profile Settings | Relay Funder',
+  );
 
   if (!isReady || (authenticated && isProfilePending)) {
     return <ProfilePageSkeleton />;

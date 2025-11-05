@@ -21,7 +21,11 @@ function CampaignsPageContent() {
   const { isLoading: loading, error } = useInfiniteUserCampaigns();
 
   // Set page title for browser history
-  useMetaTitle(showCampaignCreate ? 'Create Campaign | Relay Funder' : 'Campaign Dashboard | Relay Funder');
+  useMetaTitle(
+    showCampaignCreate
+      ? 'Create Campaign | Relay Funder'
+      : 'Campaign Dashboard | Relay Funder',
+  );
 
   const onCreate = useCallback(async () => {
     setShowCampaignCreate(true);

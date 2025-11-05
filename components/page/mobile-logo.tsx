@@ -12,7 +12,7 @@ export function MobileLogo() {
         'relative z-20 md:hidden',
         'flex cursor-pointer items-center justify-start',
         'xs:h-14 xs:w-36', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
-        'xxs:w-32 xxs:h-14', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
+        'xxs:h-14 xxs:w-32', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
         'h-14 w-20', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
         'xs:px-1 xs:py-2', // Healthy padding around logo
       )}
