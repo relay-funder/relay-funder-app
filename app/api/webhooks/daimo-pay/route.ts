@@ -152,6 +152,23 @@ export async function POST(req: Request) {
       include: paymentInclude,
     });
 
+    console.log('DAIMO PAY: Payment query result:', {
+      eventType: payload.type,
+      daimoPaymentId: payload.paymentId,
+      paymentFound: !!payment,
+      paymentId: payment?.id,
+      paymentDaimoId: payment?.daimoPaymentId,
+      paymentStatus: payment?.status,
+      hasUser: !!payment?.user,
+      userId: payment?.user?.id,
+      userAddress: payment?.user?.address,
+      hasCampaign: !!payment?.campaign,
+      campaignId: payment?.campaign?.id,
+      campaignTitle: payment?.campaign?.title,
+      treasuryAddress: payment?.campaign?.treasuryAddress,
+      campaignUpdatedAt: payment?.campaign?.updatedAt,
+    });
+
     // Create payment on payment_started if it doesn't exist
     if (!payment && payload.type === 'payment_started') {
       debug &&
@@ -535,12 +552,37 @@ export async function POST(req: Request) {
       });
 
       // Execute pledge asynchronously - fire and forget
+      // Validate that campaign has treasury address before proceeding
+      if (!payment.campaign.treasuryAddress) {
+        console.error('DAIMO PAY: Cannot execute pledge - campaign missing treasury address:', {
+          campaignId: payment.campaign.id,
+          campaignTitle: payment.campaign.title,
+          treasuryAddress: payment.campaign.treasuryAddress,
+          action: 'Configure treasury contract for this campaign to enable Daimo Pay pledges',
+        });
+        console.log('DAIMO PAY: Skipping pledge execution - campaign not configured');
+        return;
+      }
+
+      console.log('DAIMO PAY: About to execute pledge for payment:', {
+        paymentId: payment.id,
+        campaignId: payment.campaign?.id,
+        campaignTitle: payment.campaign?.title,
+        treasuryAddress: payment.campaign?.treasuryAddress,
+        pledgeAmount: payment.amount,
+      });
+
       executeGatewayPledge(payment).then(
         (result) => {
           console.log('DAIMO PAY: Pledge execution completed successfully:', result);
         },
         (error) => {
           console.error('DAIMO PAY: Pledge execution failed:', error);
+          console.error('DAIMO PAY: Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          });
         }
       );
     }

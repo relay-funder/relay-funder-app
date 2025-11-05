@@ -42,7 +42,32 @@ export async function executeGatewayPledge(
   payment: PaymentWithRelations,
 ): Promise<ExecuteGatewayPledgeResponse> {
   console.log('GATEWAY PLEDGE: Starting execution for payment:', payment.id);
+  console.log('GATEWAY PLEDGE: Payment object details:', {
+    paymentId: payment.id,
+    paymentType: typeof payment,
+    paymentKeys: Object.keys(payment),
+    hasId: 'id' in payment,
+    hasUser: 'user' in payment,
+    hasCampaign: 'campaign' in payment,
+    treasuryAddress: payment.campaign?.treasuryAddress,
+    status: payment.status,
+  });
   debug && console.log('[Execute Gateway] Starting pledge execution');
+
+  // Runtime validation: Ensure required relations are present
+  if (!payment.user) {
+    throw new ApiParameterError(
+      `Payment relation validation failed: 'user' relation is missing or null for payment ${payment.id}`,
+    );
+  }
+
+  if (!payment.campaign) {
+    throw new ApiParameterError(
+      `Payment relation validation failed: 'campaign' relation is missing or null for payment ${payment.id}`,
+    );
+  }
+
+  console.log('GATEWAY PLEDGE: Payment relations validated successfully');
 
   console.log('GATEWAY PLEDGE: Validating payment status...');
 
@@ -131,10 +156,53 @@ export async function executeGatewayPledge(
     );
   }
 
+  console.log('GATEWAY PLEDGE: Checking treasury address:', {
+    campaignId: payment.campaign?.id,
+    campaignTitle: payment.campaign?.title,
+    treasuryAddress: payment.campaign?.treasuryAddress,
+    treasuryAddressType: typeof payment.campaign?.treasuryAddress,
+    treasuryAddressLength: payment.campaign?.treasuryAddress?.length,
+    paymentCampaignType: typeof payment.campaign,
+    paymentCampaignKeys: payment.campaign ? Object.keys(payment.campaign) : 'null',
+  });
+
   if (!payment.campaign.treasuryAddress) {
-    throw new ApiParameterError(
-      'Campaign does not have a treasury address configured',
-    );
+    // Double-check by querying campaign directly from database
+    console.log('GATEWAY PLEDGE: Treasury address missing, checking database directly...');
+    try {
+      const directCampaignQuery = await db.campaign.findUnique({
+        where: { id: payment.campaign.id },
+        select: {
+          id: true,
+          title: true,
+          treasuryAddress: true,
+          updatedAt: true,
+        },
+      });
+
+      console.log('GATEWAY PLEDGE: Direct campaign query result:', {
+        campaignId: directCampaignQuery?.id,
+        title: directCampaignQuery?.title,
+        treasuryAddress: directCampaignQuery?.treasuryAddress,
+        updatedAt: directCampaignQuery?.updatedAt,
+      });
+
+      if (directCampaignQuery?.treasuryAddress) {
+        console.log('GATEWAY PLEDGE: Database has treasury address, updating payment object');
+        payment.campaign.treasuryAddress = directCampaignQuery.treasuryAddress;
+        payment.campaign.updatedAt = directCampaignQuery.updatedAt;
+      } else {
+        console.error('GATEWAY PLEDGE: Database also shows no treasury address - campaign not configured');
+        throw new ApiParameterError(
+          `Campaign ${payment.campaign.id} does not have a treasury address configured in database`,
+        );
+      }
+    } catch (dbError) {
+      console.error('GATEWAY PLEDGE: Failed to query campaign directly:', dbError);
+      throw new ApiParameterError(
+        `Failed to verify campaign treasury address: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`,
+      );
+    }
   }
 
   console.log('GATEWAY PLEDGE: Initializing RPC provider and signer...');
