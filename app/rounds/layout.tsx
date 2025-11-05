@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 import { getListingPageMetadata } from '@/components/metadata';
 
-export const metadata: Metadata = getListingPageMetadata('features');
+export const metadata: Metadata = getListingPageMetadata('rounds');
 
-export default function FeaturesLayout({
+export default function RoundsLayout({
   children,
 }: {
   children: React.ReactNode;

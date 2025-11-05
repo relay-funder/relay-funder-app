@@ -36,6 +36,11 @@ export default function ErrorPage({
     return 'Something went wrong!';
   }, [isAuthError, isServerError]);
 
+  // Set page title for browser history
+  useEffect(() => {
+    document.title = `${errorTitle} | Relay Funder`;
+  }, [errorTitle]);
+
   const errorMessage = useMemo(() => {
     if (isAuthError) return 'Redirecting you to sign in...';
     if (isServerError) return 'Sorry, something went wrong on our server.';

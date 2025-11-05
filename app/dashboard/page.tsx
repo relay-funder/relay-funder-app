@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui';
 import { useAuth } from '@/contexts';
+import { useEffect } from 'react';
 import { Heart, History, Bell, Info, Flower2 } from 'lucide-react';
 import { DonorDashboardOverview } from '@/components/dashboard/donor-overview';
 import { FavoriteCard } from '@/components/dashboard/favorite-card';
@@ -42,6 +43,11 @@ export default function DashboardPage() {
   const [removedFavorites, setRemovedFavorites] = useState<Set<number>>(
     new Set(),
   );
+
+  // Set page title for browser history
+  useEffect(() => {
+    document.title = 'Donor Dashboard | Relay Funder';
+  }, []);
 
   const {
     data: favourites,

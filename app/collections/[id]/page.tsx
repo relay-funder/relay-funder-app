@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { useCollection as useCollectionQuery } from '@/lib/hooks/useCollections';
 import { useAuth } from '@/contexts';
 import { CollectionDetailLoading } from '@/components/collection/detail-loading';
@@ -16,6 +17,15 @@ export default function CollectionDetailsPage() {
   const { authenticated } = useAuth();
 
   const { data: collection, isPending: loading } = useCollectionQuery(id);
+
+  // Set page title for browser history
+  useEffect(() => {
+    if (collection?.name) {
+      document.title = `${collection.name} | Relay Funder`;
+    } else {
+      document.title = 'Collection | Relay Funder';
+    }
+  }, [collection?.name]);
 
   if (loading) {
     return <CollectionDetailLoading />;

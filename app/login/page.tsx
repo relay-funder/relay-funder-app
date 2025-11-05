@@ -5,6 +5,10 @@ import { useAuth } from '@/contexts';
 import Authenticated from '@/components/login/authenticated';
 import Login from '@/components/login';
 
+export const metadata = {
+  title: 'Login | Relay Funder',
+};
+
 export default function LoginPage() {
   const { authenticated, isReady } = useAuth();
 

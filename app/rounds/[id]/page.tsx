@@ -1,8 +1,13 @@
 import { prefetchRound } from '@/lib/api/rounds';
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { Metadata } from 'next';
 import { getQueryClient } from '@/lib/query-client';
 import { RoundFull } from '@/components/round/full';
 import { auth } from '@/server/auth';
+
+export const metadata: Metadata = {
+  title: 'Round | Relay Funder',
+};
 
 export default async function RoundPage({
   params,

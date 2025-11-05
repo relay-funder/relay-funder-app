@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts';
+import { useEffect } from 'react';
 import { PageHome } from '@/components/page/home';
 import { PageHeader } from '@/components/page/header';
 import { DetailContainer } from '@/components/layout';
@@ -11,6 +12,11 @@ import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
 export default function WalletSettingsPage() {
   const { authenticated, isReady } = useAuth();
+
+  // Set page title for browser history
+  useEffect(() => {
+    document.title = 'Wallet Settings | Relay Funder';
+  }, []);
 
   if (!isReady) {
     return <WalletPageSkeleton />;

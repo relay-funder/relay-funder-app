@@ -1,6 +1,7 @@
 'use client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { useAuth } from '@/contexts';
+import { useEffect } from 'react';
 import { DashboardOverview } from '@/components/dashboard/overview';
 import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CampaignLoading } from '@/components/campaign/loading';
@@ -18,6 +19,15 @@ function CampaignsPageContent() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { isLoading: loading, error } = useInfiniteUserCampaigns();
+
+  // Set page title for browser history
+  useEffect(() => {
+    if (showCampaignCreate) {
+      document.title = 'Create Campaign | Relay Funder';
+    } else {
+      document.title = 'Campaign Dashboard | Relay Funder';
+    }
+  }, [showCampaignCreate]);
 
   const onCreate = useCallback(async () => {
     setShowCampaignCreate(true);
