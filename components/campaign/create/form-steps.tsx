@@ -12,6 +12,7 @@ export const FORM_PAGE_ORDER: (keyof typeof CampaignCreateFormStates)[] = [
 ];
 
 export const TOTAL_FORM_PAGES = FORM_PAGE_ORDER.length;
+export const PROGRESS_INDICATOR_START_STEP = 2;
 
 /**
  * Get the step number (1-indexed) for a given page state

@@ -8,7 +8,8 @@ import {
 import { useMemo } from 'react';
 import { CampaignCreateFormStates } from './form-states';
 import { DetailContainer } from '@/components/layout';
-import { getPrevPage } from './form-steps';
+import { getPrevPage, PROGRESS_INDICATOR_START_STEP } from './form-steps';
+import { FormProgressIndicator } from './form-progress-indicator';
 
 export function CampaignCreateFormPage({
   state,
@@ -100,6 +101,7 @@ export function CampaignCreateFormPage({
   if (page === 'introduction') {
     return (
       <DetailContainer variant="wide" padding="md">
+      <FormProgressIndicator className="mb-4" currentPage={page} startFromStep={PROGRESS_INDICATOR_START_STEP} />
         <div className="mx-auto max-w-2xl">
           <Card className="rounded-lg border bg-card shadow-sm">
             <CardHeader className="pb-4">
@@ -117,6 +119,9 @@ export function CampaignCreateFormPage({
         <div className="mt-8 flex items-center justify-center gap-4">
           {buttons}
         </div>
+
+      {/* Progress Indicator for mobile is in top and bottom of the page*/}
+      <FormProgressIndicator className="lg:hidden mt-4" currentPage={page} startFromStep={PROGRESS_INDICATOR_START_STEP} />
       </DetailContainer>
     );
   }
@@ -124,6 +129,7 @@ export function CampaignCreateFormPage({
   // Use two-column layout with guides for all other pages
   return (
     <DetailContainer variant="wide" padding="md">
+      <FormProgressIndicator className="mb-4" currentPage={page} startFromStep={PROGRESS_INDICATOR_START_STEP} />
       {/* Desktop: Two-column layout */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8">
         {/* Form Section */}
@@ -190,6 +196,9 @@ export function CampaignCreateFormPage({
       <div className="mt-8 flex items-center justify-center gap-4">
         {buttons}
       </div>
+
+      {/* Progress Indicator for mobile is in top and bottom of the page*/}
+      <FormProgressIndicator className="lg:hidden mt-4" currentPage={page} startFromStep={PROGRESS_INDICATOR_START_STEP} />
     </DetailContainer>
   );
 }
