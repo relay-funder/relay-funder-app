@@ -6,7 +6,14 @@ import { db, type Prisma } from '@/server/db';
  */
 export type AdminPaymentListItem = Prisma.PaymentGetPayload<{
   include: {
-    campaign: true;
+    campaign: {
+      select: {
+        id: true;
+        title: true;
+        slug: true;
+        treasuryAddress: true;
+      };
+    };
     user: true;
     RoundContribution: {
       include: {
@@ -90,7 +97,14 @@ export async function listAdminPayments({
       take: pageSize,
       orderBy: { createdAt: 'desc' },
       include: {
-        campaign: true,
+        campaign: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            treasuryAddress: true,
+          },
+        },
         user: true,
         // Include associated round contributions (if any)
         // Keeping full array to preserve relationship visibility

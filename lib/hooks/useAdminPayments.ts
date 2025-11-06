@@ -60,6 +60,7 @@ export type AdminPaymentListItem = {
     id: number;
     title: string;
     slug: string;
+    treasuryAddress: string | null;
   };
   user: {
     id: number;
