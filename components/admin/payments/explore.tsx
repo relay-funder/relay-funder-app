@@ -39,6 +39,9 @@ import {
 } from '@/lib/hooks/useAdminPayments';
 import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
+import ContractLink from '@/components/page/contract-link';
+import { chainConfig } from '@/lib/web3';
+import { ExternalLink } from 'lucide-react';
 
 function StatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
@@ -73,16 +76,28 @@ function PledgeExecutionBadge({ status }: { status: PledgeExecutionStatus }) {
   switch (status) {
     case 'SUCCESS':
       return (
-        <Badge variant="default" className="bg-green-600">
+        <Badge className="bg-green-600 text-white border-green-600 hover:bg-green-700 dark:bg-green-500 dark:text-white dark:border-green-500">
           Executed
         </Badge>
       );
     case 'PENDING':
-      return <Badge variant="secondary">Executing...</Badge>;
+      return (
+        <Badge className="bg-blue-500 text-white border-blue-500 hover:bg-blue-600 dark:bg-blue-400 dark:text-white dark:border-blue-400">
+          Executing...
+        </Badge>
+      );
     case 'FAILED':
-      return <Badge variant="destructive">Failed</Badge>;
+      return (
+        <Badge className="bg-red-600 text-white border-red-600 hover:bg-red-700 dark:bg-red-500 dark:text-white dark:border-red-500">
+          Failed
+        </Badge>
+      );
     case 'NOT_STARTED':
-      return <Badge variant="outline">Not Started</Badge>;
+      return (
+        <Badge className="bg-gray-500 text-white border-gray-500 hover:bg-gray-600 dark:bg-gray-400 dark:text-white dark:border-gray-400">
+          Not Started
+        </Badge>
+      );
     default:
       return null;
   }
@@ -190,7 +205,7 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               <span className="text-muted-foreground">Provider:</span>
               <div>
                 {payment.provider === 'daimo' ? (
-                  <Badge variant="outline" className="bg-blue-50">
+                  <Badge className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:border-blue-500">
                     Daimo Pay
                   </Badge>
                 ) : (
@@ -208,85 +223,38 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
         {/* Daimo Pay Specific */}
         {payment.provider === 'daimo' && (
           <div>
-            <h3 className="mb-3 font-semibold">Daimo Pay Flow & Status</h3>
-
-            {/* Flow diagram */}
-            <div className="mb-4 rounded bg-muted/50 p-3 text-xs">
-              <div className="mb-2 font-semibold">Payment Flow:</div>
-              <div className="space-y-1 text-muted-foreground">
-                <div>1. User pays via Daimo (any chain/token)</div>
-                <div>2. Daimo bridges to Celo & transfers to Admin Wallet</div>
-                <div>
-                  3. Webhook confirms payment →{' '}
-                  <Badge variant="outline" className="text-xs">
-                    confirmed
-                  </Badge>
-                </div>
-                <div>4. System executes setFeeAndPledge:</div>
-                <div className="ml-4">
-                  • Transfers funds: Admin Wallet → Campaign Treasury
-                </div>
-                <div className="ml-4">• Issues NFT to contributor</div>
-                <div>
-                  5. Status:{' '}
-                  <PledgeExecutionBadge
-                    status={payment.pledgeExecutionStatus}
-                  />
-                </div>
-              </div>
-            </div>
-
+            <h3 className="mb-3 font-semibold">Daimo Pay</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-muted-foreground">Daimo Payment ID:</span>
-                <div className="break-all font-mono text-xs">
+                <span className="text-muted-foreground">Payment ID:</span>
+                <div className="break-all font-mono text-xs mt-1">
                   {payment.daimoPaymentId || 'N/A'}
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">
-                  Pledge Execution Status:
-                </span>
-                <div>
-                  <PledgeExecutionBadge
-                    status={payment.pledgeExecutionStatus}
-                  />
+                <span className="text-muted-foreground">Status:</span>
+                <div className="mt-1">
+                  <PledgeExecutionBadge status={payment.pledgeExecutionStatus} />
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">
-                  Execution Attempts:
-                </span>
-                <div>{payment.pledgeExecutionAttempts}</div>
+                <span className="text-muted-foreground">Attempts:</span>
+                <div className="mt-1">{payment.pledgeExecutionAttempts}</div>
               </div>
               <div>
                 <span className="text-muted-foreground">Last Attempt:</span>
-                <div>
+                <div className="mt-1">
                   {payment.pledgeExecutionLastAttempt ? (
-                    <FormattedDate
-                      date={new Date(payment.pledgeExecutionLastAttempt)}
-                    />
+                    <FormattedDate date={new Date(payment.pledgeExecutionLastAttempt)} />
                   ) : (
                     'Never'
                   )}
                 </div>
               </div>
-              {payment.pledgeExecutionTxHash && (
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">
-                    Pledge Transaction Hash:
-                  </span>
-                  <div className="break-all font-mono text-xs">
-                    {payment.pledgeExecutionTxHash}
-                  </div>
-                </div>
-              )}
               {payment.pledgeExecutionError && (
                 <div className="col-span-2">
-                  <span className="text-destructive text-muted-foreground">
-                    Error Message:
-                  </span>
-                  <div className="mt-1 rounded bg-destructive/10 p-2 text-xs text-destructive">
+                  <span className="text-muted-foreground">Error:</span>
+                  <div className="break-all text-xs text-destructive bg-destructive/10 p-2 rounded mt-1">
                     {payment.pledgeExecutionError}
                   </div>
                 </div>
@@ -343,25 +311,53 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               <span className="text-muted-foreground">Slug:</span>
               <div className="font-mono">{payment.campaign.slug}</div>
             </div>
-            <div className="col-span-2">
-              <span className="text-muted-foreground">Public URL:</span>
-              <div className="mt-1">
-                <a
-                  href={`/campaigns/${payment.campaign.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="break-all text-xs text-blue-600 hover:underline"
-                >
-                  {typeof window !== 'undefined' ? window.location.origin : ''}
-                  /campaigns/{payment.campaign.slug}
-                </a>
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Public URL:</span>
+                <div className="mt-1">
+                  <a
+                    href={`/campaigns/${payment.campaign.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                  >
+                    {typeof window !== 'undefined' ? window.location.origin : ''}
+                    /campaigns/{payment.campaign.slug}
+                  </a>
+                </div>
               </div>
-            </div>
+            {payment.campaign.campaignAddress && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Campaign Contract:</span>
+                <div className="mt-1">
+                  <ContractLink
+                    address={payment.campaign.campaignAddress}
+                    chainConfig={chainConfig}
+                  >
+                    <div className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                      <span className="break-all font-mono text-xs">
+                        {payment.campaign.campaignAddress}
+                      </span>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </ContractLink>
+                </div>
+              </div>
+            )}
             {payment.campaign.treasuryAddress && (
               <div className="col-span-2">
-                <span className="text-muted-foreground">Treasury Address:</span>
-                <div className="mt-1 break-all font-mono text-xs">
-                  {payment.campaign.treasuryAddress}
+                <span className="text-muted-foreground">Treasury:</span>
+                <div className="mt-1">
+                  <ContractLink
+                    address={payment.campaign.treasuryAddress}
+                    chainConfig={chainConfig}
+                  >
+                    <div className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                      <span className="break-all font-mono text-xs">
+                        {payment.campaign.treasuryAddress}
+                      </span>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </ContractLink>
                 </div>
               </div>
             )}
@@ -467,7 +463,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
             </TableCell>
             <TableCell className="whitespace-nowrap">
               {p.provider === 'daimo' ? (
-                <Badge variant="outline" className="bg-blue-50">
+                <Badge className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:border-blue-500">
                   Daimo Pay
                 </Badge>
               ) : p.provider ? (
