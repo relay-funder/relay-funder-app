@@ -445,7 +445,7 @@ async function _executeGatewayPledgeInternal(
   };
 
   console.log('DAIMO PAY: Pledge execution complete:', {
-    paymentId,
+    paymentId: payment.id,
     pledgeId,
     transactionHash: tx.hash,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
