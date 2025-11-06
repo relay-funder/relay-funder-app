@@ -102,6 +102,7 @@ export async function listAdminPayments({
             id: true,
             title: true,
             slug: true,
+            campaignAddress: true,
             treasuryAddress: true,
           },
         },
