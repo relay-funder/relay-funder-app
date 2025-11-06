@@ -511,6 +511,66 @@ export async function POST(req: Request) {
       }
     }
 
+    // Create round contributions for confirmed payments
+    // This associates payments with rounds immediately when confirmed
+    if (
+      newStatus === 'confirmed' &&
+      currentStatus !== 'confirmed' &&
+      payment.provider === 'daimo'
+    ) {
+      console.log('[Daimo Webhook] Creating round contributions for confirmed payment:', {
+        paymentId: payment.id,
+        campaignId: payment.campaign.id,
+      });
+
+      try {
+        // Find all approved round participations for this campaign
+        // Match the logic from direct wallet payments exactly for consistency
+        const roundCampaigns = await db.roundCampaigns.findMany({
+          where: {
+            campaignId: payment.campaign.id,
+            status: 'APPROVED', // RoundCampaign must be APPROVED
+            Round: {
+              startDate: { lte: new Date() }, // Round has started
+              endDate: { gte: new Date() }, // Round hasn't ended
+            },
+          },
+          include: {
+            Round: true,
+          },
+        });
+
+        console.log(`[Daimo Webhook] Found ${roundCampaigns.length} approved round participations for campaign ${payment.campaign.id}`);
+
+        // Create RoundContribution records for each approved round
+        for (const roundCampaign of roundCampaigns) {
+          try {
+            await db.roundContribution.create({
+              data: {
+                campaignId: payment.campaign.id,
+                roundCampaignId: roundCampaign.id,
+                paymentId: payment.id,
+                humanityScore: payment.user.humanityScore, // Use user's persistent humanity score
+              },
+            });
+
+            console.log('[Daimo Webhook] Created RoundContribution:', {
+              paymentId: payment.id,
+              roundId: roundCampaign.roundId,
+              roundTitle: roundCampaign.Round.title,
+              humanityScore: payment.user.humanityScore,
+            });
+          } catch (roundError) {
+            console.error(`[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`, roundError);
+            // Continue with other rounds even if one fails
+          }
+        }
+      } catch (roundQueryError) {
+        console.error('[Daimo Webhook] Error querying round participations:', roundQueryError);
+        // Don't fail the payment confirmation if round association fails
+      }
+    }
+
     // Execute on-chain pledge for gateway payments
     // Only trigger when payment is newly confirmed (not duplicate events)
     if (
