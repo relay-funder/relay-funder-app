@@ -1,4 +1,4 @@
-import { db } from '@/server/db';
+import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
@@ -91,14 +91,9 @@ export async function executeGatewayPledge(
  * Separated for clean error handling and status tracking.
  */
 async function _executeGatewayPledgeInternal(
-  payment: Awaited<ReturnType<typeof db.payment.findUnique>> & {
-    user: NonNullable<
-      Awaited<ReturnType<typeof db.payment.findUnique>>
-    >['user'];
-    campaign: NonNullable<
-      Awaited<ReturnType<typeof db.payment.findUnique>>
-    >['campaign'];
-  },
+  payment: Prisma.PaymentGetPayload<{
+    include: { user: true; campaign: true };
+  }>
 ): Promise<ExecuteGatewayPledgeResponse> {
   if (!payment) {
     throw new ApiParameterError('Payment not found');
