@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useDeveloperPrefill } from '@/lib/develop/use-developer-prefill';
 import { Button } from '@/components/ui/button';
+import { getNextPage } from './form-steps';
 
 export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [state, setState] = useState<keyof typeof CreateProcessStates>('idle');
@@ -80,8 +81,10 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
       CampaignCreateFormStates[formState]
         .fields as (keyof CampaignFormSchemaType)[],
     );
-    if (isPageValid && CampaignCreateFormStates[formState].next?.target) {
-      setFormState(CampaignCreateFormStates[formState].next?.target);
+    if (isPageValid) {
+      const nextPage = getNextPage(formState);
+      if (nextPage) {
+        setFormState(nextPage);
       form.clearErrors();
     }
   }, [form, formState]);

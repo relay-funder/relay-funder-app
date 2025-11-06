@@ -5,12 +5,10 @@ interface CreateFormState {
   description: React.ReactNode;
   next: {
     label: string;
-    target?: keyof typeof CampaignCreateFormStates;
     submit: boolean;
   } | null;
   prev: {
     label: string;
-    target: keyof typeof CampaignCreateFormStates;
   } | null;
   fields: (keyof CampaignFormSchemaType)[];
 }
@@ -37,7 +35,7 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         </div>
       </div>
     ),
-    next: { label: "Let's Go", submit: false, target: 'description' },
+    next: { label: "Let's Go", submit: false },
     prev: null,
     fields: [],
   },
@@ -69,8 +67,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         </div>
       </div>
     ),
-    next: { label: 'Next', submit: false, target: 'meta' },
-    prev: { label: 'Back', target: 'introduction' },
+    next: { label: 'Next', submit: false },
+    prev: { label: 'Back' },
     fields: ['title', 'description'],
   },
   meta: {
@@ -103,8 +101,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         </div>
       </div>
     ),
-    next: { label: 'Next', submit: false, target: 'media' },
-    prev: { label: 'Back', target: 'description' },
+    next: { label: 'Next', submit: false },
+    prev: { label: 'Back' },
     fields: ['location', 'category'],
   },
   media: {
@@ -135,8 +133,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         </div>
       </div>
     ),
-    next: { label: 'Next', submit: false, target: 'funding' },
-    prev: { label: 'Back', target: 'meta' },
+    next: { label: 'Next', submit: false },
+    prev: { label: 'Back' },
     fields: ['bannerImage'],
   },
   funding: {
@@ -161,8 +159,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         </div>
       </div>
     ),
-    next: { label: 'Next', submit: false, target: 'timeline' },
-    prev: { label: 'Back', target: 'media' },
+    next: { label: 'Next', submit: false },
+    prev: { label: 'Back' },
     fields: ['fundingGoal', 'fundingModel'],
   },
   timeline: {
@@ -199,8 +197,8 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
         </div>
       </div>
     ),
-    next: { label: 'Next', submit: false, target: 'summary' },
-    prev: { label: 'Back', target: 'funding' },
+    next: { label: 'Next', submit: false },
+    prev: { label: 'Back' },
     fields: ['startTime', 'endTime'],
   },
   summary: {
@@ -234,7 +232,7 @@ export const CampaignCreateFormStates: Record<string, CreateFormState> = {
       </div>
     ),
     next: { label: 'Choose Action', submit: false },
-    prev: { label: 'Back', target: 'timeline' },
+    prev: { label: 'Back' },
     fields: [],
   },
 };

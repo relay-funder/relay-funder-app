@@ -8,6 +8,7 @@ import {
 import { useMemo } from 'react';
 import { CampaignCreateFormStates } from './form-states';
 import { DetailContainer } from '@/components/layout';
+import { getPrevPage } from './form-steps';
 
 export function CampaignCreateFormPage({
   state,
@@ -21,16 +22,31 @@ export function CampaignCreateFormPage({
   onStateChanged?: (arg0: keyof typeof CampaignCreateFormStates) => void;
 }) {
   const buttons = useMemo(() => {
+    const isSummaryPage = state === 'summary';
+
+    const prevPage = getPrevPage(state);
+    const prev = onStateChanged && prevPage && (
+      <Button
+        key="prev"
+        variant={isSummaryPage ? 'ghost' : 'secondary'}
+        size="lg"
+        type="button" // prevent submit
+        onClick={() => {
+          onStateChanged(prevPage);
+        }}
+      >
+        {CampaignCreateFormStates[state].prev?.label ?? 'Back'}
+      </Button>
+    );
     // Special handling for summary page with multiple actions
-    if (state === 'summary') {
+    if (isSummaryPage) {
       const saveAsDraft = (
         <Button
           key="save-draft"
           variant="outline"
           size="lg"
-          type="button"
-          onClick={(event: React.MouseEvent) => {
-            event?.preventDefault();
+          type="button" // prevent submit
+          onClick={() => {
             // Trigger form submission with draft flag
             const form = document.querySelector('form');
             if (form) {
@@ -48,9 +64,8 @@ export function CampaignCreateFormPage({
         <Button
           key="submit-approval"
           size="lg"
-          type="button"
-          onClick={(event: React.MouseEvent) => {
-            event?.preventDefault();
+          type="button" // prevent submit
+          onClick={() => {
             // Trigger form submission with approval flag
             const form = document.querySelector('form');
             if (form) {
@@ -64,47 +79,17 @@ export function CampaignCreateFormPage({
         </Button>
       );
 
-      const prev = onStateChanged && CampaignCreateFormStates[state].prev && (
-        <Button
-          key="prev"
-          variant="ghost"
-          size="lg"
-          onClick={(event: React.MouseEvent) => {
-            event?.preventDefault();
-            if (CampaignCreateFormStates[state].prev?.target) {
-              onStateChanged(CampaignCreateFormStates[state].prev.target);
-            }
-          }}
-        >
-          {CampaignCreateFormStates[state].prev.label}
+      return [prev, saveAsDraft, submitForApproval];
+    } else {
+      // Standard navigation buttons for other pages
+      const next = onStateChanged && CampaignCreateFormStates[state].next && (
+        <Button key="next" size="lg" type="submit">
+          {CampaignCreateFormStates[state].next.label}
         </Button>
       );
 
-      return [prev, saveAsDraft, submitForApproval];
+      return [prev, next];
     }
-
-    // Standard navigation buttons for other pages
-    const next = onStateChanged && CampaignCreateFormStates[state].next && (
-      <Button key="next" size="lg" type="submit">
-        {CampaignCreateFormStates[state].next.label}
-      </Button>
-    );
-    const prev = onStateChanged && CampaignCreateFormStates[state].prev && (
-      <Button
-        key="prev"
-        variant="secondary"
-        size="lg"
-        onClick={(event: React.MouseEvent) => {
-          event?.preventDefault(); // prevent submit
-          if (CampaignCreateFormStates[state].prev?.target) {
-            onStateChanged(CampaignCreateFormStates[state].prev.target);
-          }
-        }}
-      >
-        {CampaignCreateFormStates[state].prev.label}
-      </Button>
-    );
-    return [prev, next];
   }, [state, onStateChanged]);
 
   if (state !== page) {
