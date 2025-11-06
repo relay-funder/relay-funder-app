@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Sentry } from '@/lib/sentry';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 
 export default function ErrorPage({
   error,
@@ -35,6 +36,9 @@ export default function ErrorPage({
     if (isServerError) return '500 - Server Error';
     return 'Something went wrong!';
   }, [isAuthError, isServerError]);
+
+  // Set page title for browser history
+  useMetaTitle(`${errorTitle} | Relay Funder`);
 
   const errorMessage = useMemo(() => {
     if (isAuthError) return 'Redirecting you to sign in...';

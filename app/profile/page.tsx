@@ -12,6 +12,7 @@ import { useCallback, useState } from 'react';
 import { PageHeader } from '@/components/page/header';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 
 export default function ProfilePage() {
   const [editProfile, setEditProfile] = useState(false);
@@ -23,6 +24,13 @@ export default function ProfilePage() {
   const onEditSuccess = useCallback(() => {
     setEditProfile(false);
   }, [setEditProfile]);
+
+  // Set page title for browser history
+  useMetaTitle(
+    editProfile
+      ? 'Edit Profile | Relay Funder'
+      : 'Profile Settings | Relay Funder',
+  );
 
   if (!isReady || (authenticated && isProfilePending)) {
     return <ProfilePageSkeleton />;

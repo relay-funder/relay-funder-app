@@ -5,6 +5,11 @@ import { auth } from '@/server/auth';
 import { ADMIN_PAYMENTS_QUERY_KEY } from '@/lib/hooks/useAdminPayments';
 import { listAdminPayments } from '@/lib/api/adminPayments';
 import { PaymentsExplore } from '@/components/admin/payments/explore';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Payment Management | Relay Funder',
+};
 
 async function prefetchAdminPayments(
   queryClient: ReturnType<typeof getQueryClient>,

@@ -33,7 +33,7 @@ export function MobileAuthBadge() {
     >
       {authenticated ? 'Connected' : 'Connect'}
       <Image
-        className="xs:block hidden"
+        className="hidden xs:block"
         src="/wallet-icon.png"
         alt="wallet"
         width={14}

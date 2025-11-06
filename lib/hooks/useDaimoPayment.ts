@@ -108,7 +108,10 @@ export function useDaimoPayment({
         tipAmountInTokenUnits,
       );
     } catch (error) {
-      console.error('Daimo Pay: Error encoding call data (metadata only):', error);
+      console.error(
+        'Daimo Pay: Error encoding call data (metadata only):',
+        error,
+      );
       return null;
     }
   }, [pledgeId, address, validatedTreasuryAddress, baseAmount, tipAmountNum]);

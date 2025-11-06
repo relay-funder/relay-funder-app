@@ -4,6 +4,11 @@ import AdminUserDetailContent from '@/components/admin/user/detail/page-content'
 import { auth } from '@/server/auth';
 import { getQueryClient } from '@/lib/query-client';
 import { prefetchAdminUserOverview } from '@/lib/hooks/useAdminUserOverview';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin User Details | Relay Funder',
+};
 
 export default async function AdminUserDetailPage({
   params,

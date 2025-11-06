@@ -1,11 +1,19 @@
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { Metadata } from 'next';
 
 import { ExploreStories } from '@/components/explore-stories';
 import { prefetchCampaigns } from '@/lib/api/campaigns';
 import { prefetchActiveCategories } from '@/lib/api/categories';
 import { prefetchActiveRound } from '@/lib/api/rounds';
 import { getQueryClient } from '@/lib/query-client';
+import {
+  getHomePageMetadata,
+  OrganizationStructuredData,
+} from '@/components/metadata';
+import { generateOrganizationStructuredData } from '@/lib/utils/metadata';
 import { Suspense } from 'react';
+
+export const metadata: Metadata = getHomePageMetadata();
 
 export default async function HomePage() {
   const queryClient = getQueryClient();
@@ -17,11 +25,17 @@ export default async function HomePage() {
     prefetchActiveRound(queryClient),
   ]);
 
+  // Generate organization structured data
+  const organizationData = generateOrganizationStructuredData();
+
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense>
-        <ExploreStories />
-      </Suspense>
-    </HydrationBoundary>
+    <>
+      <OrganizationStructuredData data={organizationData} />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Suspense>
+          <ExploreStories />
+        </Suspense>
+      </HydrationBoundary>
+    </>
   );
 }

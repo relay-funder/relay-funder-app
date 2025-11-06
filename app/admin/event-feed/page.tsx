@@ -7,6 +7,11 @@ import {
   ADMIN_EVENT_FEED_QUERY_KEY,
   fetchAdminEventFeedPage,
 } from '@/lib/hooks/useAdminEventFeed';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Event Feed Management | Relay Funder',
+};
 
 async function prefetchAdminEventFeed(
   queryClient: ReturnType<typeof getQueryClient>,
