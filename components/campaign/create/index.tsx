@@ -27,8 +27,10 @@ import {
 import { useCampaignFormCreate } from './use-form-create';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { useFormErrorToast } from '@/hooks/use-form-error-toast';
 import { useDeveloperPrefill } from '@/lib/develop/use-developer-prefill';
 import { Button } from '@/components/ui/button';
+import { getNextPage } from './form-steps';
 
 export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [state, setState] = useState<keyof typeof CreateProcessStates>('idle');
@@ -75,16 +77,33 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
     defaultValues: campaignFormDefaultValues,
   });
 
+  const { showFormErrors } = useFormErrorToast<CampaignFormSchemaType>(form, {
+    dismissOnChange: [formState],
+  });
+
   const onSubmitStep = useCallback(async () => {
     const isPageValid = await form.trigger(
       CampaignCreateFormStates[formState]
         .fields as (keyof CampaignFormSchemaType)[],
     );
-    if (isPageValid && CampaignCreateFormStates[formState].next?.target) {
-      setFormState(CampaignCreateFormStates[formState].next?.target);
-      form.clearErrors();
+    if (isPageValid) {
+      const nextPage = getNextPage(formState);
+      if (nextPage) {
+        setFormState(nextPage);
+        form.clearErrors();
+      }
+    } else {
+      const errors: { field: string; message: string }[] = [];
+      for (const field of CampaignCreateFormStates[formState].fields) {
+        const fieldError = form.getFieldState(field).error;
+        if (!fieldError) {
+          continue;
+        }
+        errors.push({ field, message: fieldError.message ?? 'Unknown Error' });
+      }
+      showFormErrors(errors);
     }
-  }, [form, formState]);
+  }, [form, formState, showFormErrors]);
 
   const onSubmit = useCallback(
     async (data: CampaignFormSchemaType, event?: React.BaseSyntheticEvent) => {
