@@ -118,6 +118,17 @@ async function _executeGatewayPledgeInternal(
     console.log('[Execute Gateway] Pledge already executed:', {
       onChainPledgeId: metadata.onChainPledgeId,
     });
+
+    // Update payment status back to SUCCESS since it was already executed
+    await db.payment.update({
+      where: { id: payment.id },
+      data: {
+        pledgeExecutionStatus: 'SUCCESS',
+        pledgeExecutionError: null, // Clear any previous error
+        pledgeExecutionTxHash: metadata.treasuryTxHash as string,
+      },
+    });
+
     return {
       success: true,
       pledgeId: metadata.onChainPledgeId as string,

@@ -40,7 +40,7 @@ import {
 import type { PledgeExecutionStatus as PledgeExecutionStatusEnum } from '@/server/db';
 import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
-import ContractLink from '@/components/page/contract-link';
+import { ContractLink } from '@/components/page/contract-link';
 import { chainConfig } from '@/lib/web3';
 import { ExternalLink } from 'lucide-react';
 

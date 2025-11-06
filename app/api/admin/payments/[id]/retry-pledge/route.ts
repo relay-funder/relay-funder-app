@@ -8,6 +8,7 @@ import { response, handleError } from '@/lib/api/response';
 import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
 import { debugApi as debug } from '@/lib/debug';
+import type { PledgeExecutionStatus } from '@/server/db';
 
 /**
  * POST /api/admin/payments/[id]/retry-pledge
@@ -55,6 +56,21 @@ export async function POST(
     if (payment.status !== 'confirmed') {
       throw new ApiParameterError(
         `Payment must be confirmed before retry. Current status: ${payment.status}`,
+      );
+    }
+
+    // Validate pledge execution status is retryable
+    const retryableStatuses: PledgeExecutionStatus[] = ['FAILED', 'NOT_STARTED'];
+    if (!retryableStatuses.includes(payment.pledgeExecutionStatus)) {
+      console.log('[Admin] Payment not eligible for retry - non-retryable pledge status:', {
+        paymentId,
+        status: payment.status,
+        provider: payment.provider,
+        pledgeExecutionStatus: payment.pledgeExecutionStatus,
+        attempts: payment.pledgeExecutionAttempts,
+      });
+      throw new ApiParameterError(
+        `Payment pledge execution status must be FAILED or NOT_STARTED to retry. Current status: ${payment.pledgeExecutionStatus}`,
       );
     }
 

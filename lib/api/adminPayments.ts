@@ -11,6 +11,7 @@ export type AdminPaymentListItem = Prisma.PaymentGetPayload<{
         id: true;
         title: true;
         slug: true;
+        campaignAddress: true;
         treasuryAddress: true;
       };
     };
