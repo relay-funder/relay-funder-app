@@ -51,6 +51,59 @@ export async function executeGatewayPledge(
     throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
   }
 
+  // Mark execution as pending and increment attempts
+  await db.payment.update({
+    where: { id: paymentId },
+    data: {
+      pledgeExecutionStatus: 'PENDING',
+      pledgeExecutionAttempts: { increment: 1 },
+      pledgeExecutionLastAttempt: new Date(),
+    },
+  });
+
+  console.log(
+    '[Execute Gateway] Marked execution as PENDING, attempt:',
+    payment.pledgeExecutionAttempts + 1,
+  );
+
+  try {
+    return await _executeGatewayPledgeInternal(payment);
+  } catch (error) {
+    // Mark execution as failed with error message
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Execute Gateway] Execution failed:', errorMessage);
+
+    await db.payment.update({
+      where: { id: paymentId },
+      data: {
+        pledgeExecutionStatus: 'FAILED',
+        pledgeExecutionError: errorMessage,
+      },
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Internal implementation of gateway pledge execution.
+ * Separated for clean error handling and status tracking.
+ */
+async function _executeGatewayPledgeInternal(
+  payment: Awaited<ReturnType<typeof db.payment.findUnique>> & {
+    user: NonNullable<
+      Awaited<ReturnType<typeof db.payment.findUnique>>
+    >['user'];
+    campaign: NonNullable<
+      Awaited<ReturnType<typeof db.payment.findUnique>>
+    >['campaign'];
+  },
+): Promise<ExecuteGatewayPledgeResponse> {
+  if (!payment) {
+    throw new ApiParameterError('Payment not found');
+  }
+
   // Validate payment is ready for execution
   if (payment.status !== 'confirmed') {
     throw new ApiParameterError(
@@ -364,9 +417,13 @@ export async function executeGatewayPledge(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
 
+  // Mark execution as successful with transaction hash
   await db.payment.update({
     where: { id: payment.id },
     data: {
+      pledgeExecutionStatus: 'SUCCESS',
+      pledgeExecutionTxHash: tx.hash,
+      pledgeExecutionError: null,
       metadata: {
         ...(payment.metadata as Record<string, unknown>),
         ...executionMetadata,
@@ -374,10 +431,14 @@ export async function executeGatewayPledge(
     },
   });
 
-  console.log('[Execute Gateway] Payment metadata updated:', {
-    paymentId: payment.id,
-    pledgeId,
-  });
+  console.log(
+    '[Execute Gateway] Payment metadata updated and marked as SUCCESS:',
+    {
+      paymentId: payment.id,
+      pledgeId,
+      txHash: tx.hash,
+    },
+  );
 
   const result: ExecuteGatewayPledgeResponse = {
     success: true,

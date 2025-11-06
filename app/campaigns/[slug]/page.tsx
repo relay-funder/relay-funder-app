@@ -52,7 +52,9 @@ function extractCampaignMetadata(campaign: GetCampaignResponseInstance) {
   const parsedStartDate =
     rawStartTime instanceof Date
       ? rawStartTime
-      : rawStartTime && typeof rawStartTime === 'string' && rawStartTime.trim().length > 0
+      : rawStartTime &&
+          typeof rawStartTime === 'string' &&
+          rawStartTime.trim().length > 0
         ? new Date(rawStartTime)
         : undefined;
   const startDate =

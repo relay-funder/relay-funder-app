@@ -1,6 +1,8 @@
 import {
   useQuery,
   useInfiniteQuery,
+  useMutation,
+  useQueryClient,
   type QueryKey,
 } from '@tanstack/react-query';
 import { handleApiErrors } from '@/lib/api/error';
@@ -20,6 +22,11 @@ export type PaymentRefundState =
   | 'PROCESSED'
   | 'APPROVED';
 export type PaymentTypeEnum = 'BUY' | 'SELL';
+export type PledgeExecutionStatus =
+  | 'NOT_STARTED'
+  | 'PENDING'
+  | 'SUCCESS'
+  | 'FAILED';
 
 /**
  * Admin payments list item (matches /api/admin/payments response shape)
@@ -31,6 +38,7 @@ export type AdminPaymentListItem = {
   status: string;
   type: PaymentTypeEnum;
   transactionHash?: string | null;
+  daimoPaymentId?: string | null;
   isAnonymous: boolean;
   createdAt: string; // ISO from API
   updatedAt: string; // ISO from API
@@ -40,6 +48,13 @@ export type AdminPaymentListItem = {
   metadata?: unknown;
   provider?: string | null;
   refundState: PaymentRefundState;
+
+  // Pledge execution tracking (for gateway payments like Daimo Pay)
+  pledgeExecutionStatus: PledgeExecutionStatus;
+  pledgeExecutionError?: string | null;
+  pledgeExecutionAttempts: number;
+  pledgeExecutionLastAttempt?: string | null;
+  pledgeExecutionTxHash?: string | null;
 
   campaign: {
     id: number;
@@ -233,5 +248,32 @@ export function useInfiniteAdminPayments({
         ? firstPage.pagination.currentPage - 1
         : undefined,
     initialPageParam: 1,
+  });
+}
+
+/**
+ * Retry pledge execution for a payment.
+ * Used by admin UI when clicking "Retry" button on failed Daimo Pay payments.
+ */
+async function retryPledgeExecution(paymentId: number) {
+  const response = await fetch(
+    `/api/admin/payments/${paymentId}/retry-pledge`,
+    {
+      method: 'POST',
+    },
+  );
+  await handleApiErrors(response, 'Failed to retry pledge execution');
+  return response.json();
+}
+
+export function useRetryPledgeExecution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: retryPledgeExecution,
+    onSuccess: () => {
+      // Invalidate admin payments queries to refresh the list with updated status
+      queryClient.invalidateQueries({ queryKey: [ADMIN_PAYMENTS_QUERY_KEY] });
+    },
   });
 }

@@ -518,27 +518,45 @@ export async function POST(req: Request) {
       currentStatus !== 'confirmed' &&
       payment.provider === 'daimo'
     ) {
-      debug &&
-        console.log(
-          `Daimo Pay: Triggering pledge execution for payment ${payment.id}`,
-        );
+      console.log('[Daimo Webhook] Triggering pledge execution:', {
+        paymentId: payment.id,
+        daimoPaymentId: payload.paymentId,
+        amount: payment.amount,
+        token: payment.token,
+        userAddress: payment.user.address,
+        campaignId: payment.campaign.id,
+        campaignTitle: payment.campaign.title,
+        treasuryAddress: payment.campaign.treasuryAddress,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          tipAmount: (payment.metadata as Record<string, unknown>)?.tipAmount,
+          baseAmount: (payment.metadata as Record<string, unknown>)?.baseAmount,
+        },
+      });
 
       // Fire-and-forget: don't await pledge execution
       // If execution fails, payment remains "confirmed" for manual retry
-      console.log(
-        'DAIMO PAY: Payment completed - triggering pledge execution:',
-        {
-          paymentId: payment.id,
-          amount: payment.amount,
-          userAddress: payment.user.address,
-          campaignId: payment.campaign.id,
-          treasuryAddress: payment.campaign.treasuryAddress,
-          note: 'Funds received in admin wallet, now executing pledge to treasury',
-        },
-      );
       Promise.resolve().then(async () => {
+        const executionStartTime = Date.now();
         try {
+          console.log(
+            `[Daimo Webhook] Starting pledge execution for payment ${payment.id}`,
+          );
+
           const executionResult = await executeGatewayPledge(payment.id);
+
+          const executionDuration = Date.now() - executionStartTime;
+          console.log(
+            `[Daimo Webhook] Pledge execution SUCCESS for payment ${payment.id}:`,
+            {
+              duration: `${executionDuration}ms`,
+              pledgeId: executionResult.pledgeId,
+              transactionHash: executionResult.transactionHash,
+              blockNumber: executionResult.blockNumber,
+              pledgeAmount: executionResult.pledgeAmount,
+              tipAmount: executionResult.tipAmount,
+            },
+          );
 
           debug &&
             console.log(
@@ -546,6 +564,25 @@ export async function POST(req: Request) {
               executionResult,
             );
         } catch (executionError) {
+          const executionDuration = Date.now() - executionStartTime;
+          console.error(
+            `[Daimo Webhook] Pledge execution FAILED for payment ${payment.id}:`,
+            {
+              duration: `${executionDuration}ms`,
+              error:
+                executionError instanceof Error
+                  ? executionError.message
+                  : 'Unknown error',
+              errorStack:
+                executionError instanceof Error
+                  ? executionError.stack
+                  : undefined,
+              paymentId: payment.id,
+              daimoPaymentId: payload.paymentId,
+              campaignId: payment.campaign.id,
+              treasuryAddress: payment.campaign.treasuryAddress,
+            },
+          );
           console.error(
             `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
             executionError,
