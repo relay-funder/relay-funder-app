@@ -1,4 +1,4 @@
-import { db, type Prisma } from '@/server/db';
+import { db, type Prisma, type PledgeExecutionStatus } from '@/server/db';
 
 /**
  * Shape of a payment record returned for admin lists.
@@ -40,7 +40,7 @@ export interface ListAdminPaymentsParams {
   token?: string;
   refundState?: Prisma.EnumPaymentRefundStateFilter;
   type?: Prisma.EnumPaymentTypeFilter;
-  pledgeExecutionStatus?: Prisma.PledgeExecutionStatus;
+  pledgeExecutionStatus?: PledgeExecutionStatus;
 }
 
 export interface ListAdminPaymentsResult {
