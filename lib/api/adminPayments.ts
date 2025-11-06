@@ -40,7 +40,7 @@ export interface ListAdminPaymentsParams {
   token?: string;
   refundState?: Prisma.EnumPaymentRefundStateFilter;
   type?: Prisma.EnumPaymentTypeFilter;
-  pledgeExecutionStatus?: string;
+  pledgeExecutionStatus?: Prisma.PledgeExecutionStatus;
 }
 
 export interface ListAdminPaymentsResult {
