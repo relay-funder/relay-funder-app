@@ -218,6 +218,22 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 {payment.amount} {payment.token}
               </div>
             </div>
+            {payment.provider === 'daimo' && (payment.metadata as { tipAmount?: string; baseAmount?: string })?.tipAmount && (
+              <div>
+                <span className="text-muted-foreground">Tip Amount:</span>
+                <div className="font-semibold">
+                  {(payment.metadata as { tipAmount?: string })?.tipAmount} {payment.token}
+                </div>
+              </div>
+            )}
+            {payment.provider === 'daimo' && (payment.metadata as { baseAmount?: string })?.baseAmount && (
+              <div>
+                <span className="text-muted-foreground">Payment Amount:</span>
+                <div className="font-semibold">
+                  {(payment.metadata as { baseAmount?: string })?.baseAmount} {payment.token}
+                </div>
+              </div>
+            )}
             <div>
               <span className="text-muted-foreground">Status:</span>
               <div>
@@ -246,7 +262,7 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
         {/* Daimo Pay Specific */}
         {payment.provider === 'daimo' && (
           <div>
-            <h3 className="mb-3 font-semibold">Daimo Pay</h3>
+            <h3 className="mb-3 font-semibold">Treasury Transfer</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-muted-foreground">Payment ID:</span>
@@ -255,7 +271,7 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Status:</span>
+                <span className="text-muted-foreground">Pledge to Treasury:</span>
                 <div className="mt-1">
                   <PledgeExecutionBadge
                     status={payment.pledgeExecutionStatus}
@@ -263,11 +279,11 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Attempts:</span>
+                <span className="text-muted-foreground">Transfer Attempts:</span>
                 <div className="mt-1">{payment.pledgeExecutionAttempts}</div>
               </div>
               <div>
-                <span className="text-muted-foreground">Last Attempt:</span>
+                <span className="text-muted-foreground">Last Transfer Attempt:</span>
                 <div className="mt-1">
                   {payment.pledgeExecutionLastAttempt ? (
                     <FormattedDate
@@ -280,7 +296,7 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               </div>
               {payment.pledgeExecutionError && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground">Error:</span>
+                  <span className="text-muted-foreground">Transfer Error:</span>
                   <div className="mt-1 break-all rounded bg-destructive/10 p-2 text-xs text-destructive">
                     {payment.pledgeExecutionError}
                   </div>
