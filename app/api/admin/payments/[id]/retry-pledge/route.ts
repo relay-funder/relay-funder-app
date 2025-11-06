@@ -1,5 +1,5 @@
 import { checkAuth } from '@/lib/api/auth';
-import { ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
+import { ApiNotFoundError, ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
@@ -76,14 +76,9 @@ export async function POST(
       });
     } else {
       debug && console.error('[Admin] Pledge retry failed:', result.error);
-      return response(
-        {
-          success: false,
-          paymentId,
-          error: result.error,
-          message: 'Pledge execution retry failed',
-        },
-        { status: 500 },
+      // Throw error to be handled by handleError with proper status code
+      throw new ApiUpstreamError(
+        `Pledge execution retry failed: ${result.error}`,
       );
     }
   } catch (error: unknown) {
