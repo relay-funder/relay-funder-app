@@ -12,7 +12,7 @@ interface StructuredDataProps {
  */
 export function StructuredData({ data, id }: StructuredDataProps) {
   return (
-    <Script id={id} type="application/ld+json" strategy="beforeInteractive">
+    <Script id={id} type="application/ld+json" strategy="afterInteractive">
       {JSON.stringify(data)}
     </Script>
   );

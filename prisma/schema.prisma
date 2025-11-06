@@ -40,6 +40,13 @@ enum PaymentRefundState {
   APPROVED
 }
 
+enum PledgeExecutionStatus {
+  NOT_STARTED
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 enum RecipientStatus {
   PENDING
   APPROVED
@@ -181,6 +188,14 @@ model Payment {
   metadata        Json?
   provider        String?
   refundState     PaymentRefundState @default(NONE)
+  
+  // Pledge execution tracking (for gateway payments like Daimo Pay)
+  pledgeExecutionStatus      PledgeExecutionStatus @default(NOT_STARTED)
+  pledgeExecutionError       String?
+  pledgeExecutionAttempts    Int                   @default(0)
+  pledgeExecutionLastAttempt DateTime?
+  pledgeExecutionTxHash      String?
+  
   campaign        Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -189,6 +204,7 @@ model Payment {
   @@index([campaignId])
   @@index([userId])
   @@index([externalId])
+  @@index([pledgeExecutionStatus, provider])
 }
 
 model PaymentMethod {
