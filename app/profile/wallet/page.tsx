@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts';
 import { PageHome } from '@/components/page/home';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { PageHeader } from '@/components/page/header';
 import { DetailContainer } from '@/components/layout';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
@@ -11,6 +12,9 @@ import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
 export default function WalletSettingsPage() {
   const { authenticated, isReady } = useAuth();
+
+  // Set page title for browser history
+  useMetaTitle('Wallet Settings | Relay Funder');
 
   if (!isReady) {
     return <WalletPageSkeleton />;

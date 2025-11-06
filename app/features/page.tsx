@@ -32,9 +32,9 @@ const features = [
   },
   {
     icon: CreditCard,
-    title: 'Donate with Credit Card',
+    title: 'Cryptocurrency Donations',
     description:
-      'Multiple payment options including cryptocurrency and credit card integration via Stripe.',
+      'Support campaigns with cryptocurrency donations through secure blockchain transactions.',
     color: 'yellow',
   },
   {

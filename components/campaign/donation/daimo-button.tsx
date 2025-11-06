@@ -229,10 +229,11 @@ export function DaimoPayButtonComponent({
   }
 
   if (!paymentData.isValid) {
-    const isEmailValid = email && email.trim() && EmailSchema.safeParse(email).success;
+    const isEmailValid =
+      email && email.trim() && EmailSchema.safeParse(email).success;
     const buttonText = !isEmailValid
-      ? "Enter valid email to continue"
-      : "Enter donation amount to continue";
+      ? 'Enter valid email to continue'
+      : 'Enter donation amount to continue';
 
     return (
       <Button disabled className="w-full" size="lg">

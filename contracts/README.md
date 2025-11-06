@@ -491,16 +491,35 @@ The application supports payment gateways like Daimo Pay through an admin wallet
 
 ### Manual Retry
 
-If pledge execution fails, use the retry helper:
+If pledge execution fails, use the admin UI or API to retry individual payments:
 
+**Via Admin UI:**
+1. Navigate to `/admin/payments`
+2. Find payment with "Failed" or "Not Started" pledge status
+3. Click "Retry" button
+4. Monitor execution status
+
+**Via API:**
+```bash
+# Retry specific payment
+curl -X POST https://your-domain.com/api/admin/payments/{paymentId}/retry-pledge
+
+# Get list of failed pledges
+curl https://your-domain.com/api/admin/payments/failed-pledges?status=FAILED
+```
+
+**Programmatic Retry (if needed):**
 ```typescript
 import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 
 // Retry single payment
-await retryGatewayPledge(paymentId);
+const result = await retryGatewayPledge(paymentId);
 
-// Retry all failed pledges
-await retryAllFailedPledges();
+if (result.success) {
+  console.log('Retry successful:', result.result);
+} else {
+  console.error('Retry failed:', result.error);
+}
 ```
 
 ## 📞 Support & Resources

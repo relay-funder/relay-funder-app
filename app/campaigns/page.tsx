@@ -2,6 +2,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { useAuth } from '@/contexts';
 import { DashboardOverview } from '@/components/dashboard/overview';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
@@ -18,6 +19,13 @@ function CampaignsPageContent() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { isLoading: loading, error } = useInfiniteUserCampaigns();
+
+  // Set page title for browser history
+  useMetaTitle(
+    showCampaignCreate
+      ? 'Create Campaign | Relay Funder'
+      : 'Campaign Dashboard | Relay Funder',
+  );
 
   const onCreate = useCallback(async () => {
     setShowCampaignCreate(true);

@@ -66,7 +66,7 @@ export function RoundSpotlight() {
   return (
     <Card className="border border-border bg-card">
       <CardContent className="p-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col items-center justify-between xxs:flex-row">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
               {isUpcoming ? (
@@ -90,7 +90,7 @@ export function RoundSpotlight() {
           </Button>
         </div>
 
-        <div className="flex flex-col items-start gap-6 md:flex-row">
+        <div className="flex flex-col items-center gap-6 xxs:items-start md:flex-row">
           {/* Round Logo */}
           {logoUrl && (
             <div className="flex-shrink-0">

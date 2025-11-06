@@ -1,7 +1,6 @@
-import { PropsWithChildren, useCallback, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { PropsWithChildren } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { useCallback } from 'react';
 import { Loader2, Wallet, Link as LinkIcon, DollarSign } from 'lucide-react';
 import {
   useCurrentChain,
@@ -18,34 +17,29 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormDescription,
-  FormMessage,
   Button,
-  Input,
 } from '@/components/ui';
 import { CopyAddress } from '@/components/copy-text';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useToast } from '@/hooks/use-toast';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useUserProfile, useUpdateUserProfile } from '@/lib/hooks/useProfile';
 import { useUsdBalance } from '@/lib/web3/hooks/use-usd-balance';
 import { formatAddress } from '@/lib/format-address';
 import { cn } from '@/lib/utils';
 
-const recipientWalletSchema = z.object({
-  recipientWallet: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, {
-      message: 'Please enter a valid Ethereum address.',
-    })
-    .optional()
-    .or(z.literal('')),
-});
+// TODO: Recipient wallet schema for future feature
+// const recipientWalletSchema = z.object({
+//   recipientWallet: z
+//     .string()
+//     .regex(/^0x[a-fA-F0-9]{40}$/, {
+//       message: 'Please enter a valid Ethereum address.',
+//     })
+//     .optional()
+//     .or(z.literal('')),
+// });
 
-type RecipientWalletFormValues = z.infer<typeof recipientWalletSchema>;
+// type RecipientWalletFormValues = z.infer<typeof recipientWalletSchema>;
 
 function LabelLike({
   children,
@@ -85,55 +79,39 @@ export function ConnectedWalletInfo() {
   const { chain: currentChain } = useCurrentChain();
   const { usdBalance, isPending: usdBalanceIsPending } = useUsdBalance();
 
-  const { toast } = useToast();
-  const { data: profile, isLoading: profileLoading } = useUserProfile();
-  const { mutateAsync: updateUserProfile, isPending } = useUpdateUserProfile();
+  // Profile update functionality removed - this component should only display wallet info
+  // const { toast } = useToast();
+  // const { data: profile } = useUserProfile();
+  // const { mutateAsync: updateUserProfile } = useUpdateUserProfile();
 
-  const form = useForm<RecipientWalletFormValues>({
-    resolver: zodResolver(recipientWalletSchema),
-    defaultValues: {
-      recipientWallet: '',
-    },
-  });
+  // TODO: Recipient wallet feature - only handles recipient wallet updates
+  // Note: Profile updates should be handled in a separate profile editing component
 
-  useEffect(() => {
-    if (profile) {
-      form.reset({
-        recipientWallet: profile.recipientWallet ?? '',
-      });
-    }
-  }, [profile, form]);
-
-  const onSubmit = useCallback(
-    async (data: RecipientWalletFormValues) => {
-      if (!profile) return;
-      try {
-        await updateUserProfile({
-          firstName: profile.firstName ?? '',
-          lastName: profile.lastName ?? '',
-          email: profile.email ?? '',
-          username: profile.username,
-          bio: profile.bio,
-          recipientWallet: data.recipientWallet || undefined,
-        });
-        toast({
-          title: 'Recipient Wallet updated',
-          description: 'Your recipient wallet has been successfully updated.',
-        });
-      } catch (error) {
-        console.error(error);
-        toast({
-          title: 'Error',
-          description:
-            error instanceof Error
-              ? error.message
-              : 'Failed to update recipient wallet. Please try again.',
-          variant: 'destructive',
-        });
-      }
-    },
-    [updateUserProfile, toast, profile],
-  );
+  // const onSubmit = useCallback(
+  //   async (data: { recipientWallet?: string }) => {
+  //     if (!profile) return;
+  //     try {
+  //       await updateUserProfile({
+  //         recipientWallet: data.recipientWallet || undefined,
+  //       });
+  //       toast({
+  //         title: 'Recipient Wallet updated',
+  //         description: 'Your recipient wallet has been successfully updated.',
+  //       });
+  //     } catch (error) {
+  //       console.error(error);
+  //       toast({
+  //         title: 'Error',
+  //         description:
+  //           error instanceof Error
+  //             ? error.message
+  //             : 'Failed to update recipient wallet. Please try again.',
+  //         variant: 'destructive',
+  //       });
+  //     }
+  //   },
+  //   [updateUserProfile, toast, profile],
+  // );
 
   const formattedAddress = formatAddress(address ?? '');
 
@@ -265,7 +243,15 @@ export function ConnectedWalletInfo() {
           </div>
         )}
 
-        {/* Recipient Wallet Section */}
+        {/* TODO: Future Feature - Recipient Wallet Section */}
+        {/* This section allows users to set a custom recipient wallet address for campaign withdrawals */}
+        {/* Currently hidden as this feature is planned for future implementation */}
+        {/* When implementing: */}
+        {/* - Add feature flag control */}
+        {/* - Implement proper validation for recipient wallet ownership */}
+        {/* - Add confirmation dialogs for address changes */}
+        {/* - Ensure proper security measures for fund withdrawal */}
+        {/*
         <div className="space-y-4 border-t pt-6">
           <h3 className="font-display text-lg font-semibold text-foreground">
             Recipient Wallet Address
@@ -316,6 +302,7 @@ export function ConnectedWalletInfo() {
             </form>
           </Form>
         </div>
+        */}
       </CardContent>
     </Card>
   );

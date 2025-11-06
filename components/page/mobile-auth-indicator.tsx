@@ -32,7 +32,13 @@ export function MobileAuthBadge() {
       onClick={handleClick}
     >
       {authenticated ? 'Connected' : 'Connect'}
-      <Image src="/wallet-icon.png" alt="wallet" width={14} height={14} />
+      <Image
+        className="hidden xs:block"
+        src="/wallet-icon.png"
+        alt="wallet"
+        width={14}
+        height={14}
+      />
     </Button>
   );
 }

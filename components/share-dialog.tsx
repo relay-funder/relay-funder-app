@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Share2, Copy, MessageCircleQuestion } from 'lucide-react';
+import { Share2, Copy, MessageCircleQuestion, ArrowLeft } from 'lucide-react';
 import * as ReactShare from 'react-share';
 
 import { toast } from '@/hooks/use-toast';
@@ -70,6 +70,15 @@ export function ShareDialog({
   const [open, setOpen] = useState(false);
   const [showPromoteHints, setShowPromoteHints] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
+
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      // Reset flags when dialog closes
+      setShowCustom(false);
+      setShowPromoteHints(false);
+    }
+  }, []);
   const [shareUrl, setShareUrl] = useState<string | undefined>();
   const { amountGoal } = useCampaignStatsFromInstance({
     campaign,
@@ -277,7 +286,7 @@ Your support can make a huge difference! Please check it out and consider contri
     return null;
   }
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="icon" className="rounded-full">
           {children ? children : <Share2 className="h-4 w-4" />}
@@ -375,25 +384,26 @@ Your support can make a huge difference! Please check it out and consider contri
               </p>
             </div>
             {showCustom ? (
-              <div className="flex w-full gap-2">
-                <Textarea defaultValue={shareText} readOnly />
-                <div className="grid grid-cols-1">
+              <div className="flex w-full flex-col gap-4">
+                <div className="flex items-center justify-start">
+                  <Button
+                    variant="outline"
+                    onClick={toggleCustom}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Share Options
+                  </Button>
+                </div>
+                <div className="flex w-full gap-2">
+                  <Textarea defaultValue={shareText} readOnly />
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={copyTextToClipboard}
-                    className="h-8 px-2"
+                    className="h-8 self-start px-2"
                   >
                     <Copy className="h-4 w-4" />
-                    <span className="sr-only">Copy Text</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleCustom}
-                    className="h-8 px-2"
-                  >
-                    <MessageCircleQuestion className="h-4 w-4" />
                     <span className="sr-only">Copy Text</span>
                   </Button>
                 </div>

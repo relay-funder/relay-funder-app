@@ -44,7 +44,7 @@ export function HomeCategorySelect({
   const categories = categoriesData?.categories || [];
 
   return (
-    <div className="flex flex-wrap justify-center gap-3 p-4">
+    <div className="flex flex-wrap justify-center gap-3 p-2 xxs:p-4">
       <Button
         key="all"
         variant="outline"

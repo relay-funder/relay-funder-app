@@ -5,6 +5,11 @@ import { auth } from '@/server/auth';
 import { getUser } from '@/lib/api/user';
 import { ADMIN_USER_QUERY_KEY } from '@/lib/hooks/useAdminUsers';
 import AdminUserEditForm from '@/components/admin/user/edit-form';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Edit User | Relay Funder',
+};
 
 async function prefetchAdminUser(
   queryClient: ReturnType<typeof getQueryClient>,

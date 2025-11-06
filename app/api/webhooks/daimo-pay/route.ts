@@ -206,11 +206,13 @@ export async function POST(req: Request) {
       // Create payment record
       // IMPORTANT: Store only the base pledge amount (not including tip) to match direct wallet flow
       // Tip is stored separately in metadata and handled by smart contract
-      let createdPayment: Awaited<ReturnType<typeof db.payment.create>> | undefined;
+      let createdPayment:
+        | Awaited<ReturnType<typeof db.payment.create>>
+        | undefined;
       try {
         createdPayment = await db.payment.create({
           data: {
-            amount: baseAmount.toString(),  // Pledge amount only
+            amount: baseAmount.toString(), // Pledge amount only
             token: 'USDT',
             type: 'BUY',
             status: 'confirming',
@@ -223,7 +225,7 @@ export async function POST(req: Request) {
               daimoPaymentId: payload.paymentId,
               pledgeAmount: baseAmount.toString(),
               tipAmount: tipAmount.toString(),
-              totalReceivedFromDaimo: totalAmount.toString(),  // Track total for reconciliation
+              totalReceivedFromDaimo: totalAmount.toString(), // Track total for reconciliation
               userAddress,
               userEmail,
               createdViaWebhook: true,
@@ -246,12 +248,15 @@ export async function POST(req: Request) {
 
           // Verify payment was found (should exist if constraint was violated)
           if (!payment) {
-            console.error('Daimo Pay: Unique constraint violated but payment not found', {
-              daimoPaymentId: payload.paymentId,
-              error: error.message,
-            });
+            console.error(
+              'Daimo Pay: Unique constraint violated but payment not found',
+              {
+                daimoPaymentId: payload.paymentId,
+                error: error.message,
+              },
+            );
             throw new ApiParameterError(
-              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`
+              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`,
             );
           }
         } else {
@@ -506,6 +511,77 @@ export async function POST(req: Request) {
       }
     }
 
+    // Create round contributions for confirmed payments
+    // This associates payments with rounds immediately when confirmed
+    if (
+      newStatus === 'confirmed' &&
+      currentStatus !== 'confirmed' &&
+      payment.provider === 'daimo'
+    ) {
+      console.log(
+        '[Daimo Webhook] Creating round contributions for confirmed payment:',
+        {
+          paymentId: payment.id,
+          campaignId: payment.campaign.id,
+        },
+      );
+
+      try {
+        // Find all approved round participations for this campaign
+        // Match the logic from direct wallet payments exactly for consistency
+        const roundCampaigns = await db.roundCampaigns.findMany({
+          where: {
+            campaignId: payment.campaign.id,
+            status: 'APPROVED', // RoundCampaign must be APPROVED
+            Round: {
+              startDate: { lte: new Date() }, // Round has started
+              endDate: { gte: new Date() }, // Round hasn't ended
+            },
+          },
+          include: {
+            Round: true,
+          },
+        });
+
+        console.log(
+          `[Daimo Webhook] Found ${roundCampaigns.length} approved round participations for campaign ${payment.campaign.id}`,
+        );
+
+        // Create RoundContribution records for each approved round
+        for (const roundCampaign of roundCampaigns) {
+          try {
+            await db.roundContribution.create({
+              data: {
+                campaignId: payment.campaign.id,
+                roundCampaignId: roundCampaign.id,
+                paymentId: payment.id,
+                humanityScore: payment.user.humanityScore, // Use user's persistent humanity score
+              },
+            });
+
+            console.log('[Daimo Webhook] Created RoundContribution:', {
+              paymentId: payment.id,
+              roundId: roundCampaign.roundId,
+              roundTitle: roundCampaign.Round.title,
+              humanityScore: payment.user.humanityScore,
+            });
+          } catch (roundError) {
+            console.error(
+              `[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`,
+              roundError,
+            );
+            // Continue with other rounds even if one fails
+          }
+        }
+      } catch (roundQueryError) {
+        console.error(
+          '[Daimo Webhook] Error querying round participations:',
+          roundQueryError,
+        );
+        // Don't fail the payment confirmation if round association fails
+      }
+    }
+
     // Execute on-chain pledge for gateway payments
     // Only trigger when payment is newly confirmed (not duplicate events)
     if (
@@ -513,24 +589,45 @@ export async function POST(req: Request) {
       currentStatus !== 'confirmed' &&
       payment.provider === 'daimo'
     ) {
-      debug &&
-        console.log(
-          `Daimo Pay: Triggering pledge execution for payment ${payment.id}`,
-        );
+      console.log('[Daimo Webhook] Triggering pledge execution:', {
+        paymentId: payment.id,
+        daimoPaymentId: payload.paymentId,
+        amount: payment.amount,
+        token: payment.token,
+        userAddress: payment.user.address,
+        campaignId: payment.campaign.id,
+        campaignTitle: payment.campaign.title,
+        treasuryAddress: payment.campaign.treasuryAddress,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          tipAmount: (payment.metadata as Record<string, unknown>)?.tipAmount,
+          baseAmount: (payment.metadata as Record<string, unknown>)?.baseAmount,
+        },
+      });
 
       // Fire-and-forget: don't await pledge execution
       // If execution fails, payment remains "confirmed" for manual retry
-      console.log('DAIMO PAY: Payment completed - triggering pledge execution:', {
-        paymentId: payment.id,
-        amount: payment.amount,
-        userAddress: payment.user.address,
-        campaignId: payment.campaign.id,
-        treasuryAddress: payment.campaign.treasuryAddress,
-        note: 'Funds received in admin wallet, now executing pledge to treasury',
-      });
       Promise.resolve().then(async () => {
+        const executionStartTime = Date.now();
         try {
+          console.log(
+            `[Daimo Webhook] Starting pledge execution for payment ${payment.id}`,
+          );
+
           const executionResult = await executeGatewayPledge(payment.id);
+
+          const executionDuration = Date.now() - executionStartTime;
+          console.log(
+            `[Daimo Webhook] Pledge execution SUCCESS for payment ${payment.id}:`,
+            {
+              duration: `${executionDuration}ms`,
+              pledgeId: executionResult.pledgeId,
+              transactionHash: executionResult.transactionHash,
+              blockNumber: executionResult.blockNumber,
+              pledgeAmount: executionResult.pledgeAmount,
+              tipAmount: executionResult.tipAmount,
+            },
+          );
 
           debug &&
             console.log(
@@ -538,6 +635,25 @@ export async function POST(req: Request) {
               executionResult,
             );
         } catch (executionError) {
+          const executionDuration = Date.now() - executionStartTime;
+          console.error(
+            `[Daimo Webhook] Pledge execution FAILED for payment ${payment.id}:`,
+            {
+              duration: `${executionDuration}ms`,
+              error:
+                executionError instanceof Error
+                  ? executionError.message
+                  : 'Unknown error',
+              errorStack:
+                executionError instanceof Error
+                  ? executionError.stack
+                  : undefined,
+              paymentId: payment.id,
+              daimoPaymentId: payload.paymentId,
+              campaignId: payment.campaign.id,
+              treasuryAddress: payment.campaign.treasuryAddress,
+            },
+          );
           console.error(
             `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
             executionError,

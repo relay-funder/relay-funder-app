@@ -1,7 +1,16 @@
 import { useTheme } from '@/contexts/ThemeContext';
+import Image, { ImageProps } from 'next/image';
 
 // Logo mappings for different themes
 const logoMappings = {
+  '/relay-funder-logo.svg': {
+    light: '/relay-funder-logo.svg',
+    dark: '/relay-funder-logo-white.svg',
+  },
+  '/relay-funder-logo-mark.svg': {
+    light: '/relay-funder-logo-mark.svg',
+    dark: '/relay-funder-logo-mark.svg',
+  },
   '/relay-funder-logo.png': {
     light: '/relay-funder-logo.png',
     dark: '/relay-funder-logo-white.png',
@@ -27,8 +36,7 @@ export function useThemeLogo(logoPath: string): string {
 }
 
 // Alternative approach: Component that automatically handles theme switching
-interface ThemeAwareImageProps
-  extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface ThemeAwareImageProps extends Omit<ImageProps, 'src' | 'alt'> {
   src: string;
   alt: string;
 }
@@ -41,12 +49,14 @@ export function ThemeAwareImage({
 }: ThemeAwareImageProps) {
   const { actualTheme } = useTheme();
   const themeSrc = useThemeLogo(src);
+  const isSVG = themeSrc.endsWith('.svg');
 
   return (
-    <img
+    <Image
       src={themeSrc}
       alt={alt}
       className={`theme-aware-image ${actualTheme === 'dark' ? 'dark-theme' : 'light-theme'} ${className || ''}`}
+      unoptimized={isSVG}
       {...props}
     />
   );

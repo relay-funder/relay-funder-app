@@ -8,6 +8,7 @@ import {
 } from '@/components/ui';
 import { useAuth } from '@/contexts';
 import { Heart, History, Bell, Info, Flower2 } from 'lucide-react';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { DonorDashboardOverview } from '@/components/dashboard/donor-overview';
 import { FavoriteCard } from '@/components/dashboard/favorite-card';
 import { CampaignLoading } from '@/components/campaign/loading';
@@ -42,6 +43,9 @@ export default function DashboardPage() {
   const [removedFavorites, setRemovedFavorites] = useState<Set<number>>(
     new Set(),
   );
+
+  // Set page title for browser history
+  useMetaTitle('Donor Dashboard | Relay Funder');
 
   const {
     data: favourites,

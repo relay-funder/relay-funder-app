@@ -23,6 +23,8 @@ import { RoundManageResults } from './manage-results';
 import { RoundAdminInlineEdit } from './admin/inline-edit';
 import { RoundApplyDialog } from './apply-dialog';
 import { Button } from '@/components/ui';
+import { RoundQfPreview } from './qf-preview';
+import { cn } from '@/lib/utils';
 
 export function RoundFull({
   id,
@@ -85,25 +87,34 @@ export function RoundFull({
     notFound();
   }
 
+  const isEnded = status.text === 'Ended';
+  const isActive = status.text === 'Active';
+
   const header = <PageHeader />;
 
   return (
     <PageHome header={header}>
       <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          {isAdmin && status.text === 'Ended' && (
-            <RoundManageResults round={round} />
-          )}
+          {isAdmin && isEnded && <RoundManageResults round={round} />}
           {/* Round Info Section - Compact Layout with Large Logo */}
           <div className="space-y-6">
             {/* Round Header with Large Logo and Status */}
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex items-start gap-6">
-                <div className="shrink-0">
+            <div
+              className={cn(
+                'flex flex-col items-start justify-between gap-6',
+                isAdmin ? 'lg:flex-row' : 'sm:flex-row',
+              )}
+            >
+              <div className="flex flex-col items-center gap-6 xxs:flex-row xxs:items-start">
+                <div className="hidden shrink-0 xs:block">
                   <RoundMainImageAvatar round={round} size="large" />
                 </div>
+                <div className="shrink-0 xs:hidden">
+                  <RoundMainImageAvatar round={round} size="medium" />
+                </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="mb-3 text-3xl font-bold leading-tight tracking-tight">
+                  <h1 className="mb-3 text-2xl font-bold leading-tight tracking-tight xs:text-3xl">
                     {round.title ?? 'Untitled Round'}
                   </h1>
                   {/* Round URL - displayed below title with clickable icon */}
@@ -113,7 +124,7 @@ export function RoundFull({
                         href={round.descriptionUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm transition-colors hover:text-foreground hover:underline"
+                        className="flex items-center gap-2 text-xs transition-colors hover:text-foreground hover:underline xs:text-sm"
                       >
                         <ExternalLink className="h-4 w-4" />
                         <span className="truncate">{round.descriptionUrl}</span>
@@ -122,7 +133,14 @@ export function RoundFull({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  'flex gap-2',
+                  isAdmin
+                    ? 'flex-col items-start xs:flex-row xs:items-center'
+                    : 'items-center',
+                )}
+              >
                 <Badge
                   variant={status.variant}
                   className="shrink-0 px-3 py-1 text-sm"
@@ -193,7 +211,7 @@ export function RoundFull({
 
           {/* Participating Campaigns Section - Prominent Display */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-center justify-between gap-2 xs:flex-row">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">
                   Participating Campaigns
@@ -233,6 +251,11 @@ export function RoundFull({
               </Card>
             )}
           </div>
+
+          {/* QF Preview - Only for active rounds */}
+          {isAdmin && round.matchingPool > 0 && isActive && (
+            <RoundQfPreview round={round} isAdmin={isAdmin} />
+          )}
         </div>
 
         {/* Apply Dialog */}

@@ -4,9 +4,13 @@ import React from 'react';
 import { useAuth } from '@/contexts';
 import Authenticated from '@/components/login/authenticated';
 import Login from '@/components/login';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 
 export default function LoginPage() {
   const { authenticated, isReady } = useAuth();
+
+  // Set page title for browser history
+  useMetaTitle('Login | Relay Funder');
 
   // Show loading state while authentication status is being determined
   if (!isReady) {

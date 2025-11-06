@@ -8,6 +8,11 @@ import { listWithdrawals } from '@/lib/api/withdrawals';
 // useInfiniteAdminWithdrawals and provide one-click actions to approve/update.
 // Create at: components/admin/withdrawals/explore.tsx
 import { WithdrawalsExplore } from '@/components/admin/withdrawals/explore';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Withdrawal Management | Relay Funder',
+};
 
 async function prefetchAdminWithdrawals(
   queryClient: ReturnType<typeof getQueryClient>,

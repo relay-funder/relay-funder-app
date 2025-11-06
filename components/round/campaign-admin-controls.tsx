@@ -5,13 +5,14 @@ import type { GetRoundResponseInstance } from '@/lib/api/types';
 import type { DbCampaign } from '@/types/campaign';
 import { Check, Loader2, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   useUpdateRoundCampaign,
   useRemoveRoundCampaign,
 } from '@/lib/hooks/useRounds';
 import { cn } from '@/lib/utils';
 import { debugComponentData as debug } from '@/lib/debug';
+import { useConfirm } from '@/hooks/use-confirm';
 
 interface RoundCampaignAdminControlsProps {
   campaign: DbCampaign;
@@ -22,7 +23,9 @@ export function RoundCampaignAdminControls({
   campaign,
   round,
 }: RoundCampaignAdminControlsProps) {
+  const attemptedRef = useRef(false);
   const { isAdmin } = useAuth();
+  const { confirm } = useConfirm();
   const { mutateAsync: updateRoundCampaign } = useUpdateRoundCampaign();
   const { mutateAsync: removeRoundCampaign, isPending: isRemovePending } =
     useRemoveRoundCampaign();
@@ -63,11 +66,32 @@ export function RoundCampaignAdminControls({
 
   const onRemove = useCallback(async () => {
     try {
-      await removeRoundCampaign({
-        campaignId: campaign.id,
-        roundId: round.id,
+      attemptedRef.current = false;
+      await confirm({
+        title: 'Are you absolutely sure?',
+        description: (
+          <>
+            This action cannot be undone. This will permanently remove the
+            campaign &quot;
+            <span className="font-semibold">
+              {campaign?.title ?? 'Untitled Campaign'}
+            </span>
+            &quot; from the round &quot;
+            <span className="font-semibold">
+              {round.title ?? 'Untitled Round'}
+            </span>
+            &quot;.
+          </>
+        ),
+        onConfirm: async () => {
+          await removeRoundCampaign({
+            campaignId: campaign.id,
+            roundId: round.id,
+          });
+        },
+        confirmText: 'Remove',
+        confirmVariant: 'destructive',
       });
-
       // Log successful removal for tracking
       debug &&
         console.log('Admin removed campaign from round:', {
@@ -83,7 +107,14 @@ export function RoundCampaignAdminControls({
       console.error('Failed to remove campaign from round:', error);
       throw error; // Re-throw to let the UI handle the error
     }
-  }, [removeRoundCampaign, campaign.id, campaign.title, round.id, round.title]);
+  }, [
+    removeRoundCampaign,
+    campaign.id,
+    campaign.title,
+    round.id,
+    round.title,
+    confirm,
+  ]);
 
   if (!isAdmin) {
     return null;
@@ -93,9 +124,9 @@ export function RoundCampaignAdminControls({
   const isApproved = roundCampaign?.status === 'APPROVED';
   const isRejected = roundCampaign?.status === 'REJECTED';
 
-  // Admin users can always remove campaigns and toggle approval status
-  // Approve/reject buttons are always visible with visual indication of current state
-
+  if (new Date() > new Date(round.endTime)) {
+    return null;
+  }
   return (
     <div className="w-full space-y-3">
       {/* Horizontal divider for visual separation */}

@@ -1,6 +1,10 @@
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { Suspense } from 'react';
 
+export const metadata = {
+  title: 'Admin | Relay Funder',
+};
+
 export default function AdminLayout({
   children,
 }: Readonly<{

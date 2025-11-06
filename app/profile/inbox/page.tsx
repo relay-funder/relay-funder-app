@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts';
 import { PageHome } from '@/components/page/home';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { PageHeader } from '@/components/page/header';
 import { PageLoading } from '@/components/page/loading';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
@@ -10,6 +11,9 @@ import Inbox from '@/components/event-feed/inbox';
 
 export default function ProfileInboxPage() {
   const { authenticated, isReady } = useAuth();
+
+  // Set page title for browser history
+  useMetaTitle('Inbox | Relay Funder');
 
   if (!isReady) {
     return <PageLoading>Loading your inbox…</PageLoading>;

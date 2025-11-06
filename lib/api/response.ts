@@ -33,9 +33,13 @@ export async function handleError(error: unknown) {
       {
         success: false,
         error:
-          'ApplicationError, data integrity failure: ' + IS_PRODUCTION
-            ? ''
-            : error?.message,
+          'Server Error' +
+          (IS_PRODUCTION ? '' : `, integrity error: ${error?.message}`),
+        details: IS_PRODUCTION
+          ? undefined
+          : error instanceof Error
+            ? error.message
+            : String(error),
       },
       { status: 500 },
     );
@@ -45,9 +49,13 @@ export async function handleError(error: unknown) {
       {
         success: false,
         error:
-          'ApplicationError, data conflict: ' + IS_PRODUCTION
-            ? ''
-            : error?.message,
+          'Application Error' +
+          (IS_PRODUCTION ? '' : `, data conflict: ${error?.message}`),
+        details: IS_PRODUCTION
+          ? undefined
+          : error instanceof Error
+            ? error.message
+            : String(error),
       },
       { status: 409 },
     );
@@ -57,10 +65,13 @@ export async function handleError(error: unknown) {
       {
         success: false,
         error:
-          'ApplicationError, invalid parameters: ' + IS_PRODUCTION
-            ? ''
-            : error?.message,
-        details: error.details,
+          'Application Error' +
+          (IS_PRODUCTION ? '' : `, parameter error: ${error?.message}`),
+        details: IS_PRODUCTION
+          ? undefined
+          : error instanceof Error
+            ? error.message
+            : String(error),
       },
       { status: 400 },
     );
@@ -70,9 +81,13 @@ export async function handleError(error: unknown) {
       {
         success: false,
         error:
-          'ApplicationError, instance not found: ' + IS_PRODUCTION
-            ? ''
-            : error?.message,
+          'Application Error' +
+          (IS_PRODUCTION ? '' : `, instance not found: ${error?.message}`),
+        details: IS_PRODUCTION
+          ? undefined
+          : error instanceof Error
+            ? error.message
+            : String(error),
       },
       { status: 404 },
     );
@@ -82,11 +97,10 @@ export async function handleError(error: unknown) {
       {
         success: false,
         error:
-          'Service Error, upstream failure: ' + IS_PRODUCTION
-            ? ''
-            : error?.message,
+          'Service Error' +
+          (IS_PRODUCTION ? '' : `, upstream failure: ${error?.message}`),
         details: IS_PRODUCTION
-          ? ''
+          ? undefined
           : error instanceof Error
             ? error.message
             : String(error),

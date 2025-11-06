@@ -5,6 +5,11 @@ import { auth } from '@/server/auth';
 import { UserExplore } from '@/components/admin/user/explore';
 import { ADMIN_USERS_QUERY_KEY } from '@/lib/hooks/useAdminUsers';
 import { listUsers } from '@/lib/api/user';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin User Management | Relay Funder',
+};
 
 async function prefetchAdminUsers(
   queryClient: ReturnType<typeof getQueryClient>,

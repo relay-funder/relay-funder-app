@@ -1,6 +1,11 @@
 import { AdminDashboard } from '@/components/admin/dashboard';
 import { auth } from '@/server/auth';
 import { AdminAccessDenied } from '@/components/admin/access-denied';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Dashboard | Relay Funder',
+};
 
 export default async function AdminPage() {
   const session = await auth();
