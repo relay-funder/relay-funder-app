@@ -68,6 +68,27 @@ export async function GET(req: Request) {
       type = upper as unknown as typeof type;
     }
 
+    // Pledge execution status filter (PledgeExecutionStatus enum)
+    const pledgeExecutionStatusParam = searchParams.get(
+      'pledgeExecutionStatus',
+    );
+    let pledgeExecutionStatus:
+      | 'NOT_STARTED'
+      | 'PENDING'
+      | 'SUCCESS'
+      | 'FAILED'
+      | undefined = undefined;
+    if (pledgeExecutionStatusParam) {
+      const upper = pledgeExecutionStatusParam.toUpperCase();
+      const allowed = ['NOT_STARTED', 'PENDING', 'SUCCESS', 'FAILED'] as const;
+      if (!allowed.includes(upper as (typeof allowed)[number])) {
+        throw new ApiParameterError(
+          'Invalid pledgeExecutionStatus. Use NOT_STARTED, PENDING, SUCCESS, or FAILED.',
+        );
+      }
+      pledgeExecutionStatus = upper as unknown as typeof pledgeExecutionStatus;
+    }
+
     const result = await listAdminPayments({
       page,
       pageSize,
@@ -78,6 +99,7 @@ export async function GET(req: Request) {
       token: token || undefined,
       refundState,
       type,
+      pledgeExecutionStatus,
     });
 
     return response(result);

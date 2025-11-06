@@ -40,6 +40,7 @@ export interface ListAdminPaymentsParams {
   token?: string;
   refundState?: Prisma.EnumPaymentRefundStateFilter;
   type?: Prisma.EnumPaymentTypeFilter;
+  pledgeExecutionStatus?: string;
 }
 
 export interface ListAdminPaymentsResult {
@@ -68,6 +69,7 @@ export async function listAdminPayments({
   token,
   refundState,
   type,
+  pledgeExecutionStatus,
 }: ListAdminPaymentsParams = {}): Promise<ListAdminPaymentsResult> {
   const where: Prisma.PaymentWhereInput = {};
 
@@ -88,6 +90,9 @@ export async function listAdminPayments({
   }
   if (type) {
     where.type = type;
+  }
+  if (pledgeExecutionStatus && pledgeExecutionStatus.trim().length > 0) {
+    where.pledgeExecutionStatus = pledgeExecutionStatus;
   }
 
   const [items, totalCount] = await Promise.all([

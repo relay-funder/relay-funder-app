@@ -92,6 +92,7 @@ export type AdminPaymentsFilters = {
   token?: string;
   refundState?: PaymentRefundState;
   type?: PaymentTypeEnum;
+  pledgeExecutionStatus?: PledgeExecutionStatus;
 };
 
 interface PaginatedAdminPaymentsResponse extends PaginatedResponse {
@@ -131,6 +132,9 @@ function buildAdminPaymentsUrl({
   }
   if (filters?.type) {
     params.set('type', filters.type);
+  }
+  if (filters?.pledgeExecutionStatus) {
+    params.set('pledgeExecutionStatus', filters.pledgeExecutionStatus);
   }
 
   return `/api/admin/payments?${params.toString()}`;

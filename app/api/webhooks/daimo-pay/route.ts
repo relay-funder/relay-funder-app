@@ -518,10 +518,13 @@ export async function POST(req: Request) {
       currentStatus !== 'confirmed' &&
       payment.provider === 'daimo'
     ) {
-      console.log('[Daimo Webhook] Creating round contributions for confirmed payment:', {
-        paymentId: payment.id,
-        campaignId: payment.campaign.id,
-      });
+      console.log(
+        '[Daimo Webhook] Creating round contributions for confirmed payment:',
+        {
+          paymentId: payment.id,
+          campaignId: payment.campaign.id,
+        },
+      );
 
       try {
         // Find all approved round participations for this campaign
@@ -540,7 +543,9 @@ export async function POST(req: Request) {
           },
         });
 
-        console.log(`[Daimo Webhook] Found ${roundCampaigns.length} approved round participations for campaign ${payment.campaign.id}`);
+        console.log(
+          `[Daimo Webhook] Found ${roundCampaigns.length} approved round participations for campaign ${payment.campaign.id}`,
+        );
 
         // Create RoundContribution records for each approved round
         for (const roundCampaign of roundCampaigns) {
@@ -561,12 +566,18 @@ export async function POST(req: Request) {
               humanityScore: payment.user.humanityScore,
             });
           } catch (roundError) {
-            console.error(`[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`, roundError);
+            console.error(
+              `[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`,
+              roundError,
+            );
             // Continue with other rounds even if one fails
           }
         }
       } catch (roundQueryError) {
-        console.error('[Daimo Webhook] Error querying round participations:', roundQueryError);
+        console.error(
+          '[Daimo Webhook] Error querying round participations:',
+          roundQueryError,
+        );
         // Don't fail the payment confirmation if round association fails
       }
     }

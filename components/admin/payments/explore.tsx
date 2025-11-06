@@ -37,6 +37,7 @@ import {
   type PaymentRefundState,
   type PledgeExecutionStatus,
 } from '@/lib/hooks/useAdminPayments';
+import type { PledgeExecutionStatus as PledgeExecutionStatusEnum } from '@/server/db';
 import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
 import ContractLink from '@/components/page/contract-link';
@@ -76,25 +77,25 @@ function PledgeExecutionBadge({ status }: { status: PledgeExecutionStatus }) {
   switch (status) {
     case 'SUCCESS':
       return (
-        <Badge className="bg-green-600 text-white border-green-600 hover:bg-green-700 dark:bg-green-500 dark:text-white dark:border-green-500">
+        <Badge className="border-green-600 bg-green-600 text-white hover:bg-green-700 dark:border-green-500 dark:bg-green-500 dark:text-white">
           Executed
         </Badge>
       );
     case 'PENDING':
       return (
-        <Badge className="bg-blue-500 text-white border-blue-500 hover:bg-blue-600 dark:bg-blue-400 dark:text-white dark:border-blue-400">
+        <Badge className="border-blue-500 bg-blue-500 text-white hover:bg-blue-600 dark:border-blue-400 dark:bg-blue-400 dark:text-white">
           Executing...
         </Badge>
       );
     case 'FAILED':
       return (
-        <Badge className="bg-red-600 text-white border-red-600 hover:bg-red-700 dark:bg-red-500 dark:text-white dark:border-red-500">
+        <Badge className="border-red-600 bg-red-600 text-white hover:bg-red-700 dark:border-red-500 dark:bg-red-500 dark:text-white">
           Failed
         </Badge>
       );
     case 'NOT_STARTED':
       return (
-        <Badge className="bg-gray-500 text-white border-gray-500 hover:bg-gray-600 dark:bg-gray-400 dark:text-white dark:border-gray-400">
+        <Badge className="border-gray-500 bg-gray-500 text-white hover:bg-gray-600 dark:border-gray-400 dark:bg-gray-400 dark:text-white">
           Not Started
         </Badge>
       );
@@ -165,6 +166,28 @@ export type PaymentsTableProps = {
 };
 
 function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
+  const { toast } = useToast();
+  const retryMutation = useRetryPledgeExecution();
+
+  const handleRetry = async (paymentId: number) => {
+    try {
+      await retryMutation.mutateAsync(paymentId);
+      toast({
+        title: 'Pledge execution retried',
+        description: 'The pledge execution has been queued for retry.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Retry failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to retry pledge execution',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
       <DialogHeader>
@@ -205,7 +228,7 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               <span className="text-muted-foreground">Provider:</span>
               <div>
                 {payment.provider === 'daimo' ? (
-                  <Badge className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:border-blue-500">
+                  <Badge className="border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:text-white">
                     Daimo Pay
                   </Badge>
                 ) : (
@@ -227,14 +250,16 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-muted-foreground">Payment ID:</span>
-                <div className="break-all font-mono text-xs mt-1">
+                <div className="mt-1 break-all font-mono text-xs">
                   {payment.daimoPaymentId || 'N/A'}
                 </div>
               </div>
               <div>
                 <span className="text-muted-foreground">Status:</span>
                 <div className="mt-1">
-                  <PledgeExecutionBadge status={payment.pledgeExecutionStatus} />
+                  <PledgeExecutionBadge
+                    status={payment.pledgeExecutionStatus}
+                  />
                 </div>
               </div>
               <div>
@@ -245,7 +270,9 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 <span className="text-muted-foreground">Last Attempt:</span>
                 <div className="mt-1">
                   {payment.pledgeExecutionLastAttempt ? (
-                    <FormattedDate date={new Date(payment.pledgeExecutionLastAttempt)} />
+                    <FormattedDate
+                      date={new Date(payment.pledgeExecutionLastAttempt)}
+                    />
                   ) : (
                     'Never'
                   )}
@@ -254,7 +281,7 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               {payment.pledgeExecutionError && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Error:</span>
-                  <div className="break-all text-xs text-destructive bg-destructive/10 p-2 rounded mt-1">
+                  <div className="mt-1 break-all rounded bg-destructive/10 p-2 text-xs text-destructive">
                     {payment.pledgeExecutionError}
                   </div>
                 </div>
@@ -311,23 +338,25 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               <span className="text-muted-foreground">Slug:</span>
               <div className="font-mono">{payment.campaign.slug}</div>
             </div>
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Public URL:</span>
-                <div className="mt-1">
-                  <a
-                    href={`/campaigns/${payment.campaign.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
-                  >
-                    {typeof window !== 'undefined' ? window.location.origin : ''}
-                    /campaigns/{payment.campaign.slug}
-                  </a>
-                </div>
+            <div className="col-span-2">
+              <span className="text-muted-foreground">Public URL:</span>
+              <div className="mt-1">
+                <a
+                  href={`/campaigns/${payment.campaign.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-xs text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  {typeof window !== 'undefined' ? window.location.origin : ''}
+                  /campaigns/{payment.campaign.slug}
+                </a>
               </div>
+            </div>
             {payment.campaign.campaignAddress && (
               <div className="col-span-2">
-                <span className="text-muted-foreground">Campaign Contract:</span>
+                <span className="text-muted-foreground">
+                  Campaign Contract:
+                </span>
                 <div className="mt-1">
                   <ContractLink
                     address={payment.campaign.campaignAddress}
@@ -411,34 +440,30 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
             </div>
           </div>
         )}
+
+        {/* Actions */}
+        {payment.provider === 'daimo' &&
+          payment.status === 'confirmed' &&
+          (payment.pledgeExecutionStatus === 'FAILED' ||
+            payment.pledgeExecutionStatus === 'NOT_STARTED') && (
+            <div className="flex justify-end border-t pt-4">
+              <Button
+                onClick={() => handleRetry(payment.id)}
+                disabled={retryMutation.isPending}
+                variant="outline"
+              >
+                {retryMutation.isPending
+                  ? 'Retrying...'
+                  : 'Retry Pledge Execution'}
+              </Button>
+            </div>
+          )}
       </div>
     </DialogContent>
   );
 }
 
 function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
-  const { toast } = useToast();
-  const retryMutation = useRetryPledgeExecution();
-
-  const handleRetry = async (paymentId: number) => {
-    try {
-      await retryMutation.mutateAsync(paymentId);
-      toast({
-        title: 'Pledge execution retried',
-        description: 'The pledge execution has been queued for retry.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Retry failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to retry pledge execution',
-        variant: 'destructive',
-      });
-    }
-  };
-
   return (
     <Table>
       <TableHeader>
@@ -463,7 +488,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
             </TableCell>
             <TableCell className="whitespace-nowrap">
               {p.provider === 'daimo' ? (
-                <Badge className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:border-blue-500">
+                <Badge className="border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:text-white">
                   Daimo Pay
                 </Badge>
               ) : p.provider ? (
@@ -511,29 +536,14 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
               <RefundBadge state={p.refundState} />
             </TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      Details
-                    </Button>
-                  </DialogTrigger>
-                  <PaymentDetailsModal payment={p} />
-                </Dialog>
-                {p.provider === 'daimo' &&
-                  p.status === 'confirmed' &&
-                  (p.pledgeExecutionStatus === 'FAILED' ||
-                    p.pledgeExecutionStatus === 'NOT_STARTED') && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRetry(p.id)}
-                      disabled={retryMutation.isPending}
-                    >
-                      {retryMutation.isPending ? 'Retrying...' : 'Retry'}
-                    </Button>
-                  )}
-              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    Details
+                  </Button>
+                </DialogTrigger>
+                <PaymentDetailsModal payment={p} />
+              </Dialog>
             </TableCell>
           </TableRow>
         ))}
@@ -557,11 +567,13 @@ type PaymentStatusFilter =
   | 'canceled';
 
 type RefundFilter = 'ALL' | PaymentRefundState;
+type PledgeExecutionStatusFilter = 'ALL' | PledgeExecutionStatusEnum;
 
 function useDerivedFilters(
   term: string,
   status: PaymentStatusFilter,
   refund: RefundFilter,
+  pledgeExecutionStatus: PledgeExecutionStatusFilter,
 ): AdminPaymentsFilters {
   return useMemo(() => {
     const next: AdminPaymentsFilters = {};
@@ -589,16 +601,27 @@ function useDerivedFilters(
       next.refundState = refund;
     }
 
+    if (pledgeExecutionStatus && pledgeExecutionStatus !== 'ALL') {
+      next.pledgeExecutionStatus = pledgeExecutionStatus;
+    }
+
     return next;
-  }, [term, status, refund]);
+  }, [term, status, refund, pledgeExecutionStatus]);
 }
 
 export function PaymentsExplore() {
   const [searchTerm, setSearchTerm] = useState('');
   const [status, setStatus] = useState<PaymentStatusFilter>('ALL');
   const [refund, setRefund] = useState<RefundFilter>('ALL');
+  const [pledgeExecutionStatus, setPledgeExecutionStatus] =
+    useState<PledgeExecutionStatusFilter>('ALL');
 
-  const filters = useDerivedFilters(searchTerm, status, refund);
+  const filters = useDerivedFilters(
+    searchTerm,
+    status,
+    refund,
+    pledgeExecutionStatus,
+  );
   const pageSize = 10;
 
   const {
@@ -677,6 +700,29 @@ export function PaymentsExplore() {
                     <SelectItem value="REQUESTED">Requested</SelectItem>
                     <SelectItem value="APPROVED">Approved</SelectItem>
                     <SelectItem value="PROCESSED">Processed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Pledge Status
+                </span>
+                <Select
+                  value={pledgeExecutionStatus}
+                  onValueChange={(v) =>
+                    setPledgeExecutionStatus(v as PledgeExecutionStatusFilter)
+                  }
+                >
+                  <SelectTrigger className="h-8 w-44">
+                    <SelectValue placeholder="Pledge Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="NOT_STARTED">Not Started</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="SUCCESS">Success</SelectItem>
+                    <SelectItem value="FAILED">Failed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

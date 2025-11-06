@@ -93,7 +93,7 @@ export async function executeGatewayPledge(
 async function _executeGatewayPledgeInternal(
   payment: Prisma.PaymentGetPayload<{
     include: { user: true; campaign: true };
-  }>
+  }>,
 ): Promise<ExecuteGatewayPledgeResponse> {
   if (!payment) {
     throw new ApiParameterError('Payment not found');
