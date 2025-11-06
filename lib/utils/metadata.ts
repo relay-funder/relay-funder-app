@@ -307,13 +307,13 @@ export function generateCampaignStructuredData(
     targetFunding: {
       '@type': 'MonetaryAmount',
       currency: 'USD',
-      value: fundingGoal,
+      value: Number(fundingGoal),
     },
     ...(currentRaised && {
       raisedFunding: {
         '@type': 'MonetaryAmount',
         currency: 'USD',
-        value: currentRaised,
+        value: Number(currentRaised),
       },
     }),
     ...(startDate && {
