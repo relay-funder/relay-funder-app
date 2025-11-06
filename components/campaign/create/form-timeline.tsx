@@ -296,7 +296,7 @@ export function CampaignCreateFormTimeline({
                   disabled={isOnChainDeployed}
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-auto">
                       <SelectValue placeholder="Choose a funding round" />
                     </SelectTrigger>
                   </FormControl>
