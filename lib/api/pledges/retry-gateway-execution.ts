@@ -1,5 +1,4 @@
 import { executeGatewayPledge } from './execute-gateway-pledge';
-import { debugApi as debug } from '@/lib/debug';
 
 /**
  * Retry pledge execution for a specific payment.
