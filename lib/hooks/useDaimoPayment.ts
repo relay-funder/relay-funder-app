@@ -27,6 +27,7 @@ interface DaimoPaymentData {
   validatedRefundAddress: `0x${string}` | null;
   metadata: Record<string, string>;
   isValid: boolean;
+  isEmailValid: boolean;
   config: ReturnType<typeof getDaimoPayConfig>;
 }
 
@@ -133,7 +134,11 @@ export function useDaimoPayment({
 
   // Validate email format using Zod
   const isEmailValid = useMemo(() => {
-    if (!email || !email.trim()) return false;
+    if (!email || email.trim() === '') {
+      // email is optional, assume valid if unset
+      return true;
+    }
+    // only validate if set
     const result = EmailSchema.safeParse(email);
     return result.success;
   }, [email]);
@@ -167,6 +172,7 @@ export function useDaimoPayment({
     validatedRefundAddress,
     metadata,
     isValid,
+    isEmailValid,
     config,
   };
 }

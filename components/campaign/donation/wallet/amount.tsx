@@ -64,7 +64,7 @@ export function CampaignDonationWalletAmount({
               htmlFor="email"
               className="text-sm font-medium text-foreground"
             >
-              Email Address *
+              Email Address (optional)
             </Label>
           </div>
           <div className="max-w-sm">
