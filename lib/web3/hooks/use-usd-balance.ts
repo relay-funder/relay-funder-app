@@ -1,20 +1,16 @@
-import { useBalance, useAccount, formatUnits } from '@/lib/web3';
+'use client';
+
 import { USD_ADDRESS } from '@/lib/constant';
-import { useMemo } from 'react';
+import { useTokenBalance } from '@/lib/web3/hooks/use-token-balance';
 
-export function useUsdBalance() {
-  const { address } = useAccount();
-
-  const { data: usdBalance, isPending: usdBalanceIsPending } = useBalance({
-    address,
+export function useUsdBalance({ enabled = true }: { enabled?: boolean } = {}) {
+  const { data, isPending } = useTokenBalance({
     token: USD_ADDRESS as `0x${string}`,
+    enabled,
   });
-  const usdBalanceFormatted = useMemo(() => {
-    return formatUnits(
-      usdBalance?.value ?? BigInt(0),
-      usdBalance?.decimals ?? 0,
-    );
-  }, [usdBalance?.value, usdBalance?.decimals]);
 
-  return { usdBalance: usdBalanceFormatted, isPending: usdBalanceIsPending };
+  console.log(isPending, data);
+  const usdBalance = data?.formatted ?? '0';
+
+  return { usdBalance, isPending };
 }
