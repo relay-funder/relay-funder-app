@@ -3,7 +3,6 @@
 import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
 import { DaimoPayTab } from '@/components/campaign/donation/daimo-tab';
-import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { Wallet, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts';
@@ -65,32 +64,22 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
           </TabsList>
 
           <TabsContent value="daimo">
-            <Web3ContextProvider>
-              <DaimoPayTab campaign={campaign} />
-            </Web3ContextProvider>
+            <DaimoPayTab campaign={campaign} />
           </TabsContent>
 
           <TabsContent value="wallet">
-            <Web3ContextProvider>
-              <CampaignDonationWalletTab campaign={campaign} />
-            </Web3ContextProvider>
+            <CampaignDonationWalletTab campaign={campaign} />
           </TabsContent>
         </Tabs>
       ) : showDaimoPay ? (
         // Only Daimo Pay enabled - show directly without tabs
-        <Web3ContextProvider>
-          <DaimoPayTab campaign={campaign} />
-        </Web3ContextProvider>
+        <DaimoPayTab campaign={campaign} />
       ) : showCryptoWallet ? (
         // Only Crypto Wallet enabled - show directly without tabs
-        <Web3ContextProvider>
-          <CampaignDonationWalletTab campaign={campaign} />
-        </Web3ContextProvider>
+        <CampaignDonationWalletTab campaign={campaign} />
       ) : (
         // No payment methods enabled - this shouldn't happen but fallback to Daimo Pay
-        <Web3ContextProvider>
-          <DaimoPayTab campaign={campaign} />
-        </Web3ContextProvider>
+        <DaimoPayTab campaign={campaign} />
       )}
     </div>
   );
