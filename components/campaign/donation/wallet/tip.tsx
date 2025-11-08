@@ -7,24 +7,15 @@ import {
 } from 'react';
 import { Input, Label } from '@/components/ui';
 import { Info } from 'lucide-react';
-
-interface CampaignDonationWalletTipProps {
-  tipAmount: string;
-  amount: string;
-  selectedToken: string;
-  onTipAmountChanged: (tipAmount: string) => void;
-}
+import { useDonationContext } from '@/contexts';
 
 const MIN_PERCENTAGE = 0;
 const MAX_PERCENTAGE = 50;
 const DEFAULT_PERCENTAGE = 5;
 
-export function CampaignDonationWalletTip({
-  tipAmount,
-  amount,
-  selectedToken,
-  onTipAmountChanged,
-}: CampaignDonationWalletTipProps) {
+export function CampaignDonationWalletTip() {
+  const { amount, tipAmount, setTipAmount, token, paymentType } =
+    useDonationContext();
   const [percentage, setPercentage] = useState(DEFAULT_PERCENTAGE);
   const [displayPercentage, setDisplayPercentage] =
     useState(DEFAULT_PERCENTAGE);
@@ -41,7 +32,7 @@ export function CampaignDonationWalletTip({
     debounceTimeoutRef.current = setTimeout(() => {
       const tip = (percentage / 100) * parseFloat(amount || '0');
       const formattedTip = tip.toFixed(2);
-      onTipAmountChanged(formattedTip);
+      setTipAmount(formattedTip);
     }, 300); // 300ms debounce delay
 
     // Cleanup timeout on unmount
@@ -50,7 +41,7 @@ export function CampaignDonationWalletTip({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [percentage, amount, onTipAmountChanged]); // Include all dependencies
+  }, [percentage, amount, setTipAmount]); // Include all dependencies
 
   const handlePercentageChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +83,7 @@ export function CampaignDonationWalletTip({
               className="h-10 cursor-not-allowed bg-muted pr-20 text-sm"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-              {selectedToken}
+              {paymentType === 'daimo' ? 'USD' : token}
             </div>
           </div>
         </div>

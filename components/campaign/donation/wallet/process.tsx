@@ -9,30 +9,28 @@ import { DonationProcessDisplay } from './process-display';
 import { useRouter } from 'next/navigation';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletProcess({
   campaign,
-  amount,
-  tipAmount = '0',
-  selectedToken,
   donationToRelayFunder,
-  anonymous,
-  email,
-  onProcessing,
 }: {
   campaign: DbCampaign;
-  amount: string;
-  tipAmount?: string;
-  selectedToken: string;
   donationToRelayFunder: number;
-  anonymous: boolean;
-  email: string;
-  onProcessing?: (processing: boolean) => void;
 }) {
   const router = useRouter();
   const { toast } = useToast();
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
+  const {
+    amount,
+    tipAmount,
+    isAnonymous,
+    email,
+    token,
+    setIsProcessingPayment,
+  } = useDonationContext();
+
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const relayFundercAmount = useMemo(() => {
     if (donationToRelayFunder) {
@@ -55,8 +53,8 @@ export function CampaignDonationWalletProcess({
     amount,
     tipAmount,
     poolAmount,
-    isAnonymous: anonymous,
-    selectedToken,
+    isAnonymous,
+    selectedToken: token,
     userEmail: email,
     onStateChanged: setState,
   });
@@ -83,11 +81,7 @@ export function CampaignDonationWalletProcess({
       });
       return;
     }
-
-    if (typeof onProcessing === 'function') {
-      onProcessing(true);
-    }
-
+    setIsProcessingPayment(true);
     try {
       // Only update profile if user doesn't already have an email set
       if (!profile?.email || profile.email.trim() === '') {
@@ -101,29 +95,30 @@ export function CampaignDonationWalletProcess({
     } catch (error) {
       console.error('process:onDonate:catch', error);
       setProcessing(false);
-      if (typeof onProcessing === 'function') {
-        onProcessing(false);
-      }
+      setIsProcessingPayment(false);
     }
-  }, [onDonate, onProcessing, email, updateProfileEmail, toast, profile]);
+  }, [
+    onDonate,
+    setIsProcessingPayment,
+    email,
+    updateProfileEmail,
+    toast,
+    profile,
+  ]);
   useEffect(() => {
     // auto-reset state when done
     if (state === 'idle') {
       setProcessing(false);
-      if (typeof onProcessing === 'function') {
-        onProcessing(false);
-      }
+      setIsProcessingPayment(false);
     }
     if (state === 'done') {
       setTimeout(() => {
-        if (typeof onProcessing === 'function') {
-          onProcessing(false);
-        }
+        setIsProcessingPayment(false);
       }, 3000);
 
       return;
     }
-  }, [state, onProcessing]);
+  }, [state, setIsProcessingPayment]);
   const onDoneView = useCallback(() => {
     setState('idle');
     router.push(`/campaigns/${campaign.slug}`);
@@ -143,17 +138,20 @@ export function CampaignDonationWalletProcess({
       }
       clearTimeout(deferTimerId);
     };
-  }, [processingOnDonate, onProcessing]);
+  }, [processingOnDonate, setIsProcessingPayment]);
   const isButtonDisabled =
     !numericAmount || processing || !email.trim() || !isValidEmail(email);
 
+  function handleDonate() {
+    onDonateStart();
+  }
   return (
     <>
       <Button
         className="mb-6 w-full"
         size="lg"
         disabled={isButtonDisabled}
-        onClick={onDonateStart}
+        onClick={handleDonate}
       >
         {processing ? 'Processing...' : `Contribute with Wallet`}
       </Button>

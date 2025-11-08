@@ -9,23 +9,22 @@ import { CampaignDonationRelayFunder } from '../relay-funder';
 import { CampaignDonationAnonymous } from '../anonymous';
 import { EmailCapture } from '../email-capture';
 import { useEmailValidation } from '@/hooks/use-email-validation';
+import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationDetails({
   campaign,
 }: {
   campaign: DbCampaign;
 }) {
-  const [amount, setAmount] = useState('0');
+  const { email: userEmail, setEmail } = useDonationContext();
   const [donationToRelayFunder, setDonationToRelayFunder] = useState(0);
-  const [donationAnonymous, setDonationAnonymous] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | undefined>();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   const { requiresEmail, hasEmail, email } = useEmailValidation();
 
   // Handle email capture completion
   const handleEmailComplete = (email: string) => {
-    setUserEmail(email);
+    setEmail(email);
     setShowPaymentForm(true);
   };
 
@@ -35,15 +34,9 @@ export function CampaignDonationDetails({
 
   return (
     <div className="relative flex flex-col gap-4">
-      <CampaignDonationCreditCardAmount
-        onAmountChanged={setAmount}
-        amount={amount}
-      />
+      <CampaignDonationCreditCardAmount />
       <CampaignDonationRelayFunder onChange={setDonationToRelayFunder} />
-      <CampaignDonationAnonymous
-        anonymous={donationAnonymous}
-        onChange={setDonationAnonymous}
-      />
+      <CampaignDonationAnonymous />
 
       {/* Email capture - show if user doesn't have email or if payment form isn't shown yet */}
       {requiresEmail && !showPaymentForm && (
@@ -54,9 +47,7 @@ export function CampaignDonationDetails({
       {shouldShowPaymentForm && (
         <CampaignDonationCreditCardProcess
           campaign={campaign}
-          amount={amount}
           donationToRelayFunder={donationToRelayFunder}
-          anonymous={donationAnonymous}
           userEmail={finalEmail}
         />
       )}

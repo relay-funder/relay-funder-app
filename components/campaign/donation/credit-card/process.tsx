@@ -6,19 +6,19 @@ import { CampaignDonationCreditCardStripeLoading } from './stripe-loading';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
 import { useStripeLazy } from '@/hooks/use-stripe-lazy';
 import { Button } from '@/components/ui';
+import { useDonationContext } from '@/contexts';
+
 export function CampaignDonationCreditCardProcess({
   campaign,
-  amount,
   donationToRelayFunder,
-  anonymous,
   userEmail,
 }: {
   campaign: DbCampaign;
-  amount: string;
   donationToRelayFunder: number;
-  anonymous: boolean;
   userEmail?: string;
 }) {
+  const { amount, isAnonymous } = useDonationContext();
+
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const relayFunderAmount = useMemo(() => {
     if (donationToRelayFunder) {
@@ -37,7 +37,7 @@ export function CampaignDonationCreditCardProcess({
       poolAmount,
       campaign,
       userEmail: userEmail || DEFAULT_USER_EMAIL,
-      isAnonymous: anonymous,
+      isAnonymous,
     });
   return (
     <>

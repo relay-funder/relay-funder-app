@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 
 import { DbCampaign } from '@/types/campaign';
 import { useDonationContext } from '@/contexts';
@@ -15,51 +15,30 @@ export function CampaignDonationWalletDetails({
 }: {
   campaign: DbCampaign;
 }) {
-  const { donation, setAmount, setToken, setTipAmount } = useDonationContext();
+  const { isProcessingPayment, clearDonation } = useDonationContext();
 
-  const { tipAmount, amount, token } = donation;
-
-  const [donationAnonymous, setDonationAnonymous] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [email, setEmail] = useState('');
+  useEffect(() => {
+    return () => {
+      clearDonation();
+    };
+  }, [clearDonation]);
 
   return (
     <div className="relative flex flex-col gap-6">
-      <VisibilityToggle isVisible={!processing}>
+      <VisibilityToggle isVisible={!isProcessingPayment}>
         <div className="space-y-6">
-          <CampaignDonationWalletAmount
-            onAmountChanged={setAmount}
-            onTokenChanged={setToken}
-            amount={amount}
-            selectedToken={token}
-            email={email}
-            onEmailChanged={setEmail}
-          />
+          <CampaignDonationWalletAmount />
 
           {/* Two-column grid for tip and privacy settings on desktop */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <CampaignDonationWalletTip
-              tipAmount={tipAmount}
-              amount={amount}
-              selectedToken={token}
-              onTipAmountChanged={setTipAmount}
-            />
-            <CampaignDonationAnonymous
-              anonymous={donationAnonymous}
-              onChange={setDonationAnonymous}
-            />
+            <CampaignDonationWalletTip />
+            <CampaignDonationAnonymous />
           </div>
         </div>
       </VisibilityToggle>
       <CampaignDonationWalletProcess
         campaign={campaign}
-        amount={amount}
-        tipAmount={tipAmount}
         donationToRelayFunder={0}
-        selectedToken={token}
-        anonymous={donationAnonymous}
-        email={email}
-        onProcessing={setProcessing}
       />
     </div>
   );
