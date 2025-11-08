@@ -28,8 +28,11 @@ export function CampaignDonationWalletProcess({
     isAnonymous,
     email,
     token,
+    usdFormattedBalance,
     setIsProcessingPayment,
   } = useDonationContext();
+
+  const { hasUsdBalance } = usdFormattedBalance;
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const relayFundercAmount = useMemo(() => {
@@ -138,20 +141,22 @@ export function CampaignDonationWalletProcess({
       }
       clearTimeout(deferTimerId);
     };
-  }, [processingOnDonate, setIsProcessingPayment]);
-  const isButtonDisabled =
-    !numericAmount || processing || !email.trim() || !isValidEmail(email);
+  }, [processingOnDonate]);
 
-  function handleDonate() {
-    onDonateStart();
-  }
+  const isButtonDisabled =
+    !hasUsdBalance ||
+    !numericAmount ||
+    processing ||
+    !email.trim() ||
+    !isValidEmail(email);
+
   return (
     <>
       <Button
         className="mb-6 w-full"
         size="lg"
         disabled={isButtonDisabled}
-        onClick={handleDonate}
+        onClick={onDonateStart}
       >
         {processing ? 'Processing...' : `Contribute with Wallet`}
       </Button>
