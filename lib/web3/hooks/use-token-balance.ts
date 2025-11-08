@@ -32,7 +32,6 @@ export function useTokenBalance({
     if (!data) return;
     const formatted = formatUnits(data.value, data.decimals);
     const amount = parseFloat(formatted);
-    console.log(formatted);
     return {
       ...data,
       formatted,
