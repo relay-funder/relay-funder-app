@@ -16,6 +16,8 @@ export function CampaignDonationDetails({
 }: {
   campaign: DbCampaign;
 }) {
+  // TODO: emails consolidation, for how we are having separate source of truths in this case
+  // the last changes in this file were a mere refactor, as currently we are not using this payment method.
   const { email: userEmail, setEmail } = useDonationContext();
   const [donationToRelayFunder, setDonationToRelayFunder] = useState(0);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
