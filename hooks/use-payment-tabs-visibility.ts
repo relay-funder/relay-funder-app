@@ -6,10 +6,12 @@ export type PaymentMethodOption =
   | 'crypto-only'
   | 'daimo-and-crypto';
 
+export type PaymentTabValue = 'daimo' | 'wallet';
+
 export interface PaymentTabsVisibility {
   showDaimoPay: boolean;
   showCryptoWallet: boolean;
-  defaultTab: 'daimo' | 'wallet';
+  defaultTab: PaymentTabValue;
 }
 
 /**
