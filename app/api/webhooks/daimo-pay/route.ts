@@ -8,7 +8,7 @@ import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
 import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
-import { debugApi as debug } from '@/lib/debug';
+import { log, LogType } from '@/lib/debug';
 
 // Type for payment with includes
 type PaymentWithIncludes = Prisma.PaymentGetPayload<{
@@ -18,32 +18,56 @@ type PaymentWithIncludes = Prisma.PaymentGetPayload<{
   };
 }>;
 
+const logFactory = (type: LogType, prefix: string) => {
+  return (
+    message: string,
+    dataObj?: Record<string, unknown>,
+    ...args: unknown[]
+  ) => {
+    const { id, address, ...restData } = dataObj ?? {};
+    const data = Object.keys(restData).length > 0 ? restData : undefined;
+    log(
+      message,
+      {
+        type,
+        user: address as string | undefined, // used for verbose logging permission checks in production
+        data,
+        prefix: `${prefix}${id ? ` (${id})` : ''}`,
+      },
+      ...args,
+    );
+  };
+};
+
+const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook');
+
+const logError = logFactory('error', '🚨 DaimoPayWebhook');
+
+const logWarn = logFactory('warn', '🚨 DaimoPayWebhook');
+
 export async function POST(req: Request) {
   try {
-    debug &&
-      console.log('Daimo Pay webhook called:', {
-        method: req.method,
-        url: req.url,
-        headers: Object.fromEntries(
-          Array.from(req.headers.entries()).map(([key, value]) => [
-            key,
-            key.toLowerCase() === 'authorization' ? '[REDACTED]' : value,
-          ]),
-        ),
-      });
+    logVerbose('Webhook called:', {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(
+        Array.from(req.headers.entries()).map(([key, value]) => [
+          key,
+          key.toLowerCase() === 'authorization' ? '[REDACTED]' : value,
+        ]),
+      ),
+    });
 
     // Verify Daimo Pay webhook authentication
     const authHeader = req.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Basic ')) {
-      console.warn(
-        'Daimo Pay webhook: Missing or invalid Authorization header',
-      );
+      logWarn('Missing or invalid Authorization header');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.slice(6); // Remove 'Basic ' prefix
     if (token !== DAIMO_PAY_WEBHOOK_SECRET) {
-      console.warn('Daimo Pay webhook: Invalid webhook secret token');
+      logWarn('Invalid webhook secret token');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -54,12 +78,10 @@ export async function POST(req: Request) {
       const clonedReq = req.clone();
       const bodyText = await clonedReq.text();
 
-      debug && console.log('Daimo Pay webhook body length:', bodyText.length);
+      logVerbose('Daimo Pay webhook body length:', { length: bodyText.length });
 
       if (!bodyText || bodyText.trim() === '') {
-        console.warn(
-          'Daimo Pay webhook: Received empty body (possible duplicate/retry)',
-        );
+        logWarn('Received empty body (possible duplicate/retry)');
         // Return 200 to prevent retries
         return NextResponse.json(
           { acknowledged: true, message: 'Empty body - possible retry' },
@@ -68,13 +90,14 @@ export async function POST(req: Request) {
       }
 
       rawPayload = await req.json();
-      debug &&
-        console.log('Daimo Pay webhook parsed payload:', {
-          type: rawPayload?.type,
-          paymentId: rawPayload?.paymentId,
-        });
+      logVerbose('Parsed payload:', {
+        id: rawPayload?.payment?.id,
+        address: rawPayload?.payment?.source?.payerAddress,
+        type: rawPayload?.type,
+        daimoPaymentId: rawPayload?.paymentId,
+      });
     } catch (parseError) {
-      console.error('Daimo Pay webhook: JSON parse error:', parseError);
+      logError('JSON parse error:', { error: parseError });
       // Return 200 to prevent retries
       return NextResponse.json(
         { acknowledged: true, error: 'Parse error - possible retry' },
@@ -83,7 +106,7 @@ export async function POST(req: Request) {
     }
 
     if (!rawPayload || Object.keys(rawPayload).length === 0) {
-      console.warn('Daimo Pay webhook: Empty payload object');
+      logWarn('Empty payload object');
       return NextResponse.json(
         { error: 'Empty request payload' },
         { status: 400 },
@@ -92,19 +115,29 @@ export async function POST(req: Request) {
 
     const payload = DaimoPayWebhookPayloadSchema.parse(rawPayload);
 
-    // Check for idempotency key to prevent duplicate processing
+    const address = payload.payment.source?.payerAddress ?? '';
+    const type = payload.type;
+    const id = payload.payment.id;
+    const paymentId = payload.payment.id;
+    const daimoPaymentId = payload.paymentId;
+    const daimoStatus = payload.payment.status;
+    const chainId = payload.chainId;
+    const txHash = payload.txHash;
+    const isTestEvent = payload.isTestEvent;
     const idempotencyKey = req.headers.get('idempotency-key');
+
+    // Check for idempotency key to prevent duplicate processing
     if (idempotencyKey) {
       const existingEvent = await db.eventFeed.findFirst({
         where: { eventUuid: idempotencyKey },
       });
 
       if (existingEvent) {
-        debug &&
-          console.log(
-            'Duplicate webhook event detected via idempotency key:',
-            idempotencyKey,
-          );
+        logVerbose('Duplicate webhook event detected via idempotency key:', {
+          id,
+          address,
+          idempotencyKey,
+        });
         return response({
           acknowledged: true,
           message: 'Event already processed',
@@ -113,20 +146,24 @@ export async function POST(req: Request) {
       }
     }
 
-    debug &&
-      console.log('Daimo Pay webhook received:', {
-        type: payload.type,
-        paymentId: payload.paymentId,
-        isTestEvent: payload.isTestEvent,
-        paymentStatus: payload.payment?.status,
-        chainId: payload.chainId,
-        txHash: payload.txHash,
-      });
+    logVerbose('Daimo Pay webhook received:', {
+      id,
+      address,
+      type,
+      paymentId,
+      daimoPaymentId,
+      isTestEvent,
+      daimoStatus,
+      chainId,
+      txHash,
+    });
 
     // Skip processing test events (but acknowledge them)
     if (payload.isTestEvent) {
-      debug &&
-        console.log('Test event received, acknowledging without processing');
+      logVerbose('Test event received, acknowledging without processing', {
+        id,
+        address,
+      });
       return response({
         acknowledged: true,
         message: 'Test event acknowledged',
@@ -134,15 +171,15 @@ export async function POST(req: Request) {
     }
 
     // Validate required fields (already validated by Zod, but double-check for safety)
-    if (!payload.paymentId) {
+    if (!daimoPaymentId) {
       throw new ApiParameterError('Missing paymentId in webhook payload');
     }
 
-    if (!payload.payment?.id) {
+    if (!paymentId) {
       throw new ApiParameterError('Missing payment.id in webhook payload');
     }
 
-    if (!payload.type) {
+    if (!type) {
       throw new ApiParameterError('Missing type in webhook payload');
     }
 
@@ -153,7 +190,7 @@ export async function POST(req: Request) {
     } satisfies Prisma.PaymentInclude;
 
     // Find or create payment based on event type
-    let payment: PaymentWithIncludes | null = await db.payment.findFirst({
+    let dbPayment: PaymentWithIncludes | null = await db.payment.findFirst({
       where: {
         daimoPaymentId: payload.paymentId,
       },
@@ -161,12 +198,15 @@ export async function POST(req: Request) {
     });
 
     // Create payment on payment_started if it doesn't exist
-    if (!payment && payload.type === 'payment_started') {
-      debug &&
-        console.log(
-          'Daimo Pay webhook: Creating payment from payment_started event',
-          payload.paymentId,
-        );
+    if (!dbPayment && payload.type === 'payment_started') {
+      logVerbose(
+        'Daimo Pay webhook: Creating payment from payment_started event',
+        {
+          id,
+          address,
+          daimoPaymentId,
+        },
+      );
 
       // Extract metadata from Daimo payload
       const metadata = payload.payment.metadata;
@@ -239,24 +279,27 @@ export async function POST(req: Request) {
           error.code === 'P2002'
         ) {
           // Unique constraint violation - payment already exists
-          debug &&
-            console.log('Duplicate payment creation prevented by constraint');
-          payment = await db.payment.findFirst({
-            where: { daimoPaymentId: payload.paymentId },
+          logVerbose('Duplicate payment creation prevented by constraint', {
+            id,
+            address,
+          });
+          dbPayment = await db.payment.findFirst({
+            where: { daimoPaymentId },
             include: paymentInclude,
           });
 
           // Verify payment was found (should exist if constraint was violated)
-          if (!payment) {
-            console.error(
+          if (!dbPayment) {
+            logError(
               'Daimo Pay: Unique constraint violated but payment not found',
               {
-                daimoPaymentId: payload.paymentId,
+                id,
+                daimoPaymentId,
                 error: error.message,
               },
             );
             throw new ApiParameterError(
-              `Payment with Daimo payment ID ${payload.paymentId} should exist but was not found`,
+              `Payment with Daimo payment ID ${daimoPaymentId} should exist but was not found`,
             );
           }
         } else {
@@ -266,40 +309,36 @@ export async function POST(req: Request) {
 
       // Fetch the payment with includes (only if payment creation succeeded)
       if (createdPayment) {
-        payment = await db.payment.findUnique({
+        dbPayment = await db.payment.findUnique({
           where: { id: createdPayment.id },
           include: paymentInclude,
         });
 
-        if (!payment) {
+        if (!dbPayment) {
           throw new ApiParameterError('Failed to fetch created payment');
         }
       }
 
-      console.log('DAIMO PAY: Payment record created:', {
-        paymentId: payment!.id,
-        daimoPaymentId: payload.paymentId,
+      logVerbose('Payment record created:', {
+        id,
+        address,
+        dbPaymentId: dbPayment!.id,
+        daimoPaymentId,
         amount: totalAmount,
         status: 'confirming',
         userAddress: userAddress,
         campaignId: campaignId,
         note: 'Waiting for Daimo to send funds to admin wallet',
       });
-      debug &&
-        console.log('Daimo Pay webhook: Payment created or found:', {
-          paymentId: payment!.id,
-          daimoPaymentId: payload.paymentId,
-          amount: totalAmount,
-        });
     }
 
     // Handle case where payment still doesn't exist (shouldn't happen for payment_started)
-    if (!payment) {
-      debug &&
-        console.log(
-          'Daimo Pay webhook: Payment not found and could not be created for',
-          payload.paymentId,
-        );
+    if (!dbPayment) {
+      logVerbose('Payment not found and could not be created for', {
+        id,
+        address,
+        daimoPaymentId,
+      });
 
       // Return 409 Conflict to trigger Daimo's retry mechanism
       const retryAfter = payload.type === 'payment_started' ? '2' : '3';
@@ -317,7 +356,6 @@ export async function POST(req: Request) {
     }
 
     // Map Daimo Pay status to our internal status
-    const daimoStatus = payload.payment.status;
     let newStatus: string;
 
     switch (daimoStatus) {
@@ -341,20 +379,21 @@ export async function POST(req: Request) {
       failed: 2, // Terminal failure state
     };
 
-    const currentStatus = payment.status;
+    const currentStatus = dbPayment.status;
     const currentPriority = statusPriority[currentStatus] || 0;
     const newPriority = statusPriority[newStatus] || 0;
 
     // Prevent backward state transitions (webhooks arriving out of order)
     if (newPriority < currentPriority) {
-      debug &&
-        console.log(
-          `Daimo Pay: Blocking state regression ${currentStatus} -> ${newStatus}`,
-        );
+      logVerbose(`Blocking state regression ${currentStatus} -> ${newStatus}`, {
+        id,
+        address,
+      });
+
       return response({
         acknowledged: true,
-        paymentId: payment.id,
-        daimoPaymentId: payload.paymentId,
+        paymentId: dbPayment.id,
+        daimoPaymentId,
         status: currentStatus,
         message: 'State transition blocked (out-of-order webhook)',
       });
@@ -366,14 +405,17 @@ export async function POST(req: Request) {
       newPriority === 2 &&
       currentStatus !== newStatus
     ) {
-      debug &&
-        console.log(
-          `Daimo Pay: Blocking terminal state flip ${currentStatus} -> ${newStatus}`,
-        );
+      logVerbose(
+        `Blocking terminal state flip ${currentStatus} -> ${newStatus}`,
+        {
+          id,
+          address,
+        },
+      );
       return response({
         acknowledged: true,
-        paymentId: payment.id,
-        daimoPaymentId: payload.paymentId,
+        paymentId: dbPayment.id,
+        daimoPaymentId,
         status: currentStatus,
         message: 'State transition blocked (out-of-order webhook)',
       });
@@ -381,10 +423,13 @@ export async function POST(req: Request) {
 
     // Allow same-state updates (idempotency)
     if (currentStatus === newStatus) {
-      debug && console.log('Daimo Pay: Idempotent update, status unchanged');
+      logVerbose('Idempotent update, status unchanged', {
+        id,
+        address,
+      });
       return response({
         acknowledged: true,
-        paymentId: payment.id,
+        paymentId: dbPayment.id,
         daimoPaymentId: payload.paymentId,
         status: currentStatus,
       });
@@ -403,7 +448,7 @@ export async function POST(req: Request) {
 
     // Build comprehensive metadata object
     const existingMetadata =
-      (payment.metadata as Record<string, unknown>) || {};
+      (dbPayment.metadata as Record<string, unknown>) || {};
     const daimoMetadata = {
       ...existingMetadata,
       // Payment processor identification
@@ -437,7 +482,7 @@ export async function POST(req: Request) {
     };
 
     // Add refund information for payment_refunded events
-    if (payload.type === 'payment_refunded' && 'refundAddress' in payload) {
+    if (type === 'payment_refunded' && 'refundAddress' in payload) {
       Object.assign(daimoMetadata, {
         refundAddress: payload.refundAddress,
         refundTokenAddress: payload.tokenAddress,
@@ -450,195 +495,223 @@ export async function POST(req: Request) {
     baseUpdateData.metadata = daimoMetadata as Prisma.InputJsonValue;
 
     const updatedPayment = await db.payment.update({
-      where: { id: payment.id },
+      where: { id: dbPayment.id },
       data: baseUpdateData,
       include: paymentInclude,
     });
 
-    debug &&
-      console.log(
-        `Payment ${payment.id} status updated from ${currentStatus} to ${newStatus}`,
-      );
+    logVerbose(
+      `Payment ${dbPayment.id} status updated from ${currentStatus} to ${newStatus}`,
+      {
+        id,
+        address,
+      },
+    );
 
-    // If payment is confirmed, send notification (pledge already recorded via toCallData)
-    // Only send notification if this is a new confirmation (not a duplicate event)
     if (
       newStatus === 'confirmed' &&
       currentStatus !== 'confirmed' &&
-      payment.campaign.creatorAddress
+      dbPayment.campaign.creatorAddress
     ) {
-      try {
-        const creator = await db.user.findUnique({
-          where: { address: payment.campaign.creatorAddress },
+      // If payment is confirmed
+      // 1. Check if the campaign has a creator address
+      // 2. Send notification if the campaign has a creator address
+      // 3. Check if payment provider is Daimo
+      // 4. Create round contributions for confirmed payments
+      // 5. Execute on-chain pledge for gateway payments
+
+      // 1. Check if the campaign has a creator address
+      if (dbPayment.campaign.creatorAddress) {
+        // 2. Send notification if the campaign has a creator address (pledge already recorded via toCallData)
+        // Only send notification if this is a new confirmation (not a duplicate event)
+
+        logVerbose('Sending notification for confirmed payment:', {
+          id,
+          address,
+          newStatus,
+          currentStatus,
+          creatorAddress: dbPayment.campaign.creatorAddress,
         });
-
-        if (creator) {
-          const numericAmount = parseFloat(updatedPayment.amount);
-          const formattedAmount = formatCrypto(
-            numericAmount,
-            updatedPayment.token,
-          );
-          const donorName = updatedPayment.isAnonymous
-            ? 'anon'
-            : getUserNameFromInstance(updatedPayment.user) ||
-              updatedPayment.user?.address ||
-              'unknown';
-
-          await notify({
-            receiverId: creator.id,
-            creatorId: updatedPayment.userId,
-            data: {
-              type: 'CampaignPayment',
-              campaignId: payment.campaignId,
-              campaignTitle: payment.campaign.title,
-              paymentId: updatedPayment.id,
-              formattedAmount,
-              donorName,
-            },
-            eventUuid: idempotencyKey || undefined,
+        try {
+          const creator = await db.user.findUnique({
+            where: { address: dbPayment.campaign.creatorAddress },
           });
 
-          debug &&
-            console.log(
-              `Notification sent for Daimo Pay payment ${updatedPayment.id}`,
+          if (creator) {
+            const numericAmount = parseFloat(updatedPayment.amount);
+            const formattedAmount = formatCrypto(
+              numericAmount,
+              updatedPayment.token,
             );
+            const donorName = updatedPayment.isAnonymous
+              ? 'anon'
+              : getUserNameFromInstance(updatedPayment.user) ||
+                updatedPayment.user?.address ||
+                'unknown';
+
+            await notify({
+              receiverId: creator.id,
+              creatorId: updatedPayment.userId,
+              data: {
+                type: 'CampaignPayment',
+                campaignId: dbPayment.campaignId,
+                campaignTitle: dbPayment.campaign.title,
+                paymentId: updatedPayment.id,
+                formattedAmount,
+                donorName,
+              },
+              eventUuid: idempotencyKey || undefined,
+            });
+
+            logVerbose(
+              `Notification sent for Daimo Pay payment ${updatedPayment.id}`,
+              {
+                id,
+                address,
+              },
+            );
+          }
+        } catch (notificationError) {
+          logError('Error sending Daimo Pay notification:', {
+            id,
+            error: notificationError,
+          });
         }
-      } catch (notificationError) {
-        console.error(
-          'Error sending Daimo Pay notification:',
-          notificationError,
-        );
       }
-    }
 
-    // Create round contributions for confirmed payments
-    // This associates payments with rounds immediately when confirmed
-    if (
-      newStatus === 'confirmed' &&
-      currentStatus !== 'confirmed' &&
-      payment.provider === 'daimo'
-    ) {
-      console.log(
-        '[Daimo Webhook] Creating round contributions for confirmed payment:',
-        {
-          paymentId: payment.id,
-          campaignId: payment.campaign.id,
-        },
-      );
+      // 3. Check if payment provider is Daimo
+      if (dbPayment.provider === 'daimo') {
+        // 4. Create round contributions for confirmed payments
+        // This associates payments with rounds immediately when confirmed
+        logVerbose('Creating round contributions for confirmed payment:', {
+          id,
+          address,
+          newStatus,
+          currentStatus,
+          provider: dbPayment.provider,
+          dbPaymentId: dbPayment.id,
+          campaignId: dbPayment.campaign.id,
+        });
 
-      try {
-        // Find all approved round participations for this campaign
-        // Match the logic from direct wallet payments exactly for consistency
-        const roundCampaigns = await db.roundCampaigns.findMany({
-          where: {
-            campaignId: payment.campaign.id,
-            status: 'APPROVED', // RoundCampaign must be APPROVED
-            Round: {
-              startDate: { lte: new Date() }, // Round has started
-              endDate: { gte: new Date() }, // Round hasn't ended
+        try {
+          // Find all approved round participations for this campaign
+          // Match the logic from direct wallet payments exactly for consistency
+          const roundCampaigns = await db.roundCampaigns.findMany({
+            where: {
+              campaignId: dbPayment.campaign.id,
+              status: 'APPROVED', // RoundCampaign must be APPROVED
+              Round: {
+                startDate: { lte: new Date() }, // Round has started
+                endDate: { gte: new Date() }, // Round hasn't ended
+              },
             },
-          },
-          include: {
-            Round: true,
+            include: {
+              Round: true,
+            },
+          });
+
+          logVerbose(
+            `Found ${roundCampaigns.length} approved round participations for campaign ${dbPayment.campaign.id}`,
+            {
+              id,
+              address,
+            },
+          );
+
+          // Create RoundContribution records for each approved round
+          for (const roundCampaign of roundCampaigns) {
+            try {
+              await db.roundContribution.create({
+                data: {
+                  campaignId: dbPayment.campaign.id,
+                  roundCampaignId: roundCampaign.id,
+                  paymentId: dbPayment.id,
+                  humanityScore: dbPayment.user.humanityScore, // Use user's persistent humanity score
+                },
+              });
+
+              logVerbose('Created RoundContribution:', {
+                id,
+                address,
+                dbPaymentId: dbPayment.id,
+                roundId: roundCampaign.roundId,
+                roundTitle: roundCampaign.Round.title,
+                humanityScore: dbPayment.user.humanityScore,
+              });
+            } catch (roundError) {
+              logError(
+                `[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`,
+                { id, address, error: roundError },
+              );
+              // Continue with other rounds even if one fails
+            }
+          }
+        } catch (roundQueryError) {
+          logError('Error querying round participations:', {
+            id,
+            address,
+            error: roundQueryError,
+          });
+          // Don't fail the payment confirmation if round association fails
+        }
+
+        // Execute on-chain pledge for gateway payments
+        // Only trigger when payment is newly confirmed (not duplicate events)
+        logVerbose('Triggering pledge execution:', {
+          id,
+          address,
+          newStatus,
+          currentStatus,
+          provider: dbPayment.provider,
+          dbPaymentId: dbPayment.id,
+          daimoPaymentId: payload.paymentId,
+          amount: dbPayment.amount,
+          token: dbPayment.token,
+          userAddress: dbPayment.user.address,
+          campaignId: dbPayment.campaign.id,
+          campaignTitle: dbPayment.campaign.title,
+          treasuryAddress: dbPayment.campaign.treasuryAddress,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            tipAmount: (dbPayment.metadata as Record<string, unknown>)
+              ?.tipAmount,
+            baseAmount: (dbPayment.metadata as Record<string, unknown>)
+              ?.baseAmount,
           },
         });
 
-        console.log(
-          `[Daimo Webhook] Found ${roundCampaigns.length} approved round participations for campaign ${payment.campaign.id}`,
-        );
-
-        // Create RoundContribution records for each approved round
-        for (const roundCampaign of roundCampaigns) {
+        // Fire-and-forget: don't await pledge execution
+        // If execution fails, payment remains "confirmed" for manual retry
+        Promise.resolve().then(async () => {
+          const executionStartTime = Date.now();
           try {
-            await db.roundContribution.create({
-              data: {
-                campaignId: payment.campaign.id,
-                roundCampaignId: roundCampaign.id,
-                paymentId: payment.id,
-                humanityScore: payment.user.humanityScore, // Use user's persistent humanity score
+            logVerbose(
+              `Starting pledge execution for payment ${dbPayment.id}`,
+              {
+                id,
+                address,
               },
+            );
+
+            const executionResult = await executeGatewayPledge(dbPayment.id, {
+              id,
+              address,
             });
 
-            console.log('[Daimo Webhook] Created RoundContribution:', {
-              paymentId: payment.id,
-              roundId: roundCampaign.roundId,
-              roundTitle: roundCampaign.Round.title,
-              humanityScore: payment.user.humanityScore,
-            });
-          } catch (roundError) {
-            console.error(
-              `[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`,
-              roundError,
+            const executionDuration = Date.now() - executionStartTime;
+            logVerbose(
+              `Pledge execution SUCCESS for payment ${dbPayment.id}:`,
+              {
+                id,
+                address,
+                duration: `${executionDuration}ms`,
+                ...executionResult,
+              },
             );
-            // Continue with other rounds even if one fails
-          }
-        }
-      } catch (roundQueryError) {
-        console.error(
-          '[Daimo Webhook] Error querying round participations:',
-          roundQueryError,
-        );
-        // Don't fail the payment confirmation if round association fails
-      }
-    }
-
-    // Execute on-chain pledge for gateway payments
-    // Only trigger when payment is newly confirmed (not duplicate events)
-    if (
-      newStatus === 'confirmed' &&
-      currentStatus !== 'confirmed' &&
-      payment.provider === 'daimo'
-    ) {
-      console.log('[Daimo Webhook] Triggering pledge execution:', {
-        paymentId: payment.id,
-        daimoPaymentId: payload.paymentId,
-        amount: payment.amount,
-        token: payment.token,
-        userAddress: payment.user.address,
-        campaignId: payment.campaign.id,
-        campaignTitle: payment.campaign.title,
-        treasuryAddress: payment.campaign.treasuryAddress,
-        timestamp: new Date().toISOString(),
-        metadata: {
-          tipAmount: (payment.metadata as Record<string, unknown>)?.tipAmount,
-          baseAmount: (payment.metadata as Record<string, unknown>)?.baseAmount,
-        },
-      });
-
-      // Fire-and-forget: don't await pledge execution
-      // If execution fails, payment remains "confirmed" for manual retry
-      Promise.resolve().then(async () => {
-        const executionStartTime = Date.now();
-        try {
-          console.log(
-            `[Daimo Webhook] Starting pledge execution for payment ${payment.id}`,
-          );
-
-          const executionResult = await executeGatewayPledge(payment.id);
-
-          const executionDuration = Date.now() - executionStartTime;
-          console.log(
-            `[Daimo Webhook] Pledge execution SUCCESS for payment ${payment.id}:`,
-            {
-              duration: `${executionDuration}ms`,
-              pledgeId: executionResult.pledgeId,
-              transactionHash: executionResult.transactionHash,
-              blockNumber: executionResult.blockNumber,
-              pledgeAmount: executionResult.pledgeAmount,
-              tipAmount: executionResult.tipAmount,
-            },
-          );
-
-          debug &&
-            console.log(
-              `Daimo Pay: Pledge execution completed for payment ${payment.id}:`,
-              executionResult,
-            );
-        } catch (executionError) {
-          const executionDuration = Date.now() - executionStartTime;
-          console.error(
-            `[Daimo Webhook] Pledge execution FAILED for payment ${payment.id}:`,
-            {
+          } catch (executionError) {
+            const executionDuration = Date.now() - executionStartTime;
+            logError(`Pledge execution FAILED for payment ${dbPayment.id}:`, {
+              id,
               duration: `${executionDuration}ms`,
               error:
                 executionError instanceof Error
@@ -648,35 +721,31 @@ export async function POST(req: Request) {
                 executionError instanceof Error
                   ? executionError.stack
                   : undefined,
-              paymentId: payment.id,
+              dbPaymentId: dbPayment.id,
               daimoPaymentId: payload.paymentId,
-              campaignId: payment.campaign.id,
-              treasuryAddress: payment.campaign.treasuryAddress,
-            },
-          );
-          console.error(
-            `Daimo Pay: Pledge execution error for payment ${payment.id}:`,
-            executionError,
-          );
-        }
-      });
+              campaignId: dbPayment.campaign.id,
+              treasuryAddress: dbPayment.campaign.treasuryAddress,
+            });
+          }
+        });
+      }
     }
 
-    debug &&
-      console.log(
-        `Payment ${payment.id} status updated to ${newStatus} via ${payload.type} event`,
-      );
+    logVerbose(
+      `Payment ${dbPayment.id} status updated to ${newStatus} via ${payload.type} event`,
+      { id, address },
+    );
 
     return response({
       acknowledged: true,
-      paymentId: payment.id,
+      paymentId: dbPayment.id,
       daimoPaymentId: payload.paymentId,
       eventType: payload.type,
       status: newStatus,
       previousStatus: currentStatus,
     });
   } catch (error: unknown) {
-    console.error('Daimo Pay webhook error:', error);
+    logError('Daimo Pay webhook error:', { error });
     return handleError(error);
   }
 }
