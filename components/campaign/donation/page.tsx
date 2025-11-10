@@ -11,6 +11,7 @@ import { CampaignDonationForm } from './form';
 import { CampaignDonationSummary } from './campaign-summary';
 import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
 import { NotStartedYet } from '@/components/campaign//not-started-yet';
+import { Web3ContextProvider } from '@/lib/web3';
 
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
@@ -44,22 +45,24 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
       <PageHeaderSticky message="Campaign" title="" />
       <main className="w-full">
         <DetailContainer variant="standard" padding="md">
-          <DonationProvider>
-            <div className="rounded-lg border bg-card p-8 shadow-sm">
-              <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                  <CampaignDonationForm campaign={campaign} />
-                </div>
-                <div className="space-y-4 lg:col-span-1">
-                  <CampaignDonationSummary campaign={campaign} />
-                  <CampaignMatchingFundsHighlight
-                    campaign={campaign}
-                    variant="compact"
-                  />
+          <Web3ContextProvider>
+            <DonationProvider>
+              <div className="rounded-lg border bg-card p-8 shadow-sm">
+                <div className="grid gap-8 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <CampaignDonationForm campaign={campaign} />
+                  </div>
+                  <div className="space-y-4 lg:col-span-1">
+                    <CampaignDonationSummary campaign={campaign} />
+                    <CampaignMatchingFundsHighlight
+                      campaign={campaign}
+                      variant="compact"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </DonationProvider>
+            </DonationProvider>
+          </Web3ContextProvider>
         </DetailContainer>
       </main>
     </>

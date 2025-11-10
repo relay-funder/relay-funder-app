@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { DaimoPayButtonComponent } from './daimo-button';
 import { CampaignDonationWalletAmount } from './wallet/amount';
@@ -11,52 +11,56 @@ import { DaimoPayProvider } from '@daimo/pay';
 import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
+import { useDonationContext } from '@/contexts';
 
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const router = useRouter();
-  const [selectedToken, setSelectedToken] = useState('USD'); // Will be updated by config (USDC or USDT)
-  const [amount, setAmount] = useState('0');
-  const [tipAmount, setTipAmount] = useState('0');
-  const [donationAnonymous, setDonationAnonymous] = useState(false);
-  const [email, setEmail] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [paymentCompleted, setPaymentCompleted] = useState(false);
-  const handleAmountChanged = useCallback((newAmount: string) => {
-    setAmount(newAmount);
-  }, []);
+  const {
+    tipAmount,
+    amount,
+    email,
+    isAnonymous,
+    isProcessingPayment,
+    isPaymentCompleted,
+    setIsProcessingPayment,
+    setIsPaymentCompleted,
+    clearDonation,
+  } = useDonationContext();
 
-  const handleTipAmountChanged = useCallback((newTipAmount: string) => {
-    setTipAmount(newTipAmount);
-  }, []);
+  useEffect(() => {
+    return () => {
+      clearDonation();
+    };
+  }, [clearDonation]);
 
-  const handleEmailChanged = useCallback((newEmail: string) => {
-    setEmail(newEmail);
-  }, []);
+  const handlePaymentStarted = useCallback(() => {
+    setIsProcessingPayment(true);
+  }, [setIsProcessingPayment]);
 
   const handlePaymentCompleted = useCallback(() => {
-    setProcessing(false);
-    setPaymentCompleted(true);
-  }, []);
+    setIsProcessingPayment(false);
+    setIsPaymentCompleted(true);
+  }, [setIsProcessingPayment, setIsPaymentCompleted]);
 
   const handlePaymentBounced = useCallback(() => {
-    setProcessing(false);
-    setPaymentCompleted(false);
-  }, []);
+    setIsProcessingPayment(false);
+    setIsPaymentCompleted(false);
+  }, [setIsProcessingPayment, setIsPaymentCompleted]);
 
   const handleViewCampaign = useCallback(() => {
     router.push(`/campaigns/${campaign.slug}`);
   }, [router, campaign.slug]);
 
   const handleDonateAgain = useCallback(() => {
-    setPaymentCompleted(false);
-    setProcessing(false);
-  }, []);
+    setIsPaymentCompleted(false);
+    setIsProcessingPayment(false);
+  }, [setIsPaymentCompleted, setIsProcessingPayment]);
 
   return (
     <DaimoPayProvider theme="auto">
       <div className="relative flex flex-col gap-6">
         {/* Success Display */}
-        {paymentCompleted && (
+        {isPaymentCompleted && (
           <div className="mt-4 space-y-4 rounded-lg border border-green-200 bg-green-50 p-6 text-center dark:border-green-800 dark:bg-green-950">
             <CheckCircle2 className="mx-auto h-12 w-12 text-green-600 dark:text-green-400" />
             <div className="space-y-2">
@@ -79,34 +83,21 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
           </div>
         )}
 
-        <VisibilityToggle isVisible={!processing && !paymentCompleted}>
+        <VisibilityToggle
+          isVisible={!isProcessingPayment && !isPaymentCompleted}
+        >
           <div className="space-y-6">
-            <CampaignDonationWalletAmount
-              onAmountChanged={handleAmountChanged}
-              onTokenChanged={setSelectedToken}
-              amount={amount}
-              selectedToken={selectedToken}
-              email={email}
-              onEmailChanged={handleEmailChanged}
-            />
+            <CampaignDonationWalletAmount />
 
             {/* Two-column grid for tip and privacy settings on desktop */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <CampaignDonationWalletTip
-                tipAmount={tipAmount}
-                amount={amount}
-                selectedToken={selectedToken}
-                onTipAmountChanged={handleTipAmountChanged}
-              />
-              <CampaignDonationAnonymous
-                anonymous={donationAnonymous}
-                onChange={setDonationAnonymous}
-              />
+              <CampaignDonationWalletTip />
+              <CampaignDonationAnonymous />
             </div>
           </div>
         </VisibilityToggle>
 
-        <VisibilityToggle isVisible={!paymentCompleted}>
+        <VisibilityToggle isVisible={!isPaymentCompleted}>
           {/* Total Amount Display */}
           {parseFloat(amount || '0') > 0 && (
             <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -132,8 +123,8 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
             amount={amount}
             tipAmount={tipAmount}
             email={email}
-            anonymous={donationAnonymous}
-            onPaymentStartedCallback={() => setProcessing(true)}
+            anonymous={isAnonymous}
+            onPaymentStartedCallback={handlePaymentStarted}
             onPaymentCompletedCallback={handlePaymentCompleted}
             onPaymentBouncedCallback={handlePaymentBounced}
           />
