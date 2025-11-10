@@ -1,47 +1,38 @@
-import { useCallback, type ChangeEvent, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { Mail, Shield } from 'lucide-react';
 import { useConnectedAccount } from '@/lib/web3';
-import { USD_TOKEN } from '@/lib/constant';
+import { useDonationContext } from '@/contexts';
 
-export function CampaignDonationWalletAmount({
-  amount,
-  selectedToken,
-  onAmountChanged,
-  email,
-  onEmailChanged,
-}: {
-  amount: string;
-  selectedToken: string;
-  onAmountChanged: (amount: string) => void;
-  onTokenChanged: (token: 'USDC' | 'USDT') => void;
-  email: string;
-  onEmailChanged: (email: string) => void;
-}) {
+export function CampaignDonationWalletAmount() {
   const { data: profile } = useUserProfile();
+
+  const { amount, token, email, setAmount, setEmail, paymentType } =
+    useDonationContext();
+
+  const handleAmountChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setAmount(e.target.value);
+    },
+    [setAmount],
+  );
+
+  const handleEmailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setEmail(e.target.value);
+    },
+    [setEmail],
+  );
 
   // Pre-fill email from user profile
   useEffect(() => {
     if (profile?.email && !email) {
-      onEmailChanged(profile.email);
+      setEmail(profile.email);
     }
-  }, [profile?.email, email, onEmailChanged]);
+  }, [profile?.email, email, setEmail]);
 
-  const intermediateOnAmountChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      return onAmountChanged(event.target.value);
-    },
-    [onAmountChanged],
-  );
-
-  const intermediateOnEmailChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      return onEmailChanged(event.target.value);
-    },
-    [onEmailChanged],
-  );
   const { isEmbedded, embeddedEmail } = useConnectedAccount();
   useEffect(() => {
     if (!profile || profile.email) {
@@ -50,8 +41,8 @@ export function CampaignDonationWalletAmount({
     if (!isEmbedded || !embeddedEmail) {
       return;
     }
-    onEmailChanged(embeddedEmail);
-  }, [profile, isEmbedded, embeddedEmail, onEmailChanged]);
+    setEmail(embeddedEmail);
+  }, [profile, isEmbedded, embeddedEmail, setEmail]);
 
   return (
     <div className="flex flex-col space-y-6">
@@ -64,7 +55,7 @@ export function CampaignDonationWalletAmount({
               htmlFor="email"
               className="text-sm font-medium text-foreground"
             >
-              Email Address *
+              Email Address (optional)
             </Label>
           </div>
           <div className="max-w-sm">
@@ -72,9 +63,8 @@ export function CampaignDonationWalletAmount({
               id="email"
               type="email"
               value={email}
-              onChange={intermediateOnEmailChange}
+              onChange={handleEmailChange}
               placeholder="john@example.com"
-              required
               className="h-10 text-sm"
             />
           </div>
@@ -92,9 +82,7 @@ export function CampaignDonationWalletAmount({
 
       {/* Suggested amounts */}
       <CampaignDonationSuggestions
-        amount={amount}
-        onAmountChanged={onAmountChanged}
-        currency={selectedToken}
+        currency={paymentType === 'daimo' ? 'USD' : token}
       />
 
       {/* Custom amount input */}
@@ -107,12 +95,12 @@ export function CampaignDonationWalletAmount({
             <Input
               type="number"
               value={amount}
-              onChange={intermediateOnAmountChange}
+              onChange={handleAmountChange}
               placeholder="Enter amount"
               className="h-10 pr-20 text-sm"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-              {USD_TOKEN}
+              {token}
             </div>
           </div>
         </div>

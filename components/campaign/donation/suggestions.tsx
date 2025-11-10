@@ -1,23 +1,27 @@
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 import { Button } from '@/components/ui';
 import { DEFAULT_SUGGESTED_DONATION_AMOUNTS } from '@/lib/constant';
+import { useDonationContext } from '@/contexts';
 
 interface SuggestionsProps {
-  amount: string;
-  onAmountChanged: (amount: string) => void;
   currency: string; // The currency parameter as requested
 }
 
-export function CampaignDonationSuggestions({
-  amount,
-  onAmountChanged,
-  currency, // Accept currency prop
-}: SuggestionsProps) {
-  const handleSuggestedAmount = useCallback(
-    (suggestedAmount: number) => {
-      onAmountChanged(suggestedAmount.toString());
-    },
-    [onAmountChanged],
+const suggestedAmounts = DEFAULT_SUGGESTED_DONATION_AMOUNTS.map(
+  (suggestedAmount) => suggestedAmount.toString(),
+);
+
+export function CampaignDonationSuggestions({ currency }: SuggestionsProps) {
+  const { amount, setAmount } = useDonationContext();
+
+  const handlers = useMemo(
+    () =>
+      Object.fromEntries(
+        suggestedAmounts.map((suggestedAmount) => {
+          return [suggestedAmount, () => setAmount(suggestedAmount)];
+        }),
+      ),
+    [setAmount],
   );
 
   return (
@@ -26,19 +30,20 @@ export function CampaignDonationSuggestions({
         Quick amounts:
       </label>
       <div className="grid grid-cols-5 gap-2">
-        {DEFAULT_SUGGESTED_DONATION_AMOUNTS.map((suggestedAmount) => (
-          <Button
-            key={suggestedAmount}
-            variant={
-              amount === suggestedAmount.toString() ? 'default' : 'outline'
-            }
-            onClick={() => handleSuggestedAmount(suggestedAmount)}
-            className="h-10 text-sm font-medium"
-            size="default"
-          >
-            {suggestedAmount} {currency}
-          </Button>
-        ))}
+        {suggestedAmounts.map((suggestedAmount) => {
+          const isSelected = amount === suggestedAmount;
+          return (
+            <Button
+              key={suggestedAmount}
+              variant={isSelected ? 'default' : 'outline'}
+              onClick={handlers[suggestedAmount]}
+              className="h-10 text-sm font-medium"
+              size="default"
+            >
+              {suggestedAmount} {currency}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

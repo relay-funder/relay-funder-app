@@ -11,7 +11,6 @@ import { useAccount } from 'wagmi';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
-import { EmailSchema } from '@/lib/api/types/common';
 import { logFactory } from '@/lib/debug/log';
 
 interface DaimoPayEvent {
@@ -97,17 +96,7 @@ export function DaimoPayButtonComponent({
 
       try {
         // Validate email using Zod
-        if (!email.trim()) {
-          toast({
-            title: 'Email required',
-            description: 'Please enter your email address to continue.',
-            variant: 'destructive',
-          });
-          throw new Error('Email required');
-        }
-
-        const emailValidation = EmailSchema.safeParse(email);
-        if (!emailValidation.success) {
+        if (!paymentData.isEmailValid) {
           toast({
             title: 'Invalid email',
             description: 'Please enter a valid email address.',
@@ -144,6 +133,7 @@ export function DaimoPayButtonComponent({
     [
       email,
       toast,
+      paymentData,
       profile?.email,
       updateProfileEmail,
       daimoOnPaymentStarted,
@@ -200,14 +190,6 @@ export function DaimoPayButtonComponent({
       onPaymentBouncedCallback,
       logVerbose,
     ],
-  );
-
-  const handleContribute = useCallback(
-    (callback: () => void) => {
-      logVerbose('Contribute button clicked');
-      callback();
-    },
-    [logVerbose],
   );
 
   useEffect(() => {
@@ -283,9 +265,7 @@ export function DaimoPayButtonComponent({
   }
 
   if (!paymentData.isValid) {
-    const isEmailValid =
-      email && email.trim() && EmailSchema.safeParse(email).success;
-    const buttonText = !isEmailValid
+    const buttonText = !paymentData.isEmailValid
       ? 'Enter valid email to continue'
       : 'Enter donation amount to continue';
 
@@ -341,18 +321,8 @@ export function DaimoPayButtonComponent({
         onPaymentBounced={handlePaymentBounced}
       >
         {({ show }) => (
-          <Button
-            variant="default"
-            className="w-full"
-            size="lg"
-            onClick={() => handleContribute(show)}
-          >
-            Contribute to{' '}
-            <b>
-              {campaign.title.substring(0, 64)}
-              {campaign.title.length > 64 && '...'}
-            </b>{' '}
-            in {campaign.location}
+          <Button variant="default" className="w-full" size="lg" onClick={show}>
+            Support Now
           </Button>
         )}
       </DaimoPayButton.Custom>
