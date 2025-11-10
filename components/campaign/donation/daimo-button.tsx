@@ -11,7 +11,6 @@ import { useAccount } from 'wagmi';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
-import { EmailSchema } from '@/lib/api/types/common';
 import { logFactory } from '@/lib/debug/log';
 
 interface DaimoPayEvent {
@@ -191,14 +190,6 @@ export function DaimoPayButtonComponent({
       onPaymentBouncedCallback,
       logVerbose,
     ],
-  );
-
-  const handleContribute = useCallback(
-    (callback: () => void) => {
-      logVerbose('Contribute button clicked');
-      callback();
-    },
-    [logVerbose],
   );
 
   useEffect(() => {
