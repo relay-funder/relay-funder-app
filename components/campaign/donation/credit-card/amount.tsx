@@ -2,12 +2,13 @@ import { Input } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useDonationContext } from '@/contexts';
 import { useCallback } from 'react';
+import type { ChangeEvent } from 'react';
 
 export function CampaignDonationCreditCardAmount() {
   const { amount, setAmount } = useDonationContext();
 
   const handleAmountChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       setAmount(e.target.value);
     },
     [setAmount],

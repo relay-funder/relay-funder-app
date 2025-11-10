@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import type { ChangeEvent } from 'react';
 import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
@@ -13,14 +14,14 @@ export function CampaignDonationWalletAmount() {
     useDonationContext();
 
   const handleAmountChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       setAmount(e.target.value);
     },
     [setAmount],
   );
 
   const handleEmailChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       setEmail(e.target.value);
     },
     [setEmail],
