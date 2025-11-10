@@ -51,7 +51,6 @@ export function CampaignDonationWalletAmount() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="john@example.com"
-              required
               className="h-10 text-sm"
             />
           </div>
