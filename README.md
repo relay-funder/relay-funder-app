@@ -47,6 +47,21 @@ To use Pinata for decentralized file storage:
    NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
    ```
 
+### Reown AppKit Setup (Web3 Wallet Integration)
+
+To configure Reown AppKit for wallet connections:
+
+1. **Create Account**: Sign up at [Reown Cloud](https://cloud.reown.com/)
+2. **Create Project**: Generate a new project in the dashboard
+3. **Get Project ID**: Copy your project ID from the project settings
+4. **Configure Environment**: Set these variables in your `.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_REOWN_CLOUD_PROJECT_ID="your_project_id_here"
+   # Optional: Set to any truthy value to disable email login (enabled by default)
+   # NEXT_PUBLIC_REOWN_FEATURE_DISABLE_EMAIL=true
+   ```
+
 5. **Start Development Environment:**
 
    ```bash
