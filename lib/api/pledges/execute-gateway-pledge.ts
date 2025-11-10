@@ -51,6 +51,8 @@ const logError = logFactory('error', '🚨 DaimoPledge');
  * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
  * @param paymentId - Internal payment record ID
+ * @param id - payload.payment.id address from Daimo Pay webhook (for logging)
+ * @param address - Payee address (for logging)
  * @returns Execution result with transaction hash and amounts
  * @throws ApiParameterError if payment invalid or already executed
  * @throws ApiUpstreamError if insufficient balance or transaction fails
@@ -60,12 +62,6 @@ export async function executeGatewayPledge(
   { id, address }: { id?: string; address?: string } = {},
 ): Promise<ExecuteGatewayPledgeResponse> {
   logVerbose('Starting gateway pledge execution for payment:', {
-    id,
-    address,
-    paymentId,
-  });
-
-  logVerbose('Loading payment with related data', {
     id,
     address,
     paymentId,
@@ -120,7 +116,6 @@ export async function executeGatewayPledge(
     // Mark execution as failed with error message
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Execute Gateway] Execution failed:', errorMessage);
 
     logError('Execution failed:', {
       id,
@@ -488,13 +483,14 @@ async function _executeGatewayPledgeInternal(
   );
 
   logVerbose('Transaction submitted:', {
+    id,
+    address,
     hash: tx.hash,
     from: adminSigner.address,
     to: payment.campaign.treasuryAddress,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   });
-
   // Wait for confirmation
   const receipt = await tx.wait();
 
