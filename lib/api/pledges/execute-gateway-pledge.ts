@@ -12,28 +12,7 @@ import type {
   ExecuteGatewayPledgeResponse,
   GatewayPledgeMetadata,
 } from '@/lib/api/types/pledges';
-import { log, LogType } from '@/lib/debug';
-
-const logFactory = (type: LogType, prefix: string) => {
-  return (
-    message: string,
-    dataObj?: Record<string, unknown>,
-    ...args: unknown[]
-  ) => {
-    const { id, address, ...restData } = dataObj ?? {};
-    const data = Object.keys(restData).length > 0 ? restData : undefined;
-    log(
-      message,
-      {
-        type,
-        user: address as string | undefined, // used for verbose logging permission checks in production
-        data,
-        prefix: `${prefix}${id ? ` (${id})` : ''}`,
-      },
-      ...args,
-    );
-  };
-};
+import { logFactory } from '@/lib/debug';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoPledge');
 
