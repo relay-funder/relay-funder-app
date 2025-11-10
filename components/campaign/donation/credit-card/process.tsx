@@ -10,25 +10,17 @@ import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationCreditCardProcess({
   campaign,
-  donationToRelayFunder,
   userEmail,
 }: {
   campaign: DbCampaign;
-  donationToRelayFunder: number;
   userEmail?: string;
 }) {
   const { amount, isAnonymous } = useDonationContext();
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const relayFunderAmount = useMemo(() => {
-    if (donationToRelayFunder) {
-      return (numericAmount * donationToRelayFunder) / 100;
-    }
-    return 0;
-  }, [numericAmount, donationToRelayFunder]);
   const poolAmount = useMemo(() => {
-    return numericAmount - relayFunderAmount;
-  }, [numericAmount, relayFunderAmount]);
+    return numericAmount;
+  }, [numericAmount]);
 
   // Lazy Stripe implementation - no API calls until donate button clicked
   const { isProcessing, stripeData, stripePromise, createPaymentIntent } =

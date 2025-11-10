@@ -38,7 +38,6 @@ export function CampaignDonationWalletDetails({
       </VisibilityToggle>
       <CampaignDonationWalletProcess
         campaign={campaign}
-        donationToRelayFunder={0}
       />
     </div>
   );

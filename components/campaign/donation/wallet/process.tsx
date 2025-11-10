@@ -13,10 +13,8 @@ import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletProcess({
   campaign,
-  donationToRelayFunder,
 }: {
   campaign: DbCampaign;
-  donationToRelayFunder: number;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -35,15 +33,9 @@ export function CampaignDonationWalletProcess({
   const { hasUsdBalance } = usdFormattedBalance;
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const relayFundercAmount = useMemo(() => {
-    if (donationToRelayFunder) {
-      return (numericAmount * donationToRelayFunder) / 100;
-    }
-    return 0;
-  }, [numericAmount, donationToRelayFunder]);
   const poolAmount = useMemo(() => {
-    return numericAmount - relayFundercAmount;
-  }, [numericAmount, relayFundercAmount]);
+    return numericAmount;
+  }, [numericAmount]);
   const [state, setState] =
     useState<keyof typeof DonationProcessStates>('idle');
   const [processing, setProcessing] = useState<boolean>(false);
