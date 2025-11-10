@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
@@ -11,6 +11,20 @@ export function CampaignDonationWalletAmount() {
 
   const { amount, token, email, setAmount, setEmail, paymentType } =
     useDonationContext();
+
+  const handleAmountChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setAmount(e.target.value);
+    },
+    [setAmount],
+  );
+
+  const handleEmailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setEmail(e.target.value);
+    },
+    [setEmail],
+  );
 
   // Pre-fill email from user profile
   useEffect(() => {
@@ -49,7 +63,7 @@ export function CampaignDonationWalletAmount() {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               placeholder="john@example.com"
               required
               className="h-10 text-sm"
@@ -82,7 +96,7 @@ export function CampaignDonationWalletAmount() {
             <Input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={handleAmountChange}
               placeholder="Enter amount"
               className="h-10 pr-20 text-sm"
             />

@@ -1,9 +1,18 @@
 import { Input } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useDonationContext } from '@/contexts';
+import { useCallback } from 'react';
 
 export function CampaignDonationCreditCardAmount() {
   const { amount, setAmount } = useDonationContext();
+
+  const handleAmountChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setAmount(e.target.value);
+    },
+    [setAmount],
+  );
+
   return (
     <div className="flex flex-col space-y-4">
       {/* Suggested amounts */}
@@ -17,7 +26,7 @@ export function CampaignDonationCreditCardAmount() {
           <Input
             type="number"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={handleAmountChange}
             className="ml-1 rounded-l-none border-0"
           />
           <div className="flex items-center px-3 text-sm text-muted-foreground">
