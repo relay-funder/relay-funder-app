@@ -17,7 +17,8 @@ const debugFlagsEnv = process.env.NEXT_PUBLIC_DEBUG_FLAGS;
  * Array of debug flag names parsed from NEXT_PUBLIC_DEBUG_FLAGS environment variable.
  * These flags take precedence over the default debug flag values.
  */
-const debugFlagsArray = debugFlagsEnv?.split(',') ?? [];
+const debugFlagsArray =
+  debugFlagsEnv?.split(',').filter((flag) => flag !== '') ?? [];
 
 /**
  * Record mapping debug flag names to their boolean values.

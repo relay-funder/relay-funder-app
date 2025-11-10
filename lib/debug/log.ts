@@ -5,16 +5,19 @@ import { checkIsDebugFlagEnabled } from './flags';
  * Environment variable containing comma-separated list of user addresses
  * that should receive verbose logging in production.
  * Example: "0x123...,0x456..."
- * @see NEXT_PUBLIC_DEBUG_USERS
+ * @see NEXT_PUBLIC_VERBOSE_USERS
  */
-const debugUsersEnv = process.env.NEXT_PUBLIC_DEBUG_USERS;
+const debugUsersEnv = process.env.NEXT_PUBLIC_VERBOSE_USERS;
 
 /**
  * Array of user addresses (lowercased) that should receive verbose logging in production.
- * Parsed from NEXT_PUBLIC_DEBUG_USERS environment variable.
+ * Parsed from NEXT_PUBLIC_VERBOSE_USERS environment variable.
  */
 const debugUsers =
-  debugUsersEnv?.split(',').map((addr) => addr.trim().toLowerCase()) ?? [];
+  debugUsersEnv
+    ?.split(',')
+    .map((addr) => addr.trim().toLowerCase())
+    .filter((addr) => addr !== '') ?? [];
 
 /**
  * Checks if a user address is in the list of verbose users.
@@ -25,7 +28,7 @@ const debugUsers =
  *
  * @example
  * ```ts
- * checkIsVerboseUser('0x123...') // true if address is in NEXT_PUBLIC_DEBUG_USERS
+ * checkIsVerboseUser('0x123...') // true if address is in NEXT_PUBLIC_VERBOSE_USERS
  * checkIsVerboseUser(null) // false
  * ```
  */
@@ -73,11 +76,13 @@ const typeColors: Record<string, string> = {
 };
 
 /**
+/**
  * Determines whether a log message should be output based on debug flags and user permissions.
  *
  * A log will be output if:
- * 1. The debug flag is enabled (via checkIsDebugFlagEnabled), OR
- * 2. In production, the log type is 'verbose' AND the user is a verbose user
+ * 1. The log type is 'error' or 'warn' (always logged), OR
+ * 2. The debug flag is enabled (via checkIsDebugFlagEnabled), OR
+ * 3. In production, the log type is 'verbose' AND the user is a verbose user
  *
  * @param type - The log type/level
  * @param flag - The debug flag name to check (defaults to 'debug' if not provided)
@@ -93,6 +98,10 @@ function checkShouldLog({
   flag?: string;
   user?: string;
 }): boolean {
+  if (type === 'error' || type === 'warn') {
+    return true;
+  }
+
   if (checkIsDebugFlagEnabled(flag)) {
     return true;
   }
@@ -148,6 +157,7 @@ export function log(
     data?: unknown;
     flag?: string;
   },
+  ...args: unknown[]
 ): void {
   if (!checkShouldLog({ type, flag, user })) {
     return;
@@ -160,7 +170,6 @@ export function log(
   const coloredPrefix = `${color}${colors.bright}${prefixText}${colors.reset}`;
   const coloredMessage = `${color}${message}${colors.reset}`;
 
-  {
-    console[logType](`[${coloredPrefix}]: ${coloredMessage}`, data);
-  }
+  const logArgs = data !== undefined ? [data, ...args] : args;
+  console[logType](`[${coloredPrefix}]: ${coloredMessage}`, ...logArgs);
 }
