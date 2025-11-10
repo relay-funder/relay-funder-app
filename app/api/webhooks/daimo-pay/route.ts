@@ -47,15 +47,25 @@ const logWarn = logFactory('warn', '🚨 DaimoPayWebhook');
 
 export async function POST(req: Request) {
   try {
+    const headers = Array.from(req.headers.entries())
+      .filter(
+        ([key]) =>
+          ![
+            'authorization',
+            'cookie',
+            'set-cookie',
+            'x-forwarded-authorization',
+          ].includes(key.toLowerCase()),
+      )
+      .map(([key, value]) =>
+        key.toLowerCase() === 'authorization'
+          ? [key, '[REDACTED]']
+          : [key, value],
+      );
     logVerbose('Webhook called:', {
       method: req.method,
       url: req.url,
-      headers: Object.fromEntries(
-        Array.from(req.headers.entries()).map(([key, value]) => [
-          key,
-          key.toLowerCase() === 'authorization' ? '[REDACTED]' : value,
-        ]),
-      ),
+      headers: Object.fromEntries(headers),
     });
 
     // Verify Daimo Pay webhook authentication
@@ -117,7 +127,7 @@ export async function POST(req: Request) {
 
     const address = payload.payment.source?.payerAddress ?? '';
     const type = payload.type;
-    const id = payload.payment.id;
+    let id = payload.payment.id;
     const paymentId = payload.payment.id;
     const daimoPaymentId = payload.paymentId;
     const daimoStatus = payload.payment.status;
@@ -331,6 +341,8 @@ export async function POST(req: Request) {
         note: 'Waiting for Daimo to send funds to admin wallet',
       });
     }
+
+    id = `${id}/${dbPayment?.id}`;
 
     // Handle case where payment still doesn't exist (shouldn't happen for payment_started)
     if (!dbPayment) {
@@ -693,10 +705,7 @@ export async function POST(req: Request) {
               },
             );
 
-            const executionResult = await executeGatewayPledge(dbPayment.id, {
-              id,
-              address,
-            });
+            const executionResult = await executeGatewayPledge(dbPayment.id);
 
             const executionDuration = Date.now() - executionStartTime;
             logVerbose(

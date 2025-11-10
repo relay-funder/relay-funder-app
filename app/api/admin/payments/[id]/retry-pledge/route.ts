@@ -7,8 +7,33 @@ import {
 import { response, handleError } from '@/lib/api/response';
 import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
-import { debugApi as debug } from '@/lib/debug';
+import { log, LogType } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
+
+const logFactory = (type: LogType, prefix: string) => {
+  return (
+    message: string,
+    dataObj?: Record<string, unknown>,
+    ...args: unknown[]
+  ) => {
+    const { id, address, ...restData } = dataObj ?? {};
+    const data = Object.keys(restData).length > 0 ? restData : undefined;
+    log(
+      message,
+      {
+        type,
+        user: address as string | undefined, // used for verbose logging permission checks in production
+        data,
+        prefix: `${prefix}${id ? ` (${id})` : ''}`,
+      },
+      ...args,
+    );
+  };
+};
+
+const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge');
+
+const logError = logFactory('error', '🚨 DaimoRetryPledge');
 
 /**
  * POST /api/admin/payments/[id]/retry-pledge
@@ -31,8 +56,9 @@ export async function POST(
       throw new ApiParameterError('Invalid payment ID');
     }
 
-    debug &&
-      console.log('[Admin] Retry pledge request for payment:', paymentId);
+    logVerbose('Retry pledge request for payment:', {
+      paymentId,
+    });
 
     // Verify payment exists and is eligible for retry
     const payment = await db.payment.findUnique({
@@ -46,6 +72,18 @@ export async function POST(
     if (!payment) {
       throw new ApiNotFoundError(`Payment ${paymentId} not found`);
     }
+    const id = `${payment?.daimoPaymentId}/${paymentIdStr}`;
+    const address = payment?.user.address;
+
+    logVerbose('Payment found:', {
+      id,
+      address,
+      paymentId,
+      status: payment.status,
+      provider: payment.provider,
+      pledgeExecutionStatus: payment.pledgeExecutionStatus,
+      attempts: payment.pledgeExecutionAttempts,
+    });
 
     if (payment.provider !== 'daimo') {
       throw new ApiParameterError(
@@ -60,34 +98,48 @@ export async function POST(
     }
 
     // Validate pledge execution status is retryable
-    const retryableStatuses: PledgeExecutionStatus[] = ['FAILED', 'NOT_STARTED'];
+    const retryableStatuses: PledgeExecutionStatus[] = [
+      'FAILED',
+      'NOT_STARTED',
+    ];
     if (!retryableStatuses.includes(payment.pledgeExecutionStatus)) {
-      console.log('[Admin] Payment not eligible for retry - non-retryable pledge status:', {
-        paymentId,
-        status: payment.status,
-        provider: payment.provider,
-        pledgeExecutionStatus: payment.pledgeExecutionStatus,
-        attempts: payment.pledgeExecutionAttempts,
-      });
+      logError(
+        'Payment not eligible for retry - non-retryable pledge status:',
+        {
+          id,
+          address,
+          paymentId,
+          status: payment.status,
+          provider: payment.provider,
+          pledgeExecutionStatus: payment.pledgeExecutionStatus,
+          attempts: payment.pledgeExecutionAttempts,
+        },
+      );
       throw new ApiParameterError(
         `Payment pledge execution status must be FAILED or NOT_STARTED to retry. Current status: ${payment.pledgeExecutionStatus}`,
       );
     }
 
-    debug &&
-      console.log('[Admin] Payment eligible for retry:', {
-        paymentId,
-        status: payment.status,
-        provider: payment.provider,
-        pledgeExecutionStatus: payment.pledgeExecutionStatus,
-        attempts: payment.pledgeExecutionAttempts,
-      });
+    logVerbose('Payment eligible for retry:', {
+      id,
+      address,
+      paymentId,
+      status: payment.status,
+      provider: payment.provider,
+      pledgeExecutionStatus: payment.pledgeExecutionStatus,
+      attempts: payment.pledgeExecutionAttempts,
+    });
 
     // Execute retry
     const result = await retryGatewayPledge(paymentId);
 
     if (result.success) {
-      debug && console.log('[Admin] Pledge retry successful:', result);
+      logVerbose('Pledge retry successful:', {
+        id,
+        address,
+        paymentId,
+        result,
+      });
       return response({
         success: true,
         paymentId,
@@ -95,7 +147,12 @@ export async function POST(
         result: result.result,
       });
     } else {
-      debug && console.error('[Admin] Pledge retry failed:', result.error);
+      logError('Pledge retry failed:', {
+        id,
+        address,
+        paymentId,
+        result,
+      });
       // Throw error to be handled by handleError with proper status code
       throw new ApiUpstreamError(
         `Pledge execution retry failed: ${result.error}`,

@@ -51,19 +51,14 @@ const logError = logFactory('error', '🚨 DaimoPledge');
  * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
  * @param paymentId - Internal payment record ID
- * @param id - payload.payment.id address from Daimo Pay webhook (for logging)
- * @param address - Payee address (for logging)
  * @returns Execution result with transaction hash and amounts
  * @throws ApiParameterError if payment invalid or already executed
  * @throws ApiUpstreamError if insufficient balance or transaction fails
  */
 export async function executeGatewayPledge(
   paymentId: number,
-  { id, address }: { id?: string; address?: string } = {},
 ): Promise<ExecuteGatewayPledgeResponse> {
   logVerbose('Starting gateway pledge execution for payment:', {
-    id,
-    address,
     paymentId,
   });
 
@@ -75,6 +70,9 @@ export async function executeGatewayPledge(
       campaign: true,
     },
   });
+
+  const address = payment?.user.address;
+  const id = `${payment?.daimoPaymentId}/${paymentId.toString()}`;
 
   if (!payment) {
     throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
