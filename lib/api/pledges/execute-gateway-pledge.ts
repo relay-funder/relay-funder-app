@@ -50,16 +50,16 @@ export async function executeGatewayPledge(
     },
   });
 
-  const address = payment?.user.address;
-  const id = `${payment?.daimoPaymentId}/${paymentId.toString()}`;
+  const logAddress = payment?.user.address;
+  const prefixId = `${payment?.daimoPaymentId}/${paymentId.toString()}`;
 
   if (!payment) {
     throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
   }
 
   logVerbose('Payment loaded successfully', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentId,
     pledgeExecutionStatus: payment.pledgeExecutionStatus,
     pledgeExecutionAttempts: payment.pledgeExecutionAttempts,
@@ -78,8 +78,8 @@ export async function executeGatewayPledge(
   });
 
   logVerbose('Payment updated to PENDING', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentId,
     pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
     pledgeExecutionAttempts: updatedPayment.pledgeExecutionAttempts,
@@ -88,15 +88,18 @@ export async function executeGatewayPledge(
   });
 
   try {
-    return await _executeGatewayPledgeInternal(payment, { id, address });
+    return await _executeGatewayPledgeInternal(payment, {
+      prefixId,
+      logAddress,
+    });
   } catch (error) {
     // Mark execution as failed with error message
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
     logError('Execution failed:', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       paymentId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
@@ -110,8 +113,8 @@ export async function executeGatewayPledge(
     });
 
     logVerbose('Payment updated to FAILED', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       paymentId,
       pledgeExecutionStatus: failedPayment.pledgeExecutionStatus,
       pledgeExecutionError: failedPayment.pledgeExecutionError,
@@ -129,11 +132,11 @@ async function _executeGatewayPledgeInternal(
   payment: Prisma.PaymentGetPayload<{
     include: { user: true; campaign: true };
   }>,
-  { id, address }: { id?: string; address?: string } = {},
+  { prefixId, logAddress }: { prefixId?: string; logAddress?: string } = {},
 ): Promise<ExecuteGatewayPledgeResponse> {
   logVerbose('Starting internal gateway pledge execution', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentId: payment.id,
     pledgeExecutionStatus: payment.pledgeExecutionStatus,
     pledgeExecutionAttempts: payment.pledgeExecutionAttempts,
@@ -162,8 +165,8 @@ async function _executeGatewayPledgeInternal(
   const metadata = payment.metadata as Record<string, unknown>;
   if (metadata?.onChainPledgeId) {
     logVerbose('Pledge already executed', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       paymentId: payment.id,
       onChainPledgeId: metadata.onChainPledgeId,
     });
@@ -179,8 +182,8 @@ async function _executeGatewayPledgeInternal(
     });
 
     logVerbose('Payment updated to SUCCESS', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       paymentId: payment.id,
       pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
       pledgeExecutionError: updatedPayment.pledgeExecutionError,
@@ -198,8 +201,8 @@ async function _executeGatewayPledgeInternal(
   }
 
   logVerbose('Extracting amounts from payment', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentId: payment.id,
     paymentAmount: payment.amount,
   });
@@ -215,8 +218,8 @@ async function _executeGatewayPledgeInternal(
   const totalAmountUnits = pledgeAmountUnits + tipAmountUnits;
 
   logVerbose('Amount calculation breakdown', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentAmount: payment.amount,
     metadataTipAmount: (metadata?.tipAmount as string) || '0',
     metadataPledgeAmount: (metadata?.pledgeAmount as string) || 'N/A',
@@ -243,8 +246,8 @@ async function _executeGatewayPledgeInternal(
 
   if (!rpcUrl || !adminPrivateKey || !adminAddress || !USD_ADDRESS) {
     logError('Missing environment variables', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       hasRpcUrl: !!rpcUrl,
       hasAdminPrivateKey: !!adminPrivateKey,
       hasAdminAddress: !!adminAddress,
@@ -257,8 +260,8 @@ async function _executeGatewayPledgeInternal(
 
   if (!payment.campaign.treasuryAddress) {
     logError('Campaign does not have a treasury address configured', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       campaignId: payment.campaign.id,
       campaignTitle: payment.campaign.title,
     });
@@ -272,8 +275,8 @@ async function _executeGatewayPledgeInternal(
   const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
 
   logVerbose('Admin signer initialized', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     adminAddress: adminSigner.address,
     treasuryAddress: payment.campaign.treasuryAddress,
   });
@@ -281,8 +284,8 @@ async function _executeGatewayPledgeInternal(
   // Verify private key matches public address
   if (adminSigner.address.toLowerCase() !== adminAddress.toLowerCase()) {
     logError('Admin address mismatch', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       derivedFromKey: adminSigner.address,
       configured: adminAddress,
     });
@@ -292,8 +295,8 @@ async function _executeGatewayPledgeInternal(
   }
 
   logVerbose('Admin wallet verified', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     adminSignerAddress: adminSigner.address,
     treasuryAddress: payment.campaign.treasuryAddress,
   });
@@ -312,8 +315,8 @@ async function _executeGatewayPledgeInternal(
   );
 
   logVerbose('Contracts initialized', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     usdContractAddress: USD_ADDRESS,
     treasuryContractAddress: payment.campaign.treasuryAddress,
   });
@@ -323,8 +326,8 @@ async function _executeGatewayPledgeInternal(
   const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
 
   logVerbose('Admin wallet balance check', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     adminAddress: adminSigner.address,
     balance: adminBalanceFormatted,
     required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
@@ -333,8 +336,8 @@ async function _executeGatewayPledgeInternal(
 
   if (adminBalance < totalAmountUnits) {
     logError('Insufficient admin wallet balance', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       adminAddress: adminSigner.address,
       balance: adminBalanceFormatted,
       required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
@@ -352,8 +355,8 @@ async function _executeGatewayPledgeInternal(
   const gatewayFee = 0n;
 
   logVerbose('Processing amounts:', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     totalReceived: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     pledgeAmountUnits: pledgeAmountUnits.toString(),
@@ -374,8 +377,8 @@ async function _executeGatewayPledgeInternal(
   );
 
   logVerbose('Generated pledge ID', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     pledgeId,
   });
 
@@ -386,8 +389,8 @@ async function _executeGatewayPledgeInternal(
   );
 
   logVerbose('Current allowance', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     current: ethers.formatUnits(currentAllowance, USD_DECIMALS),
     required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
   });
@@ -395,8 +398,8 @@ async function _executeGatewayPledgeInternal(
   // Approve treasury for total amount if needed
   if (currentAllowance < totalAmountUnits) {
     logVerbose('Approving treasury for total amount (pledge + tip)', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       currentAllowance: ethers.formatUnits(currentAllowance, USD_DECIMALS),
       required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
     });
@@ -411,24 +414,24 @@ async function _executeGatewayPledgeInternal(
     );
 
     logVerbose('Approval transaction', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       hash: approveTx.hash,
     });
 
     await approveTx.wait();
 
     logVerbose('Approval confirmed', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       hash: approveTx.hash,
     });
   }
 
   // Execute setFeeAndPledge - transfers pledge + tip to treasury
   logVerbose('Executing setFeeAndPledge', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     pledgeId,
     backer: payment.user.address,
     pledgeAmountUnits: pledgeAmountUnits.toString(),
@@ -460,8 +463,8 @@ async function _executeGatewayPledgeInternal(
   );
 
   logVerbose('Transaction submitted:', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     hash: tx.hash,
     from: adminSigner.address,
     to: payment.campaign.treasuryAddress,
@@ -472,8 +475,8 @@ async function _executeGatewayPledgeInternal(
   const receipt = await tx.wait();
 
   logVerbose('Transaction confirmed:', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     hash: tx.hash,
     blockNumber: receipt.blockNumber,
     status: receipt.status ? 'SUCCESS' : 'FAILED',
@@ -492,8 +495,8 @@ async function _executeGatewayPledgeInternal(
   );
 
   logVerbose('Final admin wallet balance:', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     adminAddress: adminSigner.address,
     before: adminBalanceFormatted,
     after: finalAdminBalanceFormatted,
@@ -531,8 +534,8 @@ async function _executeGatewayPledgeInternal(
   });
 
   logVerbose('Payment metadata updated and marked as SUCCESS:', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentId: payment.id,
     pledgeId,
     txHash: tx.hash,
@@ -552,8 +555,8 @@ async function _executeGatewayPledgeInternal(
   };
 
   logVerbose('Pledge execution complete:', {
-    id,
-    address,
+    prefixId,
+    logAddress,
     paymentId: payment.id,
     pledgeId,
     transactionHash: tx.hash,
