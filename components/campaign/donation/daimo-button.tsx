@@ -12,7 +12,7 @@ import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
 import { EmailSchema } from '@/lib/api/types/common';
-import { log } from '@/lib/debug/log';
+import { logFactory } from '@/lib/debug/log';
 
 interface DaimoPayEvent {
   paymentId?: string;
@@ -53,19 +53,8 @@ export function DaimoPayButtonComponent({
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
 
-  const verboseLog = useCallback(
-    (message: string, data?: unknown, ...args: unknown[]) => {
-      log(
-        message,
-        {
-          type: 'verbose',
-          user: address,
-          data,
-          prefix: '🚀 DaimoPayButton',
-        },
-        ...args,
-      );
-    },
+  const logVerbose = useMemo(
+    () => logFactory('verbose', '🚀 DaimoPayButton', address),
     [address],
   );
 
@@ -104,7 +93,7 @@ export function DaimoPayButtonComponent({
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      verboseLog('Payment started', event);
+      logVerbose('Payment started', { ...event, prefixId: event.paymentId });
 
       try {
         // Validate email using Zod
@@ -160,13 +149,13 @@ export function DaimoPayButtonComponent({
       daimoOnPaymentStarted,
       onPaymentStarted,
       onPaymentStartedCallback,
-      verboseLog,
+      logVerbose,
     ],
   );
 
   const handlePaymentCompleted = useCallback(
     async (event: DaimoPayEvent) => {
-      verboseLog('Payment completed', event);
+      logVerbose('Payment completed', { ...event, prefixId: event.paymentId });
       try {
         await daimoOnPaymentCompleted(event);
         toast({
@@ -184,13 +173,13 @@ export function DaimoPayButtonComponent({
       toast,
       onPaymentCompleted,
       onPaymentCompletedCallback,
-      verboseLog,
+      logVerbose,
     ],
   );
 
   const handlePaymentBounced = useCallback(
     async (event: DaimoPayEvent) => {
-      verboseLog('Payment bounced', event);
+      logVerbose('Payment bounced', { ...event, prefixId: event.paymentId });
       try {
         await daimoOnPaymentBounced(event);
         toast({
@@ -209,20 +198,20 @@ export function DaimoPayButtonComponent({
       toast,
       onPaymentBounced,
       onPaymentBouncedCallback,
-      verboseLog,
+      logVerbose,
     ],
   );
 
   const handleContribute = useCallback(
     (callback: () => void) => {
-      verboseLog('Contribute button clicked');
+      logVerbose('Contribute button clicked');
       callback();
     },
-    [verboseLog],
+    [logVerbose],
   );
 
   useEffect(() => {
-    verboseLog('Rendering button with final values', {
+    logVerbose('Rendering button with final values', {
       appId: DAIMO_PAY_APP_ID,
       adminWalletAddress: ADMIN_ADDRESS,
       treasuryAddress: paymentData.validatedTreasuryAddress,
@@ -236,7 +225,7 @@ export function DaimoPayButtonComponent({
       config: paymentData.config,
       note: 'Gateway integration: Daimo sends to admin wallet, webhook executes pledge to treasury',
     });
-    verboseLog(
+    logVerbose(
       'Registering callbacks - onPaymentStarted function:',
       typeof handlePaymentStarted,
     );
@@ -250,7 +239,7 @@ export function DaimoPayButtonComponent({
     tipAmount,
     dynamicIntent,
     handlePaymentStarted,
-    verboseLog,
+    logVerbose,
     campaign.treasuryAddress,
   ]);
 

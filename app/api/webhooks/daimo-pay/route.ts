@@ -8,7 +8,7 @@ import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
 import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
-import { log, LogType } from '@/lib/debug';
+import { logFactory } from '@/lib/debug';
 
 // Type for payment with includes
 type PaymentWithIncludes = Prisma.PaymentGetPayload<{
@@ -17,27 +17,6 @@ type PaymentWithIncludes = Prisma.PaymentGetPayload<{
     campaign: true;
   };
 }>;
-
-const logFactory = (type: LogType, prefix: string) => {
-  return (
-    message: string,
-    dataObj?: Record<string, unknown>,
-    ...args: unknown[]
-  ) => {
-    const { id, address, ...restData } = dataObj ?? {};
-    const data = Object.keys(restData).length > 0 ? restData : undefined;
-    log(
-      message,
-      {
-        type,
-        user: address as string | undefined, // used for verbose logging permission checks in production
-        data,
-        prefix: `${prefix}${id ? ` (${id})` : ''}`,
-      },
-      ...args,
-    );
-  };
-};
 
 const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook');
 
@@ -101,8 +80,8 @@ export async function POST(req: Request) {
 
       rawPayload = await req.json();
       logVerbose('Parsed payload:', {
-        id: rawPayload?.payment?.id,
-        address: rawPayload?.payment?.source?.payerAddress,
+        prefixId: rawPayload?.payment?.id,
+        logAddress: rawPayload?.payment?.source?.payerAddress,
         type: rawPayload?.type,
         daimoPaymentId: rawPayload?.paymentId,
       });
@@ -125,9 +104,9 @@ export async function POST(req: Request) {
 
     const payload = DaimoPayWebhookPayloadSchema.parse(rawPayload);
 
-    const address = payload.payment.source?.payerAddress ?? '';
+    const logAddress = payload.payment.source?.payerAddress ?? '';
     const type = payload.type;
-    let id = payload.payment.id;
+    let prefixId = payload.payment.id;
     const paymentId = payload.payment.id;
     const daimoPaymentId = payload.paymentId;
     const daimoStatus = payload.payment.status;
@@ -144,8 +123,8 @@ export async function POST(req: Request) {
 
       if (existingEvent) {
         logVerbose('Duplicate webhook event detected via idempotency key:', {
-          id,
-          address,
+          prefixId,
+          logAddress,
           idempotencyKey,
         });
         return response({
@@ -157,8 +136,8 @@ export async function POST(req: Request) {
     }
 
     logVerbose('Daimo Pay webhook received:', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       type,
       paymentId,
       daimoPaymentId,
@@ -171,8 +150,8 @@ export async function POST(req: Request) {
     // Skip processing test events (but acknowledge them)
     if (payload.isTestEvent) {
       logVerbose('Test event received, acknowledging without processing', {
-        id,
-        address,
+        prefixId,
+        logAddress,
       });
       return response({
         acknowledged: true,
@@ -212,8 +191,8 @@ export async function POST(req: Request) {
       logVerbose(
         'Daimo Pay webhook: Creating payment from payment_started event',
         {
-          id,
-          address,
+          prefixId,
+          logAddress,
           daimoPaymentId,
         },
       );
@@ -290,8 +269,8 @@ export async function POST(req: Request) {
         ) {
           // Unique constraint violation - payment already exists
           logVerbose('Duplicate payment creation prevented by constraint', {
-            id,
-            address,
+            prefixId,
+            logAddress,
           });
           dbPayment = await db.payment.findFirst({
             where: { daimoPaymentId },
@@ -303,7 +282,8 @@ export async function POST(req: Request) {
             logError(
               'Daimo Pay: Unique constraint violated but payment not found',
               {
-                id,
+                prefixId,
+                logAddress,
                 daimoPaymentId,
                 error: error.message,
               },
@@ -330,8 +310,8 @@ export async function POST(req: Request) {
       }
 
       logVerbose('Payment record created:', {
-        id,
-        address,
+        prefixId,
+        logAddress,
         dbPaymentId: dbPayment!.id,
         daimoPaymentId,
         amount: totalAmount,
@@ -342,13 +322,13 @@ export async function POST(req: Request) {
       });
     }
 
-    id = `${id}/${dbPayment?.id}`;
+    prefixId = `${prefixId}/${dbPayment?.id}`;
 
     // Handle case where payment still doesn't exist (shouldn't happen for payment_started)
     if (!dbPayment) {
       logVerbose('Payment not found and could not be created for', {
-        id,
-        address,
+        prefixId,
+        logAddress,
         daimoPaymentId,
       });
 
@@ -398,8 +378,8 @@ export async function POST(req: Request) {
     // Prevent backward state transitions (webhooks arriving out of order)
     if (newPriority < currentPriority) {
       logVerbose(`Blocking state regression ${currentStatus} -> ${newStatus}`, {
-        id,
-        address,
+        prefixId,
+        logAddress,
       });
 
       return response({
@@ -420,8 +400,8 @@ export async function POST(req: Request) {
       logVerbose(
         `Blocking terminal state flip ${currentStatus} -> ${newStatus}`,
         {
-          id,
-          address,
+          prefixId,
+          logAddress,
         },
       );
       return response({
@@ -436,8 +416,8 @@ export async function POST(req: Request) {
     // Allow same-state updates (idempotency)
     if (currentStatus === newStatus) {
       logVerbose('Idempotent update, status unchanged', {
-        id,
-        address,
+        prefixId,
+        logAddress,
       });
       return response({
         acknowledged: true,
@@ -515,8 +495,8 @@ export async function POST(req: Request) {
     logVerbose(
       `Payment ${dbPayment.id} status updated from ${currentStatus} to ${newStatus}`,
       {
-        id,
-        address,
+        prefixId,
+        logAddress,
       },
     );
 
@@ -538,8 +518,8 @@ export async function POST(req: Request) {
         // Only send notification if this is a new confirmation (not a duplicate event)
 
         logVerbose('Sending notification for confirmed payment:', {
-          id,
-          address,
+          prefixId,
+          logAddress,
           newStatus,
           currentStatus,
           creatorAddress: dbPayment.campaign.creatorAddress,
@@ -578,14 +558,15 @@ export async function POST(req: Request) {
             logVerbose(
               `Notification sent for Daimo Pay payment ${updatedPayment.id}`,
               {
-                id,
-                address,
+                prefixId,
+                logAddress,
               },
             );
           }
         } catch (notificationError) {
           logError('Error sending Daimo Pay notification:', {
-            id,
+            prefixId,
+            logAddress,
             error: notificationError,
           });
         }
@@ -596,8 +577,8 @@ export async function POST(req: Request) {
         // 4. Create round contributions for confirmed payments
         // This associates payments with rounds immediately when confirmed
         logVerbose('Creating round contributions for confirmed payment:', {
-          id,
-          address,
+          prefixId,
+          logAddress,
           newStatus,
           currentStatus,
           provider: dbPayment.provider,
@@ -625,8 +606,8 @@ export async function POST(req: Request) {
           logVerbose(
             `Found ${roundCampaigns.length} approved round participations for campaign ${dbPayment.campaign.id}`,
             {
-              id,
-              address,
+              prefixId,
+              logAddress,
             },
           );
 
@@ -643,8 +624,8 @@ export async function POST(req: Request) {
               });
 
               logVerbose('Created RoundContribution:', {
-                id,
-                address,
+                prefixId,
+                logAddress,
                 dbPaymentId: dbPayment.id,
                 roundId: roundCampaign.roundId,
                 roundTitle: roundCampaign.Round.title,
@@ -653,15 +634,15 @@ export async function POST(req: Request) {
             } catch (roundError) {
               logError(
                 `[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`,
-                { id, address, error: roundError },
+                { prefixId, logAddress, error: roundError },
               );
               // Continue with other rounds even if one fails
             }
           }
         } catch (roundQueryError) {
           logError('Error querying round participations:', {
-            id,
-            address,
+            prefixId,
+            logAddress,
             error: roundQueryError,
           });
           // Don't fail the payment confirmation if round association fails
@@ -670,8 +651,8 @@ export async function POST(req: Request) {
         // Execute on-chain pledge for gateway payments
         // Only trigger when payment is newly confirmed (not duplicate events)
         logVerbose('Triggering pledge execution:', {
-          id,
-          address,
+          prefixId,
+          logAddress,
           newStatus,
           currentStatus,
           provider: dbPayment.provider,
@@ -700,8 +681,8 @@ export async function POST(req: Request) {
             logVerbose(
               `Starting pledge execution for payment ${dbPayment.id}`,
               {
-                id,
-                address,
+                prefixId,
+                logAddress,
               },
             );
 
@@ -711,8 +692,8 @@ export async function POST(req: Request) {
             logVerbose(
               `Pledge execution SUCCESS for payment ${dbPayment.id}:`,
               {
-                id,
-                address,
+                prefixId,
+                logAddress,
                 duration: `${executionDuration}ms`,
                 ...executionResult,
               },
@@ -720,7 +701,8 @@ export async function POST(req: Request) {
           } catch (executionError) {
             const executionDuration = Date.now() - executionStartTime;
             logError(`Pledge execution FAILED for payment ${dbPayment.id}:`, {
-              id,
+              prefixId,
+              logAddress,
               duration: `${executionDuration}ms`,
               error:
                 executionError instanceof Error
@@ -742,7 +724,7 @@ export async function POST(req: Request) {
 
     logVerbose(
       `Payment ${dbPayment.id} status updated to ${newStatus} via ${payload.type} event`,
-      { id, address },
+      { prefixId, logAddress },
     );
 
     return response({

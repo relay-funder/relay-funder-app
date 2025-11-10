@@ -173,3 +173,38 @@ export function log(
   const logArgs = data !== undefined ? [data, ...args] : args;
   console[logType](`[${coloredPrefix}]: ${coloredMessage}`, ...logArgs);
 }
+
+export const logFactory = (type: LogType, prefix: string, user?: string) => {
+  return (message: string, data?: unknown, ...args: unknown[]) => {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // It's an object, so we can safely destructure
+      const { prefixId, logAddress, ...restData } = data as Record<
+        string,
+        unknown
+      >;
+      const dataRest = Object.keys(restData).length > 0 ? restData : undefined;
+      log(
+        message,
+        {
+          type,
+          user: user ?? (logAddress as string | undefined),
+          data: dataRest,
+          prefix: `${prefix}${prefixId ? ` (${prefixId})` : ''}`,
+        },
+        ...args,
+      );
+    } else {
+      // It's a string, number, array, null, etc. - pass it through as data
+      log(
+        message,
+        {
+          type,
+          user,
+          data,
+          prefix,
+        },
+        ...args,
+      );
+    }
+  };
+};

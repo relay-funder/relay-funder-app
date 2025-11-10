@@ -7,29 +7,8 @@ import {
 import { response, handleError } from '@/lib/api/response';
 import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
-import { log, LogType } from '@/lib/debug';
+import { logFactory } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
-
-const logFactory = (type: LogType, prefix: string) => {
-  return (
-    message: string,
-    dataObj?: Record<string, unknown>,
-    ...args: unknown[]
-  ) => {
-    const { id, address, ...restData } = dataObj ?? {};
-    const data = Object.keys(restData).length > 0 ? restData : undefined;
-    log(
-      message,
-      {
-        type,
-        user: address as string | undefined, // used for verbose logging permission checks in production
-        data,
-        prefix: `${prefix}${id ? ` (${id})` : ''}`,
-      },
-      ...args,
-    );
-  };
-};
 
 const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge');
 
@@ -72,12 +51,12 @@ export async function POST(
     if (!payment) {
       throw new ApiNotFoundError(`Payment ${paymentId} not found`);
     }
-    const id = `${payment?.daimoPaymentId}/${paymentIdStr}`;
-    const address = payment?.user.address;
+    const prefixId = `${payment?.daimoPaymentId}/${paymentIdStr}`;
+    const logAddress = payment?.user.address;
 
     logVerbose('Payment found:', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       paymentId,
       status: payment.status,
       provider: payment.provider,
@@ -106,8 +85,8 @@ export async function POST(
       logError(
         'Payment not eligible for retry - non-retryable pledge status:',
         {
-          id,
-          address,
+          prefixId,
+          logAddress,
           paymentId,
           status: payment.status,
           provider: payment.provider,
@@ -121,8 +100,8 @@ export async function POST(
     }
 
     logVerbose('Payment eligible for retry:', {
-      id,
-      address,
+      prefixId,
+      logAddress,
       paymentId,
       status: payment.status,
       provider: payment.provider,
@@ -135,8 +114,8 @@ export async function POST(
 
     if (result.success) {
       logVerbose('Pledge retry successful:', {
-        id,
-        address,
+        prefixId,
+        logAddress,
         paymentId,
         result,
       });
@@ -148,8 +127,8 @@ export async function POST(
       });
     } else {
       logError('Pledge retry failed:', {
-        id,
-        address,
+        prefixId,
+        logAddress,
         paymentId,
         result,
       });
