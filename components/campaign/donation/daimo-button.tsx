@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { DaimoPayButton } from '@daimo/pay';
 import { DbCampaign } from '@/types/campaign';
 import { DAIMO_PAY_APP_ID, ADMIN_ADDRESS } from '@/lib/constant';
@@ -11,8 +11,8 @@ import { useAccount } from 'wagmi';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
-import { debugComponentData as debug } from '@/lib/debug';
 import { EmailSchema } from '@/lib/api/types/common';
+import { logFactory } from '@/lib/debug/log';
 
 interface DaimoPayEvent {
   paymentId?: string;
@@ -53,6 +53,11 @@ export function DaimoPayButtonComponent({
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
 
+  const logVerbose = useMemo(
+    () => logFactory('verbose', '🚀 DaimoPayButton', address),
+    [address],
+  );
+
   // Create dynamic intent with campaign name and location
   const dynamicIntent = useMemo(() => {
     const baseName = campaign.title?.trim() ? campaign.title : 'Campaign';
@@ -88,7 +93,7 @@ export function DaimoPayButtonComponent({
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
-      debug && console.log('Daimo Pay: Payment started', event);
+      logVerbose('Payment started', { ...event, prefixId: event.paymentId });
 
       try {
         // Validate email using Zod
@@ -144,12 +149,13 @@ export function DaimoPayButtonComponent({
       daimoOnPaymentStarted,
       onPaymentStarted,
       onPaymentStartedCallback,
+      logVerbose,
     ],
   );
 
   const handlePaymentCompleted = useCallback(
     async (event: DaimoPayEvent) => {
-      debug && console.log('Daimo Pay: Payment completed', event);
+      logVerbose('Payment completed', { ...event, prefixId: event.paymentId });
       try {
         await daimoOnPaymentCompleted(event);
         toast({
@@ -167,12 +173,13 @@ export function DaimoPayButtonComponent({
       toast,
       onPaymentCompleted,
       onPaymentCompletedCallback,
+      logVerbose,
     ],
   );
 
   const handlePaymentBounced = useCallback(
     async (event: DaimoPayEvent) => {
-      debug && console.log('Daimo Pay: Payment bounced', event);
+      logVerbose('Payment bounced', { ...event, prefixId: event.paymentId });
       try {
         await daimoOnPaymentBounced(event);
         toast({
@@ -186,8 +193,55 @@ export function DaimoPayButtonComponent({
         console.error('Error in payment bounced handler:', error);
       }
     },
-    [daimoOnPaymentBounced, toast, onPaymentBounced, onPaymentBouncedCallback],
+    [
+      daimoOnPaymentBounced,
+      toast,
+      onPaymentBounced,
+      onPaymentBouncedCallback,
+      logVerbose,
+    ],
   );
+
+  const handleContribute = useCallback(
+    (callback: () => void) => {
+      logVerbose('Contribute button clicked');
+      callback();
+    },
+    [logVerbose],
+  );
+
+  useEffect(() => {
+    logVerbose('Rendering button with final values', {
+      appId: DAIMO_PAY_APP_ID,
+      adminWalletAddress: ADMIN_ADDRESS,
+      treasuryAddress: paymentData.validatedTreasuryAddress,
+      campaignTreasuryAddress: campaign.treasuryAddress,
+      refundAddress: paymentData.validatedRefundAddress,
+      totalAmount: paymentData.totalAmount,
+      baseAmount: amount,
+      tipAmount,
+      intent: dynamicIntent,
+      isValid: paymentData.isValid,
+      config: paymentData.config,
+      note: 'Gateway integration: Daimo sends to admin wallet, webhook executes pledge to treasury',
+    });
+    logVerbose(
+      'Registering callbacks - onPaymentStarted function:',
+      typeof handlePaymentStarted,
+    );
+  }, [
+    paymentData.totalAmount,
+    paymentData.validatedTreasuryAddress,
+    paymentData.validatedRefundAddress,
+    paymentData.isValid,
+    paymentData.config,
+    amount,
+    tipAmount,
+    dynamicIntent,
+    handlePaymentStarted,
+    logVerbose,
+    campaign.treasuryAddress,
+  ]);
 
   // Early returns for error states
   if (!address) {
@@ -271,27 +325,6 @@ export function DaimoPayButtonComponent({
     );
   }
 
-  debug &&
-    console.log('Daimo Pay: Rendering button with final values', {
-      totalAmount: paymentData.totalAmount,
-      baseAmount: amount,
-      tipAmount,
-      adminWalletAddress: ADMIN_ADDRESS,
-      treasuryAddress: paymentData.validatedTreasuryAddress,
-      refundAddress: paymentData.validatedRefundAddress,
-      intent: dynamicIntent,
-      appId: DAIMO_PAY_APP_ID,
-      isValid: paymentData.isValid,
-      config: paymentData.config,
-      note: 'Gateway integration: Daimo sends to admin wallet, webhook executes pledge to treasury',
-    });
-
-  console.log('🚀 Daimo Pay: Button rendering with appId:', DAIMO_PAY_APP_ID);
-  console.log(
-    '🚀 Daimo Pay: Registering callbacks - onPaymentStarted function:',
-    typeof handlePaymentStarted,
-  );
-
   return (
     <div className="mb-6 w-full">
       <DaimoPayButton.Custom
@@ -303,18 +336,17 @@ export function DaimoPayButtonComponent({
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
-        onPaymentStarted={(event) => {
-          console.log(
-            '🚀 Daimo Pay: DaimoPayButton onPaymentStarted triggered with event:',
-            event,
-          );
-          return handlePaymentStarted(event);
-        }}
+        onPaymentStarted={handlePaymentStarted}
         onPaymentCompleted={handlePaymentCompleted}
         onPaymentBounced={handlePaymentBounced}
       >
         {({ show }) => (
-          <Button variant="default" className="w-full" size="lg" onClick={show}>
+          <Button
+            variant="default"
+            className="w-full"
+            size="lg"
+            onClick={() => handleContribute(show)}
+          >
             Contribute to{' '}
             <b>
               {campaign.title.substring(0, 64)}
