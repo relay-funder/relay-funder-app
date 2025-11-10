@@ -55,7 +55,7 @@ export function CampaignDonationWalletAmount() {
               htmlFor="email"
               className="text-sm font-medium text-foreground"
             >
-              Email Address *
+              Email Address (optional)
             </Label>
           </div>
           <div className="max-w-sm">
@@ -65,7 +65,6 @@ export function CampaignDonationWalletAmount() {
               value={email}
               onChange={handleEmailChange}
               placeholder="john@example.com"
-              required
               className="h-10 text-sm"
             />
           </div>

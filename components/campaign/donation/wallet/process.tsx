@@ -62,21 +62,14 @@ export function CampaignDonationWalletProcess({
     onStateChanged: setState,
   });
   const isValidEmail = (email: string) => {
+    if (email.trim() === '') {
+      return true;
+    }
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const onDonateStart = useCallback(async () => {
-    // Validate email first
-    if (!email.trim()) {
-      toast({
-        title: 'Email required',
-        description: 'Please enter your email address to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!isValidEmail(email)) {
+    if (profile?.email && profile.email.trim() !== '' && !isValidEmail(email)) {
       toast({
         title: 'Invalid email',
         description: 'Please enter a valid email address.',
@@ -147,7 +140,6 @@ export function CampaignDonationWalletProcess({
     !hasUsdBalance ||
     !numericAmount ||
     processing ||
-    !email.trim() ||
     !isValidEmail(email);
 
   return (
@@ -158,7 +150,7 @@ export function CampaignDonationWalletProcess({
         disabled={isButtonDisabled}
         onClick={onDonateStart}
       >
-        {processing ? 'Processing...' : `Contribute with Wallet`}
+        {processing ? 'Processing...' : `Support Now`}
       </Button>
       <VisibilityToggle isVisible={state !== 'idle'}>
         <DonationProcessDisplay
