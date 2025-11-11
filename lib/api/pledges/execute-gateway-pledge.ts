@@ -576,12 +576,13 @@ async function _executeGatewayPledgeInternal(
 
     // Wait for approval using polling with fallback
     // This handles slow RPC providers that are common cause of timeouts
+    // Total max time: 60s (wait) + 60s (poll) = 120s
     await waitForTransactionWithPolling(
       approveTx,
       provider,
       'token approval transaction',
-      TIMEOUT_VALUES.APPROVAL_TX, // Try tx.wait() for 240 seconds
-      TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 240 seconds more
+      TIMEOUT_VALUES.APPROVAL_TX, // Try tx.wait() for 60 seconds
+      TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 60 seconds more
       { prefixId, logAddress },
     );
 
@@ -658,12 +659,13 @@ async function _executeGatewayPledgeInternal(
 
   // Wait for confirmation using polling with fallback
   // This handles slow RPC providers by falling back to polling if tx.wait() times out
+  // Total max time: 30s (wait) + 60s (poll) = 90s
   const receipt = await waitForTransactionWithPolling(
     treasuryTx,
     provider,
     'setFeeAndPledge transaction confirmation',
-    TIMEOUT_VALUES.PLEDGE_TX, // Try tx.wait() for 90 seconds
-    TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 240 seconds
+    TIMEOUT_VALUES.PLEDGE_TX, // Try tx.wait() for 30 seconds
+    TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 60 seconds
     { prefixId, logAddress },
   );
 
