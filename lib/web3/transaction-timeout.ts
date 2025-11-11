@@ -123,21 +123,33 @@ export async function waitWithTimeout<T>(
 /**
  * Recommended timeout values for common blockchain operations.
  * 
- * These values are based on typical blockchain operation times plus
- * a safety margin. Increased to accommodate Celo network congestion.
+ * IMPORTANT: Vercel serverless function limits (Pro plan):
+ * - Max execution time: 300 seconds (5 minutes)
+ * - Our timeouts must fit within this limit
+ * 
+ * Worst-case timing with polling fallback:
+ * - Approval: 60s (tx.wait) + 60s (polling) = 120s max
+ * - Pledge: 30s (tx.wait) + 60s (polling) = 90s max
+ * - Total: 210s (3.5 minutes) - fits within Vercel 5-minute limit
+ * 
+ * NOTE: If RPC is slower, lambda will timeout but tx hash is saved to DB,
+ * allowing manual verification via CeloScan or recovery via retry endpoint.
  */
 export const TIMEOUT_VALUES = {
   /** Balance/allowance reads - fast operations */
   READ_OPERATION: 30000, // 30 seconds
 
-  /** Token approval transaction confirmation (increased for Celo network) */
-  APPROVAL_TX: 240000, // 240 seconds (4 minutes) - Celo can be slow during congestion
+  /** Token approval transaction confirmation (with polling fallback) */
+  APPROVAL_TX: 60000, // 60 seconds (1 minute) - try tx.wait(), then poll for another 60s
 
   /** setFeeAndPledge transaction confirmation (typically fast, ~4-5 seconds) */
-  PLEDGE_TX: 90000, // 90 seconds (1.5 minutes) - Pledges are consistently fast
+  PLEDGE_TX: 30000, // 30 seconds - try tx.wait(), then poll for another 60s
 
-  /** Overall execution timeout (sum of all operations + buffer) */
-  OVERALL_EXECUTION: 360000, // 360 seconds (6 minutes) - Enough buffer for slow approvals
+  /** 
+   * Overall execution timeout (sum of all operations + buffer)
+   * Must fit within Vercel Pro 300s limit: approval (120s) + pledge (90s) + buffer (30s) = 240s
+   */
+  OVERALL_EXECUTION: 240000, // 240 seconds (4 minutes) - fits within Vercel 5-minute limit with buffer
 } as const;
 
 /**
