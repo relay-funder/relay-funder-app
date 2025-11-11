@@ -41,6 +41,21 @@ function validateDaimoPaymentAmounts(
   prefixId: string,
   logAddress: string,
 ): { valid: boolean; error?: string } {
+  // Reject negative inputs for claimedBase and claimedTip
+  if (claimedBase < 0) {
+    return {
+      valid: false,
+      error: 'claimedBase must be non-negative',
+    };
+  }
+
+  if (claimedTip < 0) {
+    return {
+      valid: false,
+      error: 'claimedTip must be non-negative',
+    };
+  }
+
   const claimedTotal = claimedBase + claimedTip;
 
   // Require destination amount for validation
@@ -60,7 +75,22 @@ function validateDaimoPaymentAmounts(
   }
 
   // Convert destination amount from token units (6 decimals) to USD
-  const destinationAmountBigInt = BigInt(destinationAmountUnits);
+  let destinationAmountBigInt: bigint;
+  try {
+    destinationAmountBigInt = BigInt(destinationAmountUnits);
+  } catch (error) {
+    logError('Invalid destinationAmountUnits format - not a valid number', {
+      prefixId,
+      logAddress,
+      destinationAmountUnits,
+      error: error instanceof Error ? error.message : 'Unknown parsing error',
+      note: 'Malformed destination amount units in Daimo webhook',
+    });
+    return {
+      valid: false,
+      error: 'Invalid destination amount format - cannot validate payment',
+    };
+  }
   const actualReceivedUSD = Number(destinationAmountBigInt) / 1_000_000; // 6 decimals
 
   // Tolerance for floating point precision: 0.01 USD (1 cent)
