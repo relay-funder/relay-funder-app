@@ -7,6 +7,7 @@ import {
   DAIMO_PAY_APP_ID,
   PROJECT_NAME,
   REOWN_CLOUD_PROJECT_ID,
+  REOWN_FEATURE_EMAIL,
 } from '@/lib/constant';
 import { getCsrfToken, getSession, signIn, signOut } from 'next-auth/react';
 
@@ -18,8 +19,9 @@ import {
   type SIWEVerifyMessageArgs,
   type SIWECreateMessageArgs,
   createSIWEConfig,
+  formatMessage,
 } from '@reown/appkit-siwe';
-import { SiweMessage } from 'siwe';
+
 import { loginCallbackUrl } from '@/server/auth/providers/login-callback-url';
 
 // Get projectId from https://dashboard.reown.com
@@ -74,18 +76,10 @@ export const siweConfig = createSIWEConfig({
     chains: networks.map((network) => parseInt(network.id.toString())),
     statement: 'Please sign with your account',
   }),
-  createMessage: ({ address, nonce, chainId }: SIWECreateMessageArgs) => {
-    const message = new SiweMessage({
-      domain: window.location.host,
-      // use rawAddress, will get normalized in api
-      address: address.split(':').pop() as `0x${string}`,
-      statement: `${PROJECT_NAME} - Please sign this message to log in to the app.`,
-      uri: window.location.origin,
-      version: '1',
-      chainId,
-      nonce,
-    });
-    return message.prepareMessage();
+  createMessage: ({ address, ...args }: SIWECreateMessageArgs) => {
+    // SIWE hint: address may just be a placeholder
+    // avoid  { SiweMessage } from 'siwe' as it throws because of that
+    return formatMessage(args, address);
   },
   getNonce: async () => {
     const nonce = await getCsrfToken();
@@ -154,7 +148,7 @@ export function createModal() {
     themeMode: 'light',
     features: {
       analytics: false, // Optional - defaults to your Cloud configuration
-      email: true, // default to true
+      email: REOWN_FEATURE_EMAIL, // default to true
       socials: [],
       //   'google',
       //   'x',
