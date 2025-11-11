@@ -13,10 +13,9 @@ const debugUsersEnv = process.env.NEXT_PUBLIC_VERBOSE_USERS;
  * Array of user addresses (lowercased) that should receive verbose logging in production.
  * Parsed from NEXT_PUBLIC_VERBOSE_USERS environment variable.
  */
-const debugUsers =
-  (debugUsersEnv?.split(',') ?? [])
-    .map((addr) => addr.trim().toLowerCase())
-    .filter((addr) => addr !== '');
+const debugUsers = (debugUsersEnv?.split(',') ?? [])
+  .map((addr) => addr.trim().toLowerCase())
+  .filter((addr) => addr !== '');
 
 /**
  * Checks if a user address is in the list of verbose users.
@@ -48,33 +47,6 @@ export function checkIsVerboseUser(address?: string | null): boolean {
  */
 export type LogType = 'info' | 'warn' | 'error' | 'debug' | 'verbose';
 
-/**
- * ANSI color codes for terminal output.
- */
-const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  white: '\x1b[37m',
-};
-
-/**
- * Color mapping for different log types.
- */
-const typeColors: Record<string, string> = {
-  debug: colors.cyan,
-  info: colors.blue,
-  warn: colors.yellow,
-  error: colors.red,
-};
-
-/**
 /**
  * Determines whether a log message should be output based on debug flags and user permissions.
  *
@@ -164,42 +136,39 @@ export function log(
 
   const logType = type === 'verbose' ? 'debug' : type;
 
-  const color = typeColors[logType] || colors.white;
   const prefixText = prefix ?? type;
-  const coloredPrefix = `${color}${colors.bright}${prefixText}${colors.reset}`;
-  const coloredMessage = `${color}${message}${colors.reset}`;
 
   const logArgs = data !== undefined ? [data, ...args] : args;
-  console[logType](`[${coloredPrefix}]: ${coloredMessage}`, ...logArgs);
+  console[logType](`[${prefixText}]: ${message}`, ...logArgs);
 }
 
 /**
  * Factory function to create a reusable logger with predefined configuration.
- * 
+ *
  * The returned logger function will use the specified log type, prefix, and debug flag
  * for all log calls, while allowing dynamic message, data, and user information per call.
- * 
+ *
  * @param type - The log level type to use for all logs from this logger
  * @param prefix - The prefix to display before log messages (e.g., '🚀 DaimoPayButton')
  * @param options - Optional configuration
  * @param options.user - Optional user address for verbose logging permission checks
  * @param options.flag - Debug flag name to check (default: 'debug'). Use domain-specific flags like 'api', 'web3', 'daimo', etc.
  * @returns A logger function that accepts (message, data?, ...args)
- * 
+ *
  * @example
  * ```ts
  * // Create logger with default 'debug' flag
  * const logDebug = logFactory('debug', '🔍 MyFeature');
  * logDebug('Something happened', { count: 5 });
- * 
+ *
  * // Create logger with domain-specific flag for Daimo payment operations
  * const logDaimo = logFactory('verbose', '🚀 DaimoPayButton', { flag: 'daimo' });
  * logDaimo('Payment initiated', { amount: 100 });
- * 
+ *
  * // Create logger with API flag that respects NEXT_PUBLIC_DEBUG_FLAGS=api
  * const logApi = logFactory('info', '📡 API', { flag: 'api' });
  * logApi('Request received', { endpoint: '/api/campaigns' });
- * 
+ *
  * // Create logger with user for verbose logging
  * const logUser = logFactory('verbose', '👤 UserAction', { user: '0x123...', flag: 'auth' });
  * logUser('User logged in');
@@ -218,6 +187,21 @@ export const logFactory = (
         string,
         unknown
       >;
+      const shortenedPrefixId =
+        typeof prefixId === 'string'
+          ? (() => {
+              const sections = prefixId.split('/');
+              // Shorten each section if it's longer than 9 characters
+              const shortenedSections = sections.map((section) => {
+                if (section.length > 9) {
+                  return `${section.slice(0, 3)}...${section.slice(-3)}`;
+                }
+                return section;
+              });
+
+              return shortenedSections.join('/');
+            })()
+          : prefixId;
       const dataRest = Object.keys(restData).length > 0 ? restData : undefined;
       log(
         message,
@@ -225,7 +209,7 @@ export const logFactory = (
           type,
           user: user ?? (logAddress as string | undefined),
           data: dataRest,
-          prefix: `${prefix}${prefixId ? ` (${prefixId})` : ''}`,
+          prefix: `${prefix}${shortenedPrefixId ? ` (${shortenedPrefixId})` : ''}`,
           flag,
         },
         ...args,
