@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCallback, useTransition, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRef } from 'react';
 import { useCreateComment } from '@/lib/hooks/useComments';
 import { DbCampaign } from '@/types/campaign';
@@ -13,7 +13,7 @@ interface CommentFormProps {
 }
 
 export function CommentForm({ campaign }: CommentFormProps) {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState<boolean>(false);
   const { address, authenticated } = useAuth();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -33,24 +33,24 @@ export function CommentForm({ campaign }: CommentFormProps) {
 
       const formData = new FormData(e.currentTarget);
 
-      startTransition(async () => {
-        try {
-          await createComment({
-            campaignId: campaign.id,
-            content: formData.get('content')?.toString() ?? '',
-          });
-          refetchCampaign();
-
-          formRef.current?.reset();
-        } catch (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description:
-              error instanceof Error ? error.message : 'Failed to post comment',
-          });
-        }
-      });
+      setIsPending(true);
+      try {
+        await createComment({
+          campaignId: campaign.id,
+          content: formData.get('content')?.toString() ?? '',
+        });
+        refetchCampaign();
+        formRef.current?.reset();
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description:
+            error instanceof Error ? error.message : 'Failed to post comment',
+        });
+      } finally {
+        setIsPending(false);
+      }
     },
     [toast, refetchCampaign, createComment, campaign],
   );
@@ -72,7 +72,7 @@ export function CommentForm({ campaign }: CommentFormProps) {
     return (
       <div className="space-y-4 p-4">
         <h2 className="font-display text-2xl font-bold text-foreground">
-          Your need to be signed in to comment.
+          You need to be signed in to comment.
         </h2>
       </div>
     );

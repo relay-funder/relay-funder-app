@@ -37,8 +37,10 @@ export function CampaignDetailTabAbout({
       </div>
       {authenticated && (
         <Button
-          className={cn('mt-2', isComment && 'opacity-0')}
+          className={cn('mt-2', isComment && 'pointer-events-none invisible')}
           onClick={onComment}
+          aria-hidden={isComment}
+          tabIndex={isComment ? -1 : undefined}
         >
           Comment
         </Button>
