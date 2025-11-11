@@ -15,6 +15,7 @@ import { TrendingUp, HelpCircle } from 'lucide-react';
 
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 import { useQfCampaignMatching } from '@/lib/hooks/useQfCampaignMatching';
+import { useAuth } from '@/contexts';
 
 export function CampaignMatchingFundsHighlight({
   campaign,
@@ -26,7 +27,7 @@ export function CampaignMatchingFundsHighlight({
   const { activeRounds, futureRounds } = useCampaignRounds({
     campaign,
   });
-
+  const { authenticated } = useAuth();
   const validRounds = [...activeRounds, ...futureRounds];
   const latestRound = validRounds[0];
 
@@ -35,7 +36,7 @@ export function CampaignMatchingFundsHighlight({
 
   const isUpcomingRound = status === 'Upcoming';
   const hasMatchingPool = latestRound?.matchingPool > 0;
-
+  const enabled = hasMatchingPool && !isUpcomingRound && authenticated;
   const {
     data: matching,
     isPending,
@@ -43,7 +44,7 @@ export function CampaignMatchingFundsHighlight({
   } = useQfCampaignMatching({
     roundId: latestRound?.id,
     campaignId: campaign.id,
-    enabled: hasMatchingPool && !isUpcomingRound,
+    enabled,
   });
 
   const matchingAmount = matching?.matchingAmount;
@@ -75,7 +76,9 @@ export function CampaignMatchingFundsHighlight({
               </div>
               <div>
                 <h3 className="text-sm font-semibold">Matching Funds</h3>
-                <p className="text-xs text-muted-foreground">Live estimate</p>
+                {enabled && (
+                  <p className="text-xs text-muted-foreground">Live estimate</p>
+                )}
               </div>
             </div>
             <HowMatchingWorksDialog>
@@ -89,27 +92,28 @@ export function CampaignMatchingFundsHighlight({
               </Button>
             </HowMatchingWorksDialog>
           </div>
-
-          <div className="flex items-baseline justify-between">
-            {isPending && hasMatchingPool && !isUpcomingRound ? (
-              <div className="flex animate-pulse items-baseline gap-2">
-                <div className="h-7 w-20 rounded bg-muted"></div>
-              </div>
-            ) : isUpcomingRound ? (
-              <span className="text-sm font-semibold text-muted-foreground">
-                Available when round starts
+          {enabled && (
+            <div className="flex items-baseline justify-between">
+              {isPending && hasMatchingPool && !isUpcomingRound ? (
+                <div className="flex animate-pulse items-baseline gap-2">
+                  <div className="h-7 w-20 rounded bg-muted"></div>
+                </div>
+              ) : isUpcomingRound ? (
+                <span className="text-sm font-semibold text-muted-foreground">
+                  Available when round starts
+                </span>
+              ) : isError || !matching ? (
+                <span className="text-sm font-semibold text-muted-foreground">
+                  TBD
+                </span>
+              ) : (
+                <span className="text-2xl font-bold">${formattedEstimate}</span>
+              )}
+              <span className="text-xs text-muted-foreground">
+                from ${formattedMatchingPool} pool
               </span>
-            ) : isError || !matching ? (
-              <span className="text-sm font-semibold text-muted-foreground">
-                TBD
-              </span>
-            ) : (
-              <span className="text-2xl font-bold">${formattedEstimate}</span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              from ${formattedMatchingPool} pool
-            </span>
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -125,7 +129,9 @@ export function CampaignMatchingFundsHighlight({
             </div>
             <div>
               <h3 className="text-base font-semibold">Matching Funds</h3>
-              <p className="text-xs text-muted-foreground">Live estimate</p>
+              {enabled && (
+                <p className="text-xs text-muted-foreground">Live estimate</p>
+              )}
             </div>
           </div>
           <HowMatchingWorksDialog>
@@ -139,38 +145,45 @@ export function CampaignMatchingFundsHighlight({
             </Button>
           </HowMatchingWorksDialog>
         </div>
-
-        <div>
-          <p className="mb-1 text-xs text-muted-foreground">Current estimate</p>
-          {isPending && hasMatchingPool && !isUpcomingRound ? (
-            <div className="flex animate-pulse items-baseline gap-2">
-              <div className="h-8 w-24 rounded bg-muted"></div>
-            </div>
-          ) : isUpcomingRound ? (
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-semibold text-muted-foreground">
-                Available when round starts
-              </span>
-            </div>
-          ) : isError || !matching ? (
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-semibold text-muted-foreground">
-                TBD
-              </span>
-            </div>
+        {enabled && (
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">
+              Current estimate
+            </p>
+            {isPending && hasMatchingPool && !isUpcomingRound ? (
+              <div className="flex animate-pulse items-baseline gap-2">
+                <div className="h-8 w-24 rounded bg-muted"></div>
+              </div>
+            ) : isUpcomingRound ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-semibold text-muted-foreground">
+                  Available when round starts
+                </span>
+              </div>
+            ) : isError || !matching ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-semibold text-muted-foreground">
+                  TBD
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">${formattedEstimate}</span>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="border-t pt-3">
+          {enabled ? (
+            <p className="text-xs text-muted-foreground">
+              From ${formattedMatchingPool} matching pool
+            </p>
           ) : (
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold">${formattedEstimate}</span>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              ${formattedMatchingPool} matching pool
+            </p>
           )}
         </div>
-
-        <div className="border-t pt-3">
-          <p className="text-xs text-muted-foreground">
-            From ${formattedMatchingPool} matching pool
-          </p>
-        </div>
-
         <div className="border-t pt-3">
           <p className="mb-2 text-xs text-muted-foreground">Supported by</p>
           <div className="flex items-center gap-2">
