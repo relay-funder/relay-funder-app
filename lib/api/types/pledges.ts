@@ -26,11 +26,13 @@ export interface ExecuteGatewayPledgeRequest {
  */
 export interface ExecuteGatewayPledgeResponse {
   success: boolean;
-  pledgeId: string;
-  transactionHash: string;
-  blockNumber: number;
-  pledgeAmount: string;
-  tipAmount: string;
+  paymentId: number;
+  pledgeId?: string;
+  transactionHash?: string;
+  blockNumber?: number;
+  pledgeAmount?: string;
+  tipAmount?: string;
+  error?: string;
 }
 
 /**

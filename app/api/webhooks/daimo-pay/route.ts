@@ -568,24 +568,47 @@ export async function POST(req: Request) {
             const executionDuration = Date.now() - promiseStartTime;
             const totalTimeFromWebhook = Date.now() - webhookStartTime;
             
-            logVerbose(
-              `✅ Pledge execution SUCCESS for payment ${dbPayment.id}:`,
-              {
-                prefixId,
-                logAddress,
-                executionDuration: `${executionDuration}ms`,
-                delayFromQueue: `${delayFromQueue}ms`,
-                totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
-                completedAt: new Date().toISOString(),
-                ...executionResult,
-              },
-            );
+            // Check if execution succeeded or failed
+            if (executionResult.success) {
+              logVerbose(
+                `✅ Pledge execution SUCCESS for payment ${dbPayment.id}:`,
+                {
+                  prefixId,
+                  logAddress,
+                  executionDuration: `${executionDuration}ms`,
+                  delayFromQueue: `${delayFromQueue}ms`,
+                  totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
+                  completedAt: new Date().toISOString(),
+                  ...executionResult,
+                },
+              );
+            } else {
+              // Execution failed but was handled gracefully (FAILED status persisted)
+              logError(
+                `❌ Pledge execution FAILED (handled) for payment ${dbPayment.id}:`,
+                {
+                  prefixId,
+                  logAddress,
+                  executionDuration: `${executionDuration}ms`,
+                  delayFromQueue: `${delayFromQueue}ms`,
+                  totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
+                  failedAt: new Date().toISOString(),
+                  error: executionResult.error || 'Unknown error',
+                  dbPaymentId: dbPayment.id,
+                  daimoPaymentId: payload.paymentId,
+                  campaignId: dbPayment.campaign.id,
+                  treasuryAddress: dbPayment.campaign.treasuryAddress,
+                  note: 'FAILED status persisted in database',
+                },
+              );
+            }
           } catch (executionError) {
+            // Unexpected error (should rarely happen now)
             const executionDuration = Date.now() - promiseStartTime;
             const totalTimeFromWebhook = Date.now() - webhookStartTime;
             
             logError(
-              `❌ Pledge execution FAILED for payment ${dbPayment.id}:`,
+              `❌ Pledge execution CRASHED (unexpected) for payment ${dbPayment.id}:`,
               {
                 prefixId,
                 logAddress,
@@ -605,6 +628,7 @@ export async function POST(req: Request) {
                 daimoPaymentId: payload.paymentId,
                 campaignId: dbPayment.campaign.id,
                 treasuryAddress: dbPayment.campaign.treasuryAddress,
+                note: 'Unexpected error - database state may be inconsistent',
               },
             );
           }

@@ -143,6 +143,7 @@ async function _executeGatewayPledgeWithLock(
 
     return {
       success: true,
+      paymentId,
       pledgeId: metadata.onChainPledgeId as string,
       transactionHash: metadata.treasuryTxHash as string,
       blockNumber: 0,
@@ -246,7 +247,13 @@ async function _executeGatewayPledgeWithLock(
       pledgeExecutionError: failedPayment.pledgeExecutionError,
     });
 
-    throw error;
+    // DON'T re-throw - we want the FAILED status to persist
+    // Return an error response instead so the transaction can commit
+    return {
+      success: false,
+      paymentId,
+      error: errorMessage,
+    } as ExecuteGatewayPledgeResponse;
   }
 }
 
@@ -718,6 +725,7 @@ async function _executeGatewayPledgeInternal(
 
   const result: ExecuteGatewayPledgeResponse = {
     success: true,
+    paymentId: payment.id,
     pledgeId,
     transactionHash: treasuryTx.hash,
     blockNumber: receipt.blockNumber ?? 0,
