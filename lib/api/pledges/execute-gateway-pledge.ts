@@ -55,6 +55,9 @@ export async function executeGatewayPledge(
     paymentId,
   });
 
+  // Allow retrying PENDING payments if they've been stuck for more than 5 minutes
+  // This handles lambda timeouts while still preventing concurrent executions
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   
   const pendingUpdate = await db.payment.updateMany({
     where: {
