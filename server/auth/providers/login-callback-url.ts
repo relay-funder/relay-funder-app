@@ -13,6 +13,11 @@ export function loginCallbackUrl() {
   try {
     const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
+    if (!params.get('callbackUrl') && !url.pathname.includes('/login')) {
+      // connect already happened, but there is no session
+      // just refresh the page with the session.
+      return window.location.href;
+    }
     paramCallbackUrl = params.get('callbackUrl') ?? '/dashboard';
     if (paramCallbackUrl.startsWith('/')) {
       return '/dashboard';
