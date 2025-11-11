@@ -14,10 +14,9 @@ const debugUsersEnv = process.env.NEXT_PUBLIC_VERBOSE_USERS;
  * Parsed from NEXT_PUBLIC_VERBOSE_USERS environment variable.
  */
 const debugUsers =
-  debugUsersEnv
-    ?.split(',')
+  (debugUsersEnv?.split(',') ?? [])
     .map((addr) => addr.trim().toLowerCase())
-    .filter((addr) => addr !== '') ?? [];
+    .filter((addr) => addr !== '');
 
 /**
  * Checks if a user address is in the list of verbose users.

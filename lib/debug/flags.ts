@@ -7,7 +7,7 @@ const debugFlagsEnv = process.env.NEXT_PUBLIC_DEBUG_FLAGS;
  * These flags take precedence over the default debug flag values.
  */
 const debugFlagsSet = new Set(
-  debugFlagsEnv?.split(',').map(flag => flag.trim()).filter((flag) => flag !== '') ?? []
+  (debugFlagsEnv ?? '').split(',').map(flag => flag.trim()).filter((flag) => flag !== '')
 );
 
 // Derive boolean constants with environment override support
