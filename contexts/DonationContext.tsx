@@ -56,7 +56,7 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { showDaimoPay, showCryptoWallet, defaultTab } =
     usePaymentTabsVisibility();
-  const [amount, setAmount] = useState('0');
+  const [amount, setAmountIntern] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
   const [token, setToken] = useState<DonationTokens>(USD_TOKEN);
   const [paymentType, setPaymentType] = useState<PaymentTabValue>(defaultTab);
@@ -64,14 +64,27 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
-
+  const setAmount = useCallback(
+    (input: string) => {
+      // allow empty input (form checks apply)
+      if (input.trim() != '') {
+        // avoid any invalid positive numbers
+        const value = parseFloat(input);
+        if (isNaN(value) || value < 0) {
+          return;
+        }
+      }
+      setAmountIntern(input);
+    },
+    [setAmountIntern],
+  );
   const clearDonation = useCallback(() => {
     setAmount('0');
     setTipAmount('0');
     setToken(USD_TOKEN);
     setIsProcessingPayment(false);
     setIsPaymentCompleted(false);
-  }, []);
+  }, [setAmount]);
 
   const usdFormattedBalance = useUsdBalance({
     enabled: showCryptoWallet,
