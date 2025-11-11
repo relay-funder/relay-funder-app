@@ -1,6 +1,6 @@
 import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
-import type { Prisma } from '@/.generated/prisma/client';
+import { Prisma } from '@/.generated/prisma/client';
 
 const logVerbose = logFactory('verbose', '🔒 ExecutionLock');
 const logError = logFactory('error', '🚨 ExecutionLock');
