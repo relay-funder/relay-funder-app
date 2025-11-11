@@ -1,7 +1,26 @@
 import { type DbCampaign } from '@/types/campaign';
 import { ReadMoreOrLess } from '@/components/read-more-or-less';
+import type { TabNames } from './detail-tabs';
+import { Button } from '@/components/ui';
+import { useCallback, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts';
 
-export function CampaignDetailTabAbout({ campaign }: { campaign: DbCampaign }) {
+export function CampaignDetailTabAbout({
+  campaign,
+  activeTab,
+  onActiveTabChanged,
+}: {
+  campaign: DbCampaign;
+  activeTab: TabNames;
+  onActiveTabChanged?: (tabName: TabNames) => void;
+}) {
+  const { authenticated } = useAuth();
+  const onComment = useCallback(() => {
+    onActiveTabChanged?.('comments');
+  }, [onActiveTabChanged]);
+  const isComment = useMemo(() => activeTab === 'comments', [activeTab]);
+
   return (
     <div className="space-y-3">
       <h2 className="font-display text-lg font-semibold text-foreground">
@@ -16,6 +35,14 @@ export function CampaignDetailTabAbout({ campaign }: { campaign: DbCampaign }) {
           {campaign.description}
         </ReadMoreOrLess>
       </div>
+      {authenticated && (
+        <Button
+          className={cn('mt-2', isComment && 'opacity-0')}
+          onClick={onComment}
+        >
+          Comment
+        </Button>
+      )}
     </div>
   );
 }
