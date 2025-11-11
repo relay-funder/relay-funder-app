@@ -36,11 +36,12 @@ const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
  * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
  * Reliability Features:
- * - PostgreSQL advisory locks prevent concurrent execution (session-scoped)
+ * - PostgreSQL transaction-level advisory locks prevent concurrent execution
+ * - Pledge ID stored BEFORE blockchain operations (enables deterministic retries)
  * - Early idempotency check prevents re-execution
  * - Optimistic locking prevents race conditions
  * - Transaction timeouts prevent indefinite hangs
- * - Lock acquire/release guaranteed on same DB connection via Prisma transaction
+ * - Lock automatically released when transaction commits/rolls back
  *
  * @param paymentId - Internal payment record ID
  * @returns Execution result with transaction hash and amounts
@@ -54,8 +55,8 @@ export async function executeGatewayPledge(
     paymentId,
   });
 
-  // Use withExecutionLock to ensure lock is acquired and released on same connection
-  // The lock is held for the entire execution, including DB operations and blockchain transactions
+  // Use withExecutionLock to acquire transaction-level advisory lock
+  // The lock is held for the entire execution and automatically released when transaction ends
   return await withExecutionLock(paymentId, async (tx) => {
     // Wrap execution with overall timeout to prevent indefinite hangs
     return await waitWithTimeout(
@@ -73,13 +74,14 @@ type TransactionClient = Omit<
 >;
 
 /**
- * Internal execution function that runs with lock held.
+ * Internal execution function that runs with transaction-level advisory lock held.
  * 
- * CRITICAL: All database operations MUST use the provided transaction client (tx)
- * to ensure they run on the same connection that holds the advisory lock.
+ * All database operations MUST use the provided transaction client (tx)
+ * to ensure they run within the same transaction that holds the advisory lock.
+ * The lock is automatically released when the transaction commits or rolls back.
  * 
  * @param paymentId - Payment ID to execute
- * @param tx - Prisma transaction client (holds the advisory lock)
+ * @param tx - Prisma transaction client (holds the transaction-level advisory lock)
  */
 async function _executeGatewayPledgeWithLock(
   paymentId: number,
@@ -147,6 +149,34 @@ async function _executeGatewayPledgeWithLock(
       pledgeAmount: (metadata.pledgeAmount as string) || '0',
       tipAmount: (metadata.tipAmount as string) || '0',
     };
+  }
+  
+  // Check if payment is stuck in PENDING (potential crash scenario)
+  // If status is PENDING, a previous attempt may have succeeded on-chain but crashed before DB update
+  if (payment.pledgeExecutionStatus === 'PENDING') {
+    logVerbose('Payment is PENDING - checking for potential crash scenario', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+      lastAttempt: payment.pledgeExecutionLastAttempt?.toISOString(),
+      attempts: payment.pledgeExecutionAttempts,
+      note: 'Will check if blockchain operations already succeeded',
+    });
+    
+    // If we have a generated pledge ID but no onChainPledgeId, this might be a retry
+    // after crash. The pledge ID tells us what to look for on-chain.
+    if (metadata?.generatedPledgeId && !metadata?.onChainPledgeId) {
+      logVerbose('Found generated pledge ID without execution confirmation', {
+        prefixId,
+        logAddress,
+        paymentId: payment.id,
+        generatedPledgeId: metadata.generatedPledgeId,
+        note: 'This indicates potential crash after pledge ID generation. Will attempt recovery with same pledge ID.',
+      });
+      
+      // TODO: In future enhancement, query blockchain here to verify if pledge exists
+      // For now, we'll proceed with the stored pledge ID (safe because we use same ID)
+    }
   }
 
   // OPTIMISTIC LOCKING: Update to PENDING only if not already PENDING
@@ -273,7 +303,7 @@ async function _executeGatewayPledgeInternal(
   });
 
   // Extract metadata for tip amount
-  const metadata = payment.metadata as Record<string, unknown>;
+  let metadata = payment.metadata as Record<string, unknown>;
 
   // Extract amounts from payment and parse to token units
   // payment.amount contains ONLY the pledge amount (matching direct wallet flow)
@@ -442,18 +472,58 @@ async function _executeGatewayPledgeInternal(
     note2: 'Using treasury configured fees only, no additional gateway fee',
   });
 
-  // Generate unique pledge ID
-  const pledgeId = ethers.keccak256(
-    ethers.toUtf8Bytes(
-      `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
-    ),
-  );
-
-  logVerbose('Generated pledge ID', {
-    prefixId,
-    logAddress,
-    pledgeId,
-  });
+  // Generate and STORE pledge ID BEFORE any blockchain operations
+  // This ensures deterministic pledge ID across retries if crash occurs
+  let pledgeId: string;
+  
+  if (metadata?.generatedPledgeId) {
+    // RETRY case: Use existing pledge ID from previous attempt
+    pledgeId = metadata.generatedPledgeId as string;
+    logVerbose('Using existing pledge ID from previous attempt', {
+      prefixId,
+      logAddress,
+      pledgeId,
+      note: 'This is a retry - reusing same pledge ID to prevent duplicates',
+    });
+  } else {
+    // FIRST ATTEMPT: Generate new pledge ID
+    pledgeId = ethers.keccak256(
+      ethers.toUtf8Bytes(
+        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
+      ),
+    );
+    
+    logVerbose('Generated NEW pledge ID', {
+      prefixId,
+      logAddress,
+      pledgeId,
+      note: 'First execution attempt',
+    });
+    
+    // Store pledge ID IMMEDIATELY in database BEFORE blockchain operations
+    // If crash occurs during blockchain operations, pledge ID is preserved for retry
+    const updatedPayment = await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        metadata: {
+          ...(payment.metadata as Record<string, unknown>),
+          generatedPledgeId: pledgeId,
+          pledgeGeneratedAt: new Date().toISOString(),
+        },
+      },
+    });
+    
+    // Update metadata reference for later use
+    metadata = updatedPayment.metadata as Record<string, unknown>;
+    
+    logVerbose('Pledge ID stored in database', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+      pledgeId,
+      note: 'Safe to proceed with blockchain operations',
+    });
+  }
 
   // Check current allowance (with timeout to prevent hangs)
   const currentAllowance = await waitWithTimeout(

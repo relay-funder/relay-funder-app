@@ -32,14 +32,15 @@ type TransactionClient = Omit<
 >;
 
 /**
- * Attempt to acquire an advisory lock for payment execution on a specific transaction.
+ * Attempt to acquire a TRANSACTION-LEVEL advisory lock for payment execution.
+ * 
+ * Transaction-level locks are automatically released when the transaction commits or rolls back,
+ * preventing the race condition where lock was released before transaction commit.
  * 
  * This is a non-blocking operation that will immediately return false
  * if another process holds the lock.
  * 
- * IMPORTANT: This function MUST be called within a transaction context
- * to ensure the lock is held on the same connection that will execute
- * the protected operations.
+ * IMPORTANT: This function MUST be called within a transaction context.
  * 
  * @param tx - Prisma transaction client
  * @param paymentId - The payment ID to lock
@@ -51,26 +52,29 @@ async function acquireExecutionLockOnTransaction(
   paymentId: number,
 ): Promise<boolean> {
   try {
-    logVerbose('Attempting to acquire execution lock', {
+    logVerbose('Attempting to acquire transaction-level execution lock', {
       paymentId,
       lockClassId: LOCK_CLASS_ID,
+      lockType: 'pg_try_advisory_xact_lock',
     });
 
-    // Use pg_try_advisory_lock with two integers (lock class, payment ID)
-    // This is non-blocking - returns true if acquired, false if already held
+    // Use pg_try_advisory_xact_lock with two integers (lock class, payment ID)
+    // This is TRANSACTION-LEVEL - automatically released at transaction end
+    // This prevents race condition where lock was released before transaction commit
     const result = await tx.$queryRaw<Array<{ acquired: boolean }>>`
-      SELECT pg_try_advisory_lock(${LOCK_CLASS_ID}, ${paymentId}) as acquired
+      SELECT pg_try_advisory_xact_lock(${LOCK_CLASS_ID}, ${paymentId}) as acquired
     `;
 
     const acquired = result[0]?.acquired ?? false;
 
     if (acquired) {
-      logVerbose('Execution lock acquired successfully', {
+      logVerbose('Transaction-level execution lock acquired successfully', {
         paymentId,
         lockClassId: LOCK_CLASS_ID,
+        note: 'Lock will auto-release when transaction commits or rolls back',
       });
     } else {
-      logVerbose('Execution lock already held by another session', {
+      logVerbose('Execution lock already held by another transaction', {
         paymentId,
         lockClassId: LOCK_CLASS_ID,
       });
@@ -88,58 +92,24 @@ async function acquireExecutionLockOnTransaction(
 }
 
 /**
- * Release an advisory lock for payment execution on a specific transaction.
+ * NOTE: Transaction-level advisory locks (pg_advisory_xact_lock) are automatically
+ * released when the transaction commits or rolls back, so no explicit release is needed.
  * 
- * Should be called in a finally block to ensure lock is always released.
+ * This function is kept for compatibility with isExecutionLockHeld() which uses
+ * session-level locks for testing purposes.
  * 
- * IMPORTANT: This function MUST be called on the SAME transaction context
- * that acquired the lock. Calling it on a different connection will fail
- * because advisory locks are session-scoped.
- * 
- * @param tx - Prisma transaction client (MUST be the same one that acquired the lock)
- * @param paymentId - The payment ID to unlock
- * @throws Error if lock wasn't held by this session or if database query fails
+ * @deprecated No longer needed with transaction-level locks
  */
 async function releaseExecutionLockOnTransaction(
   tx: TransactionClient,
   paymentId: number,
 ): Promise<void> {
-  try {
-    logVerbose('Attempting to release execution lock', {
-      paymentId,
-      lockClassId: LOCK_CLASS_ID,
-    });
-
-    // Use pg_advisory_unlock with two integers (lock class, payment ID)
-    // Returns true if lock was held and released, false if lock wasn't held
-    const result = await tx.$queryRaw<Array<{ released: boolean }>>`
-      SELECT pg_advisory_unlock(${LOCK_CLASS_ID}, ${paymentId}) as released
-    `;
-
-    const released = result[0]?.released ?? false;
-
-    if (released) {
-      logVerbose('Execution lock released successfully', {
-        paymentId,
-        lockClassId: LOCK_CLASS_ID,
-      });
-    } else {
-      // This is a critical error - we should have held the lock on this session
-      const errorMsg = `Lock was not held by this session during release (payment ${paymentId})`;
-      logError(errorMsg, {
-        paymentId,
-        lockClassId: LOCK_CLASS_ID,
-      });
-      throw new Error(errorMsg);
-    }
-  } catch (error) {
-    logError('Failed to release execution lock', {
-      paymentId,
-      lockClassId: LOCK_CLASS_ID,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error;
-  }
+  // Transaction-level locks auto-release - no action needed
+  logVerbose('Transaction-level lock will auto-release at transaction end', {
+    paymentId,
+    lockClassId: LOCK_CLASS_ID,
+    note: 'No explicit release needed for pg_advisory_xact_lock',
+  });
 }
 
 /**
@@ -182,12 +152,16 @@ export async function isExecutionLockHeld(
 }
 
 /**
- * Execute a function with an advisory lock held.
+ * Execute a function with a TRANSACTION-LEVEL advisory lock held.
+ * 
+ * Uses transaction-level locks (pg_advisory_xact_lock) which are
+ * automatically released when the transaction commits or rolls back. This eliminates
+ * the race condition where the lock was released before transaction commit.
  * 
  * This wrapper ensures that:
  * 1. The lock is acquired on a dedicated database connection
  * 2. The callback function executes on the SAME connection
- * 3. The lock is released on that same connection in a finally block
+ * 3. The lock is automatically released when transaction ends (commit or rollback)
  * 4. All operations are properly isolated within a transaction
  * 
  * The callback receives a Prisma transaction client (tx) that MUST be used
@@ -196,7 +170,7 @@ export async function isExecutionLockHeld(
  * @param paymentId - The payment ID to lock
  * @param fn - The function to execute while holding the lock (receives tx client)
  * @returns The result of the function
- * @throws Error if lock cannot be acquired, if lock release fails, or if fn throws
+ * @throws Error if lock cannot be acquired or if fn throws
  */
 export async function withExecutionLock<T>(
   paymentId: number,
@@ -204,23 +178,18 @@ export async function withExecutionLock<T>(
 ): Promise<T> {
   return await db.$transaction(
     async (tx) => {
-      // Acquire lock on this transaction's connection
+      // Acquire transaction-level lock
       const acquired = await acquireExecutionLockOnTransaction(tx, paymentId);
 
       if (!acquired) {
         throw new Error(
-          `Cannot execute: payment ${paymentId} is already being processed by another session`,
+          `Cannot execute: payment ${paymentId} is already being processed by another transaction`,
         );
       }
 
-      try {
-        // Execute callback with the same transaction client
-        return await fn(tx);
-      } finally {
-        // Always release lock on the same connection, even if fn throws
-        // If release fails (released === false), this will throw
-        await releaseExecutionLockOnTransaction(tx, paymentId);
-      }
+      // Execute callback with the same transaction client
+      // Lock will automatically release when transaction commits or rolls back
+      return await fn(tx);
     },
     {
       maxWait: 5000, // Maximum time to wait for a connection (5 seconds)
