@@ -576,12 +576,6 @@ async function _executeGatewayPledgeInternal(
 
     // Wait for approval using polling with fallback
     // This handles slow RPC providers that are common cause of timeouts
-    const provider = adminSigner.provider;
-    
-    if (!provider) {
-      throw new ApiUpstreamError('Provider not available for transaction polling');
-    }
-
     await waitForTransactionWithPolling(
       approveTx,
       provider,
@@ -664,12 +658,6 @@ async function _executeGatewayPledgeInternal(
 
   // Wait for confirmation using polling with fallback
   // This handles slow RPC providers by falling back to polling if tx.wait() times out
-  const provider = adminSigner.provider;
-  
-  if (!provider) {
-    throw new ApiUpstreamError('Provider not available for transaction polling');
-  }
-
   const receipt = await waitForTransactionWithPolling(
     treasuryTx,
     provider,
