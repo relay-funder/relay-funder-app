@@ -265,6 +265,21 @@ docker compose exec app pnpm prisma db push
 docker compose exec app pnpm prisma db pull
 ```
 
+## Documentation Policy
+
+**DO NOT CREATE LARGE ANALYSIS OR SUMMARY MARKDOWN FILES**
+
+When responding to queries, debugging issues, or analyzing problems:
+
+- **DO**: Provide concise analysis directly in the response
+- **DO**: Make code changes and fixes inline
+- **DO**: Update existing documentation when necessary
+- **DO NOT**: Create new large markdown files with analysis (e.g., `*_ANALYSIS.md`, `*_SUMMARY.md`, etc.)
+- **DO NOT**: Generate comprehensive documentation files unless explicitly requested by the user
+- **DO NOT**: Create files in `docs/` for routine questions or debugging sessions
+
+**Rationale**: Large generated files clutter the repository and are rarely reviewed. Keep analysis concise and actionable.
+
 ## Coding Conventions
 
 ### TypeScript Standards
