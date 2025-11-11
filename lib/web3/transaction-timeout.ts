@@ -49,9 +49,12 @@ export async function waitWithTimeout<T>(
     ...context,
   });
 
+  // Track the timeout timer ID so we can clear it
+  let timeoutId: NodeJS.Timeout | null = null;
+
   // Create a timeout promise that rejects after timeoutMs
   const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       const elapsed = Date.now() - startTime;
       const error = new ApiUpstreamError(
         `Operation timed out after ${elapsed}ms: ${operation}`,
@@ -72,6 +75,11 @@ export async function waitWithTimeout<T>(
     // Race the operation against the timeout
     const result = await Promise.race([promise, timeoutPromise]);
 
+    // Clear the timeout immediately to prevent timer leak
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+
     const elapsed = Date.now() - startTime;
     logVerbose(`Operation completed successfully`, {
       operation,
@@ -82,6 +90,11 @@ export async function waitWithTimeout<T>(
 
     return result;
   } catch (error) {
+    // Clear the timeout immediately to prevent timer leak
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+
     const elapsed = Date.now() - startTime;
 
     // Check if this is a timeout error (our ApiUpstreamError)
