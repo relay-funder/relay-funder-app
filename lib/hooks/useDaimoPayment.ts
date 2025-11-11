@@ -121,6 +121,7 @@ export function useDaimoPayment({
   const metadata = useMemo(
     () => ({
       campaignId: campaign.id.toString(),
+      treasuryAddress: campaign.treasuryAddress || '',
       pledgeId: pledgeId || '',
       email,
       anonymous: anonymous.toString(),
@@ -129,7 +130,7 @@ export function useDaimoPayment({
       token: config.tokenSymbol,
       chain: config.chainName,
     }),
-    [campaign.id, pledgeId, email, anonymous, tipAmount, amount, config],
+    [campaign.id, campaign.treasuryAddress, pledgeId, email, anonymous, tipAmount, amount, config],
   );
 
   // Validate email format using Zod
