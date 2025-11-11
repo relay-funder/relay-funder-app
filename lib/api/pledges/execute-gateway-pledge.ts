@@ -13,6 +13,15 @@ import type {
   GatewayPledgeMetadata,
 } from '@/lib/api/types/pledges';
 import { logFactory } from '@/lib/debug';
+import {
+  acquireExecutionLock,
+  releaseExecutionLock,
+} from '@/lib/api/pledges/execution-lock';
+import {
+  waitWithTimeout,
+  waitForTransaction,
+  TIMEOUT_VALUES,
+} from '@/lib/web3/transaction-timeout';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 
@@ -29,6 +38,12 @@ const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
  * - Platform admin can later claim accumulated tips using claimTip()
  * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
+ * Reliability Features:
+ * - PostgreSQL advisory locks prevent concurrent execution
+ * - Early idempotency check prevents re-execution
+ * - Optimistic locking prevents race conditions
+ * - Transaction timeouts prevent indefinite hangs
+ *
  * @param paymentId - Internal payment record ID
  * @returns Execution result with transaction hash and amounts
  * @throws ApiParameterError if payment invalid or already executed
@@ -41,6 +56,40 @@ export async function executeGatewayPledge(
     paymentId,
   });
 
+  // Acquire advisory lock to prevent concurrent execution
+  const lockAcquired = await acquireExecutionLock(paymentId);
+
+  if (!lockAcquired) {
+    const errorMessage = `Cannot execute payment ${paymentId}: already being processed by another session`;
+    logError('Failed to acquire execution lock', {
+      paymentId,
+      reason: 'lock_held_by_another_session',
+    });
+    throw new ApiParameterError(errorMessage);
+  }
+
+  try {
+    // Wrap execution with overall timeout to prevent indefinite hangs
+    return await waitWithTimeout(
+      _executeGatewayPledgeWithLock(paymentId),
+      TIMEOUT_VALUES.OVERALL_EXECUTION,
+      'gateway pledge execution',
+      { paymentId },
+    );
+  } finally {
+    // Always release lock, even if execution fails
+    await releaseExecutionLock(paymentId);
+    logVerbose('Execution lock released', { paymentId });
+  }
+}
+
+/**
+ * Internal execution function that runs with lock held.
+ * Separated to ensure lock is always released in finally block.
+ */
+async function _executeGatewayPledgeWithLock(
+  paymentId: number,
+): Promise<ExecuteGatewayPledgeResponse> {
   // Load payment with related data
   const payment = await db.payment.findUnique({
     where: { id: paymentId },
@@ -67,9 +116,51 @@ export async function executeGatewayPledge(
       payment.pledgeExecutionLastAttempt?.toISOString(),
   });
 
-  // Mark execution as pending and increment attempts
-  const updatedPayment = await db.payment.update({
-    where: { id: paymentId },
+  // EARLY IDEMPOTENCY CHECK: Check if already executed BEFORE updating status
+  // This prevents re-execution window that existed when this check happened later
+  const metadata = payment.metadata as Record<string, unknown>;
+  if (metadata?.onChainPledgeId) {
+    logVerbose('Pledge already executed (early check)', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+      onChainPledgeId: metadata.onChainPledgeId,
+    });
+
+    // Update payment status back to SUCCESS since it was already executed
+    const updatedPayment = await db.payment.update({
+      where: { id: payment.id },
+      data: {
+        pledgeExecutionStatus: 'SUCCESS',
+        pledgeExecutionError: null,
+        pledgeExecutionTxHash: metadata.treasuryTxHash as string,
+      },
+    });
+
+    logVerbose('Payment status corrected to SUCCESS', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+      pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
+    });
+
+    return {
+      success: true,
+      pledgeId: metadata.onChainPledgeId as string,
+      transactionHash: metadata.treasuryTxHash as string,
+      blockNumber: 0,
+      pledgeAmount: (metadata.pledgeAmount as string) || '0',
+      tipAmount: (metadata.tipAmount as string) || '0',
+    };
+  }
+
+  // OPTIMISTIC LOCKING: Update to PENDING only if not already PENDING
+  // This prevents race conditions where multiple processes try to execute
+  const updateResult = await db.payment.updateMany({
+    where: {
+      id: paymentId,
+      pledgeExecutionStatus: { not: 'PENDING' },
+    },
     data: {
       pledgeExecutionStatus: 'PENDING',
       pledgeExecutionAttempts: { increment: 1 },
@@ -77,14 +168,24 @@ export async function executeGatewayPledge(
     },
   });
 
-  logVerbose('Payment updated to PENDING', {
+  // If update affected 0 rows, another execution is already in progress
+  if (updateResult.count === 0) {
+    logError('Optimistic lock failed - payment already PENDING', {
+      prefixId,
+      logAddress,
+      paymentId,
+      currentStatus: payment.pledgeExecutionStatus,
+    });
+    throw new ApiParameterError(
+      `Payment ${paymentId} is already being executed (status: ${payment.pledgeExecutionStatus})`,
+    );
+  }
+
+  logVerbose('Payment updated to PENDING (optimistic lock successful)', {
     prefixId,
     logAddress,
     paymentId,
-    pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
-    pledgeExecutionAttempts: updatedPayment.pledgeExecutionAttempts,
-    pledgeExecutionLastAttempt:
-      updatedPayment.pledgeExecutionLastAttempt?.toISOString(),
+    pledgeExecutionAttempts: payment.pledgeExecutionAttempts + 1,
   });
 
   try {
@@ -161,44 +262,8 @@ async function _executeGatewayPledgeInternal(
     );
   }
 
-  // Check if already executed
-  const metadata = payment.metadata as Record<string, unknown>;
-  if (metadata?.onChainPledgeId) {
-    logVerbose('Pledge already executed', {
-      prefixId,
-      logAddress,
-      paymentId: payment.id,
-      onChainPledgeId: metadata.onChainPledgeId,
-    });
-
-    // Update payment status back to SUCCESS since it was already executed
-    const updatedPayment = await db.payment.update({
-      where: { id: payment.id },
-      data: {
-        pledgeExecutionStatus: 'SUCCESS',
-        pledgeExecutionError: null, // Clear any previous error
-        pledgeExecutionTxHash: metadata.treasuryTxHash as string,
-      },
-    });
-
-    logVerbose('Payment updated to SUCCESS', {
-      prefixId,
-      logAddress,
-      paymentId: payment.id,
-      pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
-      pledgeExecutionError: updatedPayment.pledgeExecutionError,
-      pledgeExecutionTxHash: updatedPayment.pledgeExecutionTxHash,
-    });
-
-    return {
-      success: true,
-      pledgeId: metadata.onChainPledgeId as string,
-      transactionHash: metadata.treasuryTxHash as string,
-      blockNumber: 0, // Not available for already-executed pledges
-      pledgeAmount: (metadata.pledgeAmount as string) || '0',
-      tipAmount: (metadata.tipAmount as string) || '0',
-    };
-  }
+  // NOTE: Idempotency check now happens earlier in _executeGatewayPledgeWithLock
+  // This prevents the re-execution window that existed before
 
   logVerbose('Extracting amounts from payment', {
     prefixId,
@@ -206,6 +271,9 @@ async function _executeGatewayPledgeInternal(
     paymentId: payment.id,
     paymentAmount: payment.amount,
   });
+
+  // Extract metadata for tip amount
+  const metadata = payment.metadata as Record<string, unknown>;
 
   // Extract amounts from payment and parse to token units
   // payment.amount contains ONLY the pledge amount (matching direct wallet flow)
@@ -321,8 +389,13 @@ async function _executeGatewayPledgeInternal(
     treasuryContractAddress: payment.campaign.treasuryAddress,
   });
 
-  // Check admin wallet balance
-  const adminBalance = await usdContract.balanceOf(adminSigner.address);
+  // Check admin wallet balance (with timeout to prevent hangs)
+  const adminBalance = await waitWithTimeout(
+    usdContract.balanceOf(adminSigner.address),
+    TIMEOUT_VALUES.READ_OPERATION,
+    'read admin wallet balance',
+    { prefixId, logAddress, adminAddress: adminSigner.address },
+  );
   const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
 
   logVerbose('Admin wallet balance check', {
@@ -382,10 +455,15 @@ async function _executeGatewayPledgeInternal(
     pledgeId,
   });
 
-  // Check current allowance
-  const currentAllowance = await usdContract.allowance(
-    adminSigner.address,
-    payment.campaign.treasuryAddress,
+  // Check current allowance (with timeout to prevent hangs)
+  const currentAllowance = await waitWithTimeout(
+    usdContract.allowance(
+      adminSigner.address,
+      payment.campaign.treasuryAddress,
+    ),
+    TIMEOUT_VALUES.READ_OPERATION,
+    'read token allowance',
+    { prefixId, logAddress, adminAddress: adminSigner.address },
   );
 
   logVerbose('Current allowance', {
@@ -413,13 +491,18 @@ async function _executeGatewayPledgeInternal(
       },
     );
 
-    logVerbose('Approval transaction', {
+    logVerbose('Approval transaction submitted', {
       prefixId,
       logAddress,
       hash: approveTx.hash,
     });
 
-    await approveTx.wait();
+    // Wait for approval with timeout to prevent indefinite hangs
+    await waitForTransaction(
+      approveTx,
+      'token approval transaction',
+      { prefixId, logAddress },
+    );
 
     logVerbose('Approval confirmed', {
       prefixId,
@@ -471,8 +554,21 @@ async function _executeGatewayPledgeInternal(
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   });
-  // Wait for confirmation
-  const receipt = await tx.wait();
+
+  // Wait for confirmation with timeout to prevent indefinite hangs
+  const receiptOrNull = await waitWithTimeout<ethers.TransactionReceipt | null>(
+    tx.wait(),
+    TIMEOUT_VALUES.PLEDGE_TX,
+    'setFeeAndPledge transaction confirmation',
+    { prefixId, logAddress, txHash: tx.hash },
+  );
+
+  if (!receiptOrNull) {
+    throw new ApiUpstreamError(`Transaction receipt is null. Hash: ${tx.hash}`);
+  }
+
+  // TypeScript type narrowing after null check
+  const receipt: ethers.TransactionReceipt = receiptOrNull;
 
   logVerbose('Transaction confirmed:', {
     prefixId,
@@ -487,8 +583,13 @@ async function _executeGatewayPledgeInternal(
     throw new ApiUpstreamError(`Transaction reverted. Hash: ${tx.hash}`);
   }
 
-  // Get final admin wallet balance
-  const finalAdminBalance = await usdContract.balanceOf(adminSigner.address);
+  // Get final admin wallet balance (with timeout)
+  const finalAdminBalance = await waitWithTimeout(
+    usdContract.balanceOf(adminSigner.address),
+    TIMEOUT_VALUES.READ_OPERATION,
+    'read final admin wallet balance',
+    { prefixId, logAddress, adminAddress: adminSigner.address },
+  );
   const finalAdminBalanceFormatted = ethers.formatUnits(
     finalAdminBalance,
     USD_DECIMALS,
@@ -549,7 +650,7 @@ async function _executeGatewayPledgeInternal(
     success: true,
     pledgeId,
     transactionHash: tx.hash,
-    blockNumber: receipt.blockNumber as number,
+    blockNumber: receipt.blockNumber ?? 0,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
