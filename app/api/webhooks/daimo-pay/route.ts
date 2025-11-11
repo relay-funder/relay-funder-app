@@ -18,11 +18,11 @@ type PaymentWithIncludes = Prisma.PaymentGetPayload<{
   };
 }>;
 
-const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook');
+const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook', { flag: 'daimo' });
 
-const logError = logFactory('error', '🚨 DaimoPayWebhook');
+const logError = logFactory('error', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 
-const logWarn = logFactory('warn', '🚨 DaimoPayWebhook');
+const logWarn = logFactory('warn', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 
 export async function POST(req: Request) {
   try {

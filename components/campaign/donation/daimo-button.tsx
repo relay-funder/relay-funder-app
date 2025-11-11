@@ -53,7 +53,7 @@ export function DaimoPayButtonComponent({
   const { data: profile } = useUserProfile();
 
   const logVerbose = useMemo(
-    () => logFactory('verbose', '🚀 DaimoPayButton', address),
+    () => logFactory('verbose', '🚀 DaimoPayButton', { user: address, flag: 'daimo' }),
     [address],
   );
 

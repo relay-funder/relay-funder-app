@@ -14,9 +14,9 @@ import type {
 } from '@/lib/api/types/pledges';
 import { logFactory } from '@/lib/debug';
 
-const logVerbose = logFactory('verbose', '🚀 DaimoPledge');
+const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 
-const logError = logFactory('error', '🚨 DaimoPledge');
+const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
 
 /**
  * Execute a gateway pledge using setFeeAndPledge.

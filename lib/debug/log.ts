@@ -174,7 +174,44 @@ export function log(
   console[logType](`[${coloredPrefix}]: ${coloredMessage}`, ...logArgs);
 }
 
-export const logFactory = (type: LogType, prefix: string, user?: string) => {
+/**
+ * Factory function to create a reusable logger with predefined configuration.
+ * 
+ * The returned logger function will use the specified log type, prefix, and debug flag
+ * for all log calls, while allowing dynamic message, data, and user information per call.
+ * 
+ * @param type - The log level type to use for all logs from this logger
+ * @param prefix - The prefix to display before log messages (e.g., '🚀 DaimoPayButton')
+ * @param options - Optional configuration
+ * @param options.user - Optional user address for verbose logging permission checks
+ * @param options.flag - Debug flag name to check (default: 'debug'). Use domain-specific flags like 'api', 'web3', 'daimo', etc.
+ * @returns A logger function that accepts (message, data?, ...args)
+ * 
+ * @example
+ * ```ts
+ * // Create logger with default 'debug' flag
+ * const logDebug = logFactory('debug', '🔍 MyFeature');
+ * logDebug('Something happened', { count: 5 });
+ * 
+ * // Create logger with domain-specific flag for Daimo payment operations
+ * const logDaimo = logFactory('verbose', '🚀 DaimoPayButton', { flag: 'daimo' });
+ * logDaimo('Payment initiated', { amount: 100 });
+ * 
+ * // Create logger with API flag that respects NEXT_PUBLIC_DEBUG_FLAGS=api
+ * const logApi = logFactory('info', '📡 API', { flag: 'api' });
+ * logApi('Request received', { endpoint: '/api/campaigns' });
+ * 
+ * // Create logger with user for verbose logging
+ * const logUser = logFactory('verbose', '👤 UserAction', { user: '0x123...', flag: 'auth' });
+ * logUser('User logged in');
+ * ```
+ */
+export const logFactory = (
+  type: LogType,
+  prefix: string,
+  options?: { user?: string; flag?: string },
+) => {
+  const { user, flag = 'debug' } = options ?? {};
   return (message: string, data?: unknown, ...args: unknown[]) => {
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       // It's an object, so we can safely destructure
@@ -190,6 +227,7 @@ export const logFactory = (type: LogType, prefix: string, user?: string) => {
           user: user ?? (logAddress as string | undefined),
           data: dataRest,
           prefix: `${prefix}${prefixId ? ` (${prefixId})` : ''}`,
+          flag,
         },
         ...args,
       );
@@ -202,6 +240,7 @@ export const logFactory = (type: LogType, prefix: string, user?: string) => {
           user,
           data,
           prefix,
+          flag,
         },
         ...args,
       );

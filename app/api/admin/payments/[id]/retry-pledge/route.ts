@@ -10,9 +10,9 @@ import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
 
-const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge');
+const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge', { flag: 'daimo' });
 
-const logError = logFactory('error', '🚨 DaimoRetryPledge');
+const logError = logFactory('error', '🚨 DaimoRetryPledge', { flag: 'daimo' });
 
 /**
  * POST /api/admin/payments/[id]/retry-pledge

@@ -22,6 +22,7 @@ export const debugComponentData = debugFlagsSet.has('component') || debug;
 export const debugAuth = debugFlagsSet.has('auth') || debug;
 export const debugHook = debugFlagsSet.has('hook') || debug;
 export const debugQf = debugFlagsSet.has('qf') || (process.env.NEXT_PUBLIC_DEBUG_QF === 'true' || false);
+export const debugDaimo = debugFlagsSet.has('daimo') || debug;
 
 /**
  * Record mapping debug flag names to their boolean values.
@@ -39,6 +40,7 @@ const debugFlags: Record<string, boolean> = {
   hook: debugHook,
   qf: debugQf,
   component: debugComponentData,
+  daimo: debugDaimo,
 };
 
 /**
@@ -48,13 +50,14 @@ const debugFlags: Record<string, boolean> = {
  * 1. It's listed in NEXT_PUBLIC_DEBUG_FLAGS environment variable (comma-separated), OR
  * 2. It exists in the debugFlags record and its value is true
  *
- * @param flag - The name of the debug flag to check (e.g., 'debug', 'web3', 'api')
+ * @param flag - The name of the debug flag to check (e.g., 'debug', 'web3', 'api', 'daimo')
  * @returns `true` if the flag is enabled, `false` otherwise. Returns `false` if flag is undefined or empty.
  *
  * @example
  * ```ts
  * checkIsDebugFlagEnabled('debug') // true if debug is enabled
  * checkIsDebugFlagEnabled('web3') // true if web3 debug is enabled
+ * checkIsDebugFlagEnabled('daimo') // true if daimo debug is enabled
  * checkIsDebugFlagEnabled('unknown') // false
  * checkIsDebugFlagEnabled() // false
  * ```
