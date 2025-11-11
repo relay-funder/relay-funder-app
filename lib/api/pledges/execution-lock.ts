@@ -1,6 +1,7 @@
 import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
 import { Prisma } from '@/.generated/prisma/client';
+import { TIMEOUT_VALUES } from '@/lib/web3/transaction-timeout';
 
 const logVerbose = logFactory('verbose', '🔒 ExecutionLock');
 const logError = logFactory('error', '🚨 ExecutionLock');
@@ -223,7 +224,7 @@ export async function withExecutionLock<T>(
     },
     {
       maxWait: 5000, // Maximum time to wait for a connection (5 seconds)
-      timeout: 30000, // Maximum time for the entire transaction (30 seconds)
+      timeout: TIMEOUT_VALUES.OVERALL_EXECUTION, // Match overall execution timeout (180 seconds)
       isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     },
   );
