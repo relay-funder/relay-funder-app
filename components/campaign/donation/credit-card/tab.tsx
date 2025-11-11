@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { MessageSquareWarning } from 'lucide-react';
-import { useAuth } from '@/contexts';
+import { useAuth, useDonationContext } from '@/contexts';
 import { CampaignDonationDetails } from './details';
 import { CampaignDonationDetailsEligible } from '@/components/campaign/donation/details-eligible';
 import { DbCampaign } from '@/types/campaign';
@@ -13,6 +14,14 @@ export function CampaignDonationCreditCardTab({
   campaign: DbCampaign;
 }) {
   const { authenticated, login } = useAuth();
+  const { clearDonation } = useDonationContext();
+
+  useEffect(() => {
+    return () => {
+      clearDonation();
+    };
+  }, [clearDonation]);
+
   if (!authenticated) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-4">

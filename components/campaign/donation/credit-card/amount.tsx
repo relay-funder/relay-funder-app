@@ -1,28 +1,23 @@
-import { useCallback, type ChangeEvent } from 'react';
 import { Input } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
+import { useDonationContext } from '@/contexts';
+import { useCallback } from 'react';
+import type { ChangeEvent } from 'react';
 
-export function CampaignDonationCreditCardAmount({
-  amount,
-  onAmountChanged,
-}: {
-  amount: string;
-  onAmountChanged: (amount: string) => void;
-}) {
-  const intermediateOnAmountChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      return onAmountChanged(event.target.value);
+export function CampaignDonationCreditCardAmount() {
+  const { amount, setAmount } = useDonationContext();
+
+  const handleAmountChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setAmount(e.target.value);
     },
-    [onAmountChanged],
+    [setAmount],
   );
+
   return (
     <div className="flex flex-col space-y-4">
       {/* Suggested amounts */}
-      <CampaignDonationSuggestions
-        amount={amount}
-        onAmountChanged={onAmountChanged}
-        currency={'USD'}
-      />
+      <CampaignDonationSuggestions currency={'USD'} />
       {/* Custom amount input */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">
@@ -32,7 +27,7 @@ export function CampaignDonationCreditCardAmount({
           <Input
             type="number"
             value={amount}
-            onChange={intermediateOnAmountChange}
+            onChange={handleAmountChange}
             className="ml-1 rounded-l-none border-0"
           />
           <div className="flex items-center px-3 text-sm text-muted-foreground">

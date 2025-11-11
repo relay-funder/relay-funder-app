@@ -5,15 +5,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui';
+import { useDonationContext } from '@/contexts';
 import { HelpCircle } from 'lucide-react';
 
-export function CampaignDonationAnonymous({
-  anonymous,
-  onChange,
-}: {
-  anonymous: boolean;
-  onChange: (newState: boolean) => void;
-}) {
+export function CampaignDonationAnonymous() {
+  const { isAnonymous, setIsAnonymous } = useDonationContext();
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-foreground">
@@ -21,8 +17,8 @@ export function CampaignDonationAnonymous({
       </label>
       <div className="flex items-center gap-2">
         <Switch
-          checked={anonymous}
-          onCheckedChange={onChange}
+          checked={isAnonymous}
+          onCheckedChange={setIsAnonymous}
           id="anonymous"
           className="dark:data-[state=checked]:bg-quantum dark:data-[state=unchecked]:bg-muted"
         />

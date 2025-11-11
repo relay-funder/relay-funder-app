@@ -3,17 +3,17 @@
 import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
 import { DaimoPayTab } from '@/components/campaign/donation/daimo-tab';
-import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import { Wallet, Zap } from 'lucide-react';
-import { useAuth } from '@/contexts';
+import { useAuth, useDonationContext } from '@/contexts';
 import { Button } from '@/components/ui';
-import { usePaymentTabsVisibility } from '@/hooks/use-payment-tabs-visibility';
+import { type PaymentTabValue } from '@/hooks/use-payment-tabs-visibility';
 
 export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
   const { authenticated, login } = useAuth();
-  const { showDaimoPay, showCryptoWallet, defaultTab } =
-    usePaymentTabsVisibility();
+
+  const { showDaimoPay, showCryptoWallet, paymentType, setPaymentType } =
+    useDonationContext();
 
   // Require wallet authentication before showing payment options
   if (!authenticated) {
@@ -37,6 +37,11 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
     );
   }
 
+  const tabsValues: Record<string, PaymentTabValue> = {
+    'pay-cross-chain': 'daimo',
+    'pay-direct': 'wallet',
+  };
+
   // Show payment method selection after authentication
   return (
     <div className="space-y-6">
@@ -52,45 +57,44 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
       {/* Payment method tabs - conditionally render based on feature flag */}
       {showDaimoPay && showCryptoWallet ? (
         // Both payment methods enabled - show tabs
-        <Tabs defaultValue={defaultTab}>
+        <Tabs
+          value={paymentType}
+          onValueChange={(value) => setPaymentType(value as PaymentTabValue)}
+        >
           <TabsList className="mb-6 grid w-full grid-cols-2">
-            <TabsTrigger value="daimo" className="flex items-center gap-2">
+            <TabsTrigger
+              value={tabsValues['pay-cross-chain']}
+              className="flex items-center gap-2"
+            >
               <Zap className="h-4 w-4" />
               Pay Cross-chain
             </TabsTrigger>
-            <TabsTrigger value="wallet" className="flex items-center gap-2">
+            <TabsTrigger
+              value={tabsValues['pay-direct']}
+              className="flex items-center gap-2"
+            >
               <Wallet className="h-4 w-4" />
               Pay Direct
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="daimo">
-            <Web3ContextProvider>
-              <DaimoPayTab campaign={campaign} />
-            </Web3ContextProvider>
+          <TabsContent value={tabsValues['pay-cross-chain']}>
+            <DaimoPayTab campaign={campaign} />
           </TabsContent>
 
-          <TabsContent value="wallet">
-            <Web3ContextProvider>
-              <CampaignDonationWalletTab campaign={campaign} />
-            </Web3ContextProvider>
+          <TabsContent value={tabsValues['pay-direct']}>
+            <CampaignDonationWalletTab campaign={campaign} />
           </TabsContent>
         </Tabs>
       ) : showDaimoPay ? (
         // Only Daimo Pay enabled - show directly without tabs
-        <Web3ContextProvider>
-          <DaimoPayTab campaign={campaign} />
-        </Web3ContextProvider>
+        <DaimoPayTab campaign={campaign} />
       ) : showCryptoWallet ? (
         // Only Crypto Wallet enabled - show directly without tabs
-        <Web3ContextProvider>
-          <CampaignDonationWalletTab campaign={campaign} />
-        </Web3ContextProvider>
+        <CampaignDonationWalletTab campaign={campaign} />
       ) : (
         // No payment methods enabled - this shouldn't happen but fallback to Daimo Pay
-        <Web3ContextProvider>
-          <DaimoPayTab campaign={campaign} />
-        </Web3ContextProvider>
+        <DaimoPayTab campaign={campaign} />
       )}
     </div>
   );

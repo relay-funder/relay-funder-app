@@ -2,39 +2,43 @@
 
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useNetworkCheck } from '@/hooks/use-network';
-import { chainConfig, useBalance, useAccount, formatUnits } from '@/lib/web3';
-import { useUsdBalance } from '@/lib/web3/hooks/use-usd-balance';
+import { chainConfig } from '@/lib/web3';
 import { PaymentSwitchWalletNetwork } from '@/components/payment/switch-wallet-network';
-import { formatCrypto } from '@/lib/format-crypto';
 import { useConnectedAccount } from '@/lib/web3';
 import { Button } from '@/components/ui';
-import { USD_TOKEN } from '@/lib/constant';
 import { useMemo } from 'react';
+import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletStatus() {
   const { isCorrectNetwork } = useNetworkCheck();
-  const { usdBalance, isPending: usdBalanceIsPending } = useUsdBalance();
-  const { address } = useAccount();
+  const { usdFormattedBalance, celoFormattedBalance } = useDonationContext();
 
-  // Get native CELO balance for gas fees
-  const { data: celoBalance, isPending: celoBalanceIsPending } = useBalance({
-    address,
-  });
+  const {
+    isPending: usdBalanceIsPending,
+    usdSymbol,
+    hasUsdBalance,
+    usdBalanceWithSymbol,
+  } = usdFormattedBalance;
+  const {
+    isPending: celoBalanceIsPending,
+    celoSymbol,
+    hasCeloBalance,
+    celoBalanceWithSymbol,
+  } = celoFormattedBalance;
 
-  const celoBalanceFormatted = useMemo(() => {
-    if (!celoBalance?.value) return '0';
-    return formatUnits(
-      celoBalance.value,
-      celoBalance.decimals ?? chainConfig.nativeCurrency.decimals,
-    );
-  }, [celoBalance?.value, celoBalance?.decimals]);
+  const isPending = usdBalanceIsPending || celoBalanceIsPending;
 
-  const celoBalanceAmount = parseFloat(celoBalanceFormatted);
-  const nativeCurrencySymbol = chainConfig.nativeCurrency.symbol;
-
-  const hasBalance = usdBalance && parseFloat(usdBalance) > 0;
-  const balanceAmount = usdBalance ? parseFloat(usdBalance) : 0;
   const { isEmbedded, openUi } = useConnectedAccount();
+
+  const noBalanceMessage = useMemo(() => {
+    if (!hasUsdBalance && !hasCeloBalance) {
+      return `You need ${usdSymbol} and ${celoSymbol} to contribute. Get them from an exchange or on-ramp service.`;
+    }
+    if (!hasUsdBalance) {
+      return `You need ${usdSymbol} to contribute. Get it from an exchange or on-ramp service.`;
+    }
+    return `You need ${celoSymbol} for gas fees. Get it from an exchange or on-ramp service.`;
+  }, [hasUsdBalance, hasCeloBalance, usdSymbol, celoSymbol]);
 
   return (
     <div className="space-y-2">
@@ -67,16 +71,14 @@ export function CampaignDonationWalletStatus() {
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm font-bold text-foreground">
-                    {usdBalanceIsPending
-                      ? 'Loading...'
-                      : formatCrypto(balanceAmount, USD_TOKEN)}
+                    {usdBalanceIsPending ? 'Loading...' : usdBalanceWithSymbol}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    • {nativeCurrencySymbol} for gas:{' '}
+                    • {celoSymbol} for gas:{' '}
                     <span className="font-semibold text-foreground">
                       {celoBalanceIsPending
                         ? 'Loading...'
-                        : formatCrypto(celoBalanceAmount, nativeCurrencySymbol)}
+                        : celoBalanceWithSymbol}
                     </span>
                   </span>
                 </div>
@@ -92,11 +94,10 @@ export function CampaignDonationWalletStatus() {
         )}
 
         {isCorrectNetwork &&
-          !usdBalanceIsPending &&
-          !celoBalanceIsPending &&
-          (!hasBalance || celoBalanceAmount === 0) && (
+          !isPending &&
+          (!hasUsdBalance || !hasCeloBalance) && (
             <>
-              {isEmbedded && !hasBalance && (
+              {isEmbedded && !hasUsdBalance && (
                 <div className="mt-2">
                   <Button
                     onClick={openUi}
@@ -113,16 +114,9 @@ export function CampaignDonationWalletStatus() {
                 </div>
               )}
 
-              {(!hasBalance || celoBalanceAmount === 0) && (
-                <div className="mt-2 text-xs text-solar">
-                  ⚠️{' '}
-                  {!hasBalance && celoBalanceAmount === 0
-                    ? `You need ${USD_TOKEN} and ${nativeCurrencySymbol} to contribute. Get them from an exchange or on-ramp service.`
-                    : !hasBalance
-                      ? `You need ${USD_TOKEN} to contribute. Get it from an exchange or on-ramp service.`
-                      : `You need ${nativeCurrencySymbol} for gas fees. Get it from an exchange or on-ramp service.`}
-                </div>
-              )}
+              <div className="mt-2 text-xs text-solar">
+                ⚠️ {noBalanceMessage}
+              </div>
             </>
           )}
       </div>

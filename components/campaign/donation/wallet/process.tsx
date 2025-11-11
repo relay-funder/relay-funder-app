@@ -9,40 +9,33 @@ import { DonationProcessDisplay } from './process-display';
 import { useRouter } from 'next/navigation';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletProcess({
   campaign,
-  amount,
-  tipAmount = '0',
-  selectedToken,
-  donationToRelayFunder,
-  anonymous,
-  email,
-  onProcessing,
 }: {
   campaign: DbCampaign;
-  amount: string;
-  tipAmount?: string;
-  selectedToken: string;
-  donationToRelayFunder: number;
-  anonymous: boolean;
-  email: string;
-  onProcessing?: (processing: boolean) => void;
 }) {
   const router = useRouter();
   const { toast } = useToast();
   const updateProfileEmail = useUpdateProfileEmail();
   const { data: profile } = useUserProfile();
+  const {
+    amount,
+    tipAmount,
+    isAnonymous,
+    email,
+    token,
+    usdFormattedBalance,
+    setIsProcessingPayment,
+  } = useDonationContext();
+
+  const { hasUsdBalance } = usdFormattedBalance;
+
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const relayFundercAmount = useMemo(() => {
-    if (donationToRelayFunder) {
-      return (numericAmount * donationToRelayFunder) / 100;
-    }
-    return 0;
-  }, [numericAmount, donationToRelayFunder]);
   const poolAmount = useMemo(() => {
-    return numericAmount - relayFundercAmount;
-  }, [numericAmount, relayFundercAmount]);
+    return numericAmount;
+  }, [numericAmount]);
   const [state, setState] =
     useState<keyof typeof DonationProcessStates>('idle');
   const [processing, setProcessing] = useState<boolean>(false);
@@ -55,27 +48,20 @@ export function CampaignDonationWalletProcess({
     amount,
     tipAmount,
     poolAmount,
-    isAnonymous: anonymous,
-    selectedToken,
+    isAnonymous,
+    selectedToken: token,
     userEmail: email,
     onStateChanged: setState,
   });
   const isValidEmail = (email: string) => {
+    if (email.trim() === '') {
+      return true;
+    }
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const onDonateStart = useCallback(async () => {
-    // Validate email first
-    if (!email.trim()) {
-      toast({
-        title: 'Email required',
-        description: 'Please enter your email address to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!isValidEmail(email)) {
+    if (profile?.email && profile.email.trim() !== '' && !isValidEmail(email)) {
       toast({
         title: 'Invalid email',
         description: 'Please enter a valid email address.',
@@ -83,11 +69,7 @@ export function CampaignDonationWalletProcess({
       });
       return;
     }
-
-    if (typeof onProcessing === 'function') {
-      onProcessing(true);
-    }
-
+    setIsProcessingPayment(true);
     try {
       // Only update profile if user doesn't already have an email set
       if (!profile?.email || profile.email.trim() === '') {
@@ -101,29 +83,30 @@ export function CampaignDonationWalletProcess({
     } catch (error) {
       console.error('process:onDonate:catch', error);
       setProcessing(false);
-      if (typeof onProcessing === 'function') {
-        onProcessing(false);
-      }
+      setIsProcessingPayment(false);
     }
-  }, [onDonate, onProcessing, email, updateProfileEmail, toast, profile]);
+  }, [
+    onDonate,
+    setIsProcessingPayment,
+    email,
+    updateProfileEmail,
+    toast,
+    profile,
+  ]);
   useEffect(() => {
     // auto-reset state when done
     if (state === 'idle') {
       setProcessing(false);
-      if (typeof onProcessing === 'function') {
-        onProcessing(false);
-      }
+      setIsProcessingPayment(false);
     }
     if (state === 'done') {
       setTimeout(() => {
-        if (typeof onProcessing === 'function') {
-          onProcessing(false);
-        }
+        setIsProcessingPayment(false);
       }, 3000);
 
       return;
     }
-  }, [state, onProcessing]);
+  }, [state, setIsProcessingPayment]);
   const onDoneView = useCallback(() => {
     setState('idle');
     router.push(`/campaigns/${campaign.slug}`);
@@ -143,9 +126,13 @@ export function CampaignDonationWalletProcess({
       }
       clearTimeout(deferTimerId);
     };
-  }, [processingOnDonate, onProcessing]);
+  }, [processingOnDonate]);
+
   const isButtonDisabled =
-    !numericAmount || processing || !email.trim() || !isValidEmail(email);
+    !hasUsdBalance ||
+    !numericAmount ||
+    processing ||
+    !isValidEmail(email);
 
   return (
     <>
@@ -155,7 +142,7 @@ export function CampaignDonationWalletProcess({
         disabled={isButtonDisabled}
         onClick={onDonateStart}
       >
-        {processing ? 'Processing...' : `Contribute with Wallet`}
+        {processing ? 'Processing...' : `Support Now`}
       </Button>
       <VisibilityToggle isVisible={state !== 'idle'}>
         <DonationProcessDisplay

@@ -1,6 +1,18 @@
 'use client';
 
+import {
+  PaymentTabValue,
+  usePaymentTabsVisibility,
+} from '@/hooks/use-payment-tabs-visibility';
 import { USD_TOKEN } from '@/lib/constant';
+import {
+  useCeloBalance,
+  CeloFormattedBalance,
+} from '@/lib/web3/hooks/use-token-balance';
+import {
+  useUsdBalance,
+  UsdFormattedBalance,
+} from '@/lib/web3/hooks/use-usd-balance';
 import React, {
   createContext,
   useContext,
@@ -11,63 +23,86 @@ import React, {
 
 type DonationTokens = 'USDC' | 'USDT';
 
-interface DonationData {
-  tipAmount: string;
-  amount: string;
-  token: DonationTokens;
-}
-
 interface DonationContextType {
-  donation: DonationData;
-  setDonation: (donation: Partial<DonationData>) => void;
-  setTipAmount: (amount: string) => void;
+  amount: string;
   setAmount: (amount: string) => void;
+  celoFormattedBalance: CeloFormattedBalance;
+  email: string;
+  setEmail: (email: string) => void;
+  isAnonymous: boolean;
+  setIsAnonymous: (isAnonymous: boolean) => void;
+  isProcessingPayment: boolean;
+  setIsProcessingPayment: (isProcessingPayment: boolean) => void;
+  isPaymentCompleted: boolean;
+  setIsPaymentCompleted: (isPaymentCompleted: boolean) => void;
+  showDaimoPay: boolean;
+  showCryptoWallet: boolean;
+  paymentType: PaymentTabValue;
+  setPaymentType: (paymentType: PaymentTabValue) => void;
+  tipAmount: string;
+  setTipAmount: (tipAmount: string) => void;
+  token: DonationTokens;
   setToken: (token: DonationTokens) => void;
-  resetDonation: () => void;
+  usdFormattedBalance: UsdFormattedBalance;
+  clearDonation: () => void;
 }
 
 const DonationContext = createContext<DonationContextType | undefined>(
   undefined,
 );
 
-const defaultDonation: DonationData = {
-  tipAmount: '0',
-  amount: '0',
-  token: USD_TOKEN,
-};
-
 export const DonationProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [donation, setDonationState] = useState<DonationData>(defaultDonation);
+  const { showDaimoPay, showCryptoWallet, defaultTab } =
+    usePaymentTabsVisibility();
+  const [amount, setAmount] = useState('0');
+  const [tipAmount, setTipAmount] = useState('0');
+  const [token, setToken] = useState<DonationTokens>(USD_TOKEN);
+  const [paymentType, setPaymentType] = useState<PaymentTabValue>(defaultTab);
+  const [email, setEmail] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
 
-  const setDonation = useCallback((newDonation: Partial<DonationData>) => {
-    setDonationState((prev) => ({ ...prev, ...newDonation }));
+  const clearDonation = useCallback(() => {
+    setAmount('0');
+    setTipAmount('0');
+    setToken(USD_TOKEN);
+    setIsProcessingPayment(false);
+    setIsPaymentCompleted(false);
   }, []);
 
-  const setTipAmount = useCallback((tipAmount: string) => {
-    setDonationState((prev) => ({ ...prev, tipAmount }));
-  }, []);
-
-  const setAmount = useCallback((amount: string) => {
-    setDonationState((prev) => ({ ...prev, amount }));
-  }, []);
-
-  const setToken = useCallback((token: DonationTokens) => {
-    setDonationState((prev) => ({ ...prev, token }));
-  }, []);
-
-  const resetDonation = useCallback(() => {
-    setDonationState(defaultDonation);
-  }, []);
+  const usdFormattedBalance = useUsdBalance({
+    enabled: showCryptoWallet,
+  });
+  // Get native CELO balance for gas fees
+  const celoFormattedBalance = useCeloBalance({
+    enabled: showCryptoWallet,
+  });
 
   const value: DonationContextType = {
-    donation,
-    setDonation,
-    setTipAmount,
+    amount,
     setAmount,
+    celoFormattedBalance,
+    email,
+    setEmail,
+    isAnonymous,
+    setIsAnonymous,
+    isPaymentCompleted,
+    setIsPaymentCompleted,
+    isProcessingPayment,
+    setIsProcessingPayment,
+    paymentType,
+    setPaymentType,
+    tipAmount,
+    setTipAmount,
+    token,
     setToken,
-    resetDonation,
+    usdFormattedBalance,
+    showDaimoPay,
+    showCryptoWallet,
+    clearDonation,
   };
 
   return (
