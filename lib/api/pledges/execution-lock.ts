@@ -194,7 +194,7 @@ export async function withExecutionLock<T>(
     },
     {
       maxWait: 5000, // Maximum time to wait for a connection (5 seconds)
-      timeout: TIMEOUT_VALUES.OVERALL_EXECUTION, // Match overall execution timeout (360 seconds)
+      timeout: TIMEOUT_VALUES.OVERALL_EXECUTION, // Match overall execution timeout (240 seconds)
       isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     },
   );

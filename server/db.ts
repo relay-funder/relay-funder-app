@@ -18,7 +18,8 @@ const createPrismaClient = () =>
       
       // Maximum time a transaction can run before timing out
       // This prevents indefinite hangs and connection pool exhaustion
-      timeout: 360000, // 360 seconds (6 minutes) - matches OVERALL_EXECUTION timeout
+      // Must fit within Vercel limits: approval (120s) + pledge (90s) + buffer (30s) = 240s
+      timeout: 240000, // 240 seconds (4 minutes) - matches OVERALL_EXECUTION timeout
       
       // Default isolation level for all transactions
       // ReadCommitted prevents dirty reads while allowing good concurrency
