@@ -19,19 +19,34 @@ export async function retryGatewayPledge(paymentId: number) {
   try {
     const result = await executeGatewayPledge(paymentId);
 
-    console.log('[Retry] Pledge execution successful:', {
-      paymentId,
-      pledgeId: result.pledgeId,
-      transactionHash: result.transactionHash,
-    });
+    if (result.success) {
+      console.log('[Retry] Pledge execution successful:', {
+        paymentId,
+        pledgeId: result.pledgeId,
+        transactionHash: result.transactionHash,
+      });
 
-    return {
-      success: true,
-      paymentId,
-      result,
-    };
+      return {
+        success: true,
+        paymentId,
+        result,
+      };
+    } else {
+      // Execution failed but was handled gracefully (FAILED status persisted)
+      console.error('[Retry] Pledge execution failed (handled):', {
+        paymentId,
+        error: result.error,
+      });
+
+      return {
+        success: false,
+        paymentId,
+        error: result.error || 'Unknown error',
+      };
+    }
   } catch (error) {
-    console.error('[Retry] Pledge execution failed:', {
+    // Unexpected error (should rarely happen now)
+    console.error('[Retry] Pledge execution crashed (unexpected):', {
       paymentId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });

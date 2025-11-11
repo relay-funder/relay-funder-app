@@ -9,6 +9,7 @@ import { Users, Clock } from 'lucide-react';
 import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { FormattedDate } from '@/components/formatted-date';
+import { useMemo } from 'react';
 
 export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
   const {
@@ -21,8 +22,20 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
     campaign,
   });
 
-  // Check if the campaign has started
-  const hasStarted = new Date(campaign.startTime).getTime() <= Date.now();
+  // Check if the campaign has started or ended.
+  const hasStarted = useMemo(
+    () => new Date(campaign.startTime).getTime() <= Date.now(),
+    [campaign.startTime],
+  );
+  const hasEnded = useMemo(
+    () => new Date(campaign.endTime).getTime() <= Date.now(),
+    [campaign.endTime],
+  );
+  // Disable the support button to avoid treasury issues.
+  const canSupport = useMemo(
+    () => hasStarted && !hasEnded,
+    [hasStarted, hasEnded],
+  );
 
   return (
     <Card className="sticky top-8">
@@ -74,7 +87,7 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
         </div>
 
         <div className="space-y-2">
-          {hasStarted ? (
+          {canSupport ? (
             <Link href={`/campaigns/${campaign.slug}/donation`}>
               <Button
                 className="h-10 w-full dark:bg-quantum dark:text-white dark:hover:bg-quantum/90"
@@ -85,7 +98,16 @@ export function CampaignFundingBox({ campaign }: { campaign: DbCampaign }) {
             </Link>
           ) : (
             <Button className="h-10 w-full" size="default" disabled>
-              Starts <FormattedDate date={campaign.startTime} />
+              {!hasStarted && !hasEnded && (
+                <>
+                  Starts <FormattedDate date={campaign.startTime} />
+                </>
+              )}
+              {hasEnded && (
+                <>
+                  Ended on <FormattedDate date={campaign.endTime} />
+                </>
+              )}
             </Button>
           )}
         </div>

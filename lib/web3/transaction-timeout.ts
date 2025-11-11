@@ -124,20 +124,20 @@ export async function waitWithTimeout<T>(
  * Recommended timeout values for common blockchain operations.
  * 
  * These values are based on typical blockchain operation times plus
- * a safety margin. Adjust based on your network conditions.
+ * a safety margin. Increased to accommodate Celo network congestion.
  */
 export const TIMEOUT_VALUES = {
   /** Balance/allowance reads - fast operations */
   READ_OPERATION: 30000, // 30 seconds
 
-  /** Token approval transaction confirmation */
-  APPROVAL_TX: 60000, // 60 seconds
+  /** Token approval transaction confirmation (increased for Celo network) */
+  APPROVAL_TX: 240000, // 240 seconds (4 minutes) - Celo can be slow during congestion
 
-  /** setFeeAndPledge transaction confirmation (more complex) */
-  PLEDGE_TX: 90000, // 90 seconds
+  /** setFeeAndPledge transaction confirmation (typically fast, ~4-5 seconds) */
+  PLEDGE_TX: 90000, // 90 seconds (1.5 minutes) - Pledges are consistently fast
 
   /** Overall execution timeout (sum of all operations + buffer) */
-  OVERALL_EXECUTION: 180000, // 180 seconds (3 minutes)
+  OVERALL_EXECUTION: 360000, // 360 seconds (6 minutes) - Enough buffer for slow approvals
 } as const;
 
 /**
