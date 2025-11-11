@@ -556,12 +556,19 @@ async function _executeGatewayPledgeInternal(
   });
 
   // Wait for confirmation with timeout to prevent indefinite hangs
-  const receipt = await waitWithTimeout(
+  const receiptOrNull = await waitWithTimeout<ethers.TransactionReceipt | null>(
     tx.wait(),
     TIMEOUT_VALUES.PLEDGE_TX,
     'setFeeAndPledge transaction confirmation',
     { prefixId, logAddress, txHash: tx.hash },
   );
+
+  if (!receiptOrNull) {
+    throw new ApiUpstreamError(`Transaction receipt is null. Hash: ${tx.hash}`);
+  }
+
+  // TypeScript type narrowing after null check
+  const receipt: ethers.TransactionReceipt = receiptOrNull;
 
   logVerbose('Transaction confirmed:', {
     prefixId,
@@ -643,7 +650,7 @@ async function _executeGatewayPledgeInternal(
     success: true,
     pledgeId,
     transactionHash: tx.hash,
-    blockNumber: receipt.blockNumber as number,
+    blockNumber: receipt.blockNumber ?? 0,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
