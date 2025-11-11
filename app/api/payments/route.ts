@@ -3,7 +3,6 @@ import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
-  ApiParameterError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
