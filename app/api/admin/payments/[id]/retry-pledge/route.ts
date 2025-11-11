@@ -77,26 +77,68 @@ export async function POST(
     }
 
     // Validate pledge execution status is retryable
+    // Allow retry for:
+    // 1. FAILED or NOT_STARTED (always retryable)
+    // 2. PENDING payments that are stuck (>10 minutes old)
     const retryableStatuses: PledgeExecutionStatus[] = [
       'FAILED',
       'NOT_STARTED',
     ];
-    if (!retryableStatuses.includes(payment.pledgeExecutionStatus)) {
-      logError(
-        'Payment not eligible for retry - non-retryable pledge status:',
-        {
-          prefixId,
-          logAddress,
-          paymentId,
-          status: payment.status,
-          provider: payment.provider,
-          pledgeExecutionStatus: payment.pledgeExecutionStatus,
-          attempts: payment.pledgeExecutionAttempts,
-        },
-      );
+
+    const isStuckPending =
+      payment.pledgeExecutionStatus === 'PENDING' &&
+      payment.pledgeExecutionLastAttempt &&
+      Date.now() - payment.pledgeExecutionLastAttempt.getTime() >
+        10 * 60 * 1000; // 10 minutes
+
+    const isRetryable =
+      retryableStatuses.includes(payment.pledgeExecutionStatus) ||
+      isStuckPending;
+
+    if (!isRetryable) {
+      const lastAttemptAgo = payment.pledgeExecutionLastAttempt
+        ? Math.floor(
+            (Date.now() - payment.pledgeExecutionLastAttempt.getTime()) / 1000,
+          )
+        : null;
+
+      logError('Payment not eligible for retry:', {
+        prefixId,
+        logAddress,
+        paymentId,
+        status: payment.status,
+        provider: payment.provider,
+        pledgeExecutionStatus: payment.pledgeExecutionStatus,
+        attempts: payment.pledgeExecutionAttempts,
+        lastAttemptSecondsAgo: lastAttemptAgo,
+        reason:
+          payment.pledgeExecutionStatus === 'PENDING'
+            ? 'PENDING but not stuck (< 10 minutes since last attempt)'
+            : 'Status not retryable (must be FAILED, NOT_STARTED, or stuck PENDING)',
+      });
+
       throw new ApiParameterError(
-        `Payment pledge execution status must be FAILED or NOT_STARTED to retry. Current status: ${payment.pledgeExecutionStatus}`,
+        `Payment not eligible for retry. Status: ${payment.pledgeExecutionStatus}` +
+          (payment.pledgeExecutionStatus === 'PENDING' && lastAttemptAgo
+            ? ` (last attempt ${lastAttemptAgo}s ago, need >600s to retry)`
+            : '. Must be FAILED, NOT_STARTED, or stuck PENDING (>10 minutes)'),
       );
+    }
+
+    if (isStuckPending) {
+      const stuckDurationMinutes = Math.floor(
+        (Date.now() - payment.pledgeExecutionLastAttempt!.getTime()) /
+          (60 * 1000),
+      );
+
+      logVerbose('Detected stuck PENDING payment, allowing retry:', {
+        prefixId,
+        logAddress,
+        paymentId,
+        pledgeExecutionStatus: payment.pledgeExecutionStatus,
+        stuckDurationMinutes,
+        attempts: payment.pledgeExecutionAttempts,
+      });
     }
 
     logVerbose('Payment eligible for retry:', {
