@@ -394,10 +394,24 @@ export async function POST(req: Request) {
         ? parseInt(metadata.campaignId)
         : null;
 
+      // Validate campaignId exists before database query
+      if (!campaignId) {
+        logError('Missing campaignId in Daimo payment metadata', {
+          prefixId,
+          logAddress,
+          metadata,
+          note: 'Cannot create payment without valid campaignId',
+        });
+        return NextResponse.json(
+          { error: 'Missing campaignId in payment metadata' },
+          { status: 400 },
+        );
+      }
+
       // Validate campaign exists BEFORE creating payment
       // Prevents cross-environment pollution (staging -> production)
       const campaign = await db.campaign.findUnique({
-        where: { id: campaignId! },
+        where: { id: campaignId },
         select: {
           id: true,
           treasuryAddress: true,
@@ -514,12 +528,6 @@ export async function POST(req: Request) {
         return NextResponse.json(
           { error: `Payment amount ${totalAmount} below minimum ${DAIMO_PAY_MIN_AMOUNT}` },
           { status: 400 },
-        );
-      }
-
-      if (!campaignId) {
-        throw new ApiParameterError(
-          'Missing campaignId in Daimo payment metadata',
         );
       }
 
