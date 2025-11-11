@@ -25,6 +25,9 @@ const logError = logFactory('error', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 const logWarn = logFactory('warn', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 
 export async function POST(req: Request) {
+  // Track webhook processing time from the very start
+  const webhookStartTime = Date.now();
+  
   try {
     const headers = Array.from(req.headers.entries())
       .filter(
@@ -41,10 +44,11 @@ export async function POST(req: Request) {
           ? [key, '[REDACTED]']
           : [key, value],
       );
-    logVerbose('Webhook called:', {
+    logVerbose('🎯 Webhook received:', {
       method: req.method,
       url: req.url,
       headers: Object.fromEntries(headers),
+      receivedAt: new Date().toISOString(),
     });
 
     // Verify Daimo Pay webhook authentication
@@ -486,17 +490,21 @@ export async function POST(req: Request) {
 
     baseUpdateData.metadata = daimoMetadata as Prisma.InputJsonValue;
 
+    const paymentUpdateStartTime = Date.now();
     const updatedPayment = await db.payment.update({
       where: { id: dbPayment.id },
       data: baseUpdateData,
       include: paymentInclude,
     });
+    const paymentUpdateDuration = Date.now() - paymentUpdateStartTime;
 
     logVerbose(
-      `Payment ${dbPayment.id} status updated from ${currentStatus} to ${newStatus}`,
+      `💾 Payment ${dbPayment.id} status updated from ${currentStatus} to ${newStatus}`,
       {
         prefixId,
         logAddress,
+        duration: `${paymentUpdateDuration}ms`,
+        timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
       },
     );
 
@@ -505,152 +513,13 @@ export async function POST(req: Request) {
       currentStatus !== 'confirmed' &&
       dbPayment.campaign.creatorAddress
     ) {
-      // If payment is confirmed
-      // 1. Check if the campaign has a creator address
-      // 2. Send notification if the campaign has a creator address
-      // 3. Check if payment provider is Daimo
-      // 4. Create round contributions for confirmed payments
-      // 5. Execute on-chain pledge for gateway payments
-
-      // 1. Check if the campaign has a creator address
-      if (dbPayment.campaign.creatorAddress) {
-        // 2. Send notification if the campaign has a creator address (pledge already recorded via toCallData)
-        // Only send notification if this is a new confirmation (not a duplicate event)
-
-        logVerbose('Sending notification for confirmed payment:', {
-          prefixId,
-          logAddress,
-          newStatus,
-          currentStatus,
-          creatorAddress: dbPayment.campaign.creatorAddress,
-        });
-        try {
-          const creator = await db.user.findUnique({
-            where: { address: dbPayment.campaign.creatorAddress },
-          });
-
-          if (creator) {
-            const numericAmount = parseFloat(updatedPayment.amount);
-            const formattedAmount = formatCrypto(
-              numericAmount,
-              updatedPayment.token,
-            );
-            const donorName = updatedPayment.isAnonymous
-              ? 'anon'
-              : getUserNameFromInstance(updatedPayment.user) ||
-                updatedPayment.user?.address ||
-                'unknown';
-
-            await notify({
-              receiverId: creator.id,
-              creatorId: updatedPayment.userId,
-              data: {
-                type: 'CampaignPayment',
-                campaignId: dbPayment.campaignId,
-                campaignTitle: dbPayment.campaign.title,
-                paymentId: updatedPayment.id,
-                formattedAmount,
-                donorName,
-              },
-              eventUuid: idempotencyKey || undefined,
-            });
-
-            logVerbose(
-              `Notification sent for Daimo Pay payment ${updatedPayment.id}`,
-              {
-                prefixId,
-                logAddress,
-              },
-            );
-          }
-        } catch (notificationError) {
-          logError('Error sending Daimo Pay notification:', {
-            prefixId,
-            logAddress,
-            error: notificationError,
-          });
-        }
-      }
-
-      // 3. Check if payment provider is Daimo
+      // Execute on-chain pledge, before any other blocking operations
+      // This ensures pledge execution starts immediately after payment confirmation
       if (dbPayment.provider === 'daimo') {
-        // 4. Create round contributions for confirmed payments
-        // This associates payments with rounds immediately when confirmed
-        logVerbose('Creating round contributions for confirmed payment:', {
-          prefixId,
-          logAddress,
-          newStatus,
-          currentStatus,
-          provider: dbPayment.provider,
-          dbPaymentId: dbPayment.id,
-          campaignId: dbPayment.campaign.id,
-        });
-
-        try {
-          // Find all approved round participations for this campaign
-          // Match the logic from direct wallet payments exactly for consistency
-          const roundCampaigns = await db.roundCampaigns.findMany({
-            where: {
-              campaignId: dbPayment.campaign.id,
-              status: 'APPROVED', // RoundCampaign must be APPROVED
-              Round: {
-                startDate: { lte: new Date() }, // Round has started
-                endDate: { gte: new Date() }, // Round hasn't ended
-              },
-            },
-            include: {
-              Round: true,
-            },
-          });
-
-          logVerbose(
-            `Found ${roundCampaigns.length} approved round participations for campaign ${dbPayment.campaign.id}`,
-            {
-              prefixId,
-              logAddress,
-            },
-          );
-
-          // Create RoundContribution records for each approved round
-          for (const roundCampaign of roundCampaigns) {
-            try {
-              await db.roundContribution.create({
-                data: {
-                  campaignId: dbPayment.campaign.id,
-                  roundCampaignId: roundCampaign.id,
-                  paymentId: dbPayment.id,
-                  humanityScore: dbPayment.user.humanityScore, // Use user's persistent humanity score
-                },
-              });
-
-              logVerbose('Created RoundContribution:', {
-                prefixId,
-                logAddress,
-                dbPaymentId: dbPayment.id,
-                roundId: roundCampaign.roundId,
-                roundTitle: roundCampaign.Round.title,
-                humanityScore: dbPayment.user.humanityScore,
-              });
-            } catch (roundError) {
-              logError(
-                `[Daimo Webhook] Failed to create round contribution for round ${roundCampaign.roundId}:`,
-                { prefixId, logAddress, error: roundError },
-              );
-              // Continue with other rounds even if one fails
-            }
-          }
-        } catch (roundQueryError) {
-          logError('Error querying round participations:', {
-            prefixId,
-            logAddress,
-            error: roundQueryError,
-          });
-          // Don't fail the payment confirmation if round association fails
-        }
-
-        // Execute on-chain pledge for gateway payments
-        // Only trigger when payment is newly confirmed (not duplicate events)
-        logVerbose('Triggering pledge execution:', {
+        const pledgeLaunchTime = Date.now();
+        const timeSinceWebhookStart = pledgeLaunchTime - webhookStartTime;
+        
+        logVerbose('🚀 PRIORITY: Queuing pledge execution IMMEDIATELY:', {
           prefixId,
           logAddress,
           newStatus,
@@ -664,7 +533,8 @@ export async function POST(req: Request) {
           campaignId: dbPayment.campaign.id,
           campaignTitle: dbPayment.campaign.title,
           treasuryAddress: dbPayment.campaign.treasuryAddress,
-          timestamp: new Date().toISOString(),
+          queuedAt: new Date().toISOString(),
+          timeSinceWebhookStart: `${timeSinceWebhookStart}ms`,
           metadata: {
             tipAmount: (dbPayment.metadata as Record<string, unknown>)
               ?.tipAmount,
@@ -674,57 +544,286 @@ export async function POST(req: Request) {
         });
 
         // Fire-and-forget: don't await pledge execution
+        // Launch IMMEDIATELY before notifications and round contributions
         // If execution fails, payment remains "confirmed" for manual retry
         Promise.resolve().then(async () => {
-          const executionStartTime = Date.now();
+          const promiseStartTime = Date.now();
+          const delayFromQueue = promiseStartTime - pledgeLaunchTime;
+          const delayFromWebhookStart = promiseStartTime - webhookStartTime;
+          
           try {
             logVerbose(
-              `Starting pledge execution for payment ${dbPayment.id}`,
+              `⚡ PLEDGE EXECUTION STARTING for payment ${dbPayment.id}`,
               {
                 prefixId,
                 logAddress,
+                startedAt: new Date().toISOString(),
+                delayFromQueue: `${delayFromQueue}ms`,
+                delayFromWebhookStart: `${delayFromWebhookStart}ms`,
               },
             );
 
             const executionResult = await executeGatewayPledge(dbPayment.id);
 
-            const executionDuration = Date.now() - executionStartTime;
+            const executionDuration = Date.now() - promiseStartTime;
+            const totalTimeFromWebhook = Date.now() - webhookStartTime;
+            
             logVerbose(
-              `Pledge execution SUCCESS for payment ${dbPayment.id}:`,
+              `✅ Pledge execution SUCCESS for payment ${dbPayment.id}:`,
               {
                 prefixId,
                 logAddress,
-                duration: `${executionDuration}ms`,
+                executionDuration: `${executionDuration}ms`,
+                delayFromQueue: `${delayFromQueue}ms`,
+                totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
+                completedAt: new Date().toISOString(),
                 ...executionResult,
               },
             );
           } catch (executionError) {
-            const executionDuration = Date.now() - executionStartTime;
-            logError(`Pledge execution FAILED for payment ${dbPayment.id}:`, {
-              prefixId,
-              logAddress,
-              duration: `${executionDuration}ms`,
-              error:
-                executionError instanceof Error
-                  ? executionError.message
-                  : 'Unknown error',
-              errorStack:
-                executionError instanceof Error
-                  ? executionError.stack
-                  : undefined,
-              dbPaymentId: dbPayment.id,
-              daimoPaymentId: payload.paymentId,
-              campaignId: dbPayment.campaign.id,
-              treasuryAddress: dbPayment.campaign.treasuryAddress,
-            });
+            const executionDuration = Date.now() - promiseStartTime;
+            const totalTimeFromWebhook = Date.now() - webhookStartTime;
+            
+            logError(
+              `❌ Pledge execution FAILED for payment ${dbPayment.id}:`,
+              {
+                prefixId,
+                logAddress,
+                executionDuration: `${executionDuration}ms`,
+                delayFromQueue: `${delayFromQueue}ms`,
+                totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
+                failedAt: new Date().toISOString(),
+                error:
+                  executionError instanceof Error
+                    ? executionError.message
+                    : 'Unknown error',
+                errorStack:
+                  executionError instanceof Error
+                    ? executionError.stack
+                    : undefined,
+                dbPaymentId: dbPayment.id,
+                daimoPaymentId: payload.paymentId,
+                campaignId: dbPayment.campaign.id,
+                treasuryAddress: dbPayment.campaign.treasuryAddress,
+              },
+            );
           }
         });
       }
+
+      // If payment is confirmed
+      // 1. Check if the campaign has a creator address
+      // 2. Send notification if the campaign has a creator address
+      // 3. Create round contributions for confirmed payments
+      // Note: Pledge execution now happens BEFORE these operations
+
+      // 1. Check if the campaign has a creator address
+      if (dbPayment.campaign.creatorAddress) {
+        // 2. Send notification if the campaign has a creator address (pledge already recorded via toCallData)
+        // Only send notification if this is a new confirmation (not a duplicate event)
+
+        const notificationStartTime = Date.now();
+        logVerbose('📧 Starting notification processing:', {
+          prefixId,
+          logAddress,
+          newStatus,
+          currentStatus,
+          creatorAddress: dbPayment.campaign.creatorAddress,
+          timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+        });
+        
+        try {
+          const creatorLookupStart = Date.now();
+          const creator = await db.user.findUnique({
+            where: { address: dbPayment.campaign.creatorAddress },
+          });
+          const creatorLookupDuration = Date.now() - creatorLookupStart;
+
+          if (creator) {
+            const numericAmount = parseFloat(updatedPayment.amount);
+            const formattedAmount = formatCrypto(
+              numericAmount,
+              updatedPayment.token,
+            );
+            const donorName = updatedPayment.isAnonymous
+              ? 'anon'
+              : getUserNameFromInstance(updatedPayment.user) ||
+                updatedPayment.user?.address ||
+                'unknown';
+
+            const notifySendStart = Date.now();
+            await notify({
+              receiverId: creator.id,
+              creatorId: updatedPayment.userId,
+              data: {
+                type: 'CampaignPayment',
+                campaignId: dbPayment.campaignId,
+                campaignTitle: dbPayment.campaign.title,
+                paymentId: updatedPayment.id,
+                formattedAmount,
+                donorName,
+              },
+              eventUuid: idempotencyKey || undefined,
+            });
+            const notifySendDuration = Date.now() - notifySendStart;
+            const totalNotificationDuration = Date.now() - notificationStartTime;
+
+            logVerbose(
+              `✅ Notification sent for Daimo Pay payment ${updatedPayment.id}`,
+              {
+                prefixId,
+                logAddress,
+                creatorLookupDuration: `${creatorLookupDuration}ms`,
+                notifySendDuration: `${notifySendDuration}ms`,
+                totalNotificationDuration: `${totalNotificationDuration}ms`,
+                timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+              },
+            );
+          } else {
+            logVerbose('⚠️ Creator not found for notification', {
+              prefixId,
+              logAddress,
+              creatorAddress: dbPayment.campaign.creatorAddress,
+              creatorLookupDuration: `${creatorLookupDuration}ms`,
+            });
+          }
+        } catch (notificationError) {
+          const notificationDuration = Date.now() - notificationStartTime;
+          logError('❌ Error sending Daimo Pay notification:', {
+            prefixId,
+            logAddress,
+            error: notificationError,
+            notificationDuration: `${notificationDuration}ms`,
+            timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+          });
+        }
+      }
+
+      // 3. Create round contributions for confirmed payments
+      if (dbPayment.provider === 'daimo') {
+        // This associates payments with rounds immediately when confirmed
+        const roundsStartTime = Date.now();
+        
+        logVerbose('🎯 Starting round contributions processing:', {
+          prefixId,
+          logAddress,
+          newStatus,
+          currentStatus,
+          provider: dbPayment.provider,
+          dbPaymentId: dbPayment.id,
+          campaignId: dbPayment.campaign.id,
+          timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+        });
+
+        try {
+          // Find all approved round participations for this campaign
+          // Match the logic from direct wallet payments exactly for consistency
+          const roundQueryStart = Date.now();
+          const roundCampaigns = await db.roundCampaigns.findMany({
+            where: {
+              campaignId: dbPayment.campaign.id,
+              status: 'APPROVED', // RoundCampaign must be APPROVED
+              Round: {
+                startDate: { lte: new Date() }, // Round has started
+                endDate: { gte: new Date() }, // Round hasn't ended
+              },
+            },
+            include: {
+              Round: true,
+            },
+          });
+          const roundQueryDuration = Date.now() - roundQueryStart;
+
+          logVerbose(
+            `📊 Found ${roundCampaigns.length} approved round participations for campaign ${dbPayment.campaign.id}`,
+            {
+              prefixId,
+              logAddress,
+              roundQueryDuration: `${roundQueryDuration}ms`,
+              timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+            },
+          );
+
+          // Create RoundContribution records for each approved round
+          let contributionsCreated = 0;
+          let contributionsFailed = 0;
+          
+          for (const roundCampaign of roundCampaigns) {
+            const contributionStart = Date.now();
+            try {
+              await db.roundContribution.create({
+                data: {
+                  campaignId: dbPayment.campaign.id,
+                  roundCampaignId: roundCampaign.id,
+                  paymentId: dbPayment.id,
+                  humanityScore: dbPayment.user.humanityScore, // Use user's persistent humanity score
+                },
+              });
+              const contributionDuration = Date.now() - contributionStart;
+              contributionsCreated++;
+
+              logVerbose('✅ Created RoundContribution:', {
+                prefixId,
+                logAddress,
+                dbPaymentId: dbPayment.id,
+                roundId: roundCampaign.roundId,
+                roundTitle: roundCampaign.Round.title,
+                humanityScore: dbPayment.user.humanityScore,
+                contributionDuration: `${contributionDuration}ms`,
+              });
+            } catch (roundError) {
+              const contributionDuration = Date.now() - contributionStart;
+              contributionsFailed++;
+              
+              logError(
+                `❌ Failed to create round contribution for round ${roundCampaign.roundId}:`,
+                { 
+                  prefixId, 
+                  logAddress, 
+                  error: roundError,
+                  contributionDuration: `${contributionDuration}ms`,
+                },
+              );
+              // Continue with other rounds even if one fails
+            }
+          }
+          
+          const totalRoundsDuration = Date.now() - roundsStartTime;
+          logVerbose('✅ Round contributions processing complete:', {
+            prefixId,
+            logAddress,
+            contributionsCreated,
+            contributionsFailed,
+            totalRoundsDuration: `${totalRoundsDuration}ms`,
+            timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+          });
+        } catch (roundQueryError) {
+          const roundsDuration = Date.now() - roundsStartTime;
+          logError('❌ Error querying round participations:', {
+            prefixId,
+            logAddress,
+            error: roundQueryError,
+            roundsDuration: `${roundsDuration}ms`,
+            timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
+          });
+          // Don't fail the payment confirmation if round association fails
+        }
+      }
     }
 
+    const totalWebhookDuration = Date.now() - webhookStartTime;
+    
     logVerbose(
-      `Payment ${dbPayment.id} status updated to ${newStatus} via ${payload.type} event`,
-      { prefixId, logAddress },
+      `🏁 Webhook processing complete for payment ${dbPayment.id}`,
+      { 
+        prefixId, 
+        logAddress,
+        newStatus,
+        previousStatus: currentStatus,
+        eventType: payload.type,
+        totalWebhookDuration: `${totalWebhookDuration}ms`,
+        completedAt: new Date().toISOString(),
+      },
     );
 
     return response({
