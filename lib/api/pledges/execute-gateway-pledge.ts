@@ -272,6 +272,9 @@ async function _executeGatewayPledgeInternal(
     paymentAmount: payment.amount,
   });
 
+  // Extract metadata for tip amount
+  const metadata = payment.metadata as Record<string, unknown>;
+
   // Extract amounts from payment and parse to token units
   // payment.amount contains ONLY the pledge amount (matching direct wallet flow)
   // Tip is stored separately in metadata
