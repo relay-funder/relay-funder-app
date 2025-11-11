@@ -16,9 +16,9 @@ import { logFactory } from '@/lib/debug';
 import { withExecutionLock } from '@/lib/api/pledges/execution-lock';
 import {
   waitWithTimeout,
-  waitForTransaction,
   TIMEOUT_VALUES,
 } from '@/lib/web3/transaction-timeout';
+import { waitForTransactionWithPolling } from '@/lib/web3/transaction-polling';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 
@@ -574,10 +574,20 @@ async function _executeGatewayPledgeInternal(
       hash: approveTx.hash,
     });
 
-    // Wait for approval with timeout to prevent indefinite hangs
-    await waitForTransaction(
+    // Wait for approval using polling with fallback
+    // This handles slow RPC providers that are common cause of timeouts
+    const provider = adminSigner.provider;
+    
+    if (!provider) {
+      throw new ApiUpstreamError('Provider not available for transaction polling');
+    }
+
+    await waitForTransactionWithPolling(
       approveTx,
+      provider,
       'token approval transaction',
+      TIMEOUT_VALUES.APPROVAL_TX, // Try tx.wait() for 240 seconds
+      TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 240 seconds more
       { prefixId, logAddress },
     );
 
@@ -632,20 +642,42 @@ async function _executeGatewayPledgeInternal(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   });
 
-  // Wait for confirmation with timeout to prevent indefinite hangs
-  const receiptOrNull = await waitWithTimeout<ethers.TransactionReceipt | null>(
-    treasuryTx.wait(),
-    TIMEOUT_VALUES.PLEDGE_TX,
-    'setFeeAndPledge transaction confirmation',
-    { prefixId, logAddress, txHash: treasuryTx.hash },
-  );
+  // CRITICAL: Save tx hash IMMEDIATELY after submission
+  // This ensures we can track the transaction even if Vercel lambda times out
+  // Status remains PENDING (which means "executing") but we now have the tx hash
+  await tx.payment.update({
+    where: { id: payment.id },
+    data: {
+      pledgeExecutionTxHash: treasuryTx.hash,
+      pledgeExecutionError: null, // Clear any previous error
+    },
+  });
 
-  if (!receiptOrNull) {
-    throw new ApiUpstreamError(`Transaction receipt is null. Hash: ${treasuryTx.hash}`);
+  logVerbose('Transaction hash saved to database', {
+    prefixId,
+    logAddress,
+    paymentId: payment.id,
+    pledgeExecutionStatus: 'PENDING',
+    pledgeExecutionTxHash: treasuryTx.hash,
+    note: 'Transaction hash saved - safe to wait for confirmation now',
+  });
+
+  // Wait for confirmation using polling with fallback
+  // This handles slow RPC providers by falling back to polling if tx.wait() times out
+  const provider = adminSigner.provider;
+  
+  if (!provider) {
+    throw new ApiUpstreamError('Provider not available for transaction polling');
   }
 
-  // TypeScript type narrowing after null check
-  const receipt: ethers.TransactionReceipt = receiptOrNull;
+  const receipt = await waitForTransactionWithPolling(
+    treasuryTx,
+    provider,
+    'setFeeAndPledge transaction confirmation',
+    TIMEOUT_VALUES.PLEDGE_TX, // Try tx.wait() for 90 seconds
+    TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 240 seconds
+    { prefixId, logAddress },
+  );
 
   logVerbose('Transaction confirmed:', {
     prefixId,
@@ -655,10 +687,6 @@ async function _executeGatewayPledgeInternal(
     status: receipt.status ? 'SUCCESS' : 'FAILED',
     gasUsed: receipt.gasUsed?.toString(),
   });
-
-  if (receipt.status !== 1) {
-    throw new ApiUpstreamError(`Transaction reverted. Hash: ${treasuryTx.hash}`);
-  }
 
   // Get final admin wallet balance (with timeout)
   const finalAdminBalance = await waitWithTimeout(
