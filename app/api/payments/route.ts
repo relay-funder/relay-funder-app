@@ -3,7 +3,6 @@ import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
-  ApiParameterError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
@@ -28,11 +27,6 @@ export async function POST(req: Request) {
 
     // Use email from request or fallback to user profile email
     const emailForPayment = data.userEmail || user.email;
-    if (!emailForPayment || emailForPayment.trim() === '') {
-      throw new ApiParameterError(
-        'Email is required for donation. Please provide a valid email address.',
-      );
-    }
 
     const campaign = await getCampaignForPayment(data.campaignId);
     if (!campaign) {
