@@ -13,10 +13,7 @@ import type {
   GatewayPledgeMetadata,
 } from '@/lib/api/types/pledges';
 import { logFactory } from '@/lib/debug';
-import {
-  acquireExecutionLock,
-  releaseExecutionLock,
-} from '@/lib/api/pledges/execution-lock';
+import { withExecutionLock } from '@/lib/api/pledges/execution-lock';
 import {
   waitWithTimeout,
   waitForTransaction,
@@ -39,10 +36,11 @@ const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
  * - User receives pledge NFT for the pledge amount (tip excluded from refundable amount)
  *
  * Reliability Features:
- * - PostgreSQL advisory locks prevent concurrent execution
+ * - PostgreSQL advisory locks prevent concurrent execution (session-scoped)
  * - Early idempotency check prevents re-execution
  * - Optimistic locking prevents race conditions
  * - Transaction timeouts prevent indefinite hangs
+ * - Lock acquire/release guaranteed on same DB connection via Prisma transaction
  *
  * @param paymentId - Internal payment record ID
  * @returns Execution result with transaction hash and amounts
@@ -56,42 +54,39 @@ export async function executeGatewayPledge(
     paymentId,
   });
 
-  // Acquire advisory lock to prevent concurrent execution
-  const lockAcquired = await acquireExecutionLock(paymentId);
-
-  if (!lockAcquired) {
-    const errorMessage = `Cannot execute payment ${paymentId}: already being processed by another session`;
-    logError('Failed to acquire execution lock', {
-      paymentId,
-      reason: 'lock_held_by_another_session',
-    });
-    throw new ApiParameterError(errorMessage);
-  }
-
-  try {
+  // Use withExecutionLock to ensure lock is acquired and released on same connection
+  // The lock is held for the entire execution, including DB operations and blockchain transactions
+  return await withExecutionLock(paymentId, async (tx) => {
     // Wrap execution with overall timeout to prevent indefinite hangs
     return await waitWithTimeout(
-      _executeGatewayPledgeWithLock(paymentId),
+      _executeGatewayPledgeWithLock(paymentId, tx),
       TIMEOUT_VALUES.OVERALL_EXECUTION,
       'gateway pledge execution',
       { paymentId },
     );
-  } finally {
-    // Always release lock, even if execution fails
-    await releaseExecutionLock(paymentId);
-    logVerbose('Execution lock released', { paymentId });
-  }
+  });
 }
+
+type TransactionClient = Omit<
+  typeof db,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 /**
  * Internal execution function that runs with lock held.
- * Separated to ensure lock is always released in finally block.
+ * 
+ * CRITICAL: All database operations MUST use the provided transaction client (tx)
+ * to ensure they run on the same connection that holds the advisory lock.
+ * 
+ * @param paymentId - Payment ID to execute
+ * @param tx - Prisma transaction client (holds the advisory lock)
  */
 async function _executeGatewayPledgeWithLock(
   paymentId: number,
+  tx: TransactionClient,
 ): Promise<ExecuteGatewayPledgeResponse> {
-  // Load payment with related data
-  const payment = await db.payment.findUnique({
+  // Load payment with related data using transaction client
+  const payment = await tx.payment.findUnique({
     where: { id: paymentId },
     include: {
       user: true,
@@ -128,7 +123,7 @@ async function _executeGatewayPledgeWithLock(
     });
 
     // Update payment status back to SUCCESS since it was already executed
-    const updatedPayment = await db.payment.update({
+    const updatedPayment = await tx.payment.update({
       where: { id: payment.id },
       data: {
         pledgeExecutionStatus: 'SUCCESS',
@@ -156,7 +151,7 @@ async function _executeGatewayPledgeWithLock(
 
   // OPTIMISTIC LOCKING: Update to PENDING only if not already PENDING
   // This prevents race conditions where multiple processes try to execute
-  const updateResult = await db.payment.updateMany({
+  const updateResult = await tx.payment.updateMany({
     where: {
       id: paymentId,
       pledgeExecutionStatus: { not: 'PENDING' },
@@ -189,7 +184,7 @@ async function _executeGatewayPledgeWithLock(
   });
 
   try {
-    return await _executeGatewayPledgeInternal(payment, {
+    return await _executeGatewayPledgeInternal(payment, tx, {
       prefixId,
       logAddress,
     });
@@ -205,7 +200,7 @@ async function _executeGatewayPledgeWithLock(
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    const failedPayment = await db.payment.update({
+    const failedPayment = await tx.payment.update({
       where: { id: paymentId },
       data: {
         pledgeExecutionStatus: 'FAILED',
@@ -228,11 +223,16 @@ async function _executeGatewayPledgeWithLock(
 /**
  * Internal implementation of gateway pledge execution.
  * Separated for clean error handling and status tracking.
+ * 
+ * @param payment - Payment record with related data
+ * @param tx - Prisma transaction client (must be used for all DB operations)
+ * @param context - Logging context
  */
 async function _executeGatewayPledgeInternal(
   payment: Prisma.PaymentGetPayload<{
     include: { user: true; campaign: true };
   }>,
+  tx: TransactionClient,
   { prefixId, logAddress }: { prefixId?: string; logAddress?: string } = {},
 ): Promise<ExecuteGatewayPledgeResponse> {
   logVerbose('Starting internal gateway pledge execution', {
@@ -531,7 +531,7 @@ async function _executeGatewayPledgeInternal(
     isPledgeForAReward: false,
   });
 
-  const tx = await treasuryContract.setFeeAndPledge(
+  const treasuryTx = await treasuryContract.setFeeAndPledge(
     pledgeId,
     payment.user.address,
     pledgeAmountUnits,
@@ -548,7 +548,7 @@ async function _executeGatewayPledgeInternal(
   logVerbose('Transaction submitted:', {
     prefixId,
     logAddress,
-    hash: tx.hash,
+    hash: treasuryTx.hash,
     from: adminSigner.address,
     to: payment.campaign.treasuryAddress,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
@@ -557,14 +557,14 @@ async function _executeGatewayPledgeInternal(
 
   // Wait for confirmation with timeout to prevent indefinite hangs
   const receiptOrNull = await waitWithTimeout<ethers.TransactionReceipt | null>(
-    tx.wait(),
+    treasuryTx.wait(),
     TIMEOUT_VALUES.PLEDGE_TX,
     'setFeeAndPledge transaction confirmation',
-    { prefixId, logAddress, txHash: tx.hash },
+    { prefixId, logAddress, txHash: treasuryTx.hash },
   );
 
   if (!receiptOrNull) {
-    throw new ApiUpstreamError(`Transaction receipt is null. Hash: ${tx.hash}`);
+    throw new ApiUpstreamError(`Transaction receipt is null. Hash: ${treasuryTx.hash}`);
   }
 
   // TypeScript type narrowing after null check
@@ -573,14 +573,14 @@ async function _executeGatewayPledgeInternal(
   logVerbose('Transaction confirmed:', {
     prefixId,
     logAddress,
-    hash: tx.hash,
+    hash: treasuryTx.hash,
     blockNumber: receipt.blockNumber,
     status: receipt.status ? 'SUCCESS' : 'FAILED',
     gasUsed: receipt.gasUsed?.toString(),
   });
 
   if (receipt.status !== 1) {
-    throw new ApiUpstreamError(`Transaction reverted. Hash: ${tx.hash}`);
+    throw new ApiUpstreamError(`Transaction reverted. Hash: ${treasuryTx.hash}`);
   }
 
   // Get final admin wallet balance (with timeout)
@@ -612,7 +612,7 @@ async function _executeGatewayPledgeInternal(
   // Update payment metadata with execution details
   const executionMetadata: GatewayPledgeMetadata = {
     onChainPledgeId: pledgeId,
-    treasuryTxHash: tx.hash,
+    treasuryTxHash: treasuryTx.hash,
     executionTimestamp: new Date().toISOString(),
     adminWalletBalanceBefore: adminBalanceFormatted,
     adminWalletBalanceAfter: finalAdminBalanceFormatted,
@@ -621,11 +621,11 @@ async function _executeGatewayPledgeInternal(
   };
 
   // Mark execution as successful with transaction hash
-  const updatedPayment = await db.payment.update({
+  const updatedPayment = await tx.payment.update({
     where: { id: payment.id },
     data: {
       pledgeExecutionStatus: 'SUCCESS',
-      pledgeExecutionTxHash: tx.hash,
+      pledgeExecutionTxHash: treasuryTx.hash,
       pledgeExecutionError: null,
       metadata: {
         ...(payment.metadata as Record<string, unknown>),
@@ -639,7 +639,7 @@ async function _executeGatewayPledgeInternal(
     logAddress,
     paymentId: payment.id,
     pledgeId,
-    txHash: tx.hash,
+    txHash: treasuryTx.hash,
     pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
     pledgeExecutionTxHash: updatedPayment.pledgeExecutionTxHash,
     pledgeExecutionError: updatedPayment.pledgeExecutionError,
@@ -649,7 +649,7 @@ async function _executeGatewayPledgeInternal(
   const result: ExecuteGatewayPledgeResponse = {
     success: true,
     pledgeId,
-    transactionHash: tx.hash,
+    transactionHash: treasuryTx.hash,
     blockNumber: receipt.blockNumber ?? 0,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
@@ -660,7 +660,7 @@ async function _executeGatewayPledgeInternal(
     logAddress,
     paymentId: payment.id,
     pledgeId,
-    transactionHash: tx.hash,
+    transactionHash: treasuryTx.hash,
     pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
     adminWalletRemaining: finalAdminBalanceFormatted,
