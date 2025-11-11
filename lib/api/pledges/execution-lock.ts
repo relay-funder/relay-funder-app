@@ -61,8 +61,9 @@ async function acquireExecutionLockOnTransaction(
     // Use pg_try_advisory_xact_lock with two integers (lock class, payment ID)
     // This is TRANSACTION-LEVEL - automatically released at transaction end
     // This prevents race condition where lock was released before transaction commit
+    // Cast to int (32-bit) explicitly, as PostgreSQL doesn't support (bigint, bigint) signature
     const result = await tx.$queryRaw<Array<{ acquired: boolean }>>`
-      SELECT pg_try_advisory_xact_lock(${LOCK_CLASS_ID}, ${paymentId}) as acquired
+      SELECT pg_try_advisory_xact_lock(${LOCK_CLASS_ID}::int, ${paymentId}::int) as acquired
     `;
 
     const acquired = result[0]?.acquired ?? false;
