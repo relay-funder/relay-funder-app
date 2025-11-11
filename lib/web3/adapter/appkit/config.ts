@@ -110,6 +110,7 @@ export const siweConfig = createSIWEConfig({
     try {
       const session = await getSession();
       if(session.user){
+      if(session?.user){
         return true;
       }
       const callbackUrl = loginCallbackUrl();
