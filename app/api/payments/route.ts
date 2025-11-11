@@ -28,11 +28,6 @@ export async function POST(req: Request) {
 
     // Use email from request or fallback to user profile email
     const emailForPayment = data.userEmail || user.email;
-    if (!emailForPayment || emailForPayment.trim() === '') {
-      throw new ApiParameterError(
-        'Email is required for donation. Please provide a valid email address.',
-      );
-    }
 
     const campaign = await getCampaignForPayment(data.campaignId);
     if (!campaign) {
