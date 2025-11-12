@@ -121,6 +121,7 @@ interface IUpdateCampaignData {
   description: string;
   location: string;
   category: string;
+  fundingUsage: string;
   bannerImage?: File | null;
 }
 async function updateCampaignData(variables: IUpdateCampaignData) {
@@ -130,6 +131,7 @@ async function updateCampaignData(variables: IUpdateCampaignData) {
   formDataToSend.append('description', variables.description);
   formDataToSend.append('location', variables.location);
   formDataToSend.append('category', variables.category);
+  formDataToSend.append('fundingUsage', variables.fundingUsage);
   if (variables.bannerImage) {
     formDataToSend.append('bannerImage', variables.bannerImage);
   }

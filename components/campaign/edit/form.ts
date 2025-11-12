@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { countries, categories } from '@/lib/constant';
+import { FUNDING_USAGE_MAX_LENGTH, FUNDING_USAGE_MIN_LENGTH } from '@/lib/constant/form';
 
 function validateTimes(value: string) {
   const date = new Date(value);
@@ -55,6 +56,15 @@ export const CampaignFormSchema = z
       },
       { message: 'Invalid funding Goal' },
     ),
+    fundingUsage: z
+      .string()
+      .min(1, { message: 'Use of Funds is required' })
+      .refine((value) => value.length >= FUNDING_USAGE_MIN_LENGTH, {
+        message: `Use of Funds must be at least ${FUNDING_USAGE_MIN_LENGTH} characters long`,
+      })
+      .refine((value) => value.length <= FUNDING_USAGE_MAX_LENGTH, {
+        message: `Use of Funds must be ${FUNDING_USAGE_MAX_LENGTH} characters or less`,
+      }),
     fundingModel: z.string(),
     startTime: z.string().transform(transformStartTime).refine(validateTimes, {
       message: 'Invalid date format',

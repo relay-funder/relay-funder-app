@@ -60,6 +60,7 @@ export async function PATCH(req: Request) {
 
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
+    const fundingUsage = formData.get('fundingUsage') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
@@ -112,6 +113,7 @@ export async function PATCH(req: Request) {
         description,
         location,
         category,
+        fundingUsage,
       },
     });
     if (imageUrl) {
