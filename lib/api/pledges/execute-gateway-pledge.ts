@@ -65,10 +65,13 @@ export async function executeGatewayPledge(
       OR: [
         // Not currently PENDING
         { pledgeExecutionStatus: { not: 'PENDING' } },
-        // OR PENDING but stuck (last attempt > 5 minutes ago)
+        // OR PENDING but stuck (last attempt is null OR > 5 minutes ago)
         {
           pledgeExecutionStatus: 'PENDING',
-          pledgeExecutionLastAttempt: { lt: fiveMinutesAgo },
+          OR: [
+            { pledgeExecutionLastAttempt: null },
+            { pledgeExecutionLastAttempt: { lt: fiveMinutesAgo } },
+          ],
         },
       ],
     },
