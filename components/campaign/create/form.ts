@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import { countries, categories } from '@/lib/constant';
+import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+  FUNDING_USAGE_MAX_LENGTH,
+  FUNDING_USAGE_MIN_LENGTH,
+} from '@/lib/constant/form';
 import type { DbCampaign } from '@/types/campaign';
 import {
   ValidationStage,
@@ -44,11 +50,11 @@ export const CampaignFormSchema = z
     description: z
       .string()
       .min(1, { message: 'Description is required' })
-      .refine((value) => value.length >= 50, {
-        message: 'Description must be at least 50 characters long',
+      .refine((value) => value.length >= CAMPAIGN_DESCRIPTION_MIN_LENGTH, {
+        message: `Description must be at least ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} characters long`,
       })
-      .refine((value) => value.length <= 2000, {
-        message: 'Description must be 2000 characters or less',
+      .refine((value) => value.length <= CAMPAIGN_DESCRIPTION_MAX_LENGTH, {
+        message: `Description must be ${CAMPAIGN_DESCRIPTION_MAX_LENGTH} characters or less`,
       }),
     fundingGoal: z.string().refine(
       (value: string) => {
@@ -57,6 +63,15 @@ export const CampaignFormSchema = z
       },
       { message: 'Funding goal must be greater than zero' },
     ),
+    fundingUsage: z
+      .string()
+      .min(1, { message: 'Funding usage is required' })
+      .refine((value) => value.length >= FUNDING_USAGE_MIN_LENGTH, {
+        message: `Funding usage must be at least ${FUNDING_USAGE_MIN_LENGTH} characters long`,
+      })
+      .refine((value) => value.length <= FUNDING_USAGE_MAX_LENGTH, {
+        message: `Funding usage must be ${FUNDING_USAGE_MAX_LENGTH} characters or less`,
+      }),
     fundingModel: z.string(),
     selectedRoundId: z.number().nullable(),
     startTime: z
@@ -107,6 +122,7 @@ export function validateCampaignForSubmission(
     title: campaignData.title || '',
     description: campaignData.description || '',
     fundingGoal: campaignData.fundingGoal || '0',
+    fundingUsage: campaignData.fundingUsage || '',
     startTime: campaignData.startTime
       ? new Date(campaignData.startTime)
       : new Date(),
@@ -150,6 +166,7 @@ export const campaignFormDefaultValues: CampaignFormSchemaType = {
   title: '',
   description: '',
   fundingGoal: '',
+  fundingUsage: '',
   fundingModel: 'flexible',
   selectedRoundId: null,
   startTime: (() => {

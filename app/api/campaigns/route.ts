@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const fundingGoal = formData.get('fundingGoal') as string;
+    const fundingUsage = formData.get('fundingUsage') as string;
     const selectedRoundId = formData.get('selectedRoundId') as string;
     const startTime = formData.get('startTime') as string;
     const endTime = formData.get('endTime') as string;
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
         title,
         description,
         fundingGoal,
+        fundingUsage,
         startTime,
         endTime,
         creatorAddress,
@@ -147,6 +149,7 @@ export async function POST(req: Request) {
         title,
         description,
         fundingGoal,
+        fundingUsage,
         startTime: startTimeValue,
         endTime: endTimeValue,
         creatorAddress,

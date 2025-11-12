@@ -8,6 +8,8 @@ import {
   FormMessage,
 } from '@/components/ui';
 import { FeeInformation } from '@/components/shared/fee-information';
+import { FUNDING_USAGE_MAX_LENGTH } from '@/lib/constant/form';
+import { FormFieldTextArea } from '@/components/form/form-field-text-area';
 
 interface CampaignCreateFormFundingProps {
   isOnChainDeployed?: boolean;
@@ -51,6 +53,13 @@ export function CampaignCreateFormFunding({
       <div className="pt-4">
         <FeeInformation compact={true} showAllFeesForCampaign={true} />
       </div>
+
+      <FormFieldTextArea
+        name="fundingUsage"
+        label="Funding Usage"
+        placeholder="Please write 2-3 sentences describing your intended use of funds"
+        maxLength={FUNDING_USAGE_MAX_LENGTH}
+      />
 
       {/* Hidden field to maintain form structure */}
       <FormField
