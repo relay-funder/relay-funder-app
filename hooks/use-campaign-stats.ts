@@ -35,8 +35,7 @@ export function useCampaignStatsFromInstance({
 }) {
   const paymentSummary = campaign?.paymentSummary;
   const contributorPendingCount = paymentSummary?.countPending ?? 0;
-  const contributorCount =
-    (paymentSummary?.countConfirmed ?? 0) + contributorPendingCount;
+  const contributorCount = paymentSummary?.countConfirmed ?? 0;
 
   const [amountRaisedFloat, amountPendingFloat] = useMemo(() => {
     if (!paymentSummary?.token) {
