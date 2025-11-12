@@ -21,7 +21,6 @@ function FeeInformationCompact() {
     <div className="mt-4">
       <FeeInformation
         isDaimoPay={paymentType === 'daimo'}
-        isWalletDonation={paymentType === 'wallet'}
         donationAmount={
           parseFloat(amount || '0') > 0 ? parseFloat(amount || '0') : undefined
         }

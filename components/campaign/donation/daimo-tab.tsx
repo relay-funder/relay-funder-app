@@ -12,7 +12,6 @@ import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import { useDonationContext } from '@/contexts';
-import { FeeInformation } from '@/components/shared/fee-information';
 
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const router = useRouter();

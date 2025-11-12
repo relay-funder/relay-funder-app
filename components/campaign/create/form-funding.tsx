@@ -49,10 +49,7 @@ export function CampaignCreateFormFunding({
 
       {/* Fee Information - Show users the fee structure for their campaign */}
       <div className="pt-4">
-        <FeeInformation
-          compact={true}
-          showAllFeesForCampaign={true}
-        />
+        <FeeInformation compact={true} showAllFeesForCampaign={true} />
       </div>
 
       {/* Hidden field to maintain form structure */}

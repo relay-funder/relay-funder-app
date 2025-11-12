@@ -15,8 +15,6 @@ import { Info } from 'lucide-react';
 interface FeeInformationProps {
   /** Whether this is for Daimo Pay checkout (shows Daimo-specific fee) */
   isDaimoPay?: boolean;
-  /** Whether this is for wallet/direct donation (no Daimo fee) */
-  isWalletDonation?: boolean;
   /** Custom donation amount to calculate fees (optional) */
   donationAmount?: number;
   /** Whether to show as a compact card or detailed breakdown */
@@ -37,7 +35,6 @@ interface FeeInformationProps {
  */
 export function FeeInformation({
   isDaimoPay = false,
-  isWalletDonation = false,
   donationAmount,
   compact = false,
   showAllFeesForCampaign = false,
@@ -85,7 +82,6 @@ export function FeeInformation({
                 </DialogHeader>
                 <FeeBreakdownContent
                   isDaimoPay={isDaimoPay || showAllFeesForCampaign}
-                  isWalletDonation={isWalletDonation}
                   donationAmount={donationAmount}
                   daimoFee={daimoFee}
                   protocolFee={protocolFee}
@@ -97,7 +93,10 @@ export function FeeInformation({
           </div>
           <div className="mt-2 text-xs text-muted-foreground">
             {showAllFeesForCampaign ? (
-              <>1% Protocol Fee • 0% Platform Fee • 1% Daimo Pay (Only Cross-chain)</>
+              <>
+                1% Protocol Fee • 0% Platform Fee • 1% Daimo Pay (Only
+                Cross-chain)
+              </>
             ) : (
               <>
                 {isDaimoPay && `1% Daimo Pay + `}
@@ -214,7 +213,6 @@ export function FeeInformation({
  */
 function FeeBreakdownContent({
   isDaimoPay,
-  isWalletDonation,
   donationAmount,
   daimoFee,
   protocolFee,
@@ -222,7 +220,6 @@ function FeeBreakdownContent({
   totalFees,
 }: {
   isDaimoPay: boolean;
-  isWalletDonation: boolean;
   donationAmount?: number;
   daimoFee: number;
   protocolFee: number;
@@ -280,14 +277,14 @@ function FeeBreakdownContent({
             </p>
             <p>
               <strong>Platform Fee:</strong> Currently waived to maximize impact
-              for campaigns. When reintroduced, it will support Relay Funder's
+              for campaigns. When reintroduced, it will support Relay Funder&apos;s
               operations and development.
             </p>
             {isDaimoPay && (
               <p>
                 <strong>Daimo Pay Fee:</strong> Covers the cost of cross-chain
                 transfers when you donate from a different blockchain network
-                than the campaign's treasury.
+                than the campaign&apos;s treasury.
               </p>
             )}
           </div>

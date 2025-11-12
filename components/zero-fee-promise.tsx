@@ -13,8 +13,8 @@ export function ZeroFeePromise() {
       <h3 className="font-semibold">Transparent Fee Structure</h3>
       <p className="text-muted-foreground">
         Relay Funder maintains fee transparency with minimal fees: 1% CCP
-        protocol fee always applies, platform fees are currently waived, plus
-        1% Daimo Pay fee for cross-chain donations.
+        protocol fee always applies, platform fees are currently waived, plus 1%
+        Daimo Pay fee for cross-chain donations.
       </p>
       <Dialog>
         <DialogTrigger asChild>
