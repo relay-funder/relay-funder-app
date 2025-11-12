@@ -8,16 +8,16 @@ const logError = logFactory('error', '🚨 ExecutionLock');
 
 /**
  * PostgreSQL Advisory Lock System for Gateway Pledge Execution
- * 
+ *
  * Uses PostgreSQL's advisory locks to ensure exactly-once execution semantics
  * for gateway pledge processing. Advisory locks are:
  * - Automatically released when the connection closes (crash recovery)
  * - Session-level locks (connection-scoped, NOT transaction-scoped)
  * - Non-blocking with pg_try_advisory_lock (fail fast if already held)
- * 
+ *
  * All lock operations (acquire/release) MUST run on the same DB connection.
  * We use Prisma interactive transactions to guarantee this.
- * 
+ *
  * Lock Namespace:
  * - We use payment.id as the lock ID (unique integer)
  * - Lock class: 1000 (arbitrary namespace for pledge execution locks)
@@ -33,15 +33,15 @@ type TransactionClient = Omit<
 
 /**
  * Attempt to acquire a TRANSACTION-LEVEL advisory lock for payment execution.
- * 
+ *
  * Transaction-level locks are automatically released when the transaction commits or rolls back,
  * preventing the race condition where lock was released before transaction commit.
- * 
+ *
  * This is a non-blocking operation that will immediately return false
  * if another process holds the lock.
- * 
+ *
  * IMPORTANT: This function MUST be called within a transaction context.
- * 
+ *
  * @param tx - Prisma transaction client
  * @param paymentId - The payment ID to lock
  * @returns true if lock acquired, false if already held by another session
@@ -95,10 +95,10 @@ async function acquireExecutionLockOnTransaction(
 /**
  * NOTE: Transaction-level advisory locks (pg_advisory_xact_lock) are automatically
  * released when the transaction commits or rolls back, so no explicit release is needed.
- * 
+ *
  * This function is kept for compatibility with isExecutionLockHeld() which uses
  * session-level locks for testing purposes.
- * 
+ *
  * @deprecated No longer needed with transaction-level locks
  */
 async function releaseExecutionLockOnTransaction(
@@ -115,19 +115,17 @@ async function releaseExecutionLockOnTransaction(
 
 /**
  * Check if a payment execution lock is currently held by any session.
- * 
+ *
  * This is useful for detecting stuck executions or checking eligibility
  * for retry operations.
- * 
+ *
  * Note: This is a point-in-time check. The lock status may change
  * immediately after this function returns.
- * 
+ *
  * @param paymentId - The payment ID to check
  * @returns true if lock is currently held, false otherwise
  */
-export async function isExecutionLockHeld(
-  paymentId: number,
-): Promise<boolean> {
+export async function isExecutionLockHeld(paymentId: number): Promise<boolean> {
   try {
     // Use a transaction to ensure acquire/release happen on the same connection
     return await db.$transaction(async (tx) => {
@@ -154,20 +152,20 @@ export async function isExecutionLockHeld(
 
 /**
  * Execute a function with a TRANSACTION-LEVEL advisory lock held.
- * 
+ *
  * Uses transaction-level locks (pg_advisory_xact_lock) which are
  * automatically released when the transaction commits or rolls back. This eliminates
  * the race condition where the lock was released before transaction commit.
- * 
+ *
  * This wrapper ensures that:
  * 1. The lock is acquired on a dedicated database connection
  * 2. The callback function executes on the SAME connection
  * 3. The lock is automatically released when transaction ends (commit or rollback)
  * 4. All operations are properly isolated within a transaction
- * 
+ *
  * The callback receives a Prisma transaction client (tx) that MUST be used
  * for all database operations to ensure they run on the locked connection.
- * 
+ *
  * @param paymentId - The payment ID to lock
  * @param fn - The function to execute while holding the lock (receives tx client)
  * @returns The result of the function
@@ -199,4 +197,3 @@ export async function withExecutionLock<T>(
     },
   );
 }
-

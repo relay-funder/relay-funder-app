@@ -36,9 +36,8 @@ export function CampaignDonationWalletDetails({
           </div>
         </div>
       </VisibilityToggle>
-      <CampaignDonationWalletProcess
-        campaign={campaign}
-      />
+
+      <CampaignDonationWalletProcess campaign={campaign} />
     </div>
   );
 }

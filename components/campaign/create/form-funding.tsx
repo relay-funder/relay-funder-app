@@ -7,6 +7,7 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui';
+import { FeeInformation } from '@/components/shared/fee-information';
 
 interface CampaignCreateFormFundingProps {
   isOnChainDeployed?: boolean;
@@ -45,6 +46,11 @@ export function CampaignCreateFormFunding({
           </FormItem>
         )}
       />
+
+      {/* Fee Information - Show users the fee structure for their campaign */}
+      <div className="pt-4">
+        <FeeInformation compact={true} showAllFeesForCampaign={true} />
+      </div>
 
       {/* Hidden field to maintain form structure */}
       <FormField

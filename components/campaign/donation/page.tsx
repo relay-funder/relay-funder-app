@@ -3,15 +3,32 @@ import { notFound } from 'next/navigation';
 import { PageHome } from '@/components/page/home';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from '@/components/campaign/loading';
-import { DonationProvider, useAuth } from '@/contexts';
+import { DonationProvider, useAuth, useDonationContext } from '@/contexts';
 import { CampaignError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';
 import { CampaignDonationSummary } from './campaign-summary';
 import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
+import { FeeInformation } from '@/components/shared/fee-information';
 import { NotStartedYet } from '@/components/campaign//not-started-yet';
 import { Web3ContextProvider } from '@/lib/web3';
+
+function FeeInformationCompact() {
+  const { paymentType, amount } = useDonationContext();
+
+  return (
+    <div className="mt-4">
+      <FeeInformation
+        isDaimoPay={paymentType === 'daimo'}
+        donationAmount={
+          parseFloat(amount || '0') > 0 ? parseFloat(amount || '0') : undefined
+        }
+        compact={true}
+      />
+    </div>
+  );
+}
 
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
@@ -58,6 +75,7 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
                       campaign={campaign}
                       variant="compact"
                     />
+                    <FeeInformationCompact />
                   </div>
                 </div>
               </div>

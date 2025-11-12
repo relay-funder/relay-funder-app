@@ -73,7 +73,21 @@ function RefundBadge({ state }: { state: PaymentRefundState }) {
   }
 }
 
-function PledgeExecutionBadge({ status }: { status: PledgeExecutionStatus }) {
+function PledgeExecutionBadge({
+  status,
+  payment,
+}: {
+  status: PledgeExecutionStatus;
+  payment?: AdminPaymentListItem;
+}) {
+  // Check if PENDING payment is stuck (> 5 minutes)
+  const isStuck =
+    status === 'PENDING' &&
+    payment &&
+    (!payment.pledgeExecutionLastAttempt ||
+      new Date(payment.pledgeExecutionLastAttempt) <
+        new Date(Date.now() - 5 * 60 * 1000));
+
   switch (status) {
     case 'SUCCESS':
       return (
@@ -83,8 +97,14 @@ function PledgeExecutionBadge({ status }: { status: PledgeExecutionStatus }) {
       );
     case 'PENDING':
       return (
-        <Badge className="border-blue-500 bg-blue-500 text-white hover:bg-blue-600 dark:border-blue-400 dark:bg-blue-400 dark:text-white">
-          Executing...
+        <Badge
+          className={
+            isStuck
+              ? 'border-yellow-600 bg-yellow-600 text-white hover:bg-yellow-700 dark:border-yellow-500 dark:bg-yellow-500 dark:text-white'
+              : 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600 dark:border-blue-400 dark:bg-blue-400 dark:text-white'
+          }
+        >
+          {isStuck ? 'Stuck (Pending)' : 'Executing...'}
         </Badge>
       );
     case 'FAILED':
@@ -169,6 +189,16 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
   const { toast } = useToast();
   const retryMutation = useRetryPledgeExecution();
 
+  // Check if payment is stuck in PENDING (> 5 minutes since last attempt)
+  const isStuckPending = (payment: AdminPaymentListItem): boolean => {
+    if (payment.pledgeExecutionStatus !== 'PENDING') return false;
+    if (!payment.pledgeExecutionLastAttempt) return true; // No last attempt = stuck
+
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const lastAttempt = new Date(payment.pledgeExecutionLastAttempt);
+    return lastAttempt < fiveMinutesAgo;
+  };
+
   const handleRetry = async (paymentId: number) => {
     try {
       await retryMutation.mutateAsync(paymentId);
@@ -218,22 +248,27 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 {payment.amount} {payment.token}
               </div>
             </div>
-            {payment.provider === 'daimo' && (payment.metadata as { tipAmount?: string; baseAmount?: string })?.tipAmount && (
-              <div>
-                <span className="text-muted-foreground">Tip Amount:</span>
-                <div className="font-semibold">
-                  {(payment.metadata as { tipAmount?: string })?.tipAmount} {payment.token}
+            {payment.provider === 'daimo' &&
+              (payment.metadata as { tipAmount?: string; baseAmount?: string })
+                ?.tipAmount && (
+                <div>
+                  <span className="text-muted-foreground">Tip Amount:</span>
+                  <div className="font-semibold">
+                    {(payment.metadata as { tipAmount?: string })?.tipAmount}{' '}
+                    {payment.token}
+                  </div>
                 </div>
-              </div>
-            )}
-            {payment.provider === 'daimo' && (payment.metadata as { baseAmount?: string })?.baseAmount && (
-              <div>
-                <span className="text-muted-foreground">Payment Amount:</span>
-                <div className="font-semibold">
-                  {(payment.metadata as { baseAmount?: string })?.baseAmount} {payment.token}
+              )}
+            {payment.provider === 'daimo' &&
+              (payment.metadata as { baseAmount?: string })?.baseAmount && (
+                <div>
+                  <span className="text-muted-foreground">Payment Amount:</span>
+                  <div className="font-semibold">
+                    {(payment.metadata as { baseAmount?: string })?.baseAmount}{' '}
+                    {payment.token}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             <div>
               <span className="text-muted-foreground">Status:</span>
               <div>
@@ -271,19 +306,26 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Pledge to Treasury:</span>
+                <span className="text-muted-foreground">
+                  Pledge to Treasury:
+                </span>
                 <div className="mt-1">
                   <PledgeExecutionBadge
                     status={payment.pledgeExecutionStatus}
+                    payment={payment}
                   />
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Transfer Attempts:</span>
+                <span className="text-muted-foreground">
+                  Transfer Attempts:
+                </span>
                 <div className="mt-1">{payment.pledgeExecutionAttempts}</div>
               </div>
               <div>
-                <span className="text-muted-foreground">Last Transfer Attempt:</span>
+                <span className="text-muted-foreground">
+                  Last Transfer Attempt:
+                </span>
                 <div className="mt-1">
                   {payment.pledgeExecutionLastAttempt ? (
                     <FormattedDate
@@ -461,7 +503,8 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
         {payment.provider === 'daimo' &&
           payment.status === 'confirmed' &&
           (payment.pledgeExecutionStatus === 'FAILED' ||
-            payment.pledgeExecutionStatus === 'NOT_STARTED') && (
+            payment.pledgeExecutionStatus === 'NOT_STARTED' ||
+            isStuckPending(payment)) && (
             <div className="flex justify-end border-t pt-4">
               <Button
                 onClick={() => handleRetry(payment.id)}
@@ -470,7 +513,9 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
               >
                 {retryMutation.isPending
                   ? 'Retrying...'
-                  : 'Retry Pledge Execution'}
+                  : isStuckPending(payment)
+                    ? 'Force Retry (Stuck in Pending)'
+                    : 'Retry Pledge Execution'}
               </Button>
             </div>
           )}
@@ -534,7 +579,10 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
             <TableCell>
               {p.provider === 'daimo' ? (
                 <div className="space-y-1">
-                  <PledgeExecutionBadge status={p.pledgeExecutionStatus} />
+                  <PledgeExecutionBadge
+                    status={p.pledgeExecutionStatus}
+                    payment={p}
+                  />
                   {p.pledgeExecutionAttempts > 0 && (
                     <div className="text-xs text-muted-foreground">
                       Attempts: {p.pledgeExecutionAttempts}

@@ -1,9 +1,6 @@
 import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
-import {
-  ApiAuthNotAllowed,
-  ApiNotFoundError,
-} from '@/lib/api/error';
+import { ApiAuthNotAllowed, ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
 import { getCampaignForPayment } from '@/lib/api/campaigns';

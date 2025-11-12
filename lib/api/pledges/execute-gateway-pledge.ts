@@ -58,7 +58,7 @@ export async function executeGatewayPledge(
   // Allow retrying PENDING payments if they've been stuck for more than 5 minutes
   // This handles lambda timeouts while still preventing concurrent executions
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  
+
   const pendingUpdate = await db.payment.updateMany({
     where: {
       id: paymentId,
@@ -98,17 +98,53 @@ export async function executeGatewayPledge(
     note: 'UI should now show executing state',
   });
 
-  // Use withExecutionLock to acquire transaction-level advisory lock
-  // The lock is held for the entire execution and automatically released when transaction ends
-  return await withExecutionLock(paymentId, async (tx) => {
-    // Wrap execution with overall timeout to prevent indefinite hangs
-    return await waitWithTimeout(
-      _executeGatewayPledgeWithLock(paymentId, tx),
-      TIMEOUT_VALUES.OVERALL_EXECUTION,
-      'gateway pledge execution',
-      { paymentId },
-    );
-  });
+  // Wrap execution in try-catch to handle timeouts gracefully
+  // If execution fails (including timeout), we need to mark as FAILED in a SEPARATE transaction
+  try {
+    // Use withExecutionLock to acquire transaction-level advisory lock
+    // The lock is held for the entire execution and automatically released when transaction ends
+    return await withExecutionLock(paymentId, async (tx) => {
+      // Wrap execution with overall timeout to prevent indefinite hangs
+      return await waitWithTimeout(
+        _executeGatewayPledgeWithLock(paymentId, tx),
+        TIMEOUT_VALUES.OVERALL_EXECUTION,
+        'gateway pledge execution',
+        { paymentId },
+      );
+    });
+  } catch (error) {
+    // Execution failed (timeout, blockchain error, etc.)
+    // Mark as FAILED in a SEPARATE transaction so UI can show the failure
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
+    logError('Execution failed, marking as FAILED in separate transaction', {
+      paymentId,
+      error: errorMessage,
+    });
+
+    // Update status outside the locked transaction so it persists
+    await db.payment.update({
+      where: { id: paymentId },
+      data: {
+        pledgeExecutionStatus: 'FAILED',
+        pledgeExecutionError: errorMessage,
+      },
+    });
+
+    logVerbose('Payment marked as FAILED (committed to DB)', {
+      paymentId,
+      error: errorMessage,
+      note: 'UI should now show failed state with retry option',
+    });
+
+    // Return graceful failure response
+    return {
+      success: false,
+      paymentId,
+      error: errorMessage,
+    } as ExecuteGatewayPledgeResponse;
+  }
 }
 
 type TransactionClient = Omit<
@@ -118,11 +154,11 @@ type TransactionClient = Omit<
 
 /**
  * Internal execution function that runs with transaction-level advisory lock held.
- * 
+ *
  * All database operations MUST use the provided transaction client (tx)
  * to ensure they run within the same transaction that holds the advisory lock.
  * The lock is automatically released when the transaction commits or rolls back.
- * 
+ *
  * @param paymentId - Payment ID to execute
  * @param tx - Prisma transaction client (holds the transaction-level advisory lock)
  */
@@ -194,7 +230,7 @@ async function _executeGatewayPledgeWithLock(
       tipAmount: (metadata.tipAmount as string) || '0',
     };
   }
-  
+
   // Check if payment is stuck in PENDING (potential crash scenario)
   // If status is PENDING, a previous attempt may have succeeded on-chain but crashed before DB update
   if (payment.pledgeExecutionStatus === 'PENDING') {
@@ -206,7 +242,7 @@ async function _executeGatewayPledgeWithLock(
       attempts: payment.pledgeExecutionAttempts,
       note: 'Will check if blockchain operations already succeeded',
     });
-    
+
     // If we have a generated pledge ID but no onChainPledgeId, this might be a retry
     // after crash. The pledge ID tells us what to look for on-chain.
     if (metadata?.generatedPledgeId && !metadata?.onChainPledgeId) {
@@ -217,12 +253,11 @@ async function _executeGatewayPledgeWithLock(
         generatedPledgeId: metadata.generatedPledgeId,
         note: 'This indicates potential crash after pledge ID generation. Will attempt recovery with same pledge ID.',
       });
-      
+
       // TODO: In future enhancement, query blockchain here to verify if pledge exists
       // For now, we'll proceed with the stored pledge ID (safe because we use same ID)
     }
   }
-
 
   try {
     return await _executeGatewayPledgeInternal(payment, tx, {
@@ -270,7 +305,7 @@ async function _executeGatewayPledgeWithLock(
 /**
  * Internal implementation of gateway pledge execution.
  * Separated for clean error handling and status tracking.
- * 
+ *
  * @param payment - Payment record with related data
  * @param tx - Prisma transaction client (must be used for all DB operations)
  * @param context - Logging context
@@ -492,7 +527,7 @@ async function _executeGatewayPledgeInternal(
   // Generate and STORE pledge ID BEFORE any blockchain operations
   // This ensures deterministic pledge ID across retries if crash occurs
   let pledgeId: string;
-  
+
   if (metadata?.generatedPledgeId) {
     // RETRY case: Use existing pledge ID from previous attempt
     pledgeId = metadata.generatedPledgeId as string;
@@ -509,14 +544,14 @@ async function _executeGatewayPledgeInternal(
         `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
       ),
     );
-    
+
     logVerbose('Generated NEW pledge ID', {
       prefixId,
       logAddress,
       pledgeId,
       note: 'First execution attempt',
     });
-    
+
     // Store pledge ID IMMEDIATELY in database BEFORE blockchain operations
     // If crash occurs during blockchain operations, pledge ID is preserved for retry
     const updatedPayment = await tx.payment.update({
@@ -529,10 +564,10 @@ async function _executeGatewayPledgeInternal(
         },
       },
     });
-    
+
     // Update metadata reference for later use
     metadata = updatedPayment.metadata as Record<string, unknown>;
-    
+
     logVerbose('Pledge ID stored in database', {
       prefixId,
       logAddress,

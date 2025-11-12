@@ -130,7 +130,16 @@ export function useDaimoPayment({
       token: config.tokenSymbol,
       chain: config.chainName,
     }),
-    [campaign.id, campaign.treasuryAddress, pledgeId, email, anonymous, tipAmount, amount, config],
+    [
+      campaign.id,
+      campaign.treasuryAddress,
+      pledgeId,
+      email,
+      anonymous,
+      tipAmount,
+      amount,
+      config,
+    ],
   );
 
   // Validate email format using Zod

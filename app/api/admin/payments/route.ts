@@ -72,7 +72,12 @@ export async function GET(req: Request) {
     const pledgeExecutionStatusParam = searchParams.get(
       'pledgeExecutionStatus',
     );
-    let pledgeExecutionStatus: 'NOT_STARTED' | 'PENDING' | 'SUCCESS' | 'FAILED' | undefined = undefined;
+    let pledgeExecutionStatus:
+      | 'NOT_STARTED'
+      | 'PENDING'
+      | 'SUCCESS'
+      | 'FAILED'
+      | undefined = undefined;
     if (pledgeExecutionStatusParam) {
       const upper = pledgeExecutionStatusParam.toUpperCase();
       const allowed = ['NOT_STARTED', 'PENDING', 'SUCCESS', 'FAILED'] as const;
@@ -81,7 +86,11 @@ export async function GET(req: Request) {
           'Invalid pledgeExecutionStatus. Use NOT_STARTED, PENDING, SUCCESS, or FAILED.',
         );
       }
-      pledgeExecutionStatus = upper as 'NOT_STARTED' | 'PENDING' | 'SUCCESS' | 'FAILED';
+      pledgeExecutionStatus = upper as
+        | 'NOT_STARTED'
+        | 'PENDING'
+        | 'SUCCESS'
+        | 'FAILED';
     }
 
     const result = await listAdminPayments({

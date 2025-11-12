@@ -94,7 +94,10 @@ function validateDaimoPaymentAmounts(
         logAddress,
         destinationAmountUnits,
         error: error instanceof Error ? error.message : 'Unknown parsing error',
-        decimalError: decimalError instanceof Error ? decimalError.message : 'Unknown decimal parsing error',
+        decimalError:
+          decimalError instanceof Error
+            ? decimalError.message
+            : 'Unknown decimal parsing error',
         note: 'Malformed destination amount units in Daimo webhook - tried both integer and decimal parsing',
       });
       return {
@@ -217,7 +220,9 @@ function validateDaimoDestination(
   return { valid: true };
 }
 
-const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook', { flag: 'daimo' });
+const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook', {
+  flag: 'daimo',
+});
 
 const logError = logFactory('error', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 
@@ -226,7 +231,7 @@ const logWarn = logFactory('warn', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 export async function POST(req: Request) {
   // Track webhook processing time from the very start
   const webhookStartTime = Date.now();
-  
+
   try {
     const headers = Array.from(req.headers.entries())
       .filter(
@@ -473,7 +478,10 @@ export async function POST(req: Request) {
         );
       }
 
-      if (metadataTreasuryAddress.toLowerCase() !== campaign.treasuryAddress?.toLowerCase()) {
+      if (
+        metadataTreasuryAddress.toLowerCase() !==
+        campaign.treasuryAddress?.toLowerCase()
+      ) {
         logWarn('SECURITY: Treasury address mismatch in metadata', {
           prefixId,
           logAddress,
@@ -538,7 +546,9 @@ export async function POST(req: Request) {
           minimumAmount: DAIMO_PAY_MIN_AMOUNT,
         });
         return NextResponse.json(
-          { error: `Payment amount ${totalAmount} below minimum ${DAIMO_PAY_MIN_AMOUNT}` },
+          {
+            error: `Payment amount ${totalAmount} below minimum ${DAIMO_PAY_MIN_AMOUNT}`,
+          },
           { status: 400 },
         );
       }
@@ -842,7 +852,7 @@ export async function POST(req: Request) {
       if (dbPayment.provider === 'daimo') {
         const pledgeLaunchTime = Date.now();
         const timeSinceWebhookStart = pledgeLaunchTime - webhookStartTime;
-        
+
         logVerbose('🚀 PRIORITY: Queuing pledge execution IMMEDIATELY:', {
           prefixId,
           logAddress,
@@ -874,7 +884,7 @@ export async function POST(req: Request) {
           const promiseStartTime = Date.now();
           const delayFromQueue = promiseStartTime - pledgeLaunchTime;
           const delayFromWebhookStart = promiseStartTime - webhookStartTime;
-          
+
           try {
             logVerbose(
               `⚡ PLEDGE EXECUTION STARTING for payment ${dbPayment.id}`,
@@ -891,7 +901,7 @@ export async function POST(req: Request) {
 
             const executionDuration = Date.now() - promiseStartTime;
             const totalTimeFromWebhook = Date.now() - webhookStartTime;
-            
+
             // Check if execution succeeded or failed
             if (executionResult.success) {
               logVerbose(
@@ -930,7 +940,7 @@ export async function POST(req: Request) {
             // Unexpected error (should rarely happen now)
             const executionDuration = Date.now() - promiseStartTime;
             const totalTimeFromWebhook = Date.now() - webhookStartTime;
-            
+
             logError(
               `❌ Pledge execution CRASHED (unexpected) for payment ${dbPayment.id}:`,
               {
@@ -979,7 +989,7 @@ export async function POST(req: Request) {
           creatorAddress: dbPayment.campaign.creatorAddress,
           timeSinceWebhookStart: `${Date.now() - webhookStartTime}ms`,
         });
-        
+
         try {
           const creatorLookupStart = Date.now();
           const creator = await db.user.findUnique({
@@ -1014,7 +1024,8 @@ export async function POST(req: Request) {
               eventUuid: idempotencyKey || undefined,
             });
             const notifySendDuration = Date.now() - notifySendStart;
-            const totalNotificationDuration = Date.now() - notificationStartTime;
+            const totalNotificationDuration =
+              Date.now() - notificationStartTime;
 
             logVerbose(
               `✅ Notification sent for Daimo Pay payment ${updatedPayment.id}`,
@@ -1051,7 +1062,7 @@ export async function POST(req: Request) {
       if (dbPayment.provider === 'daimo') {
         // This associates payments with rounds immediately when confirmed
         const roundsStartTime = Date.now();
-        
+
         logVerbose('🎯 Starting round contributions processing:', {
           prefixId,
           logAddress,
@@ -1095,7 +1106,7 @@ export async function POST(req: Request) {
           // Create RoundContribution records for each approved round
           let contributionsCreated = 0;
           let contributionsFailed = 0;
-          
+
           for (const roundCampaign of roundCampaigns) {
             const contributionStart = Date.now();
             try {
@@ -1122,12 +1133,12 @@ export async function POST(req: Request) {
             } catch (roundError) {
               const contributionDuration = Date.now() - contributionStart;
               contributionsFailed++;
-              
+
               logError(
                 `❌ Failed to create round contribution for round ${roundCampaign.roundId}:`,
-                { 
-                  prefixId, 
-                  logAddress, 
+                {
+                  prefixId,
+                  logAddress,
                   error: roundError,
                   contributionDuration: `${contributionDuration}ms`,
                 },
@@ -1135,7 +1146,7 @@ export async function POST(req: Request) {
               // Continue with other rounds even if one fails
             }
           }
-          
+
           const totalRoundsDuration = Date.now() - roundsStartTime;
           logVerbose('✅ Round contributions processing complete:', {
             prefixId,
@@ -1160,19 +1171,16 @@ export async function POST(req: Request) {
     }
 
     const totalWebhookDuration = Date.now() - webhookStartTime;
-    
-    logVerbose(
-      `🏁 Webhook processing complete for payment ${dbPayment.id}`,
-      { 
-        prefixId, 
-        logAddress,
-        newStatus,
-        previousStatus: currentStatus,
-        eventType: payload.type,
-        totalWebhookDuration: `${totalWebhookDuration}ms`,
-        completedAt: new Date().toISOString(),
-      },
-    );
+
+    logVerbose(`🏁 Webhook processing complete for payment ${dbPayment.id}`, {
+      prefixId,
+      logAddress,
+      newStatus,
+      previousStatus: currentStatus,
+      eventType: payload.type,
+      totalWebhookDuration: `${totalWebhookDuration}ms`,
+      completedAt: new Date().toISOString(),
+    });
 
     return response({
       acknowledged: true,
