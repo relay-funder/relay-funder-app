@@ -4,7 +4,7 @@ import { useCallback, useState, useMemo } from 'react';
 export function ReadMoreOrLess({
   children,
   className,
-  collapsedClassName = 'line-clamp-6',
+  collapsedClassName = 'line-clamp-3',
 }: {
   children: React.ReactNode;
   className?: string;
@@ -19,23 +19,30 @@ export function ReadMoreOrLess({
   // Determine if content is long enough to warrant a Read More button
   const showToggle = useMemo(() => {
     if (typeof children !== 'string') return false;
+    if (!children.trim()) return false;
 
     // Extract the line clamp number from className
     const lineClampMatch = collapsedClassName.match(/line-clamp-(\d+)/);
     const lineClampNumber = lineClampMatch
       ? parseInt(lineClampMatch[1], 10)
-      : 6;
+      : 3;
 
-    // Rough estimation: assume ~80 characters per line for typical text
-    const estimatedCharsPerLine = 80;
+    // More conservative estimation: ~60 characters per line (accounting for spacing and wrapping)
+    const estimatedCharsPerLine = 60;
     const threshold = lineClampNumber * estimatedCharsPerLine;
 
-    // Also check for line breaks which would create additional lines
+    // Check for explicit line breaks
     const lineBreaks = (children.match(/\n/g) || []).length;
-    const hasSignificantContent =
-      children.length > threshold || lineBreaks >= lineClampNumber;
 
-    return hasSignificantContent;
+    // Check for very long words that might cause wrapping
+    const longWords = children.split(/\s+/).filter(word => word.length > 20);
+
+    // Show toggle if content significantly exceeds the line limit
+    const exceedsByLength = children.length > threshold * 1.2; // 20% buffer
+    const exceedsByLines = lineBreaks > lineClampNumber;
+    const hasLongWords = longWords.length > 0;
+
+    return exceedsByLength || exceedsByLines || hasLongWords;
   }, [children, collapsedClassName]);
 
   return (
@@ -43,7 +50,7 @@ export function ReadMoreOrLess({
       <p
         className={cn(
           collapsed &&
-            (collapsedClassName ? collapsedClassName : 'line-clamp-6'),
+            (collapsedClassName ? collapsedClassName : 'line-clamp-3'),
           className ? className : 'text-muted-foreground',
         )}
       >
