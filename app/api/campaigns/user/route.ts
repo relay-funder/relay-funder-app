@@ -60,9 +60,7 @@ export async function PATCH(req: Request) {
 
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
-    const fundingUsageRaw = formData.get('fundingUsage');
-    const fundingUsage =
-      typeof fundingUsageRaw === 'string' ? fundingUsageRaw : null;
+    const fundingUsage = formData.get('fundingUsage') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
@@ -111,11 +109,8 @@ export async function PATCH(req: Request) {
       description,
       location,
       category,
+      fundingUsage,
     };
-
-    if (fundingUsage !== null) {
-      updateData.fundingUsage = fundingUsage;
-    }
 
     await db.campaign.update({
       where: {
