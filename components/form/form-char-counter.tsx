@@ -25,28 +25,29 @@ export function FormCharCounter({
 
   // Update character counts when form values change
   useEffect(() => {
+    // Set initial value
+    const current = form.getValues(name)?.length || 0;
+    setCharCount(current);
+
+    // Update character counts when form values change
     const subscription = form.watch((value) => {
-      setCharCount(value[name]?.length || 0);
+      const current = value[name]?.length || 0;
+      setCharCount(current);
     });
     return () => subscription.unsubscribe();
-  }, [form, name]);
+  }, [form, name, min]);
 
-  const { currentCharColor, maxCharColor, charCountColor } = useMemo(() => {
+  const { currentCharColor, charCountColor } = useMemo(() => {
     const currentCharColor = min ? getCharMinCountColor(charCount, min) : '';
-    const maxCharColor = '';
     const charCountColor = max ? getCharCountColor(charCount, max) : '';
-    return { currentCharColor, maxCharColor, charCountColor };
+    return { currentCharColor, charCountColor };
   }, [charCount, min, max]);
 
   return (
     <div className={cn('flex justify-end', className)}>
       <span className={cn('text-xs', charCountColor)}>
         <span className={currentCharColor}>{charCount}</span>
-        {max ? (
-          <>
-            /<span className={maxCharColor}>{max}</span>
-          </>
-        ) : null}
+        {max ? `/${max}` : null}
       </span>
     </div>
   );

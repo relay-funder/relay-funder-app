@@ -1,4 +1,4 @@
-import { useFormContext } from 'react-hook-form';
+import { ControllerProps, useFormContext } from 'react-hook-form';
 import {
   FormControl,
   FormField,
@@ -9,7 +9,8 @@ import {
 } from '@/components/ui';
 import { FormCharCounter } from './form-char-counter';
 
-interface FormFieldTextAreaProps {
+interface FormFieldTextAreaProps
+  extends Partial<Omit<ControllerProps, 'control' | 'name' | 'render'>> {
   name: string;
   label: string;
   placeholder: string;

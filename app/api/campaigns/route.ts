@@ -78,7 +78,13 @@ export async function POST(req: Request) {
         location,
       });
 
-    if (!title || !description || !fundingGoal || !creatorAddress) {
+    if (
+      !title ||
+      !description ||
+      !fundingGoal ||
+      !fundingUsage ||
+      !creatorAddress
+    ) {
       throw new ApiParameterError('missing required fields');
     }
     let startTimeValue: Date | undefined = undefined;
