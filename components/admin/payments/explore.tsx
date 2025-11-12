@@ -218,22 +218,27 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 {payment.amount} {payment.token}
               </div>
             </div>
-            {payment.provider === 'daimo' && (payment.metadata as { tipAmount?: string; baseAmount?: string })?.tipAmount && (
-              <div>
-                <span className="text-muted-foreground">Tip Amount:</span>
-                <div className="font-semibold">
-                  {(payment.metadata as { tipAmount?: string })?.tipAmount} {payment.token}
+            {payment.provider === 'daimo' &&
+              (payment.metadata as { tipAmount?: string; baseAmount?: string })
+                ?.tipAmount && (
+                <div>
+                  <span className="text-muted-foreground">Tip Amount:</span>
+                  <div className="font-semibold">
+                    {(payment.metadata as { tipAmount?: string })?.tipAmount}{' '}
+                    {payment.token}
+                  </div>
                 </div>
-              </div>
-            )}
-            {payment.provider === 'daimo' && (payment.metadata as { baseAmount?: string })?.baseAmount && (
-              <div>
-                <span className="text-muted-foreground">Payment Amount:</span>
-                <div className="font-semibold">
-                  {(payment.metadata as { baseAmount?: string })?.baseAmount} {payment.token}
+              )}
+            {payment.provider === 'daimo' &&
+              (payment.metadata as { baseAmount?: string })?.baseAmount && (
+                <div>
+                  <span className="text-muted-foreground">Payment Amount:</span>
+                  <div className="font-semibold">
+                    {(payment.metadata as { baseAmount?: string })?.baseAmount}{' '}
+                    {payment.token}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             <div>
               <span className="text-muted-foreground">Status:</span>
               <div>
@@ -271,7 +276,9 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Pledge to Treasury:</span>
+                <span className="text-muted-foreground">
+                  Pledge to Treasury:
+                </span>
                 <div className="mt-1">
                   <PledgeExecutionBadge
                     status={payment.pledgeExecutionStatus}
@@ -279,11 +286,15 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground">Transfer Attempts:</span>
+                <span className="text-muted-foreground">
+                  Transfer Attempts:
+                </span>
                 <div className="mt-1">{payment.pledgeExecutionAttempts}</div>
               </div>
               <div>
-                <span className="text-muted-foreground">Last Transfer Attempt:</span>
+                <span className="text-muted-foreground">
+                  Last Transfer Attempt:
+                </span>
                 <div className="mt-1">
                   {payment.pledgeExecutionLastAttempt ? (
                     <FormattedDate
