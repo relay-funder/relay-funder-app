@@ -39,6 +39,7 @@ export function CampaignCreateFormSummary() {
         title: values.title,
         description: values.description,
         fundingGoal: values.fundingGoal,
+        fundingUsage: values.fundingUsage,
         startTime: new Date(transformStartTime(values.startTime)),
         endTime: new Date(transformEndTime(values.endTime)),
         creatorAddress: session?.data?.user.address,
@@ -67,6 +68,8 @@ export function CampaignCreateFormSummary() {
         description: 'Please complete the campaign form to see a full preview.',
         fundingGoal: '1000',
         fundingRaised: '0',
+        fundingUsage:
+          'This is an example use of funds. Please update this with your own use of funds.',
         startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
         endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         creatorAddress: session?.data?.user.address || '',

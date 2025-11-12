@@ -77,6 +77,7 @@ model Campaign {
   title           String
   description     String
   fundingGoal     String
+  fundingUsage    String               @default("")
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
@@ -177,8 +178,8 @@ model Payment {
   token           String
   status          String             @default("pending")
   type            PaymentType
-  transactionHash String?            // Blockchain transaction hash for explorer links
-  daimoPaymentId  String? @unique   // Daimo payment ID for webhook idempotency
+  transactionHash String? // Blockchain transaction hash for explorer links
+  daimoPaymentId  String?            @unique // Daimo payment ID for webhook idempotency
   isAnonymous     Boolean            @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
@@ -188,16 +189,16 @@ model Payment {
   metadata        Json?
   provider        String?
   refundState     PaymentRefundState @default(NONE)
-  
+
   // Pledge execution tracking (for gateway payments like Daimo Pay)
   pledgeExecutionStatus      PledgeExecutionStatus @default(NOT_STARTED)
   pledgeExecutionError       String?
   pledgeExecutionAttempts    Int                   @default(0)
   pledgeExecutionLastAttempt DateTime?
   pledgeExecutionTxHash      String?
-  
-  campaign        Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   RoundContribution RoundContribution[]
 

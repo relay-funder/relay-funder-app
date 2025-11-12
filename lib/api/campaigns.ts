@@ -807,9 +807,11 @@ export async function getStats({
   return stats;
 }
 
-interface MapCampaignInput extends Omit<DbCampaign, 'mediaOrder'> {
+interface MapCampaignInput
+  extends Omit<DbCampaign, 'mediaOrder' | 'fundingUsage'> {
   RoundCampaigns?: unknown;
   mediaOrder?: JsonValue | string[] | null;
+  fundingUsage?: string | null; // Allow null for existing campaigns during migration
 }
 export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
   const { RoundCampaigns, ...dbCampaignWithoutDbData } = dbCampaign;
@@ -818,6 +820,8 @@ export function mapCampaign(dbCampaign: MapCampaignInput): DbCampaign {
   }
   return {
     ...dbCampaignWithoutDbData,
+    // Provide default for existing campaigns that don't have fundingUsage
+    fundingUsage: dbCampaign.fundingUsage ?? '',
     mediaOrder: Array.isArray(dbCampaign.mediaOrder)
       ? (dbCampaign.mediaOrder as string[])
       : [],

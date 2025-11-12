@@ -6,7 +6,7 @@ import { CampaignFundingBox } from '@/components/campaign/funding-box';
 import { CampaignDetailsBox } from '@/components/campaign/details-box';
 import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
 import { CampaignDetailTabs } from '@/components/campaign/detail-tabs';
-import { CampaignDetailTabAbout } from '@/components/campaign/detail-tab-about';
+import { CampaignDetailCard } from '@/components/campaign/detail-card';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
 import { CampaignLocation } from '@/components/campaign/location';
@@ -60,9 +60,9 @@ export function CampaignFull({ slug }: { slug: string }) {
         {/* Desktop Layout: Original Grid */}
         <div className="hidden lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Left Column: Main Content */}
-          <div className="lg:col-span-2">
+          <div className="space-y-8 lg:col-span-2">
             {/* Top Section: Image and Title Box */}
-            <div className="mb-8 space-y-6">
+            <div className="space-y-6">
               {/* Main Image */}
               <div className="relative">
                 <div className="aspect-video overflow-hidden rounded-lg shadow-sm">
@@ -100,11 +100,18 @@ export function CampaignFull({ slug }: { slug: string }) {
             </div>
 
             {/* About Section - Separate from tabs */}
-            <div className="mb-8">
-              <div className="rounded-lg border bg-card p-4 shadow-sm">
-                <CampaignDetailTabAbout campaign={campaign} />
-              </div>
-            </div>
+            <CampaignDetailCard
+              title="About this campaign"
+              text={campaign.description}
+            />
+
+            {/* Use of funds Section */}
+            {campaign.fundingUsage && (
+              <CampaignDetailCard
+                title="Use of funds"
+                text={campaign.fundingUsage}
+              />
+            )}
 
             {/* Tabs Section */}
             <div className="rounded-lg border bg-card p-4 shadow-sm">
@@ -170,9 +177,18 @@ export function CampaignFull({ slug }: { slug: string }) {
           </div>
 
           {/* About Section */}
-          <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
-            <CampaignDetailTabAbout campaign={campaign} />
-          </div>
+          <CampaignDetailCard
+            title="About this campaign"
+            text={campaign.description}
+          />
+
+          {/* Use of funds Section */}
+          {campaign.fundingUsage && (
+            <CampaignDetailCard
+              title="Use of funds"
+              text={campaign.fundingUsage}
+            />
+          )}
 
           {/* Tabs Section */}
           <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
