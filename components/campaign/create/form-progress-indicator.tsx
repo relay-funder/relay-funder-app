@@ -11,7 +11,7 @@ export function FormProgressIndicator({
   className?: string;
 }) {
   const currentStep = getPageStep(currentPage);
-  
+
   if (startFromStep < 1 || startFromStep > TOTAL_FORM_PAGES) {
     console.warn(
       `FormProgressIndicator: startFromStep (${startFromStep}) must be between 1 and ${TOTAL_FORM_PAGES}`,

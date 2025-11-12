@@ -9,13 +9,14 @@ import { CampaignDonationWalletTip } from './tip';
 import { CampaignDonationWalletProcess } from './process';
 import { CampaignDonationAnonymous } from '../anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
+import { FeeInformation } from '@/components/shared/fee-information';
 
 export function CampaignDonationWalletDetails({
   campaign,
 }: {
   campaign: DbCampaign;
 }) {
-  const { isProcessingPayment, clearDonation } = useDonationContext();
+  const { isProcessingPayment, clearDonation, amount } = useDonationContext();
 
   useEffect(() => {
     return () => {
@@ -36,9 +37,8 @@ export function CampaignDonationWalletDetails({
           </div>
         </div>
       </VisibilityToggle>
-      <CampaignDonationWalletProcess
-        campaign={campaign}
-      />
+
+      <CampaignDonationWalletProcess campaign={campaign} />
     </div>
   );
 }
