@@ -36,11 +36,13 @@ export function ReadMoreOrLess({
 
     // Check for very long words that might cause wrapping
     const longWords = children.split(/\s+/).filter(word => word.length > 20);
+    const longWordsTotalLength = longWords.reduce((sum, word) => sum + word.length, 0);
+    const longWordsProportion = children.length > 0 ? longWordsTotalLength / children.length : 0;
 
     // Show toggle if content significantly exceeds the line limit
     const exceedsByLength = children.length > threshold * 1.2; // 20% buffer
-    const exceedsByLines = lineBreaks > lineClampNumber;
-    const hasLongWords = longWords.length > 0;
+    const exceedsByLines = lineBreaks >= lineClampNumber; // Include exact matches
+    const hasLongWords = longWordsProportion > 0.3; // Require significant proportion of long words
 
     return exceedsByLength || exceedsByLines || hasLongWords;
   }, [children, collapsedClassName]);
