@@ -21,8 +21,9 @@ export const KICKSTARTER_QF_ADDRESS =
 export const REOWN_CLOUD_PROJECT_ID =
   process.env.NEXT_PUBLIC_REOWN_CLOUD_PROJECT_ID || '';
 // by default allow reown email login, disable by setting the env and redeploy
-export const REOWN_FEATURE_EMAIL =
-  !Boolean(process.env.NEXT_PUBLIC_REOWN_FEATURE_DISABLE_EMAIL);
+export const REOWN_FEATURE_EMAIL = !Boolean(
+  process.env.NEXT_PUBLIC_REOWN_FEATURE_DISABLE_EMAIL,
+);
 
 // privy
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';

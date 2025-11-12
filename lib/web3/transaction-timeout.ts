@@ -6,11 +6,11 @@ const logError = logFactory('error', '🚨 Timeout');
 
 /**
  * Timeout Wrapper for Blockchain Operations
- * 
+ *
  * Prevents indefinite hangs on blockchain operations by racing the operation
  * against a timeout. This is critical for gateway pledge execution where
  * RPC failures or network issues can cause operations to hang forever.
- * 
+ *
  * Usage:
  * ```typescript
  * const receipt = await waitWithTimeout(
@@ -23,10 +23,10 @@ const logError = logFactory('error', '🚨 Timeout');
 
 /**
  * Race a promise against a timeout.
- * 
+ *
  * If the promise completes first, returns its result.
  * If the timeout occurs first, throws ApiUpstreamError with details.
- * 
+ *
  * @param promise - The promise to execute with timeout protection
  * @param timeoutMs - Timeout in milliseconds
  * @param operation - Human-readable description of the operation (for logging/errors)
@@ -98,7 +98,10 @@ export async function waitWithTimeout<T>(
     const elapsed = Date.now() - startTime;
 
     // Check if this is a timeout error (our ApiUpstreamError)
-    if (error instanceof ApiUpstreamError && error.message.includes('timed out')) {
+    if (
+      error instanceof ApiUpstreamError &&
+      error.message.includes('timed out')
+    ) {
       logError('Operation timed out', {
         operation,
         timeoutMs,
@@ -122,16 +125,16 @@ export async function waitWithTimeout<T>(
 
 /**
  * Recommended timeout values for common blockchain operations.
- * 
+ *
  * IMPORTANT: Vercel serverless function limits (Pro plan):
  * - Max execution time: 300 seconds (5 minutes)
  * - Our timeouts must fit within this limit
- * 
+ *
  * Worst-case timing with polling fallback:
  * - Approval: 60s (tx.wait) + 60s (polling) = 120s max
  * - Pledge: 30s (tx.wait) + 60s (polling) = 90s max
  * - Total: 210s (3.5 minutes) - fits within Vercel 5-minute limit
- * 
+ *
  * NOTE: If RPC is slower, lambda will timeout but tx hash is saved to DB,
  * allowing manual verification via CeloScan or recovery via retry endpoint.
  */
@@ -145,7 +148,7 @@ export const TIMEOUT_VALUES = {
   /** setFeeAndPledge transaction confirmation (typically fast, ~4-5 seconds) */
   PLEDGE_TX: 30000, // 30 seconds - try tx.wait(), then poll for another 60s
 
-  /** 
+  /**
    * Overall execution timeout (sum of all operations + buffer)
    * Must fit within Vercel Pro 300s limit: approval (120s) + pledge (90s) + buffer (30s) = 240s
    */
@@ -154,9 +157,9 @@ export const TIMEOUT_VALUES = {
 
 /**
  * Convenience wrapper for transaction wait() with timeout.
- * 
+ *
  * Automatically uses appropriate timeout for transaction confirmations.
- * 
+ *
  * @param tx - Transaction response object with wait() method
  * @param operation - Description of the transaction
  * @param context - Optional context for logging
@@ -178,4 +181,3 @@ export async function waitForTransaction<
     txContext,
   );
 }
-

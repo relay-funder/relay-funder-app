@@ -109,7 +109,7 @@ export const siweConfig = createSIWEConfig({
   verifyMessage: async ({ message, signature }: SIWEVerifyMessageArgs) => {
     try {
       const session = await getSession();
-      if(session?.user){
+      if (session?.user) {
         return true;
       }
       const callbackUrl = loginCallbackUrl();

@@ -7,21 +7,29 @@ const debugFlagsEnv = process.env.NEXT_PUBLIC_DEBUG_FLAGS;
  * These flags take precedence over the default debug flag values.
  */
 const debugFlagsSet = new Set(
-  (debugFlagsEnv ?? '').split(',').map(flag => flag.trim()).filter((flag) => flag !== '')
+  (debugFlagsEnv ?? '')
+    .split(',')
+    .map((flag) => flag.trim())
+    .filter((flag) => flag !== ''),
 );
 
 // Derive boolean constants with environment override support
 export const debug = debugFlagsSet.has('debug') || !IS_PRODUCTION;
 export const debugWeb3 = debugFlagsSet.has('web3') || debug;
 export const debugWeb3UseAuth = debugFlagsSet.has('web3UseAuth') || debugWeb3;
-export const debugWeb3ContextProvider = debugFlagsSet.has('web3ContextProvider') || debugWeb3;
-export const debugWeb3AdapterSilkConnector = debugFlagsSet.has('web3AdapterSilkConnector') || debugWeb3;
+export const debugWeb3ContextProvider =
+  debugFlagsSet.has('web3ContextProvider') || debugWeb3;
+export const debugWeb3AdapterSilkConnector =
+  debugFlagsSet.has('web3AdapterSilkConnector') || debugWeb3;
 export const debugApi = debugFlagsSet.has('api') || debug;
 export const debugLib = debugFlagsSet.has('lib') || debug;
 export const debugComponentData = debugFlagsSet.has('component') || debug;
 export const debugAuth = debugFlagsSet.has('auth') || debug;
 export const debugHook = debugFlagsSet.has('hook') || debug;
-export const debugQf = debugFlagsSet.has('qf') || (process.env.NEXT_PUBLIC_DEBUG_QF === 'true' || false);
+export const debugQf =
+  debugFlagsSet.has('qf') ||
+  process.env.NEXT_PUBLIC_DEBUG_QF === 'true' ||
+  false;
 export const debugDaimo = debugFlagsSet.has('daimo') || debug;
 
 /**
