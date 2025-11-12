@@ -14,72 +14,104 @@ import { CampaignDetailTabTransactions } from './detail-tab-transactions';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { CampaignDetailTabRounds } from './detail-tab-rounds';
 import { useUpdateAnchor } from '@/hooks/use-update-anchor';
-import { useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts';
 import { useFeatureFlag } from '@/lib/flags';
 
-export function CampaignDetailTabs({ campaign }: { campaign: DbCampaign }) {
+export type TabNames = 'updates' | 'transactions' | 'comments' | 'rounds';
+
+export function CampaignDetailTabs({
+  campaign,
+  activeTab = 'updates',
+  onActiveTabChanged,
+}: {
+  campaign: DbCampaign;
+  activeTab: TabNames;
+  onActiveTabChanged?: (tabName: TabNames) => void;
+}) {
   const { contributorCount, contributorPendingCount } =
     useCampaignStatsFromInstance({ campaign });
   const { isAdmin } = useAuth();
   const isRoundsVisibilityEnabled = useFeatureFlag('ROUNDS_VISIBILITY');
-  const [activeTab, setActiveTab] = useState('updates');
 
+  const intermediatOnActiveTabChanged = useCallback(
+    (tabName: TabNames | string) => {
+      onActiveTabChanged?.(tabName as TabNames);
+    },
+    [onActiveTabChanged],
+  );
   // Handle update anchor links - only switch tab, don't prevent user navigation
   useUpdateAnchor({
     onUpdateTarget: () => {
       // Switch to updates tab when an update is targeted
-      setActiveTab('updates');
+      intermediatOnActiveTabChanged('updates');
     },
   });
 
-  const showRoundsTab = isRoundsVisibilityEnabled || isAdmin;
+  const showRoundsTab = useMemo(
+    () => isRoundsVisibilityEnabled || isAdmin,
+    [isAdmin, isRoundsVisibilityEnabled],
+  );
 
   // Define available tabs with their labels and counts
-  const tabOptions = [
-    {
-      value: 'updates',
-      label: 'Updates',
-      count: campaign._count?.updates ?? 0,
-    },
-    {
-      value: 'transactions',
-      label: 'Transactions',
-      count: contributorCount - contributorPendingCount,
-    },
-    {
-      value: 'comments',
-      label: 'Comments',
-      count: campaign._count?.comments ?? 0,
-    },
-    ...(showRoundsTab
-      ? [
-          {
-            value: 'rounds',
-            label: 'Rounds',
-            count: campaign.rounds?.length ?? 0,
-          },
-        ]
-      : []),
-  ];
+  const tabOptions = useMemo(
+    () => [
+      {
+        value: 'updates',
+        label: 'Updates',
+        count: campaign._count?.updates ?? 0,
+      },
+      {
+        value: 'transactions',
+        label: 'Transactions',
+        count: contributorCount - contributorPendingCount,
+      },
+      {
+        value: 'comments',
+        label: 'Comments',
+        count: campaign._count?.comments ?? 0,
+      },
+      ...(showRoundsTab
+        ? [
+            {
+              value: 'rounds',
+              label: 'Rounds',
+              count: campaign.rounds?.length ?? 0,
+            },
+          ]
+        : []),
+    ],
+    [campaign, contributorCount, contributorPendingCount, showRoundsTab],
+  );
 
-  const getCurrentTabLabel = () => {
+  const getCurrentTabLabel = useCallback(() => {
     const currentTab = tabOptions.find((tab) => tab.value === activeTab);
     return currentTab
       ? `${currentTab.label} (${currentTab.count})`
       : 'Select section';
-  };
+  }, [activeTab, tabOptions]);
 
-  const gridCols = showRoundsTab
-    ? 'grid-cols-1 sm:grid-cols-4'
-    : 'grid-cols-1 sm:grid-cols-3';
+  const gridCols = useMemo(
+    () =>
+      showRoundsTab
+        ? 'grid-cols-1 sm:grid-cols-4'
+        : 'grid-cols-1 sm:grid-cols-3',
+    [showRoundsTab],
+  );
 
   return (
     <div className="w-full">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={intermediatOnActiveTabChanged}
+        className="w-full"
+      >
         {/* Mobile: Dropdown Select */}
         <div className="mb-4 block sm:hidden">
-          <Select value={activeTab} onValueChange={setActiveTab}>
+          <Select
+            value={activeTab}
+            onValueChange={intermediatOnActiveTabChanged}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select section">
                 {getCurrentTabLabel()}

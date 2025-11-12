@@ -5,7 +5,10 @@ import { CampaignMainImage } from '@/components/campaign/main-image';
 import { CampaignFundingBox } from '@/components/campaign/funding-box';
 import { CampaignDetailsBox } from '@/components/campaign/details-box';
 import { CampaignMatchingFundsHighlight } from '@/components/campaign/matching-funds-highlight';
-import { CampaignDetailTabs } from '@/components/campaign/detail-tabs';
+import {
+  CampaignDetailTabs,
+  type TabNames,
+} from '@/components/campaign/detail-tabs';
 import { CampaignDetailTabAbout } from '@/components/campaign/detail-tab-about';
 import { PageHome } from '@/components/page/home';
 import { DetailContainer } from '@/components/layout';
@@ -20,10 +23,15 @@ import { ShareDialog } from '@/components/share-dialog';
 import { CampaignInfoDialog } from '@/components/campaign/info';
 import { Button } from '@/components/ui';
 import { Info } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export function CampaignFull({ slug }: { slug: string }) {
   const { address, isAdmin, isReady } = useAuth();
   const { data: campaignInstance, isPending } = useCampaign(slug);
+  const [activeTab, setActiveTab] = useState<TabNames>('updates');
+  const onActiveTabChanged = useCallback((tabName: TabNames) => {
+    setActiveTab(tabName);
+  }, []);
   if (isPending || !isReady) {
     return (
       <PageHome header={<PageHeader />}>
@@ -102,13 +110,21 @@ export function CampaignFull({ slug }: { slug: string }) {
             {/* About Section - Separate from tabs */}
             <div className="mb-8">
               <div className="rounded-lg border bg-card p-4 shadow-sm">
-                <CampaignDetailTabAbout campaign={campaign} />
+                <CampaignDetailTabAbout
+                  campaign={campaign}
+                  activeTab={activeTab}
+                  onActiveTabChanged={onActiveTabChanged}
+                />
               </div>
             </div>
 
             {/* Tabs Section */}
             <div className="rounded-lg border bg-card p-4 shadow-sm">
-              <CampaignDetailTabs campaign={campaign} />
+              <CampaignDetailTabs
+                campaign={campaign}
+                onActiveTabChanged={onActiveTabChanged}
+                activeTab={activeTab}
+              />
             </div>
           </div>
 
@@ -171,12 +187,20 @@ export function CampaignFull({ slug }: { slug: string }) {
 
           {/* About Section */}
           <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
-            <CampaignDetailTabAbout campaign={campaign} />
+            <CampaignDetailTabAbout
+              campaign={campaign}
+              activeTab={activeTab}
+              onActiveTabChanged={onActiveTabChanged}
+            />
           </div>
 
           {/* Tabs Section */}
           <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
-            <CampaignDetailTabs campaign={campaign} />
+            <CampaignDetailTabs
+              campaign={campaign}
+              onActiveTabChanged={onActiveTabChanged}
+              activeTab={activeTab}
+            />
           </div>
         </div>
       </DetailContainer>
