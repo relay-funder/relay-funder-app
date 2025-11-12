@@ -277,8 +277,8 @@ function FeeBreakdownContent({
             </p>
             <p>
               <strong>Platform Fee:</strong> Currently waived to maximize impact
-              for campaigns. When reintroduced, it will support Relay Funder&apos;s
-              operations and development.
+              for campaigns. When reintroduced, it will support Relay
+              Funder&apos;s operations and development.
             </p>
             {isDaimoPay && (
               <p>

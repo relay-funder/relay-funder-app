@@ -98,17 +98,53 @@ export async function executeGatewayPledge(
     note: 'UI should now show executing state',
   });
 
-  // Use withExecutionLock to acquire transaction-level advisory lock
-  // The lock is held for the entire execution and automatically released when transaction ends
-  return await withExecutionLock(paymentId, async (tx) => {
-    // Wrap execution with overall timeout to prevent indefinite hangs
-    return await waitWithTimeout(
-      _executeGatewayPledgeWithLock(paymentId, tx),
-      TIMEOUT_VALUES.OVERALL_EXECUTION,
-      'gateway pledge execution',
-      { paymentId },
-    );
-  });
+  // Wrap execution in try-catch to handle timeouts gracefully
+  // If execution fails (including timeout), we need to mark as FAILED in a SEPARATE transaction
+  try {
+    // Use withExecutionLock to acquire transaction-level advisory lock
+    // The lock is held for the entire execution and automatically released when transaction ends
+    return await withExecutionLock(paymentId, async (tx) => {
+      // Wrap execution with overall timeout to prevent indefinite hangs
+      return await waitWithTimeout(
+        _executeGatewayPledgeWithLock(paymentId, tx),
+        TIMEOUT_VALUES.OVERALL_EXECUTION,
+        'gateway pledge execution',
+        { paymentId },
+      );
+    });
+  } catch (error) {
+    // Execution failed (timeout, blockchain error, etc.)
+    // Mark as FAILED in a SEPARATE transaction so UI can show the failure
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
+    logError('Execution failed, marking as FAILED in separate transaction', {
+      paymentId,
+      error: errorMessage,
+    });
+
+    // Update status outside the locked transaction so it persists
+    await db.payment.update({
+      where: { id: paymentId },
+      data: {
+        pledgeExecutionStatus: 'FAILED',
+        pledgeExecutionError: errorMessage,
+      },
+    });
+
+    logVerbose('Payment marked as FAILED (committed to DB)', {
+      paymentId,
+      error: errorMessage,
+      note: 'UI should now show failed state with retry option',
+    });
+
+    // Return graceful failure response
+    return {
+      success: false,
+      paymentId,
+      error: errorMessage,
+    } as ExecuteGatewayPledgeResponse;
+  }
 }
 
 type TransactionClient = Omit<
