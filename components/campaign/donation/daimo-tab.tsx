@@ -26,6 +26,7 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setIsProcessingPayment,
     setIsPaymentCompleted,
     clearDonation,
+    setAmount,
   } = useDonationContext();
 
   useEffect(() => {
@@ -41,7 +42,8 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const handlePaymentCompleted = useCallback(() => {
     setIsProcessingPayment(false);
     setIsPaymentCompleted(true);
-  }, [setIsProcessingPayment, setIsPaymentCompleted]);
+    setAmount('0');
+  }, [setIsProcessingPayment, setIsPaymentCompleted, setAmount]);
 
   const handlePaymentBounced = useCallback(() => {
     setIsProcessingPayment(false);
@@ -52,10 +54,10 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     router.push(`/campaigns/${campaign.slug}`);
   }, [router, campaign.slug]);
 
-  const handleDonateAgain = useCallback(() => {
-    setIsPaymentCompleted(false);
-    setIsProcessingPayment(false);
-  }, [setIsPaymentCompleted, setIsProcessingPayment]);
+  // const handleDonateAgain = useCallback(() => {
+  //   setIsPaymentCompleted(false);
+  //   setIsProcessingPayment(false);
+  // }, [setIsPaymentCompleted, setIsProcessingPayment]);
 
   return (
     <DaimoPayProvider theme="auto">
@@ -77,9 +79,9 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
               <Button onClick={handleViewCampaign} variant="default">
                 View Campaign
               </Button>
-              <Button onClick={handleDonateAgain} variant="outline">
+              {/* <Button onClick={handleDonateAgain} variant="outline">
                 Donate Again
-              </Button>
+              </Button> */}
             </div>
           </div>
         )}
