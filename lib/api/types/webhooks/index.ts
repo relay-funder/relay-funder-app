@@ -53,6 +53,7 @@ const BaseWebhookPayloadSchema = z.object({
     metadata: z
       .object({
         campaignId: z.string().optional(),
+        treasuryAddress: z.string().optional(),
         email: z.string().optional(),
         anonymous: z.string().optional(),
         tipAmount: z.string().optional(),

@@ -9,6 +9,12 @@ import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
 import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
 import { logFactory } from '@/lib/debug';
+import {
+  DAIMO_PAY_CHAIN_ID,
+  DAIMO_PAY_USDT_ADDRESS,
+  DAIMO_PAY_USDC_ADDRESS,
+  DAIMO_PAY_MIN_AMOUNT,
+} from '@/lib/constant/daimo';
 
 // Type for payment with includes
 type PaymentWithIncludes = Prisma.PaymentGetPayload<{
@@ -17,6 +23,187 @@ type PaymentWithIncludes = Prisma.PaymentGetPayload<{
     campaign: true;
   };
 }>;
+
+/**
+ * Validate Daimo payment amounts to prevent admin wallet drainage.
+ *
+ * Security: User-provided amounts (baseAmount + tipAmount) must match or be less than
+ * the actual amount Daimo transferred to our wallet (destination.amountUnits).
+ *
+ * Prevents attack: User claims $100 donation (drains $100 from admin wallet in pledge)
+ * but only sent $1 to Daimo (actual transfer).
+ */
+function validateDaimoPaymentAmounts(
+  claimedBase: number,
+  claimedTip: number,
+  destinationAmountUnits: string | undefined,
+  tokenSymbol: string | undefined,
+  prefixId: string,
+  logAddress: string,
+): { valid: boolean; error?: string } {
+  // Reject negative inputs for claimedBase and claimedTip
+  if (claimedBase < 0) {
+    return {
+      valid: false,
+      error: 'claimedBase must be non-negative',
+    };
+  }
+
+  if (claimedTip < 0) {
+    return {
+      valid: false,
+      error: 'claimedTip must be non-negative',
+    };
+  }
+
+  const claimedTotal = claimedBase + claimedTip;
+
+  // Require destination amount for validation
+  if (!destinationAmountUnits) {
+    logError('Missing destination.amountUnits for amount validation', {
+      prefixId,
+      logAddress,
+      claimedBase,
+      claimedTip,
+      claimedTotal,
+      note: 'Cannot validate without actual transfer amount',
+    });
+    return {
+      valid: false,
+      error: 'Missing destination amount - cannot validate payment',
+    };
+  }
+
+  // Convert destination amount from token units (6 decimals) to USD
+  let destinationAmountBigInt: bigint;
+  try {
+    destinationAmountBigInt = BigInt(destinationAmountUnits);
+  } catch (error) {
+    logError('Invalid destinationAmountUnits format - not a valid number', {
+      prefixId,
+      logAddress,
+      destinationAmountUnits,
+      error: error instanceof Error ? error.message : 'Unknown parsing error',
+      note: 'Malformed destination amount units in Daimo webhook',
+    });
+    return {
+      valid: false,
+      error: 'Invalid destination amount format - cannot validate payment',
+    };
+  }
+  const actualReceivedUSD = Number(destinationAmountBigInt) / 1_000_000; // 6 decimals
+
+  // Tolerance for floating point precision: 0.01 USD (1 cent)
+  const tolerance = 0.01;
+
+  // Security check: Claimed total must not exceed actual received
+  // Allow exact match or slight overpayment (user error), reject underpayment (attack)
+  if (claimedTotal > actualReceivedUSD + tolerance) {
+    logError('SECURITY: Claimed amount exceeds actual Daimo transfer', {
+      prefixId,
+      logAddress,
+      claimedBase,
+      claimedTip,
+      claimedTotal,
+      actualReceivedUSD,
+      difference: claimedTotal - actualReceivedUSD,
+      tokenSymbol,
+      destinationAmountUnits,
+      severity: 'CRITICAL',
+      note: 'Potential admin wallet drainage attack prevented',
+    });
+    return {
+      valid: false,
+      error: `Amount mismatch: claimed ${claimedTotal} USD but received ${actualReceivedUSD} USD`,
+    };
+  }
+
+  logVerbose('Amount validation passed', {
+    prefixId,
+    logAddress,
+    claimedTotal,
+    actualReceivedUSD,
+    difference: actualReceivedUSD - claimedTotal,
+    withinTolerance: true,
+  });
+
+  return { valid: true };
+}
+
+/**
+ * Validate Daimo payment destination matches expected token and chain.
+ * Prevents accepting payments in wrong tokens or on wrong chains.
+ */
+function validateDaimoDestination(
+  destinationChainId: string | undefined,
+  destinationTokenAddress: string | undefined,
+  destinationTokenSymbol: string | undefined,
+  prefixId: string,
+  logAddress: string,
+): { valid: boolean; error?: string } {
+  // Require destination details
+  if (!destinationChainId || !destinationTokenAddress) {
+    logError('Missing destination chain or token information', {
+      prefixId,
+      logAddress,
+      destinationChainId,
+      destinationTokenAddress,
+      destinationTokenSymbol,
+    });
+    return {
+      valid: false,
+      error: 'Missing destination chain or token information',
+    };
+  }
+
+  // Validate chain is Celo
+  const chainId = parseInt(destinationChainId);
+  if (chainId !== DAIMO_PAY_CHAIN_ID) {
+    logError('SECURITY: Wrong destination chain', {
+      prefixId,
+      logAddress,
+      receivedChainId: chainId,
+      expectedChainId: DAIMO_PAY_CHAIN_ID,
+      severity: 'HIGH',
+    });
+    return {
+      valid: false,
+      error: `Invalid chain: expected ${DAIMO_PAY_CHAIN_ID} (Celo), got ${chainId}`,
+    };
+  }
+
+  // Validate token is USDT or USDC (normalize addresses for comparison)
+  const receivedToken = destinationTokenAddress.toLowerCase();
+  const validTokens = [
+    DAIMO_PAY_USDT_ADDRESS.toLowerCase(),
+    DAIMO_PAY_USDC_ADDRESS.toLowerCase(),
+  ];
+
+  if (!validTokens.includes(receivedToken)) {
+    logError('SECURITY: Wrong destination token', {
+      prefixId,
+      logAddress,
+      receivedToken,
+      expectedTokens: validTokens,
+      receivedSymbol: destinationTokenSymbol,
+      severity: 'HIGH',
+    });
+    return {
+      valid: false,
+      error: `Invalid token: expected USDT/USDC on Celo, got ${destinationTokenSymbol || receivedToken}`,
+    };
+  }
+
+  logVerbose('Destination validation passed', {
+    prefixId,
+    logAddress,
+    chainId,
+    tokenAddress: receivedToken,
+    tokenSymbol: destinationTokenSymbol,
+  });
+
+  return { valid: true };
+}
 
 const logVerbose = logFactory('verbose', '🚀 DaimoPayWebhook', { flag: 'daimo' });
 
@@ -206,6 +393,90 @@ export async function POST(req: Request) {
       const campaignId = metadata?.campaignId
         ? parseInt(metadata.campaignId)
         : null;
+
+      // Validate campaignId exists before database query
+      if (!campaignId) {
+        logError('Missing campaignId in Daimo payment metadata', {
+          prefixId,
+          logAddress,
+          metadata,
+          note: 'Cannot create payment without valid campaignId',
+        });
+        return NextResponse.json(
+          { error: 'Missing campaignId in payment metadata' },
+          { status: 400 },
+        );
+      }
+
+      // Validate campaign exists BEFORE creating payment
+      // Prevents cross-environment pollution (staging -> production)
+      const campaign = await db.campaign.findUnique({
+        where: { id: campaignId },
+        select: {
+          id: true,
+          treasuryAddress: true,
+          status: true,
+        },
+      });
+
+      if (!campaign) {
+        logWarn('Campaign not found - rejecting webhook', {
+          prefixId,
+          logAddress,
+          campaignId,
+          note: 'Prevents cross-environment payment creation',
+        });
+        return NextResponse.json(
+          { error: 'Campaign not found' },
+          { status: 400 },
+        );
+      }
+
+      // Validate campaign has treasury (required for pledge execution)
+      if (!campaign.treasuryAddress) {
+        logWarn('Campaign missing treasury address - rejecting webhook', {
+          prefixId,
+          logAddress,
+          campaignId,
+          campaignStatus: campaign.status,
+        });
+        return NextResponse.json(
+          { error: 'Campaign treasury not configured' },
+          { status: 400 },
+        );
+      }
+
+      // Validate treasury address in metadata matches campaign
+      const metadataTreasuryAddress = metadata?.treasuryAddress;
+      if (!metadataTreasuryAddress) {
+        logWarn('Missing treasury address in metadata - rejecting webhook', {
+          prefixId,
+          logAddress,
+          campaignId,
+          note: 'Treasury address required in metadata for validation',
+        });
+        return NextResponse.json(
+          { error: 'Missing treasury address in metadata' },
+          { status: 400 },
+        );
+      }
+
+      if (metadataTreasuryAddress.toLowerCase() !== campaign.treasuryAddress?.toLowerCase()) {
+        logWarn('SECURITY: Treasury address mismatch in metadata', {
+          prefixId,
+          logAddress,
+          campaignId,
+          metadataTreasury: metadataTreasuryAddress,
+          campaignTreasury: campaign.treasuryAddress,
+          severity: 'HIGH',
+          note: 'Metadata treasury address does not match campaign treasury',
+        });
+        return NextResponse.json(
+          { error: 'Treasury address validation failed' },
+          { status: 400 },
+        );
+      }
+
       const userAddress = payload.payment.source?.payerAddress;
       const tipAmount = parseFloat(metadata?.tipAmount || '0');
       const baseAmount = parseFloat(metadata?.baseAmount || '0');
@@ -213,9 +484,50 @@ export async function POST(req: Request) {
       const isAnonymous = metadata?.anonymous === 'true';
       const userEmail = metadata?.email;
 
-      if (!campaignId) {
-        throw new ApiParameterError(
-          'Missing campaignId in Daimo payment metadata',
+      // Validate destination token and chain
+      const destinationValidation = validateDaimoDestination(
+        payload.payment.destination?.chainId,
+        payload.payment.destination?.tokenAddress,
+        payload.payment.destination?.tokenSymbol,
+        prefixId,
+        logAddress,
+      );
+
+      if (!destinationValidation.valid) {
+        return NextResponse.json(
+          { error: destinationValidation.error },
+          { status: 400 },
+        );
+      }
+
+      // Validate amounts against actual Daimo transfer
+      const amountValidation = validateDaimoPaymentAmounts(
+        baseAmount,
+        tipAmount,
+        payload.payment.destination?.amountUnits,
+        payload.payment.destination?.tokenSymbol,
+        prefixId,
+        logAddress,
+      );
+
+      if (!amountValidation.valid) {
+        return NextResponse.json(
+          { error: amountValidation.error },
+          { status: 400 },
+        );
+      }
+
+      // Validate minimum amount
+      if (totalAmount < DAIMO_PAY_MIN_AMOUNT) {
+        logWarn('Payment below minimum amount', {
+          prefixId,
+          logAddress,
+          totalAmount,
+          minimumAmount: DAIMO_PAY_MIN_AMOUNT,
+        });
+        return NextResponse.json(
+          { error: `Payment amount ${totalAmount} below minimum ${DAIMO_PAY_MIN_AMOUNT}` },
+          { status: 400 },
         );
       }
 

@@ -55,6 +55,49 @@ export async function executeGatewayPledge(
     paymentId,
   });
 
+  // Allow retrying PENDING payments if they've been stuck for more than 5 minutes
+  // This handles lambda timeouts while still preventing concurrent executions
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  
+  const pendingUpdate = await db.payment.updateMany({
+    where: {
+      id: paymentId,
+      OR: [
+        // Not currently PENDING
+        { pledgeExecutionStatus: { not: 'PENDING' } },
+        // OR PENDING but stuck (last attempt is null OR > 5 minutes ago)
+        {
+          pledgeExecutionStatus: 'PENDING',
+          OR: [
+            { pledgeExecutionLastAttempt: null },
+            { pledgeExecutionLastAttempt: { lt: fiveMinutesAgo } },
+          ],
+        },
+      ],
+    },
+    data: {
+      pledgeExecutionStatus: 'PENDING',
+      pledgeExecutionAttempts: { increment: 1 },
+      pledgeExecutionLastAttempt: new Date(),
+    },
+  });
+
+  // If update affected 0 rows, another execution is actively in progress
+  if (pendingUpdate.count === 0) {
+    logError('Optimistic lock failed - payment is actively being executed', {
+      paymentId,
+      note: 'Another process is currently executing this pledge',
+    });
+    throw new ApiParameterError(
+      `Payment ${paymentId} is already being executed by another process`,
+    );
+  }
+
+  logVerbose('Payment status set to PENDING (committed to DB)', {
+    paymentId,
+    note: 'UI should now show executing state',
+  });
+
   // Use withExecutionLock to acquire transaction-level advisory lock
   // The lock is held for the entire execution and automatically released when transaction ends
   return await withExecutionLock(paymentId, async (tx) => {
@@ -180,39 +223,6 @@ async function _executeGatewayPledgeWithLock(
     }
   }
 
-  // OPTIMISTIC LOCKING: Update to PENDING only if not already PENDING
-  // This prevents race conditions where multiple processes try to execute
-  const updateResult = await tx.payment.updateMany({
-    where: {
-      id: paymentId,
-      pledgeExecutionStatus: { not: 'PENDING' },
-    },
-    data: {
-      pledgeExecutionStatus: 'PENDING',
-      pledgeExecutionAttempts: { increment: 1 },
-      pledgeExecutionLastAttempt: new Date(),
-    },
-  });
-
-  // If update affected 0 rows, another execution is already in progress
-  if (updateResult.count === 0) {
-    logError('Optimistic lock failed - payment already PENDING', {
-      prefixId,
-      logAddress,
-      paymentId,
-      currentStatus: payment.pledgeExecutionStatus,
-    });
-    throw new ApiParameterError(
-      `Payment ${paymentId} is already being executed (status: ${payment.pledgeExecutionStatus})`,
-    );
-  }
-
-  logVerbose('Payment updated to PENDING (optimistic lock successful)', {
-    prefixId,
-    logAddress,
-    paymentId,
-    pledgeExecutionAttempts: payment.pledgeExecutionAttempts + 1,
-  });
 
   try {
     return await _executeGatewayPledgeInternal(payment, tx, {
