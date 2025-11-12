@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { countries, categories } from '@/lib/constant';
-import { FUNDING_USAGE_MAX_LENGTH, FUNDING_USAGE_MIN_LENGTH } from '@/lib/constant/form';
+import {
+  FUNDING_USAGE_MAX_LENGTH,
+  FUNDING_USAGE_MIN_LENGTH,
+} from '@/lib/constant/form';
 
 function validateTimes(value: string) {
   const date = new Date(value);
