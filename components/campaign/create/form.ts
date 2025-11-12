@@ -65,12 +65,12 @@ export const CampaignFormSchema = z
     ),
     fundingUsage: z
       .string()
-      .min(1, { message: 'Funding usage is required' })
+      .min(1, { message: 'Use of Funds is required' })
       .refine((value) => value.length >= FUNDING_USAGE_MIN_LENGTH, {
-        message: `Funding usage must be at least ${FUNDING_USAGE_MIN_LENGTH} characters long`,
+        message: `Use of Funds must be at least ${FUNDING_USAGE_MIN_LENGTH} characters long`,
       })
       .refine((value) => value.length <= FUNDING_USAGE_MAX_LENGTH, {
-        message: `Funding usage must be ${FUNDING_USAGE_MAX_LENGTH} characters or less`,
+        message: `Use of Funds must be ${FUNDING_USAGE_MAX_LENGTH} characters or less`,
       }),
     fundingModel: z.string(),
     selectedRoundId: z.number().nullable(),

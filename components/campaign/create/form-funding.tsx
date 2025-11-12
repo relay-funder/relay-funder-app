@@ -51,7 +51,7 @@ export function CampaignCreateFormFunding({
 
       <FormFieldTextArea
         name="fundingUsage"
-        label="Funding Usage"
+        label="Use of Funds"
         placeholder="Please write 2-3 sentences describing your intended use of funds"
         maxLength={FUNDING_USAGE_MAX_LENGTH}
       />

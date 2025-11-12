@@ -69,7 +69,7 @@ export function CampaignCreateFormSummary() {
         fundingGoal: '1000',
         fundingRaised: '0',
         fundingUsage:
-          'This is an example funding usage. Please update this with your own funding usage.',
+          'This is an example use of funds. Please update this with your own use of funds.',
         startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
         endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         creatorAddress: session?.data?.user.address || '',
