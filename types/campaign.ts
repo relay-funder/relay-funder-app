@@ -16,6 +16,7 @@ export interface DbCampaign {
   title: string;
   description: string;
   fundingGoal: string;
+  fundingUsage: string;
   startTime: Date;
   endTime: Date;
   creatorAddress: string;

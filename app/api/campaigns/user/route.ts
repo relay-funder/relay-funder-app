@@ -60,12 +60,13 @@ export async function PATCH(req: Request) {
 
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
+    const fundingUsage = formData.get('fundingUsage') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');
     }
-    if (!title || !description) {
+    if (!title || !description || !fundingUsage) {
       throw new ApiParameterError('missing required fields');
     }
 
@@ -103,16 +104,19 @@ export async function PATCH(req: Request) {
         throw new ApiUpstreamError('Image upload failed');
       }
     }
+    const updateData: Record<string, unknown> = {
+      title,
+      description,
+      location,
+      category,
+      fundingUsage,
+    };
+
     await db.campaign.update({
       where: {
         id: instance.id,
       },
-      data: {
-        title,
-        description,
-        location,
-        category,
-      },
+      data: updateData,
     });
     if (imageUrl) {
       const campaignMedia = await db.media.findMany({

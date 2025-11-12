@@ -11,7 +11,7 @@ export function CampaignDetailTabAbout({ campaign }: { campaign: DbCampaign }) {
       <div className="max-w-none">
         <ReadMoreOrLess
           className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground"
-          collapsedClassName="line-clamp-2"
+          collapsedClassName="line-clamp-3"
         >
           {campaign.description}
         </ReadMoreOrLess>

@@ -10,6 +10,7 @@ import { CampaignCreateFormStates } from './form-states';
 import { DetailContainer } from '@/components/layout';
 import { getPrevPage, PROGRESS_INDICATOR_START_STEP } from './form-steps';
 import { FormProgressIndicator } from './form-progress-indicator';
+import { cn } from '@/lib/utils';
 
 export function CampaignCreateFormPage({
   state,
@@ -31,6 +32,7 @@ export function CampaignCreateFormPage({
         key="prev"
         variant={isSummaryPage ? 'ghost' : 'secondary'}
         size="lg"
+        className="w-full xs:w-auto"
         type="button" // prevent submit
         onClick={() => {
           onStateChanged(prevPage);
@@ -47,6 +49,7 @@ export function CampaignCreateFormPage({
           variant="outline"
           size="lg"
           type="button" // prevent submit
+          className="w-full xs:w-auto"
           onClick={() => {
             // Trigger form submission with draft flag
             const form = document.querySelector('form');
@@ -66,6 +69,7 @@ export function CampaignCreateFormPage({
           key="submit-approval"
           size="lg"
           type="button" // prevent submit
+          className="w-full xs:w-auto"
           onClick={() => {
             // Trigger form submission with approval flag
             const form = document.querySelector('form');
@@ -84,7 +88,7 @@ export function CampaignCreateFormPage({
     } else {
       // Standard navigation buttons for other pages
       const next = onStateChanged && CampaignCreateFormStates[state].next && (
-        <Button key="next" size="lg" type="submit">
+        <Button key="next" size="lg" type="submit" className="w-full xs:w-auto">
           {CampaignCreateFormStates[state].next.label}
         </Button>
       );
@@ -205,7 +209,12 @@ export function CampaignCreateFormPage({
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-8 flex items-center justify-center gap-4">
+      <div
+        className={cn(
+          'mt-8 flex items-center justify-center gap-4',
+          state === 'summary' ? 'flex-col-reverse xs:flex-row' : '',
+        )}
+      >
         {buttons}
       </div>
 

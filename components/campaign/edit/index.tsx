@@ -80,6 +80,7 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
         categories.find((category) => category.id === campaign.category)?.id ??
         '',
       fundingGoal: campaign.fundingGoal || '',
+      fundingUsage: campaign.fundingUsage || '',
       fundingModel: 'flexible', // Default funding model
       startTime: campaign.startTime
         ? new Date(campaign.startTime).toISOString().slice(0, 10)

@@ -61,7 +61,7 @@ export function CampaignDonationSummary({
           <div className="text-sm text-muted-foreground">
             <ReadMoreOrLess
               className="text-sm text-muted-foreground"
-              collapsedClassName="line-clamp-2"
+              collapsedClassName="line-clamp-3"
             >
               {campaign.description}
             </ReadMoreOrLess>
