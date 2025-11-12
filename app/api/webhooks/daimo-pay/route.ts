@@ -77,19 +77,31 @@ function validateDaimoPaymentAmounts(
   // Convert destination amount from token units (6 decimals) to USD
   let destinationAmountBigInt: bigint;
   try {
+    // First try direct BigInt conversion (expected integer format)
     destinationAmountBigInt = BigInt(destinationAmountUnits);
   } catch (error) {
-    logError('Invalid destinationAmountUnits format - not a valid number', {
-      prefixId,
-      logAddress,
-      destinationAmountUnits,
-      error: error instanceof Error ? error.message : 'Unknown parsing error',
-      note: 'Malformed destination amount units in Daimo webhook',
-    });
-    return {
-      valid: false,
-      error: 'Invalid destination amount format - cannot validate payment',
-    };
+    try {
+      // If direct conversion fails, try parsing as decimal and convert to token units
+      const decimalAmount = parseFloat(destinationAmountUnits);
+      if (isNaN(decimalAmount) || !isFinite(decimalAmount)) {
+        throw new Error('Not a valid number');
+      }
+      // Convert decimal amount to token units (multiply by 10^6 for 6 decimals)
+      destinationAmountBigInt = BigInt(Math.round(decimalAmount * 1_000_000));
+    } catch (decimalError) {
+      logError('Invalid destinationAmountUnits format - not a valid number', {
+        prefixId,
+        logAddress,
+        destinationAmountUnits,
+        error: error instanceof Error ? error.message : 'Unknown parsing error',
+        decimalError: decimalError instanceof Error ? decimalError.message : 'Unknown decimal parsing error',
+        note: 'Malformed destination amount units in Daimo webhook - tried both integer and decimal parsing',
+      });
+      return {
+        valid: false,
+        error: 'Invalid destination amount format - cannot validate payment',
+      };
+    }
   }
   const actualReceivedUSD = Number(destinationAmountBigInt) / 1_000_000; // 6 decimals
 
