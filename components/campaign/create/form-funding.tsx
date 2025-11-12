@@ -49,17 +49,15 @@ export function CampaignCreateFormFunding({
         )}
       />
 
-      {/* Fee Information - Show users the fee structure for their campaign */}
-      <div className="pt-4">
-        <FeeInformation compact={true} showAllFeesForCampaign={true} />
-      </div>
-
       <FormFieldTextArea
         name="fundingUsage"
         label="Funding Usage"
         placeholder="Please write 2-3 sentences describing your intended use of funds"
         maxLength={FUNDING_USAGE_MAX_LENGTH}
       />
+
+      {/* Fee Information - Show users the fee structure for their campaign */}
+      <FeeInformation compact={true} showAllFeesForCampaign={true} />
 
       {/* Hidden field to maintain form structure */}
       <FormField
