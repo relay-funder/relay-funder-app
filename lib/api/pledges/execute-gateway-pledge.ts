@@ -25,6 +25,45 @@ const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
 
 /**
+ * Check if a pledge already exists on the blockchain.
+ * This prevents duplicate pledge execution by verifying blockchain state.
+ *
+ * @param treasuryContract - Treasury contract instance
+ * @param pledgeId - Pledge ID to check
+ * @returns true if pledge exists on-chain, false otherwise
+ */
+async function isPledgeExecutedOnChain(
+  treasuryContract: ethers.Contract,
+  pledgeId: string,
+): Promise<boolean> {
+  try {
+    // Query the pledges mapping: pledges(bytes32) returns (address backer, ...)
+    const pledge = await treasuryContract.pledges(pledgeId);
+
+    // If backer is not zero address, pledge exists
+    const backerAddress = pledge[0];
+    const isExecuted =
+      backerAddress !== '0x0000000000000000000000000000000000000000';
+
+    logVerbose('On-chain pledge verification', {
+      pledgeId,
+      backerAddress,
+      isExecuted,
+    });
+
+    return isExecuted;
+  } catch (error) {
+    logError('Failed to check on-chain pledge status', {
+      pledgeId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    // On error, return false (fail safe - proceed with caution)
+    // Better to potentially duplicate than to block legitimate pledges
+    return false;
+  }
+}
+
+/**
  * Execute a gateway pledge using setFeeAndPledge.
  *
  * Token Flow:
@@ -471,6 +510,119 @@ async function _executeGatewayPledgeInternal(
     treasuryContractAddress: payment.campaign.treasuryAddress,
   });
 
+  // Generate or retrieve pledge ID BEFORE any blockchain operations
+  // This ensures we can check on-chain status with the correct pledge ID
+  let pledgeId: string;
+
+  if (metadata?.generatedPledgeId) {
+    // RETRY case: Use existing pledge ID from previous attempt
+    pledgeId = metadata.generatedPledgeId as string;
+    logVerbose('Using existing pledge ID from previous attempt', {
+      prefixId,
+      logAddress,
+      pledgeId,
+      note: 'This is a retry - reusing same pledge ID to prevent duplicates',
+    });
+  } else {
+    // FIRST ATTEMPT: Generate new pledge ID
+    pledgeId = ethers.keccak256(
+      ethers.toUtf8Bytes(
+        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
+      ),
+    );
+
+    logVerbose('Generated NEW pledge ID', {
+      prefixId,
+      logAddress,
+      pledgeId,
+      note: 'First execution attempt',
+    });
+
+    // Store pledge ID IMMEDIATELY in database BEFORE blockchain operations
+    // If crash occurs during blockchain operations, pledge ID is preserved for retry
+    const updatedPayment = await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        metadata: {
+          ...(payment.metadata as Record<string, unknown>),
+          generatedPledgeId: pledgeId,
+          pledgeGeneratedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    // Update metadata reference for later use
+    metadata = updatedPayment.metadata as Record<string, unknown>;
+
+    logVerbose('Pledge ID stored in database', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+      pledgeId,
+      note: 'Safe to proceed with blockchain operations',
+    });
+  }
+
+  // Verify pledge doesn't already exist on-chain
+  // This prevents overpayment if previous execution succeeded but DB wasn't updated
+  const pledgeExistsOnChain = await isPledgeExecutedOnChain(
+    treasuryContract,
+    pledgeId,
+  );
+
+  if (pledgeExistsOnChain) {
+    logVerbose(
+      '⚠️  SAFETY CHECK: Pledge already exists on-chain, skipping execution',
+      {
+        prefixId,
+        logAddress,
+        paymentId: payment.id,
+        pledgeId,
+        note: 'Previous execution succeeded on-chain but DB was not updated. Fixing status now.',
+      },
+    );
+
+    // Update payment status to SUCCESS since pledge already exists on-chain
+    const updatedPayment = await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        pledgeExecutionStatus: 'SUCCESS',
+        pledgeExecutionError: null,
+        metadata: {
+          ...metadata,
+          onChainPledgeId: pledgeId,
+          recoveredFromIncompleteExecution: true,
+          recoveredAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    logVerbose('Payment status corrected to SUCCESS (on-chain verification)', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+      pledgeExecutionStatus: updatedPayment.pledgeExecutionStatus,
+    });
+
+    return {
+      success: true,
+      paymentId: payment.id,
+      pledgeId,
+      transactionHash:
+        payment.pledgeExecutionTxHash || 'recovered-from-blockchain',
+      blockNumber: 0,
+      pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
+      tipAmount: (metadata.tipAmount as string) || '0',
+    };
+  }
+
+  logVerbose('On-chain verification passed: pledge does not exist yet', {
+    prefixId,
+    logAddress,
+    pledgeId,
+    note: 'Safe to proceed with pledge execution',
+  });
+
   // Check admin wallet balance (with timeout to prevent hangs)
   const adminBalance = await waitWithTimeout(
     usdContract.balanceOf(adminSigner.address),
@@ -524,58 +676,8 @@ async function _executeGatewayPledgeInternal(
     note2: 'Using treasury configured fees only, no additional gateway fee',
   });
 
-  // Generate and STORE pledge ID BEFORE any blockchain operations
-  // This ensures deterministic pledge ID across retries if crash occurs
-  let pledgeId: string;
-
-  if (metadata?.generatedPledgeId) {
-    // RETRY case: Use existing pledge ID from previous attempt
-    pledgeId = metadata.generatedPledgeId as string;
-    logVerbose('Using existing pledge ID from previous attempt', {
-      prefixId,
-      logAddress,
-      pledgeId,
-      note: 'This is a retry - reusing same pledge ID to prevent duplicates',
-    });
-  } else {
-    // FIRST ATTEMPT: Generate new pledge ID
-    pledgeId = ethers.keccak256(
-      ethers.toUtf8Bytes(
-        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
-      ),
-    );
-
-    logVerbose('Generated NEW pledge ID', {
-      prefixId,
-      logAddress,
-      pledgeId,
-      note: 'First execution attempt',
-    });
-
-    // Store pledge ID IMMEDIATELY in database BEFORE blockchain operations
-    // If crash occurs during blockchain operations, pledge ID is preserved for retry
-    const updatedPayment = await tx.payment.update({
-      where: { id: payment.id },
-      data: {
-        metadata: {
-          ...(payment.metadata as Record<string, unknown>),
-          generatedPledgeId: pledgeId,
-          pledgeGeneratedAt: new Date().toISOString(),
-        },
-      },
-    });
-
-    // Update metadata reference for later use
-    metadata = updatedPayment.metadata as Record<string, unknown>;
-
-    logVerbose('Pledge ID stored in database', {
-      prefixId,
-      logAddress,
-      paymentId: payment.id,
-      pledgeId,
-      note: 'Safe to proceed with blockchain operations',
-    });
-  }
+  // Pledge ID was already generated and verified earlier in the function
+  // We can now proceed with token approval and execution
 
   // Check current allowance (with timeout to prevent hangs)
   const currentAllowance = await waitWithTimeout(
@@ -682,7 +784,7 @@ async function _executeGatewayPledgeInternal(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   });
 
-  // CRITICAL: Save tx hash IMMEDIATELY after submission
+  // Save tx hash IMMEDIATELY after submission
   // This ensures we can track the transaction even if Vercel lambda times out
   // Status remains PENDING (which means "executing") but we now have the tx hash
   await tx.payment.update({
