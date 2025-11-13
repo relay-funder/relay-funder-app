@@ -53,13 +53,10 @@ async function isPledgeExecutedOnChain(
 
     return isExecuted;
   } catch (error) {
-    logError('Failed to check on-chain pledge status', {
-      pledgeId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    // On error, return false (fail safe - proceed with caution)
-    // Better to potentially duplicate than to block legitimate pledges
-    return false;
+    throw new ApiUpstreamError(
+      `Failed to check on-chain pledge status for pledgeId ${pledgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error instanceof Error ? error : new Error('Unknown error'),
+    );
   }
 }
 
