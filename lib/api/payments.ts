@@ -39,7 +39,7 @@ export async function listPayments({
   ]);
 
   const publicPayments = dbPayments.map((dbPayment) => {
-    return {
+    const basePayment = {
       id: dbPayment.id,
       status: dbPayment.status,
       amount: parseFloat(dbPayment.amount),
@@ -47,7 +47,21 @@ export async function listPayments({
       user: getPaymentUser(dbPayment),
       date: dbPayment.updatedAt,
       transactionHash: dbPayment.transactionHash,
-    } as PaymentSummaryContribution;
+    };
+
+    // Include metadata for admin users
+    if (admin) {
+      return {
+        ...basePayment,
+        tipAmount: dbPayment.tipAmount,
+        metadata: dbPayment.metadata,
+        provider: dbPayment.provider,
+        type: dbPayment.type,
+        createdAt: dbPayment.createdAt,
+      };
+    }
+
+    return basePayment as PaymentSummaryContribution;
   });
   return {
     payments: publicPayments,

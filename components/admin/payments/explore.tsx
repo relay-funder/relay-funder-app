@@ -249,21 +249,18 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 {payment.amount} {payment.token}
               </div>
             </div>
-            {payment.provider === 'daimo' &&
-              (payment.metadata as { tipAmount?: string; baseAmount?: string })
-                ?.tipAmount && (
-                <div>
-                  <span className="text-muted-foreground">Tip Amount:</span>
-                  <div className="font-semibold">
-                    {(payment.metadata as { tipAmount?: string })?.tipAmount}{' '}
-                    {payment.token}
-                  </div>
+            {payment.tipAmount && (
+              <div>
+                <span className="text-muted-foreground">Tip Amount:</span>
+                <div className="font-semibold">
+                  {payment.tipAmount} {payment.token}
                 </div>
-              )}
+              </div>
+            )}
             {payment.provider === 'daimo' &&
               (payment.metadata as { baseAmount?: string })?.baseAmount && (
                 <div>
-                  <span className="text-muted-foreground">Payment Amount:</span>
+                  <span className="text-muted-foreground">Base Amount:</span>
                   <div className="font-semibold">
                     {(payment.metadata as { baseAmount?: string })?.baseAmount}{' '}
                     {payment.token}
@@ -287,10 +284,6 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                   payment.provider || 'Direct Wallet'
                 )}
               </div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Type:</span>
-              <div>{payment.type}</div>
             </div>
           </div>
         </div>
@@ -547,6 +540,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
           <TableHead>Date</TableHead>
           <TableHead>Provider</TableHead>
           <TableHead>Amount</TableHead>
+          <TableHead>Tip</TableHead>
           <TableHead>Contributor</TableHead>
           <TableHead>Campaign</TableHead>
           <TableHead>Round</TableHead>
@@ -577,6 +571,9 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
             </TableCell>
             <TableCell className="whitespace-nowrap">
               {p.amount} {p.token}
+            </TableCell>
+            <TableCell className="whitespace-nowrap">
+              {p.tipAmount ? `${p.tipAmount} ${p.token}` : '—'}
             </TableCell>
             <TableCell className="max-w-[180px]">
               <div className="truncate">
