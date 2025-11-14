@@ -68,6 +68,7 @@ export function useDeveloperPrefill(
         title: demoData.title,
         description: demoData.description,
         fundingGoal: demoData.fundingGoal.toString(),
+        fundingUsage: demoData.fundingUsage,
         fundingModel: demoData.fundingModel,
         selectedRoundId: null,
         startTime: demoData.startTime,
@@ -104,6 +105,7 @@ export function useDeveloperPrefill(
       form.setValue('title', validatedData.title);
       form.setValue('description', validatedData.description);
       form.setValue('fundingGoal', validatedData.fundingGoal.toString());
+      form.setValue('fundingUsage', validatedData.fundingUsage);
       form.setValue('fundingModel', validatedData.fundingModel);
       form.setValue('selectedRoundId', validatedData.selectedRoundId);
       // Convert ISO strings back to date-only format for date inputs

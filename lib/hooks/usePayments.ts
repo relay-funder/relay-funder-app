@@ -15,6 +15,7 @@ import {
 import { PaginatedResponse } from '@/lib/api/types/common';
 interface ICreatePaymentApi {
   amount: string;
+  tipAmount?: string;
   poolAmount: number;
   token: string;
   campaignId: number;

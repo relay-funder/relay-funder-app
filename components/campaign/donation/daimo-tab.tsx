@@ -12,6 +12,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import { useDonationContext } from '@/contexts';
+import { PaymentTotalSummary } from './payment-total-summary';
 
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const router = useRouter();
@@ -100,25 +101,7 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
         </VisibilityToggle>
 
         <VisibilityToggle isVisible={!isPaymentCompleted}>
-          {/* Total Amount Display */}
-          {parseFloat(amount || '0') > 0 && (
-            <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">
-                  Total Amount:
-                </span>
-                <span className="text-lg font-bold text-foreground">
-                  $
-                  {(
-                    parseFloat(amount || '0') + parseFloat(tipAmount || '0')
-                  ).toFixed(2)}
-                </span>
-              </div>
-              <div className="mt-2 text-xs text-muted-foreground">
-                Campaign: ${amount} • Platform tip: ${tipAmount}
-              </div>
-            </div>
-          )}
+          <PaymentTotalSummary amount={amount} tipAmount={tipAmount} />
 
           <DaimoPayButtonComponent
             campaign={campaign}

@@ -107,13 +107,14 @@ export function useDonationCallback({
       debug && console.log('Creating payment record...');
       const { paymentId } = await createPayment({
         amount: amount,
+        tipAmount: tipAmount,
         poolAmount,
         token: selectedToken,
         campaignId: campaign.id,
         isAnonymous: isAnonymous,
         status: 'confirming',
         transactionHash: tx.hash,
-        userEmail,
+        ...(userEmail && userEmail.trim() !== '' && { userEmail }),
       });
 
       debug && console.log('Payment record created with ID:', paymentId);

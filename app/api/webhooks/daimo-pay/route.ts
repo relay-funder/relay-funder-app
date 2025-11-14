@@ -504,6 +504,10 @@ export async function POST(req: Request) {
       const isAnonymous = metadata?.anonymous === 'true';
       const userEmail = metadata?.email;
 
+      logVerbose(
+        `Processing Daimo payment - Base: ${baseAmount}, Tip: ${tipAmount}, Total: ${totalAmount}`,
+      );
+
       // Validate destination token and chain
       const destinationValidation = validateDaimoDestination(
         payload.payment.destination?.chainId,
@@ -580,6 +584,7 @@ export async function POST(req: Request) {
         createdPayment = await db.payment.create({
           data: {
             amount: baseAmount.toString(), // Pledge amount only
+            tipAmount: tipAmount.toString(),
             token: 'USDT',
             type: 'BUY',
             status: 'confirming',
@@ -600,6 +605,10 @@ export async function POST(req: Request) {
             },
           },
         });
+
+        logVerbose(
+          `Daimo payment created - ID: ${createdPayment?.id}, Tip Amount: ${createdPayment?.tipAmount}`,
+        );
       } catch (error) {
         if (
           error instanceof Prisma.PrismaClientKnownRequestError &&

@@ -8,6 +8,7 @@ interface DemoCampaignData {
   title: string;
   description: string;
   fundingGoal: number;
+  fundingUsage: string;
   fundingModel: string;
   startTime: string;
   endTime: string;
@@ -188,6 +189,26 @@ const CAMPAIGN_TEMPLATES = [
   },
 ];
 
+// Funding usage templates corresponding to campaign categories
+const FUNDING_USAGE_TEMPLATES = {
+  'climate-resilience': [
+    'The funding will be allocated across three main areas: 40% for solar panel and battery system procurement and installation, 30% for community training and capacity building programs, and 30% for ongoing maintenance, monitoring, and community education initiatives. Equipment costs include high-efficiency solar panels, deep-cycle batteries, and charge controllers. Training programs will cover system operation, basic maintenance, and energy conservation. The maintenance budget ensures long-term sustainability through regular inspections, software updates, and community support.',
+    'Funds will support the deployment of clean energy infrastructure through: 50% for renewable energy equipment purchase and installation, 25% for local workforce training and job creation, and 25% for ongoing system monitoring and community education. The equipment budget covers solar panels, inverters, batteries, and wiring systems. Training programs will create skilled local technicians and promote energy efficiency awareness. Monitoring systems will track performance and ensure optimal operation throughout the project lifecycle.',
+  ],
+  'economic-development': [
+    'The funding will be distributed as follows: 35% for facility construction and equipment, 30% for training programs and mentorship, 20% for marketing and outreach, and 15% for operational costs and evaluation. Construction costs include workspace renovation, furniture, and technology equipment. Training covers business development, financial literacy, and technical skills. Marketing efforts will attract participants and build community awareness. Evaluation funds support impact measurement and program refinement.',
+    'Funds will be used for: 45% infrastructure development, 30% educational programs and workshops, 15% business development services, and 10% administrative and monitoring costs. Infrastructure includes workspace setup, equipment, and technology access. Educational programs provide comprehensive training in entrepreneurship, financial management, and industry skills. Business services offer mentorship, networking, and market access. Administrative costs cover program coordination and impact assessment.',
+  ],
+  'emergency-response': [
+    'Funding allocation: 40% for medical equipment and supplies, 30% for vehicle acquisition and maintenance, 20% for staff training and certification, and 10% for logistics and coordination. Medical equipment includes diagnostic tools, emergency supplies, and telemedicine technology. Vehicles will be equipped for rural terrain and emergency response. Training covers medical protocols, emergency procedures, and cultural competency. Logistics support ensures efficient service delivery across remote areas.',
+    'The funds will support: 35% mobile clinic equipment and medical supplies, 25% transportation and logistics, 25% healthcare personnel training, and 15% community outreach and education. Equipment includes portable medical devices, emergency kits, and telemedicine systems. Transportation covers vehicle purchase and fuel costs. Training programs develop local healthcare capacity and emergency response skills. Community outreach builds trust and ensures service utilization.',
+  ],
+  education: [
+    'Funding distribution: 40% for technology equipment and classroom materials, 30% for instructor training and curriculum development, 20% for student scholarships and support, and 10% for program evaluation and administration. Technology includes computers, tablets, software, and internet connectivity. Training programs develop instructor skills and modern teaching methods. Scholarships ensure access for underserved students. Evaluation measures learning outcomes and program effectiveness.',
+    'Funds will be allocated to: 50% educational technology and materials, 25% teacher professional development, 15% student support services, and 10% program administration and assessment. Technology investments include devices, software, and digital resources. Professional development builds instructor capacity in modern teaching methods. Student support includes scholarships, mentoring, and learning materials. Assessment ensures continuous improvement and measurable impact.',
+  ],
+};
+
 // Valid duration ranges in days
 const DURATION_RANGES = [
   [14, 21], // 2-3 weeks
@@ -246,10 +267,15 @@ function generateValidDemoCampaignData(): DemoCampaignData {
     startDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
   );
 
+  // Generate funding usage text based on category
+  const categoryTemplates = FUNDING_USAGE_TEMPLATES[template.category];
+  const fundingUsage = randomFromArray(categoryTemplates);
+
   return {
     title: template.title.replace('{location}', location),
     description: template.description.replace('{location}', location),
     fundingGoal,
+    fundingUsage,
     fundingModel: 'flexible' as const, // Only valid funding model
     // Format as date input (YYYY-MM-DD) - transformation functions will set appropriate times
     startTime: startDate.toISOString().slice(0, 10),
@@ -333,6 +359,8 @@ export function getDemoCampaignDataForPreview(): DemoCampaignData & {
       description:
         'This is a demo campaign for testing purposes. It provides realistic sample data to help developers quickly populate forms and test functionality without having to manually enter all the required fields.',
       fundingGoal: 1000,
+      fundingUsage:
+        'The demo funding will be used for: 50% educational technology and materials, 25% teacher professional development, 15% student support services, and 10% program administration and assessment. Technology investments include devices, software, and digital resources. Professional development builds instructor capacity in modern teaching methods. Student support includes scholarships, mentoring, and learning materials. Assessment ensures continuous improvement and measurable impact.',
       fundingModel: 'flexible',
       startTime: tomorrow.toISOString().slice(0, 10), // Tomorrow
       endTime: nextWeek.toISOString().slice(0, 10), // Next week

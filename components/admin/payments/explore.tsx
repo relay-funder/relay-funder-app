@@ -37,6 +37,7 @@ import {
   type PaymentRefundState,
   type PledgeExecutionStatus,
 } from '@/lib/hooks/useAdminPayments';
+import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import type { PledgeExecutionStatus as PledgeExecutionStatusEnum } from '@/server/db';
 import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
@@ -248,21 +249,18 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                 {payment.amount} {payment.token}
               </div>
             </div>
-            {payment.provider === 'daimo' &&
-              (payment.metadata as { tipAmount?: string; baseAmount?: string })
-                ?.tipAmount && (
-                <div>
-                  <span className="text-muted-foreground">Tip Amount:</span>
-                  <div className="font-semibold">
-                    {(payment.metadata as { tipAmount?: string })?.tipAmount}{' '}
-                    {payment.token}
-                  </div>
+            {payment.tipAmount && (
+              <div>
+                <span className="text-muted-foreground">Tip Amount:</span>
+                <div className="font-semibold">
+                  {payment.tipAmount} {payment.token}
                 </div>
-              )}
+              </div>
+            )}
             {payment.provider === 'daimo' &&
               (payment.metadata as { baseAmount?: string })?.baseAmount && (
                 <div>
-                  <span className="text-muted-foreground">Payment Amount:</span>
+                  <span className="text-muted-foreground">Base Amount:</span>
                   <div className="font-semibold">
                     {(payment.metadata as { baseAmount?: string })?.baseAmount}{' '}
                     {payment.token}
@@ -286,10 +284,6 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
                   payment.provider || 'Direct Wallet'
                 )}
               </div>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Type:</span>
-              <div>{payment.type}</div>
             </div>
           </div>
         </div>
@@ -486,6 +480,20 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
           </div>
         )}
 
+        {/* Full Metadata */}
+        {payment.metadata && (
+          <div>
+            <h3 className="mb-3 font-semibold">Payment Metadata</h3>
+            <div className="text-sm">
+              <div className="rounded bg-muted p-3">
+                <pre className="whitespace-pre-wrap break-all text-xs">
+                  {JSON.stringify(payment.metadata, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Transaction Hash */}
         {payment.transactionHash && (
           <div>
@@ -532,6 +540,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
           <TableHead>Date</TableHead>
           <TableHead>Provider</TableHead>
           <TableHead>Amount</TableHead>
+          <TableHead>Tip</TableHead>
           <TableHead>Contributor</TableHead>
           <TableHead>Campaign</TableHead>
           <TableHead>Round</TableHead>
@@ -562,6 +571,9 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
             </TableCell>
             <TableCell className="whitespace-nowrap">
               {p.amount} {p.token}
+            </TableCell>
+            <TableCell className="whitespace-nowrap">
+              {p.tipAmount ? `${p.tipAmount} ${p.token}` : '—'}
             </TableCell>
             <TableCell className="max-w-[180px]">
               <div className="truncate">
@@ -613,7 +625,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
         ))}
         {payments.length === 0 && !isLoading && (
           <TableRow>
-            <TableCell colSpan={10} className="py-10 text-center text-sm">
+            <TableCell colSpan={11} className="py-10 text-center text-sm">
               No payments found.
             </TableCell>
           </TableRow>
@@ -638,6 +650,7 @@ function useDerivedFilters(
   status: PaymentStatusFilter,
   refund: RefundFilter,
   pledgeExecutionStatus: PledgeExecutionStatusFilter,
+  selectedCampaignId: string,
 ): AdminPaymentsFilters {
   return useMemo(() => {
     const next: AdminPaymentsFilters = {};
@@ -657,6 +670,11 @@ function useDerivedFilters(
       }
     }
 
+    // Campaign filter takes precedence over search term if both are set
+    if (selectedCampaignId && selectedCampaignId !== 'ALL') {
+      next.campaignId = Number(selectedCampaignId);
+    }
+
     if (status && status !== 'ALL') {
       next.status = status;
     }
@@ -670,7 +688,7 @@ function useDerivedFilters(
     }
 
     return next;
-  }, [term, status, refund, pledgeExecutionStatus]);
+  }, [term, status, refund, pledgeExecutionStatus, selectedCampaignId]);
 }
 
 export function PaymentsExplore() {
@@ -679,12 +697,17 @@ export function PaymentsExplore() {
   const [refund, setRefund] = useState<RefundFilter>('ALL');
   const [pledgeExecutionStatus, setPledgeExecutionStatus] =
     useState<PledgeExecutionStatusFilter>('ALL');
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('ALL');
+
+  // Fetch campaigns for the filter dropdown (admin view - all statuses)
+  const { data: campaignsData } = useCampaigns('all');
 
   const filters = useDerivedFilters(
     searchTerm,
     status,
     refund,
     pledgeExecutionStatus,
+    selectedCampaignId,
   );
   const pageSize = 10;
 
@@ -730,6 +753,29 @@ export function PaymentsExplore() {
           <CardContent className="space-y-3">
             {/* Filter Controls */}
             <div className="flex flex-wrap items-center gap-3 border-b pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Campaign</span>
+                <Select
+                  value={selectedCampaignId}
+                  onValueChange={setSelectedCampaignId}
+                >
+                  <SelectTrigger className="h-8 w-48">
+                    <SelectValue placeholder="All Campaigns" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Campaigns</SelectItem>
+                    {campaignsData?.campaigns?.map((campaign) => (
+                      <SelectItem
+                        key={campaign.id}
+                        value={campaign.id.toString()}
+                      >
+                        {campaign.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Status</span>
                 <Select
