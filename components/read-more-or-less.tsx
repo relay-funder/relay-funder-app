@@ -35,9 +35,13 @@ export function ReadMoreOrLess({
     const lineBreaks = (children.match(/\n/g) || []).length;
 
     // Check for very long words that might cause wrapping
-    const longWords = children.split(/\s+/).filter(word => word.length > 20);
-    const longWordsTotalLength = longWords.reduce((sum, word) => sum + word.length, 0);
-    const longWordsProportion = children.length > 0 ? longWordsTotalLength / children.length : 0;
+    const longWords = children.split(/\s+/).filter((word) => word.length > 20);
+    const longWordsTotalLength = longWords.reduce(
+      (sum, word) => sum + word.length,
+      0,
+    );
+    const longWordsProportion =
+      children.length > 0 ? longWordsTotalLength / children.length : 0;
 
     // Show toggle if content significantly exceeds the line limit
     const exceedsByLength = children.length > threshold * 1.2; // 20% buffer

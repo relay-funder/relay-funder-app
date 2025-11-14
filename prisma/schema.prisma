@@ -175,6 +175,7 @@ model User {
 model Payment {
   id              Int                @id @default(autoincrement())
   amount          String
+  tipAmount       String?            // Tip amount sent to admin wallet (for Daimo payments)
   token           String
   status          String             @default("pending")
   type            PaymentType

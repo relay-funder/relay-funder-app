@@ -8,6 +8,7 @@ export interface GetCampaignPaymentResponse {
 }
 export const PostPaymentBodyRouteSchema = z.object({
   amount: z.string(),
+  tipAmount: z.string().optional(),
   token: z.string(),
   isAnonymous: z.boolean(),
   type: z.enum(['SELL', 'BUY']).optional().default('BUY'),

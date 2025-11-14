@@ -32,7 +32,7 @@ async function fetchCampaigns(status?: string) {
   const response = await fetch(url);
   await handleApiErrors(response, 'Failed to fetch campaigns');
   const data = await response.json();
-  return data.campaigns;
+  return data;
 }
 async function fetchCampaign(slug: string | number) {
   const url = `/api/campaigns/${slug}`;
@@ -303,7 +303,7 @@ export function resetCampaign(id: number, queryClient: QueryClient) {
   }
 }
 export function useCampaigns(status?: string) {
-  return useQuery({
+  return useQuery<PaginatedCampaignResponse>({
     queryKey: [CAMPAIGNS_QUERY_KEY, status],
     queryFn: () => fetchCampaigns(status),
     enabled: true,
