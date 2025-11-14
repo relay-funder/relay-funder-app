@@ -4,7 +4,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { Eye, ExternalLink } from 'lucide-react';
-import { ReconciliationPayment, CampaignReconciliationData } from './hooks/useCampaignReconciliation';
+import {
+  ReconciliationPayment,
+  CampaignReconciliationData,
+} from './hooks/useCampaignReconciliation';
 import { RawBlockExplorerTransaction } from './hooks/useOnChainTransactions';
 import { TokenTransfer } from '@/lib/block-explorer';
 import { formatTokenAmount } from '@/lib/block-explorer';
@@ -22,6 +25,13 @@ export function CampaignReconciliationTable({
   isLoading,
   error,
 }: CampaignReconciliationTableProps) {
+  // Define explicit flags for blockchain loading state and transaction presence
+  const isBlockchainLoading =
+    reconciliationData?.rawBlockExplorerTransactions === undefined;
+  const hasBlockchainTx =
+    Array.isArray(reconciliationData?.rawBlockExplorerTransactions) &&
+    reconciliationData.rawBlockExplorerTransactions.length > 0;
+
   if (isLoading) {
     return (
       <Card>
@@ -93,14 +103,11 @@ export function CampaignReconciliationTable({
             <div className="space-y-2">
               <h3 className="flex items-center gap-2 font-semibold text-green-700">
                 Blockchain Transactions
-                {(!reconciliationData.rawBlockExplorerTransactions ||
-                  reconciliationData.rawBlockExplorerTransactions.length ===
-                    0) && (
+                {isBlockchainLoading && (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
                 )}
               </h3>
-              {!reconciliationData.rawBlockExplorerTransactions ||
-              reconciliationData.rawBlockExplorerTransactions.length === 0 ? (
+              {isBlockchainLoading ? (
                 <div className="space-y-2">
                   <div className="text-2xl font-bold text-green-600">—</div>
                   <div className="text-sm text-muted-foreground">
@@ -108,6 +115,13 @@ export function CampaignReconciliationTable({
                       <div className="h-3 w-3 animate-pulse rounded-full bg-green-500"></div>
                       Fetching blockchain transaction data...
                     </span>
+                  </div>
+                </div>
+              ) : !hasBlockchainTx ? (
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-green-600">$0.00</div>
+                  <div className="text-sm text-muted-foreground">
+                    0 transactions found (incl. tips)
                   </div>
                 </div>
               ) : (
@@ -134,9 +148,8 @@ export function CampaignReconciliationTable({
               )}
             </div>
 
-            {/* Difference - Only show when blockchain data is available */}
-            {reconciliationData.rawBlockExplorerTransactions &&
-            reconciliationData.rawBlockExplorerTransactions.length > 0 ? (
+            {/* Difference */}
+            {hasBlockchainTx ? (
               <div className="space-y-2">
                 <h3 className="font-semibold text-gray-700">Difference</h3>
                 <div
@@ -163,7 +176,7 @@ export function CampaignReconciliationTable({
                       : '⚠️ Blockchain has surplus'}
                 </div>
               </div>
-            ) : (
+            ) : isBlockchainLoading ? (
               <div className="space-y-2">
                 <h3 className="flex items-center gap-2 font-semibold text-gray-700">
                   Difference
@@ -171,6 +184,14 @@ export function CampaignReconciliationTable({
                 </h3>
                 <div className="text-sm text-muted-foreground">
                   Waiting for blockchain data to calculate difference...
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-700">Difference</h3>
+                <div className="text-2xl font-bold text-gray-400">—</div>
+                <div className="text-sm text-muted-foreground">
+                  No blockchain transactions yet
                 </div>
               </div>
             )}
@@ -183,8 +204,7 @@ export function CampaignReconciliationTable({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             Transaction Reconciliation
-            {(!reconciliationData.rawBlockExplorerTransactions ||
-              reconciliationData.rawBlockExplorerTransactions.length === 0) && (
+            {isBlockchainLoading && (
               <span className="flex items-center gap-1 text-sm font-normal text-muted-foreground">
                 <div className="h-3 w-3 animate-pulse rounded-full bg-blue-500"></div>
                 Loading blockchain data...

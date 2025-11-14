@@ -5,7 +5,10 @@ interface PaymentTotalSummaryProps {
   tipAmount: string | undefined;
 }
 
-export function PaymentTotalSummary({ amount, tipAmount }: PaymentTotalSummaryProps) {
+export function PaymentTotalSummary({
+  amount,
+  tipAmount,
+}: PaymentTotalSummaryProps) {
   if (!amount || parseFloat(amount) <= 0) {
     return null;
   }
@@ -18,9 +21,9 @@ export function PaymentTotalSummary({ amount, tipAmount }: PaymentTotalSummaryPr
         </span>
         <span className="text-lg font-bold text-foreground">
           $
-          {(
-            parseFloat(amount || '0') + parseFloat(tipAmount || '0')
-          ).toFixed(2)}
+          {(parseFloat(amount || '0') + parseFloat(tipAmount || '0')).toFixed(
+            2,
+          )}
         </span>
       </div>
       <div className="mt-2 text-xs text-muted-foreground">

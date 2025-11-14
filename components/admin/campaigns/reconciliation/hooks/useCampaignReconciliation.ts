@@ -62,7 +62,6 @@ export interface CampaignReconciliationData {
 const CAMPAIGN_RECONCILIATION_QUERY_KEY = 'campaign_reconciliation';
 
 export function useCampaignReconciliation(campaignId: string) {
-
   // Get database payments (admin data with full user info)
   const { data: paymentsData } = useAdminPayments({
     page: 1,
@@ -96,7 +95,7 @@ export function useCampaignReconciliation(campaignId: string) {
       };
 
       // Calculate totals with proper accounting for withdrawals
-      const databasePayments = (paymentsData || []).map(payment => ({
+      const databasePayments = (paymentsData || []).map((payment) => ({
         ...payment,
         transactionHash: payment.transactionHash || undefined,
       })) as ReconciliationPayment[];
@@ -246,7 +245,6 @@ export function useCampaignReconciliation(campaignId: string) {
       console.log(`=== END SUMMARY ===\n`);
 
       // Use totalPledged for reconciliation (what should be in treasury)
-
 
       // Calculate simple reconciliation metrics
       const totalBlockchainAmount = totalPledgedOnChain.toString();

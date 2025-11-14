@@ -17,7 +17,6 @@ export interface TokenTransfer {
   to: string;
 }
 
-
 export interface BlockExplorerTransaction {
   hash: string;
   blockNumber: number;

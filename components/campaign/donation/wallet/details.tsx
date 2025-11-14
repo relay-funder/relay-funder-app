@@ -16,7 +16,8 @@ export function CampaignDonationWalletDetails({
 }: {
   campaign: DbCampaign;
 }) {
-  const { isProcessingPayment, clearDonation, amount, tipAmount } = useDonationContext();
+  const { isProcessingPayment, clearDonation, amount, tipAmount } =
+    useDonationContext();
 
   useEffect(() => {
     return () => {
