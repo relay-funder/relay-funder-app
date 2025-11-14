@@ -15,7 +15,7 @@ async function prefetchAdminCampaigns(
 ) {
   // Prefetch first page so the client list can hydrate instantly
   await queryClient.prefetchInfiniteQuery({
-    queryKey: ['campaigns', 'infinite', 'all', 10],
+    queryKey: ['campaigns', 'infinite', 'all', 10, true],
     initialPageParam: 1,
     queryFn: async () => {
       return listCampaigns({
