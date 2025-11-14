@@ -625,7 +625,7 @@ function PaymentsTable({ payments, isLoading }: PaymentsTableProps) {
         ))}
         {payments.length === 0 && !isLoading && (
           <TableRow>
-            <TableCell colSpan={10} className="py-10 text-center text-sm">
+            <TableCell colSpan={11} className="py-10 text-center text-sm">
               No payments found.
             </TableCell>
           </TableRow>
