@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function CampaignReconciliationPage({
   params,
 }: {
-  params: { campaignId: string };
+  params: Promise<{ campaignId: string }>;
 }) {
   const session = await auth();
   const isAdmin = session?.user?.roles?.includes('admin');
@@ -18,7 +18,7 @@ export default async function CampaignReconciliationPage({
     return <AdminAccessDenied />;
   }
 
-  const { campaignId } = params;
+  const { campaignId } = await params;
 
   // Note: Detail pages typically don't prefetch complex data since
   // the client hooks handle data fetching efficiently and the user
