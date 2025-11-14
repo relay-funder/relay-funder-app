@@ -40,7 +40,6 @@ export function CampaignAudit() {
   const {
     data: statsData,
     isLoading: statsLoading,
-    isError: statsError,
   } = useCampaignStats('global');
 
   const campaigns = data?.pages.flatMap((page) => page.campaigns) ?? [];
