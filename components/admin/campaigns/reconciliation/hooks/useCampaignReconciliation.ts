@@ -19,6 +19,7 @@ export interface ReconciliationPayment {
   transactionHash?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  isAnonymous: boolean;
   user: {
     id: number;
     address: string;

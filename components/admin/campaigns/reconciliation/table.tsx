@@ -317,10 +317,13 @@ export function CampaignReconciliationTable({
                               ).toLocaleString()}
                             </td>
                             <td className="px-4 py-3 text-sm">
-                              {payment.user?.username ||
-                                payment.user?.firstName ||
-                                `${payment.user?.address?.slice(0, 6)}...${payment.user?.address?.slice(-4)}` ||
-                                'Anonymous'}
+                              {payment.isAnonymous
+                                ? 'Anonymous'
+                                : payment.user?.username ||
+                                  payment.user?.firstName ||
+                                  (payment.user?.address
+                                    ? `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`
+                                    : 'Unknown')}
                             </td>
                             <td className="px-4 py-3 text-sm">
                               {payment.provider === 'daimo' ? (
