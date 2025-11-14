@@ -201,6 +201,10 @@ function determineTransactionType(tx: any): 'native' | 'erc20' | 'contract' {
  * Get block explorer URL for a transaction
  */
 export function getBlockExplorerTxUrl(txHash: string): string {
+  if (!txHash || !txHash.startsWith('0x') || txHash.length !== 66) {
+    console.warn('Invalid transaction hash for URL generation:', txHash);
+    return '';
+  }
   const baseUrl = chainConfig.blockExplorerUrl.replace(/\/$/, '');
   return `${baseUrl}/tx/${txHash}`;
 }
@@ -209,6 +213,9 @@ export function getBlockExplorerTxUrl(txHash: string): string {
  * Get block explorer URL for an address
  */
 export function getBlockExplorerAddressUrl(address: string): string {
+  if (!address || address.length !== 42) {
+    return '';
+  }
   const baseUrl = chainConfig.blockExplorerUrl.replace(/\/$/, '');
   return `${baseUrl}/address/${address}`;
 }
