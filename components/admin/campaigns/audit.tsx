@@ -16,8 +16,11 @@ import {
 } from '@/components/ui';
 import { Badge } from '@/components/ui';
 import { Button } from '@/components/ui';
-import { Eye, BarChart3 } from 'lucide-react';
-import { useInfiniteCampaigns } from '@/lib/hooks/useCampaigns';
+import { Eye, BarChart3, Loader2 } from 'lucide-react';
+import {
+  useInfiniteCampaigns,
+  useCampaignStats,
+} from '@/lib/hooks/useCampaigns';
 import { FormattedDate } from '@/components/formatted-date';
 
 export function CampaignAudit() {
@@ -33,6 +36,12 @@ export function CampaignAudit() {
     fetchNextPage,
     isFetchingNextPage,
   } = useInfiniteCampaigns('all', 10, false);
+
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    isError: statsError,
+  } = useCampaignStats('global');
 
   const campaigns = data?.pages.flatMap((page) => page.campaigns) ?? [];
 
@@ -76,7 +85,13 @@ export function CampaignAudit() {
                 Total Campaigns
               </h3>
             </div>
-            <div className="text-2xl font-bold">{campaigns.length}</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                (statsData?.totalCampaigns ?? 0)
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               All campaigns in system
             </p>
@@ -89,7 +104,11 @@ export function CampaignAudit() {
               </h3>
             </div>
             <div className="text-2xl font-bold">
-              {campaigns.filter((c) => c.status === 'ACTIVE').length}
+              {statsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                (statsData?.activeCampaigns ?? 0)
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Currently fundraising
@@ -99,13 +118,13 @@ export function CampaignAudit() {
           <div className="rounded-lg border bg-card p-6 text-card-foreground">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <h3 className="text-sm font-medium tracking-tight">
-                With Treasury
+                Loaded Campaigns
               </h3>
             </div>
-            <div className="text-2xl font-bold">
-              {campaigns.filter((c) => c.treasuryAddress).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Deployed treasuries</p>
+            <div className="text-2xl font-bold">{campaigns.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Currently displayed below
+            </p>
           </div>
 
           <div className="rounded-lg border bg-card p-6 text-card-foreground">

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useQuery } from '@tanstack/react-query';
 import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
-import { useAdminPayments } from '@/lib/hooks/useAdminPayments';
+import { handleApiErrors } from '@/lib/api/error';
+import type { AdminPaymentListItem } from '@/lib/api/adminPayments';
 import {
   useOnChainTransactions,
   OnChainTransaction,
@@ -51,6 +52,9 @@ export interface CampaignReconciliationData {
   onChainTransactions: OnChainTransaction[];
   rawBlockExplorerTransactions: RawBlockExplorerTransaction[];
 
+  // Loading states
+  isBlockchainDataLoading: boolean;
+
   // Comparison data
   comparison: {
     totalDatabaseAmount: string;
@@ -62,12 +66,29 @@ export interface CampaignReconciliationData {
 
 const CAMPAIGN_RECONCILIATION_QUERY_KEY = 'campaign_reconciliation';
 
+/**
+ * Fetch all payments for a campaign for reconciliation purposes
+ */
+async function fetchCampaignPaymentsForReconciliation(
+  campaignId: string,
+): Promise<AdminPaymentListItem[]> {
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/reconciliation`,
+  );
+  await handleApiErrors(
+    response,
+    'Failed to fetch campaign payments for reconciliation',
+  );
+  const data = await response.json();
+  return data.payments as AdminPaymentListItem[];
+}
+
 export function useCampaignReconciliation(campaignId: string) {
   // Get database payments (admin data with full user info)
-  const { data: paymentsData } = useAdminPayments({
-    page: 1,
-    pageSize: 1000, // Get many payments for reconciliation
-    filters: { campaignId: parseInt(campaignId) },
+  const { data: paymentsData } = useQuery({
+    queryKey: ['campaign_payments_reconciliation', campaignId],
+    queryFn: () => fetchCampaignPaymentsForReconciliation(campaignId),
+    enabled: !!campaignId,
   });
 
   // Get treasury balance (on-chain)
@@ -90,6 +111,7 @@ export function useCampaignReconciliation(campaignId: string) {
       }
 
       // onChainTransactionData might still be loading, handle gracefully
+      const isBlockchainDataLoading = onChainTransactionData === undefined;
       const onChainData = onChainTransactionData || {
         transactions: [],
         rawTransactions: [],
@@ -264,6 +286,7 @@ export function useCampaignReconciliation(campaignId: string) {
         onChainBalance: treasuryBalanceData.balance,
         onChainTransactions,
         rawBlockExplorerTransactions: onChainData.rawTransactions,
+        isBlockchainDataLoading,
         comparison: {
           totalDatabaseAmount,
           totalBlockchainAmount,

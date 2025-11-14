@@ -26,8 +26,7 @@ export function CampaignReconciliationTable({
   error,
 }: CampaignReconciliationTableProps) {
   // Define explicit flags for blockchain loading state and transaction presence
-  const isBlockchainLoading =
-    reconciliationData?.rawBlockExplorerTransactions === undefined;
+  const isBlockchainLoading = reconciliationData?.isBlockchainDataLoading ?? true;
   const hasBlockchainTx =
     Array.isArray(reconciliationData?.rawBlockExplorerTransactions) &&
     reconciliationData.rawBlockExplorerTransactions.length > 0;

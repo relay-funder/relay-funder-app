@@ -141,3 +141,43 @@ export async function listAdminPayments({
     },
   };
 }
+
+/**
+ * Get all payments for a specific campaign for reconciliation purposes.
+ * Returns all payments without pagination limits since reconciliation needs complete data.
+ */
+export async function getCampaignPaymentsForReconciliation(
+  campaignId: number,
+): Promise<AdminPaymentListItem[]> {
+  const payments = await db.payment.findMany({
+    where: {
+      campaignId,
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      campaign: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          campaignAddress: true,
+          treasuryAddress: true,
+        },
+      },
+      user: true,
+      // Include associated round contributions (if any)
+      RoundContribution: {
+        include: {
+          roundCampaign: {
+            include: {
+              Round: { select: { id: true, title: true, status: true } },
+              Campaign: { select: { id: true, title: true, slug: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return payments;
+}
