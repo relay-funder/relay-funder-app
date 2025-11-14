@@ -10,7 +10,7 @@ import {
 } from './hooks/useCampaignReconciliation';
 import { RawBlockExplorerTransaction } from './hooks/useOnChainTransactions';
 import { TokenTransfer } from '@/lib/block-explorer';
-import { formatTokenAmount } from '@/lib/block-explorer';
+import { formatTokenAmount, getBlockExplorerTxUrl } from '@/lib/block-explorer';
 
 interface CampaignReconciliationTableProps {
   campaignId: number;
@@ -416,7 +416,7 @@ export function CampaignReconciliationTable({
                             <td className="px-4 py-3 text-center">
                               <Button variant="outline" size="sm" asChild>
                                 <a
-                                  href={`https://celo-sepolia.blockscout.com/tx/${tx.hash}`}
+                                  href={getBlockExplorerTxUrl(tx.hash)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >

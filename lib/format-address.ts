@@ -22,6 +22,5 @@ export function getBlockExplorerTxUrl(txHash: string): string {
   }
   const baseUrl = chainConfig.blockExplorerUrl.replace(/\/$/, ''); // Remove trailing slash
   const url = `${baseUrl}/tx/${txHash}`;
-  console.log('Generated block explorer URL:', url);
   return url;
 }
