@@ -72,7 +72,9 @@ async function isPledgeExecutedOnChain(
  *
  * Reliability Features:
  * - PostgreSQL transaction-level advisory locks prevent concurrent execution
+ * - DETERMINISTIC pledge ID generation from stable fields (treasuryAddress, userAddress, paymentId)
  * - Pledge ID stored BEFORE blockchain operations (enables deterministic retries)
+ * - Same inputs always produce same pledge ID, preventing duplicate on-chain executions after crashes
  * - Early idempotency check prevents re-execution
  * - Optimistic locking prevents race conditions
  * - Transaction timeouts prevent indefinite hangs
@@ -508,6 +510,7 @@ async function _executeGatewayPledgeInternal(
 
   // Generate or retrieve pledge ID BEFORE any blockchain operations
   // This ensures we can check on-chain status with the correct pledge ID
+  // DETERMINISTIC generation: Same inputs always produce same pledge ID
   let pledgeId: string;
 
   if (metadata?.generatedPledgeId) {
@@ -520,18 +523,23 @@ async function _executeGatewayPledgeInternal(
       note: 'This is a retry - reusing same pledge ID to prevent duplicates',
     });
   } else {
-    // FIRST ATTEMPT: Generate new pledge ID
+    // FIRST ATTEMPT: Generate deterministic pledge ID
+    // Using stable fields (treasuryAddress, user address, payment ID)
+    // to ensure the same pledge ID is generated even after crashes
     pledgeId = ethers.keccak256(
       ethers.toUtf8Bytes(
-        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
+        `pledge-${payment.campaign.treasuryAddress}-${payment.user.address}-${payment.id}`,
       ),
     );
 
-    logVerbose('Generated NEW pledge ID', {
+    logVerbose('Generated NEW deterministic pledge ID', {
       prefixId,
       logAddress,
       pledgeId,
-      note: 'First execution attempt',
+      treasuryAddress: payment.campaign.treasuryAddress,
+      userAddress: payment.user.address,
+      paymentId: payment.id,
+      note: 'First execution attempt - deterministic hash from stable fields',
     });
 
     // Store pledge ID IMMEDIATELY in database BEFORE blockchain operations
@@ -550,7 +558,7 @@ async function _executeGatewayPledgeInternal(
     // Update metadata reference for later use
     metadata = updatedPayment.metadata as Record<string, unknown>;
 
-    logVerbose('Pledge ID stored in database', {
+    logVerbose('Deterministic pledge ID stored in database', {
       prefixId,
       logAddress,
       paymentId: payment.id,
@@ -559,8 +567,9 @@ async function _executeGatewayPledgeInternal(
     });
   }
 
-  // Verify pledge doesn't already exist on-chain
+  // Verify pledge doesn't already exist on-chain using deterministic pledgeId
   // This prevents overpayment if previous execution succeeded but DB wasn't updated
+  // Because pledgeId is deterministic, retries after crashes check for the SAME pledge ID
   const pledgeExistsOnChain = await isPledgeExecutedOnChain(
     treasuryContract,
     pledgeId,
@@ -579,6 +588,7 @@ async function _executeGatewayPledgeInternal(
     );
 
     // Update payment status to SUCCESS since pledge already exists on-chain
+    // Store deterministic pledgeId as onChainPledgeId
     const updatedPayment = await tx.payment.update({
       where: { id: payment.id },
       data: {
@@ -586,7 +596,7 @@ async function _executeGatewayPledgeInternal(
         pledgeExecutionError: null,
         metadata: {
           ...metadata,
-          onChainPledgeId: pledgeId,
+          onChainPledgeId: pledgeId, // Deterministic hash ensures consistency
           recoveredFromIncompleteExecution: true,
           recoveredAt: new Date().toISOString(),
         },
@@ -603,7 +613,7 @@ async function _executeGatewayPledgeInternal(
     return {
       success: true,
       paymentId: payment.id,
-      pledgeId,
+      pledgeId, // Deterministic pledgeId returned
       transactionHash:
         payment.pledgeExecutionTxHash || 'recovered-from-blockchain',
       blockNumber: 0,
@@ -616,7 +626,7 @@ async function _executeGatewayPledgeInternal(
     prefixId,
     logAddress,
     pledgeId,
-    note: 'Safe to proceed with pledge execution',
+    note: 'Safe to proceed with pledge execution using deterministic pledge ID',
   });
 
   // Check admin wallet balance (with timeout to prevent hangs)
@@ -672,8 +682,9 @@ async function _executeGatewayPledgeInternal(
     note2: 'Using treasury configured fees only, no additional gateway fee',
   });
 
-  // Pledge ID was already generated and verified earlier in the function
-  // We can now proceed with token approval and execution
+  // Deterministic pledge ID was already generated and verified earlier in the function
+  // Same stable fields (treasuryAddress, userAddress, paymentId) always produce same pledgeId
+  // This ensures retries after crashes use the same pledge ID, preventing duplicate on-chain executions
 
   // Check current allowance (with timeout to prevent hangs)
   const currentAllowance = await waitWithTimeout(
@@ -737,7 +748,8 @@ async function _executeGatewayPledgeInternal(
   }
 
   // Execute setFeeAndPledge - transfers pledge + tip to treasury
-  logVerbose('Executing setFeeAndPledge', {
+  // Using deterministic pledgeId ensures same pledge ID on retries after crashes
+  logVerbose('Executing setFeeAndPledge with deterministic pledge ID', {
     prefixId,
     logAddress,
     pledgeId,
@@ -757,7 +769,7 @@ async function _executeGatewayPledgeInternal(
   });
 
   const treasuryTx = await treasuryContract.setFeeAndPledge(
-    pledgeId,
+    pledgeId, // Deterministic hash from stable fields
     payment.user.address,
     pledgeAmountUnits,
     tipAmountUnits,
@@ -848,8 +860,9 @@ async function _executeGatewayPledgeInternal(
   });
 
   // Update payment metadata with execution details
+  // Store deterministic pledgeId as onChainPledgeId for future idempotency checks
   const executionMetadata: GatewayPledgeMetadata = {
-    onChainPledgeId: pledgeId,
+    onChainPledgeId: pledgeId, // Deterministic hash from stable fields
     treasuryTxHash: treasuryTx.hash,
     executionTimestamp: new Date().toISOString(),
     adminWalletBalanceBefore: adminBalanceFormatted,
