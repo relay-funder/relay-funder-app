@@ -78,10 +78,49 @@ export async function POST(
       );
     }
 
+    // Prevent retry if pledge execution already succeeded
+    if (payment.pledgeExecutionStatus === 'SUCCESS') {
+      logError('Retry blocked: Payment already has SUCCESS status', {
+        prefixId,
+        logAddress,
+        paymentId,
+        pledgeExecutionStatus: payment.pledgeExecutionStatus,
+        pledgeExecutionTxHash: payment.pledgeExecutionTxHash,
+      });
+
+      throw new ApiParameterError(
+        `Payment ${paymentId} already has SUCCESS status. Retry not allowed to prevent overpayment.`,
+      );
+    }
+
+    // Prevent retry if transaction was already submitted on-chain
+    // If we have a transaction hash, the pledge may have succeeded even if DB shows FAILED/PENDING
+    // Require manual verification and admin override for these cases
+    if (payment.pledgeExecutionTxHash) {
+      logError(
+        'Retry blocked: Transaction hash exists (pledge may have succeeded on-chain)',
+        {
+          prefixId,
+          logAddress,
+          paymentId,
+          pledgeExecutionStatus: payment.pledgeExecutionStatus,
+          pledgeExecutionTxHash: payment.pledgeExecutionTxHash,
+          note: 'Verify transaction status on CeloScan before retrying',
+        },
+      );
+
+      throw new ApiParameterError(
+        `Payment ${paymentId} has transaction hash ${payment.pledgeExecutionTxHash}. ` +
+          `Verify the transaction status on CeloScan. If transaction failed on-chain, ` +
+          `clear the pledgeExecutionTxHash field in database before retrying. ` +
+          `This safety check prevents accidental overpayment.`,
+      );
+    }
+
     // Validate pledge execution status is retryable
     // Allow retry for:
-    // 1. FAILED or NOT_STARTED (always retryable)
-    // 2. PENDING payments that are stuck (>10 minutes old)
+    // 1. FAILED or NOT_STARTED (only if no tx hash exists)
+    // 2. PENDING payments that are stuck (>10 minutes old) and have no tx hash
     const retryableStatuses: PledgeExecutionStatus[] = [
       'FAILED',
       'NOT_STARTED',
@@ -151,9 +190,12 @@ export async function POST(
       provider: payment.provider,
       pledgeExecutionStatus: payment.pledgeExecutionStatus,
       attempts: payment.pledgeExecutionAttempts,
+      note: 'Retry includes on-chain verification to prevent duplicate execution',
     });
 
-    // Execute retry
+    // Execute retry with on-chain verification
+    // The retryGatewayPledge/executeGatewayPledge function includes
+    // on-chain verification to prevent duplicate execution
     const result = await retryGatewayPledge(paymentId);
 
     if (result.success) {
