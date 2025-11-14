@@ -15,7 +15,7 @@ async function prefetchAdminCampaigns(
 ) {
   // Prefetch first page so the client list can hydrate instantly
   await queryClient.prefetchInfiniteQuery({
-    queryKey: ['campaigns', 'infinite', 'all', 10, true],
+    queryKey: ['campaigns', 'infinite', 'all', 10],
     initialPageParam: 1,
     queryFn: async () => {
       return listCampaigns({
@@ -30,7 +30,7 @@ async function prefetchAdminCampaigns(
 
 export default async function AdminCampaignsPage() {
   const session = await auth();
-  const isAdmin = session?.user.roles.includes('admin');
+  const isAdmin = session?.user?.roles?.includes('admin') ?? false;
   if (!isAdmin) {
     return <AdminAccessDenied />;
   }
