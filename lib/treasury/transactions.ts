@@ -55,6 +55,7 @@ export async function getTreasuryTransactions(
         rewards?: readonly `0x${string}`[];
         to?: `0x${string}`;
         amount?: bigint;
+        fee?: bigint;
       };
     };
 
@@ -94,10 +95,11 @@ export async function getTreasuryTransactions(
           address: contractAddress,
           event: {
             type: 'event',
-            name: 'Withdrawal',
+            name: 'WithdrawalWithFeeSuccessful',
             inputs: [
               { type: 'address', name: 'to', indexed: true },
               { type: 'uint256', name: 'amount', indexed: false },
+              { type: 'uint256', name: 'fee', indexed: false },
             ],
           },
           fromBlock: safeStartBlock,
@@ -152,10 +154,11 @@ export async function getTreasuryTransactions(
             address: contractAddress,
             event: {
               type: 'event',
-              name: 'Withdrawal',
+              name: 'WithdrawalWithFeeSuccessful',
               inputs: [
                 { type: 'address', name: 'to', indexed: true },
                 { type: 'uint256', name: 'amount', indexed: false },
+                { type: 'uint256', name: 'fee', indexed: false },
               ],
             },
             fromBlock: safeStartBlock,
@@ -231,6 +234,7 @@ export async function getTreasuryTransactions(
           token: 'USDT',
           from: treasuryAddress,
           to: event.args?.to || 'unknown',
+          fee: formatUnits(event.args?.fee || 0n, 6),
           eventType: 'withdrawal',
         };
       }),

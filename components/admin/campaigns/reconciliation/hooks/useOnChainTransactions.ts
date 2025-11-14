@@ -11,6 +11,7 @@ export interface OnChainTransaction {
   to: string;
   pledgeId?: string;
   tipAmount?: string;
+  fee?: string;
   eventType: 'pledge' | 'withdrawal' | 'transfer';
 }
 
