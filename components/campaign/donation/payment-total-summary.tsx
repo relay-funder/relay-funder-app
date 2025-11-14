@@ -9,7 +9,12 @@ export function PaymentTotalSummary({
   amount,
   tipAmount,
 }: PaymentTotalSummaryProps) {
-  if (!amount || parseFloat(amount) <= 0) {
+  const amountNum = parseFloat(amount || '0');
+  const tipAmountNum = parseFloat(tipAmount || '0');
+  const total = amountNum + tipAmountNum;
+
+  // Handle NaN cases
+  if (isNaN(total) || !amount || amountNum <= 0) {
     return null;
   }
 
@@ -20,10 +25,7 @@ export function PaymentTotalSummary({
           Total Amount:
         </span>
         <span className="text-lg font-bold text-foreground">
-          $
-          {(parseFloat(amount || '0') + parseFloat(tipAmount || '0')).toFixed(
-            2,
-          )}
+          ${total.toFixed(2)}
         </span>
       </div>
       <div className="mt-2 text-xs text-muted-foreground">
