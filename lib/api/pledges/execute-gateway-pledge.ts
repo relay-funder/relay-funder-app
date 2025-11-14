@@ -101,17 +101,20 @@ export async function executeGatewayPledge(
   // Wrap execution in try-catch to handle timeouts gracefully
   // If execution fails (including timeout), we need to mark as FAILED in a SEPARATE transaction
   try {
-    // Use withExecutionLock to acquire transaction-level advisory lock
-    // The lock is held for the entire execution and automatically released when transaction ends
-    return await withExecutionLock(paymentId, async (tx) => {
-      // Wrap execution with overall timeout to prevent indefinite hangs
-      return await waitWithTimeout(
-        _executeGatewayPledgeWithLock(paymentId, tx),
-        TIMEOUT_VALUES.OVERALL_EXECUTION,
-        'gateway pledge execution',
-        { paymentId },
-      );
-    });
+    const preparation = await withExecutionLock(paymentId, (tx) =>
+      prepareGatewayPledgeWithLock(paymentId, tx),
+    );
+
+    if (preparation.state === 'already-executed') {
+      return preparation.response;
+    }
+
+    return await waitWithTimeout(
+      executeGatewayPledgeOnChain(preparation),
+      TIMEOUT_VALUES.OVERALL_EXECUTION,
+      'gateway pledge execution',
+      { paymentId },
+    );
   } catch (error) {
     // Execution failed (timeout, blockchain error, etc.)
     // Mark as FAILED in a SEPARATE transaction so UI can show the failure
@@ -152,6 +155,20 @@ type TransactionClient = Omit<
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;
 
+type PreparedGatewayPledge =
+  | {
+      state: 'already-executed';
+      response: ExecuteGatewayPledgeResponse;
+    }
+  | {
+      state: 'ready';
+      payment: Prisma.PaymentGetPayload<{
+        include: { user: true; campaign: true };
+      }>;
+      prefixId?: string;
+      logAddress?: string;
+    };
+
 /**
  * Internal execution function that runs with transaction-level advisory lock held.
  *
@@ -162,12 +179,11 @@ type TransactionClient = Omit<
  * @param paymentId - Payment ID to execute
  * @param tx - Prisma transaction client (holds the transaction-level advisory lock)
  */
-async function _executeGatewayPledgeWithLock(
+async function prepareGatewayPledgeWithLock(
   paymentId: number,
   tx: TransactionClient,
-): Promise<ExecuteGatewayPledgeResponse> {
-  // Load payment with related data using transaction client
-  const payment = await tx.payment.findUnique({
+): Promise<PreparedGatewayPledge> {
+  let payment = await tx.payment.findUnique({
     where: { id: paymentId },
     include: {
       user: true,
@@ -175,8 +191,8 @@ async function _executeGatewayPledgeWithLock(
     },
   });
 
-  const logAddress = payment?.user.address;
-  const prefixId = `${payment?.daimoPaymentId}/${paymentId.toString()}`;
+  const logAddress = payment?.user.address ?? '';
+  const prefixId = `${payment?.daimoPaymentId ?? 'unknown'}/${paymentId.toString()}`;
 
   if (!payment) {
     throw new ApiParameterError(`Payment not found: ${paymentId.toString()}`);
@@ -192,9 +208,8 @@ async function _executeGatewayPledgeWithLock(
       payment.pledgeExecutionLastAttempt?.toISOString(),
   });
 
-  // EARLY IDEMPOTENCY CHECK: Check if already executed BEFORE updating status
-  // This prevents re-execution window that existed when this check happened later
   const metadata = payment.metadata as Record<string, unknown>;
+
   if (metadata?.onChainPledgeId) {
     logVerbose('Pledge already executed (early check)', {
       prefixId,
@@ -203,7 +218,6 @@ async function _executeGatewayPledgeWithLock(
       onChainPledgeId: metadata.onChainPledgeId,
     });
 
-    // Update payment status back to SUCCESS since it was already executed
     const updatedPayment = await tx.payment.update({
       where: { id: payment.id },
       data: {
@@ -221,18 +235,19 @@ async function _executeGatewayPledgeWithLock(
     });
 
     return {
-      success: true,
-      paymentId,
-      pledgeId: metadata.onChainPledgeId as string,
-      transactionHash: metadata.treasuryTxHash as string,
-      blockNumber: 0,
-      pledgeAmount: (metadata.pledgeAmount as string) || '0',
-      tipAmount: (metadata.tipAmount as string) || '0',
+      state: 'already-executed',
+      response: {
+        success: true,
+        paymentId,
+        pledgeId: metadata.onChainPledgeId as string,
+        transactionHash: metadata.treasuryTxHash as string,
+        blockNumber: 0,
+        pledgeAmount: (metadata.pledgeAmount as string) || '0',
+        tipAmount: (metadata.tipAmount as string) || '0',
+      },
     };
   }
 
-  // Check if payment is stuck in PENDING (potential crash scenario)
-  // If status is PENDING, a previous attempt may have succeeded on-chain but crashed before DB update
   if (payment.pledgeExecutionStatus === 'PENDING') {
     logVerbose('Payment is PENDING - checking for potential crash scenario', {
       prefixId,
@@ -243,8 +258,6 @@ async function _executeGatewayPledgeWithLock(
       note: 'Will check if blockchain operations already succeeded',
     });
 
-    // If we have a generated pledge ID but no onChainPledgeId, this might be a retry
-    // after crash. The pledge ID tells us what to look for on-chain.
     if (metadata?.generatedPledgeId && !metadata?.onChainPledgeId) {
       logVerbose('Found generated pledge ID without execution confirmation', {
         prefixId,
@@ -253,53 +266,60 @@ async function _executeGatewayPledgeWithLock(
         generatedPledgeId: metadata.generatedPledgeId,
         note: 'This indicates potential crash after pledge ID generation. Will attempt recovery with same pledge ID.',
       });
-
-      // TODO: In future enhancement, query blockchain here to verify if pledge exists
-      // For now, we'll proceed with the stored pledge ID (safe because we use same ID)
     }
   }
 
-  try {
-    return await _executeGatewayPledgeInternal(payment, tx, {
+  if (!metadata?.generatedPledgeId) {
+    const generatedPledgeId = ethers.keccak256(
+      ethers.toUtf8Bytes(
+        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
+      ),
+    );
+
+    logVerbose('Generated NEW pledge ID', {
       prefixId,
       logAddress,
-    });
-  } catch (error) {
-    // Mark execution as failed with error message
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-
-    logError('Execution failed:', {
-      prefixId,
-      logAddress,
-      paymentId,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      pledgeId: generatedPledgeId,
+      note: 'First execution attempt',
     });
 
-    const failedPayment = await tx.payment.update({
-      where: { id: paymentId },
+    payment = await tx.payment.update({
+      where: { id: payment.id },
+      include: {
+        user: true,
+        campaign: true,
+      },
       data: {
-        pledgeExecutionStatus: 'FAILED',
-        pledgeExecutionError: errorMessage,
+        metadata: {
+          ...(payment.metadata as Record<string, unknown>),
+          generatedPledgeId,
+          pledgeGeneratedAt: new Date().toISOString(),
+        },
       },
     });
 
-    logVerbose('Payment updated to FAILED', {
+    logVerbose('Pledge ID stored in database', {
       prefixId,
       logAddress,
-      paymentId,
-      pledgeExecutionStatus: failedPayment.pledgeExecutionStatus,
-      pledgeExecutionError: failedPayment.pledgeExecutionError,
+      paymentId: payment.id,
+      pledgeId: generatedPledgeId,
+      note: 'Safe to proceed with blockchain operations',
     });
-
-    // DON'T re-throw - we want the FAILED status to persist
-    // Return an error response instead so the transaction can commit
-    return {
-      success: false,
-      paymentId,
-      error: errorMessage,
-    } as ExecuteGatewayPledgeResponse;
+  } else {
+    logVerbose('Using existing pledge ID from previous attempt', {
+      prefixId,
+      logAddress,
+      pledgeId: metadata.generatedPledgeId,
+      note: 'This is a retry - reusing same pledge ID to prevent duplicates',
+    });
   }
+
+  return {
+    state: 'ready',
+    payment,
+    prefixId,
+    logAddress,
+  };
 }
 
 /**
@@ -310,14 +330,17 @@ async function _executeGatewayPledgeWithLock(
  * @param tx - Prisma transaction client (must be used for all DB operations)
  * @param context - Logging context
  */
-async function _executeGatewayPledgeInternal(
-  payment: Prisma.PaymentGetPayload<{
-    include: { user: true; campaign: true };
-  }>,
-  tx: TransactionClient,
-  { prefixId, logAddress }: { prefixId?: string; logAddress?: string } = {},
+type PreparedGatewayPledgeReady = Extract<
+  PreparedGatewayPledge,
+  { state: 'ready' }
+>;
+
+async function executeGatewayPledgeOnChain(
+  prepared: PreparedGatewayPledgeReady,
 ): Promise<ExecuteGatewayPledgeResponse> {
-  logVerbose('Starting internal gateway pledge execution', {
+  const { payment, prefixId, logAddress } = prepared;
+
+  logVerbose('Starting gateway pledge execution', {
     prefixId,
     logAddress,
     paymentId: payment.id,
@@ -331,7 +354,6 @@ async function _executeGatewayPledgeInternal(
     throw new ApiParameterError('Payment not found');
   }
 
-  // Validate payment is ready for execution
   if (payment.status !== 'confirmed') {
     throw new ApiParameterError(
       `Payment must be confirmed before execution. Current status: ${payment.status}`,
@@ -344,8 +366,19 @@ async function _executeGatewayPledgeInternal(
     );
   }
 
-  // NOTE: Idempotency check now happens earlier in _executeGatewayPledgeWithLock
-  // This prevents the re-execution window that existed before
+  const metadata = { ...(payment.metadata as Record<string, unknown>) };
+  const pledgeId = metadata.generatedPledgeId as string | undefined;
+
+  if (!pledgeId) {
+    logError('Missing generated pledge ID before execution', {
+      prefixId,
+      logAddress,
+      paymentId: payment.id,
+    });
+    throw new ApiParameterError(
+      'Gateway pledge execution requires a generated pledge ID',
+    );
+  }
 
   logVerbose('Extracting amounts from payment', {
     prefixId,
@@ -354,12 +387,6 @@ async function _executeGatewayPledgeInternal(
     paymentAmount: payment.amount,
   });
 
-  // Extract metadata for tip amount
-  let metadata = payment.metadata as Record<string, unknown>;
-
-  // Extract amounts from payment and parse to token units
-  // payment.amount contains ONLY the pledge amount (matching direct wallet flow)
-  // Tip is stored separately in metadata
   const pledgeAmountUnits = ethers.parseUnits(payment.amount, USD_DECIMALS);
   const tipAmountUnits = ethers.parseUnits(
     (metadata?.tipAmount as string) || '0',
@@ -389,7 +416,6 @@ async function _executeGatewayPledgeInternal(
     );
   }
 
-  // Verify required environment variables
   const rpcUrl = NEXT_PUBLIC_RPC_URL;
   const adminPrivateKey = PLATFORM_ADMIN_PRIVATE_KEY;
   const adminAddress = NEXT_PUBLIC_PLATFORM_ADMIN;
@@ -420,7 +446,6 @@ async function _executeGatewayPledgeInternal(
     );
   }
 
-  // Initialize provider and admin signer
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
 
@@ -431,7 +456,6 @@ async function _executeGatewayPledgeInternal(
     treasuryAddress: payment.campaign.treasuryAddress,
   });
 
-  // Verify private key matches public address
   if (adminSigner.address.toLowerCase() !== adminAddress.toLowerCase()) {
     logError('Admin address mismatch', {
       prefixId,
@@ -451,7 +475,6 @@ async function _executeGatewayPledgeInternal(
     treasuryAddress: payment.campaign.treasuryAddress,
   });
 
-  // Initialize contracts
   const usdContract = new ethers.Contract(
     USD_ADDRESS as string,
     erc20Abi,
@@ -471,7 +494,6 @@ async function _executeGatewayPledgeInternal(
     treasuryContractAddress: payment.campaign.treasuryAddress,
   });
 
-  // Check admin wallet balance (with timeout to prevent hangs)
   const adminBalance = await waitWithTimeout(
     usdContract.balanceOf(adminSigner.address),
     TIMEOUT_VALUES.READ_OPERATION,
@@ -502,11 +524,6 @@ async function _executeGatewayPledgeInternal(
     );
   }
 
-  /**
-   * Gateway fee: No additional fee for gateway payments.
-   * Treasury configured fees (gross percentage + protocol) apply automatically
-   * during contract execution, maintaining consistency with direct wallet pledges.
-   */
   const gatewayFee = 0n;
 
   logVerbose('Processing amounts:', {
@@ -524,60 +541,6 @@ async function _executeGatewayPledgeInternal(
     note2: 'Using treasury configured fees only, no additional gateway fee',
   });
 
-  // Generate and STORE pledge ID BEFORE any blockchain operations
-  // This ensures deterministic pledge ID across retries if crash occurs
-  let pledgeId: string;
-
-  if (metadata?.generatedPledgeId) {
-    // RETRY case: Use existing pledge ID from previous attempt
-    pledgeId = metadata.generatedPledgeId as string;
-    logVerbose('Using existing pledge ID from previous attempt', {
-      prefixId,
-      logAddress,
-      pledgeId,
-      note: 'This is a retry - reusing same pledge ID to prevent duplicates',
-    });
-  } else {
-    // FIRST ATTEMPT: Generate new pledge ID
-    pledgeId = ethers.keccak256(
-      ethers.toUtf8Bytes(
-        `pledge-${Date.now()}-${payment.user.address}-${payment.id}`,
-      ),
-    );
-
-    logVerbose('Generated NEW pledge ID', {
-      prefixId,
-      logAddress,
-      pledgeId,
-      note: 'First execution attempt',
-    });
-
-    // Store pledge ID IMMEDIATELY in database BEFORE blockchain operations
-    // If crash occurs during blockchain operations, pledge ID is preserved for retry
-    const updatedPayment = await tx.payment.update({
-      where: { id: payment.id },
-      data: {
-        metadata: {
-          ...(payment.metadata as Record<string, unknown>),
-          generatedPledgeId: pledgeId,
-          pledgeGeneratedAt: new Date().toISOString(),
-        },
-      },
-    });
-
-    // Update metadata reference for later use
-    metadata = updatedPayment.metadata as Record<string, unknown>;
-
-    logVerbose('Pledge ID stored in database', {
-      prefixId,
-      logAddress,
-      paymentId: payment.id,
-      pledgeId,
-      note: 'Safe to proceed with blockchain operations',
-    });
-  }
-
-  // Check current allowance (with timeout to prevent hangs)
   const currentAllowance = await waitWithTimeout(
     usdContract.allowance(
       adminSigner.address,
@@ -595,7 +558,6 @@ async function _executeGatewayPledgeInternal(
     required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
   });
 
-  // Approve treasury for total amount if needed
   if (currentAllowance < totalAmountUnits) {
     logVerbose('Approving treasury for total amount (pledge + tip)', {
       prefixId,
@@ -619,15 +581,12 @@ async function _executeGatewayPledgeInternal(
       hash: approveTx.hash,
     });
 
-    // Wait for approval using polling with fallback
-    // This handles slow RPC providers that are common cause of timeouts
-    // Total max time: 60s (wait) + 60s (poll) = 120s
     await waitForTransactionWithPolling(
       approveTx,
       provider,
       'token approval transaction',
-      TIMEOUT_VALUES.APPROVAL_TX, // Try tx.wait() for 60 seconds
-      TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 60 seconds more
+      TIMEOUT_VALUES.APPROVAL_TX,
+      TIMEOUT_VALUES.APPROVAL_TX,
       { prefixId, logAddress },
     );
 
@@ -638,7 +597,6 @@ async function _executeGatewayPledgeInternal(
     });
   }
 
-  // Execute setFeeAndPledge - transfers pledge + tip to treasury
   logVerbose('Executing setFeeAndPledge', {
     prefixId,
     logAddress,
@@ -682,14 +640,17 @@ async function _executeGatewayPledgeInternal(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   });
 
-  // CRITICAL: Save tx hash IMMEDIATELY after submission
-  // This ensures we can track the transaction even if Vercel lambda times out
-  // Status remains PENDING (which means "executing") but we now have the tx hash
-  await tx.payment.update({
+  const metadataWithTxHash = {
+    ...metadata,
+    treasuryTxHash: treasuryTx.hash,
+  };
+
+  await db.payment.update({
     where: { id: payment.id },
     data: {
       pledgeExecutionTxHash: treasuryTx.hash,
-      pledgeExecutionError: null, // Clear any previous error
+      pledgeExecutionError: null,
+      metadata: metadataWithTxHash as Prisma.InputJsonValue,
     },
   });
 
@@ -702,15 +663,12 @@ async function _executeGatewayPledgeInternal(
     note: 'Transaction hash saved - safe to wait for confirmation now',
   });
 
-  // Wait for confirmation using polling with fallback
-  // This handles slow RPC providers by falling back to polling if tx.wait() times out
-  // Total max time: 30s (wait) + 60s (poll) = 90s
   const receipt = await waitForTransactionWithPolling(
     treasuryTx,
     provider,
     'setFeeAndPledge transaction confirmation',
-    TIMEOUT_VALUES.PLEDGE_TX, // Try tx.wait() for 30 seconds
-    TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 60 seconds
+    TIMEOUT_VALUES.PLEDGE_TX,
+    TIMEOUT_VALUES.APPROVAL_TX,
     { prefixId, logAddress },
   );
 
@@ -723,7 +681,6 @@ async function _executeGatewayPledgeInternal(
     gasUsed: receipt.gasUsed?.toString(),
   });
 
-  // Get final admin wallet balance (with timeout)
   const finalAdminBalance = await waitWithTimeout(
     usdContract.balanceOf(adminSigner.address),
     TIMEOUT_VALUES.READ_OPERATION,
@@ -749,7 +706,6 @@ async function _executeGatewayPledgeInternal(
     remaining: finalAdminBalanceFormatted,
   });
 
-  // Update payment metadata with execution details
   const executionMetadata: GatewayPledgeMetadata = {
     onChainPledgeId: pledgeId,
     treasuryTxHash: treasuryTx.hash,
@@ -760,17 +716,18 @@ async function _executeGatewayPledgeInternal(
     tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
   };
 
-  // Mark execution as successful with transaction hash
-  const updatedPayment = await tx.payment.update({
+  const finalMetadata = {
+    ...metadataWithTxHash,
+    ...executionMetadata,
+  };
+
+  const updatedPayment = await db.payment.update({
     where: { id: payment.id },
     data: {
       pledgeExecutionStatus: 'SUCCESS',
       pledgeExecutionTxHash: treasuryTx.hash,
       pledgeExecutionError: null,
-      metadata: {
-        ...(payment.metadata as Record<string, unknown>),
-        ...executionMetadata,
-      },
+      metadata: finalMetadata as Prisma.InputJsonValue,
     },
   });
 
