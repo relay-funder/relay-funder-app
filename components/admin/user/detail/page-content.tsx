@@ -16,6 +16,7 @@ import ApprovalsCard from './approvals-card';
 import RecentCommentsCard from './recent-comments-card';
 import FavoritesCard from './favorites-card';
 import RoundContributionsCard from './round-contributions-card';
+import UserCampaignsCard from './user-campaigns-card';
 
 export interface AdminUserDetailContentProps {
   address: string;
@@ -105,6 +106,8 @@ export function AdminUserDetailContent({
             totalFavorites={data.totalFavorites}
             totalRoundContributions={data.totalRoundContributions}
           />
+
+          <UserCampaignsCard campaigns={data.userCampaigns} className="mb-8" />
 
           <RecentPaymentsCard payments={data.latestPayments} className="mb-8" />
 

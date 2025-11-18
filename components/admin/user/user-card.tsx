@@ -129,6 +129,9 @@ export function UserCard({
 
       <div className="flex items-center gap-2 pt-1">
         <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+          Campaigns: {counts.campaigns ?? 0}
+        </Badge>
+        <Badge variant="secondary" className="bg-slate-100 text-slate-700">
           Payments: {counts.payments ?? 0}
         </Badge>
         <Badge variant="secondary" className="bg-slate-100 text-slate-700">

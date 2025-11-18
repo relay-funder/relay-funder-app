@@ -31,6 +31,7 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
       totalComments,
       totalFavorites,
       totalRoundContributions,
+      userCampaigns,
     ] = await Promise.all([
       db.payment.findMany({
         where: { userId },
@@ -110,6 +111,19 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
       db.comment.count({ where: { userAddress: address } }),
       db.favorite.count({ where: { userAddress: address } }),
       db.roundContribution.count({ where: { payment: { userId } } }),
+      db.campaign.findMany({
+        where: { creatorAddress: address },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          createdAt: true,
+          startTime: true,
+          endTime: true,
+        },
+      }),
     ]);
 
     return response({
@@ -125,6 +139,7 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
       totalComments,
       totalFavorites,
       totalRoundContributions,
+      userCampaigns,
     });
   } catch (error: unknown) {
     return handleError(error);

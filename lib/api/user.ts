@@ -140,9 +140,32 @@ export async function listUsers({
     db.user.count({ where }),
   ]);
 
+  // Get campaign counts for all users in this page
+  const userAddresses = dbUsers.map(user => user.address);
+  const campaignCounts = await db.campaign.groupBy({
+    by: ['creatorAddress'],
+    where: {
+      creatorAddress: {
+        in: userAddresses,
+      },
+    },
+    _count: {
+      id: true,
+    },
+  });
+
+  // Create a map of address -> campaign count
+  const campaignCountMap = new Map(
+    campaignCounts.map(count => [count.creatorAddress, count._count.id])
+  );
+
   const users = await Promise.all(
     dbUsers.map(async (user) => ({
       ...user,
+      _count: {
+        ...user._count,
+        campaigns: campaignCountMap.get(user.address) ?? 0,
+      },
       score: await calculateUserScore({ userId: user.id }),
     })),
   );

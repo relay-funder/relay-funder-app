@@ -25,6 +25,21 @@ export type CampaignLite = Prisma.CampaignGetPayload<{
 }>;
 
 /**
+ * Campaign with status and key metadata for user overview.
+ */
+export type UserCampaign = Prisma.CampaignGetPayload<{
+  select: {
+    id: true;
+    title: true;
+    slug: true;
+    status: true;
+    createdAt: true;
+    startTime: true;
+    endTime: true;
+  };
+}>;
+
+/**
  * Payment with campaign metadata (compact).
  */
 export type PaymentWithCampaignLite = Prisma.PaymentGetPayload<{
@@ -119,4 +134,6 @@ export interface AdminUserOverviewResponse {
   totalComments: number;
   totalFavorites: number;
   totalRoundContributions: number;
+
+  userCampaigns: UserCampaign[];
 }
