@@ -1,6 +1,7 @@
 import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
+import { keccak256, toBytes, zeroAddress, zeroHash } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
@@ -42,8 +43,7 @@ async function isPledgeExecutedOnChain(
 
     // If backer is not zero address, pledge exists
     const backerAddress = pledge[0];
-    const isExecuted =
-      backerAddress !== '0x0000000000000000000000000000000000000000';
+    const isExecuted = backerAddress !== zeroAddress;
 
     logVerbose('On-chain pledge verification', {
       pledgeId,
@@ -526,8 +526,8 @@ async function _executeGatewayPledgeInternal(
     // FIRST ATTEMPT: Generate deterministic pledge ID
     // Using stable fields (treasuryAddress, user address, payment ID)
     // to ensure the same pledge ID is generated even after crashes
-    pledgeId = ethers.keccak256(
-      ethers.toUtf8Bytes(
+    pledgeId = keccak256(
+      toBytes(
         `pledge-${payment.campaign.treasuryAddress}-${payment.user.address}-${payment.id}`,
       ),
     );
@@ -615,7 +615,7 @@ async function _executeGatewayPledgeInternal(
       paymentId: payment.id,
       pledgeId, // Deterministic pledgeId returned
       transactionHash:
-        payment.pledgeExecutionTxHash || 'recovered-from-blockchain',
+        payment.pledgeExecutionTxHash || zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
       blockNumber: 0,
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',

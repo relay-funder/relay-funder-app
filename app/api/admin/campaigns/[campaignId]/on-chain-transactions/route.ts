@@ -99,20 +99,18 @@ export async function GET(
             'Contract code is empty, trying alternative RPC endpoints...',
           );
 
-          // Use chain-appropriate fallback endpoints
+          // Use chain-appropriate fallback endpoints (public only)
           const fallbackEndpoints =
             chainConfig.chainId === 42220
               ? [
-                  // Mainnet endpoints
-                  'https://celo-mainnet.infura.io/v3/', // Requires API key
-                  'https://rpc.ankr.com/celo', // Public endpoint
-                  'https://celo.api.onfinality.io/public', // Another public endpoint
+                  // Mainnet public endpoints
+                  'https://rpc.ankr.com/celo',
+                  'https://celo.api.onfinality.io/public',
                 ]
               : [
-                  // Sepolia testnet endpoints
-                  'https://celo-sepolia.infura.io/v3/', // Requires API key
-                  'https://rpc.ankr.com/celo_sepolia', // Public endpoint
-                  'https://celo-sepolia.api.onfinality.io/public', // Another public endpoint
+                  // Sepolia testnet public endpoints
+                  'https://rpc.ankr.com/celo_sepolia',
+                  'https://celo-sepolia.api.onfinality.io/public',
                 ];
 
           for (const endpoint of fallbackEndpoints) {

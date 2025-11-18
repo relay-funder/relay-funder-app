@@ -80,6 +80,7 @@ export interface GetCampaignsStatsResponse {
   totalRaised: number;
   activeCampaigns: number;
   averageProgress: number;
+  pendingApprovalCampaigns: number;
 }
 export interface PatchUserCampaignResponse extends GetCampaignResponse {}
 

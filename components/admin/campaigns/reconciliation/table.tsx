@@ -250,7 +250,7 @@ export function CampaignReconciliationTable({
                       allTransactions.push({
                         type: 'database',
                         date: new Date(
-                          payment.createdAt || payment.updatedAt || '',
+                          payment.createdAt || payment.updatedAt || Date.now(),
                         ),
                         data: payment,
                       });

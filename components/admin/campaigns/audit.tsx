@@ -133,7 +133,11 @@ export function CampaignAudit() {
               </h3>
             </div>
             <div className="text-2xl font-bold">
-              {campaigns.filter((c) => c.status === 'PENDING_APPROVAL').length}
+              {statsLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                statsData?.pendingApprovalCampaigns ?? 0
+              )}
             </div>
             <p className="text-xs text-muted-foreground">Awaiting review</p>
           </div>

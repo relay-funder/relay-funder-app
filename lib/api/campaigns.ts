@@ -686,12 +686,16 @@ export async function getStats({
     totalRaised: 0,
     activeCampaigns: 0,
     averageProgress: 0,
+    pendingApprovalCampaigns: 0,
   };
 
   if (admin) {
     stats.totalCampaigns = await db.campaign.count();
     stats.activeCampaigns = await db.campaign.count({
       where: { status: 'ACTIVE' },
+    });
+    stats.pendingApprovalCampaigns = await db.campaign.count({
+      where: { status: 'PENDING_APPROVAL' },
     });
     const raisedQuery = Prisma.sql`
       WITH TotalRaised AS (

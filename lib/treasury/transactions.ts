@@ -1,6 +1,7 @@
 import { createPublicClient, http, formatEther, formatUnits } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { chainConfig } from '@/lib/web3/config/chain';
+import { USD_ADDRESS } from '@/lib/constant';
 import type { OnChainTransaction } from '@/components/admin/campaigns/reconciliation/hooks/useOnChainTransactions';
 
 // Create a public client for reading from the blockchain using the proper chain configuration
@@ -271,44 +272,39 @@ export async function getTreasuryTransactions(
  */
 export async function getTreasuryContractBalance(
   treasuryAddress: string,
-): Promise<{ usdt: string; native: string }> {
+): Promise<{ usd: string; native: string }> {
   try {
     const contractAddress = treasuryAddress as `0x${string}`;
 
-    // First try to get USDT balance using contract call (preferred method)
-    let usdtBalance: bigint | null = null;
+    // First try to get USD balance using contract call (preferred method)
+    let usdBalance: bigint | null = null;
     try {
-      usdtBalance = (await publicClient.readContract({
+      usdBalance = (await publicClient.readContract({
         address: contractAddress,
         abi: KeepWhatsRaisedABI,
         functionName: 'getRaisedAmount',
       })) as bigint;
       console.log(
         `Treasury contract getRaisedAmount:`,
-        formatUnits(usdtBalance, 6),
+        formatUnits(usdBalance, 6),
       );
     } catch (contractError) {
       console.warn(
         'Failed to call getRaisedAmount on treasury contract:',
         contractError,
       );
-      usdtBalance = null;
+      usdBalance = null;
     }
 
-    // If contract call fails, try to get USDC balance directly from ERC20 contract
-    if (usdtBalance === null) {
+    // If contract call fails, try to get USD token balance directly from ERC20 contract
+    if (usdBalance === null) {
       try {
-        // Use the appropriate USDC contract address based on the chain
-        const usdcAddress = (
-          chainConfig.chainId === 42220
-            ? '0x01C5C0122039549AD1493B8220cABEdD739BC44E' // Mainnet USDC
-            : '0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B'
-        ) as  // Sepolia USDC
-        `0x${string}`;
+        // Use the configured USD token contract address (USDT in production, USDC in staging)
+        const usdTokenAddress = USD_ADDRESS as `0x${string}`;
 
         // ERC20 balanceOf call
-        usdtBalance = (await publicClient.readContract({
-          address: usdcAddress,
+          usdBalance = (await publicClient.readContract({
+          address: usdTokenAddress,
           abi: [
             {
               constant: true,
@@ -322,12 +318,12 @@ export async function getTreasuryContractBalance(
           args: [contractAddress],
         })) as bigint;
         console.log(
-          `Direct USDC balance check on ${chainConfig.name}:`,
-          formatUnits(usdtBalance, 6),
+          `Direct USD token balance check on ${chainConfig.name}:`,
+          formatUnits(usdBalance, 6),
         );
       } catch (erc20Error) {
-        console.warn('Failed to get USDC balance directly:', erc20Error);
-        usdtBalance = 0n;
+        console.warn('Failed to get USD token balance directly:', erc20Error);
+        usdBalance = 0n;
       }
     }
 
@@ -337,11 +333,11 @@ export async function getTreasuryContractBalance(
     });
 
     return {
-      usdt: formatUnits(usdtBalance, 6), // USDC has 6 decimals
+      usd: formatUnits(usdBalance, 6), // USD tokens have 6 decimals
       native: formatEther(nativeBalance),
     };
   } catch (error) {
     console.error('Error fetching treasury balance:', error);
-    return { usdt: '0', native: '0' };
+    return { usd: '0', native: '0' };
   }
 }
