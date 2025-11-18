@@ -39,7 +39,13 @@ async function isPledgeExecutedOnChain(
 ): Promise<boolean> {
   try {
     // Query the pledges mapping: pledges(bytes32) returns (address backer, ...)
-    const pledge = await treasuryContract.pledges(pledgeId);
+    // Wrap with timeout to prevent hangs that hold Prisma transaction locks
+    const pledge = await waitWithTimeout(
+      treasuryContract.pledges(pledgeId),
+      TIMEOUT_VALUES.READ_OPERATION,
+      'read on-chain pledge status',
+      { pledgeId },
+    );
 
     // If backer is not zero address, pledge exists
     const backerAddress = pledge[0];
