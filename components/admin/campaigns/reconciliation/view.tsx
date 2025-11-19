@@ -31,39 +31,13 @@ export function CampaignReconciliationView({
     progress,
   } = useCampaignReconciliationStream(campaignId);
 
-  if (campaignLoading || reconciliationLoading) {
+  // Only block on campaign loading - show page immediately with DB data
+  if (campaignLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p>
-            {campaignLoading
-              ? 'Loading campaign data...'
-              : 'Loading reconciliation data...'}
-          </p>
-          {!campaignLoading && reconciliationLoading && progress && (
-            <div className="mt-4 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Fetching blockchain transactions...
-              </p>
-              {progress.totalCount > 0 && (
-                <>
-                  <div className="mx-auto w-64">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${progress.percentComplete}%` }}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {progress.loadedCount} / {progress.totalCount} transactions
-                    loaded ({progress.percentComplete}%)
-                  </p>
-                </>
-              )}
-            </div>
-          )}
+          <p>Loading campaign data...</p>
         </div>
       </div>
     );
