@@ -16,7 +16,7 @@ import ApprovalsCard from './approvals-card';
 import RecentCommentsCard from './recent-comments-card';
 import FavoritesCard from './favorites-card';
 import RoundContributionsCard from './round-contributions-card';
-import UserCampaignsCard from './user-campaigns-card';
+import { UserCampaignsCard } from './user-campaigns-card';
 
 export interface AdminUserDetailContentProps {
   address: string;

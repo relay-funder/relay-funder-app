@@ -83,5 +83,3 @@ export function UserCampaignsCard({
     </Card>
   );
 }
-
-export default UserCampaignsCard;
