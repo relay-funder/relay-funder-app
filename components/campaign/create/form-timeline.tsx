@@ -213,17 +213,18 @@ export function CampaignCreateFormTimeline({
       // 1. Manual times are explicitly set (selectedRoundId === 0), OR
       // 2. No rounds are available, OR
       // 3. No round is currently selected
-      const canEditManually = hasManualTimes || !hasUpcomingRounds || !selectedRoundIdValue;
-      
+      const canEditManually =
+        hasManualTimes || !hasUpcomingRounds || !selectedRoundIdValue;
+
       if (!canEditManually) {
         return;
       }
-      
+
       // If changing date while a round is selected (not manual mode), switch to manual mode
       if (selectedRoundIdValue && selectedRoundIdValue !== 0) {
         form.setValue('selectedRoundId', 0);
       }
-      
+
       const newStartDate = new Date(value);
       const newStartString = newStartDate.toISOString().slice(0, 10);
       const oldValues = form.getValues();
@@ -397,8 +398,12 @@ export function CampaignCreateFormTimeline({
                 </FormControl>
                 <FormMessage />
                 {startTimeWarning && (
-                  <Alert 
-                    variant={startTimeWarning.type === 'warning' ? 'destructive' : 'default'} 
+                  <Alert
+                    variant={
+                      startTimeWarning.type === 'warning'
+                        ? 'destructive'
+                        : 'default'
+                    }
                     className="mt-2"
                   >
                     <AlertCircle className="h-4 w-4" />

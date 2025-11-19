@@ -75,11 +75,7 @@ export function FavoriteCard({ favourite, onRemoved }: FavoriteCardProps) {
     <>
       <Card className="overflow-hidden bg-card transition-shadow hover:shadow-md">
         <CardContent className="p-4">
-          <Link
-            href={`/campaigns/${campaign.slug}`}
-            className="block"
-            prefetch={true}
-          >
+          <Link href={`/campaigns/${campaign.slug}`} className="block">
             <div className="flex gap-3">
               {/* Campaign Image */}
               <div className="shrink-0">

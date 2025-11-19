@@ -275,7 +275,9 @@ export async function GET(req: Request) {
     const rounds =
       (searchParams.get('rounds') || 'false') === 'true' ? true : false;
     const isUserAdmin = await isAdmin();
-    const admin = isUserAdmin && (searchParams.has('admin') ? searchParams.get('admin') === 'true' : true);
+    const admin =
+      isUserAdmin &&
+      (searchParams.has('admin') ? searchParams.get('admin') === 'true' : true);
     const skip = (page - 1) * pageSize;
 
     if (pageSize > 10) {

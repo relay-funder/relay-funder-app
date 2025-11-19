@@ -199,7 +199,6 @@ export function CampaignCard({
         href={`/campaigns/${campaign.slug}`}
         className="block transition-opacity active:opacity-75"
         target={linkTarget}
-        prefetch={true}
       >
         {cardContent}
       </Link>

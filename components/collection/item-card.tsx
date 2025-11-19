@@ -29,7 +29,7 @@ export function CollectionItemCard({
         />
       </CardHeader>
       <CardContent className="p-6">
-        <Link href={`/campaigns/${item.details?.slug}`} prefetch={true}>
+        <Link href={`/campaigns/${item.details?.slug}`}>
           <h3 className="mb-2 text-xl font-bold transition-colors hover:text-purple-600">
             {item.details?.title ?? 'Collection Item'}
           </h3>
@@ -38,7 +38,7 @@ export function CollectionItemCard({
           {item.details?.description ?? ''}
         </p>
         <div className="flex items-center justify-between">
-          <Link href={`/campaigns/${item.details?.slug}`} prefetch={true}>
+          <Link href={`/campaigns/${item.details?.slug}`}>
             <Button variant="outline" size="sm">
               View Campaign
             </Button>

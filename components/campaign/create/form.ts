@@ -39,7 +39,7 @@ function validateStartTimeNotInPast(value: string) {
 function transformStartTime(value: string) {
   const localDate = new Date(value);
   const now = new Date();
-  
+
   // Check if the selected date is today
   if (
     now.getFullYear() === localDate.getFullYear() &&
@@ -52,7 +52,7 @@ function transformStartTime(value: string) {
     // For future dates, set to start of day
     localDate.setHours(0);
   }
-  
+
   localDate.setMinutes(0);
   localDate.setSeconds(0);
   localDate.setMilliseconds(0);
@@ -62,7 +62,7 @@ function transformStartTime(value: string) {
 
 function transformEndTime(value: string) {
   const endTime = new Date(value);
-  
+
   // Set to end of day (23:59:59)
   endTime.setHours(23);
   endTime.setMinutes(59);

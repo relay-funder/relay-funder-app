@@ -91,7 +91,7 @@ export function RoundList({
         ) : !loading ? (
           <div className="col-span-full py-12 text-center">
             <div className="mx-auto max-w-sm">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="mb-2 text-lg font-medium text-gray-900">
                 {searchTerm ? 'No rounds match your search' : 'No rounds found'}
               </h3>
               <p className="text-sm text-gray-500">
