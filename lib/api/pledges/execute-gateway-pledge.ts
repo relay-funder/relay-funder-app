@@ -47,13 +47,13 @@ async function isPledgeExecutedOnChain(
       { pledgeId },
     );
 
-    // If backer is not zero address, pledge exists
-    const backerAddress = pledge[0];
-    const isExecuted = backerAddress !== zeroAddress;
+    // If pledge exists and backer is not zero address, pledge is executed
+    const isExecuted = pledge && pledge[0] && pledge[0] !== zeroAddress;
 
     logVerbose('On-chain pledge verification', {
       pledgeId,
-      backerAddress,
+      backerAddress: pledge?.[0] || 'undefined',
+      pledgeExists: !!pledge,
       isExecuted,
     });
 
