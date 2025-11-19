@@ -89,7 +89,8 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
         }
 
         // Reject values that are unreasonably large for donations
-        if (value > 1000000) { // Max $1,000,000 for donations
+        if (value > 1000000) {
+          // Max $1,000,000 for donations
           return;
         }
 
@@ -100,7 +101,10 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
         }
 
         // Check if amount exceeds user's balance (if balance is available)
-        if (usdFormattedBalance.usdBalanceAmount > 0 && value > usdFormattedBalance.usdBalanceAmount) {
+        if (
+          usdFormattedBalance.usdBalanceAmount > 0 &&
+          value > usdFormattedBalance.usdBalanceAmount
+        ) {
           return;
         }
       }

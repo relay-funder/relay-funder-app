@@ -8,5 +8,6 @@
 // - Preview/Staging: NEXT_PUBLIC_VERCEL_ENV === 'preview' (testnet)
 // - Local development: NEXT_PUBLIC_VERCEL_ENV === undefined (testnet)
 // Fallback to VERCEL_ENV for local development with vercel CLI
-export const IS_PRODUCTION = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ||
-                             process.env.VERCEL_ENV === 'production';
+export const IS_PRODUCTION =
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ||
+  process.env.VERCEL_ENV === 'production';
