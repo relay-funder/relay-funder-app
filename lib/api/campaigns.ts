@@ -449,6 +449,9 @@ export async function getPaymentMapWithTips(
   idList: number[],
   confirmed: boolean,
 ) {
+  if (idList.length === 0) {
+    return [] as PaymentTokenList;
+  }
   const query = Prisma.sql`
     SELECT
         "campaignId",
@@ -485,6 +488,9 @@ export async function getPaymentMapWithTips(
 }
 
 export async function getPaymentMap(idList: number[], confirmed: boolean) {
+  if (idList.length === 0) {
+    return [] as PaymentTokenList;
+  }
   const query = Prisma.sql`
       SELECT
           "campaignId",
