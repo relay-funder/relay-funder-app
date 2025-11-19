@@ -35,6 +35,23 @@ export async function requestTransaction({
   if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
     throw new Error('Donation amount is missing or invalid');
   }
+
+  const numericAmount = Number(amount);
+  // Reject values that would display in exponential notation
+  if (amount.includes('e') || amount.includes('E')) {
+    throw new Error('Donation amount cannot be in exponential notation');
+  }
+
+  // Reject values that are unreasonably large for donations
+  if (numericAmount > 1000000) {
+    throw new Error('Donation amount cannot exceed $1,000,000');
+  }
+
+  // For donations, reject values with more than 2 decimal places
+  const decimalParts = amount.split('.');
+  if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+    throw new Error('Donation amount cannot have more than 2 decimal places');
+  }
   if (!address || !ethers.isAddress(address)) {
     throw new Error('Treasury address is missing or invalid');
   }

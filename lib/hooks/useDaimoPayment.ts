@@ -153,6 +153,26 @@ export function useDaimoPayment({
     return result.success;
   }, [email]);
 
+  // Validate donation amount
+  const isAmountValid = useMemo(() => {
+    if (!amount || amount.trim() === '') return false;
+
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) return false;
+
+    // Reject values that would display in exponential notation
+    if (amount.includes('e') || amount.includes('E')) return false;
+
+    // Reject values that are unreasonably large for donations
+    if (numericAmount > 1000000) return false;
+
+    // For donations, reject values with more than 2 decimal places
+    const decimalParts = amount.split('.');
+    if (decimalParts.length > 1 && decimalParts[1].length > 2) return false;
+
+    return true;
+  }, [amount]);
+
   // Validate all parameters
   // Note: pledgeCallData is no longer required for Daimo Pay button functionality
   // Gateway payments are executed via webhooks, not client-side contract calls
@@ -163,7 +183,8 @@ export function useDaimoPayment({
       parseFloat(totalAmount) >= DAIMO_PAY_MIN_AMOUNT &&
       config.isValid &&
       !!validatedTreasuryAddress &&
-      isEmailValid
+      isEmailValid &&
+      isAmountValid
     );
   }, [
     pledgeId,
@@ -172,6 +193,7 @@ export function useDaimoPayment({
     config.isValid,
     validatedTreasuryAddress,
     isEmailValid,
+    isAmountValid,
   ]);
 
   return {

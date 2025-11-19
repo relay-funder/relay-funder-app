@@ -73,10 +73,31 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
         if (isNaN(value) || value < 0) {
           return;
         }
+
+        // Reject values that would display in exponential notation
+        if (input.includes('e') || input.includes('E')) {
+          return;
+        }
+
+        // Reject values that are unreasonably large for donations
+        if (value > 1000000) { // Max $1,000,000 for donations
+          return;
+        }
+
+        // For donations, reject values with more than 2 decimal places
+        const decimalParts = input.split('.');
+        if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+          return;
+        }
+
+        // Check if amount exceeds user's balance (if balance is available)
+        if (usdFormattedBalance.usdBalanceAmount > 0 && value > usdFormattedBalance.usdBalanceAmount) {
+          return;
+        }
       }
       setAmountIntern(input);
     },
-    [setAmountIntern],
+    [setAmountIntern, usdFormattedBalance.usdBalanceAmount],
   );
   const clearDonation = useCallback(() => {
     setAmount('0');
