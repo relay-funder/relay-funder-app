@@ -558,8 +558,12 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
   if (!instance) {
     return null;
   }
-  const creator = await getUserWithStates(instance.creatorAddress);
-  const paymentSummary = await getPaymentSummary(instance.id);
+  
+  // Parallelize creator and payment summary fetching for better performance
+  const [creator, paymentSummary] = await Promise.all([
+    getUserWithStates(instance.creatorAddress),
+    getPaymentSummary(instance.id),
+  ]);
 
   return {
     ...instance,

@@ -46,6 +46,7 @@ function UpdateCard({ update }: UpdateCardProps) {
               <Link
                 href={`/campaigns/${campaign.slug}`}
                 className="block truncate text-sm font-medium text-foreground hover:text-accent-foreground hover:underline"
+                prefetch={true}
               >
                 {campaign.title}
               </Link>
