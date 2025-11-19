@@ -8,6 +8,9 @@ import {
   getBlockExplorerTransactionDetails,
 } from '@/lib/block-explorer';
 import { chainConfig } from '@/lib/web3/config/chain';
+import { logFactory } from '@/lib/debug/log';
+
+const logVerbose = logFactory('verbose', '⛓️ OnChainTx', { flag: 'api' });
 
 export async function GET(
   req: Request,
@@ -44,9 +47,9 @@ export async function GET(
     const transactionHashes = smartContractTransactions.map(
       (tx) => tx.transactionHash,
     );
-    console.log(
-      `Found ${transactionHashes.length} transaction hashes from smart contract events:`,
-      transactionHashes,
+    logVerbose(
+      `Found ${transactionHashes.length} transaction hashes from smart contract events`,
+      { transactionHashes },
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,8 +57,8 @@ export async function GET(
 
     // If no smart contract transactions, try to fetch regular transactions involving the treasury address
     if (transactionHashes.length === 0) {
-      console.log(
-        'No smart contract transactions found. Checking if treasury contract exists and fetching regular transactions...',
+      logVerbose(
+        'No smart contract transactions found. Checking if treasury contract exists and fetching regular transactions',
       );
 
       try {
@@ -68,11 +71,12 @@ export async function GET(
           ),
         });
 
-        console.log(
+        logVerbose(
           `Checking contract at address: ${campaign.treasuryAddress}`,
-        );
-        console.log(
-          `Using RPC endpoint: ${process.env.NEXT_PUBLIC_CELO_RPC_URL || 'https://forno.celo.org'}`,
+          {
+            rpcEndpoint:
+              process.env.NEXT_PUBLIC_CELO_RPC_URL || 'https://forno.celo.org',
+          },
         );
 
         // First, let's check if we can get a balance for this address
@@ -80,7 +84,9 @@ export async function GET(
           const balance = await publicClient.getBalance({
             address: campaign.treasuryAddress as `0x${string}`,
           });
-          console.log(`Address balance: ${balance} wei`);
+          logVerbose(`Address balance check`, {
+            balanceWei: balance.toString(),
+          });
         } catch (balanceError) {
           console.error('Error getting balance:', balanceError);
         }
@@ -88,15 +94,12 @@ export async function GET(
         const code = await publicClient.getCode({
           address: campaign.treasuryAddress as `0x${string}`,
         });
-        console.log(`Raw contract code response: ${code}`);
-        console.log(
-          `Treasury contract code length: ${code?.length || 0} bytes`,
-        );
+        logVerbose(`Contract code check`, { codeLength: code?.length || 0 });
 
         // If we get 0x, it might be a network issue - let's try a fallback RPC
         if (!code || code === '0x') {
-          console.log(
-            'Contract code is empty, trying alternative RPC endpoints...',
+          logVerbose(
+            'Contract code is empty, trying alternative RPC endpoints',
           );
 
           // Use chain-appropriate fallback endpoints (public only)
@@ -115,7 +118,7 @@ export async function GET(
 
           for (const endpoint of fallbackEndpoints) {
             try {
-              console.log(`Trying fallback RPC: ${endpoint}`);
+              logVerbose(`Trying fallback RPC`, { endpoint });
               const fallbackClient = createPublicClient({
                 chain: celo,
                 transport: http(endpoint),
@@ -124,12 +127,13 @@ export async function GET(
               const fallbackCode = await fallbackClient.getCode({
                 address: campaign.treasuryAddress as `0x${string}`,
               });
-              console.log(
-                `Fallback RPC ${endpoint} returned code length: ${fallbackCode?.length || 0} bytes`,
-              );
+              logVerbose(`Fallback RPC result`, {
+                endpoint,
+                codeLength: fallbackCode?.length || 0,
+              });
 
               if (fallbackCode && fallbackCode !== '0x') {
-                console.log('SUCCESS: Found contract code with fallback RPC!');
+                logVerbose('SUCCESS: Found contract code with fallback RPC');
                 // Use this successful client for further operations
                 // (We'd need to restructure the code to use this client)
                 break;
@@ -141,23 +145,23 @@ export async function GET(
         }
 
         if (!code || code === '0x') {
-          console.log(
-            'Treasury contract does not exist at this address - this might be wrong!',
+          logVerbose(
+            'Treasury contract does not exist at this address - this might be wrong',
           );
 
           // Let's try a different approach - check if we can get any transaction data
-          console.log(
-            'Attempting to fetch transactions anyway to see if address has activity...',
+          logVerbose(
+            'Attempting to fetch transactions anyway to see if address has activity',
           );
           blockExplorerTransactions = await getBlockExplorerTransactions(
             campaign.treasuryAddress,
           );
-          console.log(
-            `Found ${blockExplorerTransactions.length} transactions despite no contract code`,
-          );
+          logVerbose(`Found transactions despite no contract code`, {
+            transactionCount: blockExplorerTransactions.length,
+          });
         } else {
-          console.log(
-            'Treasury contract exists, trying to fetch regular transactions...',
+          logVerbose(
+            'Treasury contract exists, trying to fetch regular transactions',
           );
 
           // If contract exists but has no smart contract events, try fetching regular transactions
@@ -165,9 +169,9 @@ export async function GET(
           blockExplorerTransactions = await getBlockExplorerTransactions(
             campaign.treasuryAddress,
           );
-          console.log(
-            `Fetched ${blockExplorerTransactions.length} regular transactions for treasury address`,
-          );
+          logVerbose(`Fetched regular transactions for treasury address`, {
+            transactionCount: blockExplorerTransactions.length,
+          });
         }
       } catch (error) {
         console.error(
@@ -178,7 +182,7 @@ export async function GET(
     }
 
     // Fetch raw block explorer transactions - get basic list first, then fetch detailed data for all
-    console.log('Fetching block explorer transactions for treasury address');
+    logVerbose('Fetching block explorer transactions for treasury address');
 
     if (blockExplorerTransactions.length === 0) {
       try {
@@ -186,10 +190,9 @@ export async function GET(
         blockExplorerTransactions = await getBlockExplorerTransactions(
           campaign.treasuryAddress,
         );
-        console.log(
-          'Basic block explorer transactions fetched:',
-          blockExplorerTransactions.length,
-        );
+        logVerbose('Basic block explorer transactions fetched', {
+          transactionCount: blockExplorerTransactions.length,
+        });
       } catch (blockExplorerError) {
         console.warn(
           'Failed to fetch basic block explorer transactions:',
@@ -201,20 +204,21 @@ export async function GET(
 
     // Now fetch detailed data for ALL transactions to get token transfer amounts
     if (blockExplorerTransactions.length > 0) {
-      console.log(
-        `Fetching detailed data for ${blockExplorerTransactions.length} transactions`,
-      );
+      logVerbose(`Fetching detailed data for transactions`, {
+        transactionCount: blockExplorerTransactions.length,
+      });
       const detailedTransactions = [];
 
       for (const tx of blockExplorerTransactions) {
-        console.log(`Fetching detailed data for transaction: ${tx.hash}`);
+        logVerbose(`Fetching detailed data for transaction`, { hash: tx.hash });
         try {
           const detailedTx = await getBlockExplorerTransactionDetails(tx.hash);
           if (detailedTx) {
             detailedTransactions.push(detailedTx);
-            console.log(
-              `Successfully fetched details for ${tx.hash} with ${detailedTx.tokenTransfers?.length || 0} token transfers`,
-            );
+            logVerbose(`Successfully fetched details for transaction`, {
+              hash: tx.hash,
+              tokenTransferCount: detailedTx.tokenTransfers?.length || 0,
+            });
           } else {
             console.warn(
               `Failed to fetch details for transaction ${tx.hash}, using basic data`,
@@ -236,20 +240,15 @@ export async function GET(
       }
 
       blockExplorerTransactions = detailedTransactions;
-      console.log(
-        'Final block explorer transactions with details:',
-        blockExplorerTransactions.length,
-      );
+      logVerbose('Final block explorer transactions with details', {
+        finalTransactionCount: blockExplorerTransactions.length,
+      });
     }
 
-    console.log(
-      'API Response - smartContractTransactions:',
-      smartContractTransactions.length,
-    );
-    console.log(
-      'API Response - blockExplorerTransactions:',
-      blockExplorerTransactions.length,
-    );
+    logVerbose('API Response transaction counts', {
+      smartContractTransactions: smartContractTransactions.length,
+      blockExplorerTransactions: blockExplorerTransactions.length,
+    });
 
     return response({
       transactions: smartContractTransactions,

@@ -2,7 +2,11 @@ import { createPublicClient, http, formatEther, formatUnits } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { chainConfig } from '@/lib/web3/config/chain';
 import { USD_ADDRESS } from '@/lib/constant';
-import type { OnChainTransaction } from '@/components/admin/campaigns/reconciliation/hooks/useOnChainTransactions';
+import { USD_DECIMALS } from '@/lib/constant/tokens';
+import { logFactory } from '@/lib/debug/log';
+import type { OnChainTransaction } from '@/lib/hooks/useOnChainTransactions';
+
+const logVerbose = logFactory('verbose', '💰 Treasury', { flag: 'web3' });
 
 // Create a public client for reading from the blockchain using the proper chain configuration
 // This ensures we use testnet endpoints in development and mainnet in production
@@ -32,9 +36,11 @@ export async function getTreasuryTransactions(
     // Ensure we don't go below genesis
     const safeStartBlock = startBlock < 0n ? 0n : startBlock;
 
-    console.log(
-      `Fetching treasury transactions from block ${safeStartBlock} to ${currentBlock} (${currentBlock - safeStartBlock} blocks)`,
-    );
+    logVerbose(`Fetching treasury transactions`, {
+      fromBlock: safeStartBlock,
+      toBlock: currentBlock,
+      blockRange: currentBlock - safeStartBlock,
+    });
 
     // Try to fetch events with timeout protection
     type LogEntry = {
@@ -209,12 +215,12 @@ export async function getTreasuryTransactions(
           transactionHash: event.transactionHash,
           blockNumber: Number(event.blockNumber),
           timestamp: Number(block.timestamp),
-          amount: formatUnits(event.args?.pledgeAmount || 0n, 6), // USDT has 6 decimals
+          amount: formatUnits(event.args?.pledgeAmount || 0n, USD_DECIMALS), // USDT has USD_DECIMALS decimals
           token: 'USDT',
           from: event.args?.backer || 'unknown',
           to: treasuryAddress,
           pledgeId: event.args?.reward,
-          tipAmount: formatUnits(event.args?.tip || 0n, 6),
+          tipAmount: formatUnits(event.args?.tip || 0n, USD_DECIMALS),
           eventType: 'pledge',
         };
       }),
@@ -231,11 +237,11 @@ export async function getTreasuryTransactions(
           transactionHash: event.transactionHash,
           blockNumber: Number(event.blockNumber),
           timestamp: Number(block.timestamp),
-          amount: formatUnits(event.args?.amount || 0n, 6), // USDT has 6 decimals
+          amount: formatUnits(event.args?.amount || 0n, USD_DECIMALS), // USDT has USD_DECIMALS decimals
           token: 'USDT',
           from: treasuryAddress,
           to: event.args?.to || 'unknown',
-          fee: formatUnits(event.args?.fee || 0n, 6),
+          fee: formatUnits(event.args?.fee || 0n, USD_DECIMALS),
           eventType: 'withdrawal',
         };
       }),
@@ -247,9 +253,11 @@ export async function getTreasuryTransactions(
       ...withdrawalTransactions,
     ].sort((a, b) => b.timestamp - a.timestamp);
 
-    console.log(
-      `Fetched ${allTransactions.length} transactions (${pledgeTransactions.length} pledges, ${withdrawalTransactions.length} withdrawals)`,
-    );
+    logVerbose(`Fetched treasury transactions`, {
+      totalTransactions: allTransactions.length,
+      pledges: pledgeTransactions.length,
+      withdrawals: withdrawalTransactions.length,
+    });
 
     return allTransactions;
   } catch (error) {
@@ -284,10 +292,9 @@ export async function getTreasuryContractBalance(
         abi: KeepWhatsRaisedABI,
         functionName: 'getRaisedAmount',
       })) as bigint;
-      console.log(
-        `Treasury contract getRaisedAmount:`,
-        formatUnits(usdBalance, 6),
-      );
+      logVerbose(`Treasury contract getRaisedAmount`, {
+        amount: formatUnits(usdBalance, USD_DECIMALS),
+      });
     } catch (contractError) {
       console.warn(
         'Failed to call getRaisedAmount on treasury contract:',
@@ -303,7 +310,7 @@ export async function getTreasuryContractBalance(
         const usdTokenAddress = USD_ADDRESS as `0x${string}`;
 
         // ERC20 balanceOf call
-          usdBalance = (await publicClient.readContract({
+        usdBalance = (await publicClient.readContract({
           address: usdTokenAddress,
           abi: [
             {
@@ -317,10 +324,10 @@ export async function getTreasuryContractBalance(
           functionName: 'balanceOf',
           args: [contractAddress],
         })) as bigint;
-        console.log(
-          `Direct USD token balance check on ${chainConfig.name}:`,
-          formatUnits(usdBalance, 6),
-        );
+        logVerbose(`Direct USD token balance check`, {
+          chain: chainConfig.name,
+          amount: formatUnits(usdBalance, USD_DECIMALS),
+        });
       } catch (erc20Error) {
         console.warn('Failed to get USD token balance directly:', erc20Error);
         usdBalance = 0n;
@@ -333,7 +340,7 @@ export async function getTreasuryContractBalance(
     });
 
     return {
-      usd: formatUnits(usdBalance, 6), // USD tokens have 6 decimals
+      usd: formatUnits(usdBalance, USD_DECIMALS), // USD tokens have USD_DECIMALS decimals
       native: formatEther(nativeBalance),
     };
   } catch (error) {

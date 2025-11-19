@@ -5,4 +5,7 @@ export function formatAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export { getBlockExplorerAddressUrl, getBlockExplorerTxUrl } from './block-explorer';
+export {
+  getBlockExplorerAddressUrl,
+  getBlockExplorerTxUrl,
+} from './block-explorer';

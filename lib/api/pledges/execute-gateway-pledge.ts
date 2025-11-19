@@ -60,7 +60,7 @@ async function isPledgeExecutedOnChain(
     return isExecuted;
   } catch (error) {
     throw new ApiUpstreamError(
-      `Failed to check on-chain pledge status for pledgeId ${pledgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to check on-chain pledge status for pledgeId ${pledgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
   }
 }
@@ -620,8 +620,7 @@ async function _executeGatewayPledgeInternal(
       success: true,
       paymentId: payment.id,
       pledgeId, // Deterministic pledgeId returned
-      transactionHash:
-        payment.pledgeExecutionTxHash || zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
+      transactionHash: payment.pledgeExecutionTxHash || zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
       blockNumber: 0,
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',

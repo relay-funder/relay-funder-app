@@ -45,7 +45,7 @@ export interface OnChainTransactionData {
   rawTransactions: RawBlockExplorerTransaction[];
 }
 
-const ON_CHAIN_TRANSACTIONS_QUERY_KEY = 'on_chain_transactions';
+export const ON_CHAIN_TRANSACTIONS_QUERY_KEY = 'on_chain_transactions';
 
 async function fetchOnChainTransactions(
   campaignId: string,

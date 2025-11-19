@@ -1,206 +1,130 @@
-import { CampaignStatus } from '@/types/campaign';
-import { DbCampaign } from '@/types/campaign';
-import {
-  parseISO,
-  isValid,
-  addMinutes,
-  startOfDay,
-  endOfDay,
-  formatISO,
-  addDays,
-} from 'date-fns';
+import type { DbCampaign } from '@/types/campaign';
 
-/**
- * Check if a campaign is active and can accept donations
- */
-export function isCampaignActive(campaign?: DbCampaign): boolean {
-  if (!campaign) return false;
-  return campaign.status === CampaignStatus.ACTIVE;
-}
-
-/**
- * Check if a campaign has started based on start time
- */
-export function isCampaignStarted(campaign?: DbCampaign): boolean {
-  if (!campaign) return false;
-  return new Date(campaign.startTime).getTime() <= Date.now();
-}
-
-/**
- * Check if a campaign is donatable (active + has transaction hash + has started)
- */
-export function isCampaignDonatable(campaign?: DbCampaign): boolean {
-  if (!campaign) return false;
-  return (
-    campaign.status === CampaignStatus.ACTIVE &&
-    campaign.transactionHash !== null &&
-    isCampaignStarted(campaign)
-  );
-}
-
-/**
- * Check if a campaign is currently featured
- */
-export function isCampaignFeatured(campaign?: DbCampaign): boolean {
-  if (!campaign) {
-    return false;
+export function getStatusVariant(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return 'default';
+    case 'PENDING_APPROVAL':
+      return 'secondary';
+    case 'DRAFT':
+      return 'outline';
+    case 'COMPLETED':
+      return 'secondary';
+    case 'DISABLED':
+    case 'FAILED':
+    case 'CANCELLED':
+    case 'PAUSED':
+      return 'destructive';
+    default:
+      return 'outline';
   }
+}
+
+export function getStatusLabel(status: string) {
+  switch (status) {
+    case 'PENDING_APPROVAL':
+      return 'Pending Approval';
+    case 'ACTIVE':
+      return 'Active';
+    case 'DRAFT':
+      return 'Draft';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'DISABLED':
+      return 'Disabled';
+    case 'FAILED':
+      return 'Failed';
+    case 'CANCELLED':
+      return 'Cancelled';
+    case 'PAUSED':
+      return 'Paused';
+    default:
+      return status;
+  }
+}
+
+export function isCampaignStarted(campaign: DbCampaign): boolean {
+  const now = new Date();
+  return now >= campaign.startTime;
+}
+
+export function isCampaignDonatable(campaign: DbCampaign): boolean {
   const now = new Date();
   return (
-    (campaign.featuredStart &&
-      new Date(campaign.featuredStart) <= now &&
-      (!campaign.featuredEnd || new Date(campaign.featuredEnd) >= now)) ||
-    false
+    campaign.status === 'ACTIVE' &&
+    now >= campaign.startTime &&
+    now <= campaign.endTime
   );
 }
 
-/**
- * Get campaign status display info
- */
-export function getCampaignStatusInfo(campaign?: DbCampaign) {
-  if (!campaign) {
-    return {
-      status: 'Unknown',
-      variant: 'secondary' as const,
-      description: 'Campaign not found',
-      canDonate: false,
-    };
+export function getCampaignStatusInfo(campaign: DbCampaign) {
+  const now = new Date();
+  const isActive = campaign.status === 'ACTIVE';
+  const hasStarted = now >= campaign.startTime;
+  const hasEnded = now > campaign.endTime;
+  const canDonate = isActive && hasStarted && !hasEnded;
+
+  let status: string;
+  let description: string;
+  let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'outline';
+
+  if (!hasStarted) {
+    status = 'Not Started';
+    description = 'Campaign has not started yet';
+    variant = 'outline';
+  } else if (hasEnded && isActive) {
+    status = 'Ended';
+    description = 'Campaign has ended';
+    variant = 'secondary';
+  } else if (isActive && canDonate) {
+    status = 'Active';
+    description = 'Accepting donations';
+    variant = 'default';
+  } else if (campaign.status === 'COMPLETED') {
+    status = 'Completed';
+    description = 'Campaign successfully completed';
+    variant = 'secondary';
+  } else if (campaign.status === 'PENDING_APPROVAL') {
+    status = 'Pending Approval';
+    description = 'Waiting for approval';
+    variant = 'secondary';
+  } else if (campaign.status === 'DRAFT') {
+    status = 'Draft';
+    description = 'Campaign is in draft mode';
+    variant = 'outline';
+  } else {
+    status = campaign.status;
+    description = 'Campaign status unknown';
+    variant = 'destructive';
   }
 
-  switch (campaign.status) {
-    case CampaignStatus.ACTIVE:
-      return {
-        status: 'Active',
-        variant: 'default' as const,
-        description: 'Campaign is live and accepting donations',
-        canDonate: campaign.transactionHash !== null,
-      };
-    case CampaignStatus.DRAFT:
-      return {
-        status: 'Draft',
-        variant: 'secondary' as const,
-        description: 'Campaign is being prepared',
-        canDonate: false,
-      };
-    case CampaignStatus.PENDING_APPROVAL:
-      return {
-        status: 'Pending Approval',
-        variant: 'outline' as const,
-        description: 'Campaign is awaiting admin approval',
-        canDonate: false,
-      };
-    case CampaignStatus.COMPLETED:
-      return {
-        status: 'Completed',
-        variant: 'secondary' as const,
-        description: 'Campaign has reached its goal',
-        canDonate: false,
-      };
-    case CampaignStatus.DISABLED:
-      return {
-        status: 'Disabled',
-        variant: 'outline' as const,
-        description: 'Campaign has been temporarily disabled by the owner',
-        canDonate: false,
-      };
-    case CampaignStatus.FAILED:
-      return {
-        status: 'Failed',
-        variant: 'destructive' as const,
-        description: 'Campaign was unsuccessful',
-        canDonate: false,
-      };
-    default:
-      return {
-        status: 'Unknown',
-        variant: 'secondary' as const,
-        description: 'Campaign status unknown',
-        canDonate: false,
-      };
-  }
+  return {
+    status,
+    variant,
+    description,
+    canDonate,
+  };
 }
 
-/**
- * Time transformation utilities for campaign forms
- */
-
-/**
- * Transforms a date string to a proper ISO timestamp for campaign start time.
- * Handles YYYY-MM-DD format and converts to appropriate future time.
- */
-export function transformStartTime(value: string): string {
-  // Handle empty or invalid values gracefully
-  if (!value || typeof value !== 'string' || value.trim() === '') {
-    // Return a default future date if value is invalid
-    return formatISO(addDays(new Date(), 1)); // Tomorrow
+export function isCampaignFeatured(campaign: DbCampaign): boolean {
+  if (!campaign.featuredStart || !campaign.featuredEnd) {
+    return false;
   }
 
-  try {
-    // If value is already an ISO string (already transformed), return it as-is
-    if (value.includes('T') && value.includes('Z')) {
-      return value;
-    }
-
-    // Parse YYYY-MM-DD format
-    const parsedDate = parseISO(value + 'T00:00:00');
-
-    // Check if the date is valid
-    if (!isValid(parsedDate)) {
-      // Invalid date, return default
-      return formatISO(addDays(new Date(), 1)); // Tomorrow
-    }
-
-    const now = new Date();
-
-    // If selected date is today, set to 1 hour from now
-    // If selected date is in the future, set to start of day
-    const isToday = parsedDate.toDateString() === now.toDateString();
-
-    if (isToday) {
-      // Today: set to 1 hour from now
-      return formatISO(addMinutes(now, 60));
-    } else {
-      // Future date: set to start of day in UTC
-      return formatISO(startOfDay(parsedDate));
-    }
-  } catch (error) {
-    // If any error occurs, return a safe default
-    console.warn('Error in transformStartTime, using default:', error);
-    return formatISO(addDays(new Date(), 1)); // Tomorrow
-  }
+  const now = new Date();
+  return now >= campaign.featuredStart && now <= campaign.featuredEnd;
 }
 
-/**
- * Transforms a date string to a proper ISO timestamp for campaign end time.
- * Handles YYYY-MM-DD format and sets time to end of the selected day.
- */
-export function transformEndTime(value: string): string {
-  // Handle empty or invalid values gracefully
-  if (!value || typeof value !== 'string' || value.trim() === '') {
-    // Return a default future end date if value is invalid
-    return formatISO(addDays(new Date(), 7)); // 7 days from now
+export function transformStartTime(startTime: string | Date): string {
+  if (typeof startTime === 'string') {
+    return startTime;
   }
+  return startTime.toISOString();
+}
 
-  try {
-    // If value is already an ISO string (already transformed), return it as-is
-    if (value.includes('T') && value.includes('Z')) {
-      return value;
-    }
-
-    // Parse YYYY-MM-DD format
-    const parsedDate = parseISO(value + 'T00:00:00');
-
-    // Check if the date is valid
-    if (!isValid(parsedDate)) {
-      // Invalid date, return default
-      return formatISO(addDays(new Date(), 7)); // 7 days from now
-    }
-
-    // Set end time to end of the selected day
-    return formatISO(endOfDay(parsedDate));
-  } catch (error) {
-    // If any error occurs, return a safe default
-    console.warn('Error in transformEndTime, using default:', error);
-    return formatISO(addDays(new Date(), 7)); // 7 days from now
+export function transformEndTime(endTime: string | Date): string {
+  if (typeof endTime === 'string') {
+    return endTime;
   }
+  return endTime.toISOString();
 }

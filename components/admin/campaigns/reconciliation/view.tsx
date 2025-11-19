@@ -7,7 +7,7 @@ import { Button } from '@/components/ui';
 import { ArrowLeft, Edit, Eye, ExternalLink } from 'lucide-react';
 import { CampaignReconciliationTable } from './table';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
-import { useCampaignReconciliation } from './hooks/useCampaignReconciliation';
+import { useCampaignReconciliation } from '@/lib/hooks/useCampaignReconciliation';
 import { getBlockExplorerAddressUrl } from '@/lib/format-address';
 
 interface CampaignReconciliationViewProps {

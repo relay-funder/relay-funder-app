@@ -1,5 +1,12 @@
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui';
-import { AlertCircle, Clock, Eye, CheckCircle, XCircle, Pause } from 'lucide-react';
+import {
+  AlertCircle,
+  Clock,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Pause,
+} from 'lucide-react';
 import { CampaignStatus } from '@/components/campaign/status';
 import { useCampaignStatus } from '@/hooks/use-campaign-status';
 import type { DbCampaign } from '@/types/campaign';
@@ -24,11 +31,7 @@ export function CampaignError({
   );
 }
 
-export function CampaignStatusError({
-  campaign,
-}: {
-  campaign: DbCampaign;
-}) {
+export function CampaignStatusError({ campaign }: { campaign: DbCampaign }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Draft':
@@ -82,11 +85,11 @@ export function CampaignStatusError({
   const displayStatus = useCampaignStatus(campaign);
 
   return (
-    <div className="flex items-center justify-center min-h-[400px] p-8">
-      <div className="max-w-md w-full">
+    <div className="flex min-h-[400px] items-center justify-center p-8">
+      <div className="w-full max-w-md">
         <Alert className={`${getStatusColor(displayStatus)} border-2`}>
           {getStatusIcon(displayStatus)}
-          <AlertTitle className="text-lg font-semibold mb-2">
+          <AlertTitle className="mb-2 text-lg font-semibold">
             Campaign Status: {displayStatus}
           </AlertTitle>
           <AlertDescription className="text-sm leading-relaxed">

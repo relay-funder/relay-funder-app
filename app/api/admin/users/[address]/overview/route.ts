@@ -126,8 +126,17 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
       }),
     ]);
 
+    // Add campaigns count to user._count (manually computed since no direct relation)
+    const userWithCampaignsCount = {
+      ...user,
+      _count: {
+        ...user._count,
+        campaigns: userCampaigns.length,
+      },
+    };
+
     return response({
-      user,
+      user: userWithCampaignsCount,
       latestPayments,
       latestPaymentMethods,
       latestMedia,

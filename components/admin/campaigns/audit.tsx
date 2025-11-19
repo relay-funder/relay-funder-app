@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useInView } from 'react-intersection-observer';
 import { PageLayout } from '@/components/page/layout';
@@ -22,6 +22,7 @@ import {
   useCampaignStats,
 } from '@/lib/hooks/useCampaigns';
 import { FormattedDate } from '@/components/formatted-date';
+import { StatsCard } from '@/components/admin/stats-card';
 
 export function CampaignAudit() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,12 +38,13 @@ export function CampaignAudit() {
     isFetchingNextPage,
   } = useInfiniteCampaigns('all', 10, false);
 
-  const {
-    data: statsData,
-    isLoading: statsLoading,
-  } = useCampaignStats('global');
+  const { data: statsData, isLoading: statsLoading } =
+    useCampaignStats('global');
 
-  const campaigns = data?.pages.flatMap((page) => page.campaigns) ?? [];
+  const campaigns = useMemo(
+    () => data?.pages.flatMap((page) => page.campaigns) ?? [],
+    [data?.pages],
+  );
 
   // Check if we've reached the auto-scroll limit
   const currentPageCount = data?.pages.length ?? 0;
@@ -63,10 +65,14 @@ export function CampaignAudit() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const filteredCampaigns = campaigns.filter(
-    (campaign) =>
-      campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.slug.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredCampaigns = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) =>
+          campaign.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          campaign.slug.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [campaigns, searchTerm],
   );
 
   return (
@@ -78,69 +84,50 @@ export function CampaignAudit() {
       <div className="space-y-4">
         {/* Summary Stats */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border bg-card p-6 text-card-foreground">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="text-sm font-medium tracking-tight">
-                Total Campaigns
-              </h3>
-            </div>
-            <div className="text-2xl font-bold">
-              {statsLoading ? (
+          <StatsCard
+            title="Total Campaigns"
+            value={
+              statsLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 (statsData?.totalCampaigns ?? 0)
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All campaigns in system
-            </p>
-          </div>
+              )
+            }
+            description="All campaigns in system"
+            isLoading={statsLoading}
+          />
 
-          <div className="rounded-lg border bg-card p-6 text-card-foreground">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="text-sm font-medium tracking-tight">
-                Active Campaigns
-              </h3>
-            </div>
-            <div className="text-2xl font-bold">
-              {statsLoading ? (
+          <StatsCard
+            title="Active Campaigns"
+            value={
+              statsLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 (statsData?.activeCampaigns ?? 0)
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Currently fundraising
-            </p>
-          </div>
+              )
+            }
+            description="Currently fundraising"
+            isLoading={statsLoading}
+          />
 
-          <div className="rounded-lg border bg-card p-6 text-card-foreground">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="text-sm font-medium tracking-tight">
-                Loaded Campaigns
-              </h3>
-            </div>
-            <div className="text-2xl font-bold">{campaigns.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently displayed below
-            </p>
-          </div>
+          <StatsCard
+            title="Loaded Campaigns"
+            value={campaigns.length}
+            description="Currently displayed below"
+          />
 
-          <div className="rounded-lg border bg-card p-6 text-card-foreground">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="text-sm font-medium tracking-tight">
-                Pending Approval
-              </h3>
-            </div>
-            <div className="text-2xl font-bold">
-              {statsLoading ? (
+          <StatsCard
+            title="Pending Approval"
+            value={
+              statsLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
-                statsData?.pendingApprovalCampaigns ?? 0
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Awaiting review</p>
-          </div>
+                (statsData?.pendingApprovalCampaigns ?? 0)
+              )
+            }
+            description="Awaiting review"
+            isLoading={statsLoading}
+          />
         </div>
 
         {/* Campaigns Table */}

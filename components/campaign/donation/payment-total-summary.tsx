@@ -9,8 +9,8 @@ export function PaymentTotalSummary({
   amount,
   tipAmount,
 }: PaymentTotalSummaryProps) {
-  const amountNum = parseFloat(amount || '0');
-  const tipAmountNum = parseFloat(tipAmount || '0');
+  const amountNum = parseFloat(amount ?? '0');
+  const tipAmountNum = parseFloat(tipAmount ?? '0');
   const total = amountNum + tipAmountNum;
 
   // Handle NaN cases

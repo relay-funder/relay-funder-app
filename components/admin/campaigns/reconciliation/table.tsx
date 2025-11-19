@@ -1,16 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { Eye, ExternalLink } from 'lucide-react';
 import {
   ReconciliationPayment,
   CampaignReconciliationData,
-} from './hooks/useCampaignReconciliation';
-import { RawBlockExplorerTransaction } from './hooks/useOnChainTransactions';
+} from '@/lib/hooks/useCampaignReconciliation';
+import { RawBlockExplorerTransaction } from '@/lib/hooks/useOnChainTransactions';
 import { TokenTransfer } from '@/lib/block-explorer';
 import { formatTokenAmount, getBlockExplorerTxUrl } from '@/lib/block-explorer';
+import { FormattedDate } from '@/components/formatted-date';
 
 interface CampaignReconciliationTableProps {
   campaignId: number;
@@ -26,10 +27,57 @@ export function CampaignReconciliationTable({
   error,
 }: CampaignReconciliationTableProps) {
   // Define explicit flags for blockchain loading state and transaction presence
-  const isBlockchainLoading = reconciliationData?.isBlockchainDataLoading ?? true;
+  const isBlockchainLoading =
+    reconciliationData?.isBlockchainDataLoading ?? true;
   const hasBlockchainTx =
     Array.isArray(reconciliationData?.rawBlockExplorerTransactions) &&
     reconciliationData.rawBlockExplorerTransactions.length > 0;
+
+  // Memoize transaction processing for performance
+  const processedTransactions = useMemo(() => {
+    if (!reconciliationData) return null;
+
+    // Combine and sort all transactions chronologically
+    const allTransactions: Array<{
+      type: 'database' | 'blockchain';
+      date: Date;
+      data: ReconciliationPayment | RawBlockExplorerTransaction;
+    }> = [];
+
+    // Add database payments
+    reconciliationData.databasePayments?.forEach(
+      (payment: ReconciliationPayment) => {
+        allTransactions.push({
+          type: 'database',
+          date: new Date(payment.createdAt || payment.updatedAt || Date.now()),
+          data: payment,
+        });
+      },
+    );
+
+    // Add blockchain transactions
+    reconciliationData.rawBlockExplorerTransactions
+      ?.filter(
+        (tx: RawBlockExplorerTransaction) =>
+          tx.status === 'success' &&
+          tx.tokenTransfers?.some(
+            (t: TokenTransfer) =>
+              t.tokenSymbol === 'USDC' || t.tokenSymbol === 'USDT',
+          ),
+      )
+      .forEach((tx: RawBlockExplorerTransaction) => {
+        allTransactions.push({
+          type: 'blockchain',
+          date: new Date((tx.timestamp || 0) * 1000),
+          data: tx,
+        });
+      });
+
+    // Sort by date (chronological order: newest first)
+    allTransactions.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    return allTransactions;
+  }, [reconciliationData]);
 
   if (isLoading) {
     return (
@@ -236,234 +284,190 @@ export function CampaignReconciliationTable({
                 </tr>
               </thead>
               <tbody>
-                {(() => {
-                  // Combine and sort all transactions chronologically
-                  const allTransactions: Array<{
-                    type: 'database' | 'blockchain';
-                    date: Date;
-                    data: ReconciliationPayment | RawBlockExplorerTransaction;
-                  }> = [];
+                {processedTransactions && processedTransactions.length > 0 ? (
+                  processedTransactions.map((transaction) => {
+                    if (transaction.type === 'database') {
+                      const payment = transaction.data as ReconciliationPayment;
+                      const baseAmount = payment.metadata?.pledgeAmount
+                        ? parseFloat(payment.metadata.pledgeAmount)
+                        : parseFloat(payment.amount);
+                      const tipAmount = payment.tipAmount
+                        ? parseFloat(payment.tipAmount)
+                        : 0;
+                      const totalAmount = baseAmount + tipAmount;
 
-                  // Add database payments
-                  reconciliationData.databasePayments?.forEach(
-                    (payment: ReconciliationPayment) => {
-                      allTransactions.push({
-                        type: 'database',
-                        date: new Date(
-                          payment.createdAt || payment.updatedAt || Date.now(),
-                        ),
-                        data: payment,
-                      });
-                    },
-                  );
-
-                  // Add blockchain transactions
-                  reconciliationData.rawBlockExplorerTransactions
-                    ?.filter(
-                      (tx: RawBlockExplorerTransaction) =>
-                        tx.status === 'success' &&
-                        tx.tokenTransfers?.some(
-                          (t: TokenTransfer) =>
-                            t.tokenSymbol === 'USDC' ||
-                            t.tokenSymbol === 'USDT',
-                        ),
-                    )
-                    .forEach((tx: RawBlockExplorerTransaction) => {
-                      allTransactions.push({
-                        type: 'blockchain',
-                        date: new Date((tx.timestamp || 0) * 1000),
-                        data: tx,
-                      });
-                    });
-
-                  // Sort by date (chronological order: newest first)
-                  allTransactions.sort(
-                    (a, b) => b.date.getTime() - a.date.getTime(),
-                  );
-
-                  // Render sorted transactions
-                  return allTransactions.length > 0 ? (
-                    allTransactions.map((transaction) => {
-                      if (transaction.type === 'database') {
-                        const payment =
-                          transaction.data as ReconciliationPayment;
-                        const baseAmount = payment.metadata?.pledgeAmount
-                          ? parseFloat(payment.metadata.pledgeAmount)
-                          : parseFloat(payment.amount);
-                        const tipAmount = payment.tipAmount
-                          ? parseFloat(payment.tipAmount)
-                          : 0;
-                        const totalAmount = baseAmount + tipAmount;
-
-                        return (
-                          <tr
-                            key={`db-${payment.id}`}
-                            className="border-b bg-yellow-50/30 hover:bg-blue-50/50 dark:bg-yellow-950/10 dark:hover:bg-blue-950/10"
-                          >
-                            <td className="px-4 py-3">
-                              <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                Database
+                      return (
+                        <tr
+                          key={`db-${payment.id}`}
+                          className="border-b bg-yellow-50/30 hover:bg-blue-50/50 dark:bg-yellow-950/10 dark:hover:bg-blue-950/10"
+                        >
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                              Database
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-sm">
+                            Payment #{payment.id}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <FormattedDate
+                              date={
+                                new Date(
+                                  payment.createdAt ||
+                                    payment.updatedAt ||
+                                    transaction.date,
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {payment.isAnonymous
+                              ? 'Anonymous'
+                              : payment.user?.username ||
+                                payment.user?.firstName ||
+                                (payment.user?.address
+                                  ? `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`
+                                  : 'Unknown')}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {payment.provider === 'daimo' ? (
+                              <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                                Daimo Pay
                               </span>
-                            </td>
-                            <td className="px-4 py-3 font-mono text-sm">
-                              Payment #{payment.id}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {new Date(
-                                payment.createdAt ||
-                                  payment.updatedAt ||
-                                  transaction.date,
-                              ).toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {payment.isAnonymous
-                                ? 'Anonymous'
-                                : payment.user?.username ||
-                                  payment.user?.firstName ||
-                                  (payment.user?.address
-                                    ? `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`
-                                    : 'Unknown')}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {payment.provider === 'daimo' ? (
-                                <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                                  Daimo Pay
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                                  Direct
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium">
-                              ${baseAmount.toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3 text-right text-sm text-muted-foreground">
-                              ${tipAmount.toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3 text-right font-semibold text-blue-600">
-                              ${totalAmount.toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={`/admin/payments?campaignId=${campaignId}&paymentId=${payment.id.toString()}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <Eye className="mr-1 h-3 w-3" />
-                                  View
-                                </a>
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      } else {
-                        const tx =
-                          transaction.data as RawBlockExplorerTransaction;
-                        const usdTransfers =
-                          tx.tokenTransfers?.filter(
-                            (transfer: TokenTransfer) =>
-                              transfer.tokenSymbol === 'USDC' ||
-                              transfer.tokenSymbol === 'USDT',
-                          ) || [];
-                        const totalAmount = usdTransfers.reduce(
-                          (sum: number, transfer: TokenTransfer) => {
-                            return (
-                              sum +
-                              parseFloat(
-                                formatTokenAmount(
-                                  transfer.amount,
-                                  transfer.decimals,
-                                ),
-                              )
-                            );
-                          },
-                          0,
-                        );
-
-                        return (
-                          <tr
-                            key={`chain-${tx.hash}`}
-                            className="border-b hover:bg-green-50/50 dark:hover:bg-green-950/10"
-                          >
-                            <td className="px-4 py-3">
+                            ) : (
                               <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                                Blockchain
+                                Direct
                               </span>
-                            </td>
-                            <td className="px-4 py-3 font-mono text-sm">
-                              {tx.hash?.slice(0, 10)}...{tx.hash?.slice(-6)}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {transaction.date.toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-muted-foreground">
-                              — (Block explorer)
-                            </td>
-                            <td className="px-4 py-3 text-sm text-muted-foreground">
-                              — (On-chain)
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium">
-                              — (Total only)
-                            </td>
-                            <td className="px-4 py-3 text-right text-sm text-muted-foreground">
-                              — (Not separated)
-                            </td>
-                            <td className="px-4 py-3 text-right font-semibold text-green-600">
-                              ${totalAmount.toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={getBlockExplorerTxUrl(tx.hash)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ExternalLink className="mr-1 h-3 w-3" />
-                                  View
-                                </a>
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      }
-                    })
-                  ) : reconciliationData.databasePayments?.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="py-8 text-center text-muted-foreground"
-                      >
-                        No transactions found
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">
+                            ${baseAmount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                            ${tipAmount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                            ${totalAmount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button variant="outline" size="sm" asChild>
+                              <a
+                                href={`/admin/payments?campaignId=${campaignId}&paymentId=${payment.id.toString()}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Eye className="mr-1 h-3 w-3" />
+                                View
+                              </a>
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    } else {
+                      const tx =
+                        transaction.data as RawBlockExplorerTransaction;
+                      const usdTransfers =
+                        tx.tokenTransfers?.filter(
+                          (transfer: TokenTransfer) =>
+                            transfer.tokenSymbol === 'USDC' ||
+                            transfer.tokenSymbol === 'USDT',
+                        ) || [];
+                      const totalAmount = usdTransfers.reduce(
+                        (sum: number, transfer: TokenTransfer) => {
+                          return (
+                            sum +
+                            parseFloat(
+                              formatTokenAmount(
+                                transfer.amount,
+                                transfer.decimals,
+                              ),
+                            )
+                          );
+                        },
+                        0,
+                      );
+
+                      return (
+                        <tr
+                          key={`chain-${tx.hash}`}
+                          className="border-b hover:bg-green-50/50 dark:hover:bg-green-950/10"
+                        >
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                              Blockchain
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-sm">
+                            {tx.hash?.slice(0, 10)}...{tx.hash?.slice(-6)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <FormattedDate date={transaction.date} />
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            — (Block explorer)
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            — (On-chain)
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">
+                            — (Total only)
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                            — (Not separated)
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-green-600">
+                            ${totalAmount.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button variant="outline" size="sm" asChild>
+                              <a
+                                href={getBlockExplorerTxUrl(tx.hash)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="mr-1 h-3 w-3" />
+                                View
+                              </a>
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  })
+                ) : reconciliationData.databasePayments?.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      No transactions found
+                    </td>
+                  </tr>
+                ) : !reconciliationData.rawBlockExplorerTransactions ||
+                  reconciliationData.rawBlockExplorerTransactions.length ===
+                    0 ? (
+                  <>
+                    {/* Show a loading row for blockchain data */}
+                    <tr className="border-b bg-green-50/50 dark:bg-green-950/10">
+                      <td className="px-4 py-4">
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                          Blockchain
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 font-mono text-sm" colSpan={7}>
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
+                          <span>
+                            Fetching blockchain transaction details...
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="text-muted-foreground">—</span>
                       </td>
                     </tr>
-                  ) : !reconciliationData.rawBlockExplorerTransactions ||
-                    reconciliationData.rawBlockExplorerTransactions.length ===
-                      0 ? (
-                    <>
-                      {/* Show a loading row for blockchain data */}
-                      <tr className="border-b bg-green-50/50 dark:bg-green-950/10">
-                        <td className="px-4 py-4">
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                            Blockchain
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 font-mono text-sm" colSpan={7}>
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
-                            <span>
-                              Fetching blockchain transaction details...
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="text-muted-foreground">—</span>
-                        </td>
-                      </tr>
-                    </>
-                  ) : null;
-                })()}
+                  </>
+                ) : null}
               </tbody>
             </table>
           </div>

@@ -69,7 +69,8 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
                             Campaign Preview - Donations Not Available
                           </p>
                           <p className="text-sm text-amber-700 dark:text-amber-300">
-                            This campaign is not yet active. You cannot make donations at this time.
+                            This campaign is not yet active. You cannot make
+                            donations at this time.
                           </p>
                         </div>
                       </div>

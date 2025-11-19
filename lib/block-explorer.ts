@@ -109,8 +109,18 @@ function parseTransactionFields(tx: BlockExplorerTransactionRaw): {
   const blockNumber = parseInt(tx.block || tx.block_number || '0');
 
   // Extract addresses
-  const fromAddress = (typeof tx.from === 'object' && tx.from?.hash) ? tx.from.hash : (typeof tx.from === 'string' ? tx.from : '');
-  const toAddress = (typeof tx.to === 'object' && tx.to?.hash) ? tx.to.hash : (typeof tx.to === 'string' ? tx.to : '');
+  const fromAddress =
+    typeof tx.from === 'object' && tx.from?.hash
+      ? tx.from.hash
+      : typeof tx.from === 'string'
+        ? tx.from
+        : '';
+  const toAddress =
+    typeof tx.to === 'object' && tx.to?.hash
+      ? tx.to.hash
+      : typeof tx.to === 'string'
+        ? tx.to
+        : '';
 
   // Parse value
   const value = tx.value || '0';
@@ -184,7 +194,9 @@ export async function getBlockExplorerTransactions(
       return [];
     }
 
-    const data = await response.json() as { items?: BlockExplorerTransactionRaw[] };
+    const data = (await response.json()) as {
+      items?: BlockExplorerTransactionRaw[];
+    };
     const rawTransactions: BlockExplorerTransactionRaw[] = data.items || [];
 
     console.log(
@@ -197,59 +209,72 @@ export async function getBlockExplorerTransactions(
     }
 
     // Convert to our format
-    const transactions = rawTransactions.map((tx: BlockExplorerTransactionRaw) => {
-      const {
-        timestamp,
-        blockNumber,
-        fromAddress,
-        toAddress,
-        value,
-        gasUsed,
-        gasPrice,
-        fee,
-        status,
-        method,
-        type,
-      } = parseTransactionFields(tx);
+    const transactions = rawTransactions.map(
+      (tx: BlockExplorerTransactionRaw) => {
+        const {
+          timestamp,
+          blockNumber,
+          fromAddress,
+          toAddress,
+          value,
+          gasUsed,
+          gasPrice,
+          fee,
+          status,
+          method,
+          type,
+        } = parseTransactionFields(tx);
 
-      // Parse token transfers
-      const tokenTransfers: TokenTransfer[] = [];
-      if (tx.token_transfers && Array.isArray(tx.token_transfers)) {
-        for (const transfer of tx.token_transfers) {
-          const tokenSymbol = transfer.token?.symbol || 'UNKNOWN';
-          const tokenAddress = transfer.token?.address || '';
-          const decimals = parseInt(transfer.token?.decimals || '0');
-          const amount = transfer.total?.value || transfer.value || '0';
-          const transferFrom = (typeof transfer.from === 'object' && transfer.from?.hash) ? transfer.from.hash : (typeof transfer.from === 'string' ? transfer.from : '');
-          const transferTo = (typeof transfer.to === 'object' && transfer.to?.hash) ? transfer.to.hash : (typeof transfer.to === 'string' ? transfer.to : '');
+        // Parse token transfers
+        const tokenTransfers: TokenTransfer[] = [];
+        if (tx.token_transfers && Array.isArray(tx.token_transfers)) {
+          for (const transfer of tx.token_transfers) {
+            const tokenSymbol = transfer.token?.symbol || 'UNKNOWN';
+            const tokenAddress = transfer.token?.address || '';
+            const decimals = parseInt(transfer.token?.decimals || '0');
+            const amount = transfer.total?.value || transfer.value || '0';
+            const transferFrom =
+              typeof transfer.from === 'object' && transfer.from?.hash
+                ? transfer.from.hash
+                : typeof transfer.from === 'string'
+                  ? transfer.from
+                  : '';
+            const transferTo =
+              typeof transfer.to === 'object' && transfer.to?.hash
+                ? transfer.to.hash
+                : typeof transfer.to === 'string'
+                  ? transfer.to
+                  : '';
 
-          tokenTransfers.push({
-            tokenSymbol,
-            tokenAddress,
-            amount,
-            decimals,
-            from: transferFrom,
-            to: transferTo,
-          });
+            tokenTransfers.push({
+              tokenSymbol,
+              tokenAddress,
+              amount,
+              decimals,
+              from: transferFrom,
+              to: transferTo,
+            });
+          }
         }
-      }
 
-      return {
-        hash: tx.hash || '',
-        blockNumber,
-        timestamp,
-        from: fromAddress,
-        to: toAddress,
-        value,
-        gasUsed,
-        gasPrice,
-        fee,
-        status,
-        method,
-        type,
-        tokenTransfers: tokenTransfers.length > 0 ? tokenTransfers : undefined,
-      };
-    });
+        return {
+          hash: tx.hash || '',
+          blockNumber,
+          timestamp,
+          from: fromAddress,
+          to: toAddress,
+          value,
+          gasUsed,
+          gasPrice,
+          fee,
+          status,
+          method,
+          type,
+          tokenTransfers:
+            tokenTransfers.length > 0 ? tokenTransfers : undefined,
+        };
+      },
+    );
 
     console.log(
       `Returning ${transactions.length} transactions for address ${normalizedAddress}`,
@@ -264,7 +289,9 @@ export async function getBlockExplorerTransactions(
 /**
  * Determine transaction type based on transaction data
  */
-function determineTransactionType(tx: BlockExplorerTransactionRaw): 'native' | 'erc20' | 'contract' {
+function determineTransactionType(
+  tx: BlockExplorerTransactionRaw,
+): 'native' | 'erc20' | 'contract' {
   // Check if it's an ERC20 transfer
   if (tx.token_transfers && tx.token_transfers.length > 0) {
     return 'erc20';
@@ -350,7 +377,7 @@ export async function getBlockExplorerTransactionDetails(
       return null;
     }
 
-    const tx = await response.json() as BlockExplorerTransactionRaw;
+    const tx = (await response.json()) as BlockExplorerTransactionRaw;
 
     // Also try to fetch token transfers and internal transactions for this transaction
     const additionalTokenTransfers: TokenTransfer[] = [];
@@ -379,8 +406,18 @@ export async function getBlockExplorerTransactionDetails(
             const decimals = parseInt(transfer.token?.decimals || '0');
             const amount =
               transfer.total?.value || transfer.value || transfer.amount || '0';
-            const transferFrom = (typeof transfer.from === 'object' && transfer.from?.hash) ? transfer.from.hash : (typeof transfer.from === 'string' ? transfer.from : '');
-            const transferTo = (typeof transfer.to === 'object' && transfer.to?.hash) ? transfer.to.hash : (typeof transfer.to === 'string' ? transfer.to : '');
+            const transferFrom =
+              typeof transfer.from === 'object' && transfer.from?.hash
+                ? transfer.from.hash
+                : typeof transfer.from === 'string'
+                  ? transfer.from
+                  : '';
+            const transferTo =
+              typeof transfer.to === 'object' && transfer.to?.hash
+                ? transfer.to.hash
+                : typeof transfer.to === 'string'
+                  ? transfer.to
+                  : '';
 
             additionalTokenTransfers.push({
               tokenSymbol,
@@ -424,8 +461,18 @@ export async function getBlockExplorerTransactionDetails(
                 const tokenAddress = transfer.token?.address || '';
                 const decimals = parseInt(transfer.token?.decimals || '0');
                 const amount = transfer.value || transfer.amount || '0';
-                const transferFrom = (typeof transfer.from === 'object' && transfer.from?.hash) ? transfer.from.hash : (typeof transfer.from === 'string' ? transfer.from : '');
-                const transferTo = (typeof transfer.to === 'object' && transfer.to?.hash) ? transfer.to.hash : (typeof transfer.to === 'string' ? transfer.to : '');
+                const transferFrom =
+                  typeof transfer.from === 'object' && transfer.from?.hash
+                    ? transfer.from.hash
+                    : typeof transfer.from === 'string'
+                      ? transfer.from
+                      : '';
+                const transferTo =
+                  typeof transfer.to === 'object' && transfer.to?.hash
+                    ? transfer.to.hash
+                    : typeof transfer.to === 'string'
+                      ? transfer.to
+                      : '';
 
                 additionalTokenTransfers.push({
                   tokenSymbol,
@@ -507,8 +554,18 @@ export async function getBlockExplorerTransactionDetails(
         const tokenAddress = transfer.token?.address || '';
         const decimals = parseInt(transfer.token?.decimals || '0');
         const amount = transfer.total?.value || transfer.value || '0';
-        const transferFrom = (typeof transfer.from === 'object' && transfer.from?.hash) ? transfer.from.hash : (typeof transfer.from === 'string' ? transfer.from : '');
-        const transferTo = (typeof transfer.to === 'object' && transfer.to?.hash) ? transfer.to.hash : (typeof transfer.to === 'string' ? transfer.to : '');
+        const transferFrom =
+          typeof transfer.from === 'object' && transfer.from?.hash
+            ? transfer.from.hash
+            : typeof transfer.from === 'string'
+              ? transfer.from
+              : '';
+        const transferTo =
+          typeof transfer.to === 'object' && transfer.to?.hash
+            ? transfer.to.hash
+            : typeof transfer.to === 'string'
+              ? transfer.to
+              : '';
 
         console.log(
           `Parsed transfer: ${amount} ${tokenSymbol} from ${transferFrom} to ${transferTo}`,

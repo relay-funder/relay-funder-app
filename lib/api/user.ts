@@ -92,6 +92,8 @@ export async function getUser(address: string) {
           createdMedia: true,
           withdrawals: true,
           approvals: true,
+          eventFeed: true,
+          eventsCreated: true,
         },
       },
     },
@@ -141,7 +143,7 @@ export async function listUsers({
   ]);
 
   // Get campaign counts for all users in this page
-  const userAddresses = dbUsers.map(user => user.address);
+  const userAddresses = dbUsers.map((user) => user.address);
   const campaignCounts = await db.campaign.groupBy({
     by: ['creatorAddress'],
     where: {
@@ -156,7 +158,7 @@ export async function listUsers({
 
   // Create a map of address -> campaign count
   const campaignCountMap = new Map(
-    campaignCounts.map(count => [count.creatorAddress, count._count.id])
+    campaignCounts.map((count) => [count.creatorAddress, count._count.id]),
   );
 
   const users = await Promise.all(
