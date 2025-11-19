@@ -2,6 +2,7 @@ import { getCampaign } from '@/lib/api/campaigns';
 import { db } from '@/server/db';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
 import {
+  ApiAuthNotAllowed,
   ApiParameterError,
   ApiNotFoundError,
   ApiIntegrityError,
@@ -24,7 +25,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     if (instance.status !== 'ACTIVE') {
       // Only campaign owners and admins can access non-active campaigns
       if (instance.creatorAddress !== session.user.address && !admin) {
-        throw new ApiNotFoundError('Campaign not found');
+        throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
 

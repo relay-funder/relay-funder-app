@@ -1,6 +1,6 @@
 import { db } from '@/server/db';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import { ApiAuthNotAllowed, ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';
@@ -31,7 +31,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     if (instance.status !== 'ACTIVE') {
       // Only campaign owners and admins can access payments for non-active campaigns
       if (instance.creatorAddress !== session.user.address && !admin) {
-        throw new ApiNotFoundError('Campaign not found');
+        throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
 
