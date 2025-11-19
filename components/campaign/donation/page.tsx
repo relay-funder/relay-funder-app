@@ -1,10 +1,8 @@
 'use client';
 import { notFound } from 'next/navigation';
-import { PageHome } from '@/components/page/home';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { DonationProvider, useAuth, useDonationContext } from '@/contexts';
-import { CampaignError, CampaignStatusError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationForm } from './form';

@@ -4,7 +4,7 @@ import { PageHome } from '@/components/page/home';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { useAuth } from '@/contexts';
-import { CampaignError } from '@/components/campaign/error';
+import { CampaignStatusError } from '@/components/campaign/error';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { DetailContainer } from '@/components/layout';
 import { CampaignDonationSummary } from './campaign-summary';

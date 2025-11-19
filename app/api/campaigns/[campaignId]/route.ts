@@ -5,7 +5,6 @@ import {
   ApiParameterError,
   ApiNotFoundError,
   ApiIntegrityError,
-  ApiAuthNotAllowed,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams, GetCampaignResponse } from '@/lib/api/types';

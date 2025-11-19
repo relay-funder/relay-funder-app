@@ -13,7 +13,6 @@ import { CampaignLocation } from '@/components/campaign/location';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from './loading';
 import { useAuth } from '@/contexts';
-import { CampaignError, CampaignStatusError } from './error';
 import { isCampaignFeatured } from '@/lib/utils/campaign-status';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ShareDialog } from '@/components/share-dialog';

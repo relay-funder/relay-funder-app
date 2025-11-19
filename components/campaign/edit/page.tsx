@@ -4,7 +4,6 @@ import { PageHome } from '@/components/page/home';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { useAuth } from '@/contexts';
-import { CampaignStatusError } from '@/components/campaign/error';
 import { CampaignStatus } from '@/components/campaign/status';
 import { PageHeaderSticky } from '@/components/page/header-sticky';
 import { CampaignEdit } from './index';
