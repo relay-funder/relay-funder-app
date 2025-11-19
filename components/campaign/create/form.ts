@@ -42,6 +42,7 @@ function normalizeCampaignStartForForm(value: string) {
   const { year, month, day } = validateAndParseDateString(value);
   const localDate = new Date(year, month - 1, day);
   const now = new Date();
+  const oneHourInMs = 60 * 60 * 1000;
 
   // Check if the selected date is today
   if (
@@ -49,16 +50,27 @@ function normalizeCampaignStartForForm(value: string) {
     now.getMonth() === localDate.getMonth() &&
     now.getDate() === localDate.getDate()
   ) {
-    // Set to 1 hour from now for today's date (dev purposes)
-    localDate.setHours(now.getHours() + 1);
+    // Set to 1 hour from now for today's date (dev purposes), without crossing into tomorrow
+    const oneHourAhead = new Date(now.getTime() + oneHourInMs);
+    const crossesMidnight =
+      oneHourAhead.getFullYear() !== now.getFullYear() ||
+      oneHourAhead.getMonth() !== now.getMonth() ||
+      oneHourAhead.getDate() !== now.getDate();
+
+    if (crossesMidnight) {
+      localDate.setHours(23, 59, 0, 0);
+    } else {
+      localDate.setHours(
+        oneHourAhead.getHours(),
+        oneHourAhead.getMinutes(),
+        oneHourAhead.getSeconds(),
+        0,
+      );
+    }
   } else {
     // For future dates, set to start of day
-    localDate.setHours(0);
+    localDate.setHours(0, 0, 0, 0);
   }
-
-  localDate.setMinutes(0);
-  localDate.setSeconds(0);
-  localDate.setMilliseconds(0);
 
   return localDate.toISOString();
 }
