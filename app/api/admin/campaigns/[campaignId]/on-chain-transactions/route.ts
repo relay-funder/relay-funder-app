@@ -7,7 +7,7 @@ import {
   getBlockExplorerTransactions,
   getBlockExplorerTransactionDetails,
 } from '@/lib/block-explorer';
-import { chainConfig } from '@/lib/web3/config/chain';
+import { CELO_RPC_ENDPOINTS } from '@/lib/constant/rpc-endpoints';
 import { logFactory } from '@/lib/debug/log';
 
 const logVerbose = logFactory('verbose', '⛓️ OnChainTx', { flag: 'api' });
@@ -64,87 +64,62 @@ export async function GET(
       try {
         const { createPublicClient, http } = await import('viem');
         const { celo } = await import('viem/chains');
-        const publicClient = createPublicClient({
-          chain: celo,
-          transport: http(
-            process.env.NEXT_PUBLIC_CELO_RPC_URL || 'https://forno.celo.org',
-          ),
-        });
 
-        logVerbose(
-          `Checking contract at address: ${campaign.treasuryAddress}`,
-          {
-            rpcEndpoint:
-              process.env.NEXT_PUBLIC_CELO_RPC_URL || 'https://forno.celo.org',
-          },
-        );
+        // Combine primary and fallback endpoints for unified retry logic
+        const allEndpoints = [
+          CELO_RPC_ENDPOINTS.primary,
+          ...CELO_RPC_ENDPOINTS.fallbacks,
+        ];
 
-        // First, let's check if we can get a balance for this address
-        try {
-          const balance = await publicClient.getBalance({
-            address: campaign.treasuryAddress as `0x${string}`,
-          });
-          logVerbose(`Address balance check`, {
-            balanceWei: balance.toString(),
-          });
-        } catch (balanceError) {
-          console.error('Error getting balance:', balanceError);
-        }
+        let successfulClient: ReturnType<typeof createPublicClient> | null =
+          null;
+        let contractCode: string | undefined;
 
-        const code = await publicClient.getCode({
-          address: campaign.treasuryAddress as `0x${string}`,
-        });
-        logVerbose(`Contract code check`, { codeLength: code?.length || 0 });
+        // Try each endpoint in sequence until one works
+        for (const endpoint of allEndpoints) {
+          try {
+            logVerbose(`Trying RPC endpoint`, { endpoint });
+            const client = createPublicClient({
+              chain: celo,
+              transport: http(endpoint),
+            });
 
-        // If we get 0x, it might be a network issue - let's try a fallback RPC
-        if (!code || code === '0x') {
-          logVerbose(
-            'Contract code is empty, trying alternative RPC endpoints',
-          );
-
-          // Use chain-appropriate fallback endpoints (public only)
-          const fallbackEndpoints =
-            chainConfig.chainId === 42220
-              ? [
-                  // Mainnet public endpoints
-                  'https://rpc.ankr.com/celo',
-                  'https://celo.api.onfinality.io/public',
-                ]
-              : [
-                  // Sepolia testnet public endpoints
-                  'https://rpc.ankr.com/celo_sepolia',
-                  'https://celo-sepolia.api.onfinality.io/public',
-                ];
-
-          for (const endpoint of fallbackEndpoints) {
+            // First, let's check if we can get a balance for this address
             try {
-              logVerbose(`Trying fallback RPC`, { endpoint });
-              const fallbackClient = createPublicClient({
-                chain: celo,
-                transport: http(endpoint),
-              });
-
-              const fallbackCode = await fallbackClient.getCode({
+              const balance = await client.getBalance({
                 address: campaign.treasuryAddress as `0x${string}`,
               });
-              logVerbose(`Fallback RPC result`, {
+              logVerbose(`Address balance check`, {
                 endpoint,
-                codeLength: fallbackCode?.length || 0,
+                balanceWei: balance.toString(),
               });
-
-              if (fallbackCode && fallbackCode !== '0x') {
-                logVerbose('SUCCESS: Found contract code with fallback RPC');
-                // Use this successful client for further operations
-                // (We'd need to restructure the code to use this client)
-                break;
-              }
-            } catch (fallbackError) {
-              console.warn(`Fallback RPC ${endpoint} failed:`, fallbackError);
+            } catch (balanceError) {
+              console.error('Error getting balance:', balanceError);
             }
+
+            const code = await client.getCode({
+              address: campaign.treasuryAddress as `0x${string}`,
+            });
+            logVerbose(`Contract code check`, {
+              endpoint,
+              codeLength: code?.length || 0,
+            });
+
+            // If we successfully get contract code, use this client
+            if (code && code !== '0x') {
+              successfulClient = client;
+              contractCode = code;
+              logVerbose('SUCCESS: Found contract code with RPC endpoint', {
+                endpoint,
+              });
+              break;
+            }
+          } catch (endpointError) {
+            console.warn(`RPC endpoint ${endpoint} failed:`, endpointError);
           }
         }
 
-        if (!code || code === '0x') {
+        if (!contractCode || contractCode === '0x') {
           logVerbose(
             'Treasury contract does not exist at this address - this might be wrong',
           );

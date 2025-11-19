@@ -32,6 +32,7 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
       totalFavorites,
       totalRoundContributions,
       userCampaigns,
+      totalCampaigns,
     ] = await Promise.all([
       db.payment.findMany({
         where: { userId },
@@ -124,6 +125,7 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
           endTime: true,
         },
       }),
+      db.campaign.count({ where: { creatorAddress: address } }),
     ]);
 
     // Add campaigns count to user._count (manually computed since no direct relation)
@@ -131,7 +133,7 @@ export async function GET(_req: Request, { params }: UserWithAddressParams) {
       ...user,
       _count: {
         ...user._count,
-        campaigns: userCampaigns.length,
+        campaigns: totalCampaigns,
       },
     };
 

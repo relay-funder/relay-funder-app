@@ -62,7 +62,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     if (campaign.status !== 'ACTIVE') {
       // Only campaign owners and admins can access updates for non-active campaigns
       if (!isCreator && !isSessionAdmin) {
-        throw new ApiNotFoundError('Campaign not found');
+        throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
 

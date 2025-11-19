@@ -1,6 +1,10 @@
 import { db } from '@/server/db';
 import { checkAuth, isAdmin } from '@/lib/api/auth';
-import { ApiAuthNotAllowed, ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiAuthNotAllowed,
+  ApiParameterError,
+  ApiNotFoundError,
+} from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';

@@ -57,3 +57,6 @@ export {
 export const IS_PRODUCTION =
   process.env.NODE_ENV === 'production' &&
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+
+// RPC Endpoints
+export { CELO_RPC_ENDPOINTS } from './rpc-endpoints';
