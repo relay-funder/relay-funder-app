@@ -139,7 +139,9 @@ export function CampaignCard({
   const cardContent = (
     <Card
       className={`flex h-full min-h-[400px] flex-col overflow-hidden transition-all duration-200 ${
-        isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md' : 'hover:shadow-md'
+        isClickable
+          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md'
+          : 'hover:shadow-md'
       } ${shouldDimCard ? 'opacity-50' : ''} ${className || ''}`}
       onClick={
         isRoundMinimalType && onSelect ? () => onSelect(campaign) : undefined

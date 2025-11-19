@@ -9,6 +9,7 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
         title: 'Test Campaign',
         description: 'Test description',
         fundingGoal: '1000000000000000000',
+        fundingUsage: 'Test funding usage',
         creatorAddress: '0x1234567890123456789012345678901234567890',
         startTime: new Date(Date.now() + 86400000),
         endTime: new Date(Date.now() + 86400000 * 30),
@@ -37,6 +38,7 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
         title: '', // Empty title
         description: 'Test description',
         fundingGoal: '1000000000000000000',
+        fundingUsage: 'Test funding usage',
         creatorAddress: '0x1234567890123456789012345678901234567890',
         startTime: new Date(Date.now() + 86400000),
         endTime: new Date(Date.now() + 86400000 * 30),
@@ -69,6 +71,7 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
         title: '   ', // Whitespace only
         description: 'Test description',
         fundingGoal: '1000000000000000000',
+        fundingUsage: 'Test funding usage',
         creatorAddress: '0x1234567890123456789012345678901234567890',
         startTime: new Date(Date.now() + 86400000),
         endTime: new Date(Date.now() + 86400000 * 30),
@@ -102,6 +105,7 @@ describe('Campaign Validation - Essential Client-Side Rules', () => {
       title: 'Test Campaign',
       description: 'Test description',
       fundingGoal: '1000000000000000000',
+      fundingUsage: 'Test funding usage',
       startTime: new Date(Date.now() + 86400000), // Tomorrow
       endTime: new Date(Date.now() + 86400000 * 30), // 30 days from now
       creatorAddress: '0x1234567890123456789012345678901234567890',

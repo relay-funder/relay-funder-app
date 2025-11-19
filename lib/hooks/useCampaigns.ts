@@ -344,6 +344,101 @@ export function useInfiniteCampaigns(
   });
 }
 
+interface AdminCampaignFilters {
+  statuses?: string[];
+  enabled?: boolean | null; // true = enabled, false = disabled, null = both
+  excludeExpiredPending?: boolean; // exclude campaigns pending approval that have started
+}
+
+export function useInfiniteAdminCampaigns(
+  filters: AdminCampaignFilters = {},
+  pageSize = 10,
+  rounds = false,
+  includeTips = false,
+) {
+  const { statuses, enabled, excludeExpiredPending } = filters;
+
+  return useInfiniteQuery<PaginatedCampaignResponse, Error>({
+    queryKey: [
+      CAMPAIGNS_QUERY_KEY,
+      'admin',
+      'infinite',
+      statuses?.sort()?.join(',') || 'all',
+      enabled,
+      excludeExpiredPending,
+      includeTips,
+      pageSize,
+    ],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchAdminCampaignPage({
+        pageParam: pageParam as number,
+        statuses,
+        enabled,
+        excludeExpiredPending,
+        includeTips,
+        pageSize,
+        rounds,
+      }),
+    getNextPageParam: (lastPage: PaginatedCampaignResponse) => {
+      return lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined;
+    },
+    getPreviousPageParam: (firstPage: PaginatedCampaignResponse) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
+    initialPageParam: 1,
+  });
+}
+
+async function fetchAdminCampaignPage({
+  pageParam = 1,
+  statuses,
+  enabled,
+  excludeExpiredPending,
+  includeTips = false,
+  pageSize = 10,
+  rounds = false,
+}: {
+  pageParam?: number;
+  statuses?: string[];
+  enabled?: boolean | null;
+  excludeExpiredPending?: boolean;
+  includeTips?: boolean;
+  pageSize?: number;
+  rounds?: boolean;
+}) {
+  const params = new URLSearchParams({
+    page: pageParam.toString(),
+    pageSize: pageSize.toString(),
+    rounds: rounds.toString(),
+    admin: 'true',
+  });
+
+  if (statuses && statuses.length > 0) {
+    params.set('statuses', statuses.join(','));
+  }
+
+  if (enabled !== null && enabled !== undefined) {
+    params.set('enabled', enabled.toString());
+  }
+
+  if (excludeExpiredPending) {
+    params.set('excludeExpiredPending', 'true');
+  }
+
+  if (includeTips) {
+    params.set('includeTips', 'true');
+  }
+
+  const url = `/api/campaigns?${params.toString()}`;
+  const response = await fetch(url);
+  await handleApiErrors(response, 'Failed to fetch admin campaigns');
+  const data = await response.json();
+  return data as PaginatedCampaignResponse;
+}
+
 export function useInfiniteUserCampaigns(
   status = 'active',
   pageSize = 10,

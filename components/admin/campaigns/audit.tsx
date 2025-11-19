@@ -15,18 +15,63 @@ import {
   TableRow,
 } from '@/components/ui';
 import { Badge } from '@/components/ui';
-import { Button } from '@/components/ui';
 import { Eye, BarChart3, Loader2 } from 'lucide-react';
 import {
-  useInfiniteCampaigns,
+  useInfiniteAdminCampaigns,
   useCampaignStats,
 } from '@/lib/hooks/useCampaigns';
 import { FormattedDate } from '@/components/formatted-date';
 import { StatsCard } from '@/components/admin/stats-card';
+import {
+  CampaignFiltersModal,
+  type AdminCampaignFilters,
+} from '../campaign-filters-modal';
+import { Button } from '@/components/ui';
+import { Filter, X } from 'lucide-react';
 
 export function CampaignAudit() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<AdminCampaignFilters>({});
   const { ref, inView } = useInView();
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    (filters.statuses && filters.statuses.length > 0) ||
+    filters.enabled === true ||
+    filters.enabled === false ||
+    filters.excludeExpiredPending;
+
+  const filterButton = (
+    <div className="flex items-center gap-1">
+      <CampaignFiltersModal filters={filters} onFiltersChange={setFilters}>
+        <Button
+          variant={hasActiveFilters ? 'default' : 'outline'}
+          size="sm"
+          className={hasActiveFilters ? 'bg-primary' : ''}
+        >
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+          {hasActiveFilters && (
+            <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-xs text-primary">
+              {(filters.statuses?.length || 0) +
+                (filters.enabled !== null ? 1 : 0) +
+                (filters.excludeExpiredPending ? 1 : 0)}
+            </span>
+          )}
+        </Button>
+      </CampaignFiltersModal>
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setFilters({})}
+          className="h-8 px-2 text-xs"
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  );
 
   const {
     data,
@@ -36,7 +81,7 @@ export function CampaignAudit() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useInfiniteCampaigns('all', 10, false);
+  } = useInfiniteAdminCampaigns(filters, 10, false, true); // includeTips=true for financial audit
 
   const { data: statsData, isLoading: statsLoading } =
     useCampaignStats('global');
@@ -80,6 +125,7 @@ export function CampaignAudit() {
       title="Campaign Financial Audit"
       searchPlaceholder="Search campaigns by title or slug"
       onSearchChanged={setSearchTerm}
+      searchButtons={filterButton}
     >
       <div className="space-y-4">
         {/* Summary Stats */}
@@ -139,6 +185,7 @@ export function CampaignAudit() {
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Treasury</TableHead>
+                <TableHead>Volume (incl. tips)</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,19 +199,31 @@ export function CampaignAudit() {
                     <div className="font-mono text-sm text-muted-foreground">
                       {campaign.slug}
                     </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {new Date(campaign.startTime).toLocaleDateString()} -{' '}
+                      {new Date(campaign.endTime).toLocaleDateString()}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        campaign.status === 'ACTIVE'
-                          ? 'default'
-                          : campaign.status === 'PENDING_APPROVAL'
-                            ? 'secondary'
-                            : 'outline'
-                      }
-                    >
-                      {campaign.status.replace('_', ' ')}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          campaign.status === 'ACTIVE'
+                            ? 'default'
+                            : campaign.status === 'PENDING_APPROVAL'
+                              ? 'secondary'
+                              : 'outline'
+                        }
+                      >
+                        {campaign.status.replace('_', ' ')}
+                      </Badge>
+                      {campaign.status === 'PENDING_APPROVAL' &&
+                        new Date(campaign.startTime) < new Date() && (
+                          <Badge variant="destructive" className="text-xs">
+                            Expired
+                          </Badge>
+                        )}
+                    </div>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <FormattedDate date={new Date(campaign.createdAt)} />
@@ -177,6 +236,21 @@ export function CampaignAudit() {
                     ) : (
                       <Badge variant="secondary">Not Deployed</Badge>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="font-medium">
+                      {(() => {
+                        // Calculate total confirmed amount (includes tips for financial audit) across all tokens
+                        const totalConfirmed = campaign.paymentSummary?.token
+                          ? Object.values(campaign.paymentSummary.token).reduce(
+                              (sum, tokenData) =>
+                                sum + (tokenData.confirmed || 0),
+                              0,
+                            )
+                          : 0;
+                        return `$${totalConfirmed.toFixed(2)}`;
+                      })()}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -203,7 +277,7 @@ export function CampaignAudit() {
               ))}
               {filteredCampaigns.length === 0 && !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm">
+                  <TableCell colSpan={6} className="py-10 text-center text-sm">
                     {searchTerm
                       ? 'No campaigns match your search.'
                       : 'No campaigns found.'}
