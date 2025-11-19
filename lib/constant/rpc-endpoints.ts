@@ -12,7 +12,5 @@ const CELO_SEPOLIA_FALLBACKS = [
 
 export const CELO_RPC_ENDPOINTS = {
   primary: process.env.NEXT_PUBLIC_CELO_RPC_URL || 'https://forno.celo.org',
-  fallbacks: IS_PRODUCTION
-    ? CELO_MAINNET_FALLBACKS
-    : CELO_SEPOLIA_FALLBACKS,
+  fallbacks: IS_PRODUCTION ? CELO_MAINNET_FALLBACKS : CELO_SEPOLIA_FALLBACKS,
 } as const;

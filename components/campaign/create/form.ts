@@ -36,7 +36,7 @@ function validateStartTimeNotInPast(value: string) {
   return startDate >= earliestAllowed;
 }
 
-function transformStartTime(value: string) {
+function normalizeCampaignStartForForm(value: string) {
   // Parse YYYY-MM-DD as local date, not UTC
   const [year, month, day] = value.split('-').map(Number);
   const localDate = new Date(year, month - 1, day);
@@ -62,7 +62,7 @@ function transformStartTime(value: string) {
   return localDate.toISOString();
 }
 
-function transformEndTime(value: string) {
+function normalizeCampaignEndForForm(value: string) {
   // Parse YYYY-MM-DD as local date, not UTC
   const [year, month, day] = value.split('-').map(Number);
   const endTime = new Date(year, month - 1, day);
@@ -122,13 +122,13 @@ export const CampaignFormSchema = z
       .refine(validateStartTimeNotInPast, {
         message: 'Start time must be at least 1 hour in the future',
       })
-      .transform(transformStartTime),
+      .transform(normalizeCampaignStartForForm),
     endTime: z
       .string()
       .refine(validateTimes, {
         message: 'Invalid date format',
       })
-      .transform(transformEndTime),
+      .transform(normalizeCampaignEndForForm),
     location: z.enum(countries, {
       errorMap: () => ({
         message: 'Invalid Country selected.',

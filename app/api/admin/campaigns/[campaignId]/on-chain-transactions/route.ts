@@ -71,8 +71,6 @@ export async function GET(
           ...CELO_RPC_ENDPOINTS.fallbacks,
         ];
 
-        let successfulClient: ReturnType<typeof createPublicClient> | null =
-          null;
         let contractCode: string | undefined;
 
         // Try each endpoint in sequence until one works
@@ -107,7 +105,6 @@ export async function GET(
 
             // If we successfully get contract code, use this client
             if (code && code !== '0x') {
-              successfulClient = client;
               contractCode = code;
               logVerbose('SUCCESS: Found contract code with RPC endpoint', {
                 endpoint,
