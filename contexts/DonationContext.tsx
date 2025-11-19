@@ -64,6 +64,15 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
+
+  const usdFormattedBalance = useUsdBalance({
+    enabled: showCryptoWallet,
+  });
+  // Get native CELO balance for gas fees
+  const celoFormattedBalance = useCeloBalance({
+    enabled: showCryptoWallet,
+  });
+
   const setAmount = useCallback(
     (input: string) => {
       // allow empty input (form checks apply)
@@ -106,14 +115,6 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
     setIsProcessingPayment(false);
     setIsPaymentCompleted(false);
   }, [setAmount]);
-
-  const usdFormattedBalance = useUsdBalance({
-    enabled: showCryptoWallet,
-  });
-  // Get native CELO balance for gas fees
-  const celoFormattedBalance = useCeloBalance({
-    enabled: showCryptoWallet,
-  });
 
   const value: DonationContextType = {
     amount,
