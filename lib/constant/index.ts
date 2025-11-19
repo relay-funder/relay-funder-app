@@ -54,9 +54,7 @@ export {
   DAIMO_PAY_DEBOUNCE_DELAY,
 } from './daimo';
 
-export const IS_PRODUCTION =
-  process.env.NODE_ENV === 'production' &&
-  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+export { IS_PRODUCTION } from '../utils/env';
 
 // RPC Endpoints
 export { CELO_RPC_ENDPOINTS } from './rpc-endpoints';

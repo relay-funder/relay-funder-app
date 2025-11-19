@@ -1,4 +1,4 @@
-import { IS_PRODUCTION } from '@/lib/constant';
+import { IS_PRODUCTION } from '@/lib/utils/env';
 import {
   mainnet,
   arbitrum,
