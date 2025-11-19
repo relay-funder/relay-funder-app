@@ -28,7 +28,6 @@ export function CampaignReconciliationView({
     data: reconciliationData,
     isLoading: reconciliationLoading,
     error: reconciliationError,
-    progress,
   } = useCampaignReconciliationStream(campaignId);
 
   // Only block on campaign loading - show page immediately with DB data
@@ -152,7 +151,6 @@ export function CampaignReconciliationView({
       <CampaignReconciliationTable
         campaignId={parseInt(campaignId)}
         reconciliationData={reconciliationData}
-        isLoading={reconciliationLoading}
         error={reconciliationError || undefined}
       />
     </div>

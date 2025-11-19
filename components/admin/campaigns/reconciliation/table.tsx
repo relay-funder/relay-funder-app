@@ -24,24 +24,18 @@ import { FormattedDate } from '@/components/formatted-date';
 interface CampaignReconciliationTableProps {
   campaignId: number;
   reconciliationData?: CampaignReconciliationData;
-  isLoading: boolean;
   error?: Error;
 }
 
 export function CampaignReconciliationTable({
   campaignId,
   reconciliationData,
-  isLoading,
   error,
 }: CampaignReconciliationTableProps) {
   // Define explicit flags for blockchain loading state and transaction presence
   // With streaming, check if we're actively streaming OR if data hasn't loaded yet
   const streamingProgress = reconciliationData?.streamingProgress;
   const isStreaming = streamingProgress?.isStreaming ?? false;
-  const isStreamingComplete =
-    streamingProgress &&
-    !isStreaming &&
-    streamingProgress.percentComplete === 100;
   const isBlockchainLoading =
     streamingProgress?.isStreaming ??
     reconciliationData?.isBlockchainDataLoading ??
