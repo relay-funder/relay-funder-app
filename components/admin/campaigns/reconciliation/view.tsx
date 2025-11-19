@@ -26,7 +26,6 @@ export function CampaignReconciliationView({
   } = useCampaign(campaignId);
   const {
     data: reconciliationData,
-    isLoading: reconciliationLoading,
     error: reconciliationError,
   } = useCampaignReconciliationStream(campaignId);
 
