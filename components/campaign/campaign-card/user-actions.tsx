@@ -234,9 +234,8 @@ export function CampaignCardUserActions({
 
   return (
     <div className="space-y-2 border-t border-border pt-3">
-      {/* Two-column grid: Edit (left) + Disable/Remove (right) */}
+      {/* Navigation actions: Edit and View */}
       <div className="grid grid-cols-2 gap-2">
-        {/* Left column: Edit button */}
         <Link href={`/campaigns/${campaign.slug}/edit`}>
           <Button
             size="sm"
@@ -248,69 +247,17 @@ export function CampaignCardUserActions({
             Edit
           </Button>
         </Link>
-        {canView && (
-          <Link href={`/campaigns/${campaign.slug}`}>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!canView}
-              className="h-8 w-full px-2 py-1 text-xs"
-            >
-              <View className="mr-2 h-3 w-3" />
-              View
-            </Button>
-          </Link>
-        )}
-        {/* Right column: Disable or Remove button */}
-        {canRemove && (
+        <Link href={`/campaigns/${campaign.slug}`}>
           <Button
-            onClick={handleRemoveConfirm}
             size="sm"
-            disabled={isDeleting}
-            variant="destructive"
+            variant="outline"
+            disabled={!canView}
             className="h-8 w-full px-2 py-1 text-xs"
           >
-            {isDeleting ? (
-              <>
-                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                Removing...
-              </>
-            ) : (
-              <>
-                <Trash2 className="mr-2 h-3 w-3" />
-                Remove
-              </>
-            )}
+            <View className="mr-2 h-3 w-3" />
+            View
           </Button>
-        )}
-
-        {canDisable && (
-          <Button
-            onClick={handleDisableConfirm}
-            size="sm"
-            variant="destructive"
-            className="h-8 w-full px-2 py-1 text-xs"
-          >
-            <Pause className="mr-2 h-3 w-3" />
-            Disable
-          </Button>
-        )}
-
-        {canEnable && (
-          <Button
-            onClick={() => setShowEnableConfirm(true)}
-            size="sm"
-            className="h-8 w-full border border-bio bg-bio px-2 py-1 text-xs text-white hover:bg-bio/90"
-          >
-            <Play className="mr-2 h-3 w-3" />
-            Enable
-          </Button>
-        )}
-
-        {/* Placeholder for right column when neither remove, disable, nor enable */}
-        {!canRemove && !canDisable && !canEnable && (
-          <div className="h-8 w-full" />
-        )}
+        </Link>
       </div>
 
       {/* Post Update button */}
@@ -330,7 +277,7 @@ export function CampaignCardUserActions({
         </p>
       )}
 
-      {/* Full-width Withdrawal button - ALWAYS shown */}
+      {/* Withdraw Funds button */}
       <WithdrawalDialog
         campaign={campaign}
         trigger={
@@ -345,6 +292,52 @@ export function CampaignCardUserActions({
           </Button>
         }
       />
+
+      {/* Campaign state actions at bottom: Remove, Disable, or Enable */}
+      {canRemove && (
+        <Button
+          onClick={handleRemoveConfirm}
+          size="sm"
+          disabled={isDeleting}
+          variant="destructive"
+          className="h-8 w-full px-2 py-1 text-xs"
+        >
+          {isDeleting ? (
+            <>
+              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              Removing...
+            </>
+          ) : (
+            <>
+              <Trash2 className="mr-2 h-3 w-3" />
+              Remove
+            </>
+          )}
+        </Button>
+      )}
+
+      {canDisable && (
+        <Button
+          onClick={handleDisableConfirm}
+          size="sm"
+          variant="destructive"
+          className="h-8 w-full px-2 py-1 text-xs"
+        >
+          <Pause className="mr-2 h-3 w-3" />
+          Disable
+        </Button>
+      )}
+
+      {canEnable && (
+        <Button
+          onClick={() => setShowEnableConfirm(true)}
+          size="sm"
+          className="h-8 w-full border border-bio bg-bio px-2 py-1 text-xs text-white hover:bg-bio/90"
+        >
+          <Play className="mr-2 h-3 w-3" />
+          Enable
+        </Button>
+      )}
 
       {/* Confirmation Dialogs */}
       {/* Remove Campaign Confirmation */}

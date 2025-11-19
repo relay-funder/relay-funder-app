@@ -55,19 +55,15 @@ export function CampaignCardAdminActions({
 
       {/* Active campaigns: Feature + Disable buttons side-by-side */}
       {isActive && (
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <CampaignAdminFeaturedDialog
-              campaign={campaign}
-              buttonClassName="h-8 w-full px-2 py-1 text-xs bg-muted text-muted-foreground hover:bg-muted/80"
-            />
-          </div>
-          <div className="flex-1">
-            <CampaignAdminDisableButton
-              campaign={campaign}
-              buttonClassName="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-2">
+          <CampaignAdminFeaturedDialog
+            campaign={campaign}
+            buttonClassName="h-8 w-full px-2 py-1 text-xs bg-muted text-muted-foreground hover:bg-muted/80"
+          />
+          <CampaignAdminDisableButton
+            campaign={campaign}
+            buttonClassName="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
+          />
         </div>
       )}
 
