@@ -3,6 +3,14 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Button } from '@/components/ui';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui';
 import { Eye, ExternalLink } from 'lucide-react';
 import {
   ReconciliationPayment,
@@ -260,30 +268,29 @@ export function CampaignReconciliationTable({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-semibold">Type</th>
-                  <th className="px-4 py-3 text-left font-semibold">ID/Hash</th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Date & Time
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold">User</th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Payment Type
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    Base Amount
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">Tip</th>
-                  <th className="px-4 py-3 text-right font-semibold">Total</th>
-                  <th className="px-4 py-3 text-center font-semibold">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">Type</TableHead>
+                <TableHead className="font-semibold">ID/Hash</TableHead>
+                <TableHead className="font-semibold">
+                  Date & Time
+                </TableHead>
+                <TableHead className="font-semibold">User</TableHead>
+                <TableHead className="font-semibold">
+                  Payment Type
+                </TableHead>
+                <TableHead className="text-right font-semibold">
+                  Base Amount
+                </TableHead>
+                <TableHead className="text-right font-semibold">Tip</TableHead>
+                <TableHead className="text-right font-semibold">Total</TableHead>
+                <TableHead className="text-center font-semibold">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
                 {processedTransactions && processedTransactions.length > 0 ? (
                   processedTransactions.map((transaction) => {
                     if (transaction.type === 'database') {
@@ -297,19 +304,19 @@ export function CampaignReconciliationTable({
                       const totalAmount = baseAmount + tipAmount;
 
                       return (
-                        <tr
+                        <TableRow
                           key={`db-${payment.id}`}
-                          className="border-b bg-yellow-50/30 hover:bg-blue-50/50 dark:bg-yellow-950/10 dark:hover:bg-blue-950/10"
+                          className="bg-yellow-50/30 hover:bg-blue-50/50 dark:bg-yellow-950/10 dark:hover:bg-blue-950/10"
                         >
-                          <td className="px-4 py-3">
+                          <TableCell>
                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                               Database
                             </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-sm">
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
                             Payment #{payment.id}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
+                          </TableCell>
+                          <TableCell className="text-sm">
                             <FormattedDate
                               date={
                                 new Date(
@@ -319,8 +326,8 @@ export function CampaignReconciliationTable({
                                 )
                               }
                             />
-                          </td>
-                          <td className="px-4 py-3 text-sm">
+                          </TableCell>
+                          <TableCell className="text-sm">
                             {payment.isAnonymous
                               ? 'Anonymous'
                               : payment.user?.username ||
@@ -328,8 +335,8 @@ export function CampaignReconciliationTable({
                                 (payment.user?.address
                                   ? `${payment.user.address.slice(0, 6)}...${payment.user.address.slice(-4)}`
                                   : 'Unknown')}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
+                          </TableCell>
+                          <TableCell className="text-sm">
                             {payment.provider === 'daimo' ? (
                               <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
                                 Daimo Pay
@@ -339,17 +346,17 @@ export function CampaignReconciliationTable({
                                 Direct
                               </span>
                             )}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium">
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
                             ${baseAmount.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
                             ${tipAmount.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-blue-600">
                             ${totalAmount.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-center">
+                          </TableCell>
+                          <TableCell className="text-center">
                             <Button variant="outline" size="sm" asChild>
                               <a
                                 href={`/admin/payments?campaignId=${campaignId}&paymentId=${payment.id.toString()}`}
@@ -360,8 +367,8 @@ export function CampaignReconciliationTable({
                                 View
                               </a>
                             </Button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     } else {
                       const tx =
@@ -388,37 +395,37 @@ export function CampaignReconciliationTable({
                       );
 
                       return (
-                        <tr
+                        <TableRow
                           key={`chain-${tx.hash}`}
-                          className="border-b hover:bg-green-50/50 dark:hover:bg-green-950/10"
+                          className="hover:bg-green-50/50 dark:hover:bg-green-950/10"
                         >
-                          <td className="px-4 py-3">
+                          <TableCell>
                             <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
                               Blockchain
                             </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-sm">
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
                             {tx.hash?.slice(0, 10)}...{tx.hash?.slice(-6)}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
+                          </TableCell>
+                          <TableCell className="text-sm">
                             <FormattedDate date={transaction.date} />
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
                             — (Block explorer)
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
                             — (On-chain)
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium">
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
                             — (Total only)
-                          </td>
-                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
                             — (Not separated)
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-green-600">
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-green-600">
                             ${totalAmount.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-center">
+                          </TableCell>
+                          <TableCell className="text-center">
                             <Button variant="outline" size="sm" asChild>
                               <a
                                 href={getBlockExplorerTxUrl(tx.hash)}
@@ -429,48 +436,47 @@ export function CampaignReconciliationTable({
                                 View
                               </a>
                             </Button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     }
                   })
                 ) : reconciliationData.databasePayments?.length === 0 ? (
-                  <tr>
-                    <td
+                  <TableRow>
+                    <TableCell
                       colSpan={9}
                       className="py-8 text-center text-muted-foreground"
                     >
                       No transactions found
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : !reconciliationData.rawBlockExplorerTransactions ||
                   reconciliationData.rawBlockExplorerTransactions.length ===
                     0 ? (
                   <>
                     {/* Show a loading row for blockchain data */}
-                    <tr className="border-b bg-green-50/50 dark:bg-green-950/10">
-                      <td className="px-4 py-4">
+                    <TableRow className="bg-green-50/50 dark:bg-green-950/10">
+                      <TableCell>
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
                           Blockchain
                         </span>
-                      </td>
-                      <td className="px-4 py-4 font-mono text-sm" colSpan={7}>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm" colSpan={7}>
                         <div className="flex items-center gap-2">
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
                           <span>
                             Fetching blockchain transaction details...
                           </span>
                         </div>
-                      </td>
-                      <td className="px-4 py-4 text-center">
+                      </TableCell>
+                      <TableCell className="text-center">
                         <span className="text-muted-foreground">—</span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   </>
                 ) : null}
-              </tbody>
-            </table>
-          </div>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
