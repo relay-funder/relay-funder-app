@@ -29,6 +29,7 @@ export const REOWN_FEATURE_EMAIL = !Boolean(
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 
 export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
+export const SUPPORT_EMAIL = 'support@relayfunder.com';
 export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [5, 10, 25, 50, 100];
 
 export const FILE_STORAGE_PROVIDER =
@@ -54,6 +55,7 @@ export {
   DAIMO_PAY_DEBOUNCE_DELAY,
 } from './daimo';
 
-export const IS_PRODUCTION =
-  process.env.NODE_ENV === 'production' &&
-  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+export { IS_PRODUCTION } from '../utils/env';
+
+// RPC Endpoints
+export { CELO_RPC_ENDPOINTS } from './rpc-endpoints';

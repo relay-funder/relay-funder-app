@@ -11,6 +11,7 @@ import {
   ValidationStage,
   getValidationSummary,
 } from '@/lib/ccp-validation/campaign-validation';
+import { validateAndParseDateString } from '@/lib/utils/date';
 
 function validateTimes(value: string) {
   const date = new Date(value);
@@ -34,6 +35,58 @@ function validateStartTimeNotInPast(value: string) {
   const earliestAllowed = new Date(now.getTime() + bufferTime);
 
   return startDate >= earliestAllowed;
+}
+
+function normalizeCampaignStartForForm(value: string) {
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
+  const localDate = new Date(year, month - 1, day);
+  const now = new Date();
+  const oneHourInMs = 60 * 60 * 1000;
+
+  // Check if the selected date is today
+  if (
+    now.getFullYear() === localDate.getFullYear() &&
+    now.getMonth() === localDate.getMonth() &&
+    now.getDate() === localDate.getDate()
+  ) {
+    // Set to 1 hour from now for today's date (dev purposes), without crossing into tomorrow
+    const oneHourAhead = new Date(now.getTime() + oneHourInMs);
+    const crossesMidnight =
+      oneHourAhead.getFullYear() !== now.getFullYear() ||
+      oneHourAhead.getMonth() !== now.getMonth() ||
+      oneHourAhead.getDate() !== now.getDate();
+
+    if (crossesMidnight) {
+      localDate.setHours(23, 59, 0, 0);
+    } else {
+      localDate.setHours(
+        oneHourAhead.getHours(),
+        oneHourAhead.getMinutes(),
+        oneHourAhead.getSeconds(),
+        0,
+      );
+    }
+  } else {
+    // For future dates, set to start of day
+    localDate.setHours(0, 0, 0, 0);
+  }
+
+  return localDate.toISOString();
+}
+
+function normalizeCampaignEndForForm(value: string) {
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
+  const endTime = new Date(year, month - 1, day);
+
+  // Set to end of day (23:59:59)
+  endTime.setHours(23);
+  endTime.setMinutes(59);
+  endTime.setSeconds(59);
+  endTime.setMilliseconds(0);
+
+  return endTime.toISOString();
 }
 
 export const CampaignFormSchema = z
@@ -81,10 +134,14 @@ export const CampaignFormSchema = z
       })
       .refine(validateStartTimeNotInPast, {
         message: 'Start time must be at least 1 hour in the future',
-      }),
-    endTime: z.string().refine(validateTimes, {
-      message: 'Invalid date format',
-    }),
+      })
+      .transform(normalizeCampaignStartForForm),
+    endTime: z
+      .string()
+      .refine(validateTimes, {
+        message: 'Invalid date format',
+      })
+      .transform(normalizeCampaignEndForForm),
     location: z.enum(countries, {
       errorMap: () => ({
         message: 'Invalid Country selected.',

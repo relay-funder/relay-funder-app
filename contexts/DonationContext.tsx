@@ -64,6 +64,15 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
+
+  const usdFormattedBalance = useUsdBalance({
+    enabled: showCryptoWallet,
+  });
+  // Get native CELO balance for gas fees
+  const celoFormattedBalance = useCeloBalance({
+    enabled: showCryptoWallet,
+  });
+
   const setAmount = useCallback(
     (input: string) => {
       // allow empty input (form checks apply)
@@ -73,10 +82,31 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
         if (isNaN(value) || value < 0) {
           return;
         }
+
+        // Reject values that would display in exponential notation
+        if (input.includes('e') || input.includes('E')) {
+          return;
+        }
+
+        // Reject values that are unreasonably large for donations
+        if (value > 1000000) { // Max $1,000,000 for donations
+          return;
+        }
+
+        // For donations, reject values with more than 2 decimal places
+        const decimalParts = input.split('.');
+        if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+          return;
+        }
+
+        // Check if amount exceeds user's balance (if balance is available)
+        if (usdFormattedBalance.usdBalanceAmount > 0 && value > usdFormattedBalance.usdBalanceAmount) {
+          return;
+        }
       }
       setAmountIntern(input);
     },
-    [setAmountIntern],
+    [setAmountIntern, usdFormattedBalance.usdBalanceAmount],
   );
   const clearDonation = useCallback(() => {
     setAmount('0');
@@ -85,14 +115,6 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
     setIsProcessingPayment(false);
     setIsPaymentCompleted(false);
   }, [setAmount]);
-
-  const usdFormattedBalance = useUsdBalance({
-    enabled: showCryptoWallet,
-  });
-  // Get native CELO balance for gas fees
-  const celoFormattedBalance = useCeloBalance({
-    enabled: showCryptoWallet,
-  });
 
   const value: DonationContextType = {
     amount,

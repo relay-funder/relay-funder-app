@@ -60,7 +60,7 @@ export function AdminGlobalOverview() {
             <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 dark:bg-accent/30">
               <Calendar className="h-6 w-6 text-accent-foreground" />
             </div>
-            <div className="justify-center">
+            <div>
               <p className="whitespace-nowrap font-display text-xs font-medium text-muted-foreground md:text-sm">
                 Active Campaigns
               </p>

@@ -9,6 +9,7 @@ export interface PageLayoutProps {
   onCreate?: () => void;
   createTitle?: string;
   buttons?: ReactNode;
+  searchButtons?: ReactNode;
   containerWidth?: 'default' | 'detail' | 'full';
   children: ReactNode;
   customHeader?: ReactNode;
@@ -21,6 +22,7 @@ export function PageLayout({
   onCreate,
   createTitle,
   buttons,
+  searchButtons,
   containerWidth = 'default',
   children,
   customHeader,
@@ -40,6 +42,7 @@ export function PageLayout({
           onCreate={onCreate}
           createTitle={createTitle}
           buttons={buttons}
+          searchButtons={searchButtons}
           containerWidth={containerWidth}
         />
       );

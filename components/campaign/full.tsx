@@ -13,11 +13,11 @@ import { CampaignLocation } from '@/components/campaign/location';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from './loading';
 import { useAuth } from '@/contexts';
-import { CampaignError } from './error';
 import { isCampaignFeatured } from '@/lib/utils/campaign-status';
 import { FavoriteButton } from '@/components/favorite-button';
 import { ShareDialog } from '@/components/share-dialog';
 import { CampaignInfoDialog } from '@/components/campaign/info';
+import { CampaignStatus } from '@/components/campaign/status';
 import { Button } from '@/components/ui';
 import { Info } from 'lucide-react';
 
@@ -37,18 +37,12 @@ export function CampaignFull({ slug }: { slug: string }) {
   if (!campaign) {
     notFound();
   }
-  if (
-    campaign.status !== 'ACTIVE' &&
-    address !== campaign.creatorAddress &&
-    !isAdmin
-  ) {
-    // admins and campaign owners can see inactive campaigns, everyone else
-    // will get an error
-    return (
-      <PageHome header="">
-        <CampaignError error="Not Active" />
-      </PageHome>
-    );
+  const canViewInactive = address === campaign.creatorAddress || isAdmin;
+  const isInactive = campaign.status !== 'ACTIVE';
+
+  if (isInactive && !canViewInactive) {
+    // Regular users get 404 for non-active campaigns
+    notFound();
   }
 
   // Navigation header without title
@@ -74,12 +68,30 @@ export function CampaignFull({ slug }: { slug: string }) {
               <div className="rounded-lg border bg-card p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-foreground lg:text-3xl">
-                      {campaign.title}
-                    </h1>
+                    <div className="flex items-center gap-3">
+                      <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-foreground lg:text-3xl">
+                        {campaign.title}
+                      </h1>
+                      {isInactive && (
+                        <div className="flex-shrink-0">
+                          <CampaignStatus campaign={campaign} />
+                        </div>
+                      )}
+                    </div>
                     <div className="mt-2">
                       <CampaignLocation campaign={campaign} />
                     </div>
+                    {isInactive && (
+                      <div className="mt-3">
+                        <div className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                          <Info className="h-4 w-4" />
+                          <span>
+                            This campaign is not yet active. Only you and admins
+                            can view it.
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <ShareDialog campaign={campaign} />

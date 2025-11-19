@@ -15,6 +15,7 @@ export function PageHeaderSearch({
   onCreate,
   createTitle,
   buttons,
+  searchButtons,
   containerWidth = 'default',
 }: {
   title?: string;
@@ -23,6 +24,7 @@ export function PageHeaderSearch({
   onCreate?: () => void;
   createTitle?: string;
   buttons?: ReactNode;
+  searchButtons?: ReactNode;
   containerWidth?: 'default' | 'detail' | 'full';
 }) {
   const { login, authenticated } = useAuth();
@@ -53,23 +55,29 @@ export function PageHeaderSearch({
         </div>
       )}
 
-      {/* Search */}
-      <div className="flex grow flex-row items-center py-1 md:ml-3">
-        <div className="relative w-full">
+      {/* Search + Filter Button (fixed width, left aligned) */}
+      <div className="flex flex-row items-center gap-2 py-1 md:ml-3">
+        <div className="relative">
           <Search
             className={cn(
               'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground',
             )}
           />
           <Input
-            className="max-w-[calc(100vw-88px)] rounded-xl pl-10 md:max-w-sm"
+            className="w-80 rounded-xl pl-10"
             placeholder={placeholder}
             type="search"
             value={searchTerm}
             onChange={onSearchInputChanged}
           />
         </div>
+        {searchButtons}
       </div>
+
+      {/* Spacer to push right-side buttons to the right */}
+      <div className="flex-1" />
+
+      {/* Right-side buttons */}
       <div className="flex flex-row items-center gap-4">
         <ThemeToggle />
         <Button

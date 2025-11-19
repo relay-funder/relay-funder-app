@@ -9,7 +9,11 @@ import {
 import { response, handleError } from '@/lib/api/response';
 
 import { CampaignStatus } from '@/types/campaign';
-import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
+import {
+  getCampaign,
+  listCampaigns,
+  listAdminCampaignsWithFilters,
+} from '@/lib/api/campaigns';
 import { PatchCampaignResponse, PostCampaignsResponse } from '@/lib/api/types';
 import { fileToUrl } from '@/lib/storage';
 import { debugApi as debug } from '@/lib/debug';
@@ -266,27 +270,70 @@ export async function PATCH(req: Request) {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status') || 'active';
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const rounds =
       (searchParams.get('rounds') || 'false') === 'true' ? true : false;
+    const isUserAdmin = await isAdmin();
+    const admin =
+      isUserAdmin &&
+      (searchParams.has('admin') ? searchParams.get('admin') === 'true' : true);
     const skip = (page - 1) * pageSize;
+
     if (pageSize > 10) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
-    // status active should be enforced if access-token is not admin
-    const admin = await isAdmin();
-    return response(
-      await listCampaigns({
-        admin,
-        status,
-        page,
-        pageSize,
-        rounds,
-        skip,
-      }),
-    );
+
+    // Handle new admin filtering parameters
+    const statusesParam = searchParams.get('statuses');
+    const statuses = statusesParam
+      ? statusesParam.split(',').filter(Boolean)
+      : undefined;
+
+    // For admin users with no specific status filtering, default to 'all' to show all campaigns
+    // For regular users, default to 'active' as before
+    const status =
+      statusesParam || searchParams.get('status') || (admin ? 'all' : 'active');
+
+    const enabledParam = searchParams.get('enabled');
+    const enabled = enabledParam !== null ? enabledParam === 'true' : undefined;
+
+    const excludeExpiredPending =
+      (searchParams.get('excludeExpiredPending') || 'false') === 'true';
+
+    // Check if tips should be included (only for financial audit)
+    const includeTips = (searchParams.get('includeTips') || 'false') === 'true';
+
+    // Use different functions based on admin status to maintain separation of concerns
+    if (admin) {
+      // Admin users get advanced filtering capabilities
+      return response(
+        await listAdminCampaignsWithFilters({
+          admin,
+          status,
+          statuses,
+          enabled,
+          excludeExpiredPending,
+          includeTips, // Only include tips for financial audit
+          page,
+          pageSize,
+          rounds,
+          skip,
+        }),
+      );
+    } else {
+      // Non-admin users get basic filtering (original behavior)
+      return response(
+        await listCampaigns({
+          admin,
+          status,
+          page,
+          pageSize,
+          rounds,
+          skip,
+        }),
+      );
+    }
   } catch (error: unknown) {
     return handleError(error);
   }

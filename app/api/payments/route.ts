@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     const payment = await db.payment.create({
       data: {
         amount: data.amount,
+        tipAmount: data.tipAmount ?? null,
         token: data.token,
         isAnonymous: data.isAnonymous,
         status: data.status,

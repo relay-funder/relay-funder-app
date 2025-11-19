@@ -21,7 +21,7 @@ async function fetchTreasuryBalance(
 // Fetch campaign treasury address and balance
 async function fetchCampaignTreasuryBalance(
   campaignId?: number | null,
-): Promise<{ balance: TreasuryBalance }> {
+): Promise<{ balance: TreasuryBalance; treasuryAddress?: string }> {
   if (!campaignId) {
     throw new ApiParameterError('Invalid Campaign to fetch Treasury Balance');
   }

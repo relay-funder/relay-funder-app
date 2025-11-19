@@ -12,6 +12,7 @@ import {
   CreditCard,
   Coins,
   BellRing,
+  BarChart3,
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
@@ -90,6 +91,11 @@ export function PageNavMenuItems() {
         icon: <CreditCard className="h-6 w-6" />,
         label: 'Payments',
         href: '/admin/payments',
+      },
+      {
+        icon: <BarChart3 className="h-6 w-6" />,
+        label: 'Audit',
+        href: '/admin/campaigns',
       },
       {
         icon: <Coins className="h-6 w-6" />,

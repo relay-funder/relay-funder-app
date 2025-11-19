@@ -1,6 +1,6 @@
 'use client';
 
-import { EXTERNAL_LINKS } from '@/lib/constant';
+import { EXTERNAL_LINKS, SUPPORT_EMAIL } from '@/lib/constant';
 
 export function PageFooter() {
   const currentYear = new Date().getFullYear();
@@ -93,6 +93,15 @@ export function PageFooter() {
                 className="text-text-muted transition-colors hover:text-text-primary"
               >
                 Terms
+              </a>
+            </div>
+            <div className="text-text-muted">
+              Need support? Contact{' '}
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="text-text-muted transition-colors hover:text-text-primary underline"
+              >
+                {SUPPORT_EMAIL}
               </a>
             </div>
             <div className="text-text-muted">
