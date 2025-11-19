@@ -36,6 +36,42 @@ function validateStartTimeNotInPast(value: string) {
   return startDate >= earliestAllowed;
 }
 
+function transformStartTime(value: string) {
+  const localDate = new Date(value);
+  const now = new Date();
+  
+  // Check if the selected date is today
+  if (
+    now.getFullYear() === localDate.getFullYear() &&
+    now.getMonth() === localDate.getMonth() &&
+    now.getDate() === localDate.getDate()
+  ) {
+    // Set to 1 hour from now for today's date (dev purposes)
+    localDate.setHours(now.getHours() + 1);
+  } else {
+    // For future dates, set to start of day
+    localDate.setHours(0);
+  }
+  
+  localDate.setMinutes(0);
+  localDate.setSeconds(0);
+  localDate.setMilliseconds(0);
+
+  return localDate.toISOString();
+}
+
+function transformEndTime(value: string) {
+  const endTime = new Date(value);
+  
+  // Set to end of day (23:59:59)
+  endTime.setHours(23);
+  endTime.setMinutes(59);
+  endTime.setSeconds(59);
+  endTime.setMilliseconds(0);
+
+  return endTime.toISOString();
+}
+
 export const CampaignFormSchema = z
   .object({
     title: z
@@ -81,10 +117,14 @@ export const CampaignFormSchema = z
       })
       .refine(validateStartTimeNotInPast, {
         message: 'Start time must be at least 1 hour in the future',
-      }),
-    endTime: z.string().refine(validateTimes, {
-      message: 'Invalid date format',
-    }),
+      })
+      .transform(transformStartTime),
+    endTime: z
+      .string()
+      .refine(validateTimes, {
+        message: 'Invalid date format',
+      })
+      .transform(transformEndTime),
     location: z.enum(countries, {
       errorMap: () => ({
         message: 'Invalid Country selected.',

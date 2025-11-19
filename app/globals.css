@@ -23,9 +23,9 @@
     --quantum-blue: 210 100% 45%; /* Primary tech - darker for better contrast */
     --bio-green: 150 65% 40%; /* Life/growth - darker for better contrast */
     --solar-orange: 25 95% 50%; /* Hope/energy - darker for better contrast */
-    --accent: 210 5% 50%;
-    --accent-light: 210 3% 45%;
-    --accent-dark: 210 8% 25%;
+    --accent: 210 15% 92%;
+    --accent-light: 210 10% 90%;
+    --accent-dark: 210 20% 85%;
 
     /* Interactive states - Enhanced contrast */
     --hover: 210 100% 40%;

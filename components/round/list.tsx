@@ -64,6 +64,9 @@ export function RoundList({
     }),
   }));
 
+  // Check if there are any rounds after filtering
+  const hasRounds = filteredRounds?.some((page) => page.rounds.length > 0);
+
   if (loading && !data) {
     return <RoundLoading minimal={true} />;
   }
@@ -75,15 +78,30 @@ export function RoundList({
   return (
     <div className="space-y-6">
       <ResponsiveGrid variant="wide-cards" gap="lg">
-        {filteredRounds?.map((page) =>
-          page.rounds.map((round) => (
-            <ItemComponent
-              key={round.id}
-              round={round}
-              forceUserView={forceUserView}
-            />
-          )),
-        )}
+        {hasRounds ? (
+          filteredRounds?.map((page) =>
+            page.rounds.map((round) => (
+              <ItemComponent
+                key={round.id}
+                round={round}
+                forceUserView={forceUserView}
+              />
+            )),
+          )
+        ) : !loading ? (
+          <div className="col-span-full py-12 text-center">
+            <div className="mx-auto max-w-sm">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? 'No rounds match your search' : 'No rounds found'}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {searchTerm
+                  ? 'Try adjusting your search terms or clear the search to see all rounds.'
+                  : 'There are currently no funding rounds available.'}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </ResponsiveGrid>
 
       {/* Loading indicator */}

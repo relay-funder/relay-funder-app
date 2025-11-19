@@ -55,17 +55,33 @@ function getStartTimeWarning(startTimeValue: string | null | undefined) {
       (startDate.getTime() - now.getTime()) / (1000 * 60);
     const isDev = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
     const isToday = startDate.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = startDate.toDateString() === tomorrow.toDateString();
 
-    // Don't show warnings for today's date since it will be transformed to a future time
+    // For today's date, show warning about smart contract constraints
     if (isToday) {
-      return null;
+      return {
+        type: 'warning',
+        message:
+          'Campaign is set to start today. If admin approval is delayed past the start date, your campaign will expire after publishing due to smart contract rules and will need to be re-created with a future date.',
+      };
+    }
+
+    // For tomorrow's date, show similar warning
+    if (isTomorrow) {
+      return {
+        type: 'warning',
+        message:
+          'Campaign is set to start tomorrow. If admin approval is delayed past the start date, your campaign will expire after publishing due to smart contract rules and will need to be re-created with a future date.',
+      };
     }
 
     if (minutesDifference < 0) {
       return {
-        type: 'error',
+        type: 'warning',
         message:
-          'Start time is in the past. Campaigns must start in the future.',
+          'Start date is in the past. For testing purposes, this is allowed but not recommended for production.',
       };
     } else if (minutesDifference < 2) {
       return {
@@ -193,9 +209,21 @@ export function CampaignCreateFormTimeline({
   const handleStartTimeChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value;
-      if (!hasManualTimes) {
+      // Allow changes when:
+      // 1. Manual times are explicitly set (selectedRoundId === 0), OR
+      // 2. No rounds are available, OR
+      // 3. No round is currently selected
+      const canEditManually = hasManualTimes || !hasUpcomingRounds || !selectedRoundIdValue;
+      
+      if (!canEditManually) {
         return;
       }
+      
+      // If changing date while a round is selected (not manual mode), switch to manual mode
+      if (selectedRoundIdValue && selectedRoundIdValue !== 0) {
+        form.setValue('selectedRoundId', 0);
+      }
+      
       const newStartDate = new Date(value);
       const newStartString = newStartDate.toISOString().slice(0, 10);
       const oldValues = form.getValues();
@@ -227,7 +255,7 @@ export function CampaignCreateFormTimeline({
         }
       }
     },
-    [form, hasManualTimes],
+    [form, hasManualTimes, hasUpcomingRounds, selectedRoundIdValue],
   );
   // effects - beware, the control is rendered twice, avoid setting form values
   // depending on state as the effect runs twice (one for lg:hidden, one for mobile)
@@ -369,7 +397,10 @@ export function CampaignCreateFormTimeline({
                 </FormControl>
                 <FormMessage />
                 {startTimeWarning && (
-                  <Alert variant="destructive" className="mt-2">
+                  <Alert 
+                    variant={startTimeWarning.type === 'warning' ? 'destructive' : 'default'} 
+                    className="mt-2"
+                  >
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       {startTimeWarning.message}
@@ -414,7 +445,7 @@ export function CampaignCreateFormTimeline({
       )}
 
       {/* Round Dates Display - When round selected */}
-      {!hasManualTimes && upcomingRounds && (
+      {!hasManualTimes && upcomingRounds && selectedRoundDates && (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
             Campaign runs from{' '}
