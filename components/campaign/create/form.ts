@@ -11,6 +11,7 @@ import {
   ValidationStage,
   getValidationSummary,
 } from '@/lib/ccp-validation/campaign-validation';
+import { validateAndParseDateString } from '@/lib/utils/date';
 
 function validateTimes(value: string) {
   const date = new Date(value);
@@ -37,8 +38,8 @@ function validateStartTimeNotInPast(value: string) {
 }
 
 function normalizeCampaignStartForForm(value: string) {
-  // Parse YYYY-MM-DD as local date, not UTC
-  const [year, month, day] = value.split('-').map(Number);
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
   const localDate = new Date(year, month - 1, day);
   const now = new Date();
 
@@ -63,8 +64,8 @@ function normalizeCampaignStartForForm(value: string) {
 }
 
 function normalizeCampaignEndForForm(value: string) {
-  // Parse YYYY-MM-DD as local date, not UTC
-  const [year, month, day] = value.split('-').map(Number);
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
   const endTime = new Date(year, month - 1, day);
 
   // Set to end of day (23:59:59)

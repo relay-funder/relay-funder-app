@@ -1,12 +1,13 @@
 import { z } from 'zod';
+import { validateAndParseDateString } from '@/lib/utils/date';
 
 function validateTimes(value: string) {
   const date = new Date(value);
   return !isNaN(date.getTime());
 }
 function transformStartTime(value: string) {
-  // Parse YYYY-MM-DD as local date, not UTC
-  const [year, month, day] = value.split('-').map(Number);
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
   const localDate = new Date(year, month - 1, day);
   const now = new Date();
   if (
@@ -24,8 +25,8 @@ function transformStartTime(value: string) {
   return transformed;
 }
 function transformEndTime(value: string) {
-  // Parse YYYY-MM-DD as local date, not UTC
-  const [year, month, day] = value.split('-').map(Number);
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
   const endTime = new Date(year, month - 1, day);
 
   endTime.setHours(23);
@@ -38,8 +39,8 @@ function transformEndTime(value: string) {
 }
 
 function transformApplicationStartTime(value: string) {
-  // Parse YYYY-MM-DD as local date, not UTC
-  const [year, month, day] = value.split('-').map(Number);
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
   const localDate = new Date(year, month - 1, day);
   const now = new Date();
   if (
@@ -57,8 +58,8 @@ function transformApplicationStartTime(value: string) {
   return transformed;
 }
 function transformApplicationEndTime(value: string) {
-  // Parse YYYY-MM-DD as local date, not UTC
-  const [year, month, day] = value.split('-').map(Number);
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
   const endTime = new Date(year, month - 1, day);
 
   endTime.setHours(23);
