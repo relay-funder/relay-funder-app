@@ -37,7 +37,9 @@ function validateStartTimeNotInPast(value: string) {
 }
 
 function transformStartTime(value: string) {
-  const localDate = new Date(value);
+  // Parse YYYY-MM-DD as local date, not UTC
+  const [year, month, day] = value.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day);
   const now = new Date();
 
   // Check if the selected date is today
@@ -61,7 +63,9 @@ function transformStartTime(value: string) {
 }
 
 function transformEndTime(value: string) {
-  const endTime = new Date(value);
+  // Parse YYYY-MM-DD as local date, not UTC
+  const [year, month, day] = value.split('-').map(Number);
+  const endTime = new Date(year, month - 1, day);
 
   // Set to end of day (23:59:59)
   endTime.setHours(23);

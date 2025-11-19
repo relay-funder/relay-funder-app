@@ -5,7 +5,9 @@ function validateTimes(value: string) {
   return !isNaN(date.getTime());
 }
 function transformStartTime(value: string) {
-  const localDate = new Date(value);
+  // Parse YYYY-MM-DD as local date, not UTC
+  const [year, month, day] = value.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day);
   const now = new Date();
   if (
     now.getFullYear() === localDate.getFullYear() &&
@@ -22,7 +24,9 @@ function transformStartTime(value: string) {
   return transformed;
 }
 function transformEndTime(value: string) {
-  const endTime = new Date(value);
+  // Parse YYYY-MM-DD as local date, not UTC
+  const [year, month, day] = value.split('-').map(Number);
+  const endTime = new Date(year, month - 1, day);
 
   endTime.setHours(23);
   endTime.setMinutes(59);
@@ -34,7 +38,9 @@ function transformEndTime(value: string) {
 }
 
 function transformApplicationStartTime(value: string) {
-  const localDate = new Date(value);
+  // Parse YYYY-MM-DD as local date, not UTC
+  const [year, month, day] = value.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day);
   const now = new Date();
   if (
     now.getFullYear() === localDate.getFullYear() &&
@@ -51,7 +57,9 @@ function transformApplicationStartTime(value: string) {
   return transformed;
 }
 function transformApplicationEndTime(value: string) {
-  const endTime = new Date(value);
+  // Parse YYYY-MM-DD as local date, not UTC
+  const [year, month, day] = value.split('-').map(Number);
+  const endTime = new Date(year, month - 1, day);
 
   endTime.setHours(23);
   endTime.setMinutes(59);
