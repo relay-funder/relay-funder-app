@@ -44,7 +44,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     if (instance.status !== 'ACTIVE') {
       // Only campaign owners and admins can access comments for non-active campaigns
       if (instance.creatorAddress !== session.user.address && !admin) {
-        throw new ApiNotFoundError('Campaign not found');
+        throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
 
