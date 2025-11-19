@@ -37,6 +37,7 @@ async function getCampaignSummary(campaignId: number) {
       slug: true,
       creatorAddress: true,
       title: true,
+      status: true,
     },
   });
 }
