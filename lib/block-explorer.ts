@@ -1,4 +1,7 @@
 import { chainConfig } from '@/lib/web3/config/chain';
+import { logFactory } from '@/lib/debug/log';
+
+const logVerbose = logFactory('verbose', '🔍 BlockExplorer', { flag: 'web3' });
 
 /**
  * Get the appropriate block explorer API URL for the current chain
@@ -181,7 +184,7 @@ export async function getBlockExplorerTransactions(
       `/addresses/${normalizedAddress}/transactions`,
     );
 
-    console.log(`Fetching transactions from: ${apiUrl}`);
+    logVerbose(`Fetching transactions from: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
       headers: {
@@ -190,7 +193,7 @@ export async function getBlockExplorerTransactions(
     });
 
     if (!response.ok) {
-      console.error(`Block explorer API failed with status ${response.status}`);
+      logVerbose(`Block explorer API failed with status ${response.status}`);
       return [];
     }
 
@@ -199,12 +202,12 @@ export async function getBlockExplorerTransactions(
     };
     const rawTransactions: BlockExplorerTransactionRaw[] = data.items || [];
 
-    console.log(
+    logVerbose(
       `Received ${rawTransactions.length} transactions from block explorer`,
     );
 
     if (rawTransactions.length === 0) {
-      console.warn('No transactions found in API response');
+      logVerbose('No transactions found in API response');
       return [];
     }
 
@@ -276,12 +279,12 @@ export async function getBlockExplorerTransactions(
       },
     );
 
-    console.log(
+    logVerbose(
       `Returning ${transactions.length} transactions for address ${normalizedAddress}`,
     );
     return transactions;
   } catch (error) {
-    console.error('Error fetching block explorer transactions:', error);
+    logVerbose('Error fetching block explorer transactions:', error);
     return [];
   }
 }
@@ -311,7 +314,7 @@ function determineTransactionType(
  */
 export function getBlockExplorerTxUrl(txHash: string): string {
   if (!txHash || !txHash.startsWith('0x') || txHash.length !== 66) {
-    console.warn('Invalid transaction hash for URL generation:', txHash);
+    logVerbose('Invalid transaction hash for URL generation:', txHash);
     return '';
   }
   const baseUrl = chainConfig.blockExplorerUrl.replace(/\/$/, '');
@@ -362,7 +365,7 @@ export async function getBlockExplorerTransactionDetails(
   try {
     const apiUrl = getBlockExplorerApiUrl(`/transactions/${txHash}`);
 
-    console.log(`Fetching transaction details from: ${apiUrl}`);
+    logVerbose(`Fetching transaction details from: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
       headers: {
@@ -371,7 +374,7 @@ export async function getBlockExplorerTransactionDetails(
     });
 
     if (!response.ok) {
-      console.error(
+      logVerbose(
         `Block explorer transaction details API failed with status ${response.status}`,
       );
       return null;
@@ -386,7 +389,7 @@ export async function getBlockExplorerTransactionDetails(
       const tokenTransfersUrl = getBlockExplorerApiUrl(
         `/transactions/${txHash}/token-transfers`,
       );
-      console.log(`Fetching token transfers from: ${tokenTransfersUrl}`);
+      logVerbose(`Fetching token transfers from: ${tokenTransfersUrl}`);
 
       const tokenResponse = await fetch(tokenTransfersUrl, {
         headers: {
@@ -397,7 +400,7 @@ export async function getBlockExplorerTransactionDetails(
       if (tokenResponse.ok) {
         const tokenData = await tokenResponse.json();
         if (tokenData.items && Array.isArray(tokenData.items)) {
-          console.log(
+          logVerbose(
             `Found ${tokenData.items.length} token transfers via dedicated API`,
           );
           for (const transfer of tokenData.items) {
@@ -435,7 +438,7 @@ export async function getBlockExplorerTransactionDetails(
       const internalTxUrl = getBlockExplorerApiUrl(
         `/transactions/${txHash}/internal-transactions`,
       );
-      console.log(`Fetching internal transactions from: ${internalTxUrl}`);
+      logVerbose(`Fetching internal transactions from: ${internalTxUrl}`);
 
       const internalResponse = await fetch(internalTxUrl, {
         headers: {
@@ -446,7 +449,7 @@ export async function getBlockExplorerTransactionDetails(
       if (internalResponse.ok) {
         const internalData = await internalResponse.json();
         if (internalData.items && Array.isArray(internalData.items)) {
-          console.log(
+          logVerbose(
             `Found ${internalData.items.length} internal transactions`,
           );
           // Process internal transactions that involve token transfers
@@ -488,14 +491,14 @@ export async function getBlockExplorerTransactionDetails(
         }
       }
     } catch (error) {
-      console.warn(
+      logVerbose(
         `Failed to fetch additional transaction data for ${txHash}:`,
         error,
       );
     }
 
     // Debug: Log key fields for troubleshooting
-    console.log(
+    logVerbose(
       `Transaction ${txHash} has token_transfers: ${!!tx.token_transfers}, logs: ${!!tx.logs}`,
     );
 
@@ -523,11 +526,11 @@ export async function getBlockExplorerTransactionDetails(
       const key = transferKey(transfer);
       if (!tokenTransfers.some((existing) => transferKey(existing) === key)) {
         tokenTransfers.push(transfer);
-        console.log(
+        logVerbose(
           `Added unique transfer: ${transfer.amount} ${transfer.tokenSymbol} from ${transfer.from} to ${transfer.to}`,
         );
       } else {
-        console.log(
+        logVerbose(
           `Skipped duplicate transfer: ${transfer.amount} ${transfer.tokenSymbol} from ${transfer.from} to ${transfer.to}`,
         );
       }
@@ -535,7 +538,7 @@ export async function getBlockExplorerTransactionDetails(
 
     // Add token transfers from the dedicated API call first
     if (additionalTokenTransfers.length > 0) {
-      console.log(
+      logVerbose(
         `Adding ${additionalTokenTransfers.length} token transfers from dedicated API`,
       );
       additionalTokenTransfers.forEach(addTransferIfUnique);
@@ -545,11 +548,11 @@ export async function getBlockExplorerTransactionDetails(
 
     // Try token_transfers from transaction details
     if (tx.token_transfers && Array.isArray(tx.token_transfers)) {
-      console.log(
+      logVerbose(
         `Found ${tx.token_transfers.length} token transfers in token_transfers field for ${txHash}`,
       );
       for (const transfer of tx.token_transfers) {
-        console.log(`Processing transfer from token_transfers:`, transfer);
+        logVerbose(`Processing transfer from token_transfers:`, transfer);
         const tokenSymbol = transfer.token?.symbol || 'UNKNOWN';
         const tokenAddress = transfer.token?.address || '';
         const decimals = parseInt(transfer.token?.decimals || '0');
@@ -567,7 +570,7 @@ export async function getBlockExplorerTransactionDetails(
               ? transfer.to
               : '';
 
-        console.log(
+        logVerbose(
           `Parsed transfer: ${amount} ${tokenSymbol} from ${transferFrom} to ${transferTo}`,
         );
 
@@ -583,7 +586,7 @@ export async function getBlockExplorerTransactionDetails(
     }
     // Try logs as fallback for ERC20 transfers
     else if (tx.logs && Array.isArray(tx.logs)) {
-      console.log(`Checking logs for ERC20 transfers in ${txHash}`);
+      logVerbose(`Checking logs for ERC20 transfers in ${txHash}`);
       for (const log of tx.logs) {
         // ERC20 Transfer event signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
         if (
@@ -591,7 +594,7 @@ export async function getBlockExplorerTransactionDetails(
           log.topics[0] ===
             '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
         ) {
-          console.log(`Found ERC20 Transfer event in log:`, log);
+          logVerbose(`Found ERC20 Transfer event in log:`, log);
 
           // Parse the log data to extract transfer information
           try {
@@ -610,17 +613,17 @@ export async function getBlockExplorerTransactionDetails(
               from,
               to,
             });
-            console.log(
+            logVerbose(
               `Parsed ERC20 transfer: ${amount} tokens from ${from} to ${to}`,
             );
           } catch (error) {
-            console.warn(`Failed to parse ERC20 transfer log:`, error);
+            logVerbose(`Failed to parse ERC20 transfer log:`, error);
           }
         }
       }
     }
 
-    console.log(
+    logVerbose(
       `Total unique token transfers found for ${txHash}: ${tokenTransfers.length}`,
     );
 
@@ -640,12 +643,12 @@ export async function getBlockExplorerTransactionDetails(
       tokenTransfers: tokenTransfers.length > 0 ? tokenTransfers : undefined,
     };
 
-    console.log(
+    logVerbose(
       `Fetched detailed transaction ${txHash} with ${tokenTransfers.length} token transfers`,
     );
     return detailedTransaction;
   } catch (error) {
-    console.error(`Error fetching transaction details for ${txHash}:`, error);
+    logVerbose(`Error fetching transaction details for ${txHash}:`, error);
     return null;
   }
 }
