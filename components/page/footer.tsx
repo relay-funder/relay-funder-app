@@ -99,7 +99,7 @@ export function PageFooter() {
               Need support? Contact{' '}
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
-                className="text-text-muted transition-colors hover:text-text-primary underline"
+                className="text-text-muted underline transition-colors hover:text-text-primary"
               >
                 {SUPPORT_EMAIL}
               </a>
