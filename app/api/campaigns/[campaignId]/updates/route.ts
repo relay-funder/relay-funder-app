@@ -57,6 +57,14 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     const isCreator = session?.user.address === campaign.creatorAddress;
     const isSessionAdmin = await isAdmin();
 
+    // Check access control for non-active campaigns
+    if (campaign.status !== 'ACTIVE') {
+      // Only campaign owners and admins can access updates for non-active campaigns
+      if (!isCreator && !isSessionAdmin) {
+        throw new ApiNotFoundError('Campaign not found');
+      }
+    }
+
     const { searchParams } = new URL(req.url);
     const pageParam = searchParams.get('page');
     const pageSizeParam = searchParams.get('pageSize');

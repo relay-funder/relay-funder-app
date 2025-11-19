@@ -8,6 +8,7 @@ import { listPayments } from '@/lib/api/payments';
 
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
+    const session = await checkAuth(['user']);
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');
@@ -24,6 +25,14 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     const instance = await getCampaign(campaignId);
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
+    }
+
+    // Check access control for non-active campaigns
+    if (instance.status !== 'ACTIVE') {
+      // Only campaign owners and admins can access payments for non-active campaigns
+      if (instance.creatorAddress !== session.user.address && !admin) {
+        throw new ApiNotFoundError('Campaign not found');
+      }
     }
 
     return response(
