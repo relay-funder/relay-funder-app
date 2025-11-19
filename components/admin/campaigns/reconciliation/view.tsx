@@ -7,7 +7,7 @@ import { Button } from '@/components/ui';
 import { ArrowLeft, Edit, Eye, ExternalLink } from 'lucide-react';
 import { CampaignReconciliationTable } from './table';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
-import { useCampaignReconciliation } from '@/lib/hooks/useCampaignReconciliation';
+import { useCampaignReconciliationStream } from '@/lib/hooks/useCampaignReconciliation';
 import { getBlockExplorerAddressUrl } from '@/lib/format-address';
 
 interface CampaignReconciliationViewProps {
@@ -28,7 +28,8 @@ export function CampaignReconciliationView({
     data: reconciliationData,
     isLoading: reconciliationLoading,
     error: reconciliationError,
-  } = useCampaignReconciliation(campaignId);
+    progress,
+  } = useCampaignReconciliationStream(campaignId);
 
   if (campaignLoading || reconciliationLoading) {
     return (
@@ -40,10 +41,28 @@ export function CampaignReconciliationView({
               ? 'Loading campaign data...'
               : 'Loading reconciliation data...'}
           </p>
-          {!campaignLoading && reconciliationLoading && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              This may take a moment as we fetch blockchain transaction data
-            </p>
+          {!campaignLoading && reconciliationLoading && progress && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Fetching blockchain transactions...
+              </p>
+              {progress.totalCount > 0 && (
+                <>
+                  <div className="mx-auto w-64">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${progress.percentComplete}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {progress.loadedCount} / {progress.totalCount} transactions
+                    loaded ({progress.percentComplete}%)
+                  </p>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

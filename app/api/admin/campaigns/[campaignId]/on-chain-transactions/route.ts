@@ -11,6 +11,114 @@ import { logFactory } from '@/lib/debug/log';
 
 const logVerbose = logFactory('verbose', '⛓️ OnChainTx', { flag: 'api' });
 
+/**
+ * Create a streaming response that sends transactions progressively
+ * Uses Server-Sent Events (SSE) pattern for real-time updates
+ */
+async function createStreamingResponse(treasuryAddress: string) {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        // Helper to send a JSON message to the client
+        const sendMessage = (type: string, data: unknown) => {
+          const message = `data: ${JSON.stringify({ type, data })}\n\n`;
+          controller.enqueue(encoder.encode(message));
+        };
+
+        // Step 1: Fetch smart contract transactions
+        logVerbose('Fetching smart contract transactions');
+        const smartContractTransactions =
+          await getTreasuryTransactions(treasuryAddress);
+        sendMessage('smart_contract_transactions', smartContractTransactions);
+
+        // Step 2: Get basic transaction list from block explorer
+        logVerbose('Fetching block explorer transactions');
+        let blockExplorerTransactions =
+          await getBlockExplorerTransactions(treasuryAddress);
+
+        if (blockExplorerTransactions.length === 0) {
+          // Try alternative approach if no transactions found
+          try {
+            const { createPublicClient, http } = await import('viem');
+            const { chainConfig } = await import('@/lib/web3/config/chain');
+
+            const client = createPublicClient({
+              chain: chainConfig.defaultChain,
+              transport: http(chainConfig.rpcUrl),
+            });
+
+            const code = await client.getCode({
+              address: treasuryAddress as `0x${string}`,
+            });
+
+            if (code && code !== '0x') {
+              blockExplorerTransactions =
+                await getBlockExplorerTransactions(treasuryAddress);
+            }
+          } catch (error) {
+            logVerbose('Error checking contract:', error);
+          }
+        }
+
+        sendMessage('transaction_count', {
+          total: blockExplorerTransactions.length,
+        });
+
+        // Step 3: Fetch detailed transaction data one by one
+        let processedCount = 0;
+        for (const tx of blockExplorerTransactions) {
+          try {
+            logVerbose(`Fetching details for ${tx.hash}`);
+            const detailedTx = await getBlockExplorerTransactionDetails(
+              tx.hash,
+            );
+
+            if (detailedTx) {
+              // Send individual transaction immediately
+              sendMessage('transaction', detailedTx);
+              processedCount++;
+              logVerbose(
+                `Sent transaction ${processedCount}/${blockExplorerTransactions.length}`,
+              );
+            } else {
+              // Fallback to basic data
+              sendMessage('transaction', tx);
+              processedCount++;
+            }
+          } catch (error) {
+            logVerbose(`Error fetching details for ${tx.hash}:`, error);
+            // Send basic transaction data on error
+            sendMessage('transaction', tx);
+            processedCount++;
+          }
+
+          // Small delay to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
+        // Send completion message
+        sendMessage('complete', { processedCount });
+        controller.close();
+      } catch (error) {
+        logVerbose('Streaming error:', error);
+        const errorMessage = `data: ${JSON.stringify({ type: 'error', data: { error: error instanceof Error ? error.message : 'Unknown error' } })}\n\n`;
+        controller.enqueue(encoder.encode(errorMessage));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  });
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ campaignId: string }> },
@@ -20,6 +128,8 @@ export async function GET(
 
     const { campaignId } = await params;
     const campaignIdNum = parseInt(campaignId);
+    const { searchParams } = new URL(req.url);
+    const stream = searchParams.get('stream') === 'true';
 
     if (isNaN(campaignIdNum)) {
       throw new ApiParameterError('Invalid campaign ID');
@@ -34,6 +144,11 @@ export async function GET(
     if (!campaign.treasuryAddress) {
       // Return empty array if no treasury deployed yet
       return response({ transactions: [], rawTransactions: [] });
+    }
+
+    // If streaming is requested, use streaming response
+    if (stream) {
+      return createStreamingResponse(campaign.treasuryAddress);
     }
 
     // Fetch on-chain transactions from the treasury

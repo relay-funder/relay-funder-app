@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { Eye, ExternalLink } from 'lucide-react';
+import { Eye, ExternalLink, Loader2 } from 'lucide-react';
 import {
   ReconciliationPayment,
   CampaignReconciliationData,
@@ -130,8 +130,41 @@ export function CampaignReconciliationTable({
     );
   }
 
+  // Get streaming progress if available
+  const streamingProgress = reconciliationData?.streamingProgress;
+  const isStreaming = streamingProgress?.isStreaming ?? false;
+
   return (
     <div className="space-y-6">
+      {/* Streaming Progress Indicator */}
+      {isStreaming && streamingProgress && streamingProgress.totalCount > 0 && (
+        <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-blue-900 dark:text-blue-100">
+                    Loading blockchain transactions...
+                  </span>
+                  <span className="text-blue-700 dark:text-blue-300">
+                    {streamingProgress.loadedCount} /{' '}
+                    {streamingProgress.totalCount} (
+                    {streamingProgress.percentComplete}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200 dark:bg-blue-900">
+                  <div
+                    className="h-full bg-blue-600 transition-all duration-300 dark:bg-blue-400"
+                    style={{ width: `${streamingProgress.percentComplete}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Reconciliation Summary */}
       <Card>
         <CardHeader>

@@ -7,9 +7,11 @@ import type { AdminPaymentListItem } from '@/lib/api/adminPayments';
 import type { TreasuryBalance } from '@/lib/treasury/interface';
 import {
   useOnChainTransactions,
+  useOnChainTransactionsStream,
   OnChainTransaction,
   RawBlockExplorerTransaction,
   OnChainTransactionData,
+  StreamingProgress,
 } from './useOnChainTransactions';
 
 const logVerbose = logFactory('verbose', '🔍 Reconciliation', {
@@ -61,6 +63,9 @@ export interface CampaignReconciliationData {
 
   // Loading states
   isBlockchainDataLoading: boolean;
+
+  // Streaming progress (only present when using streaming)
+  streamingProgress?: StreamingProgress;
 
   // Comparison data
   comparison: {
@@ -320,4 +325,65 @@ export function useCampaignReconciliation(campaignId: string) {
     // Don't cache stale data when on-chain data updates
     staleTime: onChainTransactionData ? 5 * 60 * 1000 : 0,
   });
+}
+
+/**
+ * Hook for streaming reconciliation data with progressive transaction loading
+ * Ideal for campaigns with many transactions (50+) to avoid timeouts
+ *
+ * This hook provides real-time progress updates as blockchain transactions are fetched
+ */
+export function useCampaignReconciliationStream(campaignId: string) {
+  // Get database payments (admin data with full user info)
+  const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
+    queryKey: ['campaign_payments_reconciliation', campaignId],
+    queryFn: () => fetchCampaignPaymentsForReconciliation(campaignId),
+    enabled: !!campaignId,
+  });
+
+  // Get treasury balance (on-chain)
+  const { data: treasuryBalanceData, isLoading: treasuryLoading } =
+    useCampaignTreasuryBalance(parseInt(campaignId));
+
+  // Get on-chain transactions with streaming
+  const {
+    data: onChainTransactionData,
+    progress,
+    error: streamError,
+    isLoading: streamLoading,
+  } = useOnChainTransactionsStream(campaignId);
+
+  const reconciliationData = useQuery({
+    queryKey: [
+      CAMPAIGN_RECONCILIATION_QUERY_KEY,
+      'stream',
+      campaignId,
+      progress.loadedCount, // Update when new transactions arrive
+    ],
+    queryFn: async (): Promise<CampaignReconciliationData> => {
+      const result = await performReconciliation(
+        paymentsData || [],
+        treasuryBalanceData,
+        onChainTransactionData.rawTransactions.length > 0
+          ? onChainTransactionData
+          : undefined,
+      );
+
+      // Add streaming progress to the result
+      return {
+        ...result,
+        streamingProgress: progress,
+      };
+    },
+    enabled: !!paymentsData && !!treasuryBalanceData?.balance,
+    // Allow continuous updates as streaming data arrives
+    staleTime: 0,
+  });
+
+  return {
+    ...reconciliationData,
+    isLoading: paymentsLoading || treasuryLoading || streamLoading,
+    error: reconciliationData.error || streamError,
+    progress,
+  };
 }
