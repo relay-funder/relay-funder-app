@@ -114,7 +114,7 @@ export function useDonationCallback({
         isAnonymous: isAnonymous,
         status: 'confirming',
         transactionHash: tx.hash,
-        ...(userEmail?.trim() && { userEmail: userEmail.trim() }),
+        ...(userEmail && { userEmail }),
       });
 
       debug && console.log('Payment record created with ID:', paymentId);

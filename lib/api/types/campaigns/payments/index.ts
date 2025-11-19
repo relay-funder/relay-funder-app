@@ -15,7 +15,7 @@ export const PostPaymentBodyRouteSchema = z.object({
   status: z.enum(['confirming']),
   transactionHash: z.string(),
   campaignId: z.number(),
-  userEmail: z.string().email().optional(),
+  userEmail: z.string().email().trim().optional(),
   poolAmount: z.number().optional(),
   provider: z.string().optional(),
 });
