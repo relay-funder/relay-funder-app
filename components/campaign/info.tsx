@@ -7,6 +7,7 @@ import {
   DialogTitle,
   Card,
   CardContent,
+  Button,
 } from '@/components/ui';
 import { Info, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
@@ -298,31 +299,17 @@ export function CampaignInfoDialog({
                 <h3 className="mb-4 text-sm font-medium text-foreground">
                   {'Admin Only Links'}
                 </h3>
-                <div className="space-y-3">
-                  <div
-                    key={campaign.id}
-                    className="flex items-center justify-between"
-                  >
-                    <Link
-                      href={`/campaigns/${campaign.id}`}
-                      className="truncate text-sm text-foreground hover:text-gray-700 hover:underline"
-                    >
-                      View
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/campaigns/${campaign.id}`}>
+                      View Campaign
                     </Link>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div
-                    key={campaign.id}
-                    className="flex items-center justify-between"
-                  >
-                    <Link
-                      href={`/campaigns/${campaign.id}/edit`}
-                      className="truncate text-sm text-foreground hover:text-gray-700 hover:underline"
-                    >
-                      Edit
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/campaigns/${campaign.id}/edit`}>
+                      Edit Campaign
                     </Link>
-                  </div>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
