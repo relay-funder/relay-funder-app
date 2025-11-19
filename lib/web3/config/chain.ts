@@ -33,11 +33,12 @@ export const chainConfig = {
   // Custom values not from wagmi
   rpcUrl:
     process.env.NEXT_PUBLIC_RPC_URL || defaultChain.rpcUrls.default.http[0],
+  // Use Blockscout for both mainnet and testnet (consistent API)
+  // Viem defaults to celoscan.io but Blockscout has better API support
   blockExplorerUrl:
-    defaultChain.blockExplorers?.default?.url ||
-    (defaultChain.id === 42220
+    defaultChain.id === 42220
       ? 'https://celo.blockscout.com'
-      : 'https://celo-sepolia.blockscout.com'),
+      : 'https://celo-sepolia.blockscout.com',
 
   // Reference to the actual chain object for provider configurations
   defaultChain,
