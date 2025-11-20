@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { handleApiErrors } from '@/lib/api/error';
+import { logFactory } from '@/lib/debug/log';
+
+const logVerbose = logFactory('verbose', '⛓️ OnChainTx', { flag: 'api' });
 
 export interface OnChainTransaction {
   transactionHash: string;
