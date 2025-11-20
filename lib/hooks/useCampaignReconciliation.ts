@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { handleApiErrors } from '@/lib/api/error';
