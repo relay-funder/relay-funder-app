@@ -1,7 +1,7 @@
 import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
-import { keccak256, toBytes, zeroAddress, zeroHash } from 'viem';
+import { keccak256, toBytes, zeroHash, encodePacked } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
@@ -26,44 +26,49 @@ const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
 
 /**
- * Check if a pledge already exists on the blockchain.
- * This prevents duplicate pledge execution by verifying blockchain state.
+ * Check if a pledge already exists on the blockchain by calling the s_processedPledges getter.
+ * The contract tracks processed pledges using internalPledgeId = keccak256(abi.encodePacked(pledgeId, adminAddress)).
  *
  * @param treasuryContract - Treasury contract instance
  * @param pledgeId - Pledge ID to check
+ * @param adminAddress - Admin wallet address used in internal pledge ID calculation
  * @returns true if pledge exists on-chain, false otherwise
  */
 async function isPledgeExecutedOnChain(
   treasuryContract: ethers.Contract,
   pledgeId: string,
+  adminAddress: string,
 ): Promise<boolean> {
   try {
-    // Query the pledges mapping: pledges(bytes32) returns (address backer, ...)
-    // Wrap with timeout to prevent hangs that hold Prisma transaction locks
-    const pledge = await waitWithTimeout(
-      treasuryContract.pledges(pledgeId),
-      TIMEOUT_VALUES.READ_OPERATION,
-      'read on-chain pledge status',
-      { pledgeId },
+    // Compute the internal pledge ID used by the contract
+    // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
+    // where msg.sender is the admin address
+    const internalPledgeId = keccak256(
+      encodePacked(['bytes32', 'address'], [pledgeId as `0x${string}`, adminAddress as `0x${string}`])
     );
 
-    // If pledge exists and backer is not zero address, pledge is executed
-    const isExecuted = pledge && pledge[0] && pledge[0] !== zeroAddress;
+    // Call the s_processedPledges getter (available in ABI)
+    const isProcessed = await treasuryContract.s_processedPledges(internalPledgeId);
 
-    logVerbose('On-chain pledge verification', {
+    logVerbose('On-chain pledge verification via s_processedPledges', {
       pledgeId,
-      backerAddress: pledge?.[0] || 'undefined',
-      pledgeExists: !!pledge,
-      isExecuted,
+      adminAddress,
+      internalPledgeId,
+      isProcessed,
     });
 
-    return isExecuted;
+    return isProcessed;
   } catch (error) {
-    throw new ApiUpstreamError(
-      `Failed to check on-chain pledge status for pledgeId ${pledgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    );
+    // If the call fails, assume pledge doesn't exist (safer default)
+    logVerbose('On-chain pledge check via s_processedPledges failed, assuming pledge does not exist', {
+      pledgeId,
+      adminAddress,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return false;
   }
 }
+
 
 /**
  * Execute a gateway pledge using setFeeAndPledge.
@@ -573,12 +578,13 @@ async function _executeGatewayPledgeInternal(
     });
   }
 
-  // Verify pledge doesn't already exist on-chain using deterministic pledgeId
+  // Verify pledge doesn't already exist on-chain using s_processedPledges getter
   // This prevents overpayment if previous execution succeeded but DB wasn't updated
   // Because pledgeId is deterministic, retries after crashes check for the SAME pledge ID
   const pledgeExistsOnChain = await isPledgeExecutedOnChain(
     treasuryContract,
     pledgeId,
+    adminAddress,
   );
 
   if (pledgeExistsOnChain) {
@@ -620,7 +626,7 @@ async function _executeGatewayPledgeInternal(
       success: true,
       paymentId: payment.id,
       pledgeId, // Deterministic pledgeId returned
-      transactionHash: payment.pledgeExecutionTxHash || zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
+      transactionHash: zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
       blockNumber: 0,
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',
