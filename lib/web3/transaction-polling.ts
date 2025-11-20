@@ -80,12 +80,14 @@ export async function pollForTransactionReceipt(
   return null;
 }
 
+
 /**
- * Check if a pledge exists on-chain by querying the contract
- * This is useful when transaction receipt is not available but we want to verify execution
+ * Check if a pledge exists on-chain by polling the s_processedPledges mapping
+ * Uses the contract's built-in tracking of processed pledges
  *
  * @param treasuryContract - Treasury contract instance
  * @param pledgeId - Pledge ID to check
+ * @param adminAddress - Admin wallet address used in internal pledge ID calculation
  * @param pollIntervalMs - Interval between polls (default 2000ms)
  * @param timeoutMs - Maximum time to poll (default 240000ms = 4 minutes)
  * @param context - Logging context
@@ -94,6 +96,7 @@ export async function pollForTransactionReceipt(
 export async function pollForPledgeExistence(
   treasuryContract: ethers.Contract,
   pledgeId: string,
+  adminAddress: string,
   pollIntervalMs: number = 2000,
   timeoutMs: number = 240000,
   context?: Record<string, unknown>,
@@ -101,9 +104,17 @@ export async function pollForPledgeExistence(
   const startTime = Date.now();
   let attempts = 0;
 
-  logVerbose('Starting pledge existence polling', {
+  // Compute the internal pledge ID used by the contract (matches contract's abi.encodePacked)
+  const internalPledgeId = ethers.solidityPackedKeccak256(
+    ['bytes32', 'address'],
+    [pledgeId, adminAddress],
+  );
+
+  logVerbose('Starting pledge existence polling via s_processedPledges', {
     ...context,
     pledgeId,
+    adminAddress,
+    internalPledgeId,
     pollIntervalMs,
     timeoutMs,
   });
@@ -112,46 +123,38 @@ export async function pollForPledgeExistence(
     attempts++;
 
     try {
-      // Query the pledge from contract
-      // KeepWhatsRaised contract has a `pledges` mapping: pledges(bytes32) returns (address backer, ...)
-      const pledge = await treasuryContract.pledges(pledgeId);
+      // Call the s_processedPledges getter
+      const isProcessed = await treasuryContract.s_processedPledges(internalPledgeId);
 
-      // If backer is not zero address, pledge exists
-      if (
-        pledge &&
-        pledge[0] !== '0x0000000000000000000000000000000000000000'
-      ) {
+      if (isProcessed) {
         const elapsed = Date.now() - startTime;
-        logVerbose('Pledge found on-chain', {
+        logVerbose('Pledge found on-chain via s_processedPledges', {
           ...context,
           pledgeId,
-          backer: pledge[0],
+          adminAddress,
+          internalPledgeId,
           attempts,
-          elapsed: `${elapsed}ms`,
+          elapsedMs: elapsed,
         });
         return true;
       }
 
-      // Pledge not found yet, wait before next poll
+      // Pledge doesn't exist yet, wait and try again
+      logVerbose('Pledge not found, waiting to retry', {
+        ...context,
+        pledgeId,
+        attempts,
+        elapsedMs: Date.now() - startTime,
+      });
+
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     } catch (error) {
       const elapsed = Date.now() - startTime;
-
-      // If error is "call revert exception", pledge might not exist yet
-      // Continue polling
-      if (
-        error instanceof Error &&
-        error.message.includes('call revert exception')
-      ) {
-        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-        continue;
-      }
-
-      logError('Error polling for pledge existence', {
+      logVerbose('Error polling for pledge existence via s_processedPledges, continuing to poll', {
         ...context,
         pledgeId,
-        attempt: attempts,
-        elapsed: `${elapsed}ms`,
+        attempts,
+        elapsedMs: elapsed,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
@@ -160,12 +163,12 @@ export async function pollForPledgeExistence(
     }
   }
 
-  const elapsed = Date.now() - startTime;
-  logError('Pledge existence polling timed out', {
+  // Timeout reached without finding pledge
+  logVerbose('Pledge existence polling timed out', {
     ...context,
     pledgeId,
     attempts,
-    elapsed: `${elapsed}ms`,
+    elapsedMs: Date.now() - startTime,
     timeoutMs,
   });
 
