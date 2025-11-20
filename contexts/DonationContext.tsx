@@ -102,6 +102,7 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
 
         // Check if amount exceeds user's balance (if balance is available)
         if (
+          paymentType === 'wallet' &&
           usdFormattedBalance.usdBalanceAmount > 0 &&
           value > usdFormattedBalance.usdBalanceAmount
         ) {
@@ -110,7 +111,7 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
       }
       setAmountIntern(input);
     },
-    [setAmountIntern, usdFormattedBalance.usdBalanceAmount],
+    [setAmountIntern, usdFormattedBalance.usdBalanceAmount, paymentType],
   );
   const clearDonation = useCallback(() => {
     setAmount('0');
