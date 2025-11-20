@@ -36,10 +36,9 @@ export function CampaignReconciliationTable({
   // With streaming, check if we're actively streaming OR if data hasn't loaded yet
   const streamingProgress = reconciliationData?.streamingProgress;
   const isStreaming = streamingProgress?.isStreaming ?? false;
+  // For streaming, show loading until streaming is complete
   const isBlockchainLoading =
-    streamingProgress?.isStreaming ??
-    reconciliationData?.isBlockchainDataLoading ??
-    false;
+    streamingProgress ? streamingProgress.isStreaming : reconciliationData?.isBlockchainDataLoading ?? false;
   const hasBlockchainTx =
     Array.isArray(reconciliationData?.rawBlockExplorerTransactions) &&
     reconciliationData.rawBlockExplorerTransactions.length > 0;

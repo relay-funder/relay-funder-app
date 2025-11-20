@@ -98,13 +98,13 @@ async function fetchCampaignPaymentsForReconciliation(
 /**
  * Perform reconciliation logic between database and blockchain data
  */
-async function performReconciliation(
+function performReconciliation(
   paymentsData: AdminPaymentListItem[],
   treasuryBalanceData:
     | { balance: TreasuryBalance; treasuryAddress?: string }
     | undefined,
   onChainTransactionData: OnChainTransactionData | undefined,
-): Promise<CampaignReconciliationData> {
+): CampaignReconciliationData {
   if (!paymentsData || !treasuryBalanceData?.balance) {
     throw new Error('Missing required data for reconciliation');
   }
@@ -314,7 +314,7 @@ export function useCampaignReconciliation(campaignId: string) {
       campaignId,
       onChainTransactionData ? 'with-onchain' : 'without-onchain',
     ],
-    queryFn: async (): Promise<CampaignReconciliationData> => {
+    queryFn: (): CampaignReconciliationData => {
       return performReconciliation(
         paymentsData || [],
         treasuryBalanceData,
@@ -353,32 +353,40 @@ export function useCampaignReconciliationStream(campaignId: string) {
     isLoading: streamLoading,
   } = useOnChainTransactionsStream(campaignId);
 
-  const reconciliationData = useQuery({
-    queryKey: [
-      CAMPAIGN_RECONCILIATION_QUERY_KEY,
-      'stream',
-      campaignId,
-      progress.loadedCount, // Update when new transactions arrive
-    ],
-    queryFn: async (): Promise<CampaignReconciliationData> => {
-      const result = await performReconciliation(
-        paymentsData || [],
-        treasuryBalanceData,
-        onChainTransactionData.rawTransactions.length > 0
-          ? onChainTransactionData
-          : undefined,
-      );
+  // Use useMemo for streaming reconciliation to ensure it updates immediately
+  const reconciliationResult = useMemo(() => {
+    if (!paymentsData || !treasuryBalanceData?.balance) {
+      return null;
+    }
 
-      // Add streaming progress to the result
-      return {
-        ...result,
-        streamingProgress: progress,
-      };
+    const result = performReconciliation(
+      paymentsData,
+      treasuryBalanceData,
+      onChainTransactionData,
+    );
+
+    return result;
+  }, [
+    paymentsData,
+    treasuryBalanceData,
+    onChainTransactionData,
+    progress.isStreaming,
+  ]);
+
+  const reconciliationData = reconciliationResult ? {
+    data: {
+      ...reconciliationResult,
+      streamingProgress: progress,
     },
-    enabled: !!paymentsData && !!treasuryBalanceData?.balance,
-    // Allow continuous updates as streaming data arrives
-    staleTime: 0,
-  });
+    isLoading: false,
+    error: null,
+    refetch: () => Promise.resolve(),
+  } : {
+    data: undefined,
+    isLoading: true,
+    error: null,
+    refetch: () => Promise.resolve(),
+  };
 
   return {
     ...reconciliationData,
