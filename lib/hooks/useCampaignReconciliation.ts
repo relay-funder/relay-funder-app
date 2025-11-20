@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { handleApiErrors } from '@/lib/api/error';
@@ -7,9 +8,11 @@ import type { AdminPaymentListItem } from '@/lib/api/adminPayments';
 import type { TreasuryBalance } from '@/lib/treasury/interface';
 import {
   useOnChainTransactions,
+  useOnChainTransactionsStream,
   OnChainTransaction,
   RawBlockExplorerTransaction,
   OnChainTransactionData,
+  StreamingProgress,
 } from './useOnChainTransactions';
 
 const logVerbose = logFactory('verbose', '🔍 Reconciliation', {
@@ -62,6 +65,9 @@ export interface CampaignReconciliationData {
   // Loading states
   isBlockchainDataLoading: boolean;
 
+  // Streaming progress (only present when using streaming)
+  streamingProgress?: StreamingProgress;
+
   // Comparison data
   comparison: {
     totalDatabaseAmount: string;
@@ -93,13 +99,13 @@ async function fetchCampaignPaymentsForReconciliation(
 /**
  * Perform reconciliation logic between database and blockchain data
  */
-async function performReconciliation(
+function performReconciliation(
   paymentsData: AdminPaymentListItem[],
   treasuryBalanceData:
     | { balance: TreasuryBalance; treasuryAddress?: string }
     | undefined,
   onChainTransactionData: OnChainTransactionData | undefined,
-): Promise<CampaignReconciliationData> {
+): CampaignReconciliationData {
   if (!paymentsData || !treasuryBalanceData?.balance) {
     throw new Error('Missing required data for reconciliation');
   }
@@ -309,7 +315,7 @@ export function useCampaignReconciliation(campaignId: string) {
       campaignId,
       onChainTransactionData ? 'with-onchain' : 'without-onchain',
     ],
-    queryFn: async (): Promise<CampaignReconciliationData> => {
+    queryFn: (): CampaignReconciliationData => {
       return performReconciliation(
         paymentsData || [],
         treasuryBalanceData,
@@ -320,4 +326,102 @@ export function useCampaignReconciliation(campaignId: string) {
     // Don't cache stale data when on-chain data updates
     staleTime: onChainTransactionData ? 5 * 60 * 1000 : 0,
   });
+}
+
+/**
+ * Hook for streaming reconciliation data with progressive transaction loading
+ * Ideal for campaigns with many transactions (50+) to avoid timeouts
+ *
+ * This hook provides real-time progress updates as blockchain transactions are fetched
+ */
+export function useCampaignReconciliationStream(campaignId: string) {
+  // Get database payments (admin data with full user info) - cache for 30 minutes
+  const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
+    queryKey: ['campaign_payments_reconciliation', campaignId],
+    queryFn: () => fetchCampaignPaymentsForReconciliation(campaignId),
+    enabled: !!campaignId,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour garbage collection
+  });
+
+  // Get treasury balance (on-chain) - cache for 10 minutes
+  const { data: treasuryBalanceData, isLoading: treasuryLoading } =
+    useCampaignTreasuryBalance(parseInt(campaignId));
+
+  // Get on-chain transactions with streaming
+  const {
+    data: onChainTransactionData,
+    progress,
+    error: streamError,
+    isLoading: streamLoading,
+    forceRefresh: forceRefreshTransactions,
+  } = useOnChainTransactionsStream(campaignId);
+
+  // Cache reconciliation results for 15 minutes when streaming is complete
+  const reconciliationQuery = useQuery({
+    queryKey: [
+      CAMPAIGN_RECONCILIATION_QUERY_KEY,
+      'stream_cached',
+      campaignId,
+      onChainTransactionData.rawTransactions.length, // Changes when new tx arrive
+      progress.isStreaming, // Changes when streaming completes
+    ],
+    queryFn: (): CampaignReconciliationData | null => {
+      if (!paymentsData || !treasuryBalanceData?.balance) {
+        return null;
+      }
+
+      const result = performReconciliation(
+        paymentsData,
+        treasuryBalanceData,
+        onChainTransactionData,
+      );
+
+      return result;
+    },
+    enabled:
+      !!paymentsData && !!treasuryBalanceData?.balance && !progress.isStreaming,
+    staleTime: 15 * 60 * 1000, // 15 minutes when streaming is complete
+    gcTime: 60 * 60 * 1000, // 1 hour garbage collection
+  });
+
+  // For streaming, use immediate calculation; for complete, use cached query
+  const reconciliationResult = progress.isStreaming
+    ? paymentsData && treasuryBalanceData?.balance
+      ? performReconciliation(
+          paymentsData,
+          treasuryBalanceData,
+          onChainTransactionData,
+        )
+      : null
+    : reconciliationQuery.data;
+
+  const reconciliationData = reconciliationResult
+    ? {
+        data: {
+          ...reconciliationResult,
+          streamingProgress: progress,
+        },
+        isLoading: false,
+        error: null,
+        refetch: async () => {
+          // Force refresh transactions (clears cache and refetches)
+          await forceRefreshTransactions();
+          // Refetch reconciliation query
+          await reconciliationQuery.refetch();
+        },
+      }
+    : {
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: () => Promise.resolve(),
+      };
+
+  return {
+    ...reconciliationData,
+    isLoading: paymentsLoading || treasuryLoading || streamLoading,
+    error: reconciliationData.error || streamError,
+    progress,
+  };
 }

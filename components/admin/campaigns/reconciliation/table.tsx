@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { Eye, ExternalLink } from 'lucide-react';
+import { Eye, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import {
   ReconciliationPayment,
   CampaignReconciliationData,
@@ -24,19 +24,26 @@ import { FormattedDate } from '@/components/formatted-date';
 interface CampaignReconciliationTableProps {
   campaignId: number;
   reconciliationData?: CampaignReconciliationData;
-  isLoading: boolean;
   error?: Error;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export function CampaignReconciliationTable({
   campaignId,
   reconciliationData,
-  isLoading,
   error,
+  onRefresh,
+  isRefreshing,
 }: CampaignReconciliationTableProps) {
   // Define explicit flags for blockchain loading state and transaction presence
-  const isBlockchainLoading =
-    reconciliationData?.isBlockchainDataLoading ?? true;
+  // With streaming, check if we're actively streaming OR if data hasn't loaded yet
+  const streamingProgress = reconciliationData?.streamingProgress;
+  const isStreaming = streamingProgress?.isStreaming ?? false;
+  // For streaming, show loading until streaming is complete
+  const isBlockchainLoading = streamingProgress
+    ? streamingProgress.isStreaming
+    : (reconciliationData?.isBlockchainDataLoading ?? false);
   const hasBlockchainTx =
     Array.isArray(reconciliationData?.rawBlockExplorerTransactions) &&
     reconciliationData.rawBlockExplorerTransactions.length > 0;
@@ -87,21 +94,8 @@ export function CampaignReconciliationTable({
     return allTransactions;
   }, [reconciliationData]);
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Reconciliation Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Don't block on loading - show DB payments immediately while blockchain streams
+  // Only show error state for actual errors
   if (error) {
     return (
       <Card>
@@ -130,12 +124,61 @@ export function CampaignReconciliationTable({
     );
   }
 
+  // Show progress indicator only while actively streaming (not when complete)
+  const shouldShowProgress =
+    isStreaming && streamingProgress && streamingProgress.totalCount > 0;
+
   return (
     <div className="space-y-6">
+      {/* Streaming Progress Indicator - Only show while actively streaming */}
+      {shouldShowProgress && (
+        <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-blue-900 dark:text-blue-100">
+                    Loading blockchain transactions...
+                  </span>
+                  <span className="text-blue-700 dark:text-blue-300">
+                    {streamingProgress.loadedCount} /{' '}
+                    {streamingProgress.totalCount} (
+                    {streamingProgress.percentComplete}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200 dark:bg-blue-900">
+                  <div
+                    className="h-full bg-blue-600 transition-all duration-300 dark:bg-blue-400"
+                    style={{ width: `${streamingProgress.percentComplete}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Reconciliation Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Reconciliation Summary</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Reconciliation Summary</CardTitle>
+            {onRefresh && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
+                Refresh Data
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -158,8 +201,8 @@ export function CampaignReconciliationTable({
             <div className="space-y-2">
               <h3 className="flex items-center gap-2 font-semibold text-green-700">
                 Blockchain Transactions
-                {isBlockchainLoading && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
+                {isStreaming && (
+                  <Loader2 className="h-4 w-4 animate-spin text-green-600" />
                 )}
               </h3>
               {isBlockchainLoading ? (
@@ -227,8 +270,8 @@ export function CampaignReconciliationTable({
                     ? '✅ Amounts match (incl. tips)'
                     : reconciliationData.comparison.status ===
                         'blockchain_short'
-                      ? '❌ Blockchain short by this amount'
-                      : '⚠️ Blockchain has surplus'}
+                      ? '❌ Treasury short by this amount'
+                      : '⚠️ Treasury has surplus'}
                 </div>
               </div>
             ) : isBlockchainLoading ? (

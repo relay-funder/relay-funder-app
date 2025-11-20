@@ -7,7 +7,7 @@ import { Button } from '@/components/ui';
 import { ArrowLeft, Edit, Eye, ExternalLink } from 'lucide-react';
 import { CampaignReconciliationTable } from './table';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
-import { useCampaignReconciliation } from '@/lib/hooks/useCampaignReconciliation';
+import { useCampaignReconciliationStream } from '@/lib/hooks/useCampaignReconciliation';
 import { getBlockExplorerAddressUrl } from '@/lib/format-address';
 
 interface CampaignReconciliationViewProps {
@@ -26,25 +26,18 @@ export function CampaignReconciliationView({
   } = useCampaign(campaignId);
   const {
     data: reconciliationData,
-    isLoading: reconciliationLoading,
     error: reconciliationError,
-  } = useCampaignReconciliation(campaignId);
+    refetch: refetchReconciliation,
+    isLoading: reconciliationLoading,
+  } = useCampaignReconciliationStream(campaignId);
 
-  if (campaignLoading || reconciliationLoading) {
+  // Only block on campaign loading - show page immediately with DB data
+  if (campaignLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p>
-            {campaignLoading
-              ? 'Loading campaign data...'
-              : 'Loading reconciliation data...'}
-          </p>
-          {!campaignLoading && reconciliationLoading && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              This may take a moment as we fetch blockchain transaction data
-            </p>
-          )}
+          <p>Loading campaign data...</p>
         </div>
       </div>
     );
@@ -159,8 +152,9 @@ export function CampaignReconciliationView({
       <CampaignReconciliationTable
         campaignId={parseInt(campaignId)}
         reconciliationData={reconciliationData}
-        isLoading={reconciliationLoading}
         error={reconciliationError || undefined}
+        onRefresh={refetchReconciliation}
+        isRefreshing={reconciliationLoading}
       />
     </div>
   );
