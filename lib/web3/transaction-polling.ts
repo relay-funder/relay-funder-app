@@ -104,10 +104,17 @@ export async function pollForPledgeExistence(
   const startTime = Date.now();
   let attempts = 0;
 
+  // Compute the internal pledge ID used by the contract (matches contract's abi.encodePacked)
+  const internalPledgeId = ethers.solidityPackedKeccak256(
+    ['bytes32', 'address'],
+    [pledgeId, adminAddress],
+  );
+
   logVerbose('Starting pledge existence polling via s_processedPledges', {
     ...context,
     pledgeId,
     adminAddress,
+    internalPledgeId,
     pollIntervalMs,
     timeoutMs,
   });
@@ -116,14 +123,6 @@ export async function pollForPledgeExistence(
     attempts++;
 
     try {
-      // Compute the internal pledge ID used by the contract
-      const internalPledgeId = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(
-          ['bytes32', 'address'],
-          [pledgeId, adminAddress]
-        )
-      );
-
       // Call the s_processedPledges getter
       const isProcessed = await treasuryContract.s_processedPledges(internalPledgeId);
 
