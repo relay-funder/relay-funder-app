@@ -27,6 +27,8 @@ export function CampaignReconciliationView({
   const {
     data: reconciliationData,
     error: reconciliationError,
+    refetch: refetchReconciliation,
+    isLoading: reconciliationLoading,
   } = useCampaignReconciliationStream(campaignId);
 
   // Only block on campaign loading - show page immediately with DB data
@@ -151,6 +153,8 @@ export function CampaignReconciliationView({
         campaignId={parseInt(campaignId)}
         reconciliationData={reconciliationData}
         error={reconciliationError || undefined}
+        onRefresh={refetchReconciliation}
+        isRefreshing={reconciliationLoading}
       />
     </div>
   );

@@ -335,14 +335,16 @@ export function useCampaignReconciliation(campaignId: string) {
  * This hook provides real-time progress updates as blockchain transactions are fetched
  */
 export function useCampaignReconciliationStream(campaignId: string) {
-  // Get database payments (admin data with full user info)
+  // Get database payments (admin data with full user info) - cache for 30 minutes
   const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
     queryKey: ['campaign_payments_reconciliation', campaignId],
     queryFn: () => fetchCampaignPaymentsForReconciliation(campaignId),
     enabled: !!campaignId,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour garbage collection
   });
 
-  // Get treasury balance (on-chain)
+  // Get treasury balance (on-chain) - cache for 10 minutes
   const { data: treasuryBalanceData, isLoading: treasuryLoading } =
     useCampaignTreasuryBalance(parseInt(campaignId));
 
@@ -352,42 +354,69 @@ export function useCampaignReconciliationStream(campaignId: string) {
     progress,
     error: streamError,
     isLoading: streamLoading,
+    forceRefresh: forceRefreshTransactions,
   } = useOnChainTransactionsStream(campaignId);
 
-  // Use useMemo for streaming reconciliation to ensure it updates immediately
-  const reconciliationResult = useMemo(() => {
-    if (!paymentsData || !treasuryBalanceData?.balance) {
-      return null;
-    }
+  // Cache reconciliation results for 15 minutes when streaming is complete
+  const reconciliationQuery = useQuery({
+    queryKey: [
+      CAMPAIGN_RECONCILIATION_QUERY_KEY,
+      'stream_cached',
+      campaignId,
+      onChainTransactionData.rawTransactions.length, // Changes when new tx arrive
+      progress.isStreaming, // Changes when streaming completes
+    ],
+    queryFn: (): CampaignReconciliationData | null => {
+      if (!paymentsData || !treasuryBalanceData?.balance) {
+        return null;
+      }
 
-    const result = performReconciliation(
-      paymentsData,
-      treasuryBalanceData,
-      onChainTransactionData,
-    );
+      const result = performReconciliation(
+        paymentsData,
+        treasuryBalanceData,
+        onChainTransactionData,
+      );
 
-    return result;
-  }, [
-    paymentsData,
-    treasuryBalanceData,
-    onChainTransactionData,
-    progress.isStreaming,
-  ]);
-
-  const reconciliationData = reconciliationResult ? {
-    data: {
-      ...reconciliationResult,
-      streamingProgress: progress,
+      return result;
     },
-    isLoading: false,
-    error: null,
-    refetch: () => Promise.resolve(),
-  } : {
-    data: undefined,
-    isLoading: true,
-    error: null,
-    refetch: () => Promise.resolve(),
-  };
+    enabled:
+      !!paymentsData && !!treasuryBalanceData?.balance && !progress.isStreaming,
+    staleTime: 15 * 60 * 1000, // 15 minutes when streaming is complete
+    gcTime: 60 * 60 * 1000, // 1 hour garbage collection
+  });
+
+  // For streaming, use immediate calculation; for complete, use cached query
+  const reconciliationResult = progress.isStreaming
+    ? paymentsData && treasuryBalanceData?.balance
+      ? performReconciliation(
+          paymentsData,
+          treasuryBalanceData,
+          onChainTransactionData,
+        )
+      : null
+    : reconciliationQuery.data;
+
+  const reconciliationData = reconciliationResult
+    ? {
+        data: {
+          ...reconciliationResult,
+          streamingProgress: progress,
+        },
+        isLoading: false,
+        error: null,
+        refetch: async () => {
+          // Force refresh transactions (clears cache and refetches)
+          await forceRefreshTransactions();
+          // Refetch reconciliation query
+          await reconciliationQuery.refetch();
+        },
+      }
+    : {
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: () => Promise.resolve(),
+      };
 
   return {
     ...reconciliationData,

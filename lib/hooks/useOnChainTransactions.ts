@@ -109,111 +109,173 @@ export function useOnChainTransactionsStream(campaignId: string) {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchStream = useCallback(async () => {
-    if (!campaignId) return;
+  const fetchStream = useCallback(
+    async (forceRefresh = false) => {
+      if (!campaignId) return;
 
-    setIsLoading(true);
-    setError(null);
-    setProgress({
-      isStreaming: true,
-      totalCount: 0,
-      loadedCount: 0,
-      percentComplete: 0,
-    });
+      // Check for cached data first (unless force refresh is requested)
+      const cacheKey = `onchain_tx_${campaignId}`;
+      const cachedData = forceRefresh ? null : localStorage.getItem(cacheKey);
 
-    try {
-      const response = await fetch(
-        `/api/admin/campaigns/${campaignId}/on-chain-transactions?stream=true`,
-      );
+      if (cachedData) {
+        try {
+          const parsedCache = JSON.parse(cachedData);
+          const cacheAge = Date.now() - parsedCache.timestamp;
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch transactions: ${response.statusText}`);
+          // Use cache if it's less than 30 minutes old
+          if (cacheAge < 30 * 60 * 1000) {
+            logVerbose(
+              `Using cached blockchain data (${Math.round(cacheAge / 1000 / 60)} minutes old)`,
+            );
+            setData(parsedCache.data);
+            setProgress({
+              isStreaming: false,
+              totalCount: parsedCache.data.rawTransactions.length,
+              loadedCount: parsedCache.data.rawTransactions.length,
+              percentComplete: 100,
+            });
+            setIsLoading(false);
+            return;
+          } else {
+            // Cache is too old, remove it
+            localStorage.removeItem(cacheKey);
+          }
+        } catch (cacheError) {
+          // Invalid cache, remove it
+          localStorage.removeItem(cacheKey);
+        }
       }
 
-      if (!response.body) {
-        throw new Error('Response body is null');
-      }
+      setIsLoading(true);
+      setError(null);
+      setProgress({
+        isStreaming: true,
+        totalCount: 0,
+        loadedCount: 0,
+        percentComplete: 0,
+      });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      try {
+        const response = await fetch(
+          `/api/admin/campaigns/${campaignId}/on-chain-transactions?stream=true`,
+        );
 
-      const tempData: OnChainTransactionData = {
-        transactions: [],
-        rawTransactions: [],
-      };
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch transactions: ${response.statusText}`,
+          );
+        }
 
-      while (true) {
-        const { done, value } = await reader.read();
+        if (!response.body) {
+          throw new Error('Response body is null');
+        }
 
-        if (done) break;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-        buffer = lines.pop() || '';
+        const tempData: OnChainTransactionData = {
+          transactions: [],
+          rawTransactions: [],
+        };
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const jsonStr = line.slice(6);
-            try {
-              const message = JSON.parse(jsonStr);
+        while (true) {
+          const { done, value } = await reader.read();
 
-              switch (message.type) {
-                case 'smart_contract_transactions':
-                  tempData.transactions = message.data;
-                  setData({ ...tempData });
-                  break;
+          if (done) break;
 
-                case 'transaction_count':
-                  setProgress((prev) => ({
-                    ...prev,
-                    totalCount: message.data.total,
-                  }));
-                  break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
 
-                case 'transaction':
-                  tempData.rawTransactions.push(message.data);
-                  const loadedCount = tempData.rawTransactions.length;
-                  setData({ ...tempData });
-                  setProgress((prev) => ({
-                    ...prev,
-                    loadedCount,
-                    percentComplete:
-                      prev.totalCount > 0
-                        ? Math.round((loadedCount / prev.totalCount) * 100)
-                        : 0,
-                  }));
-                  break;
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonStr = line.slice(6);
+              try {
+                const message = JSON.parse(jsonStr);
 
-                case 'complete':
-                  setProgress((prev) => ({
-                    ...prev,
-                    isStreaming: false,
-                    percentComplete: 100,
-                  }));
-                  setIsLoading(false);
-                  break;
+                switch (message.type) {
+                  case 'smart_contract_transactions':
+                    tempData.transactions = message.data;
+                    setData({ ...tempData });
+                    break;
 
-                case 'error':
-                  throw new Error(message.data.error || 'Streaming error');
+                  case 'transaction_count':
+                    setProgress((prev) => ({
+                      ...prev,
+                      totalCount: message.data.total,
+                    }));
+                    break;
+
+                  case 'transaction':
+                    tempData.rawTransactions.push(message.data);
+                    const loadedCount = tempData.rawTransactions.length;
+                    setData({ ...tempData });
+                    setProgress((prev) => ({
+                      ...prev,
+                      loadedCount,
+                      percentComplete:
+                        prev.totalCount > 0
+                          ? Math.round((loadedCount / prev.totalCount) * 100)
+                          : 0,
+                    }));
+                    break;
+
+                  case 'complete':
+                    setProgress((prev) => ({
+                      ...prev,
+                      isStreaming: false,
+                      percentComplete: 100,
+                    }));
+                    setIsLoading(false);
+
+                    // Cache the final data
+                    const cacheKey = `onchain_tx_${campaignId}`;
+                    const cacheData = {
+                      data: tempData,
+                      timestamp: Date.now(),
+                    };
+                    try {
+                      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                      logVerbose(
+                        `Cached blockchain data for campaign ${campaignId}`,
+                      );
+                    } catch (cacheError) {
+                      logVerbose(
+                        `Failed to cache blockchain data:`,
+                        cacheError,
+                      );
+                    }
+                    break;
+
+                  case 'error':
+                    throw new Error(message.data.error || 'Streaming error');
+                }
+              } catch (parseError) {
+                console.error('Failed to parse SSE message:', parseError);
               }
-            } catch (parseError) {
-              console.error('Failed to parse SSE message:', parseError);
             }
           }
         }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Unknown error');
+        setError(error);
+        setProgress((prev) => ({ ...prev, isStreaming: false }));
+        setIsLoading(false);
       }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setError(error);
-      setProgress((prev) => ({ ...prev, isStreaming: false }));
-      setIsLoading(false);
-    }
-  }, [campaignId]);
+    },
+    [campaignId],
+  );
 
   useEffect(() => {
     fetchStream();
   }, [fetchStream]);
+
+  const forceRefresh = useCallback(async () => {
+    const cacheKey = `onchain_tx_${campaignId}`;
+    localStorage.removeItem(cacheKey);
+    await fetchStream(true); // Pass true to skip cache check
+  }, [campaignId, fetchStream]);
 
   return {
     data,
@@ -221,5 +283,6 @@ export function useOnChainTransactionsStream(campaignId: string) {
     error,
     isLoading,
     refetch: fetchStream,
+    forceRefresh,
   };
 }
