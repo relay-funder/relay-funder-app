@@ -134,7 +134,7 @@ export function CampaignDonationWalletProcess({
     processing ||
     !isValidEmail(email) ||
     (usdFormattedBalance.usdBalanceAmount > 0 &&
-      numericAmount > usdFormattedBalance.usdBalanceAmount);
+      (numericAmount + parseFloat(tipAmount || '0')) > usdFormattedBalance.usdBalanceAmount);
 
   return (
     <>
