@@ -44,11 +44,15 @@ async function isPledgeExecutedOnChain(
     // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
     // where msg.sender is the admin address
     const internalPledgeId = keccak256(
-      encodePacked(['bytes32', 'address'], [pledgeId as `0x${string}`, adminAddress as `0x${string}`])
+      encodePacked(
+        ['bytes32', 'address'],
+        [pledgeId as `0x${string}`, adminAddress as `0x${string}`],
+      ),
     );
 
     // Call the s_processedPledges getter (available in ABI)
-    const isProcessed = await treasuryContract.s_processedPledges(internalPledgeId);
+    const isProcessed =
+      await treasuryContract.s_processedPledges(internalPledgeId);
 
     logVerbose('On-chain pledge verification via s_processedPledges', {
       pledgeId,
@@ -60,15 +64,17 @@ async function isPledgeExecutedOnChain(
     return isProcessed;
   } catch (error) {
     // If the call fails, assume pledge doesn't exist (safer default)
-    logVerbose('On-chain pledge check via s_processedPledges failed, assuming pledge does not exist', {
-      pledgeId,
-      adminAddress,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    logVerbose(
+      'On-chain pledge check via s_processedPledges failed, assuming pledge does not exist',
+      {
+        pledgeId,
+        adminAddress,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+    );
     return false;
   }
 }
-
 
 /**
  * Execute a gateway pledge using setFeeAndPledge.

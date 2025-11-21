@@ -129,7 +129,12 @@ export function CampaignDonationWalletProcess({
   }, [processingOnDonate]);
 
   const isButtonDisabled =
-    !hasUsdBalance || !numericAmount || processing || !isValidEmail(email);
+    !hasUsdBalance ||
+    !numericAmount ||
+    processing ||
+    !isValidEmail(email) ||
+    (usdFormattedBalance.usdBalanceAmount > 0 &&
+      numericAmount > usdFormattedBalance.usdBalanceAmount);
 
   return (
     <>

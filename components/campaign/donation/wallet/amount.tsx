@@ -1,17 +1,24 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
-import { Mail, Shield } from 'lucide-react';
+import { Mail, Shield, AlertTriangle } from 'lucide-react';
 import { useConnectedAccount } from '@/lib/web3';
 import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletAmount() {
   const { data: profile } = useUserProfile();
 
-  const { amount, token, email, setAmount, setEmail, paymentType } =
-    useDonationContext();
+  const {
+    amount,
+    token,
+    email,
+    setAmount,
+    setEmail,
+    paymentType,
+    usdFormattedBalance,
+  } = useDonationContext();
 
   const handleAmountChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +51,14 @@ export function CampaignDonationWalletAmount() {
     }
     setEmail(embeddedEmail);
   }, [profile, isEmbedded, embeddedEmail, setEmail]);
+
+  const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
+  const hasInsufficientBalance = useMemo(() => {
+    return (
+      usdFormattedBalance.usdBalanceAmount > 0 &&
+      numericAmount > usdFormattedBalance.usdBalanceAmount
+    );
+  }, [numericAmount, usdFormattedBalance.usdBalanceAmount]);
 
   return (
     <div className="flex flex-col space-y-6">
@@ -105,6 +120,20 @@ export function CampaignDonationWalletAmount() {
             </div>
           </div>
         </div>
+
+        {/* Insufficient balance warning - only for wallet payments */}
+        {hasInsufficientBalance && paymentType === 'wallet' && (
+          <div className="flex items-center gap-2 rounded-md border border-orange-200/60 bg-orange-50/70 p-3 text-sm text-orange-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 text-orange-600 dark:text-blue-300" />
+            <span>
+              Insufficient balance. You have{' '}
+              <span className="font-medium text-orange-900 dark:text-blue-50">
+                {usdFormattedBalance.usdBalanceWithSymbol}
+              </span>{' '}
+              available.
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
