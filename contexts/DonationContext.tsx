@@ -99,15 +99,6 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
         if (decimalParts.length > 1 && decimalParts[1].length > 2) {
           return;
         }
-
-        // Check if amount exceeds user's balance (if balance is available)
-        if (
-          paymentType === 'wallet' &&
-          usdFormattedBalance.usdBalanceAmount > 0 &&
-          value > usdFormattedBalance.usdBalanceAmount
-        ) {
-          return;
-        }
       }
       setAmountIntern(input);
     },

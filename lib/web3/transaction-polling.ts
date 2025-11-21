@@ -80,7 +80,6 @@ export async function pollForTransactionReceipt(
   return null;
 }
 
-
 /**
  * Check if a pledge exists on-chain by polling the s_processedPledges mapping
  * Uses the contract's built-in tracking of processed pledges
@@ -124,7 +123,8 @@ export async function pollForPledgeExistence(
 
     try {
       // Call the s_processedPledges getter
-      const isProcessed = await treasuryContract.s_processedPledges(internalPledgeId);
+      const isProcessed =
+        await treasuryContract.s_processedPledges(internalPledgeId);
 
       if (isProcessed) {
         const elapsed = Date.now() - startTime;
@@ -150,13 +150,16 @@ export async function pollForPledgeExistence(
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     } catch (error) {
       const elapsed = Date.now() - startTime;
-      logVerbose('Error polling for pledge existence via s_processedPledges, continuing to poll', {
-        ...context,
-        pledgeId,
-        attempts,
-        elapsedMs: elapsed,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logVerbose(
+        'Error polling for pledge existence via s_processedPledges, continuing to poll',
+        {
+          ...context,
+          pledgeId,
+          attempts,
+          elapsedMs: elapsed,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      );
 
       // Continue polling despite errors
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
