@@ -17,7 +17,6 @@ export function CampaignDonationWalletAmount() {
     setAmount,
     setEmail,
     paymentType,
-    usdFormattedBalance,
   } = useDonationContext();
 
   const handleAmountChange = useCallback(

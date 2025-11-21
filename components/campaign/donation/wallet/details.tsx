@@ -23,7 +23,7 @@ export function CampaignDonationWalletDetails({
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const hasInsufficientBalance = useMemo(() => {
     return (
-      usdFormattedBalance.usdBalanceAmount > 0 &&
+      usdFormattedBalance.usdBalanceAmount != null &&
       (numericAmount + parseFloat(tipAmount || '0')) > usdFormattedBalance.usdBalanceAmount
     );
   }, [numericAmount, tipAmount, usdFormattedBalance.usdBalanceAmount]);
