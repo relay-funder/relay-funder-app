@@ -17,6 +17,7 @@ export type ApproveDialogProps = {
   description?: string;
   confirmText?: string;
   isSubmitting?: boolean;
+  requestType?: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
 };
 
 export function ApproveDialog({
@@ -29,6 +30,7 @@ export function ApproveDialog({
   description = 'Enter the transaction hash and optional note, then confirm approval.',
   confirmText = 'Approve',
   isSubmitting = false,
+  requestType = 'WITHDRAWAL_AMOUNT',
 }: ApproveDialogProps) {
   const [tx, setTx] = useState<string>(defaultTransactionHash ?? '');
   const [notes, setNotes] = useState<string>(defaultNotes ?? '');
@@ -118,6 +120,9 @@ export function ApproveDialog({
             <div className="space-y-2">
               <label htmlFor="approve-tx" className="text-sm font-medium">
                 Transaction Hash
+                {requestType === 'ON_CHAIN_AUTHORIZATION' && (
+                  <span className="ml-1 text-red-600">*</span>
+                )}
               </label>
               <input
                 id="approve-tx"
@@ -131,7 +136,9 @@ export function ApproveDialog({
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Provide the blockchain transaction hash for this approval.
+                {requestType === 'ON_CHAIN_AUTHORIZATION'
+                  ? 'Execute the on-chain authorization first, then provide the transaction hash here. This enables withdrawals for the treasury.'
+                  : 'Provide the blockchain transaction hash for this approval.'}
               </p>
             </div>
 

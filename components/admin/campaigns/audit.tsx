@@ -185,6 +185,7 @@ export function CampaignAudit() {
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Treasury</TableHead>
+                <TableHead>Withdrawals</TableHead>
                 <TableHead>Volume (incl. tips)</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -235,6 +236,27 @@ export function CampaignAudit() {
                       </Badge>
                     ) : (
                       <Badge variant="secondary">Not Deployed</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {campaign.treasuryAddress &&
+                    (campaign.status === 'ACTIVE' ||
+                      campaign.status === 'COMPLETED' ||
+                      campaign.status === 'FAILED') ? (
+                      campaign.treasuryWithdrawalsEnabled ? (
+                        <Badge className="bg-green-600 hover:bg-green-700">
+                          Authorized
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="bg-muted/50 text-muted-foreground"
+                        >
+                          Not Authorized
+                        </Badge>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
