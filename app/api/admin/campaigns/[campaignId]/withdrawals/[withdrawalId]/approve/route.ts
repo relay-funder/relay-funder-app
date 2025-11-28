@@ -119,18 +119,30 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
             treasuryApprovalAdmin: { connect: { id: adminUser.id } },
           },
         });
-      }
 
-      // Track treasury authorization event
-      try {
-        const campaignCreator = await getUser(campaign.creatorAddress);
-        const adminName =
-          adminUser.username ||
-          adminUser.firstName ||
-          adminUser.address.slice(0, 10) + '...';
-        if (campaignCreator) {
-          await notify({
-            receiverId: campaignCreator.id,
+        // Track treasury authorization event (only when transaction hash is provided)
+        try {
+          const campaignCreator = await getUser(campaign.creatorAddress);
+          const adminName =
+            adminUser.username ||
+            adminUser.firstName ||
+            adminUser.address.slice(0, 10) + '...';
+          if (campaignCreator) {
+            await notify({
+              receiverId: campaignCreator.id,
+              creatorId: adminUser.id,
+              data: {
+                type: 'TreasuryAuthorized',
+                withdrawalId: withdrawal.id,
+                campaignId: campaign.id,
+                campaignTitle: campaign.title,
+                transactionHash: transactionHash,
+                adminName,
+              },
+            });
+          }
+          // Also notify admin for audit trail
+          await notifyIntern({
             creatorId: adminUser.id,
             data: {
               type: 'TreasuryAuthorized',
@@ -141,21 +153,9 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
               adminName,
             },
           });
+        } catch (error) {
+          console.error('Failed to create treasury authorization event', error);
         }
-        // Also notify admin for audit trail
-        await notifyIntern({
-          creatorId: adminUser.id,
-          data: {
-            type: 'TreasuryAuthorized',
-            withdrawalId: withdrawal.id,
-            campaignId: campaign.id,
-            campaignTitle: campaign.title,
-            transactionHash: transactionHash,
-            adminName,
-          },
-        });
-      } catch (error) {
-        console.error('Failed to create treasury authorization event', error);
       }
 
       return response({ withdrawal });
