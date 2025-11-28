@@ -63,7 +63,7 @@ export function CampaignAuditWithdrawalActions({
                 open={authDialogOpen}
                 onOpenChange={setAuthDialogOpen}
                 onConfirm={handleAuthSuccess}
-                treasuryAddress={campaign.treasuryAddress}
+                treasuryAddress={campaign.treasuryAddress as `0x${string}`}
                 campaignTitle={campaign.title}
                 campaignId={campaign.id}
               />
