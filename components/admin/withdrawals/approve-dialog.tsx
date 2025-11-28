@@ -157,15 +157,6 @@ export function ApproveDialog({
     }
   }
 
-  function validateTx(hash: string) {
-    // Basic validation: must be non-empty; if looks like hex, check 0x prefix and length commonly 66 (32 bytes + 0x).
-    if (!hash.trim()) return 'Transaction hash is required';
-    if (hash.startsWith('0x') && hash.length < 10) {
-      return 'Transaction hash looks too short';
-    }
-    return null;
-  }
-
   async function handleExecuteTransaction() {
     if (!treasuryAddress) {
       setError('Treasury address is missing.');
