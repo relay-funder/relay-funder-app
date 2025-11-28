@@ -171,27 +171,33 @@ export async function listWithdrawals({
 
   // Fetch campaign creator information for each withdrawal
   // Funds always go to the campaign creator
-  const enrichedItems: WithdrawalListItem[] = await Promise.all(
-    items.map(async (item) => {
-      // Get creator user data from campaign creatorAddress
-      const creatorUser = await db.user.findUnique({
-        where: { address: item.campaign.creatorAddress },
-        select: {
-          id: true,
-          address: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-        },
-      });
-
-      return {
-        ...item,
-        campaignCreator: creatorUser,
-      } as WithdrawalListItem;
-    }),
+  const uniqueCreatorAddresses = [
+    ...new Set(items.map((item) => item.campaign.creatorAddress)),
+  ];
+  const creatorUsers = await db.user.findMany({
+    where: { address: { in: uniqueCreatorAddresses } },
+    select: {
+      id: true,
+      address: true,
+      username: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  });
+  const creatorMap = new Map(
+    creatorUsers.map((user) => [user.address.toLowerCase(), user]),
   );
+
+  const enrichedItems: WithdrawalListItem[] = items.map((item) => {
+    const creatorUser = creatorMap.get(
+      item.campaign.creatorAddress.toLowerCase(),
+    );
+    return {
+      ...item,
+      campaignCreator: creatorUser ?? null,
+    } as WithdrawalListItem;
+  });
 
   return {
     withdrawals: enrichedItems,

@@ -96,11 +96,14 @@ export function useRequestWithdrawal() {
  * - GET /api/campaigns/[campaignId]/withdraw
  * - Returns { hasApproval: boolean, onChainAuthorized: boolean }
  */
-export function useWithdrawalApproval(campaignId: number | string | undefined) {
+export function useWithdrawalApproval(
+  campaignId: number | string | undefined,
+  enabled: boolean = true,
+) {
   return useQuery({
     queryKey: [WITHDRAWALS_QUERY_KEY, 'approval', campaignId],
     queryFn: async () => fetchWithdrawApproval(campaignId),
-    enabled: !!campaignId,
+    enabled: enabled && !!campaignId,
   });
 }
 
@@ -150,10 +153,11 @@ async function fetchCampaignWithdrawals(campaignId: number | string) {
 
 export function useCampaignWithdrawals(
   campaignId: number | string | undefined,
+  enabled: boolean = true,
 ) {
   return useQuery({
     queryKey: [WITHDRAWALS_QUERY_KEY, 'campaign', campaignId],
     queryFn: () => fetchCampaignWithdrawals(campaignId!),
-    enabled: !!campaignId,
+    enabled: enabled && !!campaignId,
   });
 }

@@ -82,15 +82,20 @@ export function WithdrawalDialog({
     useCampaignTreasuryBalance(campaign?.id);
 
   // Fetch existing withdrawals to calculate truly available amount
+  // Only fetch when dialog is open to avoid exhausting connection pool
   const { data: existingWithdrawalsData, isLoading: isWithdrawalsLoading } =
-    useCampaignWithdrawals(campaign?.id);
+    useCampaignWithdrawals(campaign?.id, dialogOpen);
 
   // User and profile (for recipient wallet)
   const { address: connectedAddress } = useAuth();
   const { data: profile } = useUserProfile();
 
   // Check if campaign has withdrawal approval
-  const { data: approvalData } = useWithdrawalApproval(campaign?.id);
+  // Only fetch when dialog is open to avoid exhausting connection pool
+  const { data: approvalData } = useWithdrawalApproval(
+    campaign?.id,
+    dialogOpen,
+  );
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
@@ -502,7 +507,7 @@ export function WithdrawalDialog({
                   Withdrawal address
                 </span>
                 <div className="flex items-center gap-2">
-                  <code className="rounded bg-gray-50 px-2 py-1 text-sm">
+                  <code className="rounded bg-muted px-2 py-1 text-sm text-foreground">
                     {recipientAddress}
                   </code>
                 </div>
@@ -522,7 +527,7 @@ export function WithdrawalDialog({
                         <span className="text-xs uppercase tracking-wide">
                           Connected
                         </span>
-                        <code className="rounded bg-white px-2 py-0.5">
+                        <code className="rounded bg-muted px-2 py-0.5 text-foreground">
                           {connectedAddress || ''}
                         </code>
                       </div>
@@ -530,7 +535,7 @@ export function WithdrawalDialog({
                         <span className="text-xs uppercase tracking-wide">
                           Recipient
                         </span>
-                        <code className="rounded bg-white px-2 py-0.5">
+                        <code className="rounded bg-muted px-2 py-0.5 text-foreground">
                           {recipientAddress}
                         </code>
                       </div>
