@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-import { AlertTriangle, Wallet, Loader2, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
 import { normalizeAddress } from '@/lib/normalize-address';
 import { USD_TOKEN } from '@/lib/constant';
 import { TreasuryAuthorizationStatus } from '@/components/campaign/treasury-authorization-status';

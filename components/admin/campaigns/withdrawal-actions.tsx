@@ -7,7 +7,7 @@ import Link from 'next/link';
 import type { DbCampaign } from '@/types/campaign';
 import { OnChainAuthDialog } from '@/components/admin/withdrawals/on-chain-auth-dialog';
 import { useQueryClient } from '@tanstack/react-query';
-import { CAMPAIGNS_QUERY_KEY, resetCampaign } from '@/lib/hooks/useCampaigns';
+import { resetCampaign } from '@/lib/hooks/useCampaigns';
 import { useToast } from '@/hooks/use-toast';
 
 export function CampaignAuditWithdrawalActions({

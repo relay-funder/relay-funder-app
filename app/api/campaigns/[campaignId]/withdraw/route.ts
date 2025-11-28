@@ -2,20 +2,17 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
-  ApiIntegrityError,
   ApiNotFoundError,
   ApiParameterError,
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import {
   CampaignsWithIdParams,
-  PatchCampaignWithdrawRouteBodySchema,
   PostCampaignWithdrawRouteBodySchema,
 } from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';
 import {
   validateWithdrawalAmount,
-  validateOnChainAuthorization,
   normalizeWithdrawalAmount,
 } from '@/lib/api/withdrawals/validation';
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { handleApiErrors } from '@/lib/api/error';
 import { ADMIN_WITHDRAWALS_QUERY_KEY } from '@/lib/hooks/useAdminWithdrawals';
-import { CAMPAIGNS_QUERY_KEY, resetCampaign } from '@/lib/hooks/useCampaigns';
+import { resetCampaign } from '@/lib/hooks/useCampaigns';
 import { Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,6 @@ export type AdminWithdrawalRequestDialogProps = {
   onOpenChange?: (open: boolean) => void;
   campaignId: number;
   campaignTitle: string;
-  treasuryAddress: string;
 };
 
 async function createAdminWithdrawalRequest(
@@ -45,7 +44,6 @@ export function AdminWithdrawalRequestDialog({
   onOpenChange,
   campaignId,
   campaignTitle,
-  treasuryAddress,
 }: AdminWithdrawalRequestDialogProps) {
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');

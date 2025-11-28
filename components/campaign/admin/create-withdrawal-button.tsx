@@ -36,7 +36,6 @@ export function CampaignAdminCreateWithdrawalButton({
         onOpenChange={setOpen}
         campaignId={campaign.id}
         campaignTitle={campaign.title}
-        treasuryAddress={campaign.treasuryAddress}
       />
     </>
   );

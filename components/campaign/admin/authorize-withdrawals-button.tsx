@@ -6,7 +6,7 @@ import { OnChainAuthDialog } from '@/components/admin/withdrawals/on-chain-auth-
 import type { DbCampaign } from '@/types/campaign';
 import { CheckCircle2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { CAMPAIGNS_QUERY_KEY, resetCampaign } from '@/lib/hooks/useCampaigns';
+import { resetCampaign } from '@/lib/hooks/useCampaigns';
 import { useToast } from '@/hooks/use-toast';
 
 export function CampaignAdminAuthorizeWithdrawalsButton({
