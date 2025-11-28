@@ -3,10 +3,23 @@ import { db, type Prisma } from '@/server/db';
 export type WithdrawalListItem = Prisma.WithdrawalGetPayload<{
   include: {
     campaign: true;
-    createdBy: true;
-    approvedBy: true;
   };
 }> & {
+  createdBy: {
+    id: number;
+    address: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    roles: string[];
+  };
+  approvedBy: {
+    id: number;
+    address: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
   campaignCreator?: {
     id: number;
     address: string;
@@ -97,7 +110,10 @@ export async function listWithdrawals({
   if (createdByType === 'admin') {
     createdByFilter.roles = { has: 'admin' };
   } else if (createdByType === 'user') {
-    createdByFilter.roles = { not: { has: 'admin' } };
+    // For array filters, use NOT at the top level to check "does not contain"
+    createdByFilter.NOT = {
+      roles: { has: 'admin' },
+    };
   }
   // Only add createdBy filter if we have any conditions
   if (Object.keys(createdByFilter).length > 0) {
@@ -155,7 +171,7 @@ export async function listWithdrawals({
 
   // Fetch campaign creator information for each withdrawal
   // Funds always go to the campaign creator
-  const enrichedItems = await Promise.all(
+  const enrichedItems: WithdrawalListItem[] = await Promise.all(
     items.map(async (item) => {
       // Get creator user data from campaign creatorAddress
       const creatorUser = await db.user.findUnique({
@@ -173,7 +189,7 @@ export async function listWithdrawals({
       return {
         ...item,
         campaignCreator: creatorUser,
-      };
+      } as WithdrawalListItem;
     }),
   );
 

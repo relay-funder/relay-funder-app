@@ -9,6 +9,8 @@ import {
 import { response, handleError } from '@/lib/api/response';
 import { getCampaign } from '@/lib/api/campaigns';
 import { validateWithdrawalAmount } from '@/lib/api/withdrawals/validation';
+import { notify, notifyIntern } from '@/lib/api/event-feed';
+import { getUser } from '@/lib/api/user';
 import { z } from 'zod';
 
 const PatchAdminWithdrawalApprovalSchema = z.object({
@@ -119,6 +121,43 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
         },
       });
 
+      // Track treasury authorization event
+      try {
+        const campaignCreator = await getUser(campaign.creatorAddress);
+        const adminName =
+          adminUser.username ||
+          adminUser.firstName ||
+          adminUser.address.slice(0, 10) + '...';
+        if (campaignCreator) {
+          await notify({
+            receiverId: campaignCreator.id,
+            creatorId: adminUser.id,
+            data: {
+              type: 'TreasuryAuthorized',
+              withdrawalId: withdrawal.id,
+              campaignId: campaign.id,
+              campaignTitle: campaign.title,
+              transactionHash: transactionHash,
+              adminName,
+            },
+          });
+        }
+        // Also notify admin for audit trail
+        await notifyIntern({
+          creatorId: adminUser.id,
+          data: {
+            type: 'TreasuryAuthorized',
+            withdrawalId: withdrawal.id,
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            transactionHash: transactionHash,
+            adminName,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to create treasury authorization event', error);
+      }
+
       return response({ withdrawal });
     }
 
@@ -147,6 +186,47 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
         approvedBy: true,
       },
     });
+
+    // Track withdrawal approval event
+    try {
+      const campaignCreator = await getUser(campaign.creatorAddress);
+      const adminName =
+        adminUser.username ||
+        adminUser.firstName ||
+        adminUser.address.slice(0, 10) + '...';
+      if (campaignCreator) {
+        await notify({
+          receiverId: campaignCreator.id,
+          creatorId: adminUser.id,
+          data: {
+            type: 'WithdrawalApproved',
+            withdrawalId: withdrawal.id,
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            amount: withdrawal.amount,
+            token: withdrawal.token,
+            adminName,
+            transactionHash: transactionHash,
+          },
+        });
+      }
+      // Also notify admin for audit trail
+      await notifyIntern({
+        creatorId: adminUser.id,
+        data: {
+          type: 'WithdrawalApproved',
+          withdrawalId: withdrawal.id,
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          amount: withdrawal.amount,
+          token: withdrawal.token,
+          adminName,
+          transactionHash: transactionHash,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to create withdrawal approval event', error);
+    }
 
     return response({ withdrawal });
   } catch (error: unknown) {

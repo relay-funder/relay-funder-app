@@ -12,6 +12,8 @@ import {
   validateWithdrawalAmount,
   normalizeWithdrawalAmount,
 } from '@/lib/api/withdrawals/validation';
+import { notify, notifyIntern } from '@/lib/api/event-feed';
+import { getUser } from '@/lib/api/user';
 import { z } from 'zod';
 
 const PostAdminWithdrawalRequestSchema = z.object({
@@ -81,6 +83,45 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         notes: notes ?? null,
       },
     });
+
+    // Track withdrawal request event
+    try {
+      const campaignCreator = await getUser(campaign.creatorAddress);
+      const adminName =
+        adminUser.username ||
+        adminUser.firstName ||
+        adminUser.address.slice(0, 10) + '...';
+      if (campaignCreator) {
+        await notify({
+          receiverId: campaignCreator.id,
+          creatorId: adminUser.id,
+          data: {
+            type: 'WithdrawalRequestedByAdmin',
+            withdrawalId: withdrawal.id,
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            amount: withdrawal.amount,
+            token: withdrawal.token,
+            adminName,
+          },
+        });
+      }
+      // Also notify admin for audit trail
+      await notifyIntern({
+        creatorId: adminUser.id,
+        data: {
+          type: 'WithdrawalRequestedByAdmin',
+          withdrawalId: withdrawal.id,
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          amount: withdrawal.amount,
+          token: withdrawal.token,
+          adminName,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to create admin withdrawal request event', error);
+    }
 
     return response({ withdrawal });
   } catch (error: unknown) {

@@ -15,6 +15,8 @@ import {
   validateWithdrawalAmount,
   normalizeWithdrawalAmount,
 } from '@/lib/api/withdrawals/validation';
+import { notify } from '@/lib/api/event-feed';
+import { getUser } from '@/lib/api/user';
 
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
@@ -134,7 +136,32 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       const updatedWithdrawal = await db.withdrawal.update({
         where: { id: approvedWithdrawal.id },
         data: { transactionHash },
+        include: {
+          campaign: true,
+        },
       });
+
+      // Track withdrawal execution event
+      try {
+        const campaignCreator = await getUser(campaign.creatorAddress);
+        if (campaignCreator) {
+          await notify({
+            receiverId: campaignCreator.id,
+            creatorId: user.id,
+            data: {
+              type: 'WithdrawalExecuted',
+              withdrawalId: updatedWithdrawal.id,
+              campaignId: campaign.id,
+              campaignTitle: campaign.title,
+              amount: updatedWithdrawal.amount,
+              token: updatedWithdrawal.token,
+              transactionHash: transactionHash,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create withdrawal execution event', error);
+      }
 
       return response(updatedWithdrawal);
     }
@@ -159,6 +186,28 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
         // No transactionHash - user requests are pending admin approval
       },
     });
+
+    // Track withdrawal request event
+    try {
+      const campaignCreator = await getUser(campaign.creatorAddress);
+      if (campaignCreator) {
+        await notify({
+          receiverId: campaignCreator.id,
+          creatorId: user.id,
+          data: {
+            type: 'WithdrawalRequested',
+            withdrawalId: withdrawal.id,
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            amount: withdrawal.amount,
+            token: withdrawal.token,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create withdrawal request event', error);
+    }
+
     return response(withdrawal);
   } catch (error: unknown) {
     return handleError(error);

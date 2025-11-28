@@ -15,7 +15,8 @@ export interface TreasuryWithdrawalStatusResult {
 export function useTreasuryWithdrawalStatus(
   treasuryAddress?: string | null,
 ): TreasuryWithdrawalStatusResult {
-  const isValidAddress = treasuryAddress && ethers.isAddress(treasuryAddress);
+  const isValidAddress =
+    Boolean(treasuryAddress && ethers.isAddress(treasuryAddress));
 
   const {
     data: isAuthorized,

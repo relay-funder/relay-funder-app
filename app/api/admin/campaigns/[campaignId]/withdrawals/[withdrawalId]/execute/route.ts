@@ -7,6 +7,8 @@ import {
 } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getCampaign } from '@/lib/api/campaigns';
+import { notify, notifyIntern } from '@/lib/api/event-feed';
+import { getUser } from '@/lib/api/user';
 
 interface ExecuteWithdrawalParams {
   params: Promise<{
@@ -90,7 +92,51 @@ export async function POST(req: Request, { params }: ExecuteWithdrawalParams) {
       data: {
         transactionHash,
       },
+      include: {
+        campaign: true,
+      },
     });
+
+    // Track withdrawal execution event
+    try {
+      const campaignCreator = await getUser(campaign.creatorAddress);
+      const adminName =
+        adminUser.username ||
+        adminUser.firstName ||
+        adminUser.address.slice(0, 10) + '...';
+      if (campaignCreator) {
+        await notify({
+          receiverId: campaignCreator.id,
+          creatorId: adminUser.id,
+          data: {
+            type: 'WithdrawalExecuted',
+            withdrawalId: updated.id,
+            campaignId: campaign.id,
+            campaignTitle: campaign.title,
+            amount: updated.amount,
+            token: updated.token,
+            transactionHash: transactionHash,
+            adminName,
+          },
+        });
+      }
+      // Also notify admin for audit trail
+      await notifyIntern({
+        creatorId: adminUser.id,
+        data: {
+          type: 'WithdrawalExecuted',
+          withdrawalId: updated.id,
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          amount: updated.amount,
+          token: updated.token,
+          transactionHash: transactionHash,
+          adminName,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to create withdrawal execution event', error);
+    }
 
     return response({ withdrawal: updated });
   } catch (error: unknown) {
