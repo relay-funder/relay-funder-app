@@ -73,10 +73,7 @@ export async function PATCH(req: Request, { params }: WithdrawalWithIdParams) {
     ) {
       changes.transactionHash = body.transactionHash;
     }
-    if (
-      typeof body.notes !== 'undefined' &&
-      body.notes !== existing.notes
-    ) {
+    if (typeof body.notes !== 'undefined' && body.notes !== existing.notes) {
       changes.notes = body.notes;
     }
     if (

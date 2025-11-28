@@ -31,15 +31,26 @@ export function generateMessage(data: NotificationData): string {
     case 'WithdrawalUpdated':
       const changeParts: string[] = [];
       if (data.changes.transactionHash !== undefined) {
-        changeParts.push(data.changes.transactionHash ? 'transaction hash updated' : 'transaction hash removed');
+        changeParts.push(
+          data.changes.transactionHash
+            ? 'transaction hash updated'
+            : 'transaction hash removed',
+        );
       }
       if (data.changes.notes !== undefined) {
-        changeParts.push(data.changes.notes ? 'notes updated' : 'notes removed');
+        changeParts.push(
+          data.changes.notes ? 'notes updated' : 'notes removed',
+        );
       }
       if (data.changes.approvedById !== undefined) {
-        changeParts.push(data.changes.approvedById ? 'approval status updated' : 'approval removed');
+        changeParts.push(
+          data.changes.approvedById
+            ? 'approval status updated'
+            : 'approval removed',
+        );
       }
-      const changesText = changeParts.length > 0 ? changeParts.join(', ') : 'details updated';
+      const changesText =
+        changeParts.length > 0 ? changeParts.join(', ') : 'details updated';
       return `Withdrawal for ${data.amount} ${data.token} from "${data.campaignTitle}" has been updated (${changesText}) by ${data.adminName}`;
     case 'WithdrawalDeleted':
       return `Withdrawal request for ${data.amount} ${data.token} from "${data.campaignTitle}" has been deleted by ${data.adminName}`;
