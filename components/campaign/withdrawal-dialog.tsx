@@ -300,6 +300,27 @@ export function WithdrawalDialog({
     setDialogOpen(false);
   }, [setDialogOpen]);
 
+  const handleRequestAuthorization = useCallback(async () => {
+    try {
+      await requestAuthorization(campaign.id);
+      toast({
+        title: 'Authorization requested',
+        description:
+          'Your request has been submitted. An admin will review and authorize withdrawals for this treasury.',
+      });
+      setDialogOpen(false);
+    } catch (err) {
+      toast({
+        title: 'Request failed',
+        description:
+          err instanceof Error
+            ? err.message
+            : 'Failed to request authorization',
+        variant: 'destructive',
+      });
+    }
+  }, [requestAuthorization, campaign.id, toast, setDialogOpen]);
+
   const defaultTrigger = (
     <Button className="h-12 w-full text-lg" size="lg" disabled={!campaign}>
       Withdraw funds
@@ -365,26 +386,7 @@ export function WithdrawalDialog({
                       </p>
                     </div>
                     <Button
-                      onClick={async () => {
-                        try {
-                          await requestAuthorization(campaign.id);
-                          toast({
-                            title: 'Authorization requested',
-                            description:
-                              'Your request has been submitted. An admin will review and authorize withdrawals for this treasury.',
-                          });
-                          setDialogOpen(false);
-                        } catch (err) {
-                          toast({
-                            title: 'Request failed',
-                            description:
-                              err instanceof Error
-                                ? err.message
-                                : 'Failed to request authorization',
-                            variant: 'destructive',
-                          });
-                        }
-                      }}
+                      onClick={handleRequestAuthorization}
                       disabled={isRequestingAuthorization}
                       className="w-full"
                       variant="outline"

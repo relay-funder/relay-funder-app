@@ -128,3 +128,12 @@ export type PostTreasuryAuthorizationRouteResponse = {
     };
   }>;
 };
+
+export type CampaignWithdrawal = {
+  id: number;
+  amount: string;
+  token: string;
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+  transactionHash?: string | null;
+  createdAt: string;
+};

@@ -3,7 +3,7 @@ import { useWriteContract, ethers } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 
 export interface ApproveWithdrawalOnChainParams {
-  treasuryAddress: string;
+  treasuryAddress: `0x${string}`;
 }
 
 export interface ApproveWithdrawalOnChainResult {
@@ -31,9 +31,9 @@ export function useApproveWithdrawalOnChain() {
       setLastTxHash(undefined);
 
       if (!ethers.isAddress(treasuryAddress)) {
-        const err = 'Invalid treasury address';
-        setError(err);
-        return { success: false, error: err };
+        const error = 'Invalid treasury address';
+        setError(error);
+        return { success: false, error };
       }
 
       try {
@@ -41,7 +41,7 @@ export function useApproveWithdrawalOnChain() {
 
         // Call the treasury approveWithdrawal function (no arguments)
         const tx = await writeContract({
-          address: treasuryAddress as `0x${string}`,
+          address: treasuryAddress,
           abi: KeepWhatsRaisedABI,
           functionName: 'approveWithdrawal',
           args: [],
@@ -51,9 +51,9 @@ export function useApproveWithdrawalOnChain() {
         setLastTxHash(hash);
         return { hash, success: true };
       } catch (e) {
-        const err = e instanceof Error ? e.message : 'Unknown error';
-        setError(err);
-        return { success: false, error: err };
+        const error = e instanceof Error ? e.message : 'Unknown error';
+        setError(error);
+        return { success: false, error };
       } finally {
         setIsExecuting(false);
       }

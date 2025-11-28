@@ -128,13 +128,7 @@ export async function listWithdrawals({
       take: pageSize,
       orderBy: { createdAt: 'desc' },
       include: {
-        campaign: {
-          include: {
-            // Include campaign creator user data
-            // Note: creatorAddress is stored on Campaign, but we need User data
-            // We'll fetch it separately to avoid circular dependencies
-          },
-        },
+        campaign: true,
         createdBy: {
           select: {
             id: true,

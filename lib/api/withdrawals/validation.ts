@@ -4,8 +4,57 @@ import {
   ApiIntegrityError,
   ApiAuthNotAllowed,
   ApiNotFoundError,
+  ApiParameterError,
 } from '@/lib/api/error';
 import type { DbCampaign } from '@/types/campaign';
+
+/**
+ * Normalize withdrawal amount to prevent precision issues
+ * - Rejects scientific notation (e.g., 1e-5)
+ * - Validates it's a valid positive number
+ * - Normalizes to fixed decimal format (max 6 decimal places)
+ * - Returns normalized string for consistent database storage
+ */
+export function normalizeWithdrawalAmount(amount: string): string {
+  // Reject empty or whitespace-only strings
+  if (!amount || typeof amount !== 'string' || amount.trim().length === 0) {
+    throw new ApiParameterError('Amount is required');
+  }
+
+  // Reject scientific notation (e.g., 1e-5, 1E-5, 1e+5)
+  if (/[eE]/.test(amount)) {
+    throw new ApiParameterError(
+      'Amount cannot use scientific notation. Please use decimal format (e.g., 0.00001 instead of 1e-5)',
+    );
+  }
+
+  // Parse as number
+  const num = parseFloat(amount.trim());
+
+  // Validate it's a valid number
+  if (!Number.isFinite(num)) {
+    throw new ApiParameterError('Amount must be a valid number');
+  }
+
+  // Validate it's positive
+  if (num <= 0) {
+    throw new ApiParameterError('Amount must be greater than 0');
+  }
+
+  // Normalize to fixed decimal format (max 6 decimal places)
+  // This prevents precision issues when comparing amounts in database queries
+  const normalized = num.toFixed(6);
+
+  // Remove trailing zeros to keep format clean (e.g., "100.000000" -> "100")
+  // But preserve at least one decimal place if original had decimals
+  const hasDecimal = amount.includes('.');
+  const normalizedNum = parseFloat(normalized);
+  const result = hasDecimal
+    ? normalizedNum.toString()
+    : normalizedNum.toFixed(0);
+
+  return result;
+}
 
 /**
  * Validate withdrawal amount against on-chain treasury balance and existing withdrawals
@@ -19,6 +68,9 @@ export async function validateWithdrawalAmount(
   if (!campaign.treasuryAddress) {
     throw new ApiNotFoundError('Campaign must have a treasury address');
   }
+
+  // Normalize amount to prevent precision issues
+  const normalizedAmount = normalizeWithdrawalAmount(amount);
 
   // 1. Get on-chain treasury balance (source of truth)
   const treasuryManager = await createTreasuryManager();
@@ -35,6 +87,7 @@ export async function validateWithdrawalAmount(
 
   // 2. Count ALL existing withdrawal requests (both user and admin-initiated)
   // because funds always go to campaign owner
+  // Use normalized amounts for consistent comparison
   const existingWithdrawals = await db.withdrawal.findMany({
     where: {
       campaignId: campaign.id,
@@ -49,13 +102,13 @@ export async function validateWithdrawalAmount(
     return sum;
   }, 0);
 
-  const requestedAmount = parseFloat(amount);
+  const requestedAmount = parseFloat(normalizedAmount);
   const totalAfterRequest = totalRequestedAmount + requestedAmount;
 
   // 3. Validate against on-chain available balance (most important check)
   if (totalAfterRequest > availableOnChain) {
     throw new ApiIntegrityError(
-      `Withdrawal amount (${amount} ${token}) exceeds available treasury balance (${onChainBalance.available} ${onChainBalance.currency}). ` +
+      `Withdrawal amount (${normalizedAmount} ${token}) exceeds available treasury balance (${onChainBalance.available} ${onChainBalance.currency}). ` +
         `Total requested: ${totalRequestedAmount.toFixed(2)} ${token}, Available: ${availableOnChain.toFixed(2)} ${onChainBalance.currency}`,
     );
   }

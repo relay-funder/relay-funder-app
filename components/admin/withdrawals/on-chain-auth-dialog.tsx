@@ -1,8 +1,15 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useApproveWithdrawalOnChain } from '@/lib/web3/hooks/useApproveWithdrawalOnChain';
 import { useAuthorizeTreasury } from '@/lib/hooks/useAdminWithdrawals';
 import { Loader2 } from 'lucide-react';
@@ -14,7 +21,7 @@ export type OnChainAuthDialogProps = {
     transactionHash: string;
     notes?: string | null;
   }) => void | Promise<void>;
-  treasuryAddress: string;
+  treasuryAddress: `0x${string}`;
   campaignTitle: string;
   campaignId: number;
   defaultNotes?: string | null;
@@ -47,25 +54,6 @@ export function OnChainAuthDialog({
       setTxHash(null);
     }
   }, [open, defaultNotes]);
-
-  const isBrowser = useMemo(
-    () => typeof window !== 'undefined' && typeof document !== 'undefined',
-    [],
-  );
-  if (!isBrowser) return null;
-  if (!open) return null;
-
-  function onOverlayClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget && !isExecuting) {
-      onOpenChange?.(false);
-    }
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Escape' && !isExecuting) {
-      onOpenChange?.(false);
-    }
-  }
 
   async function handleExecuteOnChain() {
     try {
@@ -106,31 +94,18 @@ export function OnChainAuthDialog({
     }
   }
 
-  const modal = (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="onchain-auth-dialog-title"
-      aria-describedby="onchain-auth-dialog-description"
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onKeyDown={onKeyDown}
-    >
-      <div className="absolute inset-0 bg-black/50" onClick={onOverlayClick} />
-      <div className="relative z-10 w-[95vw] max-w-lg rounded-md border bg-background shadow-lg">
-        <div className="border-b p-5">
-          <h2 id="onchain-auth-dialog-title" className="text-lg font-semibold">
-            Enable Treasury Withdrawals
-          </h2>
-          <p
-            id="onchain-auth-dialog-description"
-            className="mt-1 text-sm text-muted-foreground"
-          >
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Enable Treasury Withdrawals</DialogTitle>
+          <DialogDescription>
             Execute on-chain authorization to enable withdrawals from this
             treasury. This is a one-time action per treasury.
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4 p-5">
+        <div className="space-y-4">
           <div className="space-y-2 rounded-md border p-3">
             <div className="text-sm font-medium">Campaign</div>
             <div className="text-sm text-muted-foreground">{campaignTitle}</div>
@@ -180,7 +155,7 @@ export function OnChainAuthDialog({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t p-4">
+        <DialogFooter>
           <Button
             type="button"
             variant="secondary"
@@ -205,10 +180,8 @@ export function OnChainAuthDialog({
               )}
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-
-  return ReactDOM.createPortal(modal, document.body);
 }

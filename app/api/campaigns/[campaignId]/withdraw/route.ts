@@ -16,6 +16,7 @@ import { getCampaign } from '@/lib/api/campaigns';
 import {
   validateWithdrawalAmount,
   validateOnChainAuthorization,
+  normalizeWithdrawalAmount,
 } from '@/lib/api/withdrawals/validation';
 
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
@@ -67,8 +68,14 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
     const { campaignId: campaignIdOrSlug } = await params;
-    const { amount, token, transactionHash } =
-      PostCampaignWithdrawRouteBodySchema.parse(await req.json());
+    const {
+      amount: rawAmount,
+      token,
+      transactionHash,
+    } = PostCampaignWithdrawRouteBodySchema.parse(await req.json());
+
+    // Normalize amount to prevent precision issues
+    const amount = normalizeWithdrawalAmount(rawAmount);
 
     const user = await db.user.findUnique({
       where: {

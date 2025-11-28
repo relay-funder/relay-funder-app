@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useExecuteKeepWhatsRaisedWithdrawal } from '@/lib/web3/hooks/useExecuteKeepWhatsRaisedWithdrawal';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { handleApiErrors } from '@/lib/api/error';
-import { ADMIN_WITHDRAWALS_QUERY_KEY } from '@/lib/hooks/useAdminWithdrawals';
-import { CAMPAIGNS_QUERY_KEY, resetCampaign } from '@/lib/hooks/useCampaigns';
+import { useRecordWithdrawalExecution } from '@/lib/hooks/useAdminWithdrawals';
 import { Loader2, AlertCircle, Wallet } from 'lucide-react';
 import { formatUSD } from '@/lib/format-usd';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -24,23 +28,6 @@ export type AdminExecuteWithdrawalDialogProps = {
   token: string;
 };
 
-async function recordWithdrawalExecution(
-  campaignId: number,
-  withdrawalId: number,
-  transactionHash: string,
-) {
-  const response = await fetch(
-    `/api/admin/campaigns/${campaignId}/withdrawals/${withdrawalId}/execute`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactionHash }),
-    },
-  );
-  await handleApiErrors(response, 'Failed to record withdrawal execution');
-  return response.json();
-}
-
 export function AdminExecuteWithdrawalDialog({
   open,
   onOpenChange,
@@ -54,7 +41,6 @@ export function AdminExecuteWithdrawalDialog({
 }: AdminExecuteWithdrawalDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     executeWithdrawal,
@@ -63,32 +49,7 @@ export function AdminExecuteWithdrawalDialog({
     lastTxHash: onChainLastTxHash,
   } = useExecuteKeepWhatsRaisedWithdrawal();
 
-  const recordExecutionMutation = useMutation({
-    mutationFn: ({
-      campaignId,
-      withdrawalId,
-      transactionHash,
-    }: {
-      campaignId: number;
-      withdrawalId: number;
-      transactionHash: string;
-    }) => recordWithdrawalExecution(campaignId, withdrawalId, transactionHash),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'infinite'],
-      });
-      resetCampaign(variables.campaignId, queryClient);
-      onOpenChange?.(false);
-      setTxHash(null);
-      setError(null);
-    },
-    onError: (err) => {
-      setError(err.message || 'Failed to record withdrawal execution');
-    },
-  });
+  const recordExecutionMutation = useRecordWithdrawalExecution();
 
   useEffect(() => {
     if (open) {
@@ -101,11 +62,23 @@ export function AdminExecuteWithdrawalDialog({
     if (onChainLastTxHash && !isExecutingOnChain && !onChainError) {
       // On-chain transaction successful, now record in DB
       setTxHash(onChainLastTxHash);
-      recordExecutionMutation.mutate({
-        campaignId,
-        withdrawalId,
-        transactionHash: onChainLastTxHash,
-      });
+      recordExecutionMutation.mutate(
+        {
+          campaignId,
+          withdrawalId,
+          transactionHash: onChainLastTxHash,
+        },
+        {
+          onSuccess: () => {
+            onOpenChange?.(false);
+            setTxHash(null);
+            setError(null);
+          },
+          onError: (err) => {
+            setError(err.message || 'Failed to record withdrawal execution');
+          },
+        },
+      );
     } else if (onChainError) {
       setError(onChainError);
     }
@@ -116,28 +89,10 @@ export function AdminExecuteWithdrawalDialog({
     campaignId,
     withdrawalId,
     recordExecutionMutation,
+    onOpenChange,
   ]);
 
   const isSubmitting = isExecutingOnChain || recordExecutionMutation.isPending;
-
-  const isBrowser = useMemo(
-    () => typeof window !== 'undefined' && typeof document !== 'undefined',
-    [],
-  );
-  if (!isBrowser) return null;
-  if (!open) return null;
-
-  function onOverlayClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget && !isSubmitting) {
-      onOpenChange?.(false);
-    }
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Escape' && !isSubmitting) {
-      onOpenChange?.(false);
-    }
-  }
 
   async function handleExecute() {
     setError(null);
@@ -157,34 +112,18 @@ export function AdminExecuteWithdrawalDialog({
     }
   }
 
-  const modal = (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="admin-execute-withdrawal-dialog-title"
-      aria-describedby="admin-execute-withdrawal-dialog-description"
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      onKeyDown={onKeyDown}
-    >
-      <div className="absolute inset-0 bg-black/50" onClick={onOverlayClick} />
-      <div className="relative z-10 w-[95vw] max-w-lg rounded-md border bg-background shadow-lg">
-        <div className="border-b p-5">
-          <h2
-            id="admin-execute-withdrawal-dialog-title"
-            className="text-lg font-semibold"
-          >
-            Execute Withdrawal
-          </h2>
-          <p
-            id="admin-execute-withdrawal-dialog-description"
-            className="mt-1 text-sm text-muted-foreground"
-          >
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Execute Withdrawal</DialogTitle>
+          <DialogDescription>
             Execute the withdrawal on-chain. Funds will be sent to the campaign
             owner.
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4 p-5">
+        <div className="space-y-4">
           {/* Important restriction notice */}
           <Alert className="border-amber-200 bg-amber-50">
             <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -251,7 +190,7 @@ export function AdminExecuteWithdrawalDialog({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t p-4">
+        <DialogFooter>
           <Button
             type="button"
             variant="secondary"
@@ -270,10 +209,8 @@ export function AdminExecuteWithdrawalDialog({
               'Execute Withdrawal'
             )}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-
-  return ReactDOM.createPortal(modal, document.body);
 }

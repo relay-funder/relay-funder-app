@@ -9,7 +9,10 @@ import {
 import { response, handleError } from '@/lib/api/response';
 import { CampaignsWithIdParams } from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';
-import { validateWithdrawalAmount } from '@/lib/api/withdrawals/validation';
+import {
+  validateWithdrawalAmount,
+  normalizeWithdrawalAmount,
+} from '@/lib/api/withdrawals/validation';
 import { z } from 'zod';
 
 const PostAdminWithdrawalRequestSchema = z.object({
@@ -26,9 +29,14 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['admin']);
     const { campaignId: campaignIdOrSlug } = await params;
-    const { amount, token, notes } = PostAdminWithdrawalRequestSchema.parse(
-      await req.json(),
-    );
+    const {
+      amount: rawAmount,
+      token,
+      notes,
+    } = PostAdminWithdrawalRequestSchema.parse(await req.json());
+
+    // Normalize amount to prevent precision issues
+    const amount = normalizeWithdrawalAmount(rawAmount);
 
     if (!campaignIdOrSlug) {
       throw new ApiParameterError('Campaign ID is required');

@@ -398,3 +398,70 @@ export function useAuthorizeTreasury() {
     },
   });
 }
+
+// GET /api/admin/withdrawals stats (for dashboard cards)
+async function fetchAdminWithdrawalsStats() {
+  const [pendingResponse, totalResponse] = await Promise.all([
+    fetch('/api/admin/withdrawals?page=1&pageSize=1&status=PENDING'),
+    fetch('/api/admin/withdrawals?page=1&pageSize=1'),
+  ]);
+
+  await handleApiErrors(pendingResponse, 'Failed to fetch pending withdrawals');
+  await handleApiErrors(totalResponse, 'Failed to fetch withdrawals');
+
+  const pendingData = await pendingResponse.json();
+  const totalData = await totalResponse.json();
+
+  return {
+    pendingCount: pendingData.pagination?.totalItems ?? 0,
+    totalCount: totalData.pagination?.totalItems ?? 0,
+  };
+}
+
+export function useAdminWithdrawalsStats() {
+  return useQuery({
+    queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'stats'],
+    queryFn: fetchAdminWithdrawalsStats,
+  });
+}
+
+// POST /api/admin/campaigns/[campaignId]/withdrawals/[withdrawalId]/execute
+type RecordWithdrawalExecutionVariables = {
+  campaignId: number;
+  withdrawalId: number;
+  transactionHash: string;
+};
+
+async function recordWithdrawalExecution({
+  campaignId,
+  withdrawalId,
+  transactionHash,
+}: RecordWithdrawalExecutionVariables) {
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/withdrawals/${withdrawalId}/execute`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionHash }),
+    },
+  );
+  await handleApiErrors(response, 'Failed to record withdrawal execution');
+  return response.json();
+}
+
+export function useRecordWithdrawalExecution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: recordWithdrawalExecution,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'infinite'],
+      });
+      resetCampaign(variables.campaignId, queryClient);
+    },
+  });
+}

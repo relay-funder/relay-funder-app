@@ -3,6 +3,7 @@ import { handleApiErrors } from '@/lib/api/error';
 import type {
   PostCampaignWithdrawRouteResponse,
   GetCampaignWithdrawRouteResponse,
+  CampaignWithdrawal,
 } from '@/lib/api/types';
 import {
   CAMPAIGNS_QUERY_KEY,
@@ -144,14 +145,7 @@ async function fetchCampaignWithdrawals(campaignId: number | string) {
   const response = await fetch(`/api/campaigns/${campaignId}/withdrawals`);
   await handleApiErrors(response, 'Failed to fetch campaign withdrawals');
   const data = await response.json();
-  return data.withdrawals as Array<{
-    id: number;
-    amount: string;
-    token: string;
-    requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
-    transactionHash?: string | null;
-    createdAt: string;
-  }>;
+  return data.withdrawals as CampaignWithdrawal[];
 }
 
 export function useCampaignWithdrawals(
