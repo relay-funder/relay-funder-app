@@ -153,7 +153,13 @@ export function WithdrawalDialog({
 
   const token = currency; // use API token the same as currency string (ex. 'USDT')
 
-  const enabled = availableBalance > 0;
+  // Only disable if we're sure there's no balance (not while loading)
+  const enabled = useMemo<boolean>(() => {
+    // Don't disable while loading - wait for data
+    if (isBalanceLoading || isWithdrawalsLoading) return true;
+    return availableBalance > 0;
+  }, [availableBalance, isBalanceLoading, isWithdrawalsLoading]);
+
   const hasApproval = useMemo<boolean>(() => {
     return approvalData?.hasApproval ?? false;
   }, [approvalData]);
@@ -173,9 +179,13 @@ export function WithdrawalDialog({
   
   // Determine if we should show amount input form
   // Show if authorized OR if approval exists (approval implies authorization)
+  // If hasApproval is true, show immediately (don't wait for loading to complete)
   const shouldShowAmountForm = useMemo<boolean>(() => {
-    if (isApprovalLoading) return false; // Don't show while loading
-    return onChainAuthorized || hasApproval;
+    // If we have approval, show form immediately (approval implies authorization happened)
+    if (hasApproval) return true;
+    // Otherwise, wait for loading to complete and check authorization
+    if (isApprovalLoading) return false;
+    return onChainAuthorized;
   }, [isApprovalLoading, onChainAuthorized, hasApproval]);
 
   const recipientAddress = useMemo<string | null>(() => {
@@ -235,6 +245,16 @@ export function WithdrawalDialog({
       resetLocalState();
     }
   }, [dialogOpen, resetLocalState]);
+
+  // Prevent dialog from closing when data loads/changes
+  // Only close if explicitly requested via onOpenChange
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      // Don't auto-close when data loads - only close if user explicitly closes
+      setDialogOpen(open);
+    },
+    [setDialogOpen],
+  );
 
   const handleProceedToReview = useCallback(() => {
     if (!amountError) {
@@ -344,16 +364,17 @@ export function WithdrawalDialog({
   }, [requestAuthorization, campaign.id, toast, setDialogOpen]);
 
   const defaultTrigger = (
-    <Button className="h-12 w-full text-lg" size="lg" disabled={!campaign}>
+    <Button
+      className="h-12 w-full text-lg"
+      size="lg"
+      disabled={!campaign || (!enabled && !isBalanceLoading && !isWithdrawalsLoading)}
+    >
       Withdraw funds
     </Button>
   );
-  if (!enabled) {
-    return null;
-  }
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       <DialogContent className={className}>
         <DialogHeader>
