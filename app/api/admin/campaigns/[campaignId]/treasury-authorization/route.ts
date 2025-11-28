@@ -1,7 +1,6 @@
 import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import {
-  ApiAuthNotAllowed,
   ApiNotFoundError,
   ApiParameterError,
   ApiIntegrityError,
@@ -12,7 +11,6 @@ import {
   PostTreasuryAuthorizationRouteBodySchema,
 } from '@/lib/api/types';
 import { getCampaign } from '@/lib/api/campaigns';
-import { Prisma } from '@/.generated/prisma/client';
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
