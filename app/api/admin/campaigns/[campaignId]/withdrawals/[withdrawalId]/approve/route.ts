@@ -2,6 +2,7 @@ import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
+  ApiIntegrityError,
   ApiNotFoundError,
   ApiParameterError,
 } from '@/lib/api/error';
