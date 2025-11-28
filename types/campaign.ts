@@ -36,6 +36,9 @@ export interface DbCampaign {
   slug: string;
   location: string | null;
   treasuryAddress?: string | null;
+  treasuryWithdrawalsEnabled?: boolean;
+  treasuryApprovalTxHash?: string | null;
+  treasuryApprovalTimestamp?: Date | null;
   category?: string | null;
   featuredStart?: Date | null;
   featuredEnd?: Date | null;

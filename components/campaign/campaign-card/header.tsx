@@ -9,6 +9,7 @@ import { CampaignCardActions, CampaignCardDisplayOptions } from './types';
 import { CampaignInfoDialog } from '../info';
 import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface CampaignCardHeaderProps {
   campaign: DbCampaign;
@@ -32,6 +33,7 @@ export function CampaignCardHeader({
   displayOptions,
   actionHandlers,
   isFavorite,
+  adminMode,
   statusIndicators,
   adminControls,
 }: CampaignCardHeaderProps) {
@@ -59,6 +61,28 @@ export function CampaignCardHeader({
           <CampaignStatus campaign={campaign} />
         </div>
       )}
+
+      {/* Withdrawal Authorization Badge - Admin only, for ACTIVE/COMPLETED/FAILED campaigns */}
+      {adminMode &&
+        campaign.treasuryAddress &&
+        (campaign.status === 'ACTIVE' ||
+          campaign.status === 'COMPLETED' ||
+          campaign.status === 'FAILED') && (
+          <div className="absolute right-4 top-4 z-20">
+            {campaign.treasuryWithdrawalsEnabled ? (
+              <Badge className="bg-green-600 text-xs hover:bg-green-700">
+                Withdrawals Enabled
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="bg-muted/50 text-xs text-muted-foreground"
+              >
+                Withdrawals Disabled
+              </Badge>
+            )}
+          </div>
+        )}
 
       {/* Round-specific status indicators */}
       {displayOptions.showRoundStatus && statusIndicators && (

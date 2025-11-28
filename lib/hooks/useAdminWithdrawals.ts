@@ -17,12 +17,23 @@ export type AdminWithdrawalListItem = {
   token: string;
   notes?: string | null;
   transactionHash?: string | null;
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
   campaignId: number;
   campaign: {
     id: number;
     title: string;
     slug: string;
+    creatorAddress: string; // Campaign creator address (recipient of funds)
+    treasuryAddress?: string | null; // Treasury address for executing withdrawals
   };
+  campaignCreator?: {
+    id: number;
+    address: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+  } | null;
   createdById: number;
   createdBy: {
     id: number;
@@ -30,6 +41,7 @@ export type AdminWithdrawalListItem = {
     username?: string | null;
     firstName?: string | null;
     lastName?: string | null;
+    roles: string[];
   };
   approvedById?: number | null;
   approvedBy?: {
@@ -48,6 +60,9 @@ export type AdminWithdrawalsFilters = {
   createdByAddress?: string;
   token?: string;
   status?: AdminWithdrawalsStatus;
+  requestType?: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+  createdByType?: 'admin' | 'user';
+  executionStatus?: 'EXECUTED' | 'NOT_EXECUTED';
 };
 
 interface PaginatedWithdrawalsResponse extends PaginatedResponse {
@@ -77,6 +92,15 @@ function buildAdminWithdrawalsUrl({
   }
   if (filters?.status) {
     params.set('status', filters.status);
+  }
+  if (filters?.requestType) {
+    params.set('requestType', filters.requestType);
+  }
+  if (filters?.createdByType) {
+    params.set('createdByType', filters.createdByType);
+  }
+  if (filters?.executionStatus) {
+    params.set('executionStatus', filters.executionStatus);
   }
   return `/api/admin/withdrawals?${params.toString()}`;
 }
@@ -208,11 +232,15 @@ async function approveWithdrawal({
   transactionHash,
   notes,
 }: ApproveWithdrawalVariables) {
-  const response = await fetch(`/api/campaigns/${campaignId}/withdraw`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ withdrawalId, transactionHash, notes }),
-  });
+  // Use admin-specific endpoint for approving user-initiated withdrawals
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/withdrawals/${withdrawalId}/approve`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionHash, notes }),
+    },
+  );
   await handleApiErrors(response, 'Failed to approve withdrawal');
   return response.json();
 }
@@ -324,6 +352,116 @@ export function useRemoveAdminWithdrawal() {
       queryClient.invalidateQueries({
         queryKey: [ADMIN_WITHDRAWAL_QUERY_KEY, variables.id],
       });
+    },
+  });
+}
+
+// POST /api/admin/campaigns/[campaignId]/treasury-authorization
+type AuthorizeTreasuryVariables = {
+  campaignId: number;
+  transactionHash: string;
+  notes?: string | null;
+};
+
+async function authorizeTreasury({
+  campaignId,
+  transactionHash,
+  notes,
+}: AuthorizeTreasuryVariables) {
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/treasury-authorization`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionHash, notes }),
+    },
+  );
+  await handleApiErrors(response, 'Failed to authorize treasury');
+  return response.json();
+}
+
+export function useAuthorizeTreasury() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: authorizeTreasury,
+    onSuccess: (_data, variables) => {
+      // Refresh admin withdrawals lists
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'infinite'],
+      });
+      // Refresh the campaign details
+      resetCampaign(variables.campaignId, queryClient);
+    },
+  });
+}
+
+// GET /api/admin/withdrawals stats (for dashboard cards)
+async function fetchAdminWithdrawalsStats() {
+  const [pendingResponse, totalResponse] = await Promise.all([
+    fetch('/api/admin/withdrawals?page=1&pageSize=1&status=PENDING'),
+    fetch('/api/admin/withdrawals?page=1&pageSize=1'),
+  ]);
+
+  await handleApiErrors(pendingResponse, 'Failed to fetch pending withdrawals');
+  await handleApiErrors(totalResponse, 'Failed to fetch withdrawals');
+
+  const pendingData = await pendingResponse.json();
+  const totalData = await totalResponse.json();
+
+  return {
+    pendingCount: pendingData.pagination?.totalItems ?? 0,
+    totalCount: totalData.pagination?.totalItems ?? 0,
+  };
+}
+
+export function useAdminWithdrawalsStats() {
+  return useQuery({
+    queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'stats'],
+    queryFn: fetchAdminWithdrawalsStats,
+  });
+}
+
+// POST /api/admin/campaigns/[campaignId]/withdrawals/[withdrawalId]/execute
+type RecordWithdrawalExecutionVariables = {
+  campaignId: number;
+  withdrawalId: number;
+  transactionHash: string;
+};
+
+async function recordWithdrawalExecution({
+  campaignId,
+  withdrawalId,
+  transactionHash,
+}: RecordWithdrawalExecutionVariables) {
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/withdrawals/${withdrawalId}/execute`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionHash }),
+    },
+  );
+  await handleApiErrors(response, 'Failed to record withdrawal execution');
+  return response.json();
+}
+
+export function useRecordWithdrawalExecution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: recordWithdrawalExecution,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'infinite'],
+      });
+      resetCampaign(variables.campaignId, queryClient);
     },
   });
 }

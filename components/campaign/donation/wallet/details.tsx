@@ -17,14 +17,21 @@ export function CampaignDonationWalletDetails({
 }: {
   campaign: DbCampaign;
 }) {
-  const { isProcessingPayment, clearDonation, amount, tipAmount, paymentType, usdFormattedBalance } =
-    useDonationContext();
+  const {
+    isProcessingPayment,
+    clearDonation,
+    amount,
+    tipAmount,
+    paymentType,
+    usdFormattedBalance,
+  } = useDonationContext();
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const hasInsufficientBalance = useMemo(() => {
     return (
       usdFormattedBalance.usdBalanceAmount != null &&
-      (numericAmount + parseFloat(tipAmount || '0')) > usdFormattedBalance.usdBalanceAmount
+      numericAmount + parseFloat(tipAmount || '0') >
+        usdFormattedBalance.usdBalanceAmount
     );
   }, [numericAmount, tipAmount, usdFormattedBalance.usdBalanceAmount]);
 

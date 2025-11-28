@@ -72,6 +72,11 @@ enum WithdrawState {
   EXECUTED
 }
 
+enum WithdrawalRequestType {
+  ON_CHAIN_AUTHORIZATION
+  WITHDRAWAL_AMOUNT
+}
+
 model Campaign {
   id              Int                  @id @default(autoincrement())
   title           String
@@ -104,6 +109,12 @@ model Campaign {
   withdrawals        Withdrawal[]
   media              Media[]
   mediaOrder         Json?
+
+  treasuryWithdrawalsEnabled Boolean   @default(false)
+  treasuryApprovalTxHash      String?
+  treasuryApprovalTimestamp   DateTime?
+  treasuryApprovalAdmin       User?    @relation(name: "TreasuryApprovalAdmin", fields: [treasuryApprovalAdminId], references: [id])
+  treasuryApprovalAdminId     Int?
 
   @@index([creatorAddress])
   @@index([category])
@@ -170,6 +181,7 @@ model User {
   approvals     Withdrawal[] @relation(name: "WithdrawalApprovedBy")
   eventFeed     EventFeed[]  @relation(name: "FeedReceiver")
   eventsCreated EventFeed[]  @relation(name: "FeedCreatedBy")
+  treasuryApprovals Campaign[] @relation(name: "TreasuryApprovalAdmin")
 }
 
 model Payment {
@@ -348,16 +360,17 @@ model RoundContribution {
 }
 
 model Withdrawal {
-  id              Int      @id @default(autoincrement())
-  createdAt       DateTime @default(now())
-  createdBy       User     @relation(name: "WithdrawalCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  id              Int                   @id @default(autoincrement())
+  createdAt       DateTime              @default(now())
+  createdBy       User                  @relation(name: "WithdrawalCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
   createdById     Int
-  approvedBy      User?    @relation(name: "WithdrawalApprovedBy", fields: [approvedById], references: [id])
+  approvedBy      User?                 @relation(name: "WithdrawalApprovedBy", fields: [approvedById], references: [id])
   approvedById    Int?
   amount          String
   token           String
   notes           String?
   transactionHash String?
+  requestType     WithdrawalRequestType @default(WITHDRAWAL_AMOUNT)
 
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId Int
