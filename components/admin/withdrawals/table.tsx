@@ -454,9 +454,13 @@ export function WithdrawalsTable({
         }
         description={
           approveTarget?.requestType === 'ON_CHAIN_AUTHORIZATION'
-            ? 'Execute the on-chain authorization first, then enter the transaction hash and optional note to approve this authorization request.'
-            : 'Enter the transaction hash and optional note, then confirm approval.'
+            ? 'Click approve to execute the on-chain authorization transaction via MetaMask. This enables withdrawals for the treasury.'
+            : 'Click approve to execute the withdrawal transaction via MetaMask. Funds will be sent to the campaign owner.'
         }
+        treasuryAddress={approveTarget?.campaign.treasuryAddress ?? null}
+        amount={approveTarget?.amount}
+        token={approveTarget?.token}
+        campaignOwnerAddress={approveTarget?.campaign.creatorAddress}
       />
       <RevokeDialog
         open={revokeOpen}

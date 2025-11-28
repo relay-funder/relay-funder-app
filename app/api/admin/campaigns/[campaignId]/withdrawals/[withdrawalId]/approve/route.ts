@@ -86,13 +86,6 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
 
     // Handle ON_CHAIN_AUTHORIZATION requests differently
     if (instance.requestType === 'ON_CHAIN_AUTHORIZATION') {
-      // For authorization requests, admin must provide transactionHash (on-chain execution)
-      if (!transactionHash) {
-        throw new ApiParameterError(
-          'Transaction hash is required when approving treasury authorization requests. Admin must execute the on-chain authorization first.',
-        );
-      }
-
       // Check if already authorized
       if (campaign.treasuryWithdrawalsEnabled) {
         throw new ApiIntegrityError(
@@ -100,26 +93,33 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
         );
       }
 
-      // Update withdrawal with approval and transaction hash
+      // Transaction hash is optional - if provided, it means admin executed on-chain
+      // If not provided, admin will execute on-chain and provide hash later
+      // For now, we allow approval without hash (admin executes client-side)
+
+      // Update withdrawal with approval and transaction hash (if provided)
       const withdrawal = await db.withdrawal.update({
         where: { id: instance.id },
         data: {
-          transactionHash,
+          ...(transactionHash && { transactionHash }),
           notes: notes ?? null,
           approvedBy: { connect: { id: adminUser.id } },
         },
       });
 
-      // Update campaign with authorization details
-      await db.campaign.update({
-        where: { id: campaign.id },
-        data: {
-          treasuryWithdrawalsEnabled: true,
-          treasuryApprovalTxHash: transactionHash,
-          treasuryApprovalTimestamp: new Date(),
-          treasuryApprovalAdmin: { connect: { id: adminUser.id } },
-        },
-      });
+      // Update campaign with authorization details when transaction hash is provided
+      // This means the on-chain authorization was executed successfully
+      if (transactionHash) {
+        await db.campaign.update({
+          where: { id: campaign.id },
+          data: {
+            treasuryWithdrawalsEnabled: true,
+            treasuryApprovalTxHash: transactionHash,
+            treasuryApprovalTimestamp: new Date(),
+            treasuryApprovalAdmin: { connect: { id: adminUser.id } },
+          },
+        });
+      }
 
       // Track treasury authorization event
       try {
