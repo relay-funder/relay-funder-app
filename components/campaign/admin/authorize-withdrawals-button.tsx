@@ -59,7 +59,7 @@ export function CampaignAdminAuthorizeWithdrawalsButton({
           open={open}
           onOpenChange={setOpen}
           onConfirm={handleSuccess}
-          treasuryAddress={campaign.treasuryAddress}
+          treasuryAddress={campaign.treasuryAddress as `0x${string}`}
           campaignTitle={campaign.title}
           campaignId={campaign.id}
         />
