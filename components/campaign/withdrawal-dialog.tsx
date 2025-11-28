@@ -92,10 +92,10 @@ export function WithdrawalDialog({
 
   // Check if campaign has withdrawal approval
   // Only fetch when dialog is open to avoid exhausting connection pool
-  const { data: approvalData } = useWithdrawalApproval(
-    campaign?.id,
-    dialogOpen,
-  );
+  const {
+    data: approvalData,
+    isLoading: isApprovalLoading,
+  } = useWithdrawalApproval(campaign?.id, dialogOpen);
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
@@ -158,8 +158,25 @@ export function WithdrawalDialog({
     return approvalData?.hasApproval ?? false;
   }, [approvalData]);
   const onChainAuthorized = useMemo<boolean>(() => {
+    // If hasApproval is true, onChainAuthorized must also be true (can't have approval without authorization)
+    // But we still check the actual value from API
     return approvalData?.onChainAuthorized ?? false;
   }, [approvalData]);
+  
+  // Determine if we should show authorization request button
+  // Only show if not authorized AND not loading AND no approval exists
+  const shouldShowAuthRequest = useMemo<boolean>(() => {
+    if (isApprovalLoading) return false; // Don't show while loading
+    if (hasApproval) return false; // Don't show if approval exists (authorization must have happened)
+    return !onChainAuthorized; // Show if not authorized
+  }, [isApprovalLoading, hasApproval, onChainAuthorized]);
+  
+  // Determine if we should show amount input form
+  // Show if authorized OR if approval exists (approval implies authorization)
+  const shouldShowAmountForm = useMemo<boolean>(() => {
+    if (isApprovalLoading) return false; // Don't show while loading
+    return onChainAuthorized || hasApproval;
+  }, [isApprovalLoading, onChainAuthorized, hasApproval]);
 
   const recipientAddress = useMemo<string | null>(() => {
     // If user set a recipientWallet in profile, prefer that; else use profile.address
@@ -372,10 +389,10 @@ export function WithdrawalDialog({
           <div className="space-y-6">
             <TreasuryAuthorizationStatus
               treasuryAddress={treasuryAddress}
-              onChainAuthorized={onChainAuthorized}
+              onChainAuthorized={onChainAuthorized || hasApproval}
               showLabel={true}
             />
-            {!onChainAuthorized && (
+            {shouldShowAuthRequest && (
               <div className="rounded-md border border-amber-300 bg-amber-50 p-4">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
@@ -444,7 +461,13 @@ export function WithdrawalDialog({
               )}
             </div>
 
-            {onChainAuthorized && (
+            {isApprovalLoading && (
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking withdrawal status...
+              </div>
+            )}
+            {shouldShowAmountForm && (
               <div className="space-y-2">
                 <Label htmlFor="withdraw-amount">Amount to withdraw</Label>
                 <div className="flex items-center gap-2">
@@ -616,9 +639,10 @@ export function WithdrawalDialog({
                   !!amountError ||
                   isBalanceLoading ||
                   isWithdrawalsLoading ||
+                  isApprovalLoading ||
                   !treasuryAddress ||
                   !campaign ||
-                  !onChainAuthorized
+                  !shouldShowAmountForm
                 }
               >
                 Review
