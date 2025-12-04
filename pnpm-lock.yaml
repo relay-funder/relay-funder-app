@@ -238,7 +238,7 @@ importers:
         specifier: ^8.57.0
         version: 8.57.1
       eslint-config-next:
-        specifier: 15.5.7
+        specifier: ^15.5.7
         version: 15.5.7(eslint@8.57.1)(typescript@5.8.3)
       node-mocks-http:
         specifier: ^1.17.2

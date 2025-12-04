@@ -102,7 +102,7 @@
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
     "eslint": "^8.57.0",
-    "eslint-config-next": "15.5.7",
+    "eslint-config-next": "^15.5.7",
     "node-mocks-http": "^1.17.2",
     "postcss": "^8",
     "prettier": "^3.5.3",
