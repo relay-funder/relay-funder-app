@@ -10,14 +10,8 @@ import { useDonationContext } from '@/contexts';
 export function CampaignDonationWalletAmount() {
   const { data: profile } = useUserProfile();
 
-  const {
-    amount,
-    token,
-    email,
-    setAmount,
-    setEmail,
-    paymentType,
-  } = useDonationContext();
+  const { amount, token, email, setAmount, setEmail, paymentType } =
+    useDonationContext();
 
   const handleAmountChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -50,7 +44,6 @@ export function CampaignDonationWalletAmount() {
     }
     setEmail(embeddedEmail);
   }, [profile, isEmbedded, embeddedEmail, setEmail]);
-
 
   return (
     <div className="flex flex-col space-y-6">

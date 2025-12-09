@@ -3,10 +3,32 @@ import { db, type Prisma } from '@/server/db';
 export type WithdrawalListItem = Prisma.WithdrawalGetPayload<{
   include: {
     campaign: true;
-    createdBy: true;
-    approvedBy: true;
   };
-}>;
+}> & {
+  createdBy: {
+    id: number;
+    address: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    roles: string[];
+  };
+  approvedBy: {
+    id: number;
+    address: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+  campaignCreator?: {
+    id: number;
+    address: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+  } | null;
+};
 
 export interface ListWithdrawalsParams {
   page?: number;
@@ -24,6 +46,27 @@ export interface ListWithdrawalsParams {
    * - undefined  -> no filter
    */
   status?: 'APPROVED' | 'PENDING';
+  /**
+   * Filter by execution state
+   * - 'EXECUTED' -> transactionHash != null
+   * - 'NOT_EXECUTED' -> transactionHash == null
+   * - undefined -> no filter
+   */
+  executionStatus?: 'EXECUTED' | 'NOT_EXECUTED';
+  /**
+   * Filter by request type
+   * - 'ON_CHAIN_AUTHORIZATION' -> on-chain authorization requests
+   * - 'WITHDRAWAL_AMOUNT' -> individual withdrawal amount requests
+   * - undefined -> no filter
+   */
+  requestType?: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+  /**
+   * Filter by creator type
+   * - 'admin' -> only admin-initiated withdrawals (createdBy has admin role)
+   * - 'user' -> only user-initiated withdrawals (createdBy does not have admin role)
+   * - undefined -> no filter (all withdrawals)
+   */
+  createdByType?: 'admin' | 'user';
 }
 
 export interface ListWithdrawalsResult {
@@ -49,15 +92,34 @@ export async function listWithdrawals({
   createdByAddress,
   token,
   status,
+  requestType,
+  createdByType,
+  executionStatus,
 }: ListWithdrawalsParams = {}): Promise<ListWithdrawalsResult> {
   const where: Prisma.WithdrawalWhereInput = {};
 
   if (typeof campaignId === 'number') {
     where.campaignId = campaignId;
   }
+  // Build createdBy filter object
+  const createdByFilter: Prisma.UserWhereInput = {};
   if (createdByAddress && createdByAddress.trim().length > 0) {
-    where.createdBy = { address: createdByAddress };
+    createdByFilter.address = createdByAddress;
   }
+  // Filter by creator type (admin vs user)
+  if (createdByType === 'admin') {
+    createdByFilter.roles = { has: 'admin' };
+  } else if (createdByType === 'user') {
+    // For array filters, use NOT at the top level to check "does not contain"
+    createdByFilter.NOT = {
+      roles: { has: 'admin' },
+    };
+  }
+  // Only add createdBy filter if we have any conditions
+  if (Object.keys(createdByFilter).length > 0) {
+    where.createdBy = createdByFilter;
+  }
+
   if (token && token.trim().length > 0) {
     where.token = token;
   }
@@ -65,6 +127,14 @@ export async function listWithdrawals({
     where.approvedById = { not: null };
   } else if (status === 'PENDING') {
     where.approvedById = null;
+  }
+  if (requestType) {
+    where.requestType = requestType;
+  }
+  if (executionStatus === 'EXECUTED') {
+    where.transactionHash = { not: null };
+  } else if (executionStatus === 'NOT_EXECUTED') {
+    where.transactionHash = null;
   }
 
   const [items, totalCount] = await Promise.all([
@@ -75,15 +145,62 @@ export async function listWithdrawals({
       orderBy: { createdAt: 'desc' },
       include: {
         campaign: true,
-        createdBy: true,
-        approvedBy: true,
+        createdBy: {
+          select: {
+            id: true,
+            address: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            roles: true,
+          },
+        },
+        approvedBy: {
+          select: {
+            id: true,
+            address: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     }),
     db.withdrawal.count({ where }),
   ]);
 
+  // Fetch campaign creator information for each withdrawal
+  // Funds always go to the campaign creator
+  const uniqueCreatorAddresses = [
+    ...new Set(items.map((item) => item.campaign.creatorAddress)),
+  ];
+  const creatorUsers = await db.user.findMany({
+    where: { address: { in: uniqueCreatorAddresses } },
+    select: {
+      id: true,
+      address: true,
+      username: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  });
+  const creatorMap = new Map(
+    creatorUsers.map((user) => [user.address.toLowerCase(), user]),
+  );
+
+  const enrichedItems: WithdrawalListItem[] = items.map((item) => {
+    const creatorUser = creatorMap.get(
+      item.campaign.creatorAddress.toLowerCase(),
+    );
+    return {
+      ...item,
+      campaignCreator: creatorUser ?? null,
+    } as WithdrawalListItem;
+  });
+
   return {
-    withdrawals: items,
+    withdrawals: enrichedItems,
     pagination: {
       currentPage: page,
       pageSize,

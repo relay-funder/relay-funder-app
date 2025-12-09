@@ -100,6 +100,40 @@ export type PostCampaignWithdrawRouteBody = z.infer<
 
 export type GetCampaignWithdrawRouteResponse = {
   hasApproval: boolean;
+  onChainAuthorized: boolean;
 };
 export type PostCampaignWithdrawRouteResponse = Prisma.WithdrawalCreateInput;
 export type PatchCampaignWithdrawRouteResponse = Prisma.WithdrawalCreateInput;
+
+export const PostTreasuryAuthorizationRouteBodySchema = z.object({
+  transactionHash: z.string(),
+  notes: z.string().optional().or(z.null()),
+});
+export type PostTreasuryAuthorizationRouteBody = z.infer<
+  typeof PostTreasuryAuthorizationRouteBodySchema
+>;
+
+export type PostTreasuryAuthorizationRouteResponse = {
+  campaign: {
+    id: number;
+    treasuryWithdrawalsEnabled: boolean;
+    treasuryApprovalTxHash: string | null;
+    treasuryApprovalTimestamp: Date | null;
+  };
+  withdrawal: Prisma.WithdrawalGetPayload<{
+    include: {
+      campaign: true;
+      createdBy: true;
+      approvedBy: true;
+    };
+  }>;
+};
+
+export type CampaignWithdrawal = {
+  id: number;
+  amount: string;
+  token: string;
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+  transactionHash?: string | null;
+  createdAt: string;
+};
