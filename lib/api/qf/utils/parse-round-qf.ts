@@ -113,14 +113,19 @@ function filterApprovedCampaigns(
  */
 function parseCampaignForQf(roundCampaign: QfCampaignDB): QfCampaign {
   const { Campaign } = roundCampaign;
-  const { payments } = Campaign;
+  const payments: QfPaymentDB[] = roundCampaign.roundContributions.map(
+    (c) => c.payment,
+  );
 
   debug &&
     console.log(
       `[QF Parse] Parsing campaign ${Campaign.id}: "${Campaign.title}"`,
     );
   debug && console.log(`[QF Parse]  - Status: ${Campaign.status}`);
-  debug && console.log(`[QF Parse]  - Number of payments: ${payments.length}`);
+  debug &&
+    console.log(
+      `[QF Parse]  - Number of round-attributed payments: ${payments.length}`,
+    );
 
   const { aggregatedContributionsByUser, nUniqueContributors, nContributions } =
     aggregateContributionsByUser(payments);

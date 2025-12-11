@@ -96,15 +96,17 @@ describe('parseRoundForQf', () => {
                 id: 1,
                 title: 'Campaign 1',
                 status: 'ACTIVE',
-                payments: [
-                  {
+              },
+              roundContributions: [
+                {
+                  payment: {
                     amount: '100',
                     token: USD_TOKEN,
                     status: 'confirmed',
                     user: { id: 1, address: '0x123' },
                   },
-                ],
-              },
+                },
+              ],
               status: 'APPROVED',
             },
           ],
