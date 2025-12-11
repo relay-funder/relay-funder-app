@@ -21,21 +21,6 @@ export function toLocalDateInputValue(
   return `${year}-${month}-${day}`;
 }
 
-export function getLocalTimeParts(
-  dateString: string | null | undefined,
-  fallback: TimeParts,
-): TimeParts {
-  if (!dateString) return fallback;
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return fallback;
-  return {
-    hours: date.getHours(),
-    minutes: date.getMinutes(),
-    seconds: date.getSeconds(),
-    ms: date.getMilliseconds(),
-  };
-}
-
 export function applyLocalDateWithTime(value: string, time: TimeParts): string {
   const { year, month, day } = validateAndParseDateString(value);
   const date = new Date(
