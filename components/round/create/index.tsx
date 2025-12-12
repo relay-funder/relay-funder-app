@@ -67,14 +67,6 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
   );
 
   const onDeveloperSubmit = useCallback(async () => {
-    // Only allow in development environment
-    if (process.env.NODE_ENV !== 'development') {
-      console.warn(
-        '🚫 Developer prefill is only available in development mode',
-      );
-      return;
-    }
-
     // Generate meaningful title and description for humanitarian quadratic funding
     const roundTitles = [
       'Humanitarian Tech Innovation Round',
@@ -104,22 +96,26 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
     form.setValue('description', randomDescription);
     form.setValue('descriptionUrl', 'https://example.com');
     form.setValue('matchingPool', Math.round(Math.random() * 1000) + 100); // Ensure > 0
+    form.setValue('tags', [
+      'RULE_MATCHING_QF',
+      'RULE_DISTRIBUTION_AFTER',
+    ]);
 
     // Set proper timeline according to validation rules:
     // applicationEndTime <= startTime (applications close before round starts)
     const now = new Date();
-    const applicationStartTime = now.toISOString().slice(0, 16);
+    const applicationStartTime = now.toISOString().slice(0, 10);
     const applicationEndTime = new Date(
       now.getTime() + 29 * 24 * 60 * 60 * 1000,
     )
       .toISOString()
-      .slice(0, 16); // 29 days
+      .slice(0, 10); // 29 days
     const startTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
       .toISOString()
-      .slice(0, 16); // 30 days
+      .slice(0, 10); // 30 days
     const endTime = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000)
       .toISOString()
-      .slice(0, 16); // 60 days
+      .slice(0, 10); // 60 days
 
     form.setValue('applicationStartTime', applicationStartTime);
     form.setValue('applicationEndTime', applicationEndTime);
