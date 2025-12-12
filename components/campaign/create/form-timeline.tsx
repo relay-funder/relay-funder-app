@@ -36,13 +36,6 @@ interface CampaignCreateFormTimelineProps {
   isOnChainDeployed?: boolean;
 }
 
-function toLocalYyyyMmDd(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function getStartTimeWarning(startTimeValue: string | null | undefined) {
   if (typeof startTimeValue !== 'string') {
     return null;
@@ -174,12 +167,16 @@ export function CampaignCreateFormTimeline({
     if (startTimeValue.includes('T')) {
       startDate = new Date(startTimeValue);
     } else {
-      const { year, month, day } = validateAndParseDateString(startTimeValue);
-      startDate = new Date(year, month - 1, day);
+      try {
+        const { year, month, day } = validateAndParseDateString(startTimeValue);
+        startDate = new Date(year, month - 1, day);
+      } catch {
+        return '';
+      }
     }
     if (Number.isNaN(startDate.getTime())) return '';
     const minEnd = addDays(startDate, 1);
-    return toLocalYyyyMmDd(minEnd);
+    return toLocalDateInputValue(minEnd);
   }, [startTimeValue]);
 
   const handleSwitchToManual = useCallback(() => {
@@ -246,7 +243,7 @@ export function CampaignCreateFormTimeline({
         const diffDays = differenceInDays(oldEndDate, oldStartDate);
         if (diffDays > 0) {
           const newEndDate = addDays(newStartDate, diffDays);
-          const newEndString = toLocalYyyyMmDd(newEndDate);
+          const newEndString = toLocalDateInputValue(newEndDate);
           form.setValue('endTime', newEndString);
         } else {
           // ensure endTime is not before startTime
@@ -324,7 +321,7 @@ export function CampaignCreateFormTimeline({
   }, [form, selectedRoundIdValue, upcomingRounds]);
 
   useEffect(() => {
-    setMinDate(toLocalYyyyMmDd(new Date()));
+    setMinDate(toLocalDateInputValue(new Date()));
   }, []);
 
   return (
