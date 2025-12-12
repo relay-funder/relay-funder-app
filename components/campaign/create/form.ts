@@ -11,7 +11,10 @@ import {
   ValidationStage,
   getValidationSummary,
 } from '@/lib/ccp-validation/campaign-validation';
-import { validateAndParseDateString } from '@/lib/utils/date';
+import {
+  toLocalDateInputValue,
+  validateAndParseDateString,
+} from '@/lib/utils/date';
 
 function validateTimes(value: string) {
   const date = new Date(value);
@@ -228,12 +231,12 @@ export const campaignFormDefaultValues: CampaignFormSchemaType = {
   selectedRoundId: null,
   startTime: (() => {
     const now = new Date();
-    return now.toISOString().slice(0, 10); // Today in YYYY-MM-DD format for date input
+    return toLocalDateInputValue(now);
   })(),
   endTime: (() => {
     const now = new Date();
     const targetDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-    return targetDate.toISOString().slice(0, 10); // YYYY-MM-DD format for date input
+    return toLocalDateInputValue(targetDate);
   })(),
   location: '',
   category: '',
