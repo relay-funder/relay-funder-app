@@ -18,9 +18,16 @@ export function RoundVisibilityToggle({
   const handleToggleVisibility = useCallback(async () => {
     try {
       const numericRoundId =
-        typeof roundId === 'number' ? roundId : Number(roundId);
-      if (!Number.isFinite(numericRoundId)) {
-        throw new Error('Invalid round id');
+        typeof roundId === 'number'
+          ? roundId
+          : parseInt(roundId as string, 10);
+
+      if (
+        !Number.isInteger(numericRoundId) ||
+        numericRoundId <= 0 ||
+        !Number.isFinite(numericRoundId)
+      ) {
+        throw new Error('Invalid round id: must be a positive integer');
       }
 
       await toggleVisibility({
@@ -35,6 +42,7 @@ export function RoundVisibilityToggle({
 
   return (
     <Button
+      type="button"
       variant="outline"
       onClick={handleToggleVisibility}
       disabled={isToggling}
