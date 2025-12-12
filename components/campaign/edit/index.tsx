@@ -19,6 +19,7 @@ import { CampaignCreateFormTimeline } from '../create/form-timeline';
 import { CampaignFormSchema, CampaignFormSchemaType } from './form';
 import { useCampaignFormEdit } from './use-form-edit';
 import { categories } from '@/lib/constant';
+import { toLocalDateInputValue } from '@/lib/utils/date';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,12 +83,8 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
       fundingGoal: campaign.fundingGoal || '',
       fundingUsage: campaign.fundingUsage || '',
       fundingModel: 'flexible', // Default funding model
-      startTime: campaign.startTime
-        ? new Date(campaign.startTime).toISOString().slice(0, 10)
-        : '',
-      endTime: campaign.endTime
-        ? new Date(campaign.endTime).toISOString().slice(0, 10)
-        : '',
+      startTime: toLocalDateInputValue(campaign.startTime),
+      endTime: toLocalDateInputValue(campaign.endTime),
     },
   });
   const onSubmitStep = useCallback(async () => {
@@ -168,7 +165,8 @@ export function CampaignEdit({ campaign }: { campaign: DbCampaign }) {
               isAlreadySubmitted={isAlreadySubmitted}
             >
               <CampaignCreateFormTimeline
-                isOnChainDeployed={isOnChainDeployed}
+                // Lock timeline controls starting at PENDING_APPROVAL (and beyond).
+                isOnChainDeployed={isAlreadySubmitted}
               />
             </CampaignEditFormPage>
             <CampaignEditFormPage

@@ -27,10 +27,22 @@ import { GetRoundResponseInstance } from '@/lib/api/types';
 import { AlertCircle } from 'lucide-react';
 import { RoundSelectItem } from '@/components/round/select-item';
 import { differenceInDays, addDays } from 'date-fns';
+import {
+  toLocalDateInputValue,
+  validateAndParseDateString,
+} from '@/lib/utils/date';
 
 interface CampaignCreateFormTimelineProps {
   isOnChainDeployed?: boolean;
 }
+
+function toLocalYyyyMmDd(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getStartTimeWarning(startTimeValue: string | null | undefined) {
   if (typeof startTimeValue !== 'string') {
     return null;
@@ -157,9 +169,17 @@ export function CampaignCreateFormTimeline({
 
   const minEndDate = useMemo(() => {
     if (!startTimeValue) return '';
-    const startDate = new Date(startTimeValue);
+    // `startTimeValue` might be ISO or YYYY-MM-DD; normalize to a local date for date input min.
+    let startDate: Date;
+    if (startTimeValue.includes('T')) {
+      startDate = new Date(startTimeValue);
+    } else {
+      const { year, month, day } = validateAndParseDateString(startTimeValue);
+      startDate = new Date(year, month - 1, day);
+    }
+    if (Number.isNaN(startDate.getTime())) return '';
     const minEnd = addDays(startDate, 1);
-    return minEnd.toISOString().slice(0, 10);
+    return toLocalYyyyMmDd(minEnd);
   }, [startTimeValue]);
 
   const handleSwitchToManual = useCallback(() => {
@@ -172,14 +192,8 @@ export function CampaignCreateFormTimeline({
     }
 
     form.setValue('selectedRoundId', upcomingRound.id);
-    form.setValue(
-      'startTime',
-      new Date(upcomingRound.startTime).toISOString().slice(0, 10),
-    );
-    form.setValue(
-      'endTime',
-      new Date(upcomingRound.endTime).toISOString().slice(0, 10),
-    );
+    form.setValue('startTime', toLocalDateInputValue(upcomingRound.startTime));
+    form.setValue('endTime', toLocalDateInputValue(upcomingRound.endTime));
   }, [form, upcomingRound]);
 
   const handleRoundChange = useCallback(
@@ -194,14 +208,8 @@ export function CampaignCreateFormTimeline({
       const round = upcomingRounds?.find(({ id }) => id === parseInt(value));
       if (round) {
         form.setValue('selectedRoundId', round.id);
-        form.setValue(
-          'startTime',
-          new Date(round.startTime).toISOString().slice(0, 10),
-        );
-        form.setValue(
-          'endTime',
-          new Date(round.endTime).toISOString().slice(0, 10),
-        );
+        form.setValue('startTime', toLocalDateInputValue(round.startTime));
+        form.setValue('endTime', toLocalDateInputValue(round.endTime));
       }
     },
     [form, hasManualTimes, upcomingRounds],
@@ -225,8 +233,9 @@ export function CampaignCreateFormTimeline({
         form.setValue('selectedRoundId', 0);
       }
 
-      const newStartDate = new Date(value);
-      const newStartString = newStartDate.toISOString().slice(0, 10);
+      const { year, month, day } = validateAndParseDateString(value);
+      const newStartDate = new Date(year, month - 1, day);
+      const newStartString = value;
       const oldValues = form.getValues();
       const oldStartString = oldValues.startTime;
       const oldEndString = oldValues.endTime;
@@ -237,7 +246,7 @@ export function CampaignCreateFormTimeline({
         const diffDays = differenceInDays(oldEndDate, oldStartDate);
         if (diffDays > 0) {
           const newEndDate = addDays(newStartDate, diffDays);
-          const newEndString = newEndDate.toISOString().slice(0, 10);
+          const newEndString = toLocalYyyyMmDd(newEndDate);
           form.setValue('endTime', newEndString);
         } else {
           // ensure endTime is not before startTime
@@ -277,6 +286,8 @@ export function CampaignCreateFormTimeline({
     refLoaded.current = true;
 
     form.setValue('selectedRoundId', upcomingRound.id);
+    form.setValue('startTime', toLocalDateInputValue(upcomingRound.startTime));
+    form.setValue('endTime', toLocalDateInputValue(upcomingRound.endTime));
   }, [
     upcomingRound,
     upcomingRoundsLoading,
@@ -285,8 +296,35 @@ export function CampaignCreateFormTimeline({
     hasManualTimes,
     form,
   ]);
+
+  // If a round is selected (id > 0), keep the campaign's date inputs in sync with that round.
+  // This prevents saving/submitting stale start/end dates while a round appears selected in the UI.
   useEffect(() => {
-    setMinDate(new Date().toISOString().slice(0, 10));
+    if (!upcomingRounds) return;
+    if (typeof selectedRoundIdValue !== 'number' || selectedRoundIdValue <= 0) {
+      return;
+    }
+    const selectedRound = upcomingRounds.find(
+      (round) => round.id === selectedRoundIdValue,
+    );
+    if (!selectedRound) return;
+
+    const desiredStart = toLocalDateInputValue(selectedRound.startTime);
+    const desiredEnd = toLocalDateInputValue(selectedRound.endTime);
+    if (!desiredStart || !desiredEnd) return;
+
+    const currentStart = form.getValues('startTime');
+    const currentEnd = form.getValues('endTime');
+    if (currentStart !== desiredStart) {
+      form.setValue('startTime', desiredStart);
+    }
+    if (currentEnd !== desiredEnd) {
+      form.setValue('endTime', desiredEnd);
+    }
+  }, [form, selectedRoundIdValue, upcomingRounds]);
+
+  useEffect(() => {
+    setMinDate(toLocalYyyyMmDd(new Date()));
   }, []);
 
   return (
