@@ -252,8 +252,8 @@ export function RoundFull({
             )}
           </div>
 
-          {/* QF Preview - Only for active rounds */}
-          {isAdmin && round.matchingPool > 0 && isActive && (
+          {/* QF Preview - Show for rounds with matching pool (active or ended) */}
+          {isAdmin && round.matchingPool > 0 && (isActive || isEnded) && (
             <RoundQfPreview round={round} isAdmin={isAdmin} />
           )}
         </div>
