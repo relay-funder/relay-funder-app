@@ -7,4 +7,6 @@ export type QfRoundDB = Prisma.RoundGetPayload<{
 
 export type QfCampaignDB = QfRoundDB['roundCampaigns'][number];
 
-export type QfPaymentDB = QfCampaignDB['Campaign']['payments'][number];
+export type QfContributionDB = QfCampaignDB['roundContributions'][number];
+
+export type QfPaymentDB = QfContributionDB['payment'];

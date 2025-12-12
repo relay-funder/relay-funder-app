@@ -17,7 +17,11 @@ export const roundForQfSelect = {
           id: true,
           title: true,
           status: true,
-          payments: {
+        },
+      },
+      roundContributions: {
+        select: {
+          payment: {
             select: {
               amount: true,
               token: true,
@@ -29,9 +33,11 @@ export const roundForQfSelect = {
                 },
               },
             },
-            where: {
-              status: 'confirmed',
-            },
+          },
+        },
+        where: {
+          payment: {
+            status: 'confirmed',
           },
         },
       },

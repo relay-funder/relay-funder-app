@@ -10,6 +10,74 @@ import { response, handleError } from '@/lib/api/response';
 import { fileToUrl } from '@/lib/storage';
 import { PatchRoundResponse, PostRoundsResponse } from '@/lib/api/types';
 import { getUser } from '@/lib/api/user';
+import { parseAndValidateRoundDates } from '@/lib/api/rounds/validate-round-dates';
+import { z } from 'zod';
+
+const RoundDatesFormSchema = z.object({
+  applicationStartTime: z.string().min(1),
+  applicationEndTime: z.string().min(1),
+  startTime: z.string().min(1),
+  endTime: z.string().min(1),
+});
+
+/**
+ * Zod schema for validating matchingPool form field.
+ * Coerces string to number, ensures finite, non-negative value.
+ * Decimals are allowed (matchingPool is Decimal in database).
+ */
+const MatchingPoolSchema = z.coerce
+  .number({
+    required_error: 'matchingPool is required',
+    invalid_type_error: 'matchingPool must be a number',
+  })
+  .finite({ message: 'matchingPool must be a finite number' })
+  .nonnegative({ message: 'matchingPool must be non-negative' });
+
+/**
+ * Parses and decodes comma-separated tags from form data.
+ * Handles malformed percent-escapes by throwing ApiParameterError instead of letting URIError bubble.
+ * @throws {ApiParameterError} if tag decoding fails
+ */
+function parseTags(value: string | null | undefined): string[] {
+  const tags = (value ?? '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .map((tag) => {
+      try {
+        return decodeURIComponent(tag);
+      } catch (error) {
+        throw new ApiParameterError(
+          `Invalid tags parameter: malformed percent-escaped sequence in tag "${tag}"`,
+        );
+      }
+    });
+  return tags;
+}
+
+/**
+ * Strictly validates and parses a numeric string.
+ * Ensures the value is a non-empty string containing only digits,
+ * then converts to a finite number.
+ * @throws {ApiParameterError} if validation fails
+ */
+function parseStrictNumeric(
+  value: string | null | undefined,
+  fieldName: string,
+): number {
+  const rawValue = value ?? '';
+  if (typeof rawValue !== 'string' || rawValue.trim() === '') {
+    throw new ApiParameterError(`Invalid ${fieldName}: must be a non-empty string`);
+  }
+  if (!/^\d+$/.test(rawValue.trim())) {
+    throw new ApiParameterError(`Invalid ${fieldName}: must contain only digits`);
+  }
+  const parsed = Number(rawValue.trim());
+  if (!Number.isFinite(parsed)) {
+    throw new ApiParameterError(`Invalid ${fieldName}: must be a finite number`);
+  }
+  return parsed;
+}
 
 export async function POST(req: Request) {
   try {
@@ -20,30 +88,30 @@ export async function POST(req: Request) {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const descriptionUrl = (formData.get('descriptionUrl') as string) || null;
-    const matchingPool = parseInt(formData.get('matchingPool') as string);
-    const startTime = formData.get('startTime') as string;
-    const endTime = formData.get('endTime') as string;
-    const applicationStartTime = formData.get('applicationStartTime') as string;
-    const applicationEndTime = formData.get('applicationEndTime') as string;
-    const tags =
-      (formData.get('tags') as string)
-        ?.split(',')
-        .map((tag) => decodeURIComponent(tag)) ?? [];
+    const matchingPoolResult = MatchingPoolSchema.safeParse(
+      formData.get('matchingPool'),
+    );
+    if (!matchingPoolResult.success) {
+      throw new ApiParameterError(
+        `Invalid matchingPool: ${matchingPoolResult.error.errors[0]?.message ?? 'must be a valid non-negative number'}`,
+      );
+    }
+    const matchingPool = matchingPoolResult.data;
+    const rawDates = RoundDatesFormSchema.parse({
+      applicationStartTime: formData.get('applicationStartTime'),
+      applicationEndTime: formData.get('applicationEndTime'),
+      startTime: formData.get('startTime'),
+      endTime: formData.get('endTime'),
+    });
+    const { applicationStart, applicationEnd, roundStart, roundEnd } =
+      parseAndValidateRoundDates(rawDates);
+    const tags = parseTags(formData.get('tags') as string | null);
     const status = formData.get('status') as string;
 
     const logo = formData.get('logo') as File | null;
 
     // Check if any required fields are missing
-    if (
-      !title ||
-      !description ||
-      !tags ||
-      !matchingPool ||
-      !applicationStartTime ||
-      !applicationEndTime ||
-      !startTime ||
-      !endTime
-    ) {
+    if (!title || !description) {
       throw new ApiParameterError('Missing required parameters');
     }
 
@@ -74,10 +142,10 @@ export async function POST(req: Request) {
         descriptionUrl,
         tags,
         matchingPool: matchingPool,
-        applicationStart: new Date(applicationStartTime),
-        applicationClose: new Date(applicationEndTime),
-        startDate: new Date(startTime),
-        endDate: new Date(endTime),
+        applicationStart,
+        applicationClose: applicationEnd,
+        startDate: roundStart,
+        endDate: roundEnd,
         blockchain: 'CELO',
         logoUrl,
         managerAddress: creatorAddress,
@@ -112,16 +180,36 @@ export async function PATCH(req: Request) {
     const session = await checkAuth(['admin']);
     const formData = await req.formData();
     // Extract form fields
-    const id = parseInt(formData.get('roundId') as string);
+    const id = parseStrictNumeric(
+      formData.get('roundId') as string,
+      'roundId',
+    );
+
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
-    const matchingPool = parseInt(formData.get('matchingPool') as string);
-    const startTime = formData.get('startTime') as string;
-    const endTime = formData.get('endTime') as string;
-    const applicationStartTime = formData.get('applicationStartTime') as string;
-    const applicationEndTime = formData.get('applicationEndTime') as string;
-    const tags = formData.get('tags') as string;
+    const matchingPoolResult = MatchingPoolSchema.safeParse(
+      formData.get('matchingPool'),
+    );
+    if (!matchingPoolResult.success) {
+      throw new ApiParameterError(
+        `Invalid matchingPool: ${matchingPoolResult.error.errors[0]?.message ?? 'must be a valid non-negative number'}`,
+      );
+    }
+    const matchingPool = matchingPoolResult.data;
+    const rawDates = RoundDatesFormSchema.parse({
+      applicationStartTime: formData.get('applicationStartTime'),
+      applicationEndTime: formData.get('applicationEndTime'),
+      startTime: formData.get('startTime'),
+      endTime: formData.get('endTime'),
+    });
+    const { applicationStart, applicationEnd, roundStart, roundEnd } =
+      parseAndValidateRoundDates(rawDates);
+    const tags = parseTags(formData.get('tags') as string | null);
     const descriptionUrl = (formData.get('descriptionUrl') as string) || null;
+
+    if (!title || !description) {
+      throw new ApiParameterError('Missing required parameters');
+    }
 
     const logo = formData.get('logo') as File | null;
     const instance = await db.round.findUnique({ where: { id } });
@@ -156,12 +244,12 @@ export async function PATCH(req: Request) {
         title,
         description,
         descriptionUrl,
-        tags: tags.split(','),
+        tags,
         matchingPool: matchingPool,
-        startDate: new Date(startTime),
-        endDate: new Date(endTime),
-        applicationStart: new Date(applicationStartTime),
-        applicationClose: new Date(applicationEndTime),
+        startDate: roundStart,
+        endDate: roundEnd,
+        applicationStart,
+        applicationClose: applicationEnd,
         logoUrl,
       },
     });

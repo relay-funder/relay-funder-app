@@ -62,27 +62,33 @@ export const mockedQfRoundMultipleCampaigns: MockedQfRound = {
           id: 1,
           title: 'Campaign 1',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '10.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '5.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '20.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 2, address: '0x223' },
             },
-          ],
-        },
+          },
+        ],
       },
       {
         id: 2,
@@ -91,21 +97,25 @@ export const mockedQfRoundMultipleCampaigns: MockedQfRound = {
           id: 2,
           title: 'Campaign 2',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '15.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 3, address: '0x323' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '25.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 4, address: '0x423' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -195,15 +205,17 @@ export const mockedQfRoundSameScoreCampaigns: MockedQfRound = {
           id: 100,
           title: 'Campaign 1',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '400.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-          ],
-        },
+          },
+        ],
       },
       {
         id: 2,
@@ -212,33 +224,41 @@ export const mockedQfRoundSameScoreCampaigns: MockedQfRound = {
           id: 101,
           title: 'Campaign 2',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '25.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 3, address: '0x323' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '25.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 4, address: '0x423' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '25.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 5, address: '0x523' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '25.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 6, address: '0x623' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -330,27 +350,33 @@ export const mockedQfRoundSingleCampaign: MockedQfRound = {
           id: 100,
           title: 'Campaign 1',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '10.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '5.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '20.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 2, address: '0x223' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -461,8 +487,8 @@ export const mockedQfRoundNoPayments: MockedQfRound = {
           id: 100,
           title: 'No Payments Campaign',
           status: 'ACTIVE',
-          payments: [],
         },
+        roundContributions: [],
       },
     ],
   },
@@ -521,33 +547,41 @@ export const mockedQfRoundAggregationSameUser: MockedQfRound = {
           id: 100,
           title: 'Aggregation Campaign',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '10.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '5.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '2.5',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '1.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -596,39 +630,49 @@ export const mockedQfRoundDecimalContributions: MockedQfRound = {
           id: 100,
           title: 'Decimal Campaign',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '10.75',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '15.10',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 2, address: '0x223' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '100.25',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 3, address: '0x323' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '0.01',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 4, address: '0x423' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '999.999',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 5, address: '0x523' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -688,21 +732,25 @@ export const mockedQfRoundSmallContributions: MockedQfRound = {
           id: 100,
           title: 'Small Contributions Campaign',
           status: 'ACTIVE',
-          payments: [
-            {
-              amount: '0.000001',
-              token: USD_TOKEN,
-              status: 'confirmed',
-              user: { id: 1, address: '0x123' },
-            },
-            {
-              amount: '0.000001',
-              token: USD_TOKEN,
-              status: 'confirmed',
-              user: { id: 1, address: '0x123' },
-            },
-          ],
         },
+        roundContributions: [
+          {
+            payment: {
+              amount: '0.000001',
+              token: USD_TOKEN,
+              status: 'confirmed',
+              user: { id: 1, address: '0x123' },
+            },
+          },
+          {
+            payment: {
+              amount: '0.000001',
+              token: USD_TOKEN,
+              status: 'confirmed',
+              user: { id: 1, address: '0x123' },
+            },
+          },
+        ],
       },
     ],
   },
@@ -761,21 +809,25 @@ export const mockedQfRoundLargeContributions: MockedQfRound = {
           id: 100,
           title: 'Large Contributions Campaign',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '1000000.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '500000.5',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 2, address: '0x223' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -853,21 +905,25 @@ export const mockedQfRoundPendingPayments: MockedQfRound = {
           id: 100,
           title: 'Pending Campaign',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '10.0',
               token: USD_TOKEN,
               status: 'pending',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '20.0',
               token: USD_TOKEN,
               status: 'failed',
               user: { id: 2, address: '0x223' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },
@@ -926,33 +982,41 @@ export const mockedQfRoundMixedStatus: MockedQfRound = {
           id: 100,
           title: 'Mixed Status Campaign',
           status: 'ACTIVE',
-          payments: [
-            {
+        },
+        roundContributions: [
+          {
+            payment: {
               amount: '10.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 1, address: '0x123' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '20.0',
               token: USD_TOKEN,
               status: 'pending',
               user: { id: 2, address: '0x223' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '30.0',
               token: USD_TOKEN,
               status: 'confirmed',
               user: { id: 3, address: '0x323' },
             },
-            {
+          },
+          {
+            payment: {
               amount: '40.0',
               token: USD_TOKEN,
               status: 'failed',
               user: { id: 4, address: '0x423' },
             },
-          ],
-        },
+          },
+        ],
       },
     ],
   },

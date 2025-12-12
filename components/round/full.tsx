@@ -175,18 +175,6 @@ export function RoundFull({
                 </p>
               </Card>
 
-              {/* Round Period */}
-              <Card className="p-4">
-                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-sm font-medium">Round Period</span>
-                </div>
-                <p className="text-sm font-medium text-foreground">
-                  <FormattedDate date={new Date(round.startTime)} /> -{' '}
-                  <FormattedDate date={new Date(round.endTime)} />
-                </p>
-              </Card>
-
               {/* Applications Period */}
               <Card className="p-4">
                 <div className="mb-2 flex items-center gap-2 text-muted-foreground">
@@ -196,6 +184,18 @@ export function RoundFull({
                 <p className="text-sm font-medium text-foreground">
                   <FormattedDate date={new Date(round.applicationStartTime)} />{' '}
                   - <FormattedDate date={new Date(round.applicationEndTime)} />
+                </p>
+              </Card>
+
+              {/* Round Period */}
+              <Card className="p-4">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-sm font-medium">Round Period</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  <FormattedDate date={new Date(round.startTime)} /> -{' '}
+                  <FormattedDate date={new Date(round.endTime)} />
                 </p>
               </Card>
             </div>
@@ -252,8 +252,8 @@ export function RoundFull({
             )}
           </div>
 
-          {/* QF Preview - Only for active rounds */}
-          {isAdmin && round.matchingPool > 0 && isActive && (
+          {/* QF Preview - Show for rounds with matching pool (active or ended) */}
+          {isAdmin && round.matchingPool > 0 && (isActive || isEnded) && (
             <RoundQfPreview round={round} isAdmin={isAdmin} />
           )}
         </div>

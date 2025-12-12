@@ -17,16 +17,26 @@ export function CampaignDonationWalletDetails({
 }: {
   campaign: DbCampaign;
 }) {
-  const { isProcessingPayment, clearDonation, amount, tipAmount, paymentType, usdFormattedBalance } =
-    useDonationContext();
+  const {
+    isProcessingPayment,
+    clearDonation,
+    amount,
+    tipAmount,
+    paymentType,
+    usdFormattedBalance,
+  } = useDonationContext();
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
+  const numericTip = useMemo(() => {
+    const parsed = parseFloat(tipAmount ?? '0');
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, [tipAmount]);
   const hasInsufficientBalance = useMemo(() => {
     return (
       usdFormattedBalance.usdBalanceAmount != null &&
-      (numericAmount + parseFloat(tipAmount || '0')) > usdFormattedBalance.usdBalanceAmount
+      numericAmount + numericTip > usdFormattedBalance.usdBalanceAmount
     );
-  }, [numericAmount, tipAmount, usdFormattedBalance.usdBalanceAmount]);
+  }, [numericAmount, numericTip, usdFormattedBalance.usdBalanceAmount]);
 
   useEffect(() => {
     return () => {

@@ -107,9 +107,17 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{options?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {options?.description}
-            </AlertDialogDescription>
+            {typeof options?.description === 'string' ? (
+              <AlertDialogDescription>
+                {options.description}
+              </AlertDialogDescription>
+            ) : (
+              <AlertDialogDescription asChild>
+                <div className="text-sm text-muted-foreground">
+                  {options?.description}
+                </div>
+              </AlertDialogDescription>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancel} disabled={isPending}>

@@ -18,6 +18,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { ROUNDS_QUERY_KEY, ROUND_QUERY_KEY } from './useRounds';
 import { handleApiErrors } from '@/lib/api/error';
 
@@ -80,15 +81,40 @@ async function updateRoundBasic(input: UpdateRoundBasicInput) {
 
 export function useUpdateRoundBasic() {
   const qc = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: updateRoundBasic,
     onSuccess: (_data, vars) => {
       // Invalidate lists/infinite lists and the specific round detail
+      // Note: useRound uses [ROUND_QUERY_KEY, id, forceUserView], so we need to
+      // invalidate all variants (with and without forceUserView)
       qc.invalidateQueries({ queryKey: [ROUNDS_QUERY_KEY] });
       qc.invalidateQueries({ queryKey: [ROUNDS_QUERY_KEY, 'infinite', 10] });
       qc.invalidateQueries({ queryKey: [ROUNDS_QUERY_KEY, 'infinite', 3] });
-      qc.invalidateQueries({ queryKey: [ROUND_QUERY_KEY, vars.roundId] });
+      // Invalidate all round detail queries for this roundId (regardless of forceUserView)
+      qc.invalidateQueries({
+        queryKey: [ROUND_QUERY_KEY, vars.roundId],
+        exact: false,
+      });
+
+      // Show success toast
+      toast({
+        title: 'Round Updated',
+        description: 'Round information has been successfully updated.',
+        variant: 'default',
+      });
+    },
+    onError: (error) => {
+      // Show error toast
+      toast({
+        title: 'Failed to Update Round',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     },
   });
 }
