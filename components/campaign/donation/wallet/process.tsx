@@ -106,7 +106,7 @@ export function CampaignDonationWalletProcess({
   const onDoneView = useCallback(() => {
     setState('idle');
     router.push(`/campaigns/${campaign.slug}`);
-  }, [router, campaign]);
+  }, [router, campaign, setState]);
   const onDoneDonateAgain = useCallback(() => {
     clearDonation();
     setState('idle');
