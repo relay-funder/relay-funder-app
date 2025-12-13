@@ -10,6 +10,7 @@ export const EXTERNAL_LINKS = {
   TERMS: 'https://www.relayfunder.com/terms',
   PARTNERS: 'https://www.relayfunder.com/partners',
   FAQ: 'https://www.relayfunder.com/faq',
+  NEWSLETTER: 'https://mailchi.mp/704e7264267c/relay-funder-newsletter',
 } as const;
 
 export type ExternalLinkKey = keyof typeof EXTERNAL_LINKS;

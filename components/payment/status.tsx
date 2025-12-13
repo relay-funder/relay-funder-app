@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { enableApiMock } from '@/lib/develop';
 import { mockStripeInstance } from '@/lib/test/mock-stripe';
+import { NewsletterSignupLink } from '@/components/newsletter/newsletter-signup-link';
 
 export function PaymentStatus() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
@@ -77,29 +78,36 @@ export function PaymentStatus() {
   }, [searchParams]);
 
   return (
-    <div className="flex items-start justify-center bg-gray-50/50 p-4">
-      <Card className="w-full max-w-md space-y-4 p-6">
+    <div className="flex items-start justify-center bg-muted/30 px-4 py-10">
+      <Card className="w-full max-w-md space-y-6 p-8">
         {status === 'loading' ? (
           <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
-            <p className="mt-4">Verifying payment status...</p>
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-foreground"></div>
+            <p className="mt-4 text-muted-foreground">
+              Verifying payment status...
+            </p>
           </div>
         ) : status === 'success' ? (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
-            <h1 className="text-2xl font-bold text-green-700">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-bio" />
+            <h1 className="text-2xl font-bold text-foreground">
               Payment Successful!
             </h1>
-            <p className="text-gray-600">{message}</p>
+            <p className="text-muted-foreground">{message}</p>
+            <div className="flex justify-center">
+              <NewsletterSignupLink />
+            </div>
             <Link href="/" className="block">
               <Button className="w-full">Return to Home</Button>
             </Link>
           </div>
         ) : (
           <div className="space-y-4 text-center">
-            <XCircle className="mx-auto h-12 w-12 text-red-500" />
-            <h1 className="text-2xl font-bold text-red-700">Payment Failed</h1>
-            <p className="text-gray-600">{message}</p>
+            <XCircle className="mx-auto h-12 w-12 text-destructive" />
+            <h1 className="text-2xl font-bold text-foreground">
+              Payment Failed
+            </h1>
+            <p className="text-muted-foreground">{message}</p>
             <Link href="/" className="block">
               <Button variant="outline" className="w-full">
                 Return to Home
