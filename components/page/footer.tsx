@@ -1,6 +1,7 @@
 'use client';
 
 import { EXTERNAL_LINKS, SUPPORT_EMAIL } from '@/lib/constant';
+import { Mail } from 'lucide-react';
 
 export function PageFooter() {
   const currentYear = new Date().getFullYear();
@@ -77,6 +78,15 @@ export function PageFooter() {
                 className="text-text-muted transition-colors hover:text-text-primary"
               >
                 FAQ
+              </a>
+              <a
+                href={EXTERNAL_LINKS.NEWSLETTER}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-text-muted transition-colors hover:text-text-primary"
+              >
+                <Mail className="h-4 w-4" />
+                Newsletter
               </a>
               <a
                 href={EXTERNAL_LINKS.PRIVACY}

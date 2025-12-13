@@ -13,8 +13,12 @@ import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletProcess({
   campaign,
+  state,
+  setState,
 }: {
   campaign: DbCampaign;
+  state: keyof typeof DonationProcessStates;
+  setState: (state: keyof typeof DonationProcessStates) => void;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -28,6 +32,7 @@ export function CampaignDonationWalletProcess({
     token,
     usdFormattedBalance,
     setIsProcessingPayment,
+    clearDonation,
   } = useDonationContext();
 
   const { hasUsdBalance } = usdFormattedBalance;
@@ -36,8 +41,6 @@ export function CampaignDonationWalletProcess({
   const poolAmount = useMemo(() => {
     return numericAmount;
   }, [numericAmount]);
-  const [state, setState] =
-    useState<keyof typeof DonationProcessStates>('idle');
   const [processing, setProcessing] = useState<boolean>(false);
   const {
     onDonate,
@@ -99,18 +102,15 @@ export function CampaignDonationWalletProcess({
       setProcessing(false);
       setIsProcessingPayment(false);
     }
-    if (state === 'done') {
-      setTimeout(() => {
-        setIsProcessingPayment(false);
-      }, 3000);
-
-      return;
-    }
   }, [state, setIsProcessingPayment]);
   const onDoneView = useCallback(() => {
     setState('idle');
     router.push(`/campaigns/${campaign.slug}`);
   }, [router, campaign]);
+  const onDoneDonateAgain = useCallback(() => {
+    clearDonation();
+    setState('idle');
+  }, [clearDonation, setState]);
   useEffect(() => {
     let deferTimerId = null;
     if (processingOnDonate) {
@@ -139,14 +139,16 @@ export function CampaignDonationWalletProcess({
 
   return (
     <>
-      <Button
-        className="mb-6 w-full"
-        size="lg"
-        disabled={isButtonDisabled}
-        onClick={onDonateStart}
-      >
-        {processing ? 'Processing...' : `Support Now`}
-      </Button>
+      <VisibilityToggle isVisible={state === 'idle'}>
+        <Button
+          className="mb-6 w-full"
+          size="lg"
+          disabled={isButtonDisabled}
+          onClick={onDonateStart}
+        >
+          {processing ? 'Processing...' : `Support Now`}
+        </Button>
+      </VisibilityToggle>
       <VisibilityToggle isVisible={state !== 'idle'}>
         <DonationProcessDisplay
           currentState={state}
@@ -155,6 +157,7 @@ export function CampaignDonationWalletProcess({
           onFailureCancel={() => setState('idle')}
           onFailureRetry={onDonateStart}
           onDoneView={onDoneView}
+          onDoneDonateAgain={onDoneDonateAgain}
         />
       </VisibilityToggle>
     </>
