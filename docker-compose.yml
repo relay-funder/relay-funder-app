@@ -8,15 +8,18 @@ volumes:
 x-app-environment: &app-environment
   DATABASE_URL: postgres://${POSTGRES_USER:-relayfunder}:${POSTGRES_PASSWORD:-relayfunder}@database:5432/${POSTGRES_DB:-relayfunder_dev}
   NODE_ENV: development
+  CI: "true"
 
 services:
   database:
-    image: postgres:latest
+    image: postgres:16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-relayfunder}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-relayfunder}
       POSTGRES_DB: ${POSTGRES_DB:-relayfunder_dev}
+    ports:
+      - "5432:5432"
     healthcheck:
       test:
         [

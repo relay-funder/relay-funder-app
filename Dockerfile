@@ -25,7 +25,7 @@ ENV PORT=3000
 # this project deals with lots of small files from the web3
 # dependencies, raising the max_old_size allows node to cache
 # them when next does a re-compile for hot-reloading
-ENV NODE_OPTIONS=--max_old_space_size=8192
+ENV NODE_OPTIONS=--max_old_space_size=2048
 
 # Expose port
 EXPOSE 3000
