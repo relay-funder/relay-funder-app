@@ -61,7 +61,7 @@ export async function getPassportScore(
   address: Address,
 ): Promise<PassportScoreResponse> {
   debug && console.log('[Passport] Getting score for address:', address);
-  const endpoint = `/v2/stamps/${PASSPORT_SCORER_ID}/score/${address}`;
+  const endpoint = `/registry/score/${PASSPORT_SCORER_ID}/${address}`;
   const url = `${PASSPORT_API_BASE_URL}${endpoint}`;
 
   try {
@@ -78,6 +78,9 @@ export async function getPassportScore(
         'passing:',
         result.passing_score,
       );
+
+
+
     return result;
   } catch (error) {
     console.error('[Passport] Error getting score:', error);
@@ -110,7 +113,7 @@ export async function getPassportStamps(
       includeMetadata,
     );
 
-  const endpoint = `/v2/stamps/${address}?include_metadata=${includeMetadata}`;
+  const endpoint = `/registry/stamps/${address}?include_metadata=${includeMetadata}`;
   const url = `${PASSPORT_API_BASE_URL}${endpoint}`;
 
   try {

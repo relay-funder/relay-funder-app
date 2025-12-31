@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
     // Convert the Passport score to our humanity score format
     const humanityScore = convertPassportScoreToHumanityScore(
-      passportData.score,
+      passportData.score || '0',
     );
 
     // Update the humanity score in the database

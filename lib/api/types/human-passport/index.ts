@@ -7,11 +7,11 @@ export const GetPassportResponseSchema = z.object({
   success: z.literal(true),
   address: z.string(),
   humanityScore: z.number().int().min(0),
-  passportScore: NumericString,
-  passingScore: z.boolean(),
-  threshold: NumericString,
-  lastScoreTimestamp: z.string(),
-  expirationTimestamp: z.string(),
+  passportScore: NumericString.optional(),
+  passingScore: z.boolean().optional(),
+  threshold: NumericString.optional(),
+  lastScoreTimestamp: z.string().optional(),
+  expirationTimestamp: z.string().nullable().optional(),
   stamps: z.record(PassportStampDataSchema).optional(),
 });
 

@@ -288,7 +288,7 @@ export function PassportVerificationCard({
                           </span>
                           <FormattedDate
                             className="font-medium"
-                            date={verificationData.expirationTimestamp}
+                            date={verificationData.expirationTimestamp || undefined}
                             options={{
                               year: 'numeric',
                               month: 'numeric',

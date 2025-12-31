@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { enableApiMock } from '@/lib/develop';
 import { mockStripeInstance } from '@/lib/test/mock-stripe';
+import { trackEvent } from '@/lib/analytics';
 
 export function PaymentStatus() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
@@ -58,18 +59,31 @@ export function PaymentStatus() {
         if (paymentIntent?.status === 'succeeded') {
           setStatus('success');
           setMessage('Thank you for your donation!');
+          trackEvent('funnel_payment_success', {
+            amount: paymentIntent.amount / 100, // Stripe amount is in cents
+            currency: paymentIntent.currency,
+            payment_method: paymentIntent.payment_method_types?.[0],
+            session_id: paymentIntentId,
+          });
         } else {
           setStatus('error');
           setMessage('Payment was not completed successfully');
+          trackEvent('funnel_payment_failed', {
+            error_message: 'Payment status not succeeded',
+            session_id: paymentIntentId,
+          });
         }
       } catch (err) {
         console.error('Error checking payment status:', err);
         setStatus('error');
-        setMessage(
+        const errorMessage =
           err instanceof Error
             ? err.message
-            : 'Failed to verify payment status',
-        );
+            : 'Failed to verify payment status';
+        setMessage(errorMessage);
+        trackEvent('funnel_payment_failed', {
+          error_message: errorMessage,
+        });
       }
     };
 
