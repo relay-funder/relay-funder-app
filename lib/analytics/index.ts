@@ -1,4 +1,4 @@
-import { track } from '@vercel/analytics/react';
+import { track } from '@vercel/analytics';
 import { FunnelEvent, FunnelEventProperties } from './types';
 import { getFunnelProperties } from './funnel';
 

@@ -20,8 +20,9 @@ import { PageLayout } from '@/components/page/layout';
 import { DonationHistory } from '@/components/dashboard/donation-history';
 import { CampaignUpdates } from '@/components/dashboard/campaign-updates';
 import { ScoreList } from '@/components/dashboard/score-list';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
 
 const dashTabsClasses = {
   list: cn('mb-6 h-full w-full', 'grid grid-cols-2 gap-2', 'sm:grid-cols-4'),
@@ -38,6 +39,13 @@ const dashTabsClasses = {
 };
 
 export default function DashboardPage() {
+  useEffect(() => {
+    trackEvent('test_vercel_integration', {
+      time: new Date().toISOString(),
+      environment: process.env.NODE_ENV
+    });
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { authenticated } = useAuth();
   const [removedFavorites, setRemovedFavorites] = useState<Set<number>>(

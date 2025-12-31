@@ -11,8 +11,12 @@ import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { useSearchParams } from 'next/navigation';
 import { useFunnelTracking } from '@/hooks/use-funnel-tracking';
 
+
 export function ExploreStories() {
   useFunnelTracking();
+
+
+
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
