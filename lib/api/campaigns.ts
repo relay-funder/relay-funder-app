@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { db, Prisma } from '@/server/db';
 import type {
   Campaign,
@@ -793,7 +794,7 @@ export async function getCampaignForPayment(campaignId: number) {
   };
 }
 
-export async function getCampaign(campaignIdOrSlug: string | number) {
+export const getCampaign = cache(async (campaignIdOrSlug: string | number) => {
   let where = undefined as Prisma.CampaignWhereUniqueInput | undefined;
   if (!isNaN(Number(campaignIdOrSlug))) {
     where = { id: Number(campaignIdOrSlug) };
@@ -850,7 +851,7 @@ export async function getCampaign(campaignIdOrSlug: string | number) {
     creator,
     paymentSummary,
   } as GetCampaignResponseInstance;
-}
+});
 
 export async function addCampaignUpdate(
   id: number,
