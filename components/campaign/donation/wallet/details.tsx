@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DbCampaign } from '@/types/campaign';
 import { useDonationContext } from '@/contexts';
@@ -11,6 +11,7 @@ import { CampaignDonationAnonymous } from '../anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { PaymentTotalSummary } from '../payment-total-summary';
 import { AlertTriangle } from 'lucide-react';
+import { DonationProcessStates } from '@/types/campaign';
 
 export function CampaignDonationWalletDetails({
   campaign,
@@ -25,6 +26,9 @@ export function CampaignDonationWalletDetails({
     paymentType,
     usdFormattedBalance,
   } = useDonationContext();
+
+  const [processState, setProcessState] =
+    useState<keyof typeof DonationProcessStates>('idle');
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const numericTip = useMemo(() => {
@@ -46,7 +50,7 @@ export function CampaignDonationWalletDetails({
 
   return (
     <div className="relative flex flex-col gap-6">
-      <VisibilityToggle isVisible={!isProcessingPayment}>
+      <VisibilityToggle isVisible={!isProcessingPayment && processState !== 'done'}>
         <div className="space-y-6">
           <CampaignDonationWalletAmount />
 
@@ -59,7 +63,9 @@ export function CampaignDonationWalletDetails({
       </VisibilityToggle>
 
       {/* Insufficient balance warning - only for wallet payments */}
-      {hasInsufficientBalance && paymentType === 'wallet' && (
+      {processState !== 'done' &&
+        hasInsufficientBalance &&
+        paymentType === 'wallet' && (
         <div className="flex items-center gap-2 rounded-md border border-orange-200/60 bg-orange-50/70 p-3 text-sm text-orange-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100">
           <AlertTriangle className="h-4 w-4 flex-shrink-0 text-orange-600 dark:text-blue-300" />
           <span>
@@ -72,9 +78,15 @@ export function CampaignDonationWalletDetails({
         </div>
       )}
 
-      <PaymentTotalSummary amount={amount} tipAmount={tipAmount} />
+      {processState !== 'done' && (
+        <PaymentTotalSummary amount={amount} tipAmount={tipAmount} />
+      )}
 
-      <CampaignDonationWalletProcess campaign={campaign} />
+      <CampaignDonationWalletProcess
+        campaign={campaign}
+        state={processState}
+        setState={setProcessState}
+      />
     </div>
   );
 }
