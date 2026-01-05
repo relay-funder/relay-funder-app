@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=4096 next dev -H 0.0.0.0",
+    "dev": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=8192 next dev",
     "build": "NODE_ENV=production next build",
     "build:production": "node prisma/deploy-migrations.js && NODE_ENV=production next build",
     "migrate:deploy": "node prisma/deploy-migrations.js",
