@@ -4,8 +4,7 @@ export type FunnelEvent =
   | 'funnel_payment_form_view'
   | 'funnel_payment_initiated'
   | 'funnel_payment_success'
-  | 'funnel_payment_failed'
-  | 'test_vercel_integration';
+  | 'funnel_payment_failed';
 
 export interface FunnelEventProperties {
   // Common properties
@@ -23,8 +22,4 @@ export interface FunnelEventProperties {
   // Failure specific
   error_message?: string;
   error_code?: string;
-
-  // Test specific
-  time?: string;
-  environment?: string;
 }

@@ -7,8 +7,7 @@ import type {
 } from '@stripe/stripe-js';
 import { useStripeFormSubmission } from '@/hooks/use-stripe-form-submission';
 
-import { trackEvent } from '@/lib/analytics';
-import { useEffect } from 'react';
+
 
 interface PaymentStripeFormProps {
   publicKey: string;
@@ -23,7 +22,6 @@ interface PaymentStripeFormProps {
 export function PaymentStripeForm({
   publicKey,
   campaign,
-  amount,
 }: PaymentStripeFormProps) {
   const { error, isProcessing, isReady, handleSubmit, clearError } =
     useStripeFormSubmission({
@@ -33,20 +31,7 @@ export function PaymentStripeForm({
 
 
 
-  useEffect(() => {
-    // track form view when ready
-    if (isReady) {
-      trackEvent('funnel_payment_form_view', {
-        amount: parseFloat(amount),
-        currency: 'USD', // Assuming USD for now or check campaign
-      });
-    }
-  }, [isReady, amount]);
-
   const handleFormSubmit = async (e: React.FormEvent) => {
-    trackEvent('funnel_payment_initiated', {
-      amount: parseFloat(amount),
-    });
     await handleSubmit(e);
   };
 
