@@ -1,6 +1,7 @@
 # API Integration Playbook
 
 This playbook standardizes how to add a new API + client hook set. It mirrors the established patterns in:
+
 - `app/api/**` (server routes)
 - `lib/hooks/useRounds.ts` and `lib/hooks/useAdminUsers.ts` (client hooks)
 - `lib/api/types/**` (shared types and zod schemas)
@@ -20,6 +21,7 @@ Follow these steps for any new entity (e.g., "users", "rounds", "campaigns", etc
 ### Specialized Admin Sub-resources
 
 For flags/roles endpoints:
+
 - Live under `app/api/admin/<plural>/[address]/flags` or `/roles`.
 - Validate payload arrays; enforce specific feature flags if needed (e.g., `USER_MODERATOR`).
 - Return `{ user: ... }` or `{ item: ... }` to match the rest of admin endpoints.
@@ -59,7 +61,10 @@ interface PaginatedResponse {
 ### Fetch Helpers
 
 ```typescript
-function buildUrl(base: string, q: Record<string, string | number | undefined>) {
+function buildUrl(
+  base: string,
+  q: Record<string, string | number | undefined>,
+) {
   const params = new URLSearchParams();
   Object.entries(q).forEach(([k, v]) => {
     if (typeof v !== 'undefined' && v !== '') params.set(k, String(v));
@@ -67,13 +72,28 @@ function buildUrl(base: string, q: Record<string, string | number | undefined>) 
   return `${base}?${params.toString()}`;
 }
 
-async function fetchPage({ pageParam = 1, pageSize = 10, name }: { pageParam?: number; pageSize?: number; name?: string }) {
+async function fetchPage({
+  pageParam = 1,
+  pageSize = 10,
+  name,
+}: {
+  pageParam?: number;
+  pageSize?: number;
+  name?: string;
+}) {
   const safePageSize = Math.min(pageSize ?? 10, 10);
-  const url = buildUrl('/api/<feature>', { page: pageParam, pageSize: safePageSize, name });
+  const url = buildUrl('/api/<feature>', {
+    page: pageParam,
+    pageSize: safePageSize,
+    name,
+  });
   const res = await fetch(url);
   if (!res.ok) {
     let msg = 'Failed to fetch <feature>';
-    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    try {
+      const e = await res.json();
+      msg = e?.error || msg;
+    } catch {}
     throw new Error(msg);
   }
   return (await res.json()) as PaginatedResponse;
@@ -84,7 +104,10 @@ async function fetchItem(idOrAddress: string | number) {
   const res = await fetch(url);
   if (!res.ok) {
     let msg = 'Failed to fetch <feature> item';
-    try { const e = await res.json(); msg = e?.error || msg; } catch {}
+    try {
+      const e = await res.json();
+      msg = e?.error || msg;
+    } catch {}
     throw new Error(msg);
   }
   const data = await res.json();
@@ -95,14 +118,25 @@ async function fetchItem(idOrAddress: string | number) {
 ### Hook Exports
 
 ```typescript
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 export function useFeatures({ name, page = 1, pageSize = 10 } = {}) {
   const safePage = page > 0 ? page : 1;
   const safePageSize = Math.min(pageSize ?? 10, 10);
   return useQuery({
-    queryKey: [FEATURE_QUERY_KEY, 'page', { name: name ?? '', page: safePage, pageSize: safePageSize }],
-    queryFn: async () => (await fetchPage({ pageParam: safePage, pageSize: safePageSize, name })).items,
+    queryKey: [
+      FEATURE_QUERY_KEY,
+      'page',
+      { name: name ?? '', page: safePage, pageSize: safePageSize },
+    ],
+    queryFn: async () =>
+      (await fetchPage({ pageParam: safePage, pageSize: safePageSize, name }))
+        .items,
     enabled: true,
   });
 }
@@ -111,9 +145,20 @@ export function useInfiniteFeatures({ name, pageSize = 10 } = {}) {
   const safePageSize = Math.min(pageSize ?? 10, 10);
   return useInfiniteQuery<PaginatedResponse, Error>({
     queryKey: [FEATURE_QUERY_KEY, 'infinite', safePageSize, name ?? ''],
-    queryFn: ({ pageParam = 1 }) => fetchPage({ pageParam: pageParam as number, pageSize: safePageSize, name }),
-    getNextPageParam: (lastPage) => lastPage.pagination.hasMore ? lastPage.pagination.currentPage + 1 : undefined,
-    getPreviousPageParam: (firstPage) => firstPage.pagination.currentPage > 1 ? firstPage.pagination.currentPage - 1 : undefined,
+    queryFn: ({ pageParam = 1 }) =>
+      fetchPage({
+        pageParam: pageParam as number,
+        pageSize: safePageSize,
+        name,
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
     initialPageParam: 1,
   });
 }
@@ -137,14 +182,19 @@ export function useUpdateFeature() {
       });
       if (!res.ok) {
         let msg = 'Failed to update <feature>';
-        try { const e = await res.json(); msg = e?.error || msg; } catch {}
+        try {
+          const e = await res.json();
+          msg = e?.error || msg;
+        } catch {}
         throw new Error(msg);
       }
       return res.json();
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: [FEATURE_QUERY_KEY] });
-      qc.invalidateQueries({ queryKey: [FEATURE_ITEM_QUERY_KEY, vars.idOrAddress] });
+      qc.invalidateQueries({
+        queryKey: [FEATURE_ITEM_QUERY_KEY, vars.idOrAddress],
+      });
     },
   });
 }
@@ -156,11 +206,18 @@ export function useUpdateFeature() {
 
 ```typescript
 import { checkAuth } from '@/lib/api/auth';
-import { ApiAuthNotAllowed, ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
+import {
+  ApiAuthNotAllowed,
+  ApiNotFoundError,
+  ApiParameterError,
+} from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 import { getUser, updateUserRoles } from '@/lib/api/user';
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ address: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ address: string }> },
+) {
   try {
     await checkAuth(['admin']);
     const { address } = await params;
@@ -172,7 +229,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ addres
       throw new ApiAuthNotAllowed('Admin needs USER_MODERATOR flag');
     }
 
-    if (!Array.isArray(roles)) throw new ApiParameterError('Roles needs to be an array');
+    if (!Array.isArray(roles))
+      throw new ApiParameterError('Roles needs to be an array');
     for (const role of roles) {
       if (typeof role !== 'string' || role.trim().length === 0) {
         throw new ApiParameterError('Role must be a nonempty string');
@@ -196,7 +254,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 export function useUpdateAdminUserRoles() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ address, roles }: { address: string; roles: string[] }) => {
+    mutationFn: async ({
+      address,
+      roles,
+    }: {
+      address: string;
+      roles: string[];
+    }) => {
       const res = await fetch(`/api/admin/users/${address}/roles`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -204,7 +268,10 @@ export function useUpdateAdminUserRoles() {
       });
       if (!res.ok) {
         let msg = 'Failed to update user roles';
-        try { const e = await res.json(); msg = e?.error || msg; } catch {}
+        try {
+          const e = await res.json();
+          msg = e?.error || msg;
+        } catch {}
         throw new Error(msg);
       }
       return res.json();

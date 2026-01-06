@@ -5,6 +5,7 @@ This project uses Docker for all development operations. **NEVER run pnpm or Nod
 ## Docker Services
 
 The development environment includes multiple Docker services:
+
 - **app**: Main Next.js application with hot reloading
 - **database**: PostgreSQL database with health checks
 - **pgadmin**: Database administration interface
@@ -132,6 +133,7 @@ docker compose exec app pnpm prisma db pull
 ## Troubleshooting
 
 ### Container won't start
+
 ```bash
 # Check logs for errors
 docker compose logs app
@@ -142,6 +144,7 @@ docker compose up
 ```
 
 ### Database connection issues
+
 ```bash
 # Check database is running
 docker compose ps database
@@ -154,6 +157,7 @@ docker compose restart database
 ```
 
 ### Port conflicts
+
 ```bash
 # Check what's using a port
 lsof -i :3000
