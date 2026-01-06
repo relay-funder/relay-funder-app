@@ -10,18 +10,18 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'staging.akashic.xyz',
+        hostname: 'staging.relayfunder.com',
       },
       {
         protocol: 'https',
         hostname: 'asset.captureapp.xyz',
       },
-      {
-        protocol: 'https',
-        hostname: 'dia-cdn.numbersprotocol.io',
-      },
       { protocol: 'https', hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL },
     ],
+  },
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    return config;
   },
 };
 
@@ -39,14 +39,15 @@ if (shouldInitSentry) {
   // also be aware of the docker-compose bind-mount of
   // lib/sentry-dev.ts -> lib/sentry.ts which you need to
   // disable if you want to test/debug sentry in dev-mode
+  // eslint-disable-next-line
   const { withSentryConfig } = require('@sentry/nextjs');
 
   const sentryConfig = withSentryConfig(nextConfig, {
     // For all available options, see:
     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-    org: 'akashic-yj',
-    project: 'akashic-app',
+    org: 'relayfunder-yj',
+    project: 'relayfunder-app',
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,

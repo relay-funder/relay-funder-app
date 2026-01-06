@@ -1,5 +1,9 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { PostCampaignWithdrawRouteResponse } from '@/lib/api/types';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
+import type {
+  PostCampaignWithdrawRouteResponse,
+  GetCampaignWithdrawRouteResponse,
+} from '@/lib/api/types';
 import {
   CAMPAIGNS_QUERY_KEY,
   CAMPAIGN_PAYMENTS_QUERY_KEY,
@@ -12,12 +16,14 @@ export interface RequestWithdrawalVariables {
   campaignId: number | string; // accepts numeric ID or slug
   amount: string | number;
   token: string;
+  transactionHash?: string;
 }
 
 async function requestWithdrawal({
   campaignId,
   amount,
   token,
+  transactionHash,
 }: RequestWithdrawalVariables) {
   const response = await fetch(`/api/campaigns/${campaignId}/withdraw`, {
     method: 'POST',
@@ -25,24 +31,22 @@ async function requestWithdrawal({
     body: JSON.stringify({
       amount: String(amount),
       token,
+      ...(transactionHash && { transactionHash }),
     }),
   });
-
-  if (!response.ok) {
-    let errorMsg = 'Failed to request withdrawal';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to request withdrawal');
 
   const data = (await response.json()) as PostCampaignWithdrawRouteResponse;
   return data;
 }
 
+async function fetchWithdrawApproval(campaignId?: string | number) {
+  if (!campaignId) throw new Error('Campaign ID is required');
+  const response = await fetch(`/api/campaigns/${campaignId}/withdraw`);
+  await handleApiErrors(response, 'Failed to check withdrawal approval');
+  const data = (await response.json()) as GetCampaignWithdrawRouteResponse;
+  return data;
+}
 /**
  * useRequestWithdrawal
  * User-facing hook to request a withdrawal for a campaign.
@@ -81,5 +85,20 @@ export function useRequestWithdrawal() {
         });
       }
     },
+  });
+}
+
+/**
+ * useWithdrawalApproval
+ * Hook to check if a campaign has withdrawal approval (at least one approved withdrawal).
+ *
+ * - GET /api/campaigns/[campaignId]/withdraw
+ * - Returns { hasApproval: boolean }
+ */
+export function useWithdrawalApproval(campaignId: number | string | undefined) {
+  return useQuery({
+    queryKey: [WITHDRAWALS_QUERY_KEY, 'approval', campaignId],
+    queryFn: async () => fetchWithdrawApproval(campaignId),
+    enabled: !!campaignId,
   });
 }

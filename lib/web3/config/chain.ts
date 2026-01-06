@@ -5,6 +5,23 @@
 
 import { defaultChain } from './chains';
 
+const CELO_PARAMS = {
+  chainId: '0xa4ec',
+  chainName: 'Celo',
+  nativeCurrency: { name: 'Celo', symbol: 'CELO', decimals: 18 },
+  rpcUrls: ['https://forno.celo.org'],
+  blockExplorerUrls: ['https://celo.blockscout.com/'],
+  iconUrls: ['future'],
+};
+
+const CELO_SEPOLIA_PARAMS = {
+  chainId: '0xAA044C',
+  chainName: 'Celo Sepolia',
+  nativeCurrency: { name: 'Celo', symbol: 'S-CELO', decimals: 18 },
+  rpcUrls: ['https://forno.celo-sepolia.celo-testnet.org/'],
+  blockExplorerUrls: ['https://celo-sepolia.blockscout.com/'],
+  iconUrls: ['future'],
+};
 export const chainConfig = {
   // Chain identifiers
   chainId: defaultChain.id,
@@ -16,22 +33,22 @@ export const chainConfig = {
   // Custom values not from wagmi
   rpcUrl:
     process.env.NEXT_PUBLIC_RPC_URL || defaultChain.rpcUrls.default.http[0],
+  // Use Blockscout for both mainnet and testnet (consistent API)
+  // Viem defaults to celoscan.io but Blockscout has better API support
   blockExplorerUrl:
-    defaultChain.blockExplorers?.default?.url ||
-    'https://alfajores.celoscan.io/',
+    defaultChain.id === 42220
+      ? 'https://celo.blockscout.com'
+      : 'https://celo-sepolia.blockscout.com',
 
   // Reference to the actual chain object for provider configurations
   defaultChain,
 
   // Helper methods
   getAddChainParams() {
-    return {
-      chainId: `0x${this.chainId.toString(16)}`,
-      chainName: this.name,
-      nativeCurrency: this.nativeCurrency,
-      rpcUrls: [this.rpcUrl],
-      blockExplorerUrls: [this.blockExplorerUrl],
-    };
+    if ((this.chainId as number) === 11142220) {
+      return CELO_SEPOLIA_PARAMS;
+    }
+    return CELO_PARAMS;
   },
 };
 

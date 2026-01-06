@@ -1,18 +1,26 @@
 import type { Prisma } from '@/.generated/prisma/client';
 import { z } from 'zod';
 import type { GetCampaignResponse } from '../campaigns';
-export type UserWithCount = Prisma.UserGetPayload<{
+type PrismaUserWithCount = Prisma.UserGetPayload<{
   include: {
     _count: true;
   };
 }>;
+
+export interface UserWithCount extends Omit<PrismaUserWithCount, '_count'> {
+  _count: PrismaUserWithCount['_count'] & {
+    campaigns: number; // Manually added campaign count
+  };
+}
 
 export interface UserWithAddressParams {
   params: Promise<{
     address: string;
   }>;
 }
-export interface GetUserResponseInstance extends UserWithCount {}
+export interface GetUserResponseInstance extends UserWithCount {
+  score?: { totalScore: number };
+}
 export interface GetUserResponse {
   user: GetUserResponseInstance;
 }

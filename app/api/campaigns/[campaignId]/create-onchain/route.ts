@@ -1,49 +1,64 @@
 import { ethers } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { db } from '@/server/db';
-import { ApiParameterError, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiParameterError,
+  ApiNotFoundError,
+  ApiAuthNotAllowed,
+} from '@/lib/api/error';
+import { debugApi as debug } from '@/lib/debug';
 
 import { CampaignInfoFactoryABI } from '@/contracts/abi/CampaignInfoFactory';
-import { checkAuth } from '@/lib/api/auth';
+import { normalizeAddress } from '@/lib/normalize-address';
+import { checkAuth, isAdmin } from '@/lib/api/auth';
+import {
+  checkIpLimit,
+  checkUserLimit,
+  ipLimiterCreateCampaignOnChain,
+  userLimiterCreateCampaignOnChain,
+} from '@/lib/rate-limit';
+import { CampaignsWithIdParams } from '@/lib/api/types';
+import { USD_DECIMALS } from '@/lib/constant';
 
 /**
  * # Platform Fee Configuration
- * NEXT_PUBLIC_PLATFORM_FLAT_FEE=0.001          # Flat fee per pledge (USDC)
- * NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE=0.002 # Cumulative flat fee threshold (USDC)
+ * NEXT_PUBLIC_PLATFORM_FLAT_FEE=0.001          # Flat fee per pledge (USDX)
+ * NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE=0.002 # Cumulative flat fee threshold (USDX)
  * NEXT_PUBLIC_PLATFORM_FEE_BPS=400             # Platform fee percentage (400 = 4%)
  * NEXT_PUBLIC_VAKI_COMMISSION_BPS=100          # Vaki commission percentage (100 = 1%)
- * NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD=0.5      # Fee exemption threshold (USDC)
+ * NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD=0.5      # Fee exemption threshold (USDX)
  * # Campaign Timing Configuration
- * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=3600           # Minimum hours before launch (3600 = 1 hour)
+ * NEXT_PUBLIC_LAUNCH_OFFSET_SEC=3600           # Minimum seconds before launch (3600 = 1 hour)
  * NEXT_PUBLIC_MIN_CAMPAIGN_DURATION_SEC=86400  # Minimum campaign duration (86400 = 24 hours)
  */
 
-export async function POST(
-  req: Request,
-  context: { params: Promise<{ campaignId: string }> },
-) {
+export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
-    await checkAuth(['user']);
-    const { campaignId } = await context.params;
+    await checkIpLimit(req.headers, ipLimiterCreateCampaignOnChain);
+
+    const session = await checkAuth(['user']);
+    const creatorAddress = session.user.address;
+
+    await checkUserLimit(creatorAddress, userLimiterCreateCampaignOnChain);
+
+    const { campaignId } = await params;
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL as string;
     const factoryAddr = process.env
       .NEXT_PUBLIC_CAMPAIGN_INFO_FACTORY as `0x${string}`;
     const globalPlatformHash = process.env
       .NEXT_PUBLIC_PLATFORM_HASH as `0x${string}`;
-    const usdcDecimals = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS || 6);
+    const usdDecimals = USD_DECIMALS;
 
     // Platform configuration - should be configurable per platform/environment
     const platformConfig = {
-      // Fee structure (in USDC)
-      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0.001', // 0.001 USDC per pledge
+      // Fee structure (in USDX)
+      flatFee: process.env.NEXT_PUBLIC_PLATFORM_FLAT_FEE || '0', // 0 USDX per pledge
       cumulativeFlatFee:
-        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0.002', // 0.002 USDC threshold
-      platformFeeBps: parseInt(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '400',
-      ), // 4% platform fee
+        process.env.NEXT_PUBLIC_PLATFORM_CUMULATIVE_FLAT_FEE || '0', // 0 USDX threshold
+      platformFeeBps: parseInt(process.env.NEXT_PUBLIC_PLATFORM_FEE_BPS || '0'), // 0% platform fee
       vakiCommissionBps: parseInt(
-        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '100',
-      ), // 1% commission
+        process.env.NEXT_PUBLIC_VAKI_COMMISSION_BPS || '0',
+      ), // 0% commission
 
       // Timing configuration (in seconds)
       launchOffsetSec: parseInt(
@@ -55,16 +70,17 @@ export async function POST(
 
       // Platform settings
       feeExemptionThreshold:
-        process.env.NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD || '0.5', // 0.5 USDC threshold
+        process.env.NEXT_PUBLIC_FEE_EXEMPTION_THRESHOLD || '0.5', // 0.5 USDX threshold
     };
 
-    const adminPk = process.env.PLATFORM_ADMIN_PRIVATE_KEY as string;
-    if (!rpcUrl || !factoryAddr || !globalPlatformHash || !adminPk) {
+    const sponsorPrivateKey = process.env
+      .PLATFORM_SPONSOR_PRIVATE_KEY as string;
+    if (!rpcUrl || !factoryAddr || !globalPlatformHash || !sponsorPrivateKey) {
       console.warn('[campaigns/create-onchain] Missing env', {
         hasRpcUrl: !!rpcUrl,
         hasFactory: !!factoryAddr,
         hasPlatformHash: !!globalPlatformHash,
-        hasAdminPk: !!adminPk,
+        hasSponsorPrivateKey: !!sponsorPrivateKey,
       });
       throw new ApiParameterError('Missing required env vars');
     }
@@ -78,6 +94,13 @@ export async function POST(
     const campaign = await db.campaign.findUnique({ where: { id } });
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
+    }
+    if (campaign.creatorAddress !== session.user.address) {
+      if (!(await isAdmin())) {
+        throw new ApiAuthNotAllowed(
+          'Cannot execute CampaignInfoFactory for not owned Campaign',
+        );
+      }
     }
 
     // Validate platform configuration
@@ -106,7 +129,7 @@ export async function POST(
     }
     // Build inputs aligned to shell script
     const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const signer = new ethers.Wallet(adminPk, provider);
+    const signer = new ethers.Wallet(sponsorPrivateKey, provider);
     const factory = new ethers.Contract(
       factoryAddr,
       CampaignInfoFactoryABI,
@@ -150,45 +173,19 @@ export async function POST(
 
     const goalAmount = ethers.parseUnits(
       String(campaign.fundingGoal || '0'),
-      usdcDecimals,
+      usdDecimals,
     );
 
     // Generate meaningful campaign identifier for production use
     const uniqueSuffix = `${campaign.creatorAddress.slice(2, 8)}-${id}-${Date.now()}`;
     const identifierHash = ethers.keccak256(
-      ethers.toUtf8Bytes(`AKASHIC-${uniqueSuffix}`),
+      ethers.toUtf8Bytes(`RELAYFUNDER-${uniqueSuffix}`),
     );
 
-    // Use configurable fee structure
-    const feeKeys = [
-      'flatFee',
-      'cumulativeFlatFee',
-      'platformFee',
-      'vakiCommission',
-    ];
-    const platformDataKeys = feeKeys.map((n) =>
-      ethers.keccak256(ethers.toUtf8Bytes(n)),
-    );
+    // Platform data keys and values are empty - fees are configured in treasury
+    const platformDataKeys: string[] = [];
+    const platformDataValues: string[] = [];
 
-    // Parse fee values from configuration
-    const flatFee = ethers.parseUnits(platformConfig.flatFee, usdcDecimals);
-    const cumulativeFlatFee = ethers.parseUnits(
-      platformConfig.cumulativeFlatFee,
-      usdcDecimals,
-    );
-    const platformFeeBps = platformConfig.platformFeeBps;
-    const vakiCommissionBps = platformConfig.vakiCommissionBps;
-
-    const toBytes32 = (n: bigint | number) =>
-      `0x${BigInt(n).toString(16).padStart(64, '0')}`;
-    const platformDataValues = [
-      toBytes32(flatFee),
-      toBytes32(cumulativeFlatFee),
-      toBytes32(platformFeeBps),
-      toBytes32(vakiCommissionBps),
-    ];
-
-    // Ensure bytes32[] values order matches the function signature exactly
     const campaignData = [launchTime, deadline, goalAmount] as const;
 
     const tx = await factory.createCampaign(
@@ -210,7 +207,7 @@ export async function POST(
       for (const log of receipt?.logs || []) {
         if (
           log?.topics?.[0] === eventTopic &&
-          log?.address?.toLowerCase() === factoryAddr.toLowerCase()
+          normalizeAddress(log?.address) === normalizeAddress(factoryAddr)
         ) {
           // campaignInfoAddress is the second indexed parameter (topic[2])
           const campaignAddressTopic = log.topics[2];
@@ -226,14 +223,23 @@ export async function POST(
     }
 
     // Persist on chain info to DB
+    // Update database with actual on-chain timing for treasury configuration
+    // The campaign contract enforces minimum launch offset and duration,
+    // so we must sync the DB with these adjusted values
     try {
       await db.campaign.update({
         where: { id },
         data: {
           transactionHash: tx.hash,
           campaignAddress: campaignAddress ?? undefined,
+          startTime: new Date(launchTime * 1000),
+          endTime: new Date(deadline * 1000),
         },
       });
+      debug &&
+        console.log(
+          `[campaigns/create-onchain] Updated DB with on-chain timing: launchTime=${launchTime}, deadline=${deadline}`,
+        );
     } catch (persistErr) {
       console.error(
         '[campaigns/create-onchain] Failed to persist on-chain info',

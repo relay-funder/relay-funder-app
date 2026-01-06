@@ -1,0 +1,210 @@
+import { useMemo } from 'react';
+import { getAddress } from 'viem';
+import { useAccount } from 'wagmi';
+import { DbCampaign } from '@/types/campaign';
+import {
+  generatePledgeId,
+  toTokenUnits,
+  encodePledgeCallData,
+} from '@/lib/web3/daimo/pledge';
+import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
+import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
+import { EmailSchema } from '@/lib/api/types/common';
+
+interface UseDaimoPaymentParams {
+  campaign: DbCampaign;
+  amount: string;
+  tipAmount: string;
+  email: string;
+  anonymous: boolean;
+}
+
+interface DaimoPaymentData {
+  pledgeId: `0x${string}` | null;
+  pledgeCallData: `0x${string}` | null;
+  totalAmount: string;
+  validatedTreasuryAddress: `0x${string}` | null;
+  validatedRefundAddress: `0x${string}` | null;
+  metadata: Record<string, string>;
+  isValid: boolean;
+  isEmailValid: boolean;
+  config: ReturnType<typeof getDaimoPayConfig>;
+}
+
+/**
+ * Hook for managing Daimo Pay payment parameters and validation
+ */
+export function useDaimoPayment({
+  campaign,
+  amount,
+  tipAmount,
+  email,
+  anonymous,
+}: UseDaimoPaymentParams): DaimoPaymentData {
+  const { address } = useAccount();
+  const config = useMemo(() => getDaimoPayConfig(), []);
+
+  // Calculate amounts
+  const baseAmount = useMemo(() => parseFloat(amount || '0'), [amount]);
+  const tipAmountNum = useMemo(() => parseFloat(tipAmount || '0'), [tipAmount]);
+  const totalAmount = useMemo(() => {
+    return (baseAmount + tipAmountNum).toFixed(2);
+  }, [baseAmount, tipAmountNum]);
+
+  // Generate pledge ID
+  const pledgeId = useMemo(() => {
+    if (!address) return null;
+    return generatePledgeId(address, campaign.id, amount, tipAmount);
+  }, [address, campaign.id, amount, tipAmount]);
+
+  // Validate and format treasury address
+  const validatedTreasuryAddress = useMemo(() => {
+    if (!address || !campaign.treasuryAddress) return null;
+
+    try {
+      getAddress(address); // Validate user address format
+      return getAddress(campaign.treasuryAddress);
+    } catch (error) {
+      console.error('Daimo Pay: Invalid address format:', error);
+      return null;
+    }
+  }, [address, campaign.treasuryAddress]);
+
+  // Validate refund address with fallback to treasury address
+  // Ensures non-null, network-valid address for Daimo Pay refunds
+  const validatedRefundAddress = useMemo(() => {
+    // First priority: user's connected wallet address
+    if (address) {
+      try {
+        return getAddress(address);
+      } catch (error) {
+        console.warn(
+          'Daimo Pay: Invalid user address format, using treasury fallback:',
+          error,
+        );
+      }
+    }
+
+    // Fallback: campaign treasury address (already validated for network)
+    if (validatedTreasuryAddress) {
+      return validatedTreasuryAddress;
+    }
+
+    return null;
+  }, [address, validatedTreasuryAddress]);
+
+  // Generate contract call data (for metadata only - not used in Daimo Pay button)
+  // Gateway payments are executed via webhooks, not client-side contract calls
+  const pledgeCallData = useMemo(() => {
+    if (!address || !pledgeId || !validatedTreasuryAddress) return null;
+
+    try {
+      const pledgeAmountInTokenUnits = toTokenUnits(baseAmount);
+      const tipAmountInTokenUnits = toTokenUnits(tipAmountNum);
+
+      return encodePledgeCallData(
+        pledgeId,
+        address as `0x${string}`,
+        pledgeAmountInTokenUnits,
+        tipAmountInTokenUnits,
+      );
+    } catch (error) {
+      console.error(
+        'Daimo Pay: Error encoding call data (metadata only):',
+        error,
+      );
+      return null;
+    }
+  }, [pledgeId, address, validatedTreasuryAddress, baseAmount, tipAmountNum]);
+
+  // Memoized metadata to prevent re-renders
+  const metadata = useMemo(
+    () => ({
+      campaignId: campaign.id.toString(),
+      treasuryAddress: campaign.treasuryAddress || '',
+      pledgeId: pledgeId || '',
+      email,
+      anonymous: anonymous.toString(),
+      tipAmount,
+      baseAmount: amount,
+      token: config.tokenSymbol,
+      chain: config.chainName,
+    }),
+    [
+      campaign.id,
+      campaign.treasuryAddress,
+      pledgeId,
+      email,
+      anonymous,
+      tipAmount,
+      amount,
+      config,
+    ],
+  );
+
+  // Validate email format using Zod
+  const isEmailValid = useMemo(() => {
+    if (!email || email.trim() === '') {
+      // email is optional, assume valid if unset
+      return true;
+    }
+    // only validate if set
+    const result = EmailSchema.safeParse(email);
+    return result.success;
+  }, [email]);
+
+  // Validate donation amount
+  const isAmountValid = useMemo(() => {
+    if (!amount || amount.trim() === '') return false;
+
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) return false;
+
+    // Reject values that would display in exponential notation
+    if (amount.includes('e') || amount.includes('E')) return false;
+
+    // Reject values that are unreasonably large for donations
+    if (numericAmount > 1000000) return false;
+
+    // For donations, reject values with more than 2 decimal places
+    const decimalParts = amount.split('.');
+    if (decimalParts.length > 1 && decimalParts[1].length > 2) return false;
+
+    return true;
+  }, [amount]);
+
+  // Validate all parameters
+  // Note: pledgeCallData is no longer required for Daimo Pay button functionality
+  // Gateway payments are executed via webhooks, not client-side contract calls
+  const isValid = useMemo(() => {
+    return (
+      !!pledgeId && // pledgeId still needed for metadata
+      !!address &&
+      parseFloat(totalAmount) >= DAIMO_PAY_MIN_AMOUNT &&
+      config.isValid &&
+      !!validatedTreasuryAddress &&
+      isEmailValid &&
+      isAmountValid
+    );
+  }, [
+    pledgeId,
+    address,
+    totalAmount,
+    config.isValid,
+    validatedTreasuryAddress,
+    isEmailValid,
+    isAmountValid,
+  ]);
+
+  return {
+    pledgeId,
+    pledgeCallData,
+    totalAmount,
+    validatedTreasuryAddress,
+    validatedRefundAddress,
+    metadata,
+    isValid,
+    isEmailValid,
+    config,
+  };
+}

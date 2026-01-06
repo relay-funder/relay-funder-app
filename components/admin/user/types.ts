@@ -14,6 +14,7 @@ export type UserCounts = {
   createdMedia?: number;
   withdrawals?: number;
   approvals?: number;
+  campaigns?: number;
 };
 
 /**

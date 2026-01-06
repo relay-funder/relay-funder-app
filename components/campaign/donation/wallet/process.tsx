@@ -7,37 +7,40 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VisibilityToggle } from '@/components/visibility-toggle';
 import { DonationProcessDisplay } from './process-display';
 import { useRouter } from 'next/navigation';
+import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
+import { useToast } from '@/hooks/use-toast';
+import { useDonationContext } from '@/contexts';
 
 export function CampaignDonationWalletProcess({
   campaign,
-  amount,
-  tipAmount = '0',
-  selectedToken,
-  donationToAkashic,
-  anonymous,
-  onProcessing,
+  state,
+  setState,
 }: {
   campaign: DbCampaign;
-  amount: string;
-  tipAmount?: string;
-  selectedToken: string;
-  donationToAkashic: number;
-  anonymous: boolean;
-  onProcessing?: (processing: boolean) => void;
+  state: keyof typeof DonationProcessStates;
+  setState: (state: keyof typeof DonationProcessStates) => void;
 }) {
   const router = useRouter();
+  const { toast } = useToast();
+  const updateProfileEmail = useUpdateProfileEmail();
+  const { data: profile } = useUserProfile();
+  const {
+    amount,
+    tipAmount,
+    isAnonymous,
+    email,
+    token,
+    usdFormattedBalance,
+    setIsProcessingPayment,
+    clearDonation,
+  } = useDonationContext();
+
+  const { hasUsdBalance } = usdFormattedBalance;
+
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const akashicAmount = useMemo(() => {
-    if (donationToAkashic) {
-      return (numericAmount * donationToAkashic) / 100;
-    }
-    return 0;
-  }, [numericAmount, donationToAkashic]);
   const poolAmount = useMemo(() => {
-    return numericAmount - akashicAmount;
-  }, [numericAmount, akashicAmount]);
-  const [state, setState] =
-    useState<keyof typeof DonationProcessStates>('idle');
+    return numericAmount;
+  }, [numericAmount]);
   const [processing, setProcessing] = useState<boolean>(false);
   const {
     onDonate,
@@ -48,41 +51,66 @@ export function CampaignDonationWalletProcess({
     amount,
     tipAmount,
     poolAmount,
-    isAnonymous: anonymous,
-    selectedToken,
+    isAnonymous,
+    selectedToken: token,
+    userEmail: email,
     onStateChanged: setState,
   });
-  const onDonateStart = useCallback(() => {
-    if (typeof onProcessing === 'function') {
-      onProcessing(true);
+  const isValidEmail = (email: string) => {
+    if (email.trim() === '') {
+      return true;
     }
-    onDonate().catch((error) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const onDonateStart = useCallback(async () => {
+    if (profile?.email && profile.email.trim() !== '' && !isValidEmail(email)) {
+      toast({
+        title: 'Invalid email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsProcessingPayment(true);
+    try {
+      // Only update profile if user doesn't already have an email set
+      if (!profile?.email || profile.email.trim() === '') {
+        await updateProfileEmail.mutateAsync({
+          email,
+        });
+      }
+
+      // Proceed with donation (email will be included in payment metadata regardless)
+      await onDonate();
+    } catch (error) {
       console.error('process:onDonate:catch', error);
       setProcessing(false);
-    });
-  }, [onDonate, onProcessing]);
+      setIsProcessingPayment(false);
+    }
+  }, [
+    onDonate,
+    setIsProcessingPayment,
+    email,
+    updateProfileEmail,
+    toast,
+    profile,
+  ]);
   useEffect(() => {
     // auto-reset state when done
     if (state === 'idle') {
       setProcessing(false);
-      if (typeof onProcessing === 'function') {
-        onProcessing(false);
-      }
+      setIsProcessingPayment(false);
     }
-    if (state === 'done') {
-      setTimeout(() => {
-        if (typeof onProcessing === 'function') {
-          onProcessing(false);
-        }
-      }, 3000);
-
-      return;
-    }
-  }, [state, onProcessing]);
+  }, [state, setIsProcessingPayment]);
   const onDoneView = useCallback(() => {
     setState('idle');
     router.push(`/campaigns/${campaign.slug}`);
-  }, [router, campaign]);
+  }, [router, campaign, setState]);
+  const onDoneDonateAgain = useCallback(() => {
+    clearDonation();
+    setState('idle');
+  }, [clearDonation, setState]);
   useEffect(() => {
     let deferTimerId = null;
     if (processingOnDonate) {
@@ -98,17 +126,29 @@ export function CampaignDonationWalletProcess({
       }
       clearTimeout(deferTimerId);
     };
-  }, [processingOnDonate, onProcessing]);
+  }, [processingOnDonate]);
+
+  const isButtonDisabled =
+    !hasUsdBalance ||
+    !numericAmount ||
+    processing ||
+    !isValidEmail(email) ||
+    (usdFormattedBalance.usdBalanceAmount > 0 &&
+      numericAmount + parseFloat(tipAmount || '0') >
+        usdFormattedBalance.usdBalanceAmount);
+
   return (
     <>
-      <Button
-        className="w-full"
-        size="lg"
-        disabled={!numericAmount || processing}
-        onClick={onDonateStart}
-      >
-        {processing ? 'Processing...' : `Donate with Wallet`}
-      </Button>
+      <VisibilityToggle isVisible={state === 'idle'}>
+        <Button
+          className="mb-6 w-full"
+          size="lg"
+          disabled={isButtonDisabled}
+          onClick={onDonateStart}
+        >
+          {processing ? 'Processing...' : `Support Now`}
+        </Button>
+      </VisibilityToggle>
       <VisibilityToggle isVisible={state !== 'idle'}>
         <DonationProcessDisplay
           currentState={state}
@@ -117,6 +157,7 @@ export function CampaignDonationWalletProcess({
           onFailureCancel={() => setState('idle')}
           onFailureRetry={onDonateStart}
           onDoneView={onDoneView}
+          onDoneDonateAgain={onDoneDonateAgain}
         />
       </VisibilityToggle>
     </>

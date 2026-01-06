@@ -7,3 +7,5 @@ export {
   useFeatureFlag,
   FeatureFlagsProvider,
 } from './FeatureFlagsContext';
+export { useTheme, ThemeProvider } from './ThemeContext';
+export { useDonationContext, DonationProvider } from './DonationContext';

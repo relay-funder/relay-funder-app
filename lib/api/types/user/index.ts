@@ -3,6 +3,5 @@ export interface DisplayUser {
   address: string | null;
 }
 export interface DisplayUserWithStates extends DisplayUser {
-  isKycCompleted: boolean;
   isVouched?: boolean;
 }

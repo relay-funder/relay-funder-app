@@ -5,9 +5,11 @@ import { useInView } from 'react-intersection-observer';
 import { useCallback, useEffect, useState } from 'react';
 import { CampaignLoading } from '@/components/campaign/loading';
 import { CampaignError } from '@/components/campaign/error';
-import { CampaignCardStandard } from '@/components/campaign/campaign-card';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { CollectionAddDialog } from '@/components/collection/add-dialog';
 import { ResponsiveGrid } from '@/components/layout';
+import { LoadMoreButton } from '@/components/shared/load-more-button';
+import { INFINITE_SCROLL_CONFIG } from '@/lib/constant';
 import type { DbCampaign, CampaignItemProps } from '@/types/campaign';
 interface CampaignListProps {
   searchTerm: string;
@@ -24,7 +26,7 @@ export function CampaignList({
   statusFilter = undefined,
   pageSize = 10,
   withRounds = false,
-  item: ItemComponent = CampaignCardStandard,
+  item: ItemComponent = (props) => <CampaignCard {...props} type="standard" />,
 }: CampaignListProps) {
   const { ref, inView } = useInView();
   const {
@@ -36,11 +38,24 @@ export function CampaignList({
     isFetchingNextPage,
   } = useInfiniteCampaigns(statusFilter, pageSize, withRounds);
 
+  // Check if we've reached the auto-scroll limit
+  const currentPageCount = data?.pages.length ?? 0;
+  const shouldAutoFetch =
+    currentPageCount < INFINITE_SCROLL_CONFIG.MAX_AUTO_PAGES;
+  const shouldRenderSentinel = shouldAutoFetch && hasNextPage;
+  const shouldShowLoadMore = !shouldAutoFetch && hasNextPage;
+
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage && shouldAutoFetch) {
       fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, shouldAutoFetch]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Filter campaigns based on search term and category
   const filteredCampaigns = data?.pages.map((page) => ({
@@ -99,8 +114,17 @@ export function CampaignList({
       {/* Loading indicator */}
       {isFetchingNextPage && <CampaignLoading minimal={true} />}
 
-      {/* Intersection observer target */}
-      <div ref={ref} className="h-10" />
+      {/* Load more button when auto-fetch limit reached */}
+      {shouldShowLoadMore && (
+        <LoadMoreButton
+          onLoadMore={handleLoadMore}
+          hasMore={hasNextPage}
+          isLoading={isFetchingNextPage}
+        />
+      )}
+
+      {/* Intersection observer target - only active when auto-fetching */}
+      {shouldRenderSentinel && <div ref={ref} className="h-10" />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useInfiniteComments } from '@/lib/hooks/useComments';
 import { useInView } from 'react-intersection-observer';
 
@@ -7,6 +7,8 @@ import { CommentItem } from './item';
 import { type DbCampaign } from '@/types/campaign';
 import { CommentLoading } from './loading';
 import { CommentError } from './error';
+import { LoadMoreButton } from '@/components/shared/load-more-button';
+import { INFINITE_SCROLL_CONFIG } from '@/lib/constant';
 export function CommentList({ campaign }: { campaign: DbCampaign }) {
   const { ref, inView } = useInView();
   const {
@@ -17,13 +19,26 @@ export function CommentList({ campaign }: { campaign: DbCampaign }) {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteComments(campaign.id);
+
+  // Check if we've reached the auto-scroll limit
+  const currentPageCount = data?.pages.length ?? 0;
+  const shouldAutoFetch =
+    currentPageCount < INFINITE_SCROLL_CONFIG.MAX_AUTO_PAGES;
+  const shouldShowLoadMore = !shouldAutoFetch && hasNextPage;
+
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
+    if (inView && hasNextPage && !isFetchingNextPage && shouldAutoFetch) {
       fetchNextPage();
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, shouldAutoFetch]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
   if (loading && !data) {
-    return <CommentLoading minimal={true} />;
+    return <CommentLoading expectItemCount={2} />;
   }
 
   if (error) {
@@ -37,10 +52,19 @@ export function CommentList({ campaign }: { campaign: DbCampaign }) {
         )),
       )}
       {/* Loading indicator */}
-      {isFetchingNextPage && <CommentLoading minimal={true} />}
+      {isFetchingNextPage && <CommentLoading expectItemCount={1} />}
 
-      {/* Intersection observer target */}
-      <div ref={ref} className="h-10" />
+      {/* Load more button when auto-fetch limit reached */}
+      {shouldShowLoadMore && (
+        <LoadMoreButton
+          onLoadMore={handleLoadMore}
+          hasMore={hasNextPage}
+          isLoading={isFetchingNextPage}
+        />
+      )}
+
+      {/* Intersection observer target - only active when auto-fetching */}
+      {shouldAutoFetch && <div ref={ref} className="h-10" />}
     </div>
   );
 }

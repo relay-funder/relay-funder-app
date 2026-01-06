@@ -14,7 +14,16 @@ import {
 import { countries, categories } from '@/lib/constant';
 
 function CountrySelectItems() {
-  return countries.map((country) => (
+  // Prioritize Kenya and Uganda at the top of the list
+  const prioritizedCountries = [
+    'Kenya',
+    'Uganda',
+    ...countries.filter(
+      (country) => country !== 'Kenya' && country !== 'Uganda',
+    ),
+  ];
+
+  return prioritizedCountries.map((country) => (
     <SelectItem key={country} value={country}>
       {country}
     </SelectItem>
@@ -23,16 +32,18 @@ function CountrySelectItems() {
 export function CampaignCreateFormMeta() {
   const form = useFormContext();
   return (
-    <>
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="location"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Location</FormLabel>
+            <FormLabel className="text-sm font-medium text-foreground">
+              Location
+            </FormLabel>
             <FormControl>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -49,10 +60,12 @@ export function CampaignCreateFormMeta() {
         name="category"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Category</FormLabel>
+            <FormLabel className="text-sm font-medium text-foreground">
+              Category
+            </FormLabel>
             <FormControl>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -71,6 +84,6 @@ export function CampaignCreateFormMeta() {
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 }

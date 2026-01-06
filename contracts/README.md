@@ -11,7 +11,7 @@ This guide provides comprehensive instructions for testing and deploying CC Prot
 - **Implementation ID**: `0`
 - **Primary Method**: `pledgeWithoutAReward(address backer, uint256 pledgeAmount, uint256 tip)`
 - **Withdrawal**: Complex fee-based system with admin approval required
-- **Use Case**: Direct wallet-to-wallet USDC payments
+- **Use Case**: Direct wallet-to-wallet USDT payments
 
 <!-- PaymentTreasury commented out for single treasury MVP focus -->
 <!-- **PaymentTreasury** (Credit Card Flow) - Commented out for MVP
@@ -59,8 +59,8 @@ NEXT_PUBLIC_PLATFORM_ADMIN=0x4567890123456789012345678901234567890123     # Plat
 # PaymentTreasury functionality commented out for MVP focus
 
 # Test Token Configuration
-NEXT_PUBLIC_USDC_ADDRESS=0x6789012345678901234567890123456789012345        # USDC token address
-NEXT_PUBLIC_USDC_DECIMALS=6
+NEXT_PUBLIC_USDT_ADDRESS=0x6789012345678901234567890123456789012345        # USDT token address
+NEXT_PUBLIC_USDT_DECIMALS=6
 
 
 ```
@@ -74,7 +74,7 @@ Using the CC Protocol deployment script available in the `cc-protocol/` director
 ```bash
 # Set environment variables
 export PRIVATE_KEY="your-private-key"
-export PLATFORM_NAME="Akashic"
+export PLATFORM_NAME="RELAYFUNDER"
 export PROTOCOL_FEE_PERCENT=100    # 1%
 export PLATFORM_FEE_PERCENT=400    # 4%
 
@@ -387,7 +387,8 @@ To use the provided admin wallets in your local environment:
 
    ```bash
    # Replace the truncated keys with full private keys
-   PLATFORM_ADMIN_PRIVATE_KEY=0xfef684505b... # Full key from CC Protocol
+   PLATFORM_SPONSOR_PRIVATE_KEY=0xfef684505c... # Full key managed by platform
+   PLATFORM_ADMIN_PRIVATE_KEY=0xfef684505b... # Full key managed by platform
    PROTOCOL_ADMIN_PRIVATE_KEY=0x83e2056711... # Full key from CC Protocol
    ```
 
@@ -452,12 +453,80 @@ cast send $TREASURY_ADDRESS \
   --private-key $PLATFORM_ADMIN_PRIVATE_KEY
 ```
 
+## Payment Gateway Integration
+
+### Overview
+
+The application supports payment gateways like Daimo Pay through an admin wallet intermediary pattern. This allows users to pay from any chain/token while the platform handles conversion and pledge execution.
+
+### Daimo Pay + CCP Integration
+
+```
+1. User pays via Daimo (any chain/token)
+   └─> Daimo bridges to Celo
+
+2. Daimo transfers USDT to NEXT_PUBLIC_PLATFORM_ADMIN wallet
+   └─> pledge amount + tip
+
+3. Webhook receives payment_started event
+   └─> Creates payment record in database
+
+4. Webhook receives payment_completed event
+   └─> Updates payment status to "confirmed"
+   └─> Triggers pledge execution
+
+5. Backend calls setFeeAndPledge via admin wallet
+   └─> (Pledge + Tip) → Treasury (via transferFrom)
+   └─> Tips tracked separately in contract (s_tip)
+   └─> User receives NFT
+```
+
+### Tips Handling
+
+- `setFeeAndPledge` approves (pledge + tip) amount
+- Contract transfers (pledge + tip) from admin → treasury via `safeTransferFrom(admin, treasury, pledge + tip)`
+- Tips are tracked separately in contract state: `s_tip`, `s_tokenToTippedAmount[tokenId]`
+- Platform admin can claim accumulated tips later using `claimTip()` function
+- Same behavior as direct wallet pledges - maintains consistency
+
+### Manual Retry
+
+If pledge execution fails, use the admin UI or API to retry individual payments:
+
+**Via Admin UI:**
+1. Navigate to `/admin/payments`
+2. Find payment with "Failed" or "Not Started" pledge status
+3. Click "Retry" button
+4. Monitor execution status
+
+**Via API:**
+```bash
+# Retry specific payment
+curl -X POST https://your-domain.com/api/admin/payments/{paymentId}/retry-pledge
+
+# Get list of failed pledges
+curl https://your-domain.com/api/admin/payments/failed-pledges?status=FAILED
+```
+
+**Programmatic Retry (if needed):**
+```typescript
+import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
+
+// Retry single payment
+const result = await retryGatewayPledge(paymentId);
+
+if (result.success) {
+  console.log('Retry successful:', result.result);
+} else {
+  console.error('Retry failed:', result.error);
+}
+```
+
 ## 📞 Support & Resources
 
 - **CC Protocol Setup Guide**: Available in `cc-protocol/CCP-STAGING-SETUP.md`
 - **Deployment Test Script**: `cc-protocol/cc-protocol-test.sh`
 - **Environment Template**: `cc-protocol/env.foundry.template`
 - **Contract ABIs**: Available in `contracts/abi/` directory
-- **NFT Contract ABIs**: Available in `contracts/nftABI/` directory
 
 For issues or questions, refer to the CC Protocol documentation in the `cc-protocol/` directory or use the provided test script for deployment verification.

@@ -7,24 +7,57 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui';
+import { FeeInformation } from '@/components/shared/fee-information';
+import { FUNDING_USAGE_MAX_LENGTH } from '@/lib/constant/form';
+import { FormFieldTextArea } from '@/components/form/form-field-text-area';
 
-export function CampaignCreateFormFunding() {
+interface CampaignCreateFormFundingProps {
+  isOnChainDeployed?: boolean;
+}
+
+export function CampaignCreateFormFunding({
+  isOnChainDeployed = false,
+}: CampaignCreateFormFundingProps) {
   const form = useFormContext();
   return (
-    <>
+    <div className="space-y-6">
       <FormField
         control={form.control}
         name="fundingGoal"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Funding Goal (USDC)</FormLabel>
+            <FormLabel className="text-sm font-medium text-foreground">
+              Funding Goal (USD)
+            </FormLabel>
             <FormControl>
-              <Input type="number" step="0.01" {...field} />
+              <Input
+                type="number"
+                step="0.01"
+                className="mt-1"
+                placeholder="1000"
+                disabled={isOnChainDeployed}
+                {...field}
+              />
             </FormControl>
             <FormMessage />
+            {isOnChainDeployed && (
+              <p className="text-sm text-solar">
+                Funding goal cannot be changed after campaign deployment
+              </p>
+            )}
           </FormItem>
         )}
       />
+
+      <FormFieldTextArea
+        name="fundingUsage"
+        label="Use of Funds"
+        placeholder="Please write 2-3 sentences describing your intended use of funds"
+        maxLength={FUNDING_USAGE_MAX_LENGTH}
+      />
+
+      {/* Fee Information - Show users the fee structure for their campaign */}
+      <FeeInformation compact={true} showAllFeesForCampaign={true} />
 
       {/* Hidden field to maintain form structure */}
       <FormField
@@ -34,15 +67,6 @@ export function CampaignCreateFormFunding() {
           <input type="hidden" {...field} value="flexible" />
         )}
       />
-
-      {/* Information about funding model */}
-      <div className="rounded-lg bg-blue-50 p-4">
-        <h3 className="font-semibold text-blue-900">🎨 Flexible Funding</h3>
-        <p className="mt-1 text-sm text-blue-700">
-          You&apos;ll receive all funds raised at the end of your campaign,
-          regardless of whether you reach your funding goal.
-        </p>
-      </div>
-    </>
+    </div>
   );
 }

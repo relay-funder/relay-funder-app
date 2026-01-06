@@ -1,46 +1,53 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useAuth } from '@/contexts';
-import { useUserProfile } from '@/lib/hooks/useProfile';
-import { KycWalletAddressesForm } from '@/components/profile/kyc-wallet-addresses-form';
 import { PageHome } from '@/components/page/home';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { PageHeader } from '@/components/page/header';
-import { PageDefaultContent } from '@/components/page/default-content';
-import { PageLoading } from '@/components/page/loading';
+import { DetailContainer } from '@/components/layout';
 import { PageConnectWallet } from '@/components/page/connect-wallet';
 import { ConnectedWalletInfo } from '@/components/profile/connected-wallet-info';
+import { WalletPageSkeleton } from '@/components/profile/wallet-page-skeleton';
 import { Web3ContextProvider } from '@/lib/web3/context-provider';
 
 export default function WalletSettingsPage() {
   const { authenticated, isReady } = useAuth();
-  const { data: profile, isPending: isProfilePending } = useUserProfile();
-  const customerId = useMemo(
-    () => profile?.crowdsplitCustomerId ?? null,
-    [profile],
-  );
+
+  // Set page title for browser history
+  useMetaTitle('Wallet Settings | Relay Funder');
+
+  if (!isReady) {
+    return <WalletPageSkeleton />;
+  }
+
   if (!authenticated) {
     return <PageConnectWallet>Please connect your wallet</PageConnectWallet>;
-  }
-  if (!isReady || isProfilePending) {
-    return (
-      <PageLoading>
-        Please wait while we fetch your wallet information.
-      </PageLoading>
-    );
   }
 
   return (
     <PageHome
       header={
-        <PageHeader message="Manage your wallet addresses for receiving payments."></PageHeader>
+        <PageHeader message="Manage your wallet for receiving payments and interacting with on-chain contracts."></PageHeader>
       }
     >
-      <PageDefaultContent title="Wallet Settings">
-        <Web3ContextProvider>
-          {customerId ? <KycWalletAddressesForm /> : <ConnectedWalletInfo />}
-        </Web3ContextProvider>
-      </PageDefaultContent>
+      <DetailContainer variant="wide" padding="md">
+        <div className="space-y-8">
+          {/* Wallet Header */}
+          <div className="space-y-2">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+              Wallet Settings
+            </h1>
+            <p className="text-muted-foreground">
+              View your connected wallet information, balances, and network
+              details.
+            </p>
+          </div>
+
+          <Web3ContextProvider>
+            <ConnectedWalletInfo />
+          </Web3ContextProvider>
+        </div>
+      </DetailContainer>
     </PageHome>
   );
 }

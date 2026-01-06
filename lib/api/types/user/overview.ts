@@ -8,20 +8,34 @@ import type { Prisma } from '@/.generated/prisma/client';
   - Totals for comments, favorites, and round contributions
 */
 
+import { UserWithCount } from '@/lib/api/types/admin';
+
 /**
  * Base user payload with relation counts.
+ * Note: campaigns count is manually added in the API response since no direct Prisma relation exists.
  */
-export type AdminUserOverviewUser = Prisma.UserGetPayload<{
-  include: {
-    _count: true;
-  };
-}>;
+export type AdminUserOverviewUser = UserWithCount;
 
 /**
  * Lightweight campaign shape used across relations.
  */
 export type CampaignLite = Prisma.CampaignGetPayload<{
   select: { id: true; title: true; slug: true };
+}>;
+
+/**
+ * Campaign with status and key metadata for user overview.
+ */
+export type UserCampaign = Prisma.CampaignGetPayload<{
+  select: {
+    id: true;
+    title: true;
+    slug: true;
+    status: true;
+    createdAt: true;
+    startTime: true;
+    endTime: true;
+  };
 }>;
 
 /**
@@ -119,4 +133,6 @@ export interface AdminUserOverviewResponse {
   totalComments: number;
   totalFavorites: number;
   totalRoundContributions: number;
+
+  userCampaigns: UserCampaign[];
 }

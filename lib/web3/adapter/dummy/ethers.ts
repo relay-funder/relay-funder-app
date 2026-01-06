@@ -155,6 +155,9 @@ export class BrowserProvider {
     console.log('dummy BrowserProvider.getCode', address);
     return address;
   }
+  async getNetwork() {
+    return { chainId: 0 };
+  }
 }
 export class JsonRpcProvider {
   constructor(rpcUrl?: string) {

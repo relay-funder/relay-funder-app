@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
-import { useWeb3Auth, ethers } from '@/lib/web3';
+import {
+  chainConfig,
+  ethers,
+  useConnectorClient,
+  useCurrentChain,
+} from '@/lib/web3';
 import { useAuth } from '@/contexts';
 import { switchNetwork } from '@/lib/web3/switch-network';
 import { requestTransaction } from '@/lib/web3/request-transaction';
@@ -7,6 +12,7 @@ import {
   useCreatePayment,
   useUpdatePaymentStatus,
 } from '@/lib/hooks/usePayments';
+import { useUserProfile } from '@/lib/hooks/useProfile';
 import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 import { debugHook as debug } from '@/lib/debug';
 
@@ -17,6 +23,7 @@ export function useDonationCallback({
   poolAmount,
   selectedToken,
   isAnonymous = false,
+  userEmail,
   onStateChanged,
 }: {
   campaign: DbCampaign;
@@ -25,15 +32,18 @@ export function useDonationCallback({
   poolAmount: number;
   selectedToken: string;
   isAnonymous?: boolean;
+  userEmail?: string;
   onStateChanged: (state: keyof typeof DonationProcessStates) => void;
 }) {
-  const { wallet } = useWeb3Auth();
+  const { data: client } = useConnectorClient();
   const { authenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { chainId } = useCurrentChain();
 
   const { mutateAsync: createPayment } = useCreatePayment();
   const { mutateAsync: updatePaymentStatus } = useUpdatePaymentStatus();
+  const { refetch: validateUserProfile } = useUserProfile();
 
   const onDonate = useCallback(async () => {
     try {
@@ -44,16 +54,31 @@ export function useDonationCallback({
       if (!authenticated) {
         throw new Error('Not signed in');
       }
-      if (!wallet) {
+      if (!client) {
         throw new Error('Wallet not connected');
       }
 
-      debug && console.log('Getting wallet provider and signer...');
-      const walletProvider = await wallet.getEthereumProvider();
-      if (!walletProvider) {
-        throw new Error('Wallet not supported or connected');
+      // Validate user session BEFORE any blockchain transactions
+      debug && console.log('Validating user session...');
+      try {
+        const validationResult = await validateUserProfile();
+        if (validationResult.error) {
+          throw validationResult.error;
+        }
+        debug &&
+          console.log('User session validated successfully:', {
+            user: validationResult.data,
+          });
+      } catch (validationError) {
+        debug && console.error('Session validation failed:', validationError);
+        throw new Error(
+          validationError instanceof Error
+            ? validationError.message
+            : 'Session validation failed',
+        );
       }
-      const ethersProvider = new ethers.BrowserProvider(walletProvider);
+
+      const ethersProvider = new ethers.BrowserProvider(client);
       const signer = await ethersProvider.getSigner();
       const userAddress = signer.address;
       if (!userAddress || !ethers.isAddress(userAddress)) {
@@ -65,14 +90,16 @@ export function useDonationCallback({
       debug && console.log('User address:', userAddress);
 
       onStateChanged('switch');
-      await switchNetwork({ wallet });
+      if (chainId !== chainConfig.chainId) {
+        await switchNetwork({ client });
+      }
 
       onStateChanged('requestTransaction');
       const tx = await requestTransaction({
         address: campaign.treasuryAddress,
         amount,
         tipAmount,
-        wallet,
+        client,
         onStateChanged,
       });
 
@@ -80,12 +107,14 @@ export function useDonationCallback({
       debug && console.log('Creating payment record...');
       const { paymentId } = await createPayment({
         amount: amount,
+        tipAmount: tipAmount,
         poolAmount,
         token: selectedToken,
         campaignId: campaign.id,
         isAnonymous: isAnonymous,
         status: 'confirming',
         transactionHash: tx.hash,
+        ...(userEmail && { userEmail }),
       });
 
       debug && console.log('Payment record created with ID:', paymentId);
@@ -114,18 +143,21 @@ export function useDonationCallback({
       setIsProcessing(false);
     }
   }, [
-    wallet,
+    onStateChanged,
     authenticated,
-    createPayment,
-    updatePaymentStatus,
+    client,
+    campaign.treasuryAddress,
+    campaign.id,
     amount,
     tipAmount,
+    createPayment,
     poolAmount,
-    campaign?.id,
-    campaign?.treasuryAddress,
     selectedToken,
     isAnonymous,
-    onStateChanged,
+    userEmail,
+    updatePaymentStatus,
+    validateUserProfile,
+    chainId,
   ]);
   return { onDonate, isProcessing, error };
 }

@@ -11,7 +11,6 @@ export function UserInlineName({
   user?: {
     name?: string | null;
     address?: string | null;
-    isKycCompleted?: boolean;
     isVouched?: boolean;
   };
   badges?: boolean;
@@ -43,7 +42,7 @@ export function UserInlineName({
         <span className="text-sm font-semibold">{prefix}</span>
       )}
       <UserAvatar user={user} />
-      <span title={name} className="text-sm font-semibold text-pink-500">
+      <span title={name} className="text-sm font-semibold">
         {shortName}
       </span>
       {badges && <UserInlineBadges user={user} />}

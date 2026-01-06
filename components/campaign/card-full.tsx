@@ -12,17 +12,13 @@ import { CampaignDaysLeft } from '@/components/campaign/days-left';
 import { CampaignProgress } from './progress';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { TreasuryBalanceCompact } from './treasury-balance';
-import { WithdrawalDialog } from './withdrawal-dialog';
-import { useAuth } from '@/contexts';
 import { useCampaignRounds } from '@/hooks/use-campaign-rounds';
 
 export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
-  const { address } = useAuth();
   const { contributorCount, contributorPendingCount } =
     useCampaignStatsFromInstance({
       campaign,
     });
-  const isOwner = campaign.creatorAddress === address;
   const {
     hasRounds,
     listingSummary: roundsListingSummary,
@@ -49,7 +45,7 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
                 {contributorCount}
               </span>
             </div>
-            <p className="text-sm text-gray-600">backers</p>
+            <p className="text-sm text-gray-600">contributors</p>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -61,22 +57,15 @@ export function CampaignCardFull({ campaign }: { campaign: DbCampaign }) {
             <p className="text-sm text-gray-600">days left</p>
           </div>
         </div>
-        {isOwner ? (
-          <div className="mt-4 space-y-3">
-            <Link href={`/campaigns/${campaign.slug}/edit`}>
-              <Button className="h-12 w-full text-lg" size="lg">
-                Edit this campaign
-              </Button>
-            </Link>
-            <WithdrawalDialog campaign={campaign} />
-          </div>
-        ) : (
+        <div className="mt-4 space-y-3">
           <Link href={`/campaigns/${campaign.slug}/donation`}>
-            <Button className="mt-4 h-12 w-full text-lg" size="lg">
-              Back this campaign
+            <Button className="h-12 w-full text-lg" size="lg">
+              <span className="flex items-center gap-2">
+                Support this campaign
+              </span>
             </Button>
           </Link>
-        )}
+        </div>
 
         <div className="flex justify-center gap-2">
           <FavoriteButton campaignId={campaign.id} />

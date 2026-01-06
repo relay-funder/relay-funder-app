@@ -1,5 +1,8 @@
 'use client';
-import { IWeb3UseAuthHook, EthereumProvider } from '@/lib/web3/types';
+import {
+  IWeb3UseAuthHook,
+  IWeb3UseConnectedAccountHook,
+} from '@/lib/web3/types';
 import { useEffect, useState, useCallback } from 'react';
 /**
  * This is a very basic adapter
@@ -53,7 +56,6 @@ export function getProvider() {
 export function useWeb3Auth(): IWeb3UseAuthHook {
   const [authenticating, setAuthenticating] = useState<boolean>(false);
   const [wallet, setWallet] = useState<{
-    getEthereumProvider: () => Promise<EthereumProvider>;
     isConnected: () => Promise<boolean>;
     address: `0x${string}`;
     chainId: number;
@@ -63,7 +65,6 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     requestWallet().then((wallet) =>
       setWallet({
         ...wallet,
-        getEthereumProvider: async () => getProvider() as EthereumProvider,
         isConnected: async () => true,
         address:
           (address as `0x${string}`) ??
@@ -106,6 +107,15 @@ export function useWeb3Auth(): IWeb3UseAuthHook {
     address,
     wallet,
   };
+}
+export function useConnectedAccount(): IWeb3UseConnectedAccountHook {
+  const { address } = useWeb3Auth();
+  const isConnected = true;
+  const isEmbedded = false;
+  const openUi = useCallback(() => {
+    console.warn('no web3::useConnectedAccount::openUi in dummy mode');
+  }, []);
+  return { isConnected, isEmbedded, address, openUi };
 }
 
 export * as ethers from './ethers';

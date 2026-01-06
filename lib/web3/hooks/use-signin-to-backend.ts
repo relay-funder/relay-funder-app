@@ -1,21 +1,15 @@
 import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   getCsrfToken,
   getSession,
   signIn as nextAuthSignIn,
 } from 'next-auth/react';
 import { SiweMessage } from 'siwe';
-import {
-  ethers,
-  useAccount,
-  useSignMessage,
-  getProvider,
-  UserRejectedRequestError,
-} from '@/lib/web3';
+import { ethers, useAccount, useSignMessage } from '@/lib/web3';
 import { PROJECT_NAME } from '@/lib/constant';
 
 import { debugWeb3UseAuth as debug } from '@/lib/debug';
+import { loginCallbackUrl } from '@/server/auth/providers/login-callback-url';
 
 async function fetchNonce() {
   try {
@@ -26,11 +20,9 @@ async function fetchNonce() {
   return;
 }
 export function useSignInToBackend() {
-  const params = useSearchParams();
-  const callbackUrl = useMemo(
-    () => params?.get('callbackUrl') || '/dashboard',
-    [params],
-  );
+  const callbackUrl = useMemo(() => {
+    return loginCallbackUrl();
+  }, []);
   const { signMessageAsync } = useSignMessage();
   const account = useAccount();
 
@@ -44,6 +36,9 @@ export function useSignInToBackend() {
       console.log('web3/hooks/use-signin-to-backend', {
         address,
         chainId,
+        domain: window.location.host,
+        origin: window.location.origin,
+        callbackUrl,
       });
     if (!address || typeof chainId !== 'number') {
       throw new Error(
@@ -74,43 +69,9 @@ export function useSignInToBackend() {
         'web3/hooks/use-signin-to-backend: Wagmi signMessageAsync not found',
       );
     }
-    let signature = '';
-    try {
-      signature = await signMessageAsync({
-        message: preparedMessage,
-      });
-    } catch (error: unknown) {
-      // signMessageAsync cannot work because the wagmi connector is not set yet
-      // that signature would only work if we detach the nextauth login from the wagmi connect
-      // in a way that react could process the contexts&providers
-      // const signature = await signMessageAsync({
-      //   message: preparedMessage,
-      // });
-      if (error instanceof UserRejectedRequestError) {
-        throw error;
-      }
-      const provider = getProvider();
-      if (!provider) {
-        throw new Error(
-          'web3/adapter/silk/use-auth:signInToBackend: Wallet is not loaded',
-        );
-      }
-      debug &&
-        console.log(
-          'web3/adapter/silk/use-auth:signInToBackend: request signature',
-        );
-      const updatedProvider = getProvider();
-      if (!updatedProvider) {
-        throw new Error('Provider no longer available');
-      }
-      signature = (await updatedProvider.request({
-        method: 'personal_sign',
-        params: [
-          ethers.hexlify(ethers.toUtf8Bytes(preparedMessage)),
-          ethers.getAddress(address),
-        ],
-      })) as string;
-    }
+    const signature = await signMessageAsync({
+      message: preparedMessage,
+    });
 
     debug &&
       console.log('web3/hooks/use-signin-to-backend: login to next-auth');
@@ -131,7 +92,15 @@ export function useSignInToBackend() {
       const errorMessage =
         'web3/hooks/use-signin-to-backend:' +
         ' An error occurred while signin in.' +
-        ` Code: ${authResult.status} - ${authResult.error}`;
+        ` Code: ${authResult.status} - ${authResult.error}` +
+        ` (Domain: ${window.location.host})`;
+      console.error('Authentication failed:', {
+        status: authResult.status,
+        error: authResult.error,
+        domain: window.location.host,
+        callbackUrl,
+        vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV,
+      });
       throw new Error(errorMessage);
     }
     return callbackUrl;

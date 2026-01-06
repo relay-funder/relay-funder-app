@@ -1,4 +1,4 @@
-import { db, type Prisma } from '@/server/db';
+import { db, type Prisma, type PledgeExecutionStatus } from '@/server/db';
 
 /**
  * Shape of a payment record returned for admin lists.
@@ -6,7 +6,15 @@ import { db, type Prisma } from '@/server/db';
  */
 export type AdminPaymentListItem = Prisma.PaymentGetPayload<{
   include: {
-    campaign: true;
+    campaign: {
+      select: {
+        id: true;
+        title: true;
+        slug: true;
+        campaignAddress: true;
+        treasuryAddress: true;
+      };
+    };
     user: true;
     RoundContribution: {
       include: {
@@ -33,6 +41,7 @@ export interface ListAdminPaymentsParams {
   token?: string;
   refundState?: Prisma.EnumPaymentRefundStateFilter;
   type?: Prisma.EnumPaymentTypeFilter;
+  pledgeExecutionStatus?: PledgeExecutionStatus;
 }
 
 export interface ListAdminPaymentsResult {
@@ -61,6 +70,7 @@ export async function listAdminPayments({
   token,
   refundState,
   type,
+  pledgeExecutionStatus,
 }: ListAdminPaymentsParams = {}): Promise<ListAdminPaymentsResult> {
   const where: Prisma.PaymentWhereInput = {};
 
@@ -82,6 +92,9 @@ export async function listAdminPayments({
   if (type) {
     where.type = type;
   }
+  if (pledgeExecutionStatus && pledgeExecutionStatus.trim().length > 0) {
+    where.pledgeExecutionStatus = pledgeExecutionStatus;
+  }
 
   const [items, totalCount] = await Promise.all([
     db.payment.findMany({
@@ -90,7 +103,15 @@ export async function listAdminPayments({
       take: pageSize,
       orderBy: { createdAt: 'desc' },
       include: {
-        campaign: true,
+        campaign: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            campaignAddress: true,
+            treasuryAddress: true,
+          },
+        },
         user: true,
         // Include associated round contributions (if any)
         // Keeping full array to preserve relationship visibility
@@ -119,4 +140,44 @@ export async function listAdminPayments({
       hasMore: skip + pageSize < totalCount,
     },
   };
+}
+
+/**
+ * Get all payments for a specific campaign for reconciliation purposes.
+ * Returns all payments without pagination limits since reconciliation needs complete data.
+ */
+export async function getCampaignPaymentsForReconciliation(
+  campaignId: number,
+): Promise<AdminPaymentListItem[]> {
+  const payments = await db.payment.findMany({
+    where: {
+      campaignId,
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      campaign: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          campaignAddress: true,
+          treasuryAddress: true,
+        },
+      },
+      user: true,
+      // Include associated round contributions (if any)
+      RoundContribution: {
+        include: {
+          roundCampaign: {
+            include: {
+              Round: { select: { id: true, title: true, status: true } },
+              Campaign: { select: { id: true, title: true, slug: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return payments;
 }

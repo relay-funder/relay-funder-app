@@ -1,4 +1,12 @@
-import { useFormContext } from 'react-hook-form';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  ChangeEvent,
+} from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import {
   Input,
   FormField,
@@ -6,38 +14,485 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  Select,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+  Alert,
+  AlertDescription,
+  Skeleton,
 } from '@/components/ui';
+import { useUpcomingRounds, useUpcomingRound } from '@/lib/hooks/useRounds';
+import { GetRoundResponseInstance } from '@/lib/api/types';
+import { AlertCircle } from 'lucide-react';
+import { RoundSelectItem } from '@/components/round/select-item';
+import { differenceInDays, addDays } from 'date-fns';
+import {
+  toLocalDateInputValue,
+  validateAndParseDateString,
+} from '@/lib/utils/date';
 
-export function CampaignCreateFormTimeline() {
+interface CampaignCreateFormTimelineProps {
+  isOnChainDeployed?: boolean;
+}
+
+function getStartTimeWarning(startTimeValue: string | null | undefined) {
+  if (typeof startTimeValue !== 'string') {
+    return null;
+  }
+
+  try {
+    let startDate: Date;
+    if (startTimeValue.includes('T')) {
+      // ISO format
+      startDate = new Date(startTimeValue);
+    } else {
+      // Date-only format, add time for comparison
+      startDate = new Date(startTimeValue + 'T00:00:00');
+    }
+
+    if (isNaN(startDate.getTime())) {
+      return null; // Invalid date, no warning
+    }
+
+    const now = new Date();
+    const minutesDifference =
+      (startDate.getTime() - now.getTime()) / (1000 * 60);
+    const isDev = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
+    const isToday = startDate.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = startDate.toDateString() === tomorrow.toDateString();
+
+    // For today's date, show warning about smart contract constraints
+    if (isToday) {
+      return {
+        type: 'warning',
+        message:
+          'Campaign is set to start today. If admin approval is delayed past the start date, your campaign will expire after publishing due to smart contract rules and will need to be re-created with a future date.',
+      };
+    }
+
+    // For tomorrow's date, show similar warning
+    if (isTomorrow) {
+      return {
+        type: 'warning',
+        message:
+          'Campaign is set to start tomorrow. If admin approval is delayed past the start date, your campaign will expire after publishing due to smart contract rules and will need to be re-created with a future date.',
+      };
+    }
+
+    if (minutesDifference < 0) {
+      return {
+        type: 'warning',
+        message:
+          'Start date is in the past. For testing purposes, this is allowed but not recommended for production.',
+      };
+    } else if (minutesDifference < 2) {
+      return {
+        type: 'warning',
+        message:
+          'Campaign starts very soon. You may not have enough time to complete setup.',
+      };
+    } else if (minutesDifference < 60) {
+      return {
+        type: 'info',
+        message:
+          'Campaign starts within the next hour. Make sure everything is ready to go.',
+      };
+    } else if (minutesDifference < 24 * 60 && isDev) {
+      return {
+        type: 'info',
+        message:
+          'Campaign starts soon. Double-check that all settings are correct.',
+      };
+    }
+    return null;
+  } catch (error) {
+    console.warn('Error checking start time warning:', error);
+    return null;
+  }
+}
+export function CampaignCreateFormTimeline({
+  isOnChainDeployed = false,
+}: CampaignCreateFormTimelineProps) {
+  const refLoaded = useRef<boolean>(false);
   const form = useFormContext();
+  const [minDate, setMinDate] = useState<string>('2025-01-01'); // uses effect to get current date in client
+  const startTimeValue: string | undefined = useWatch({
+    name: 'startTime',
+  });
+  const selectedRoundIdValue: number | undefined = useWatch({
+    name: 'selectedRoundId',
+  });
+
+  const { data: upcomingRounds, isLoading: upcomingRoundsLoading } =
+    useUpcomingRounds();
+  const { data: upcomingRound, isLoading: upcomingRoundLoading } =
+    useUpcomingRound();
+
+  const hasManualTimes = useMemo(() => {
+    // differs from default value (null)
+    return (
+      typeof selectedRoundIdValue === 'number' && selectedRoundIdValue === 0
+    );
+  }, [selectedRoundIdValue]);
+  const hasUpcomingRounds = useMemo(
+    () => Array.isArray(upcomingRounds) && upcomingRounds.length > 0,
+    [upcomingRounds],
+  );
+  // Check if start time is too close to current time
+  const selectedRoundDates = useMemo(() => {
+    if (!selectedRoundIdValue || !upcomingRounds) {
+      return '';
+    }
+    const selectedRound = upcomingRounds.find(
+      (round: GetRoundResponseInstance) => round.id === selectedRoundIdValue,
+    );
+    if (!selectedRound) {
+      return '';
+    }
+    return `${new Date(selectedRound.startTime).toLocaleDateString()} to ${new Date(selectedRound.endTime).toLocaleDateString()}`;
+  }, [selectedRoundIdValue, upcomingRounds]);
+
+  const startTimeWarning = useMemo(
+    () => getStartTimeWarning(startTimeValue),
+    [startTimeValue],
+  );
+
+  const minEndDate = useMemo(() => {
+    if (!startTimeValue) return '';
+    // `startTimeValue` might be ISO or YYYY-MM-DD; normalize to a local date for date input min.
+    let startDate: Date;
+    if (startTimeValue.includes('T')) {
+      startDate = new Date(startTimeValue);
+    } else {
+      try {
+        const { year, month, day } = validateAndParseDateString(startTimeValue);
+        startDate = new Date(year, month - 1, day);
+      } catch {
+        return '';
+      }
+    }
+    if (Number.isNaN(startDate.getTime())) return '';
+    const minEnd = addDays(startDate, 1);
+    return toLocalDateInputValue(minEnd);
+  }, [startTimeValue]);
+
+  const handleSwitchToManual = useCallback(() => {
+    form.setValue('selectedRoundId', 0);
+  }, [form]);
+
+  const handleSwitchToRound = useCallback(() => {
+    if (!upcomingRound) {
+      return;
+    }
+
+    form.setValue('selectedRoundId', upcomingRound.id);
+    form.setValue('startTime', toLocalDateInputValue(upcomingRound.startTime));
+    form.setValue('endTime', toLocalDateInputValue(upcomingRound.endTime));
+  }, [form, upcomingRound]);
+
+  const handleRoundChange = useCallback(
+    (value: string) => {
+      if (hasManualTimes) {
+        return;
+      }
+      if (value === '' || value === '0') {
+        return;
+      }
+
+      const round = upcomingRounds?.find(({ id }) => id === parseInt(value));
+      if (round) {
+        form.setValue('selectedRoundId', round.id);
+        form.setValue('startTime', toLocalDateInputValue(round.startTime));
+        form.setValue('endTime', toLocalDateInputValue(round.endTime));
+      }
+    },
+    [form, hasManualTimes, upcomingRounds],
+  );
+  const handleStartTimeChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      // Allow changes when:
+      // 1. Manual times are explicitly set (selectedRoundId === 0), OR
+      // 2. No rounds are available, OR
+      // 3. No round is currently selected
+      const canEditManually =
+        hasManualTimes || !hasUpcomingRounds || !selectedRoundIdValue;
+
+      if (!canEditManually) {
+        return;
+      }
+
+      // If changing date while a round is selected (not manual mode), switch to manual mode
+      if (selectedRoundIdValue && selectedRoundIdValue !== 0) {
+        form.setValue('selectedRoundId', 0);
+      }
+
+      const { year, month, day } = validateAndParseDateString(value);
+      const newStartDate = new Date(year, month - 1, day);
+      const newStartString = value;
+      const oldValues = form.getValues();
+      const oldStartString = oldValues.startTime;
+      const oldEndString = oldValues.endTime;
+      form.setValue('startTime', newStartString);
+      if (oldStartString && oldEndString) {
+        const oldStartDate = new Date(oldStartString);
+        const oldEndDate = new Date(oldEndString);
+        const diffDays = differenceInDays(oldEndDate, oldStartDate);
+        if (diffDays > 0) {
+          const newEndDate = addDays(newStartDate, diffDays);
+          const newEndString = toLocalDateInputValue(newEndDate);
+          form.setValue('endTime', newEndString);
+        } else {
+          // ensure endTime is not before startTime
+          if (new Date(oldEndString).getTime() < newStartDate.getTime()) {
+            form.setValue('endTime', newStartString);
+          }
+        }
+      } else {
+        // ensure endTime is not before startTime if it exists
+        const currentEndString = oldValues.endTime;
+        if (
+          currentEndString &&
+          new Date(currentEndString).getTime() < newStartDate.getTime()
+        ) {
+          form.setValue('endTime', newStartString);
+        }
+      }
+    },
+    [form, hasManualTimes, hasUpcomingRounds, selectedRoundIdValue],
+  );
+  // effects - beware, the control is rendered twice, avoid setting form values
+  // depending on state as the effect runs twice (one for lg:hidden, one for mobile)
+  // Pre-select the upcoming round when it loads (only if user hasn't manually selected custom dates)
+  useEffect(() => {
+    if (refLoaded.current === true) {
+      return;
+    }
+    if (hasManualTimes) {
+      return;
+    }
+    if (!upcomingRound || upcomingRoundsLoading || upcomingRoundLoading) {
+      return;
+    }
+    if (selectedRoundIdValue) {
+      return;
+    }
+    refLoaded.current = true;
+
+    form.setValue('selectedRoundId', upcomingRound.id);
+    form.setValue('startTime', toLocalDateInputValue(upcomingRound.startTime));
+    form.setValue('endTime', toLocalDateInputValue(upcomingRound.endTime));
+  }, [
+    upcomingRound,
+    upcomingRoundsLoading,
+    upcomingRoundLoading,
+    selectedRoundIdValue,
+    hasManualTimes,
+    form,
+  ]);
+
+  // If a round is selected (id > 0), keep the campaign's date inputs in sync with that round.
+  // This prevents saving/submitting stale start/end dates while a round appears selected in the UI.
+  useEffect(() => {
+    if (!upcomingRounds) return;
+    if (typeof selectedRoundIdValue !== 'number' || selectedRoundIdValue <= 0) {
+      return;
+    }
+    const selectedRound = upcomingRounds.find(
+      (round) => round.id === selectedRoundIdValue,
+    );
+    if (!selectedRound) return;
+
+    const desiredStart = toLocalDateInputValue(selectedRound.startTime);
+    const desiredEnd = toLocalDateInputValue(selectedRound.endTime);
+    if (!desiredStart || !desiredEnd) return;
+
+    const currentStart = form.getValues('startTime');
+    const currentEnd = form.getValues('endTime');
+    if (currentStart !== desiredStart) {
+      form.setValue('startTime', desiredStart);
+    }
+    if (currentEnd !== desiredEnd) {
+      form.setValue('endTime', desiredEnd);
+    }
+  }, [form, selectedRoundIdValue, upcomingRounds]);
+
+  useEffect(() => {
+    setMinDate(toLocalDateInputValue(new Date()));
+  }, []);
+
   return (
-    <>
-      <FormField
-        control={form.control}
-        name="startTime"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Start Time</FormLabel>
-            <FormControl>
-              <Input type="date" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="endTime"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>End Time</FormLabel>
-            <FormControl>
-              <Input type="date" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium text-foreground">
+          Campaign Timeline
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Choose your campaign scheduling option.
+        </p>
+      </div>
+
+      {/* Timeline Selection */}
+      {upcomingRoundsLoading || upcomingRoundLoading ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      ) : hasUpcomingRounds && !hasManualTimes ? (
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="selectedRoundId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Select a Funding Round
+                </FormLabel>
+                <Select
+                  onValueChange={handleRoundChange}
+                  value={field.value?.toString()}
+                  disabled={isOnChainDeployed}
+                >
+                  <FormControl>
+                    <SelectTrigger className="h-auto">
+                      <SelectValue placeholder="Choose a funding round" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {upcomingRounds?.map((round) => (
+                      <RoundSelectItem key={round.id} round={round} />
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+                {isOnChainDeployed && (
+                  <p className="text-sm text-solar">
+                    Timeline option cannot be changed after campaign deployment
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
+
+          {/* Manual dates option */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={handleSwitchToManual}
+              className="text-sm text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+              disabled={isOnChainDeployed}
+            >
+              Or set custom dates manually
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Manual Date Selection - Original Interface */
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-medium text-foreground">
+                Campaign Dates
+              </h4>
+              {hasUpcomingRounds && (
+                <button
+                  type="button"
+                  onClick={handleSwitchToRound}
+                  className="text-sm text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                  disabled={isOnChainDeployed}
+                >
+                  Switch to round
+                </button>
+              )}
+            </div>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="startTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Campaign Start Date
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    className="mt-1"
+                    min={minDate}
+                    disabled={isOnChainDeployed}
+                    {...field}
+                    onChange={handleStartTimeChange}
+                  />
+                </FormControl>
+                <FormMessage />
+                {startTimeWarning && (
+                  <Alert
+                    variant={
+                      startTimeWarning.type === 'warning'
+                        ? 'destructive'
+                        : 'default'
+                    }
+                    className="mt-2"
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {startTimeWarning.message}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {isOnChainDeployed && (
+                  <p className="text-sm text-solar">
+                    Start date cannot be changed after campaign deployment
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="endTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-foreground">
+                  Campaign End Date
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    className="mt-1"
+                    min={minEndDate}
+                    disabled={isOnChainDeployed}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+                {isOnChainDeployed && (
+                  <p className="text-sm text-solar">
+                    End date cannot be changed after campaign deployment
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+
+      {/* Round Dates Display - When round selected */}
+      {!hasManualTimes && upcomingRounds && selectedRoundDates && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Campaign runs from{' '}
+            <span className="font-medium">{selectedRoundDates}</span>
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

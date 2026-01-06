@@ -8,16 +8,14 @@ export function RoundCardTabOverview({
 }) {
   return (
     <div className="space-y-4">
-      {/* Full Description */}
+      {/* Basic round information - descriptions removed */}
       <Card>
         <CardHeader>
           <CardTitle>About this Round</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="prose prose-sm max-w-none">
-            <p className="leading-relaxed text-muted-foreground">
-              {round.description || 'No description available for this round.'}
-            </p>
+          <div className="text-sm text-muted-foreground">
+            Round information and basic stats only.
           </div>
         </CardContent>
       </Card>

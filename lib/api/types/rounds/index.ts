@@ -10,6 +10,12 @@ export interface RoundsWithRoundIdParams {
     roundId: string;
   }>;
 }
+export interface RoundsWithIdAndCampaignIdParams {
+  params: Promise<{
+    id: string;
+    campaignId: string;
+  }>;
+}
 export interface GetRoundsStatsResponse {
   totalRounds: number;
   totalRaised: number;
@@ -32,6 +38,7 @@ export interface GetRoundResponseInstance {
   id: number;
   title: string;
   description: string;
+  descriptionUrl?: string | null;
   tags: string[];
   matchingPool: number;
   poolId?: number | null;
@@ -43,6 +50,7 @@ export interface GetRoundResponseInstance {
   createdAt: string;
   managerAddress: string;
   updatedAt: string;
+  isHidden: boolean;
   roundCampaigns?: GetRoundCampaignResponseInstance[];
   recipientStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   roundCampaignId?: number;

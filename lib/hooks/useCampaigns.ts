@@ -5,6 +5,7 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { QueryClient } from '@tanstack/react-query';
 import type {
   GetCampaignResponseInstance,
@@ -29,20 +30,14 @@ interface PaginatedCampaignResponse extends PaginatedResponse {
 async function fetchCampaigns(status?: string) {
   const url = status ? `/api/campaigns?status=${status}` : '/api/campaigns';
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaigns');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaigns');
   const data = await response.json();
-  return data.campaigns;
+  return data;
 }
 async function fetchCampaign(slug: string | number) {
   const url = `/api/campaigns/${slug}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaign');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign');
   const data = await response.json();
   return data as GetCampaignResponse;
 }
@@ -60,10 +55,7 @@ async function fetchCampaignPayments({
 }) {
   const url = `/api/campaigns/${id}/payments?status=${status}&page=${pageParam}&pageSize=${pageSize}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaign');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign payments');
   const data = (await response.json()) as GetCampaignPaymentsResponse;
   return data?.payments ?? [];
 }
@@ -76,10 +68,7 @@ async function fetchCampaignPage({
 }) {
   const url = `/api/campaigns?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaigns');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaigns');
   const data = await response.json();
   return data as PaginatedCampaignResponse;
 }
@@ -92,20 +81,18 @@ async function fetchUserCampaignPage({
 }) {
   const url = `/api/campaigns/user?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
   const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaigns');
-  }
+  await handleApiErrors(response, 'Failed to fetch campaign payments');
   const data = await response.json();
   return data as PaginatedCampaignResponse;
 }
-async function fetchCampaignStats() {
-  const url = `/api/campaigns/stats`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch campaign');
+async function fetchCampaignStats(scope?: 'user' | 'global') {
+  const params = new URLSearchParams();
+  if (scope) {
+    params.set('scope', scope);
   }
+  const url = `/api/campaigns/stats${params.toString() ? `?${params.toString()}` : ''}`;
+  const response = await fetch(url);
+  await handleApiErrors(response, 'Failed to fetch campaign');
   const data = await response.json();
   return data as GetCampaignsStatsResponse;
 }
@@ -123,10 +110,7 @@ async function updateCampaign(variables: IUpdateCampaign) {
     body: JSON.stringify(variables),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update campaign');
-  }
+  await handleApiErrors(response, 'Failed to update campaign');
 
   const data = await response.json();
   return data as PatchCampaignResponse;
@@ -137,6 +121,7 @@ interface IUpdateCampaignData {
   description: string;
   location: string;
   category: string;
+  fundingUsage: string;
   bannerImage?: File | null;
 }
 async function updateCampaignData(variables: IUpdateCampaignData) {
@@ -146,6 +131,7 @@ async function updateCampaignData(variables: IUpdateCampaignData) {
   formDataToSend.append('description', variables.description);
   formDataToSend.append('location', variables.location);
   formDataToSend.append('category', variables.category);
+  formDataToSend.append('fundingUsage', variables.fundingUsage);
   if (variables.bannerImage) {
     formDataToSend.append('bannerImage', variables.bannerImage);
   }
@@ -154,10 +140,7 @@ async function updateCampaignData(variables: IUpdateCampaignData) {
     body: formDataToSend,
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update campaign');
-  }
+  await handleApiErrors(response, 'Failed to update campaign data');
 
   const data = await response.json();
   return data as PatchCampaignResponse;
@@ -166,6 +149,8 @@ interface ICreateCampaign {
   title: string;
   description: string;
   fundingGoal: string;
+  fundingUsage: string;
+  selectedRoundId: number | null;
   startTime: string;
   endTime: string;
   status?: string;
@@ -177,6 +162,8 @@ async function createCampaign({
   title,
   description,
   fundingGoal,
+  fundingUsage,
+  selectedRoundId,
   startTime,
   endTime,
   status = 'draft',
@@ -188,6 +175,10 @@ async function createCampaign({
   formDataToSend.append('title', title);
   formDataToSend.append('description', description);
   formDataToSend.append('fundingGoal', fundingGoal);
+  formDataToSend.append('fundingUsage', fundingUsage);
+  if (selectedRoundId != null && selectedRoundId > 0) {
+    formDataToSend.append('selectedRoundId', `${selectedRoundId}`);
+  }
   formDataToSend.append('startTime', startTime);
   formDataToSend.append('endTime', endTime);
   formDataToSend.append('status', status);
@@ -200,16 +191,7 @@ async function createCampaign({
     method: 'POST',
     body: formDataToSend,
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to save campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to save campaign');
   const data = await response.json();
   return data as PostCampaignsResponse;
 }
@@ -229,16 +211,7 @@ async function approveCampaign(variables: IApproveCampaign) {
       body: JSON.stringify(variables),
     },
   );
-  if (!response.ok) {
-    let errorMsg = 'Failed to approve campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to approve campaign');
   const data = await response.json();
   return data as PostCampaignApproveResponse;
 }
@@ -254,16 +227,19 @@ async function disableCampaign(variables: IDisableCampaign) {
       body: JSON.stringify(variables),
     },
   );
-  if (!response.ok) {
-    let errorMsg = 'Failed to disable campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to disable campaign');
+  return response.json();
+}
+
+async function enableCampaign(variables: IDisableCampaign) {
+  const response = await fetch(
+    `/api/campaigns/${variables.campaignId}/enable`,
+    {
+      method: 'POST',
+      body: JSON.stringify(variables),
+    },
+  );
+  await handleApiErrors(response, 'Failed to enable campaign');
   return response.json();
 }
 async function removeCampaign(variables: IDisableCampaign) {
@@ -271,50 +247,36 @@ async function removeCampaign(variables: IDisableCampaign) {
     method: 'DELETE',
     body: JSON.stringify(variables),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to remove campaign';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error
-        ? `${errorData.error}${errorData.details ? ': ' + errorData.details : ''}`
-        : errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to remove campaign');
   return response.json();
 }
 
-interface IDeployContract {
+interface IUpdateCampaignTransaction {
   campaignId: number;
+  transactionHash: string;
+  campaignAddress?: string | null;
 }
 
-async function deployContract(variables: IDeployContract) {
+async function updateCampaignTransactionApi(
+  variables: IUpdateCampaignTransaction,
+) {
   const response = await fetch(
-    `/api/admin/campaigns/${variables.campaignId}/deploy-campaign-contract`,
+    `/api/admin/campaigns/${variables.campaignId}/update-transaction`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        transactionHash: variables.transactionHash,
+        campaignAddress: variables.campaignAddress,
+      }),
     },
   );
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      `Contract deployment failed: ${errorData.error || 'Unknown server error'}`,
-    );
-  }
+  await handleApiErrors(response, 'Failed to update campaign transaction');
 
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(
-      `Contract deployment failed: ${result.error || 'Unknown error'}`,
-    );
-  }
-
-  return result;
+  return response.json();
 }
 
 export function resetCampaign(id: number, queryClient: QueryClient) {
@@ -341,7 +303,7 @@ export function resetCampaign(id: number, queryClient: QueryClient) {
   }
 }
 export function useCampaigns(status?: string) {
-  return useQuery({
+  return useQuery<PaginatedCampaignResponse>({
     queryKey: [CAMPAIGNS_QUERY_KEY, status],
     queryFn: () => fetchCampaigns(status),
     enabled: true,
@@ -380,6 +342,101 @@ export function useInfiniteCampaigns(
         : undefined,
     initialPageParam: 1,
   });
+}
+
+interface AdminCampaignFilters {
+  statuses?: string[];
+  enabled?: boolean | null; // true = enabled, false = disabled, null = both
+  excludeExpiredPending?: boolean; // exclude campaigns pending approval that have started
+}
+
+export function useInfiniteAdminCampaigns(
+  filters: AdminCampaignFilters = {},
+  pageSize = 10,
+  rounds = false,
+  includeTips = false,
+) {
+  const { statuses, enabled, excludeExpiredPending } = filters;
+
+  return useInfiniteQuery<PaginatedCampaignResponse, Error>({
+    queryKey: [
+      CAMPAIGNS_QUERY_KEY,
+      'admin',
+      'infinite',
+      statuses?.sort()?.join(',') || 'all',
+      enabled,
+      excludeExpiredPending,
+      includeTips,
+      pageSize,
+    ],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchAdminCampaignPage({
+        pageParam: pageParam as number,
+        statuses,
+        enabled,
+        excludeExpiredPending,
+        includeTips,
+        pageSize,
+        rounds,
+      }),
+    getNextPageParam: (lastPage: PaginatedCampaignResponse) => {
+      return lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined;
+    },
+    getPreviousPageParam: (firstPage: PaginatedCampaignResponse) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
+    initialPageParam: 1,
+  });
+}
+
+async function fetchAdminCampaignPage({
+  pageParam = 1,
+  statuses,
+  enabled,
+  excludeExpiredPending,
+  includeTips = false,
+  pageSize = 10,
+  rounds = false,
+}: {
+  pageParam?: number;
+  statuses?: string[];
+  enabled?: boolean | null;
+  excludeExpiredPending?: boolean;
+  includeTips?: boolean;
+  pageSize?: number;
+  rounds?: boolean;
+}) {
+  const params = new URLSearchParams({
+    page: pageParam.toString(),
+    pageSize: pageSize.toString(),
+    rounds: rounds.toString(),
+    admin: 'true',
+  });
+
+  if (statuses && statuses.length > 0) {
+    params.set('statuses', statuses.join(','));
+  }
+
+  if (enabled !== null && enabled !== undefined) {
+    params.set('enabled', enabled.toString());
+  }
+
+  if (excludeExpiredPending) {
+    params.set('excludeExpiredPending', 'true');
+  }
+
+  if (includeTips) {
+    params.set('includeTips', 'true');
+  }
+
+  const url = `/api/campaigns?${params.toString()}`;
+  const response = await fetch(url);
+  await handleApiErrors(response, 'Failed to fetch admin campaigns');
+  const data = await response.json();
+  return data as PaginatedCampaignResponse;
 }
 
 export function useInfiniteUserCampaigns(
@@ -480,8 +537,40 @@ export function useAdminDisableCampaign() {
   return useMutation({
     mutationFn: disableCampaign,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      // Invalidate all campaign-related queries more aggressively
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
       queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
+
+      // Force refetch of all campaign data
+      queryClient.refetchQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
+    },
+  });
+}
+
+export function useAdminEnableCampaign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: enableCampaign,
+    onSuccess: () => {
+      // Invalidate all campaign-related queries more aggressively
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGN_STATS_QUERY_KEY] });
+
+      // Force refetch of all campaign data
+      queryClient.refetchQueries({
+        predicate: (query) =>
+          query.queryKey && query.queryKey[0] === CAMPAIGNS_QUERY_KEY,
+      });
     },
   });
 }
@@ -505,21 +594,21 @@ export function useRefetchCampaign(campaignId: number) {
   return refetch;
 }
 
-export function useCampaignStats() {
+export function useCampaignStats(scope?: 'user' | 'global') {
   return useQuery({
-    queryKey: [CAMPAIGN_STATS_QUERY_KEY],
-    queryFn: fetchCampaignStats,
+    queryKey: [CAMPAIGN_STATS_QUERY_KEY, scope],
+    queryFn: () => fetchCampaignStats(scope),
     enabled: true,
   });
 }
 
-export function useAdminDeployContract() {
+export function useAdminUpdateCampaignTransaction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deployContract,
+    mutationFn: updateCampaignTransactionApi,
     onSuccess: (data, variables) => {
-      // Invalidate all campaign-related queries
+      // Invalidate campaign-related queries
       queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [CAMPAIGNS_QUERY_KEY, variables.campaignId],

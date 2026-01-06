@@ -21,9 +21,28 @@ const PROCESS_STEP_INFO: Record<
     title: 'Setup Update',
     description: 'We are setting up the data that updates the campaign.',
   },
+  validatingPlatform: {
+    title: 'Validating Platform',
+    description: 'We are validating the platform setup and configuration.',
+  },
+  create: {
+    title: 'Update Campaign Data',
+    description: 'We are updating your campaign information in the database.',
+  },
+  createOnChain: {
+    title: 'Deploy Campaign Contract',
+    description:
+      'We are deploying your campaign with a smart contract. This will create a treasury address that is used by all your contributors.',
+  },
+  waitForCreationConfirmation: {
+    title: 'Confirming Deployment',
+    description:
+      'We are waiting for the blockchain to confirm that the smart contract has been deployed. This might take a moment.',
+  },
   updateDbCampaign: {
     title: 'Storing the Campaign',
-    description: 'Now we are storing the state in our database.',
+    description:
+      'Now that the campaign is confirmed, we are storing the state in our database.',
   },
   idle: {
     title: 'Ready to Start',
@@ -32,7 +51,7 @@ const PROCESS_STEP_INFO: Record<
   done: {
     title: 'Update Complete!',
     description:
-      'Your campaign has been successfully update. Now a akashic admin will manually approve the campaign.',
+      'Your campaign has been successfully updated. Now a Relay Funder admin will manually approve the campaign.',
   },
   failed: {
     title: 'Update Failed',
@@ -51,6 +70,10 @@ export function CampaignEditProcessDisplay({
   const orderedStates: (keyof typeof UpdateProcessStates)[] = useMemo(() => {
     return [
       'setup',
+      'create',
+      'validatingPlatform',
+      'createOnChain',
+      'waitForCreationConfirmation',
       'updateDbCampaign',
       // 'idle', // Idle is not a step in the process flow
       // 'done', // Done and failed are terminal states, not steps

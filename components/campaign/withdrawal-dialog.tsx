@@ -4,9 +4,13 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import type { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
-import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { useUserProfile } from '@/lib/hooks/useProfile';
-import { useRequestWithdrawal } from '@/lib/hooks/useWithdrawals';
+import {
+  useRequestWithdrawal,
+  useWithdrawalApproval,
+} from '@/lib/hooks/useWithdrawals';
+import { useExecuteWithdrawal } from '@/lib/web3/hooks/useExecuteWithdrawal';
 import { formatUSD } from '@/lib/format-usd';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,8 +29,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
 import { AlertTriangle, Wallet, Loader2, CheckCircle2 } from 'lucide-react';
+import { normalizeAddress } from '@/lib/normalize-address';
+import { USD_TOKEN } from '@/lib/constant';
 
-type WithdrawalStep = 'amount' | 'review' | 'submitted';
+type WithdrawalStep = 'amount' | 'review' | 'executing' | 'submitted';
 
 export interface WithdrawalDialogProps {
   campaign: DbCampaign;
@@ -40,7 +46,8 @@ export interface WithdrawalDialogProps {
  * WithdrawalDialog
  * - Step 1: Enter amount (shows available balance via useTreasuryBalance)
  * - Step 2: Review amount + recipient address; highlight if connected wallet != recipient address; link to profile/wallet
- * - Step 3: After confirming, call API (useRequestWithdrawal) and inform user admin must approve
+ * - Step 3: If no prior approval, request withdrawal approval from admin
+ * - Step 4: If prior approval exists, execute smart contract withdrawal and record in DB
  */
 export function WithdrawalDialog({
   campaign,
@@ -75,9 +82,12 @@ export function WithdrawalDialog({
   const { address: connectedAddress } = useAuth();
   const { data: profile } = useUserProfile();
 
+  // Check if campaign has withdrawal approval
+  const { data: approvalData } = useWithdrawalApproval(campaign?.id);
+
   // Prepare displayed data
   const currency = useMemo<string>(() => {
-    return treasuryBalance?.balance?.currency ?? 'USDC';
+    return treasuryBalance?.balance?.currency ?? USD_TOKEN;
   }, [treasuryBalance]);
 
   const availableFloat = useMemo<number>(() => {
@@ -85,19 +95,25 @@ export function WithdrawalDialog({
     const parsed = parseFloat(available || '0');
     return Number.isFinite(parsed) ? parsed : 0;
   }, [treasuryBalance]);
-  const token = currency; // use API token the same as currency string (ex. 'USDC')
+  const token = currency; // use API token the same as currency string (ex. 'USDT')
 
   const enabled = availableFloat > 0;
+  const hasApproval = useMemo<boolean>(() => {
+    return approvalData?.hasApproval ?? false;
+  }, [approvalData]);
+
   const recipientAddress = useMemo<string | null>(() => {
     // If user set a recipientWallet in profile, prefer that; else use profile.address
-    return profile?.recipientWallet?.trim()
-      ? profile.recipientWallet.trim()
-      : (profile?.address ?? null);
+    return normalizeAddress(
+      profile?.recipientWallet?.trim()
+        ? profile.recipientWallet.trim()
+        : (profile?.address ?? null),
+    );
   }, [profile]);
 
   const isMismatch = useMemo<boolean>(() => {
     if (!connectedAddress || !recipientAddress) return false;
-    return connectedAddress.toLowerCase() !== recipientAddress.toLowerCase();
+    return connectedAddress !== recipientAddress;
   }, [connectedAddress, recipientAddress]);
 
   // Form validation
@@ -119,6 +135,10 @@ export function WithdrawalDialog({
   const { toast } = useToast();
   const { mutateAsync: requestWithdrawal, isPending: isSubmitting } =
     useRequestWithdrawal();
+
+  // Hook to execute direct withdrawal
+  const { executeWithdrawal, isExecuting: isExecutingWithdrawal } =
+    useExecuteWithdrawal();
 
   const resetLocalState = useCallback(() => {
     setStep('amount');
@@ -143,28 +163,73 @@ export function WithdrawalDialog({
   }, []);
 
   const handleConfirmAndSubmit = useCallback(async () => {
-    try {
-      await requestWithdrawal({
-        campaignId: campaign.id, // API accepts numeric ID or slug; prefer numeric ID
-        amount: amountNumber,
-        token,
-      });
-      setStep('submitted');
-      toast({
-        title: 'Withdrawal requested',
-        description:
-          'Your withdrawal has been submitted. An admin will review and approve it shortly.',
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to request withdrawal';
-      toast({
-        title: 'Withdrawal failed',
-        description: message,
-        variant: 'destructive',
-      });
+    if (hasApproval) {
+      // Direct withdrawal: execute contract first
+      setStep('executing');
+      try {
+        const result = await executeWithdrawal({
+          treasuryAddress: treasuryAddress!,
+          amount: String(amountNumber),
+        });
+        if (!result.success || !result.hash) {
+          throw new Error(result.error || 'Failed to execute withdrawal');
+        }
+        // Now record in DB
+        await requestWithdrawal({
+          campaignId: campaign.id,
+          amount: amountNumber,
+          token,
+          transactionHash: result.hash,
+        });
+        setStep('submitted');
+        toast({
+          title: 'Withdrawal executed',
+          description: 'Your withdrawal has been completed successfully.',
+        });
+      } catch (err) {
+        setStep('review'); // Go back to review on error
+        const message =
+          err instanceof Error ? err.message : 'Failed to execute withdrawal';
+        toast({
+          title: 'Withdrawal failed',
+          description: message,
+          variant: 'destructive',
+        });
+      }
+    } else {
+      // Request approval
+      try {
+        await requestWithdrawal({
+          campaignId: campaign.id,
+          amount: amountNumber,
+          token,
+        });
+        setStep('submitted');
+        toast({
+          title: 'Withdrawal requested',
+          description:
+            'Your withdrawal request has been submitted. An admin will review and approve it shortly.',
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to request withdrawal';
+        toast({
+          title: 'Request failed',
+          description: message,
+          variant: 'destructive',
+        });
+      }
     }
-  }, [amountNumber, campaign.id, requestWithdrawal, toast, token]);
+  }, [
+    hasApproval,
+    executeWithdrawal,
+    treasuryAddress,
+    amountNumber,
+    requestWithdrawal,
+    campaign.id,
+    token,
+    toast,
+  ]);
 
   const handleDone = useCallback(() => {
     setDialogOpen(false);
@@ -185,17 +250,28 @@ export function WithdrawalDialog({
       <DialogContent className={className}>
         <DialogHeader>
           <DialogTitle>
-            {step === 'amount' && 'Request Withdrawal'}
-            {step === 'review' && 'Confirm Withdrawal'}
+            {step === 'amount' &&
+              (hasApproval ? 'Withdraw Funds' : 'Request Withdrawal Approval')}
+            {step === 'review' &&
+              (hasApproval
+                ? 'Confirm Withdrawal'
+                : 'Confirm Withdrawal Request')}
+            {step === 'executing' && 'Executing Withdrawal'}
             {step === 'submitted' && 'Withdrawal Submitted'}
           </DialogTitle>
           <DialogDescription>
             {step === 'amount' &&
               'Enter the amount you wish to withdraw from the available balance.'}
             {step === 'review' &&
-              'Please review the details below before submitting your withdrawal request.'}
+              (hasApproval
+                ? 'Please review the details below before executing the withdrawal.'
+                : 'Please review the details below before submitting your withdrawal request.')}
+            {step === 'executing' &&
+              'Executing the withdrawal on the blockchain. Please wait...'}
             {step === 'submitted' &&
-              'Your withdrawal request was created. An admin must approve it before funds are sent.'}
+              (hasApproval
+                ? 'Your withdrawal has been executed and recorded.'
+                : 'Your withdrawal request was created. An admin must approve it before funds are sent.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -357,12 +433,14 @@ export function WithdrawalDialog({
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-emerald-700">
-                  Withdrawal created
+                  {hasApproval
+                    ? 'Withdrawal completed'
+                    : 'Withdrawal requested'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Your request for {formatUSD(amountNumber)} {currency} has been
-                  created and will be reviewed by an admin. You will see the
-                  status update once it is approved.
+                  {hasApproval
+                    ? `Your withdrawal of ${formatUSD(amountNumber)} ${currency} has been executed and recorded.`
+                    : `Your request for ${formatUSD(amountNumber)} ${currency} has been created and will be reviewed by an admin. You will see the status update once it is approved.`}
                 </p>
               </div>
             </div>
@@ -398,16 +476,19 @@ export function WithdrawalDialog({
                 onClick={handleConfirmAndSubmit}
                 disabled={
                   isSubmitting ||
+                  isExecutingWithdrawal ||
                   !recipientAddress ||
                   Number.isNaN(amountNumber) ||
                   amountNumber <= 0
                 }
               >
-                {isSubmitting ? (
+                {isSubmitting || isExecutingWithdrawal ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
+                    {hasApproval ? 'Executing...' : 'Submitting...'}
                   </div>
+                ) : hasApproval ? (
+                  'Confirm and withdraw'
                 ) : (
                   'Confirm and request'
                 )}

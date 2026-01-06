@@ -1,15 +1,12 @@
-import { AkashicNFTRegistry } from '@/contracts/nftABI/AkashicNFTRegistry';
-import { CAMPAIGN_NFT_FACTORY } from '@/lib/constant';
-import { AKASHIC_NFT_REGISTRY } from '@/lib/constant';
-// import { CampaignNFTabi } from '@/contracts/nftABI/CampaignNFT';
-import { CampaignNFTFactory } from '@/contracts/nftABI/CampaignNFTFactory';
-// import { NFT_METADATA } from '@/lib/constant';
 import { chainConfig, ethers } from '@/lib/web3';
+import type { Eip1193Provider } from 'ethers';
 
 export const getProvider = () => {
   // For browser environments
   if (typeof window !== 'undefined' && window.ethereum) {
-    return new ethers.BrowserProvider(window.ethereum);
+    return new ethers.BrowserProvider(
+      window.ethereum as unknown as Eip1193Provider,
+    );
   }
 
   // Fallback to a public provider
@@ -26,35 +23,4 @@ export const getSigner = async () => {
   }
 
   throw new Error('No signer available. Please connect a wallet.');
-};
-
-// Get contract instances
-export const getRegistryContract = (
-  signerOrProvider?: ethers.Signer | ethers.Provider,
-) => {
-  const provider = signerOrProvider || getProvider();
-  return new ethers.Contract(
-    AKASHIC_NFT_REGISTRY,
-    AkashicNFTRegistry,
-    provider,
-  );
-};
-
-export const getFactoryContract = (
-  signerOrProvider?: ethers.Signer | ethers.Provider,
-) => {
-  const provider = signerOrProvider || getProvider();
-  return new ethers.Contract(
-    CAMPAIGN_NFT_FACTORY,
-    CampaignNFTFactory,
-    provider,
-  );
-};
-
-export const getCampaignNFTContract = (
-  address: string,
-  signerOrProvider?: ethers.Signer | ethers.Provider,
-) => {
-  const provider = signerOrProvider || getProvider();
-  return new ethers.Contract(address, CampaignNFTFactory, provider);
 };

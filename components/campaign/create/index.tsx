@@ -2,8 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { Form } from '@/components/ui';
-import { countries, categories } from '@/lib/constant';
-import { enableFormDefault } from '@/lib/develop';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateProcessStates } from '@/types/campaign';
@@ -11,8 +9,6 @@ import { VisibilityToggle } from '@/components/visibility-toggle';
 import { CampaignCreateProcessDisplay } from './process-display';
 import { CampaignCreateFormStates } from './form-states';
 import { CampaignCreateFormPage } from './form-page';
-import { uniqueName, uniqueDescription } from '@/lib/generate-strings';
-import Image from 'next/image';
 import { CampaignCreateFormMedia } from './form-media';
 import { CampaignCreateFormDescription } from './form-description';
 import { CampaignCreateFormMeta } from './form-meta';
@@ -24,8 +20,17 @@ import {
   CampaignFormSchemaType,
   campaignFormDefaultValues,
 } from './form';
+import {
+  transformStartTime,
+  transformEndTime,
+} from '@/lib/utils/campaign-status';
 import { useCampaignFormCreate } from './use-form-create';
-import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { useFormErrorToast } from '@/hooks/use-form-error-toast';
+import { useDeveloperPrefill } from '@/lib/develop/use-developer-prefill';
+import { Button } from '@/components/ui/button';
+import { getNextPage } from './form-steps';
 
 export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [state, setState] = useState<keyof typeof CreateProcessStates>('idle');
@@ -33,70 +38,107 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
   const [formState, setFormState] =
     useState<keyof typeof CampaignCreateFormStates>('introduction');
   const processing = state !== 'idle';
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const onCreateSuccess = useCallback(
+    (wasSubmittedForApproval: boolean) => {
+      if (wasSubmittedForApproval) {
+        toast({
+          title: 'Campaign Submitted!',
+          description:
+            'Your campaign has been submitted for approval. A Relay Funder admin will review it shortly.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Draft Saved!',
+          description:
+            'Your campaign draft has been saved successfully. You can continue editing later.',
+          variant: 'default',
+        });
+      }
+
+      // Redirect to campaigns overview
+      router.push('/campaigns');
+    },
+    [toast, router],
+  );
+
   const { mutateAsync: createCampaign } = useCampaignFormCreate({
     onStateChanged: setState,
-    onCreated,
+    onCreated: onCreated,
     onError: setError,
+    onSuccess: onCreated ? undefined : onCreateSuccess,
   });
 
   const form = useForm<CampaignFormSchemaType>({
     resolver: zodResolver(CampaignFormSchema),
     defaultValues: campaignFormDefaultValues,
   });
+
+  const { showFormErrors } = useFormErrorToast<CampaignFormSchemaType>(form, {
+    dismissOnChange: [formState],
+  });
+
   const onSubmitStep = useCallback(async () => {
     const isPageValid = await form.trigger(
       CampaignCreateFormStates[formState]
         .fields as (keyof CampaignFormSchemaType)[],
     );
-    if (isPageValid && CampaignCreateFormStates[formState].next?.target) {
-      setFormState(CampaignCreateFormStates[formState].next?.target);
-      form.clearErrors();
+    if (isPageValid) {
+      const nextPage = getNextPage(formState);
+      if (nextPage) {
+        setFormState(nextPage);
+        form.clearErrors();
+      }
+    } else {
+      const errors: { field: string; message: string }[] = [];
+      for (const field of CampaignCreateFormStates[formState].fields) {
+        const fieldError = form.getFieldState(field).error;
+        if (!fieldError) {
+          continue;
+        }
+        errors.push({ field, message: fieldError.message ?? 'Unknown Error' });
+      }
+      showFormErrors(errors);
     }
-  }, [form, formState]);
+  }, [form, formState, showFormErrors]);
 
   const onSubmit = useCallback(
-    async (data: CampaignFormSchemaType) => {
+    async (data: CampaignFormSchemaType, event?: React.BaseSyntheticEvent) => {
       if (formState !== 'summary') {
         return onSubmitStep();
       }
+
+      // Check if this is a draft save or approval submission
+      const form = event?.target as HTMLFormElement;
+      const submitType =
+        (form as HTMLFormElement & { _submitType?: string })?._submitType ||
+        'approval';
+
       setError(null);
-      setState('setup');
-      return await createCampaign(data);
+
+      // Apply date transformations only during submission
+      const transformedData = {
+        ...data,
+        startTime: transformStartTime(data.startTime),
+        endTime: transformEndTime(data.endTime),
+      };
+
+      if (submitType === 'draft') {
+        // Save as draft - create campaign but don't process blockchain transaction
+        return await createCampaign({ ...transformedData, _saveAsDraft: true });
+      } else {
+        // Submit for approval - full process
+        return await createCampaign(transformedData);
+      }
     },
     [createCampaign, formState, onSubmitStep],
   );
 
-  const onDeveloperSubmit = useCallback(
-    async (event: React.MouseEvent) => {
-      if (!event.shiftKey) {
-        return;
-      }
-      if (!enableFormDefault) {
-        return;
-      }
-      form.setValue('title', uniqueName());
-      form.setValue('description', uniqueDescription());
-      form.setValue('fundingGoal', `${(Math.random() * 1000).toFixed(2)}`);
-      form.setValue('fundingModel', 'flexible');
-      form.setValue('startTime', new Date().toISOString().slice(0, 16));
-      form.setValue(
-        'endTime',
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 16),
-      );
-      form.setValue(
-        'location',
-        countries[Math.floor(Math.random() * countries.length)],
-      );
-      form.setValue(
-        'category',
-        categories[Math.floor(Math.random() * categories.length)].id,
-      );
-      setFormState('summary');
-    },
-    [form],
-  );
+  // Use demo campaign data for development prefill
+  const { onDeveloperSubmit } = useDeveloperPrefill(form, setFormState);
 
   const onFailureRetry = useCallback(async () => {
     setState('setup');
@@ -116,39 +158,54 @@ export function CampaignCreate({ onCreated }: { onCreated?: () => void }) {
               page="introduction"
               onStateChanged={setFormState}
             >
-              <div className="flex justify-end">
-                <div className="hidden md:block md:justify-end">
-                  <Image
-                    src="/images/campaign-create-introduction.jpg"
-                    width={512}
-                    height={768}
-                    className="max-w-[400px]"
-                    alt="Create an engaging and vibrant illustration depicting a diverse group of people collaborating on a project. Include elements that represent creativity, funding, and community support, such as lightbulbs, coins, and hands coming together. The background should convey a sense of progress and innovation, with a timeline graphic showing the steps from submission to payout."
-                    onDoubleClick={onDeveloperSubmit}
-                  />
-                </div>
-              </div>
-              <div
-                className={cn(
-                  'w-full max-w-full',
-                  'prose prose-sm',
-                  'overflow-y-auto p-1',
-
-                  'h-[calc(100svh-200px)]',
-                  'md:hidden',
-                )}
-              >
-                <h2>{CampaignCreateFormStates.introduction.title}</h2>
-                <div
-                  className={cn(
-                    'overflow-y-visible',
-                    'md:overflow-y-auto',
-                    'h-[calc(50svh-100px-50px)]',
-                    // 200: header, 40: container, 50 buttons, 40 title, 48 prose-padding
-                    'md:h-[calc(100svh-202px-40px-50px-40px-48px)]',
+              <div className="space-y-4">
+                <div className="max-w-lg space-y-4">
+                  <p className="text-lg font-medium leading-relaxed text-muted-foreground">
+                    <strong>
+                      You&apos;re about to launch your campaign, an exciting
+                      step toward bringing your project to life and attracting
+                      the support it deserves!
+                    </strong>
+                  </p>
+                  <div className="space-y-2 text-muted-foreground">
+                    <p>
+                      <em>This guided process will help you:</em>
+                    </p>
+                    <ul className="max-w-sm list-inside list-disc space-y-1 text-left">
+                      <li>
+                        <em>Share your story in a compelling way</em>
+                      </li>
+                      <li>
+                        <em>Set clear and realistic funding goals</em>
+                      </li>
+                      <li>
+                        <em>
+                          Prepare your campaign for maximum visibility and
+                          success
+                        </em>
+                      </li>
+                    </ul>
+                    <p className="pt-2">
+                      <em>
+                        We&apos;ll walk you through everything you need to
+                        inspire supporters and raise the funds to make your
+                        vision possible.
+                      </em>
+                    </p>
+                  </div>
+                  {/* Development-only button to replicate original image shift/double-click campaign pre-fill logic */}
+                  {process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true' && (
+                    <div className="mt-6">
+                      <Button
+                        onClick={onDeveloperSubmit}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        🚀 Dev: Pre-fill Form
+                      </Button>
+                    </div>
                   )}
-                >
-                  {CampaignCreateFormStates.introduction.description}
                 </div>
               </div>
             </CampaignCreateFormPage>

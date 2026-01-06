@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { CreateProcessStates } from '@/types/campaign';
 import { useCreateCampaign, useUpdateCampaign } from '@/lib/hooks/useCampaigns';
+import { useCreateRoundCampaign } from '@/lib/hooks/useRounds';
 import {
   IOnCreateCampaignConfirmed,
   useCreateCampaignContract,
@@ -12,15 +13,18 @@ export function useCampaignFormCreate({
   onStateChanged,
   onCreated,
   onError,
+  onSuccess,
 }: {
   onCreated?: () => void;
   onStateChanged: (arg0: keyof typeof CreateProcessStates) => void;
   onError: (arg0: string) => void;
+  onSuccess?: (wasSubmittedForApproval: boolean) => void;
 }) {
   const { authenticated } = useAuth();
 
   const { mutateAsync: createCampaign } = useCreateCampaign();
   const { mutateAsync: updateCampaign } = useUpdateCampaign();
+  const { mutateAsync: createRoundCampaign } = useCreateRoundCampaign();
 
   const onConfirmed = useCallback(
     async ({
@@ -38,10 +42,13 @@ export function useCampaignFormCreate({
             status: 'pending_approval',
             campaignAddress,
           });
-          if (typeof onCreated === 'function') {
+          if (onSuccess) {
+            onSuccess(true); // Was submitted for approval
+          } else if (typeof onCreated === 'function') {
             onCreated();
+          } else {
+            onStateChanged('done');
           }
-          onStateChanged('done');
         } else {
           onStateChanged('failed');
           onError(
@@ -69,11 +76,11 @@ export function useCampaignFormCreate({
         );
       }
     },
-    [updateCampaign, onCreated, onStateChanged, onError],
+    [updateCampaign, onCreated, onSuccess, onStateChanged, onError],
   );
   const { createCampaignContract } = useCreateCampaignContract({ onConfirmed });
   const mutateAsync = useCallback(
-    async (data: CampaignFormSchemaType) => {
+    async (data: CampaignFormSchemaType & { _saveAsDraft?: boolean }) => {
       try {
         onStateChanged('setup');
         if (!authenticated) {
@@ -84,6 +91,35 @@ export function useCampaignFormCreate({
           throw new Error('Create campaign contract failure');
         }
         const newCampaign = await createCampaign(data);
+
+        // If a round is selected, add the campaign to the round
+        if (data.selectedRoundId && data.selectedRoundId > 0) {
+          try {
+            await createRoundCampaign({
+              roundId: data.selectedRoundId,
+              campaignId: newCampaign.campaignId,
+              applicationReason: 'Campaign created with round selection',
+            });
+          } catch (roundError) {
+            console.error('Failed to add campaign to round:', roundError);
+            // Don't fail the entire campaign creation, just log the error
+            // The campaign was created successfully, just not added to the round
+          }
+        }
+
+        // If saving as draft, skip blockchain transaction
+        if (data._saveAsDraft) {
+          if (onSuccess) {
+            onSuccess(false); // Was not submitted for approval
+          } else if (typeof onCreated === 'function') {
+            onCreated();
+          } else {
+            onStateChanged('done');
+          }
+          return;
+        }
+
+        // Continue with full approval process
         if (data.title.startsWith('QA:throw:createCampaignContract')) {
           throw new Error('Create campaign contract failure');
         }
@@ -102,6 +138,9 @@ export function useCampaignFormCreate({
       authenticated,
       createCampaign,
       createCampaignContract,
+      createRoundCampaign,
+      onCreated,
+      onSuccess,
       onError,
       onStateChanged,
     ],

@@ -2,12 +2,13 @@ import { Card, CardContent } from '@/components/ui';
 import { useCampaignStats } from '@/lib/hooks/useCampaigns';
 import { Users, Coins, Calendar, TrendingUp } from 'lucide-react';
 import { ResponsiveGrid } from '@/components/layout';
+import { USD_TOKEN } from '@/lib/constant';
 
 export function DashboardOverview() {
-  const { data: stats, isPending } = useCampaignStats();
+  const { data: stats, isPending } = useCampaignStats('user');
   return (
     <div className="mb-8">
-      <ResponsiveGrid variant="cards" gap="md">
+      <ResponsiveGrid variant="stats" gap="md">
         <Card>
           <CardContent className="flex items-center p-2 md:p-6">
             <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
@@ -41,7 +42,7 @@ export function DashboardOverview() {
                 <div className="mt-1 h-8 animate-pulse rounded bg-gray-200" />
               ) : (
                 <h3 className="whitespace-nowrap text-sm font-bold md:text-xl">
-                  {stats?.totalRaised.toFixed(2) ?? 0} USDC
+                  {stats?.totalRaised.toFixed(2) ?? 0} {USD_TOKEN}
                 </h3>
               )}
             </div>

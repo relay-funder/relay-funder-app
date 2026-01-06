@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useCollection as useCollectionQuery } from '@/lib/hooks/useCollections';
+import { useMetaTitle } from '@/hooks/use-meta-title';
 import { useAuth } from '@/contexts';
 import { CollectionDetailLoading } from '@/components/collection/detail-loading';
 import { CollectionDetailNoAuth } from '@/components/collection/detail-noauth';
@@ -16,6 +17,13 @@ export default function CollectionDetailsPage() {
   const { authenticated } = useAuth();
 
   const { data: collection, isPending: loading } = useCollectionQuery(id);
+
+  // Set page title for browser history
+  useMetaTitle(
+    collection?.name
+      ? `${collection.name} | Relay Funder`
+      : 'Collection | Relay Funder',
+  );
 
   if (loading) {
     return <CollectionDetailLoading />;

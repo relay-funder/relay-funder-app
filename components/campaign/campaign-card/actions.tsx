@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { DbCampaign } from '@/types/campaign';
 import { CampaignCardAdminActions } from '../card-admin-actions';
 import { CampaignCardDisplayOptions } from './types';
+import { isCampaignStarted } from '@/lib/utils/campaign-status';
+import { FormattedDate } from '@/components/formatted-date';
 
 interface CampaignStatusInfo {
   status: string;
@@ -47,7 +49,7 @@ export function CampaignCardActions({
                   href={`/campaigns/${campaign.slug}/donation`}
                   className="flex-1"
                 >
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  <Button className="w-full">
                     <Image
                       src="/diamond.png"
                       alt="wallet"
@@ -60,7 +62,7 @@ export function CampaignCardActions({
               ) : displayOptions.showStatusBasedButton ? (
                 <Button
                   disabled
-                  className="w-full cursor-not-allowed bg-gray-400"
+                  className="w-full cursor-not-allowed"
                   title={campaignStatusInfo.description}
                 >
                   <Image
@@ -70,7 +72,13 @@ export function CampaignCardActions({
                     height={24}
                     className="opacity-50"
                   />
-                  {campaignStatusInfo.status}
+                  {isCampaignStarted(campaign) ? (
+                    campaignStatusInfo.status
+                  ) : (
+                    <>
+                      Starts <FormattedDate date={campaign.startTime} />
+                    </>
+                  )}
                 </Button>
               ) : null}
             </div>

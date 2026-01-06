@@ -11,3 +11,4 @@ export * from './approvals-card';
 export * from './recent-comments-card';
 export * from './favorites-card';
 export * from './round-contributions-card';
+export * from './user-campaigns-card';

@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, User, Globe } from 'lucide-react';
 import { useUpdateUserProfile } from '@/lib/hooks/useProfile';
 import { type Profile } from '@/types/profile';
 import { debugComponentData as debug } from '@/lib/debug';
@@ -39,6 +39,13 @@ const profileFormSchema = z.object({
       message: 'Last Name must be at least 2 characters.',
     })
     .optional(),
+  email: z
+    .string()
+    .email({
+      message: 'Please enter a valid email address.',
+    })
+    .optional()
+    .or(z.literal('')),
   uniqueUsername: z
     .string()
     .min(2, {
@@ -60,13 +67,6 @@ const profileFormSchema = z.object({
       message: 'Bio cannot be longer than 200 characters.',
     })
     .optional(),
-  recipientWallet: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, {
-      message: 'Please enter a valid Ethereum address.',
-    })
-    .optional()
-    .or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -85,8 +85,9 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
     defaultValues: {
       firstName: profile?.firstName ?? '',
       lastName: profile?.lastName ?? '',
+      email: profile?.email ?? '',
       uniqueUsername: profile?.username ?? '',
-      recipientWallet: profile?.recipientWallet ?? '',
+
       bio: profile?.bio ?? '',
     },
   });
@@ -100,10 +101,9 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
         await updateUserProfile({
           firstName: data.firstName ?? '',
           lastName: data.lastName ?? '',
+          email: data.email ?? '',
           username: data.uniqueUsername,
-          avatarUrl: data.avatarUrl,
           bio: data.bio,
-          recipientWallet: data.recipientWallet || undefined,
         });
         toast({
           title: 'Profile updated',
@@ -128,109 +128,149 @@ export function UserProfileForm({ profile, onSuccess }: UserProfileFormProps) {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Edit Profile</CardTitle>
+    <Card className="rounded-lg border bg-card shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Edit Profile
+        </CardTitle>
         <CardDescription>
-          Update your profile information below.
+          Update your profile information and contact details. This information
+          will be used for donations and platform interactions.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your First Name" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    This will be your display name on the platform.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your Last Name" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    This will be your display name on the platform.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Personal Information Section */}
+            <div className="space-y-4">
+              <h3 className="font-display text-lg font-semibold text-foreground">
+                Personal Information
+              </h3>
 
-            <FormField
-              control={form.control}
-              name="uniqueUsername"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="your_unique_username" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    This will be your unique identifier on the platform.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        First Name
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Your first name as it will appear on the platform.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="recipientWallet"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recipient Wallet Address (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="0x..." {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Set a different wallet address to receive funds (leave empty
-                    to use your connected wallet).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Short Biography" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    This is a short Biography to be shared on the platform.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                'Update Profile'
-              )}
-            </Button>
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Your last name as it will appear on the platform.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="john@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Your email address for donation receipts and important
+                      updates. We won&apos;t spam you.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="uniqueUsername"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      Username
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="your_unique_username" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Your unique identifier on the platform. This cannot be
+                      changed later.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bio</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Tell us about yourself..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      A short biography to share with the community (max 200
+                      characters).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="pt-4">
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating Profile...
+                  </>
+                ) : (
+                  'Update Profile'
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>

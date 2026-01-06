@@ -13,8 +13,11 @@ enum CampaignStatus {
   DRAFT
   PENDING_APPROVAL
   ACTIVE
+  DISABLED
   COMPLETED
   FAILED
+  PAUSED
+  CANCELLED
 }
 
 enum RoundStatus {
@@ -35,6 +38,13 @@ enum PaymentRefundState {
   REQUESTED
   PROCESSED
   APPROVED
+}
+
+enum PledgeExecutionStatus {
+  NOT_STARTED
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 enum RecipientStatus {
@@ -67,6 +77,7 @@ model Campaign {
   title           String
   description     String
   fundingGoal     String
+  fundingUsage    String               @default("")
   startTime       DateTime
   endTime         DateTime
   creatorAddress  String
@@ -132,7 +143,8 @@ model Media {
 
 model User {
   id                   Int             @id @default(autoincrement())
-  address              String          @unique
+  address              String          @unique // normalized (lowercased) address
+  rawAddress           String // original case sensitive address
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   prevSigninAt         DateTime?
@@ -147,24 +159,28 @@ model User {
   lastName             String?
   bio                  String?
   recipientWallet      String?
-  isKycCompleted       Boolean?        @default(false)
   humanityScore        Int             @default(0)
   collections          Collection[]
   payments             Payment[]
   paymentMethods       PaymentMethod[]
   createdMedia         Media[]         @relation(name: "MediaCreatedBy")
+  eventFeedRead        DateTime?
 
-  withdrawals Withdrawal[] @relation(name: "WithdrawalCreatedBy")
-  approvals   Withdrawal[] @relation(name: "WithdrawalApprovedBy")
+  withdrawals   Withdrawal[] @relation(name: "WithdrawalCreatedBy")
+  approvals     Withdrawal[] @relation(name: "WithdrawalApprovedBy")
+  eventFeed     EventFeed[]  @relation(name: "FeedReceiver")
+  eventsCreated EventFeed[]  @relation(name: "FeedCreatedBy")
 }
 
 model Payment {
   id              Int                @id @default(autoincrement())
   amount          String
+  tipAmount       String?            // Tip amount sent to admin wallet (for Daimo payments)
   token           String
   status          String             @default("pending")
   type            PaymentType
-  transactionHash String?
+  transactionHash String? // Blockchain transaction hash for explorer links
+  daimoPaymentId  String?            @unique // Daimo payment ID for webhook idempotency
   isAnonymous     Boolean            @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
@@ -174,14 +190,23 @@ model Payment {
   metadata        Json?
   provider        String?
   refundState     PaymentRefundState @default(NONE)
-  campaign        Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Pledge execution tracking (for gateway payments like Daimo Pay)
+  pledgeExecutionStatus      PledgeExecutionStatus @default(NOT_STARTED)
+  pledgeExecutionError       String?
+  pledgeExecutionAttempts    Int                   @default(0)
+  pledgeExecutionLastAttempt DateTime?
+  pledgeExecutionTxHash      String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   RoundContribution RoundContribution[]
 
   @@index([campaignId])
   @@index([userId])
   @@index([externalId])
+  @@index([pledgeExecutionStatus, provider])
 }
 
 model PaymentMethod {
@@ -219,6 +244,7 @@ model CampaignUpdate {
   updatedAt      DateTime @updatedAt
   campaignId     Int
   creatorAddress String
+  isHidden       Boolean  @default(false)
   campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   media          Media[]
   mediaOrder     Json?
@@ -249,6 +275,7 @@ model Round {
   mediaOrder        Json?
   approvedResult    Json?
   status            RoundStatus      @default(CREATED)
+  isHidden          Boolean          @default(false)
 }
 
 model RoundCampaigns {
@@ -334,4 +361,30 @@ model Withdrawal {
 
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId Int
+}
+
+model EventFeed {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation(name: "FeedCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById Int
+  receiver    User     @relation(name: "FeedReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId  Int
+  type        String
+  message     String
+  data        Json?
+  eventUuid   String   @default(uuid())
+
+  @@index([receiverId, createdAt])
+  @@index([receiverId, type])
+  @@index([eventUuid])
+}
+
+model RateLimit {
+  identifier  String   @id // Format: "prefix:user" or "prefix:ip" example: "create-campaign:user" or "/api/campaigns:POST:
+  requests    Int      @default(1)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([windowStart])
 }

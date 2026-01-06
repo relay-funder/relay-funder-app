@@ -1,59 +1,150 @@
 import { z } from 'zod';
 import { countries, categories } from '@/lib/constant';
+import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+  FUNDING_USAGE_MAX_LENGTH,
+  FUNDING_USAGE_MIN_LENGTH,
+} from '@/lib/constant/form';
+import type { DbCampaign } from '@/types/campaign';
+import {
+  ValidationStage,
+  getValidationSummary,
+} from '@/lib/ccp-validation/campaign-validation';
+import {
+  toLocalDateInputValue,
+  validateAndParseDateString,
+} from '@/lib/utils/date';
 
 function validateTimes(value: string) {
   const date = new Date(value);
   return !isNaN(date.getTime());
 }
-function transformStartTime(value: string) {
-  const localDate = new Date(value);
+
+function validateStartTimeNotInPast(value: string) {
+  const startDate = new Date(value);
   const now = new Date();
+
+  // Check if the selected date is today
+  const isToday = startDate.toDateString() === now.toDateString();
+
+  if (isToday) {
+    // Allow selecting today - the transformation will set to 1 hour from now during submission
+    return true;
+  }
+
+  // For future dates, require minimum time buffer
+  const bufferTime = 60 * 60 * 1000; // 1 hour for all envs
+  const earliestAllowed = new Date(now.getTime() + bufferTime);
+
+  return startDate >= earliestAllowed;
+}
+
+function normalizeCampaignStartForForm(value: string) {
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
+  const localDate = new Date(year, month - 1, day);
+  const now = new Date();
+  const oneHourInMs = 60 * 60 * 1000;
+
+  // Check if the selected date is today
   if (
     now.getFullYear() === localDate.getFullYear() &&
     now.getMonth() === localDate.getMonth() &&
     now.getDate() === localDate.getDate()
   ) {
-    localDate.setHours(now.getHours() + 1);
+    // Set to 1 hour from now for today's date (dev purposes), without crossing into tomorrow
+    const oneHourAhead = new Date(now.getTime() + oneHourInMs);
+    const crossesMidnight =
+      oneHourAhead.getFullYear() !== now.getFullYear() ||
+      oneHourAhead.getMonth() !== now.getMonth() ||
+      oneHourAhead.getDate() !== now.getDate();
+
+    if (crossesMidnight) {
+      localDate.setHours(23, 59, 0, 0);
+    } else {
+      localDate.setHours(
+        oneHourAhead.getHours(),
+        oneHourAhead.getMinutes(),
+        oneHourAhead.getSeconds(),
+        0,
+      );
+    }
+  } else {
+    // For future dates, set to start of day
+    localDate.setHours(0, 0, 0, 0);
   }
-  localDate.setMinutes(0);
-  localDate.setSeconds(0);
-  localDate.setMilliseconds(0);
 
-  const transformed = localDate.toISOString(); // Returns in YYYY-MM-DDTHH:MM:SSZ format
-  return transformed;
+  return localDate.toISOString();
 }
-function transformEndTime(value: string) {
-  const endTime = new Date(value);
 
+function normalizeCampaignEndForForm(value: string) {
+  // Validate and parse YYYY-MM-DD as local date, not UTC
+  const { year, month, day } = validateAndParseDateString(value);
+  const endTime = new Date(year, month - 1, day);
+
+  // Set to end of day (23:59:59)
   endTime.setHours(23);
   endTime.setMinutes(59);
   endTime.setSeconds(59);
   endTime.setMilliseconds(0);
 
-  const transformed = endTime.toISOString(); // Returns in YYYY-MM-DDTHH:MM:SSZ format
-  return transformed;
+  return endTime.toISOString();
 }
 
 export const CampaignFormSchema = z
   .object({
-    title: z.string().min(5, { message: 'Title must not be empty' }),
+    title: z
+      .string()
+      .min(1, { message: 'Title is required' })
+      .refine((value) => value.length >= 5, {
+        message: 'Title must be at least 5 characters long',
+      })
+      .refine((value) => value.length <= 100, {
+        message: 'Title must be 100 characters or less',
+      }),
     description: z
       .string()
-      .min(50, { message: 'Description must not be empty' }),
+      .min(1, { message: 'Description is required' })
+      .refine((value) => value.length >= CAMPAIGN_DESCRIPTION_MIN_LENGTH, {
+        message: `Description must be at least ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} characters long`,
+      })
+      .refine((value) => value.length <= CAMPAIGN_DESCRIPTION_MAX_LENGTH, {
+        message: `Description must be ${CAMPAIGN_DESCRIPTION_MAX_LENGTH} characters or less`,
+      }),
     fundingGoal: z.string().refine(
       (value: string) => {
         const fValue = parseFloat(value);
-        return !isNaN(fValue);
+        return !isNaN(fValue) && fValue > 0;
       },
-      { message: 'Invalid funding Goal' },
+      { message: 'Funding goal must be greater than zero' },
     ),
+    fundingUsage: z
+      .string()
+      .min(1, { message: 'Use of Funds is required' })
+      .refine((value) => value.length >= FUNDING_USAGE_MIN_LENGTH, {
+        message: `Use of Funds must be at least ${FUNDING_USAGE_MIN_LENGTH} characters long`,
+      })
+      .refine((value) => value.length <= FUNDING_USAGE_MAX_LENGTH, {
+        message: `Use of Funds must be ${FUNDING_USAGE_MAX_LENGTH} characters or less`,
+      }),
     fundingModel: z.string(),
-    startTime: z.string().transform(transformStartTime).refine(validateTimes, {
-      message: 'Invalid date format',
-    }),
-    endTime: z.string().transform(transformEndTime).refine(validateTimes, {
-      message: 'Invalid date format',
-    }),
+    selectedRoundId: z.number().nullable(),
+    startTime: z
+      .string()
+      .refine(validateTimes, {
+        message: 'Invalid date format',
+      })
+      .refine(validateStartTimeNotInPast, {
+        message: 'Start time must be at least 1 hour in the future',
+      })
+      .transform(normalizeCampaignStartForForm),
+    endTime: z
+      .string()
+      .refine(validateTimes, {
+        message: 'Invalid date format',
+      })
+      .transform(normalizeCampaignEndForForm),
     location: z.enum(countries, {
       errorMap: () => ({
         message: 'Invalid Country selected.',
@@ -74,15 +165,79 @@ export const CampaignFormSchema = z
     path: ['endTime'],
   });
 export type CampaignFormSchemaType = z.infer<typeof CampaignFormSchema>;
+
+/**
+ * Validate campaign data against the comprehensive validation matrix
+ */
+export function validateCampaignForSubmission(
+  campaignData: Partial<CampaignFormSchemaType>,
+): {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
+  // Transform form data to campaign object for validation
+  const campaign: DbCampaign = {
+    id: 0, // Temporary ID for validation
+    title: campaignData.title || '',
+    description: campaignData.description || '',
+    fundingGoal: campaignData.fundingGoal || '0',
+    fundingUsage: campaignData.fundingUsage || '',
+    startTime: campaignData.startTime
+      ? new Date(campaignData.startTime)
+      : new Date(),
+    endTime: campaignData.endTime ? new Date(campaignData.endTime) : new Date(),
+    creatorAddress: '', // Will be set by session
+    status: 'DRAFT',
+    transactionHash: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    campaignAddress: null,
+    treasuryAddress: null,
+    slug: '', // Will be generated
+    location: campaignData.location || null,
+    category: campaignData.category || null,
+    featuredStart: null,
+    featuredEnd: null,
+    mediaOrder: [],
+  };
+
+  const summary = getValidationSummary(
+    campaign,
+    ValidationStage.PENDING_APPROVAL,
+  );
+
+  // Separate errors and warnings from messages
+  const errors = summary.messages
+    .filter((msg) => msg.startsWith('❌'))
+    .map((msg) => msg.slice(2));
+  const warnings = summary.messages
+    .filter((msg) => msg.startsWith('⚠️'))
+    .map((msg) => msg.slice(2));
+
+  return {
+    isValid: summary.canProceed,
+    errors,
+    warnings,
+  };
+}
+
 export const campaignFormDefaultValues: CampaignFormSchemaType = {
   title: '',
   description: '',
   fundingGoal: '',
+  fundingUsage: '',
   fundingModel: 'flexible',
-  startTime: new Date().toISOString().slice(0, 10),
-  endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10),
+  selectedRoundId: null,
+  startTime: (() => {
+    const now = new Date();
+    return toLocalDateInputValue(now);
+  })(),
+  endTime: (() => {
+    const now = new Date();
+    const targetDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    return toLocalDateInputValue(targetDate);
+  })(),
   location: '',
   category: '',
   bannerImage: null,

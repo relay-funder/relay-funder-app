@@ -1,5 +1,6 @@
 export interface Profile {
   address: string;
+  rawAddress: string;
   recipientWallet: string;
   crowdsplitCustomerId: string;
   firstName: string;
@@ -7,7 +8,6 @@ export interface Profile {
   email: string;
   createdAt: Date;
   updatedAt: Date;
-  isKycCompleted: boolean;
   username: string;
   bio: string;
 }

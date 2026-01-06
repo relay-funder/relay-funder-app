@@ -4,11 +4,10 @@
 
 # 🌍 Relay Funder
 
-**Relay Funder** is an open-source platform that helps displaced communities preserve their cultural heritage and fund creative work using Web3 technologies. Refugee creators can upload stories, art, and multimedia—then launch funding campaigns powered by NFTs and smart contracts.
+**Relay Funder** is an open-source crowdfunding infrastructure for refugee and displaced communities unlocking direct, transparent, and community-led capital flows across the Ethereum ecosystem.
 
-By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-driven funding protocols, Relay Funder ensures these cultural narratives are owned by the people who create them—and remain accessible across borders and generations.
+Relay Funder uses quadratic funding rounds where individuals and match-fund sponsors can directly support verified campaigns. Using Celo stablecoins bridged to Ethereum (USDT) Relay Funder enables transparent, auditable fund flows for humanitarian and development projects.
 
-> Refugees are not just survivors—they are custodians of culture.
 
 ## Prerequisites
 
@@ -21,7 +20,7 @@ By leveraging decentralized storage (IPFS/Filecoin) and transparent, community-d
 
    ```bash
    git clone <repository-url>
-   cd akashic
+   cd relay-funder-app
    pnpm install
    ```
 
@@ -48,7 +47,22 @@ To use Pinata for decentralized file storage:
    NEXT_PUBLIC_PINATA_GATEWAY_URL="your_gateway_url"
    ```
 
-3. **Start Development Environment:**
+### Reown AppKit Setup (Web3 Wallet Integration)
+
+To configure Reown AppKit for wallet connections:
+
+1. **Create Account**: Sign up at [Reown Cloud](https://cloud.reown.com/)
+2. **Create Project**: Generate a new project in the dashboard
+3. **Get Project ID**: Copy your project ID from the project settings
+4. **Configure Environment**: Set these variables in your `.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_REOWN_CLOUD_PROJECT_ID="your_project_id_here"
+   # Optional: Set to any truthy value to disable email login (enabled by default)
+   # NEXT_PUBLIC_REOWN_FEATURE_DISABLE_EMAIL=true
+   ```
+
+5. **Start Development Environment:**
 
    ```bash
    docker compose up
@@ -59,14 +73,14 @@ To use Pinata for decentralized file storage:
    - PostgreSQL database
    - Next.js development server (accessible at [http://localhost:3000](http://localhost:3000))
 
-4. **Initialize Database (in a new terminal):**
+6. **Initialize Database (in a new terminal):**
 
    ```bash
    docker compose exec app pnpm prisma migrate dev
    docker compose exec app pnpm prisma db seed
    ```
 
-5. **Setup Development Wallet**
+7. **Setup Development Wallet**
 
 Create a browser profile and install a Wallet like metamask
 
@@ -75,7 +89,7 @@ copy your account-address into the form and claim CELO
 
 ## Enhanced Development Setup
 
-In order to efficently and securely develop akashic, there is a app-shell
+In order to efficently and securely develop relay-funder-app, there is a app-shell
 available that uses the same environment as the next-application. While it is
 possible to do things pnpm install in the host and execute some scripts (eg pnpm
 prisma db migrate) directly from the host (`docker compose exec app COMMAND`) it
@@ -159,7 +173,7 @@ To start the pgadmin database tool,
 run `docker compose --profile develop up -d`. after a few seconds navigate to
 https://localhost:3001 (PGADMIN_PORT) and see a login, the default is
 `admin@local.host` with the password `admin`. After you are signed in, connect
-to a server host: `database`, username&password `akashic`. Now you can browse
+to a server host: `database`, username&password `relay-funder-app`. Now you can browse
 the table schema, show and modify the data and execute queries.
 
 ## Database Setup Troubleshooting

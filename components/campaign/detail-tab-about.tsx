@@ -3,12 +3,15 @@ import { ReadMoreOrLess } from '@/components/read-more-or-less';
 
 export function CampaignDetailTabAbout({ campaign }: { campaign: DbCampaign }) {
   return (
-    <div className="max-w-3xl">
-      <div className="prose prose-lg">
-        <h2 className="mb-4 text-2xl font-semibold">About this project</h2>
+    <div className="space-y-3">
+      <h2 className="font-display text-lg font-semibold text-foreground">
+        About this campaign
+      </h2>
+
+      <div className="max-w-none">
         <ReadMoreOrLess
-          className="whitespace-pre-wrap leading-relaxed text-gray-700"
-          collapsedClassName="line-clamp-4"
+          className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground"
+          collapsedClassName="line-clamp-3"
         >
           {campaign.description}
         </ReadMoreOrLess>

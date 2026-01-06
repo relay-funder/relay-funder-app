@@ -51,12 +51,14 @@ export function CampaignCardBadges({
         </Badge>
       )}
 
-      {/* Status badge - Only visible to admins */}
-      {displayOptions.showStatusBadge && adminMode && !canDonate && (
-        <Badge variant={campaignStatusInfo.variant} className="text-xs">
-          {campaignStatusInfo.status}
-        </Badge>
-      )}
+      {/* Campaign Status badge - Always show in round context, only to admins otherwise */}
+      {(displayOptions.showStatusBadge ||
+        (displayOptions.showRoundStatus && adminMode)) &&
+        !canDonate && (
+          <Badge variant={campaignStatusInfo.variant} className="text-xs">
+            Campaign: {campaignStatusInfo.status}
+          </Badge>
+        )}
     </div>
   );
 }

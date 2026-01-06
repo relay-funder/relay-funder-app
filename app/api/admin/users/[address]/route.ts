@@ -10,7 +10,6 @@ import {
   getUser,
   updateUserBio,
   updateUserEmail,
-  updateUserKycStatus,
   updateUserNames,
   updateUserRecipientWallet,
 } from '@/lib/api/user';
@@ -34,23 +33,20 @@ export async function GET(req: Request, { params }: UserWithAddressParams) {
 
 export async function PATCH(req: Request, { params }: UserWithAddressParams) {
   try {
-    await checkAuth(['admin']);
+    const session = await checkAuth(['admin']);
     const { address } = await params;
-    const {
-      email,
-      username,
-      firstName,
-      lastName,
-      bio,
-      recipientWallet,
-      isKycCompleted,
-    } = PatchUserRouteBodySchema.parse(await req.json());
+    const { email, username, firstName, lastName, bio, recipientWallet } =
+      PatchUserRouteBodySchema.parse(await req.json());
 
     const instance = await getUser(address);
     if (!instance) {
       throw new ApiNotFoundError('User not found');
     }
-    if (!instance.featureFlags.includes('USER_MODERATOR')) {
+    const admin = await getUser(session.user.address);
+    if (!admin) {
+      throw new ApiNotFoundError('Admin User not found');
+    }
+    if (!admin.featureFlags.includes('USER_MODERATOR')) {
       throw new ApiAuthNotAllowed('Admin needs USER_MODERATOR flag');
     }
     if (email) {
@@ -69,9 +65,7 @@ export async function PATCH(req: Request, { params }: UserWithAddressParams) {
     if (typeof recipientWallet !== 'undefined') {
       await updateUserRecipientWallet(address, recipientWallet);
     }
-    if (typeof isKycCompleted !== 'undefined') {
-      await updateUserKycStatus(address, isKycCompleted);
-    }
+
     const updatedInstance = await getUser(address);
     return response({
       user: updatedInstance,

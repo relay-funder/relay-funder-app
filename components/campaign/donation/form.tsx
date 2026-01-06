@@ -1,38 +1,101 @@
-import { Card, CardContent } from '@/components/ui';
+'use client';
+
 import { DbCampaign } from '@/types/campaign';
 import { CampaignDonationWalletTab } from '@/components/campaign/donation/wallet/tab';
-import { Web3ContextProvider } from '@/lib/web3/context-provider';
+import { DaimoPayTab } from '@/components/campaign/donation/daimo-tab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { Wallet, Zap } from 'lucide-react';
+import { useAuth, useDonationContext } from '@/contexts';
+import { Button } from '@/components/ui';
+import { type PaymentTabValue } from '@/hooks/use-payment-tabs-visibility';
+
 export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
-  return (
-    <Card className="border-0 shadow-none">
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium">How do you want to donate?</h2>
+  const { authenticated, login } = useAuth();
+
+  const { showDaimoPay, showCryptoWallet, paymentType, setPaymentType } =
+    useDonationContext();
+
+  // Require wallet authentication before showing payment options
+  if (!authenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-6">
+        <div className="mb-4 flex items-center space-x-2">
+          <Wallet className="text-muted-foreground" />
+          <span className="font-display text-base font-semibold text-foreground">
+            You need to connect your wallet to contribute
+          </span>
         </div>
-        {/* Single treasury mode: Only crypto wallet donations supported */}
-        {/* Credit card functionality commented out for MVP - single treasury focus */}
-        {/* <Tabs defaultValue="card">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="card" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Credit Card
+        <p className="mb-4 text-center text-sm text-muted-foreground">
+          To track your payments and the projects you support, connect your
+          wallet. It&apos;s free and easy, and no additional personal data is
+          required to contribute.
+        </p>
+        <div className="flex items-center justify-center">
+          <Button onClick={login}>Connect Wallet</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const tabsValues: Record<string, PaymentTabValue> = {
+    'pay-cross-chain': 'daimo',
+    'pay-direct': 'wallet',
+  };
+
+  // Show payment method selection after authentication
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-display text-xl font-semibold text-foreground">
+          Contribute to Campaign
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Support this campaign with your contribution
+        </p>
+      </div>
+
+      {/* Payment method tabs - conditionally render based on feature flag */}
+      {showDaimoPay && showCryptoWallet ? (
+        // Both payment methods enabled - show tabs
+        <Tabs
+          value={paymentType}
+          onValueChange={(value) => setPaymentType(value as PaymentTabValue)}
+        >
+          <TabsList className="mb-6 grid w-full grid-cols-2">
+            <TabsTrigger
+              value={tabsValues['pay-cross-chain']}
+              className="flex items-center gap-2"
+            >
+              <Zap className="h-4 w-4" />
+              Pay Cross-chain
             </TabsTrigger>
-            <TabsTrigger value="wallet" className="flex items-center gap-2">
+            <TabsTrigger
+              value={tabsValues['pay-direct']}
+              className="flex items-center gap-2"
+            >
               <Wallet className="h-4 w-4" />
-              Crypto Wallet
+              Pay Direct
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="card">
-            <CampaignDonationCreditCardTab campaign={campaign} />
+          <TabsContent value={tabsValues['pay-cross-chain']}>
+            <DaimoPayTab campaign={campaign} />
           </TabsContent>
-        </Tabs> */}
 
-        {/* Crypto wallet donation only */}
-        <Web3ContextProvider>
-          <CampaignDonationWalletTab campaign={campaign} />
-        </Web3ContextProvider>
-      </CardContent>
-    </Card>
+          <TabsContent value={tabsValues['pay-direct']}>
+            <CampaignDonationWalletTab campaign={campaign} />
+          </TabsContent>
+        </Tabs>
+      ) : showDaimoPay ? (
+        // Only Daimo Pay enabled - show directly without tabs
+        <DaimoPayTab campaign={campaign} />
+      ) : showCryptoWallet ? (
+        // Only Crypto Wallet enabled - show directly without tabs
+        <CampaignDonationWalletTab campaign={campaign} />
+      ) : (
+        // No payment methods enabled - this shouldn't happen but fallback to Daimo Pay
+        <DaimoPayTab campaign={campaign} />
+      )}
+    </div>
   );
 }

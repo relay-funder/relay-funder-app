@@ -16,364 +16,217 @@ interface EditFormState {
 }
 export const CampaignEditFormStates: Record<string, EditFormState> = {
   introduction: {
-    title: 'Your Campaign Modification',
+    title: 'Welcome to Campaign Editing',
     description: (
-      <>
-        <p>
-          Welcome to the campaign edit page! Here, you have the opportunity to
-          bring update project, enhance the metadata and text in order to
-          creating a compelling campaign that can attract funding from
-          supporters. This form will guide you through the essential steps to
-          set up your campaign, including providing a captivating title, a
-          detailed description, relevant metadata, and media uploads.
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Update your campaign details to better connect with supporters and
+          improve your presentation.
         </p>
 
-        <p>How the Campaign Edit Process Works</p>
-        <ul>
-          <li>
-            Submit: Once you fill out the form and submit your campaign update,
-            it will re-enter the review stage.
-          </li>
-          <li>
-            Pending: Your campaign will be reviewed by our team to ensure it
-            meets our guidelines and standards.
-          </li>
-          <li>
-            Approved: Upon approval, your campaign will be live and visible to
-            potential backers.
-          </li>
-        </ul>
-        <p>
-          We’re excited to see your ideas come to life and support you on this
-          journey!
-        </p>
-      </>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">
+            Edit Process Overview:
+          </h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Make your updates</li>
+            <li>Submit changes for review</li>
+            <li>Get approved and go live</li>
+          </ul>
+        </div>
+      </div>
     ),
-    next: { label: 'Lets Go', submit: false, target: 'description' },
+    next: { label: "Let's Go", submit: false, target: 'description' },
     prev: null,
     fields: [],
   },
   description: {
     title: 'Title and Description',
     description: (
-      <div>
-        <p>
-          In this first step, you will provide a <b>title</b> and a{' '}
-          <b>description</b> for your campaign. These elements are crucial as
-          they will be the first impression potential backers have of your
-          project. A compelling title and a clear description can significantly
-          impact your campaign&apos;s success.
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Update your campaign title and description to better connect with
+          potential supporters.
         </p>
 
-        <h3>Title</h3>
-        <p>
-          Your title should be <b>concise</b> and <b>catchy</b>, capturing the
-          essence of your project in just a few words. Aim for something that
-          sparks curiosity and encourages people to learn more.
-        </p>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Title Tips:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Keep it concise and use action words</li>
+            <li>Include your main goal or benefit</li>
+          </ul>
+        </div>
 
-        <h4>Descriptive Patterns for Titles:</h4>
-        <ul>
-          <li>
-            Use action words: &quot;Launch,&quot; &quot;Create,&quot;
-            &quot;Build&quot;
-          </li>
-          <li>
-            Include the main benefit or goal: &quot;Help Us Build a Community
-            Garden&quot;
-          </li>
-          <li>
-            Make it personal: &quot;Join Me in My Journey to Publish My First
-            Book&quot;
-          </li>
-        </ul>
-
-        <h4>Examples:</h4>
-        <ul>
-          <li>&quot;Empower Local Artists: A Community Art Project&quot;</li>
-          <li>
-            &quot;Help Us Save Endangered Species: A Wildlife Conservation
-            Initiative&quot;
-          </li>
-        </ul>
-
-        <h3>Description</h3>
-        <p>
-          The description allows you to elaborate on your project, explaining
-          what it is, why it matters, and how backers can help. Aim for clarity
-          and passion, and consider the following structure:
-        </p>
-
-        <ol>
-          <li>
-            <b>Introduction</b>: Briefly introduce your project and its purpose.
-          </li>
-          <li>
-            <b>The Problem</b>: Explain the issue or need your project
-            addresses.
-          </li>
-          <li>
-            <b>Your Solution</b>: Describe how your project will solve this
-            problem.
-          </li>
-          <li>
-            <b>Call to Action</b>: Encourage potential backers to support your
-            campaign.
-          </li>
-        </ol>
-
-        <h4>Descriptive Patterns for Descriptions:</h4>
-        <ul>
-          <li>Start with a hook: &quot;Imagine a world where...&quot;</li>
-          <li>
-            Use storytelling: Share a personal anecdote related to your project.
-          </li>
-          <li>
-            Highlight the impact: Explain how their support will make a
-            difference.
-          </li>
-        </ul>
-
-        <h4>Examples:</h4>
-        <ul>
-          <li>
-            &quot;Imagine a world where every child has access to quality
-            education. Our project aims to build a library in an underserved
-            community, providing resources and a safe space for learning. With
-            your support, we can make this dream a reality!&quot;
-          </li>
-          <li>
-            &quot;Every year, millions of plastic bottles end up in our oceans,
-            harming marine life. Our initiative seeks to create a recycling
-            program that not only reduces waste but also educates the community
-            on sustainability. Join us in making a positive change!&quot;
-          </li>
-        </ul>
-
-        <p>
-          By following these guidelines, you can create a compelling title and
-          description that resonate with potential backers and inspire them to
-          support your campaign.
-        </p>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">
+            Description Structure:
+          </h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Start with the problem and explain your solution</li>
+            <li>Show impact and end with a clear call to action</li>
+          </ul>
+        </div>
       </div>
     ),
     next: { label: 'Next', submit: false, target: 'meta' },
-    prev: { label: 'Back', target: 'introduction' },
+    prev: null,
     fields: ['title', 'description'],
   },
   meta: {
     title: 'Location and Category',
     description: (
-      <div>
-        <p>
-          In this step, you will provide essential <b>metadata</b>, specify the{' '}
-          <b>location</b>, and select a <b>category</b> for your campaign. This
-          information is vital as it helps our platform filter and display your
-          campaign in the appropriate channels, making it easier for potential
-          backers to find and support your project.
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Update your campaign location and category to help supporters find
+          your project.
         </p>
 
-        <h3>Metadata</h3>
-        <p>
-          Metadata includes key details that describe your campaign and enhance
-          its visibility. This may include:
-        </p>
-        <ul>
-          <li>
-            <b>Funding Goal</b>: The total amount you aim to raise.
-          </li>
-          <li>
-            <b>Campaign Duration</b>: The length of time your campaign will be
-            active.
-          </li>
-          <li>
-            <b>Rewards</b>: Any incentives you plan to offer backers for their
-            support.
-          </li>
-        </ul>
-        <p>
-          Providing accurate and detailed metadata will help potential backers
-          understand your campaign better and encourage them to contribute.
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">
+            Why This Matters:
+          </h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Location helps local supporters connect with your project</li>
+            <li>
+              Category improves discoverability and targets the right audience
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Choose Wisely:</h4>
+          <p className="text-sm text-muted-foreground">
+            Select the category that best represents your project&apos;s main
+            focus area.
+          </p>
+        </div>
+      </div>
+    ),
+    next: { label: 'Next', submit: false, target: 'funding' },
+    prev: { label: 'Back', target: 'description' },
+    fields: ['location', 'category'],
+  },
+  funding: {
+    title: 'Funding Goal',
+    description: (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Set your funding goal and choose your funding model.
         </p>
 
-        <h3>Location</h3>
-        <p>
-          Specifying a location for your campaign is important for several
-          reasons:
-        </p>
-        <ul>
-          <li>
-            It helps backers understand the geographical context of your
-            project.
-          </li>
-          <li>
-            It allows you to connect with local supporters who may be more
-            inclined to contribute.
-          </li>
-          <li>
-            It can enhance the visibility of your campaign in location-based
-            searches.
-          </li>
-        </ul>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Funding Tips:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Set a realistic goal based on your project needs</li>
+            <li>Consider all costs including materials and fees</li>
+          </ul>
+        </div>
 
-        <h3>Category</h3>
-        <p>
-          Selecting the right category for your campaign is crucial for
-          effective filtering and discovery. Categories help potential backers
-          find projects that align with their interests. Consider the following
-          common categories:
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Important:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Funding goal cannot be changed after deployment</li>
+            <li>Choose carefully based on your project requirements</li>
+          </ul>
+        </div>
+      </div>
+    ),
+    next: { label: 'Next', submit: false, target: 'timeline' },
+    prev: { label: 'Back', target: 'meta' },
+    fields: ['fundingGoal', 'fundingModel'],
+  },
+  timeline: {
+    title: 'Campaign Timeline',
+    description: (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Set your campaign start and end dates.
         </p>
-        <ul>
-          <li>
-            <b>Art & Music</b>: Projects related to creative arts, performances,
-            or music production.
-          </li>
-          <li>
-            <b>Technology</b>: Innovations, gadgets, or software development.
-          </li>
-          <li>
-            <b>Community</b>: Initiatives aimed at improving local communities
-            or social causes.
-          </li>
-          <li>
-            <b>Education</b>: Projects focused on learning, teaching, or
-            educational resources.
-          </li>
-        </ul>
-        <p>
-          By accurately filling out the metadata, location, and category, you
-          will increase the chances of your campaign being discovered by the
-          right audience, ultimately leading to greater support and funding.
-        </p>
+
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Timeline Tips:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Allow enough time to reach your funding goal</li>
+            <li>Consider seasonal factors and holidays</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Important:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Dates cannot be changed after deployment</li>
+            <li>Plan your timeline carefully</li>
+          </ul>
+        </div>
       </div>
     ),
     next: { label: 'Next', submit: false, target: 'media' },
-    prev: { label: 'Back', target: 'description' },
-    fields: ['location', 'category'],
+    prev: { label: 'Back', target: 'funding' },
+    fields: ['startTime', 'endTime'],
   },
   media: {
     title: 'Media',
     description: (
-      <div>
-        <p>
-          In this step, you will select a <b>main image</b> for your campaign.
-          This image will be prominently displayed across the platform in
-          various sizes, making it a crucial element for attracting potential
-          backers. A compelling visual can significantly enhance the appeal of
-          your campaign and draw more attention.
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Update your campaign image to better represent your project.
         </p>
 
-        <h3>Image Selection</h3>
-        <p>When choosing your main image, consider the following:</p>
-        <ul>
-          <li>
-            <b>Quality</b>: High-quality images are essential. They not only
-            look more professional but also convey the seriousness and
-            credibility of your project. A well-chosen image can evoke emotions
-            and create a connection with potential backers.
-          </li>
-          <li>
-            <b>Relevance</b>: Ensure that the image represents your project
-            accurately. It should reflect the essence of what you are trying to
-            achieve and resonate with your target audience.
-          </li>
-        </ul>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">
+            Image Guidelines:
+          </h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Use high-quality images that represent your project</li>
+            <li>Avoid cluttered backgrounds and focus on your main subject</li>
+          </ul>
+        </div>
 
-        <h3>Cropping the Image</h3>
-        <p>
-          Once you upload your image, you will have the option to crop it. This
-          feature allows you to select the best portion of the image that
-          captures the most important aspects of your project. Here are some
-          tips for effective cropping:
-        </p>
-        <ul>
-          <li>
-            <b>Focus on the Subject</b>: Make sure the main subject of your
-            image is clearly visible and centered.
-          </li>
-          <li>
-            <b>Avoid Clutter</b>: Remove any distracting elements from the edges
-            of the image that may take attention away from the main focus.
-          </li>
-          <li>
-            <b>Aspect Ratio</b>: Keep in mind the aspect ratio required for the
-            platform to ensure your image displays correctly in all formats.
-          </li>
-        </ul>
-
-        <p>
-          By selecting a high-quality image and cropping it thoughtfully, you
-          will enhance your campaign&apos;s visual appeal and increase the
-          likelihood of attracting backers.
-        </p>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Pro Tip:</h4>
+          <p className="text-sm text-muted-foreground">
+            A compelling image can significantly increase engagement and attract
+            more supporters to your campaign.
+          </p>
+        </div>
       </div>
     ),
     next: { label: 'Next', submit: false, target: 'summary' },
-    prev: { label: 'Back', target: 'meta' },
+    prev: { label: 'Back', target: 'timeline' },
     fields: ['bannerImage'],
   },
   summary: {
-    title: 'Summary',
+    title: 'Review & Submit',
     description: (
-      <div>
-        <p>
-          In this final step, you will review a comprehensive <b>summary</b> of
-          your campaign as it will be displayed on the platform once approved.
-          This is your opportunity to ensure that all the details are accurate
-          and compelling before submitting your campaign for review.
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Review your updated campaign preview and submit your changes.
         </p>
 
-        <h3>Campaign Overview</h3>
-        <p>The summary will include the following key elements:</p>
-        <ul>
-          <li>
-            <b>Title</b>: The catchy title you created for your campaign.
-          </li>
-          <li>
-            <b>Description</b>: A detailed overview of your project, including
-            the problem it addresses and your proposed solution.
-          </li>
-          <li>
-            <b>Metadata</b>: Information such as your funding goal, campaign
-            duration, and any rewards you plan to offer.
-          </li>
-          <li>
-            <b>Media</b>: The main image you selected, which will represent your
-            campaign visually.
-          </li>
-          <li>
-            <b>Funding Model</b>: The chosen funding model for your campaign.
-          </li>
-          <li>
-            <b>Timeline</b>: The start and end dates you set for your campaign.
-          </li>
-        </ul>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Your Options:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>
+              <strong>Save (draft)</strong> - Save changes without submitting
+              for review
+            </li>
+            <li>
+              <strong>Submit for approval</strong> - Submit changes for review
+              and approval
+            </li>
+            <li>
+              <strong>Save</strong> - Save changes to already submitted campaign
+            </li>
+          </ul>
+        </div>
 
-        <h3>Review and Modify</h3>
-        <p>
-          Take a moment to carefully review each section of your campaign
-          summary. Ensure that:
-        </p>
-        <ul>
-          <li>All information is accurate and free of errors.</li>
-          <li>
-            The title and description effectively convey your project&apos;s
-            purpose and appeal.
-          </li>
-          <li>The funding details align with your project needs.</li>
-        </ul>
-        <p>
-          If you notice any areas that need adjustment, you can easily go back
-          and modify the values. Make sure you are completely satisfied with
-          your campaign before submitting it for approval.
-        </p>
-
-        <h3>Final Thoughts</h3>
-        <p>
-          Once you are confident that everything is in order, you can proceed to
-          submit your campaign. We look forward to supporting you on this
-          exciting journey and helping you bring your project to life!
-        </p>
+        <div>
+          <h4 className="mb-2 font-medium text-foreground">Quick Check:</h4>
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            <li>Review all changes and ensure accuracy</li>
+            <li>Go back to edit any section if needed</li>
+          </ul>
+        </div>
       </div>
     ),
     next: { label: 'Submit', submit: true },

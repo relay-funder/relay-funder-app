@@ -1,7 +1,7 @@
 import type { GetCampaignResponse } from '@/lib/api/types';
 import { formatUSD } from '@/lib/format-usd';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
-import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { DbCampaign } from '@/types/campaign';
 import { useMemo } from 'react';
 
@@ -35,8 +35,7 @@ export function useCampaignStatsFromInstance({
 }) {
   const paymentSummary = campaign?.paymentSummary;
   const contributorPendingCount = paymentSummary?.countPending ?? 0;
-  const contributorCount =
-    (paymentSummary?.countConfirmed ?? 0) + contributorPendingCount;
+  const contributorCount = paymentSummary?.countConfirmed ?? 0;
 
   const [amountRaisedFloat, amountPendingFloat] = useMemo(() => {
     if (!paymentSummary?.token) {

@@ -1,4 +1,5 @@
-import { PrismaClient } from '@/.generated/prisma/client';
+import { PrismaClient, Prisma } from '@/.generated/prisma/client';
+import { IS_PRODUCTION } from '@/lib/constant';
 
 export {
   Decimal,
@@ -11,6 +12,19 @@ export { RecipientStatus } from '@/.generated/prisma/client';
 const createPrismaClient = () =>
   new PrismaClient({
     log: ['error'],
+    transactionOptions: {
+      // Maximum time to wait for a transaction to start (acquire connection from pool)
+      maxWait: 5000, // 5 seconds
+
+      // Maximum time a transaction can run before timing out
+      // This prevents indefinite hangs and connection pool exhaustion
+      // Must fit within Vercel limits: approval (120s) + pledge (90s) + buffer (30s) = 240s
+      timeout: 240000, // 240 seconds (4 minutes) - matches OVERALL_EXECUTION timeout
+
+      // Default isolation level for all transactions
+      // ReadCommitted prevents dirty reads while allowing good concurrency
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+    },
   });
 
 const globalForPrisma = globalThis as unknown as {
@@ -19,4 +33,4 @@ const globalForPrisma = globalThis as unknown as {
 
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
+if (!IS_PRODUCTION) globalForPrisma.prisma = db;

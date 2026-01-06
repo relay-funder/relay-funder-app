@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts';
 import { CreateProcessStates } from '@/types/campaign';
+import { handleApiErrors } from '@/lib/api/error';
 
 // All on-chain specifics handled server-side
 
@@ -59,6 +60,7 @@ export function useCreateCampaignContract({
         const res = await fetch(`/api/campaigns/${campaignId}/create-onchain`, {
           method: 'POST',
         });
+        await handleApiErrors(res, 'Failed to create on-chain campaign');
         const json = await res.json();
         if (!json?.success) {
           throw new Error(

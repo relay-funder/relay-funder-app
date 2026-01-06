@@ -1,7 +1,7 @@
-import { http, type Config, type CreateConfigParameters } from 'wagmi';
-import { chainConfig } from '@/lib/web3/config/chain';
-import { sepolia, defaultChain, celo, mainnet } from './chains';
-import { injected } from './connectors';
+import { createConfig, http, type Config } from 'wagmi';
+import { chainConfig } from './chain';
+import { defaultChain, celo, daimoPayChains } from './chains';
+import { DAIMO_PAY_APP_ID } from '@/lib/constant';
 
 // Add type declaration for wagmi config
 declare module 'wagmi' {
@@ -10,14 +10,35 @@ declare module 'wagmi' {
   }
 }
 
-export const config: CreateConfigParameters = {
-  chains: [defaultChain, sepolia, celo, mainnet],
-  connectors: [injected()],
-  transports: {
-    [defaultChain.id]: http(chainConfig.rpcUrl),
-    [sepolia.id]: http(),
-    [celo.id]: http(chainConfig.rpcUrl), // Use same RPC for all Celo chains
-    [mainnet.id]: http(),
-  },
+// Build base chains (include celo only when needed)
+const baseChains = [defaultChain];
+if (defaultChain.id !== celo.id) {
+  baseChains.push(celo);
+}
+
+// Combine with Daimo Pay chains and dedupe by chain.id
+const allChains = [...baseChains];
+if (DAIMO_PAY_APP_ID && DAIMO_PAY_APP_ID.trim() !== '') {
+  daimoPayChains.forEach((chain) => {
+    if (!allChains.some((existing) => existing.id === chain.id)) {
+      allChains.push(chain as (typeof allChains)[0]);
+    }
+  });
+}
+const dedupedChains = allChains.filter(
+  (chain, index, self) => self.findIndex((c) => c.id === chain.id) === index,
+) as [(typeof allChains)[0], ...typeof allChains]; // Ensure at least one chain
+
+// Create transports mapping each chain.id to http() transport
+// Use custom RPC url for defaultChain, standard http() for others
+const transports: Record<number, ReturnType<typeof http>> = {};
+dedupedChains.forEach((chain) => {
+  transports[chain.id] =
+    chain.id === defaultChain.id ? http(chainConfig.rpcUrl) : http();
+});
+
+export const config: Config = createConfig({
+  chains: dedupedChains,
+  transports,
   ssr: true,
-};
+});

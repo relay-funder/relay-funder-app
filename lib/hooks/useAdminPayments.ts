@@ -1,9 +1,13 @@
 import {
   useQuery,
   useInfiniteQuery,
+  useMutation,
+  useQueryClient,
   type QueryKey,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type { PaginatedResponse } from '@/lib/api/types';
+import type { AdminPaymentListItem } from '@/lib/api/adminPayments';
 
 /**
  * Query key root for admin payments lists
@@ -19,50 +23,14 @@ export type PaymentRefundState =
   | 'PROCESSED'
   | 'APPROVED';
 export type PaymentTypeEnum = 'BUY' | 'SELL';
+export type PledgeExecutionStatus =
+  | 'NOT_STARTED'
+  | 'PENDING'
+  | 'SUCCESS'
+  | 'FAILED';
 
-/**
- * Admin payments list item (matches /api/admin/payments response shape)
- */
-export type AdminPaymentListItem = {
-  id: number;
-  amount: string;
-  token: string;
-  status: string;
-  type: PaymentTypeEnum;
-  transactionHash?: string | null;
-  isAnonymous: boolean;
-  createdAt: string; // ISO from API
-  updatedAt: string; // ISO from API
-  campaignId: number;
-  userId: number;
-  externalId?: string | null;
-  metadata?: unknown;
-  provider?: string | null;
-  refundState: PaymentRefundState;
-
-  campaign: {
-    id: number;
-    title: string;
-    slug: string;
-  };
-  user: {
-    id: number;
-    address: string;
-    username?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-  };
-  RoundContribution: Array<{
-    id: number;
-    createdAt: string;
-    humanityScore: number;
-    roundCampaign: {
-      id: number;
-      Round: { id: number; title: string; status: string };
-      Campaign: { id: number; title: string; slug: string };
-    };
-  }>;
-};
+// Re-export the type from the API file to ensure consistency
+export type { AdminPaymentListItem } from '@/lib/api/adminPayments';
 
 /**
  * Filter options for admin payments list
@@ -74,6 +42,7 @@ export type AdminPaymentsFilters = {
   token?: string;
   refundState?: PaymentRefundState;
   type?: PaymentTypeEnum;
+  pledgeExecutionStatus?: PledgeExecutionStatus;
 };
 
 interface PaginatedAdminPaymentsResponse extends PaginatedResponse {
@@ -114,6 +83,9 @@ function buildAdminPaymentsUrl({
   if (filters?.type) {
     params.set('type', filters.type);
   }
+  if (filters?.pledgeExecutionStatus) {
+    params.set('pledgeExecutionStatus', filters.pledgeExecutionStatus);
+  }
 
   return `/api/admin/payments?${params.toString()}`;
 }
@@ -138,16 +110,10 @@ async function fetchAdminPaymentsPage({
     filters,
   });
   const response = await fetch(url);
-  if (!response.ok) {
-    let msg = 'Failed to fetch admin payments';
-    try {
-      const err = await response.json();
-      msg = err?.error || msg;
-    } catch {}
-    throw new Error(msg);
-  }
-  const data = (await response.json()) as PaginatedAdminPaymentsResponse;
-  return data;
+  await handleApiErrors(response, 'Failed to fetch admin payments');
+  const data = await response.json();
+  // Ensure proper typing of the response
+  return data as PaginatedAdminPaymentsResponse;
 }
 
 /**
@@ -161,13 +127,14 @@ async function fetchAdminPayments({
   page?: number;
   pageSize?: number;
   filters?: AdminPaymentsFilters;
-}) {
+}): Promise<AdminPaymentListItem[]> {
   const pageData = await fetchAdminPaymentsPage({
     pageParam: page,
     pageSize,
     filters,
   });
-  return pageData.payments;
+  // Ensure proper typing of the payments array
+  return pageData.payments as AdminPaymentListItem[];
 }
 
 /**
@@ -191,7 +158,7 @@ export function useAdminPayments({
     { page: safePage, pageSize: safePageSize, filters: filters ?? {} },
   ];
 
-  return useQuery({
+  return useQuery<AdminPaymentListItem[]>({
     queryKey: key,
     queryFn: () =>
       fetchAdminPayments({
@@ -239,5 +206,32 @@ export function useInfiniteAdminPayments({
         ? firstPage.pagination.currentPage - 1
         : undefined,
     initialPageParam: 1,
+  });
+}
+
+/**
+ * Retry pledge execution for a payment.
+ * Used by admin UI when clicking "Retry" button on failed Daimo Pay payments.
+ */
+async function retryPledgeExecution(paymentId: number) {
+  const response = await fetch(
+    `/api/admin/payments/${paymentId}/retry-pledge`,
+    {
+      method: 'POST',
+    },
+  );
+  await handleApiErrors(response, 'Failed to retry pledge execution');
+  return response.json();
+}
+
+export function useRetryPledgeExecution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: retryPledgeExecution,
+    onSuccess: () => {
+      // Invalidate admin payments queries to refresh the list with updated status
+      queryClient.invalidateQueries({ queryKey: [ADMIN_PAYMENTS_QUERY_KEY] });
+    },
   });
 }

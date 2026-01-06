@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 interface FullWidthContainerProps {
   children: ReactNode;
   className?: string;
-  variant?: 'default' | 'constrained' | 'edge-to-edge';
+  variant?: 'default' | 'constrained' | 'detail' | 'edge-to-edge';
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
@@ -12,8 +12,9 @@ interface FullWidthContainerProps {
  * Full-width container component that handles proper spacing and alignment
  *
  * Variants:
- * - default: Full width with responsive padding
- * - constrained: Max width with center alignment (for content-heavy pages)
+ * - default: Full width with responsive padding and max-width constraint for wide displays
+ * - constrained: Max width (7xl) with center alignment (for content-heavy pages)
+ * - detail: Laptop-size max width (5xl) for detail pages like campaigns and rounds
  * - edge-to-edge: True full width with minimal padding (for hero sections, etc.)
  */
 export function FullWidthContainer({
@@ -30,8 +31,9 @@ export function FullWidthContainer({
   };
 
   const variantClasses = {
-    default: 'w-full',
+    default: 'w-full max-w-[1600px] mx-auto',
     constrained: 'w-full max-w-7xl mx-auto',
+    detail: 'w-full max-w-5xl mx-auto',
     'edge-to-edge': 'w-full',
   };
 

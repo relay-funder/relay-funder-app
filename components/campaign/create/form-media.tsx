@@ -9,19 +9,32 @@ import {
   FormMessage,
   Button,
 } from '@/components/ui';
+import Image from 'next/image';
 export function CampaignCreateFormMedia() {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
+
   const onReset = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       form.setValue('bannerImage', null);
+      setBannerImage(null);
     },
     [form],
   );
+
+  const onFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] || null;
+      form.setValue('bannerImage', file);
+    },
+    [form],
+  );
+
   useEffect(() => {
     if (!imageWatch) {
+      setBannerImage(null);
       return;
     }
     if (imageWatch instanceof File) {
@@ -34,36 +47,52 @@ export function CampaignCreateFormMedia() {
     }
   }, [imageWatch]);
   return (
-    <>
-      {bannerImage ? (
-        <div className="flex flex-col">
-          <picture className="flex justify-center">
-            <img src={bannerImage} alt="img-input" className="max-h-[50vh]" />
-          </picture>
-          <Button variant="ghost" onClick={onReset}>
-            Reset
-          </Button>
-        </div>
-      ) : null}
+    <div className="space-y-6">
       <FormField
         control={form.control}
         name="bannerImage"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
-            <FormLabel>Campaign Banner Image</FormLabel>
+            <FormLabel className="text-sm font-medium text-foreground">
+              Campaign Banner Image
+            </FormLabel>
             <FormControl>
               <Input
                 type="file"
                 accept="image/*"
-                onChange={(event) =>
-                  field.onChange(event.target.files && event.target.files[0])
-                }
+                className="mt-1"
+                onChange={onFileChange}
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-    </>
+
+      {bannerImage && (
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-card p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-medium text-foreground">
+              Preview
+            </h3>
+            <div className="flex justify-center">
+              <Image
+                src={bannerImage}
+                alt="Campaign banner preview"
+                className="max-h-64 rounded-lg shadow-sm"
+                width={400}
+                height={256}
+                style={{ objectFit: 'contain' }}
+              />
+            </div>
+            <div className="mt-4 flex justify-center">
+              <Button variant="outline" onClick={onReset}>
+                Remove Image
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

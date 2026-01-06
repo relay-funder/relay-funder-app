@@ -11,6 +11,10 @@ import {
 import { PatchUserCampaignResponse } from '@/lib/api/types';
 import { fileToUrl } from '@/lib/storage';
 import { getUser } from '@/lib/api/user';
+import {
+  isValidCategoryId,
+  VALID_CATEGORY_IDS,
+} from '@/lib/constant/categories';
 
 export async function GET(req: Request) {
   try {
@@ -56,13 +60,21 @@ export async function PATCH(req: Request) {
 
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
+    const fundingUsage = formData.get('fundingUsage') as string;
     const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');
     }
-    if (!title || !description) {
+    if (!title || !description || !fundingUsage) {
       throw new ApiParameterError('missing required fields');
+    }
+
+    // Validate category if provided
+    if (category && !isValidCategoryId(category)) {
+      throw new ApiParameterError(
+        `Invalid category "${category}". Only allowed: ${VALID_CATEGORY_IDS.join(', ')}`,
+      );
     }
     const user = await getUser(session.user.address);
     if (!user) {
@@ -92,16 +104,19 @@ export async function PATCH(req: Request) {
         throw new ApiUpstreamError('Image upload failed');
       }
     }
+    const updateData: Record<string, unknown> = {
+      title,
+      description,
+      location,
+      category,
+      fundingUsage,
+    };
+
     await db.campaign.update({
       where: {
         id: instance.id,
       },
-      data: {
-        title,
-        description,
-        location,
-        category,
-      },
+      data: updateData,
     });
     if (imageUrl) {
       const campaignMedia = await db.media.findMany({

@@ -4,7 +4,6 @@ import { ApiNotFoundError, ApiParameterError } from '@/lib/api/error';
 import { response, handleError } from '@/lib/api/response';
 
 import { RecipientStatus } from '@/types/round';
-// import { ApplicationStatus } from "@/lib/qfInteractions"
 
 export async function POST(req: Request) {
   try {

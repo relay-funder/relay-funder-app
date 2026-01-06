@@ -4,12 +4,14 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { handleApiErrors } from '@/lib/api/error';
 import type {
   GetUserResponse,
   GetUserResponseInstance,
   PatchUserRouteBody,
 } from '@/lib/api/types/admin';
 import { PaginatedResponse } from '@/lib/api/types';
+import { ADMIN_USER_OVERVIEW_QUERY_KEY } from '@/lib/hooks/useAdminUserOverview';
 
 export const ADMIN_USERS_QUERY_KEY = 'admin_users';
 export const ADMIN_USER_QUERY_KEY = 'admin_user';
@@ -55,14 +57,7 @@ async function fetchAdminUsersPage({
     name,
   });
   const response = await fetch(url);
-  if (!response.ok) {
-    let errorMsg = 'Failed to fetch admin users';
-    try {
-      const errorData = await response.json();
-      errorMsg = errorData?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to fetch admin users');
   const data = await response.json();
   return data as PaginatedUsersResponse;
 }
@@ -154,14 +149,7 @@ export function useInfiniteAdminUsers({
 // Single user query
 async function fetchAdminUser(address: string) {
   const response = await fetch(`/api/admin/users/${address}`);
-  if (!response.ok) {
-    let errorMsg = 'Failed to fetch user';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to fetch user');
   const result = await response.json();
   return (result as GetUserResponse).user;
 }
@@ -187,14 +175,7 @@ async function patchAdminUser({ address, data }: UpdateAdminUserVariables) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to update user';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to update user');
   const result = await response.json();
   return result as GetUserResponse;
 }
@@ -212,14 +193,7 @@ async function patchAdminUserFlags({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ flags }),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to update user flags';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to update user flags');
   const result = await response.json();
   return result as GetUserResponse;
 }
@@ -234,6 +208,9 @@ export function useUpdateAdminUser() {
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
       });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
+      });
     },
   });
 }
@@ -247,6 +224,9 @@ export function useUpdateAdminUserFlags() {
       queryClient.invalidateQueries({ queryKey: [ADMIN_USERS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
       });
     },
   });
@@ -265,14 +245,7 @@ async function patchAdminUserRoles({
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ roles }),
   });
-  if (!response.ok) {
-    let errorMsg = 'Failed to update user roles';
-    try {
-      const err = await response.json();
-      errorMsg = err?.error || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+  await handleApiErrors(response, 'Failed to update user roles');
   const result = await response.json();
   return result as GetUserResponse;
 }
@@ -286,6 +259,9 @@ export function useUpdateAdminUserRoles() {
       queryClient.invalidateQueries({ queryKey: [ADMIN_USERS_QUERY_KEY] });
       queryClient.invalidateQueries({
         queryKey: [ADMIN_USER_QUERY_KEY, variables.address],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_USER_OVERVIEW_QUERY_KEY, variables.address],
       });
     },
   });

@@ -6,27 +6,21 @@ import { CampaignDonationCreditCardStripeLoading } from './stripe-loading';
 import { DEFAULT_USER_EMAIL } from '@/lib/constant';
 import { useStripeLazy } from '@/hooks/use-stripe-lazy';
 import { Button } from '@/components/ui';
+import { useDonationContext } from '@/contexts';
+
 export function CampaignDonationCreditCardProcess({
   campaign,
-  amount,
-  donationToAkashic,
-  anonymous,
+  userEmail,
 }: {
   campaign: DbCampaign;
-  amount: string;
-  donationToAkashic: number;
-  anonymous: boolean;
+  userEmail?: string;
 }) {
+  const { amount, isAnonymous } = useDonationContext();
+
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
-  const akashicAmount = useMemo(() => {
-    if (donationToAkashic) {
-      return (numericAmount * donationToAkashic) / 100;
-    }
-    return 0;
-  }, [numericAmount, donationToAkashic]);
   const poolAmount = useMemo(() => {
-    return numericAmount - akashicAmount;
-  }, [numericAmount, akashicAmount]);
+    return numericAmount;
+  }, [numericAmount]);
 
   // Lazy Stripe implementation - no API calls until donate button clicked
   const { isProcessing, stripeData, stripePromise, createPaymentIntent } =
@@ -34,8 +28,8 @@ export function CampaignDonationCreditCardProcess({
       amount,
       poolAmount,
       campaign,
-      userEmail: DEFAULT_USER_EMAIL, // TODO: Get actual user email from session or profile
-      isAnonymous: anonymous,
+      userEmail: userEmail || DEFAULT_USER_EMAIL,
+      isAnonymous,
     });
   return (
     <>

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { DonationProcessStates } from '@/types/campaign';
 import { CheckCircle2, Loader2, Timer } from 'lucide-react';
 import { useMemo } from 'react';
+import { NewsletterSignupLink } from '@/components/newsletter/newsletter-signup-link';
 
 interface DonationProcessDisplayProps {
   currentState: keyof typeof DonationProcessStates | null;
@@ -13,6 +14,7 @@ interface DonationProcessDisplayProps {
   onFailureCancel?: () => void;
   onFailureRetry?: () => void;
   onDoneView?: () => void;
+  onDoneDonateAgain?: () => void;
 }
 
 const PROCESS_STEP_INFO: Record<
@@ -34,15 +36,20 @@ const PROCESS_STEP_INFO: Record<
     description:
       'We are setting up the necessary details for your donation transaction. This involves preparing the data that will be sent to the blockchain.',
   },
-  approveUsdcContract: {
-    title: 'Approving USDC Spending',
+  registerPledge: {
+    title: 'Registering Pledge',
     description:
-      'Before we can transfer your USDC, you need to grant permission for our smart contract to spend a specific amount of USDC from your wallet. This is a standard security measure.',
+      'We are securely registering your pledge with the treasury contract using our backend system. This step ensures your donation can be properly processed.',
   },
-  waitForUsdcContractConfirmation: {
-    title: 'Confirming USDC Approval',
+  approveUsdtContract: {
+    title: 'Approving USD Token Spending',
     description:
-      'We are waiting for the blockchain to confirm that your USDC spending approval has been successfully processed. This might take a moment.',
+      'Before we can transfer your USD Token, you need to grant permission for our smart contract to spend a specific amount of USD Token from your wallet. This is a standard security measure.',
+  },
+  waitForUsdtContractConfirmation: {
+    title: 'Confirming USD Token Approval',
+    description:
+      'We are waiting for the blockchain to confirm that your USD Token spending approval has been successfully processed. This might take a moment.',
   },
   pledgeContract: {
     title: 'Executing Donation',
@@ -80,6 +87,7 @@ export function DonationProcessDisplay({
   onFailureCancel,
   onFailureRetry,
   onDoneView,
+  onDoneDonateAgain,
   isProcessing,
 }: DonationProcessDisplayProps) {
   // Ensure the order of steps is maintained
@@ -88,8 +96,9 @@ export function DonationProcessDisplay({
       'connect',
       'switch',
       'requestTransaction',
-      'approveUsdcContract',
-      'waitForUsdcContractConfirmation',
+      'registerPledge',
+      'approveUsdtContract',
+      'waitForUsdtContractConfirmation',
       'pledgeContract',
       'waitForPledgeContractConfirmation',
       'storageComplete',
@@ -137,14 +146,26 @@ export function DonationProcessDisplay({
   }
   if (isDone) {
     return (
-      <div className="mt-4 space-y-2 text-center text-green-600 dark:text-green-400">
-        <CheckCircle2 className="mx-auto h-12 w-12" />
-        <p className="text-lg font-semibold">{PROCESS_STEP_INFO.done.title}</p>
-        <p className="text-sm">{PROCESS_STEP_INFO.done.description}</p>
-        <div className="flex justify-center gap-2">
-          {onFailureRetry && (
+      <div className="mt-6 space-y-6 rounded-lg border border-border bg-card p-8 text-center text-card-foreground shadow-subtle">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-bio" />
+        <p className="font-display text-lg font-semibold text-foreground">
+          {PROCESS_STEP_INFO.done.title}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {PROCESS_STEP_INFO.done.description}
+        </p>
+        <div className="flex justify-center">
+          <NewsletterSignupLink />
+        </div>
+        <div className="flex flex-col justify-center gap-2 sm:flex-row">
+          {onDoneView && (
             <Button onClick={onDoneView} variant="default">
               View Campaign
+            </Button>
+          )}
+          {onDoneDonateAgain && (
+            <Button onClick={onDoneDonateAgain} variant="outline">
+              Donate Again
             </Button>
           )}
         </div>
@@ -170,27 +191,25 @@ export function DonationProcessDisplay({
               key={stateKey}
               className={cn(
                 'flex flex-col rounded-md p-2',
-                isCurrent && 'bg-blue-100 dark:bg-blue-900',
-                isCompleted && 'text-green-600 dark:text-green-400',
-                isPending && 'text-gray-400 dark:text-gray-600',
+                isCurrent && 'bg-accent/50',
+                isCompleted && 'text-bio',
+                isPending && 'text-muted-foreground',
               )}
             >
               <div className="flex items-center gap-2">
-                {isCompleted && (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                )}
+                {isCompleted && <CheckCircle2 className="h-5 w-5 text-bio" />}
                 {isCurrent && isProcessing && (
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                  <Loader2 className="h-5 w-5 animate-spin text-quantum" />
                 )}
                 {!isCompleted && !isCurrent && (
-                  <span className="flex h-5 w-5 items-center justify-center text-gray-400 dark:text-gray-600">
+                  <span className="flex h-5 w-5 items-center justify-center text-muted-foreground">
                     <Timer className="h-5 w-5" />
                   </span>
                 )}
                 <span className="font-semibold">{stepInfo.title}</span>
               </div>
               {isCurrent && (
-                <p className="ml-7 text-sm text-gray-700 dark:text-gray-300">
+                <p className="ml-7 text-sm text-muted-foreground">
                   {stepInfo.description}
                 </p>
               )}

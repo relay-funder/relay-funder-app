@@ -1,39 +1,36 @@
 export { countries } from './countries';
 export { categories } from './categories';
 export { fundingModels } from './funding-models';
+export { EXTERNAL_LINKS } from './external-links';
+export { INFINITE_SCROLL_CONFIG } from './infinite-scroll';
+export {
+  CREATOR_EVENT_POINTS,
+  RECEIVER_EVENT_POINTS,
+} from './user-score-points';
+export * from './tokens';
 
 export const PROJECT_NAME = 'Relay Funder';
 export const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_PLATFORM_ADMIN;
-export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
-
-// Akashic NFT Contract Addresses
-export const NFT_METADATA = '0x73258C5813AB9494473d34eD57869531B2dd6ac2';
-export const CAMPAIGN_NFT_FACTORY =
-  '0x41ab8cf665f931B010d13D46b5178551594EE2DA';
-export const AKASHIC_NFT_REGISTRY =
-  '0x41b40AB343E607e59de62930D726A324B3b7cf63';
 
 // Allo Integration Contract
 export const ALLO_ADDRESS = '0x1133eA7Af70876e64665ecD07C0A0476d09465a1';
 export const KICKSTARTER_QF_ADDRESS =
   '0x331e239848571d98B917982c16562b6E29DD91C5';
 
-// Crowdsplit API configuration
-export const CROWDSPLIT_API_URL = process.env.CROWDSPLIT_API_URL;
-export const CROWDSPLIT_CLIENT_ID = process.env.CROWDSPLIT_CLIENT_ID;
-export const CROWDSPLIT_CLIENT_SECRET = process.env.CROWDSPLIT_CLIENT_SECRET;
-export const CROWDSPLIT_WEBHOOK_SECRET = process.env.CROWDSPLIT_WEBHOOK_SECRET;
-
 // silk / appkit
 export const REOWN_CLOUD_PROJECT_ID =
   process.env.NEXT_PUBLIC_REOWN_CLOUD_PROJECT_ID || '';
+// by default allow reown email login, disable by setting the env and redeploy
+export const REOWN_FEATURE_EMAIL = !Boolean(
+  process.env.NEXT_PUBLIC_REOWN_FEATURE_DISABLE_EMAIL,
+);
 
 // privy
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
-export const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
 
-export const DEFAULT_USER_EMAIL = 'test.donor@akashic.org';
-export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [25, 50, 100, 250, 500];
+export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
+export const SUPPORT_EMAIL = 'support@relayfunder.com';
+export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [5, 10, 25, 50, 100];
 
 export const FILE_STORAGE_PROVIDER =
   process.env.FILE_STORAGE_PROVIDER ?? 'LOCAL';
@@ -42,3 +39,23 @@ export const PINATA_API_JWT_ACCESS_TOKEN =
   process.env.PINATA_API_JWT_ACCESS_TOKEN;
 export const NEXT_PUBLIC_PINATA_GATEWAY_URL =
   process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL ?? '';
+
+// Daimo Pay configuration - appId is public for client-side
+export const DAIMO_PAY_APP_ID = process.env.NEXT_PUBLIC_DAIMO_PAY_APP_ID ?? '';
+
+// Daimo Pay specific constants
+export {
+  DAIMO_PAY_USDC_ADDRESS,
+  DAIMO_PAY_USDT_ADDRESS,
+  DAIMO_PAY_CHAIN_ID,
+  DAIMO_PAY_CHAIN_NAME,
+  DAIMO_PAY_TOKEN_SYMBOL,
+  DAIMO_PAY_MIN_AMOUNT,
+  DAIMO_PAY_INITIAL_RESET_DELAY,
+  DAIMO_PAY_DEBOUNCE_DELAY,
+} from './daimo';
+
+export { IS_PRODUCTION } from '../utils/env';
+
+// RPC Endpoints
+export { CELO_RPC_ENDPOINTS } from './rpc-endpoints';

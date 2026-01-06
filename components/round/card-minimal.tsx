@@ -5,7 +5,6 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Clock, Calendar, DollarSign } from 'lucide-react';
@@ -14,22 +13,36 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useRoundStatus } from './use-status';
 import { useRoundTimeInfo } from './use-time-info';
 import { useAuth } from '@/contexts';
-import { useMemo } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { DbCampaign } from '@/types/campaign';
-import { RoundCardCampaignRemoveButton } from './card-campaign-remove-button';
+import { useRemoveRoundCampaign } from '@/lib/hooks/useRounds';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 import { RoundMainImageAvatar } from './main-image-avatar';
+import { useConfirm } from '@/hooks/use-confirm';
 
 export function RoundCardMinimal({
   round,
   campaign,
+  forceUserView = false,
 }: {
   round: GetRoundResponseInstance;
   campaign?: DbCampaign;
+  forceUserView?: boolean;
 }) {
-  const { isAdmin, address } = useAuth();
+  const { isAdmin: authIsAdmin, address } = useAuth();
+
+  // Force user view if specified, otherwise use actual admin status
+  const isAdmin = forceUserView ? false : authIsAdmin;
   const status = useRoundStatus(round);
   const timeInfo = useRoundTimeInfo(round);
-  const canWithdraw = useMemo(() => {
+  const { toast } = useToast();
+  const { mutateAsync: removeRoundCampaign, isPending: isRemoving } =
+    useRemoveRoundCampaign();
+  const { confirm } = useConfirm();
+  const attemptedRef = useRef(false);
+
+  const canRemove = useMemo(() => {
     if (!campaign) {
       return false;
     }
@@ -44,6 +57,60 @@ export function RoundCardMinimal({
     }
     return true;
   }, [round, campaign, address, isAdmin]);
+
+  const handleRemove = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!campaign) return;
+
+      attemptedRef.current = false;
+
+      const confirmed = await confirm({
+        title: 'Are you absolutely sure?',
+        description: (
+          <>
+            This action cannot be undone. This will permanently remove the
+            campaign &quot;
+            <span className="font-semibold">
+              {campaign?.title ?? 'Untitled Campaign'}
+            </span>
+            &quot; from the round &quot;
+            <span className="font-semibold">
+              {round.title ?? 'Untitled Round'}
+            </span>
+            &quot;.
+          </>
+        ),
+        onConfirm: async () => {
+          attemptedRef.current = true;
+          await removeRoundCampaign({
+            campaignId: campaign.id,
+            roundId: round.id,
+          });
+        },
+        confirmText: 'Remove',
+        confirmVariant: 'destructive',
+      });
+
+      if (confirmed) {
+        toast({
+          title: 'Success',
+          description: 'Campaign removed from round successfully',
+        });
+      } else if (attemptedRef.current) {
+        toast({
+          title: 'Error',
+          description: 'Failed to remove campaign',
+          variant: 'destructive',
+        });
+      }
+
+      attemptedRef.current = false;
+    },
+    [campaign, round.id, round.title, removeRoundCampaign, toast, confirm],
+  );
+
   if (!round || !round.id) {
     return (
       <Card className="flex h-full flex-col overflow-hidden rounded-lg border p-4 shadow-sm">
@@ -62,18 +129,15 @@ export function RoundCardMinimal({
         <CardHeader className="border-b p-4">
           <div className="flex items-start gap-4">
             <RoundMainImageAvatar round={round} />
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">
-                  {round.title ?? 'Untitled Round'}
-                </h2>
-                <Badge variant={status.variant} className="shrink-0 text-xs">
+            <div className="min-w-0 flex-1 space-y-2">
+              <h2 className="truncate text-lg font-semibold leading-tight tracking-tight">
+                {round.title ?? 'Untitled Round'}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Badge variant={status.variant} className="text-xs">
                   {status.text}
                 </Badge>
               </div>
-              <p className="line-clamp-2 text-sm text-muted-foreground">
-                {round.description ?? 'No description.'}
-              </p>
             </div>
           </div>
         </CardHeader>
@@ -100,6 +164,30 @@ export function RoundCardMinimal({
             </span>
           </div>
 
+          {/* Application Status - Show for the specific campaign */}
+          {campaign && round.recipientStatus && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <span>Application Status</span>
+              </div>
+              <span
+                className={`rounded-md px-2 py-1 text-xs font-normal ${
+                  round.recipientStatus === 'APPROVED'
+                    ? 'border border-green-200 bg-green-50 text-green-600'
+                    : round.recipientStatus === 'REJECTED'
+                      ? 'border border-red-200 bg-red-50 text-red-600'
+                      : 'border border-gray-200 bg-gray-50 text-gray-600'
+                }`}
+              >
+                {round.recipientStatus === 'APPROVED'
+                  ? 'approved'
+                  : round.recipientStatus === 'REJECTED'
+                    ? 'rejected'
+                    : 'pending'}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
@@ -110,21 +198,36 @@ export function RoundCardMinimal({
         </CardContent>
 
         <CardFooter className="mt-auto p-4 pt-0">
-          <Button
-            className="w-full"
-            variant={status.text === 'Ended' ? 'default' : 'ghost'}
-            size="sm"
-            asChild
-          >
-            <span>
-              {status.text === 'Ended' ? 'View Results' : 'View Round'}
-            </span>
-          </Button>
-          {canWithdraw && (
-            <RoundCardCampaignRemoveButton campaign={campaign} round={round}>
-              Withdraw Application
-            </RoundCardCampaignRemoveButton>
-          )}
+          <div className="flex w-full gap-2">
+            <Button
+              className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              variant={status.text === 'Ended' ? 'default' : 'ghost'}
+              size="sm"
+              asChild
+            >
+              <span>
+                {status.text === 'Ended' ? 'View Results' : 'View Round'}
+              </span>
+            </Button>
+            {canRemove && (
+              <Button
+                onClick={handleRemove}
+                variant="ghost"
+                size="sm"
+                disabled={isRemoving}
+                className="flex-1 bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600"
+              >
+                {isRemoving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  'Remove'
+                )}
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </Link>
     </Card>

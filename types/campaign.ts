@@ -16,10 +16,19 @@ export interface DbCampaign {
   title: string;
   description: string;
   fundingGoal: string;
+  fundingUsage: string;
   startTime: Date;
   endTime: Date;
   creatorAddress: string;
-  status: 'DRAFT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
+  status:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'ACTIVE'
+    | 'DISABLED'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'PAUSED'
+    | 'CANCELLED';
   transactionHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -113,12 +122,15 @@ export type CampaignUpdate = {
   updatedAt: Date;
   campaignId: number;
   creatorAddress: string;
+  media?: Media[];
+  mediaOrder?: string[];
+  isHidden?: boolean;
 };
 
 export type DbPayment = {
   id: number;
   amount: string; // Stored as string to preserve precision
-  token: string; // Standard: "USDC" (Circle's native multi-chain token on Celo)
+  token: string; // Standard: "USDT" (Tethers's native multi-chain token on Celo)
   status: string; // 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
   type: 'BUY' | 'SELL';
   transactionHash: string | null;
@@ -134,7 +146,7 @@ export type DbPayment = {
 export type Payment = {
   paymentId: number;
   amount: string; // Stored as string to preserve precision
-  token?: string; // e.g., "USDC"
+  token?: string; // e.g., "USDT"
   type?: 'BUY' | 'SELL';
   status?: string; // 'pending' | 'confirmed' | 'failed'; // Assuming possible statuses
   transactionHash?: string | null;
@@ -150,6 +162,7 @@ export type Payment = {
 type User = {
   id: number;
   address: string;
+  rawAddress: string;
   username?: string;
   firstName?: string;
   lastName?: string;
@@ -194,8 +207,11 @@ export enum CampaignStatus {
   DRAFT = 'DRAFT',
   PENDING_APPROVAL = 'PENDING_APPROVAL',
   ACTIVE = 'ACTIVE',
+  DISABLED = 'DISABLED',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
 }
 
 export type CampaignCreatedEvent = {
@@ -231,16 +247,23 @@ export const DonationProcessStates = {
   requestTransaction: 'requestTransaction',
 
   /**
-   * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDC.
+   * The backend is registering the pledge ID with the treasury contract using admin credentials.
+   * This privileged operation must complete before the user can proceed with their pledge.
+   * No direct user interaction is required during this phase.
+   */
+  registerPledge: 'registerPledge',
+
+  /**
+   * The wallet is asked to execute a proxy-token contract to set a spending cap limit for USDX.
    * This action will require confirmation from the user within their wallet.
    */
-  approveUsdcContract: 'approveUsdcContract',
+  approveUsdtContract: 'approveUsdtContract',
 
   /**
    * The contract has been executed, and the application is waiting for blockchain confirmation.
    * No user interaction is required during this phase, but it can take some time.
    */
-  waitForUsdcContractConfirmation: 'waitForUsdcContractConfirmation',
+  waitForUsdtContractConfirmation: 'waitForUsdtContractConfirmation',
 
   /**
    * The wallet is asked to execute the treasury pledge contract.
@@ -349,6 +372,26 @@ export const UpdateProcessStates = {
    * The deploy process is starting
    */
   setup: 'setup',
+
+  /**
+   * Validate platform setup and configuration
+   */
+  validatingPlatform: 'validatingPlatform',
+
+  /**
+   * Create the campaign in the database (for edit flow compatibility)
+   */
+  create: 'create',
+
+  /**
+   * Create/update the campaign on-chain using smart contract
+   */
+  createOnChain: 'createOnChain',
+
+  /**
+   * Waiting for blockchain confirmation of the smart contract transaction
+   */
+  waitForCreationConfirmation: 'waitForCreationConfirmation',
 
   /**
    * wait for db to store the transaction hash

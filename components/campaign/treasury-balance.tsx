@@ -1,8 +1,9 @@
 import { formatUSD } from '@/lib/format-usd';
-import { useTreasuryBalance } from '@/hooks/use-treasury-balance';
+import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Wallet } from 'lucide-react';
+import { USD_TOKEN } from '@/lib/constant';
 
 interface TreasuryBalanceProps {
   treasuryAddress: string;
@@ -50,22 +51,26 @@ export function TreasuryBalance({
       </Card>
     );
   }
+  // Safely parse balance values with fallbacks
+  const totalPledged = treasuryBalance.balance?.totalPledged ?? '0';
+  const currency = treasuryBalance.balance?.currency ?? USD_TOKEN;
+
+  // Parse as numbers with fallback to 0
+  const totalPledgedNum = parseFloat(totalPledged) || 0;
 
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Badge variant="outline" className="text-xs">
-          {treasuryBalance.balance?.currency ?? 'USDC'}
+          {currency}
         </Badge>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           <div>
             <div className="text-2xl font-bold">
-              {formatUSD(
-                parseFloat(treasuryBalance.balance?.totalPledged ?? '0') || 0,
-              )}
+              {formatUSD(totalPledgedNum)}
             </div>
             <p className="text-xs text-muted-foreground">Total Raised</p>
           </div>
@@ -80,8 +85,11 @@ export function TreasuryBalanceCompact({
   treasuryAddress,
   className = '',
 }: Omit<TreasuryBalanceProps, 'title'>) {
-  const { data: treasuryBalance, isLoading } =
-    useTreasuryBalance(treasuryAddress);
+  const {
+    data: treasuryBalance,
+    isLoading,
+    error,
+  } = useTreasuryBalance(treasuryAddress);
 
   if (isLoading) {
     return (
@@ -92,7 +100,7 @@ export function TreasuryBalanceCompact({
     );
   }
 
-  if (!treasuryBalance || !treasuryBalance.balance) {
+  if (error || !treasuryBalance) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
         <Wallet className="h-3 w-3 text-muted-foreground" />
@@ -105,7 +113,7 @@ export function TreasuryBalanceCompact({
 
   // Safely parse balance values with fallbacks
   const totalPledged = treasuryBalance.balance?.totalPledged ?? '0';
-  const currency = treasuryBalance.balance?.currency ?? 'USDC';
+  const currency = treasuryBalance.balance?.currency ?? USD_TOKEN;
 
   // Parse as numbers with fallback to 0
   const totalPledgedNum = parseFloat(totalPledged) || 0;

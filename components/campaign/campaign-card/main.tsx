@@ -59,12 +59,19 @@ export function CampaignCard({
   campaign,
   type = 'standard',
   isFavorite,
+  description,
   actionHandlers = {},
   displayOptions: userDisplayOptions = {},
   customButtons,
   disabled = false,
   className,
   children,
+  // Round-specific props
+  round,
+  statusIndicators,
+  adminControls,
+  roundAdminFooterControls,
+  onSelect,
 }: CampaignCardProps) {
   const { details: categoryDetails } = useCampaignCategory({ campaign });
 
@@ -73,6 +80,12 @@ export function CampaignCard({
     ...getDefaultDisplayOptions(type),
     ...userDisplayOptions,
   };
+
+  // Round-specific logic
+  const isRoundType = type?.startsWith('round');
+  const roundCampaign = round?.roundCampaigns?.find(
+    (rc) => rc.campaignId === campaign?.id,
+  );
 
   // Runtime validation of campaign data
   if (campaign && !validateCampaignCardData(campaign)) {
@@ -108,13 +121,31 @@ export function CampaignCard({
   // Get campaign status info for donation logic
   const campaignStatusInfo = getCampaignStatusInfo(campaign);
   const canDonate = isCampaignDonatable(campaign);
-  const isAdminType = type === 'admin';
+  const isAdminType = type === 'admin' || type === 'round';
   const isDashboardType = type === 'dashboard';
+  const isRoundMinimalType = type === 'round-minimal';
 
-  // Don't make admin cards clickable (they have action buttons)
+  // Handle round-specific dimming for non-approved campaigns
+  const shouldDimCard =
+    displayOptions.dimNonApproved &&
+    isRoundType &&
+    roundCampaign?.status !== 'APPROVED' &&
+    !actionHandlers.onRoundApprove; // Don't dim if user has admin controls
+
+  // Don't make admin, dashboard, or round-minimal cards clickable (they have action buttons)
+  // Round-minimal cards have onSelect behavior instead of navigation
+  const isClickable = !isAdminType && !isDashboardType && !isRoundMinimalType;
+
   const cardContent = (
     <Card
-      className={`flex h-full flex-col overflow-hidden transition-shadow ${isAdminType ? 'hover:shadow-md' : 'cursor-pointer hover:shadow-lg'} ${className || ''}`}
+      className={`flex h-full min-h-[400px] flex-col overflow-hidden transition-all duration-200 ${
+        isClickable
+          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md'
+          : 'hover:shadow-md'
+      } ${shouldDimCard ? 'opacity-50' : ''} ${className || ''}`}
+      onClick={
+        isRoundMinimalType && onSelect ? () => onSelect(campaign) : undefined
+      }
     >
       <CampaignCardHeader
         campaign={campaign}
@@ -122,16 +153,24 @@ export function CampaignCard({
         actionHandlers={actionHandlers}
         isFavorite={isFavorite}
         adminMode={isAdminType}
+        round={round}
+        roundCampaign={roundCampaign}
+        statusIndicators={statusIndicators}
+        adminControls={adminControls}
       />
 
       <CampaignCardContent
         campaign={campaign}
+        description={description}
         displayOptions={displayOptions}
         adminMode={isAdminType}
         dashboardMode={isDashboardType}
         canDonate={canDonate}
         campaignStatusInfo={campaignStatusInfo}
         categoryDetails={categoryDetails ?? null}
+        round={round}
+        roundCampaign={roundCampaign}
+        cardType={type}
       >
         {children}
       </CampaignCardContent>
@@ -144,14 +183,23 @@ export function CampaignCard({
         customButtons={customButtons}
         canDonate={canDonate}
         campaignStatusInfo={campaignStatusInfo}
+        round={round}
+        roundCampaign={roundCampaign}
+        roundAdminFooterControls={roundAdminFooterControls}
+        cardType={type}
       />
     </Card>
   );
 
-  // Wrap in Link for non-admin cards
-  if (!isAdminType && campaign?.slug) {
+  // Wrap in Link for non-admin and non-round-minimal cards
+  if (isClickable && campaign?.slug && !isRoundMinimalType) {
+    const linkTarget = displayOptions.openLinksInNewTab ? '_blank' : undefined;
     return (
-      <Link href={`/campaigns/${campaign.slug}`} className="block">
+      <Link
+        href={`/campaigns/${campaign.slug}`}
+        className="block transition-opacity active:opacity-75"
+        target={linkTarget}
+      >
         {cardContent}
       </Link>
     );
