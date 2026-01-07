@@ -11,7 +11,6 @@ import React, {
 import { debugAuth as debug } from '@/lib/debug';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { useDisconnect } from '@reown/appkit/react';
 
 interface AuthContextType {
   address?: string;
@@ -37,8 +36,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const session = useSession();
-  const { disconnect } = useDisconnect();
   const [isClient, setIsClient] = useState(false);
+
+  // Preload appkit and wagmi in background after initial render
+  useEffect(() => {
+    Promise.all([
+      import('@reown/appkit/react'),
+      import('@wagmi/core'),
+      import('@/lib/web3/adapter/appkit/config'),
+    ]);
+  }, []);
 
   const authenticated = useMemo(() => {
     debug &&
@@ -93,9 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [authenticated, address, isAdmin, isClient]);
   const logout = useCallback(async () => {
-    await disconnect();
+    // Dynamically import wagmi core disconnect to avoid blocking initial load
+    const [{ disconnect }, { config }] = await Promise.all([
+      import('@wagmi/core'),
+      import('@/lib/web3/adapter/appkit/config'),
+    ]);
+    await disconnect(config);
     await signOut();
-  }, [disconnect]);
+  }, []);
   const value = useMemo(() => {
     return {
       address,

@@ -1,14 +1,27 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CampaignCreate } from '@/components/campaign/create';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui';
 import { CampaignList } from '@/components/campaign/list';
 import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
 import { RoundSpotlight } from '@/components/home/round-spotlight';
 import { PageLayout } from '@/components/page/layout';
-import { Web3ContextProvider } from '@/lib/web3/context-provider';
 import { useSearchParams } from 'next/navigation';
+
+const CampaignCreate = dynamic(
+  () =>
+    import('@/components/campaign/create').then((mod) => mod.CampaignCreate),
+  { ssr: false },
+);
+
+const Web3ContextProvider = dynamic(
+  () =>
+    import('@/lib/web3/context-provider').then(
+      (mod) => mod.Web3ContextProvider,
+    ),
+  { ssr: false },
+);
 
 export function ExploreStories() {
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
