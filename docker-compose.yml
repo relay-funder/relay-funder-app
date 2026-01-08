@@ -8,6 +8,9 @@ volumes:
 x-app-environment: &app-environment
   DATABASE_URL: postgres://${POSTGRES_USER:-relayfunder}:${POSTGRES_PASSWORD:-relayfunder}@database:5432/${POSTGRES_DB:-relayfunder_dev}
   NODE_ENV: development
+  # Disable io_uring to prevent libuv assertion crashes during file watching
+  # See: https://github.com/nodejs/node/issues/48444
+  UV_USE_IO_URING: 0
 
 services:
   database:
