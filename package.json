@@ -7,7 +7,9 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=8192 next dev",
+    "dev": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=8192 next dev --turbo",
+    "dev:turbo": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=8192 next dev --turbo",
+    "dev:webpack": "pnpm install && prisma generate && NODE_OPTIONS=--max_old_space_size=8192 next dev",
     "build": "NODE_ENV=production next build",
     "build:production": "node prisma/deploy-migrations.js && NODE_ENV=production next build",
     "migrate:deploy": "node prisma/deploy-migrations.js",
@@ -63,6 +65,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
+    "encoding": "^0.1.13",
     "ethers": "^6.14.4",
     "flags": "^3.2.0",
     "husky": "^9.1.7",
