@@ -22,11 +22,16 @@ function validateTimes(value: string) {
 }
 
 function validateStartTimeNotInPast(value: string) {
-  const startDate = new Date(value);
+  // Parse as local date, not UTC (YYYY-MM-DD strings are parsed as UTC by default)
+  const { year, month, day } = validateAndParseDateString(value);
+  const startDate = new Date(year, month - 1, day);
   const now = new Date();
 
-  // Check if the selected date is today
-  const isToday = startDate.toDateString() === now.toDateString();
+  // Check if the selected date is today using year/month/day comparison
+  const isToday =
+    now.getFullYear() === startDate.getFullYear() &&
+    now.getMonth() === startDate.getMonth() &&
+    now.getDate() === startDate.getDate();
 
   if (isToday) {
     // Allow selecting today - the transformation will set to 1 hour from now during submission
