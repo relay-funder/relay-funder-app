@@ -16,7 +16,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'asset.captureapp.xyz',
       },
-      { protocol: 'https', hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL },
+      ...(NEXT_PUBLIC_PINATA_GATEWAY_URL
+        ? [
+          {
+            protocol: 'https' as const,
+            hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL,
+          },
+        ]
+        : []),
     ],
   },
   webpack: (config) => {

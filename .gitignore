@@ -13,6 +13,8 @@ yarn.lock
 bun.lockb
 .pnpm-store/
 
+slurps
+
 # testing
 /coverage
 
@@ -56,3 +58,4 @@ dev_modules
 .generated
 cc-protocol/.env.foundry
 !cc-protocol/.env.foundry.template
+.idea
