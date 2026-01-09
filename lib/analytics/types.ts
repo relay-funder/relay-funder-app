@@ -1,7 +1,7 @@
 export type FunnelEvent =
   | 'funnel_homepage_view'
   | 'funnel_cta_click'
-  | 'funnel_payment_form_view'
+  | 'funnel_donation_page_view'
   | 'funnel_payment_initiated'
   | 'funnel_payment_success'
   | 'funnel_payment_failed';

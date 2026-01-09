@@ -13,6 +13,8 @@ yarn.lock
 bun.lockb
 .pnpm-store/
 
+slurps
+
 # testing
 /coverage
 

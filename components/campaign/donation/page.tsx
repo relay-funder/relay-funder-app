@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef } from 'react';
 import { notFound } from 'next/navigation';
 import { useCampaign } from '@/lib/hooks/useCampaigns';
 import { CampaignLoading } from '@/components/campaign/loading';
@@ -13,6 +14,7 @@ import { NotStartedYet } from '@/components/campaign//not-started-yet';
 import { CampaignStatus } from '@/components/campaign/status';
 import { Web3ContextProvider } from '@/lib/web3';
 import { Info } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics';
 
 function FeeInformationCompact() {
   const { paymentType, amount } = useDonationContext();
@@ -33,6 +35,16 @@ function FeeInformationCompact() {
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
   const { data: campaignInstance, isPending } = useCampaign(slug);
+  const hasTracked = useRef(false);
+
+  useEffect(() => {
+    if (hasTracked.current) return;
+    hasTracked.current = true;
+    trackEvent('funnel_donation_page_view', {
+      path: `/campaigns/${slug}/donate`,
+    });
+  }, [slug]);
+
   if (isPending) {
     return <CampaignLoading />;
   }
