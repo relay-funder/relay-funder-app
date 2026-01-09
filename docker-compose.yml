@@ -12,7 +12,7 @@ x-app-environment: &app-environment
 
 services:
   database:
-    image: postgres:latest
+    image: postgres:16.11
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-relayfunder}
