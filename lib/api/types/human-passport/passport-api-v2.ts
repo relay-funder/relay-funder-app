@@ -16,6 +16,16 @@ export const PassportStampDataSchema = z.object({
 
 export type PassportStampData = z.infer<typeof PassportStampDataSchema>;
 
+// Evidence object returned for threshold-based scorers
+export const PassportEvidenceSchema = z.object({
+  type: z.string(),
+  success: z.boolean(),
+  rawScore: z.number(),
+  threshold: z.number(),
+});
+
+export type PassportEvidence = z.infer<typeof PassportEvidenceSchema>;
+
 export const PassportScoreResponseSchema = z.object({
   address: z
     .string()
@@ -25,12 +35,14 @@ export const PassportScoreResponseSchema = z.object({
       'Invalid address',
     ),
   score: NumericString.nullable().optional(),
+  status: z.string().optional(),
   passing_score: z.boolean().optional(),
   last_score_timestamp: z.string().optional(),
-  expiration_timestamp: z.string().nullable().optional(),
+  expiration_date: z.string().nullable().optional(),
   threshold: NumericString.optional(),
   error: z.string().nullable().optional(),
-  stamps: z.record(PassportStampDataSchema).default({}),
+  evidence: PassportEvidenceSchema.nullable().optional(),
+  stamp_scores: z.record(z.number()).default({}),
 });
 
 export type PassportScoreResponse = z.infer<typeof PassportScoreResponseSchema>;

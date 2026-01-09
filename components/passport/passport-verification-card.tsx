@@ -187,7 +187,9 @@ export function PassportVerificationCard({
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800 dark:text-green-200">
                     Successfully verified! Your Passport score is{' '}
-                    <strong>{verificationData.passportScore}</strong>
+                    <strong>
+                      {Number(verificationData.passportScore || 0).toFixed(2)}
+                    </strong>
                     {verificationData.passingScore && ' (Passing)'}
                   </AlertDescription>
                 </Alert>
@@ -263,7 +265,7 @@ export function PassportVerificationCard({
                             Passport Score:
                           </span>
                           <span className="font-medium">
-                            {verificationData.passportScore}
+                            {Number(verificationData.passportScore || 0).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex justify-between">

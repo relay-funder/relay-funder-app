@@ -35,13 +35,52 @@ function rethrowAsPassportError(error: unknown, ctx: string): never {
   throw new ApiUpstreamError(`${ctx}: ${String(error)}`);
 }
 
+const defaultHeaders = {
+  'X-API-KEY': PASSPORT_API_KEY,
+  'Content-Type': 'application/json',
+};
+
 const defaultInit: RequestInit = {
-  headers: {
-    'X-API-KEY': PASSPORT_API_KEY,
-    'Content-Type': 'application/json',
-  },
+  headers: defaultHeaders,
   method: 'GET',
 };
+
+/**
+ * Submits an address to the Passport scorer for scoring.
+ * This must be called before getPassportScore for addresses that haven't been scored yet.
+ *
+ * @param address - Ethereum address to submit for scoring
+ * @returns The submission response (may include score if already available)
+ */
+export async function submitPassportForScoring(address: Address): Promise<void> {
+  debug && console.log('[Passport] Submitting address for scoring:', address);
+  const url = `${PASSPORT_API_BASE_URL}/registry/submit-passport`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: defaultHeaders,
+      body: JSON.stringify({
+        address,
+        scorer_id: PASSPORT_SCORER_ID,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      debug && console.error('[Passport] Submit error:', response.status, errorText);
+      throw new ApiUpstreamError(
+        `submitPassportForScoring: HTTP ${response.status} - ${errorText}`,
+      );
+    }
+
+    debug && console.log('[Passport] Address submitted successfully');
+  } catch (error) {
+    if (error instanceof ApiUpstreamError) throw error;
+    console.error('[Passport] Error submitting address:', error);
+    rethrowAsPassportError(error, 'submitPassportForScoring');
+  }
+}
 
 /**
  * Retrieves the Passport score for a given Ethereum address
