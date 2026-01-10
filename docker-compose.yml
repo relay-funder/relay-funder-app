@@ -101,3 +101,63 @@ services:
       - debug
     networks:
       extern-net:
+  ##
+  ## Load Testing
+  ##
+  ## docker compose --profile tool-load up
+  ## To run locally against the 'app' service
+  ## docker compose --profile loadtest up -d
+  ## To run against an external host (e.g., staging)
+  ## LOCUST_HOST=https://staging.app.relayfunder.com docker compose --profile loadtest up -d
+  ## Creates a locust master and worker setup to execute load tests and uses
+  ## the docker-network to access the ptc-api (depends on locustfile.py)
+  ##
+  ## locust-master web ui (8089)
+  ##
+
+  locust-master:
+    image: locustio/locust
+    depends_on:
+      - locust-worker
+    command: |
+      -f /mnt/locust/locustfile.py
+      --master
+      --loglevel info
+      --host ${LOCUST_HOST:-http://app:3000}
+      --web-host 0.0.0.0
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./locust:/mnt/locust
+    working_dir: /mnt
+    profiles:
+      - loadtest
+    networks:
+      extern-net:
+      aka-net:
+
+  locust-worker:
+    image: locustio/locust
+    command: |
+      -f /mnt/locust/locustfile.py
+      --worker
+      --loglevel info
+      --master-host locust-master
+    volumes:
+      - ./locust:/mnt/locust
+    working_dir: /mnt
+    profiles:
+      - loadtest
+    networks:
+      aka-net:
+
+  locust-shell:
+    image: locustio/locust
+    entrypoint: /bin/sh
+    # user: root
+    volumes:
+      - ./locust:/mnt/locust
+    profiles:
+      - shell
+    networks:
+      aka-net:
