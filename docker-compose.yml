@@ -68,6 +68,12 @@ services:
       - ./dev_modules/pnpm_store:/app/.pnpm-store
     environment:
       <<: *app-environment
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
     networks:
       extern-net:
       aka-net:
@@ -111,7 +117,8 @@ services:
       target: devrunner
     command: "pnpm warmup"
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     volumes_from:
       - app
     environment:
