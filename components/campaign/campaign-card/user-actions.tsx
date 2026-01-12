@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui';
 import {
   Dialog,
@@ -34,11 +35,17 @@ import {
   AdminRemoveProcessStates,
   AdminDisableProcessStates,
 } from '@/types/admin';
-import { WithdrawalDialog } from '../withdrawal-dialog';
 import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { CampaignUpdateModal } from './campaign-update-modal';
 import { FormattedDate } from '@/components/formatted-date';
 import { useInfiniteCampaignUpdates } from '@/lib/hooks/useUpdates';
+
+// Lazy load WithdrawalDialog to avoid loading Web3 dependencies on initial render
+const WithdrawalDialog = dynamic(
+  () =>
+    import('../withdrawal-dialog').then((mod) => mod.WithdrawalDialog),
+  { ssr: false },
+);
 
 interface CampaignCardUserActionsProps {
   campaign: DbCampaign;
