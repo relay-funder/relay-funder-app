@@ -53,15 +53,9 @@ export function FeeInformation({
     ? (donationAmount * PLATFORM_FEE_RATE) / 100
     : 0;
 
-  // Total user payment = Donation + Tip + Fees
   const totalFees = daimoFee + protocolFee + platformFee;
   const totalUserPayment = (donationAmount || 0) + tipAmount + totalFees;
 
-  // Total impact = Donation + Tip + QF Match
-  // Or "Total Contribution" as per screenshot (sum of everything?)
-  // The screenshot shows $30.10 for $5 donation, implies sum of Donation + Fees + Match.
-  // $5.00 + $0.05 + $0.05 + $25.00 = $30.10.
-  // So "Total Contribution" in that design means the SUM of all value moved/created.
   const totalContribution = totalUserPayment + (qfMatch || 0);
 
   if (compact) {
@@ -170,7 +164,7 @@ function FeeBreakdownContent({
           <div className="space-y-3">
             {/* Campaign Donation */}
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm">Campaign Donation</span>
+              <span className="text-sm">Amount going to campaign creator</span>
               <span className="text-sm font-medium">
                 {donationAmount ? `$${donationAmount.toFixed(2)}` : '$0.00'}
               </span>
@@ -189,7 +183,7 @@ function FeeBreakdownContent({
             {/* Daimo Fee */}
             {isDaimoPay && (
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm">Daimo Pay Fee (1%)</span>
+                <span className="text-sm">1% Daimo Pay fee</span>
                 <span className="text-sm font-medium">
                   {donationAmount ? `$${daimoFee.toFixed(2)}` : '$0.00'}
                 </span>
@@ -198,7 +192,7 @@ function FeeBreakdownContent({
 
             {/* Protocol Fee */}
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm">Protocol Fee (1%)</span>
+              <span className="text-sm">1% Protocol fee</span>
               <span className="text-sm font-medium">
                 {donationAmount ? `$${protocolFee.toFixed(2)}` : '$0.00'}
               </span>
@@ -207,7 +201,7 @@ function FeeBreakdownContent({
             {/* QF Match */}
             {qfMatch !== undefined && (
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm">QF Matching</span>
+                <span className="text-sm">QF Funding</span>
                 <span className="text-sm font-medium text-green-600 dark:text-green-400">
                   {`$${qfMatch.toFixed(2)}`}
                 </span>
