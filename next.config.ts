@@ -92,7 +92,7 @@ if (shouldInitSentry) {
   module.exports = {
     ...sentryConfig,
     serverExternalPackages: [
-      ...nextConfig.serverExternalPackages,
+      ...(nextConfig.serverExternalPackages ?? []),
       '@sentry/profiling-node',
     ],
   };
