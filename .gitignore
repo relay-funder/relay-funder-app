@@ -12,6 +12,7 @@ package-lock.json
 yarn.lock
 bun.lockb
 .pnpm-store/
+.claude
 
 slurps
 
