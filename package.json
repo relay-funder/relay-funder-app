@@ -25,7 +25,8 @@
     "publish": "vercel publish",
     "format:write": "prettier --write \"./**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "chown": "stat -c '%u %g' /app/package.json | awk '{printf \"chown -R %i:%i /app/\", $1,$2}' | bash",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "warmup": "tsx scripts/warmup.ts"
   },
   "dependencies": {
     "@daimo/pay": "^1.17.5",

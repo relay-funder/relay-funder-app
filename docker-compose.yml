@@ -104,3 +104,21 @@ services:
       - debug
     networks:
       extern-net:
+
+  app-warmup:
+    build:
+      context: .
+      target: devrunner
+    command: "pnpm warmup"
+    depends_on:
+      - app
+    volumes_from:
+      - app
+    environment:
+      <<: *app-environment
+      WARMUP_BASE_URL: http://app:3000
+    restart: "no"
+    profiles:
+      - warmup
+    networks:
+      aka-net:
