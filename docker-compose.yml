@@ -118,7 +118,5 @@ services:
       <<: *app-environment
       WARMUP_BASE_URL: http://app:3000
     restart: "no"
-    profiles:
-      - warmup
     networks:
       aka-net:
