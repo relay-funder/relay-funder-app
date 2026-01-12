@@ -11,6 +11,7 @@ x-app-environment: &app-environment
   # Disable io_uring to prevent libuv assertion crashes during file watching
   # See: https://github.com/nodejs/node/issues/48444
   UV_USE_IO_URING: 0
+  CI: "true"
 
 services:
   database:
@@ -20,6 +21,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-relayfunder}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-relayfunder}
       POSTGRES_DB: ${POSTGRES_DB:-relayfunder_dev}
+    ports:
+      - "5432:5432"
     healthcheck:
       test:
         [

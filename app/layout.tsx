@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
 import { ConfirmProvider } from '@/contexts/ConfirmContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -63,6 +64,7 @@ export default function RootLayout({
             <PageMainLayout>{children}</PageMainLayout>
             <Toaster />
             <EnvironmentBadge />
+            <Analytics />
           </Providers>
         </ConfirmProvider>
       </body>

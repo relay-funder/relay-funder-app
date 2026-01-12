@@ -12,6 +12,9 @@ package-lock.json
 yarn.lock
 bun.lockb
 .pnpm-store/
+.claude
+
+slurps
 
 # testing
 /coverage
@@ -56,6 +59,4 @@ dev_modules
 .generated
 cc-protocol/.env.foundry
 !cc-protocol/.env.foundry.template
-
-#ai
-.claude
+.idea
