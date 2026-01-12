@@ -60,3 +60,4 @@ dev_modules
 cc-protocol/.env.foundry
 !cc-protocol/.env.foundry.template
 .idea
+.tldr
