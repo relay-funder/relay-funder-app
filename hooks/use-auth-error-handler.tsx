@@ -7,12 +7,18 @@ import { useCallback } from 'react';
 import { signIn } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
-import { ApiAuthError } from '@/lib/api/error';
+import { ApiAuthError, ApiAuthNotAllowed } from '@/lib/api/error';
 
 /**
- * Check if an error is an authentication error
+ * Check if an error is an authentication error (401), not an authorization error (403).
+ * ApiAuthNotAllowed extends ApiAuthError, so we must explicitly exclude it.
  */
 export function isAuthError(error: unknown): boolean {
+  // Exclude authorization errors (403) - user is authenticated but not permitted
+  if (error instanceof ApiAuthNotAllowed) {
+    return false;
+  }
+  // Only true authentication errors (401) - session expired
   if (error instanceof ApiAuthError) {
     return true;
   }

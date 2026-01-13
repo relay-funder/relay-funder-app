@@ -85,12 +85,10 @@ export async function POST(req: Request, { params }: ValidateWithdrawalParams) {
       );
     }
 
-    // 2. For user-initiated withdrawals, check approval status
-    if (!withdrawal.createdBy.roles.includes('admin') && !withdrawal.approvedById) {
-      throw new ApiAuthNotAllowed(
-        'Withdrawal must be approved before execution',
-      );
-    }
+    // 2. Approval status check removed - this is an admin-only endpoint
+    // The admin is validating in order to approve, so requiring prior approval
+    // creates a chicken-and-egg problem. Admin is responsible for reviewing
+    // the withdrawal request before approving.
 
     // 3. Check already executed
     if (withdrawal.transactionHash) {
@@ -101,7 +99,8 @@ export async function POST(req: Request, { params }: ValidateWithdrawalParams) {
 
     // 4. Validate withdrawal amount against on-chain balance
     // This will throw if balance is insufficient or if there's an RPC error
-    await validateWithdrawalAmount(campaign, withdrawal.amount, withdrawal.token);
+    // Pass withdrawal.id to exclude it from pending count (avoid double-counting)
+    await validateWithdrawalAmount(campaign, withdrawal.amount, withdrawal.token, withdrawal.id);
 
     return response({
       valid: true,

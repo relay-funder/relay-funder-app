@@ -59,11 +59,15 @@ export function normalizeWithdrawalAmount(amount: string): string {
 /**
  * Validate withdrawal amount against on-chain treasury balance and existing withdrawals
  * This ensures no money is withdrawn without proper checks
+ *
+ * @param excludeWithdrawalId - Optional withdrawal ID to exclude from pending count
+ *   (used when validating an existing withdrawal to avoid double-counting)
  */
 export async function validateWithdrawalAmount(
   campaign: DbCampaign,
   amount: string,
   token: string,
+  excludeWithdrawalId?: number,
 ): Promise<void> {
   if (!campaign.treasuryAddress) {
     throw new ApiNotFoundError('Campaign must have a treasury address');
@@ -93,6 +97,8 @@ export async function validateWithdrawalAmount(
       campaignId: campaign.id,
       requestType: 'WITHDRAWAL_AMOUNT',
       transactionHash: null, // Only pending (not executed) withdrawals
+      // Exclude the current withdrawal if provided (to avoid double-counting when validating existing)
+      ...(excludeWithdrawalId && { id: { not: excludeWithdrawalId } }),
     },
   });
 

@@ -44,12 +44,14 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
       );
     }
 
-    // Check for ANY approved withdrawal (user or admin-initiated)
-    // Admin-initiated withdrawals are auto-approved, user-initiated need admin approval
+    // Check if the current user has a pending approved withdrawal request
+    // Only returns true if the user has an approved request that hasn't been executed yet
     const approvedWithdrawal = await db.withdrawal.findFirst({
       where: {
         campaignId: campaign.id,
-        approvedById: { not: null },
+        createdById: user.id, // User's own request
+        approvedById: { not: null }, // Approved by admin
+        transactionHash: null, // Not yet executed
         requestType: 'WITHDRAWAL_AMOUNT',
       },
     });
