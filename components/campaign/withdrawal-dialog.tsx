@@ -15,6 +15,7 @@ import {
 import { useExecuteKeepWhatsRaisedWithdrawal } from '@/lib/web3/hooks/useExecuteKeepWhatsRaisedWithdrawal';
 import { formatUSD } from '@/lib/format-usd';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthErrorHandler } from '@/hooks/use-auth-error-handler';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -102,21 +103,26 @@ export function WithdrawalDialog({
     return balanceData?.balance?.currency ?? USD_TOKEN;
   }, [balanceData]);
 
-  // Calculate available balance accounting for existing withdrawal requests
+  // Calculate available balance accounting for PENDING withdrawal requests
+  // Executed withdrawals are already reflected in the on-chain balance
   const availableBalance = useMemo<number>(() => {
     if (!balanceData?.balance) return 0;
     const onChainAvailable = parseFloat(balanceData.balance.available || '0');
 
-    // Subtract existing withdrawal requests for the same token
-    const existingAmount =
+    // Only subtract PENDING withdrawal requests (not yet executed)
+    const pendingAmount =
       existingWithdrawalsData?.reduce((sum, w) => {
-        if (w.token === currency && w.requestType === 'WITHDRAWAL_AMOUNT') {
+        if (
+          w.token === currency &&
+          w.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !w.transactionHash // Only pending (not executed)
+        ) {
           return sum + parseFloat(w.amount || '0');
         }
         return sum;
       }, 0) || 0;
 
-    const trulyAvailable = onChainAvailable - existingAmount;
+    const trulyAvailable = onChainAvailable - pendingAmount;
     return Math.max(0, trulyAvailable); // Don't go negative
   }, [balanceData, existingWithdrawalsData, currency]);
 
@@ -125,10 +131,15 @@ export function WithdrawalDialog({
     return parseFloat(balanceData.balance.available || '0');
   }, [balanceData]);
 
+  // Only count PENDING withdrawal requests (not yet executed)
   const existingWithdrawalsTotal = useMemo<number>(() => {
     return (
       existingWithdrawalsData?.reduce((sum, w) => {
-        if (w.token === currency && w.requestType === 'WITHDRAWAL_AMOUNT') {
+        if (
+          w.token === currency &&
+          w.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !w.transactionHash // Only pending (not executed)
+        ) {
           return sum + parseFloat(w.amount || '0');
         }
         return sum;
@@ -223,6 +234,7 @@ export function WithdrawalDialog({
 
   // Mutation to request a withdrawal
   const { toast } = useToast();
+  const { handleError: handleAuthError } = useAuthErrorHandler();
   const { mutateAsync: requestWithdrawal, isPending: isSubmitting } =
     useRequestWithdrawal();
   const {
@@ -245,6 +257,13 @@ export function WithdrawalDialog({
       resetLocalState();
     }
   }, [dialogOpen, resetLocalState]);
+
+  // Default amount to available balance when dialog opens and balance loads
+  useEffect(() => {
+    if (dialogOpen && availableBalance > 0 && amount === '') {
+      setAmount(availableBalance.toFixed(2));
+    }
+  }, [dialogOpen, availableBalance, amount]);
 
   // Prevent dialog from closing when data loads/changes
   // Only close if explicitly requested via onOpenChange
@@ -292,13 +311,8 @@ export function WithdrawalDialog({
         });
       } catch (err) {
         setStep('review'); // Go back to review on error
-        const message =
-          err instanceof Error ? err.message : 'Failed to execute withdrawal';
-        toast({
-          title: 'Withdrawal failed',
-          description: message,
-          variant: 'destructive',
-        });
+        // handleAuthError shows appropriate toast (session expired or generic error)
+        handleAuthError(err, 'Failed to execute withdrawal');
       }
     } else {
       // Request approval (will be queued until on-chain authorization is complete)
@@ -317,13 +331,8 @@ export function WithdrawalDialog({
           description: message,
         });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to request withdrawal';
-        toast({
-          title: 'Request failed',
-          description: message,
-          variant: 'destructive',
-        });
+        // handleAuthError shows appropriate toast (session expired or generic error)
+        handleAuthError(err, 'Failed to request withdrawal');
       }
     }
   }, [
@@ -336,6 +345,7 @@ export function WithdrawalDialog({
     campaign.id,
     token,
     toast,
+    handleAuthError,
   ]);
 
   const handleDone = useCallback(() => {
@@ -352,16 +362,10 @@ export function WithdrawalDialog({
       });
       setDialogOpen(false);
     } catch (err) {
-      toast({
-        title: 'Request failed',
-        description:
-          err instanceof Error
-            ? err.message
-            : 'Failed to request authorization',
-        variant: 'destructive',
-      });
+      // handleAuthError shows appropriate toast (session expired or generic error)
+      handleAuthError(err, 'Failed to request authorization');
     }
-  }, [requestAuthorization, campaign.id, toast, setDialogOpen]);
+  }, [requestAuthorization, campaign.id, toast, setDialogOpen, handleAuthError]);
 
   const defaultTrigger = (
     <Button

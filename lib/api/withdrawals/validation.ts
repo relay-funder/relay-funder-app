@@ -85,13 +85,14 @@ export async function validateWithdrawalAmount(
     );
   }
 
-  // 2. Count ALL existing withdrawal requests (both user and admin-initiated)
-  // because funds always go to campaign owner
-  // Use normalized amounts for consistent comparison
+  // 2. Count PENDING withdrawal requests (not yet executed)
+  // Executed withdrawals have already reduced the on-chain balance, so we only
+  // count pending ones to avoid double-counting
   const existingWithdrawals = await db.withdrawal.findMany({
     where: {
       campaignId: campaign.id,
       requestType: 'WITHDRAWAL_AMOUNT',
+      transactionHash: null, // Only pending (not executed) withdrawals
     },
   });
 

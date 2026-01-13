@@ -461,6 +461,8 @@ export function WithdrawalsTable({
         amount={approveTarget?.amount}
         token={approveTarget?.token}
         campaignOwnerAddress={approveTarget?.campaign.creatorAddress}
+        campaignId={approveTarget?.campaignId}
+        withdrawalId={approveTarget?.id}
       />
       <RevokeDialog
         open={revokeOpen}

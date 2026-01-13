@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import { Button } from '@/components/ui';
 import { useExecuteKeepWhatsRaisedWithdrawal } from '@/lib/web3/hooks/useExecuteKeepWhatsRaisedWithdrawal';
 import { useApproveWithdrawalOnChain } from '@/lib/web3/hooks/useApproveWithdrawalOnChain';
+import { useValidateWithdrawal } from '@/lib/hooks/useAdminWithdrawals';
 import { Loader2, Wallet } from 'lucide-react';
 import { formatUSD } from '@/lib/format-usd';
 
@@ -27,6 +28,9 @@ export type ApproveDialogProps = {
   amount?: string;
   token?: string;
   campaignOwnerAddress?: string;
+  // Required for pre-validation before on-chain execution
+  campaignId?: number;
+  withdrawalId?: number;
 };
 
 export function ApproveDialog({
@@ -44,6 +48,8 @@ export function ApproveDialog({
   amount,
   token,
   campaignOwnerAddress,
+  campaignId,
+  withdrawalId,
 }: ApproveDialogProps) {
   const [tx, setTx] = useState<string>(defaultTransactionHash ?? '');
   const [notes, setNotes] = useState<string>(defaultNotes ?? '');
@@ -65,6 +71,9 @@ export function ApproveDialog({
     error: authorizationError,
     lastTxHash: authorizationTxHash,
   } = useApproveWithdrawalOnChain();
+
+  const validateMutation = useValidateWithdrawal();
+  const [isValidating, setIsValidating] = useState(false);
 
   const isWithdrawalAmount = requestType === 'WITHDRAWAL_AMOUNT';
   const isOnChainAuth = requestType === 'ON_CHAIN_AUTHORIZATION';
@@ -140,7 +149,8 @@ export function ApproveDialog({
       e.target === e.currentTarget &&
       !isSubmitting &&
       !isExecutingOnChain &&
-      !isExecutingTransaction
+      !isExecutingTransaction &&
+      !isValidating
     ) {
       onOpenChange?.(false);
     }
@@ -151,7 +161,8 @@ export function ApproveDialog({
       e.key === 'Escape' &&
       !isSubmitting &&
       !isExecutingOnChain &&
-      !isExecutingTransaction
+      !isExecutingTransaction &&
+      !isValidating
     ) {
       onOpenChange?.(false);
     }
@@ -161,6 +172,20 @@ export function ApproveDialog({
     if (!treasuryAddress) {
       setError('Treasury address is missing.');
       return;
+    }
+
+    // Validate BEFORE executing on-chain transaction
+    if (campaignId && withdrawalId) {
+      setIsValidating(true);
+      setError(null);
+      try {
+        await validateMutation.mutateAsync({ campaignId, withdrawalId });
+      } catch (err) {
+        setError((err as Error)?.message || 'Validation failed');
+        setIsValidating(false);
+        return;
+      }
+      setIsValidating(false);
     }
 
     setError(null);
@@ -294,7 +319,15 @@ export function ApproveDialog({
               </div>
             )}
 
+            {(isWithdrawalAmount || isOnChainAuth) && isValidating && (
+              <div className="flex items-center gap-2 text-blue-600">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Validating withdrawal...</span>
+              </div>
+            )}
+
             {(isWithdrawalAmount || isOnChainAuth) &&
+              !isValidating &&
               (isExecutingOnChain || isExecutingTransaction) && (
                 <div className="flex items-center gap-2 text-blue-600">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -337,17 +370,22 @@ export function ApproveDialog({
               variant="secondary"
               onClick={() => onOpenChange?.(false)}
               disabled={
-                isSubmitting || isExecutingOnChain || isExecutingTransaction
+                isSubmitting || isExecutingOnChain || isExecutingTransaction || isValidating
               }
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || isExecutingOnChain || isExecutingTransaction}
+              disabled={isSubmitting || isExecutingOnChain || isExecutingTransaction || isValidating}
             >
               {isSubmitting ? (
                 'Approving...'
+              ) : isValidating ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Validating...
+                </div>
               ) : isExecutingOnChain || isExecutingTransaction ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />

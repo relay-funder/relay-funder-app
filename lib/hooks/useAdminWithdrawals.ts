@@ -425,6 +425,40 @@ export function useAdminWithdrawalsStats() {
   });
 }
 
+// POST /api/admin/campaigns/[campaignId]/withdrawals/[withdrawalId]/validate
+type ValidateWithdrawalVariables = {
+  campaignId: number;
+  withdrawalId: number;
+};
+
+type ValidateWithdrawalResponse = {
+  valid: boolean;
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+  amount?: string;
+  token?: string;
+};
+
+async function validateWithdrawal({
+  campaignId,
+  withdrawalId,
+}: ValidateWithdrawalVariables): Promise<ValidateWithdrawalResponse> {
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/withdrawals/${withdrawalId}/validate`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  await handleApiErrors(response, 'Withdrawal validation failed');
+  return response.json();
+}
+
+export function useValidateWithdrawal() {
+  return useMutation({
+    mutationFn: validateWithdrawal,
+  });
+}
+
 // POST /api/admin/campaigns/[campaignId]/withdrawals/[withdrawalId]/execute
 type RecordWithdrawalExecutionVariables = {
   campaignId: number;

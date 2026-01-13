@@ -69,21 +69,22 @@ export function AdminWithdrawalRequestDialog({
     return balanceData?.balance?.currency || 'USDT';
   }, [balanceData]);
 
-  // Calculate available balance accounting for existing withdrawal requests
+  // Calculate available balance accounting for PENDING withdrawal requests
+  // Executed withdrawals are already reflected in the on-chain balance
   const availableBalance = useMemo(() => {
     if (!balanceData?.balance) return 0;
     const onChainAvailable = parseFloat(balanceData.balance.available || '0');
 
-    // Subtract existing withdrawal requests for the same token
-    const existingAmount =
+    // Only subtract PENDING withdrawal requests (not yet executed)
+    const pendingAmount =
       existingWithdrawalsData?.reduce((sum, w) => {
-        if (w.token === currency) {
+        if (w.token === currency && !w.transactionHash) {
           return sum + parseFloat(w.amount || '0');
         }
         return sum;
       }, 0) || 0;
 
-    const trulyAvailable = onChainAvailable - existingAmount;
+    const trulyAvailable = onChainAvailable - pendingAmount;
     return Math.max(0, trulyAvailable); // Don't go negative
   }, [balanceData, existingWithdrawalsData, currency]);
 
@@ -92,10 +93,11 @@ export function AdminWithdrawalRequestDialog({
     return parseFloat(balanceData.balance.available || '0');
   }, [balanceData]);
 
+  // Only count PENDING withdrawal requests (not yet executed)
   const existingWithdrawalsTotal = useMemo(() => {
     return (
       existingWithdrawalsData?.reduce((sum, w) => {
-        if (w.token === currency) {
+        if (w.token === currency && !w.transactionHash) {
           return sum + parseFloat(w.amount || '0');
         }
         return sum;

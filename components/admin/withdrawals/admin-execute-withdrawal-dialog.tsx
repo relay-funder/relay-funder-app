@@ -11,7 +11,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useExecuteKeepWhatsRaisedWithdrawal } from '@/lib/web3/hooks/useExecuteKeepWhatsRaisedWithdrawal';
-import { useRecordWithdrawalExecution } from '@/lib/hooks/useAdminWithdrawals';
+import {
+  useRecordWithdrawalExecution,
+  useValidateWithdrawal,
+} from '@/lib/hooks/useAdminWithdrawals';
 import { Loader2, AlertCircle, Wallet } from 'lucide-react';
 import { formatUSD } from '@/lib/format-usd';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -41,6 +44,7 @@ export function AdminExecuteWithdrawalDialog({
 }: AdminExecuteWithdrawalDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const {
     executeWithdrawal,
@@ -50,6 +54,7 @@ export function AdminExecuteWithdrawalDialog({
   } = useExecuteKeepWhatsRaisedWithdrawal();
 
   const recordExecutionMutation = useRecordWithdrawalExecution();
+  const validateMutation = useValidateWithdrawal();
 
   useEffect(() => {
     if (open) {
@@ -92,7 +97,7 @@ export function AdminExecuteWithdrawalDialog({
     onOpenChange,
   ]);
 
-  const isSubmitting = isExecutingOnChain || recordExecutionMutation.isPending;
+  const isSubmitting = isValidating || isExecutingOnChain || recordExecutionMutation.isPending;
 
   async function handleExecute() {
     setError(null);
@@ -101,6 +106,17 @@ export function AdminExecuteWithdrawalDialog({
       setError('Treasury address is missing.');
       return;
     }
+
+    // Validate BEFORE executing on-chain transaction
+    setIsValidating(true);
+    try {
+      await validateMutation.mutateAsync({ campaignId, withdrawalId });
+    } catch (err) {
+      setError((err as Error)?.message || 'Validation failed');
+      setIsValidating(false);
+      return;
+    }
+    setIsValidating(false);
 
     try {
       await executeWithdrawal({
@@ -163,7 +179,13 @@ export function AdminExecuteWithdrawalDialog({
             </div>
           </div>
 
-          {isExecutingOnChain && (
+          {isValidating && (
+            <div className="flex items-center gap-2 text-blue-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Validating withdrawal...</span>
+            </div>
+          )}
+          {!isValidating && isExecutingOnChain && (
             <div className="flex items-center gap-2 text-blue-600">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Waiting for on-chain transaction...</span>
@@ -200,7 +222,12 @@ export function AdminExecuteWithdrawalDialog({
             Cancel
           </Button>
           <Button type="button" onClick={handleExecute} disabled={isSubmitting}>
-            {isSubmitting ? (
+            {isValidating ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Validating...
+              </div>
+            ) : isSubmitting ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Executing...
