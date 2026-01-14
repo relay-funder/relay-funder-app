@@ -236,7 +236,9 @@ export function CampaignCardUserActions({
     treasuryData?.balance && parseFloat(treasuryData.balance.available) > 0;
   const canWithdraw =
     campaign?.treasuryAddress &&
-    campaign.status === 'ACTIVE' &&
+    (campaign.status === 'ACTIVE' ||
+      campaign.status === 'COMPLETED' ||
+      campaign.status === 'FAILED') &&
     hasAvailableFunds;
 
   return (
