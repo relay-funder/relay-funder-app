@@ -113,7 +113,11 @@ export async function validateWithdrawalAmount(
   const totalAfterRequest = totalRequestedAmount + requestedAmount;
 
   // 3. Validate against on-chain available balance (most important check)
-  if (totalAfterRequest > availableOnChain) {
+  // Round to cents (2 decimal places) to avoid floating point precision issues
+  // (e.g., 1.99 vs 1.9899 from on-chain balance calculations)
+  const roundedTotal = Math.round(totalAfterRequest * 100) / 100;
+  const roundedAvailable = Math.round(availableOnChain * 100) / 100;
+  if (roundedTotal > roundedAvailable) {
     throw new ApiIntegrityError(
       `Withdrawal amount (${normalizedAmount} ${token}) exceeds available treasury balance (${onChainBalance.available} ${onChainBalance.currency}). ` +
         `Total requested: ${totalRequestedAmount.toFixed(2)} ${token}, Available: ${availableOnChain.toFixed(2)} ${onChainBalance.currency}`,
@@ -127,7 +131,9 @@ export async function validateWithdrawalAmount(
       ? campaign.paymentSummary.token[token].confirmed
       : 0;
 
-  if (totalAfterRequest > confirmedPayments) {
+  // Round to cents to avoid floating point precision issues
+  const roundedConfirmed = Math.round(confirmedPayments * 100) / 100;
+  if (roundedTotal > roundedConfirmed) {
     throw new ApiIntegrityError(
       `Withdrawal amount exceeds confirmed payments. ` +
         `Requested: ${totalAfterRequest.toFixed(2)} ${token}, Confirmed: ${confirmedPayments.toFixed(2)} ${token}`,
