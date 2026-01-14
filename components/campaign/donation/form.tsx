@@ -67,14 +67,14 @@ export function CampaignDonationForm({ campaign }: { campaign: DbCampaign }) {
               className="flex items-center gap-2"
             >
               <Zap className="h-4 w-4" />
-              Pay Cross-chain
+              Pay with Any Wallet
             </TabsTrigger>
             <TabsTrigger
               value={tabsValues['pay-direct']}
               className="flex items-center gap-2"
             >
               <Wallet className="h-4 w-4" />
-              Pay Direct
+              Pay with USDT on Celo
             </TabsTrigger>
           </TabsList>
 

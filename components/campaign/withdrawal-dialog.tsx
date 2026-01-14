@@ -223,10 +223,15 @@ export function WithdrawalDialog({
     if (!amount || amount.trim() === '') return 'Enter an amount';
     if (Number.isNaN(amountNumber)) return 'Amount must be a number';
     if (amountNumber <= 0) return 'Amount must be greater than 0';
-    if (amountNumber > availableBalance) {
+    // Use rounded comparison to avoid floating point precision issues
+    // (e.g., 1.99 vs 1.9899999... from balance calculations)
+    const roundedAmount = Math.round(amountNumber * 100) / 100;
+    const roundedAvailable = Math.round(availableBalance * 100) / 100;
+    const roundedOnChain = Math.round(totalOnChainBalance * 100) / 100;
+    if (roundedAmount > roundedAvailable) {
       return `Amount exceeds available balance. Available: ${formatUSD(availableBalance)} ${currency}`;
     }
-    if (amountNumber > totalOnChainBalance) {
+    if (roundedAmount > roundedOnChain) {
       return `Amount exceeds on-chain treasury balance. Treasury balance: ${formatUSD(totalOnChainBalance)} ${currency}`;
     }
     return null;
