@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   useAdminApproveWithdrawal,
   useUpdateAdminWithdrawal,
-  useRemoveAdminWithdrawal,
   type AdminWithdrawalListItem,
 } from '@/lib/hooks/useAdminWithdrawals';
 import {
@@ -18,15 +17,86 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
-import { Trash as TrashIcon } from 'lucide-react';
 import { ApproveDialog } from '@/components/admin/withdrawals/approve-dialog';
 import { RevokeDialog } from '@/components/admin/withdrawals/revoke-dialog';
+import { AdminExecuteWithdrawalDialog } from '@/components/admin/withdrawals/admin-execute-withdrawal-dialog';
 
-function StatusBadge({ approvedById }: { approvedById?: number | null }) {
+function StatusBadge({
+  approvedById,
+  transactionHash,
+  requestType,
+}: {
+  approvedById?: number | null;
+  transactionHash?: string | null;
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+}) {
+  // For ON_CHAIN_AUTHORIZATION: Only show Pending/Approved (no execution state)
+  // For WITHDRAWAL_AMOUNT: Show Pending, Approved (Not Executed), or Executed
+  if (requestType === 'ON_CHAIN_AUTHORIZATION') {
+    if (approvedById) {
+      return (
+        <Badge className="bg-green-600 hover:bg-green-700">Approved</Badge>
+      );
+    }
+    return <Badge variant="secondary">Pending</Badge>;
+  }
+
+  // WITHDRAWAL_AMOUNT: Three states
+  if (transactionHash) {
+    return <Badge className="bg-green-600 hover:bg-green-700">Executed</Badge>;
+  }
   if (approvedById) {
-    return <Badge>Approved</Badge>;
+    return (
+      <Badge
+        variant="outline"
+        className="border-amber-300 bg-amber-50 text-amber-700"
+      >
+        Approved (Not Executed)
+      </Badge>
+    );
   }
   return <Badge variant="secondary">Pending</Badge>;
+}
+
+function RequestTypeBadge({
+  requestType,
+}: {
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+}) {
+  if (requestType === 'ON_CHAIN_AUTHORIZATION') {
+    return (
+      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+        On-Chain Auth
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="bg-green-50 text-green-700">
+      Withdrawal
+    </Badge>
+  );
+}
+
+function CreatorTypeBadge({
+  createdBy,
+}: {
+  createdBy: {
+    roles: string[];
+  };
+}) {
+  const isAdminCreated = createdBy.roles.includes('admin');
+  if (isAdminCreated) {
+    return (
+      <Badge variant="outline" className="bg-purple-50 text-purple-700">
+        Admin
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="bg-gray-50 text-gray-700">
+      User
+    </Badge>
+  );
 }
 
 function formatDate(iso: string) {
@@ -40,7 +110,6 @@ function formatDate(iso: string) {
 type ActionBusy = {
   approving?: number;
   updating?: number;
-  deleting?: number;
 };
 
 export type WithdrawalsTableProps = {
@@ -59,10 +128,12 @@ export function WithdrawalsTable({
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [revokeTarget, setRevokeTarget] =
     useState<AdminWithdrawalListItem | null>(null);
+  const [executeOpen, setExecuteOpen] = useState(false);
+  const [executeTarget, setExecuteTarget] =
+    useState<AdminWithdrawalListItem | null>(null);
 
   const approveMutation = useAdminApproveWithdrawal();
   const updateMutation = useUpdateAdminWithdrawal();
-  const removeMutation = useRemoveAdminWithdrawal();
 
   const openApproveDialog = useCallback((w: AdminWithdrawalListItem) => {
     setApproveTarget(w);
@@ -137,22 +208,10 @@ export function WithdrawalsTable({
     [updateMutation],
   );
 
-  const handleDelete = useCallback(
-    async (w: AdminWithdrawalListItem) => {
-      if (!window.confirm('Delete this withdrawal? This cannot be undone.')) {
-        return;
-      }
-      try {
-        setBusy((b) => ({ ...b, deleting: w.id }));
-        await removeMutation.mutateAsync({ id: w.id });
-      } catch (e) {
-        window.alert((e as Error)?.message ?? 'Failed to delete');
-      } finally {
-        setBusy((b) => ({ ...b, deleting: undefined }));
-      }
-    },
-    [removeMutation],
-  );
+  const handleExecute = useCallback((w: AdminWithdrawalListItem) => {
+    setExecuteTarget(w);
+    setExecuteOpen(true);
+  }, []);
 
   const approveDialogDefaults = useMemo(
     () => ({
@@ -167,14 +226,28 @@ export function WithdrawalsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Campaign</TableHead>
-            <TableHead>Created By</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Tx Hash</TableHead>
-            <TableHead>Notes</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="whitespace-nowrap">Date</TableHead>
+            <TableHead className="whitespace-nowrap">Type</TableHead>
+            <TableHead className="hidden whitespace-nowrap md:table-cell">
+              Request Creator
+            </TableHead>
+            <TableHead className="whitespace-nowrap">Amount</TableHead>
+            <TableHead className="hidden whitespace-nowrap lg:table-cell">
+              Campaign
+            </TableHead>
+            <TableHead className="hidden whitespace-nowrap lg:table-cell">
+              Recipient
+            </TableHead>
+            <TableHead className="whitespace-nowrap">Status</TableHead>
+            <TableHead className="hidden whitespace-nowrap xl:table-cell">
+              Tx Hash
+            </TableHead>
+            <TableHead className="hidden whitespace-nowrap xl:table-cell">
+              Notes
+            </TableHead>
+            <TableHead className="whitespace-nowrap text-right">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -183,104 +256,177 @@ export function WithdrawalsTable({
             return (
               <TableRow key={w.id}>
                 <TableCell className="whitespace-nowrap">
-                  {formatDate(w.createdAt)}
+                  <div className="text-sm">{formatDate(w.createdAt)}</div>
+                </TableCell>
+                <TableCell>
+                  <RequestTypeBadge requestType={w.requestType} />
+                </TableCell>
+                <TableCell className="hidden max-w-[180px] md:table-cell">
+                  <div className="space-y-1">
+                    <div className="truncate">
+                      <Link
+                        href={`/admin/users/${w.createdBy.address}`}
+                        className="text-sm hover:underline"
+                        title={w.createdBy.address}
+                      >
+                        {w.createdBy.username ||
+                          w.createdBy.address.slice(0, 6) +
+                            '...' +
+                            w.createdBy.address.slice(-4)}
+                      </Link>
+                    </div>
+                    <CreatorTypeBadge createdBy={w.createdBy} />
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {w.amount} {w.token}
+                  {w.requestType === 'ON_CHAIN_AUTHORIZATION' ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <span className="font-medium">
+                      {w.amount} {w.token}
+                    </span>
+                  )}
                 </TableCell>
-                <TableCell className="max-w-[240px]">
+                <TableCell className="hidden max-w-[200px] lg:table-cell">
                   <div className="truncate">
                     <Link
                       href={`/campaigns/${w.campaign.slug}`}
-                      className="text-primary hover:underline"
+                      className="text-sm text-primary hover:underline"
                       title={w.campaign.title}
                     >
                       {w.campaign.title}
                     </Link>
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[220px]">
-                  <div className="truncate">
-                    <Link
-                      href={`/admin/users/${w.createdBy.address}`}
-                      className="hover:underline"
-                      title={w.createdBy.address}
-                    >
-                      {w.createdBy.username ||
-                        w.createdBy.address.slice(0, 6) +
-                          '...' +
-                          w.createdBy.address.slice(-4)}
-                    </Link>
+                <TableCell className="hidden max-w-[200px] lg:table-cell">
+                  <div className="space-y-1">
+                    <div className="truncate">
+                      <Link
+                        href={`/admin/users/${w.campaign.creatorAddress}`}
+                        className="font-mono text-xs text-primary hover:underline"
+                        title={w.campaign.creatorAddress}
+                      >
+                        {w.campaignCreator?.username ||
+                          w.campaign.creatorAddress.slice(0, 8) +
+                            '...' +
+                            w.campaign.creatorAddress.slice(-6)}
+                      </Link>
+                    </div>
+                    {w.campaignCreator && (
+                      <div className="truncate text-xs text-muted-foreground">
+                        {w.campaignCreator.firstName ||
+                        w.campaignCreator.lastName
+                          ? `${w.campaignCreator.firstName || ''} ${w.campaignCreator.lastName || ''}`.trim()
+                          : w.campaignCreator.email || null}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <StatusBadge approvedById={w.approvedById} />
+                  <StatusBadge
+                    approvedById={w.approvedById}
+                    transactionHash={w.transactionHash}
+                    requestType={w.requestType}
+                  />
                 </TableCell>
-                <TableCell className="max-w-[220px]">
+                <TableCell className="hidden max-w-[180px] xl:table-cell">
                   <div
                     className="truncate"
                     title={w.transactionHash ?? undefined}
                   >
                     {w.transactionHash ? (
                       <span className="font-mono text-xs">
-                        {w.transactionHash}
+                        {w.transactionHash.slice(0, 10)}...
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[240px]">
-                  <div className="truncate" title={w.notes ?? undefined}>
+                <TableCell className="hidden max-w-[200px] xl:table-cell">
+                  <div
+                    className="truncate text-sm"
+                    title={w.notes ?? undefined}
+                  >
                     {w.notes || (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="space-x-1 text-right">
-                  {!isApproved && (
+                <TableCell className="space-x-1 whitespace-nowrap text-right">
+                  <div className="flex flex-wrap items-center justify-end gap-1">
+                    {!isApproved &&
+                      !w.createdBy.roles?.includes('admin') &&
+                      w.requestType === 'WITHDRAWAL_AMOUNT' && (
+                        <Button
+                          size="sm"
+                          onClick={() => openApproveDialog(w)}
+                          disabled={busy.approving === w.id}
+                          className="text-xs"
+                        >
+                          Approve
+                        </Button>
+                      )}
+                    {!isApproved &&
+                      !w.createdBy.roles?.includes('admin') &&
+                      w.requestType === 'ON_CHAIN_AUTHORIZATION' && (
+                        <Button
+                          size="sm"
+                          onClick={() => openApproveDialog(w)}
+                          disabled={busy.approving === w.id}
+                          className="text-xs"
+                        >
+                          Approve Auth
+                        </Button>
+                      )}
+                    {!isApproved && w.createdBy.roles?.includes('admin') && (
+                      <span className="text-xs text-muted-foreground">
+                        Auto-approved
+                      </span>
+                    )}
+                    {/* Show Execute button for approved but not executed withdrawals */}
+                    {isApproved &&
+                      !w.transactionHash &&
+                      w.requestType === 'WITHDRAWAL_AMOUNT' &&
+                      w.campaign.treasuryAddress && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => handleExecute(w)}
+                          className="bg-green-600 text-xs hover:bg-green-700"
+                        >
+                          Execute
+                        </Button>
+                      )}
+                    {/* Revoke enabled for approved but not executed withdrawals */}
+                    {isApproved && !w.transactionHash && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleRevoke(w)}
+                        disabled={busy.updating === w.id}
+                        className="text-xs"
+                      >
+                        Revoke
+                      </Button>
+                    )}
                     <Button
+                      variant="secondary"
                       size="sm"
-                      onClick={() => openApproveDialog(w)}
-                      disabled={busy.approving === w.id}
+                      onClick={() => handleEditNotes(w)}
+                      disabled={busy.updating === w.id}
+                      className="hidden text-xs sm:inline-flex"
                     >
-                      Approve
+                      Notes
                     </Button>
-                  )}
-                  {/* Revoke enabled for both approved and pending states */}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleRevoke(w)}
-                    disabled={busy.updating === w.id}
-                  >
-                    Revoke
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleEditNotes(w)}
-                    disabled={busy.updating === w.id}
-                  >
-                    Edit Notes
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDelete(w)}
-                    disabled={busy.deleting === w.id}
-                    aria-label="Delete"
-                    title="Delete"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );
           })}
           {withdrawals.length === 0 && !isLoading && (
             <TableRow>
-              <TableCell colSpan={8} className="py-10 text-center text-sm">
+              <TableCell colSpan={10} className="py-10 text-center text-sm">
                 No withdrawals found.
               </TableCell>
             </TableRow>
@@ -300,6 +446,23 @@ export function WithdrawalsTable({
         isSubmitting={
           approveTarget ? busy.approving === approveTarget.id : false
         }
+        requestType={approveTarget?.requestType}
+        title={
+          approveTarget?.requestType === 'ON_CHAIN_AUTHORIZATION'
+            ? 'Approve Treasury Authorization'
+            : 'Approve Withdrawal'
+        }
+        description={
+          approveTarget?.requestType === 'ON_CHAIN_AUTHORIZATION'
+            ? 'Click approve to execute the on-chain authorization transaction via MetaMask. This enables withdrawals for the treasury.'
+            : 'Click approve to execute the withdrawal transaction via MetaMask. Funds will be sent to the campaign owner.'
+        }
+        treasuryAddress={approveTarget?.campaign.treasuryAddress ?? null}
+        amount={approveTarget?.amount}
+        token={approveTarget?.token}
+        campaignOwnerAddress={approveTarget?.campaign.creatorAddress}
+        campaignId={approveTarget?.campaignId}
+        withdrawalId={approveTarget?.id}
       />
       <RevokeDialog
         open={revokeOpen}
@@ -311,6 +474,22 @@ export function WithdrawalsTable({
         defaultNotes={revokeTarget?.notes ?? ''}
         isSubmitting={revokeTarget ? busy.updating === revokeTarget.id : false}
       />
+      {executeTarget && executeTarget.campaign.treasuryAddress && (
+        <AdminExecuteWithdrawalDialog
+          open={executeOpen}
+          onOpenChange={(v) => {
+            setExecuteOpen(v);
+            if (!v) setExecuteTarget(null);
+          }}
+          campaignId={executeTarget.campaignId}
+          campaignTitle={executeTarget.campaign.title}
+          campaignOwnerAddress={executeTarget.campaign.creatorAddress}
+          treasuryAddress={executeTarget.campaign.treasuryAddress}
+          withdrawalId={executeTarget.id}
+          amount={executeTarget.amount}
+          token={executeTarget.token}
+        />
+      )}
     </>
   );
 }
