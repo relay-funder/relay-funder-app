@@ -7,6 +7,8 @@ import { CampaignAdminDeployButton } from './admin/deploy';
 import { CampaignAdminDisableButton } from './admin/disable';
 import { CampaignAdminDeployContractButton } from './admin/deploy-contract';
 import { CampaignAdminFeaturedDialog } from './admin/featured-dialog';
+import { CampaignAdminClaimTipButton } from './admin/claim-tip';
+import { CampaignAdminDisburseFeesButton } from './admin/disburse-fees';
 
 export function CampaignCardAdminActions({
   campaign,
@@ -55,16 +57,31 @@ export function CampaignCardAdminActions({
 
       {/* Active campaigns: Feature + Disable buttons side-by-side */}
       {isActive && (
-        <div className="grid grid-cols-2 gap-2">
-          <CampaignAdminFeaturedDialog
-            campaign={campaign}
-            buttonClassName="h-8 w-full px-2 py-1 text-xs bg-muted text-muted-foreground hover:bg-muted/80"
-          />
-          <CampaignAdminDisableButton
-            campaign={campaign}
-            buttonClassName="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <CampaignAdminFeaturedDialog
+              campaign={campaign}
+              buttonClassName="h-8 w-full px-2 py-1 text-xs bg-muted text-muted-foreground hover:bg-muted/80"
+            />
+            <CampaignAdminDisableButton
+              campaign={campaign}
+              buttonClassName="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
+            />
+          </div>
+          {/* Active campaigns past deadline: Show claim buttons */}
+          {campaign.treasuryAddress && new Date(campaign.endTime).getTime() < Date.now() && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <CampaignAdminClaimTipButton
+                campaign={campaign}
+                buttonClassName="h-8 w-full px-2 py-1 text-xs"
+              />
+              <CampaignAdminDisburseFeesButton
+                campaign={campaign}
+                buttonClassName="h-8 w-full px-2 py-1 text-xs"
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Pending approval campaigns: Single full-width approve button */}
@@ -83,12 +100,26 @@ export function CampaignCardAdminActions({
         />
       )}
 
-      {/* Completed/Failed campaigns: Single full-width remove button */}
+      {/* Completed/Failed campaigns: Treasury actions and remove button */}
       {(isCompleted || isFailed) && (
-        <CampaignAdminRemoveButton
-          campaign={campaign}
-          buttonClassName="h-8 w-full px-2 py-1 text-xs"
-        />
+        <div className="space-y-2">
+          {campaign.treasuryAddress && (
+            <div className="grid grid-cols-2 gap-2">
+              <CampaignAdminClaimTipButton
+                campaign={campaign}
+                buttonClassName="h-8 w-full px-2 py-1 text-xs"
+              />
+              <CampaignAdminDisburseFeesButton
+                campaign={campaign}
+                buttonClassName="h-8 w-full px-2 py-1 text-xs"
+              />
+            </div>
+          )}
+          <CampaignAdminRemoveButton
+            campaign={campaign}
+            buttonClassName="h-8 w-full px-2 py-1 text-xs"
+          />
+        </div>
       )}
     </div>
   );
