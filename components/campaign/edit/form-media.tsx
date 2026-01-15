@@ -12,6 +12,8 @@ import {
 import { DbCampaign } from '@/types/campaign';
 import Image from 'next/image';
 
+const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4MB
+
 export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
@@ -54,7 +56,7 @@ export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
       <FormField
         control={form.control}
         name="bannerImage"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <FormLabel className="text-sm font-medium text-foreground">
               Campaign Banner Image
@@ -64,9 +66,18 @@ export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
                 type="file"
                 accept="image/*"
                 className="mt-1"
-                onChange={(event) =>
-                  field.onChange(event.target.files && event.target.files[0])
-                }
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  if (file && file.size > MAX_FILE_SIZE_BYTES) {
+                    form.setError('bannerImage', {
+                      message: 'Image must be smaller than 4MB',
+                    });
+                    event.target.value = '';
+                    return;
+                  }
+                  form.clearErrors('bannerImage');
+                  form.setValue('bannerImage', file);
+                }}
               />
             </FormControl>
             <FormMessage />
