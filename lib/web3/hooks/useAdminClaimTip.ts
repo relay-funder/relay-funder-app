@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { useWriteContract, ethers } from '@/lib/web3';
+import { isAddress } from 'viem';
+import { useWriteContract } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 
 export interface ClaimTipParams {
@@ -28,7 +29,7 @@ export function useAdminClaimTip() {
       setError(null);
       setLastTxHash(undefined);
 
-      if (!ethers.isAddress(treasuryAddress)) {
+      if (!isAddress(treasuryAddress)) {
         const err = 'Invalid treasury address';
         setError(err);
         return { success: false, error: err };

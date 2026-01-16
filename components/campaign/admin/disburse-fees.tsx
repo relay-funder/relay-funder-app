@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { useAdminDisburseFees } from '@/lib/web3/hooks/useAdminDisburseFees';
@@ -15,10 +15,9 @@ export function CampaignAdminDisburseFeesButton({
   buttonClassName?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [processState, setProcessState] = useState<'idle' | 'processing' | 'done' | 'failed'>('idle');
 
   const { toast } = useToast();
-  const { disburseFees, error } = useAdminDisburseFees();
+  const { disburseFees } = useAdminDisburseFees();
 
   const onDisburseFees = useCallback(async () => {
     if (!campaign.treasuryAddress) {
@@ -31,38 +30,32 @@ export function CampaignAdminDisburseFeesButton({
     }
 
     setIsLoading(true);
-    setProcessState('processing');
 
     try {
       const result = await disburseFees({ treasuryAddress: campaign.treasuryAddress });
 
       if (result.success) {
-        setProcessState('done');
+        toast({
+          title: 'Success',
+          description: 'Fees have been disbursed to protocol and platform admins',
+        });
       } else {
-        setProcessState('failed');
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to disburse fees',
+          variant: 'destructive',
+        });
       }
     } catch {
-      setProcessState('failed');
+      toast({
+        title: 'Error',
+        description: 'Failed to disburse fees',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   }, [campaign.treasuryAddress, disburseFees, toast]);
-
-  useEffect(() => {
-    if (processState === 'done') {
-      toast({
-        title: 'Success',
-        description: 'Fees have been disbursed to protocol and platform admins',
-      });
-    }
-    if (processState === 'failed') {
-      toast({
-        title: 'Error',
-        description: error || 'Failed to disburse fees',
-        variant: 'destructive',
-      });
-    }
-  }, [toast, processState, error]);
 
   // Only show for campaigns with treasury that have received donations
   if (!campaign.treasuryAddress) {

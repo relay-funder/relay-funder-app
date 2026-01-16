@@ -6,15 +6,17 @@ vi.mock('react', () => ({
   useCallback: vi.fn((fn) => fn),
 }));
 
+// Mock viem isAddress
+vi.mock('viem', () => ({
+  isAddress: (addr: string) => addr.startsWith('0x') && addr.length === 42,
+}));
+
 // Mock web3 dependencies
 const mockWriteContractAsync = vi.fn();
 vi.mock('@/lib/web3', () => ({
   useWriteContract: () => ({
     writeContractAsync: mockWriteContractAsync,
   }),
-  ethers: {
-    isAddress: (addr: string) => addr.startsWith('0x') && addr.length === 42,
-  },
 }));
 
 // Mock the ABI

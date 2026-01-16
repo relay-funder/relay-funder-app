@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { useAdminClaimTip } from '@/lib/web3/hooks/useAdminClaimTip';
@@ -15,10 +15,9 @@ export function CampaignAdminClaimTipButton({
   buttonClassName?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [processState, setProcessState] = useState<'idle' | 'processing' | 'done' | 'failed'>('idle');
 
   const { toast } = useToast();
-  const { claimTip, error } = useAdminClaimTip();
+  const { claimTip } = useAdminClaimTip();
 
   const onClaimTip = useCallback(async () => {
     if (!campaign.treasuryAddress) {
@@ -31,38 +30,32 @@ export function CampaignAdminClaimTipButton({
     }
 
     setIsLoading(true);
-    setProcessState('processing');
 
     try {
       const result = await claimTip({ treasuryAddress: campaign.treasuryAddress });
 
       if (result.success) {
-        setProcessState('done');
+        toast({
+          title: 'Success',
+          description: 'Tips have been claimed successfully',
+        });
       } else {
-        setProcessState('failed');
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to claim tips. Tips may only be available after campaign deadline.',
+          variant: 'destructive',
+        });
       }
     } catch {
-      setProcessState('failed');
+      toast({
+        title: 'Error',
+        description: 'Failed to claim tips. Tips may only be available after campaign deadline.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   }, [campaign.treasuryAddress, claimTip, toast]);
-
-  useEffect(() => {
-    if (processState === 'done') {
-      toast({
-        title: 'Success',
-        description: 'Tips have been claimed successfully',
-      });
-    }
-    if (processState === 'failed') {
-      toast({
-        title: 'Error',
-        description: error || 'Failed to claim tips. Tips may only be available after campaign deadline.',
-        variant: 'destructive',
-      });
-    }
-  }, [toast, processState, error]);
 
   // Only show for campaigns with treasury that are completed, failed, or past deadline
   const campaignEndTime = campaign.endTime ? new Date(campaign.endTime).getTime() : 0;
