@@ -101,7 +101,7 @@ export function CampaignDonationWalletAmount() {
               className="h-10 pr-20 text-sm"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-              {token}
+              {paymentType === 'daimo' ? 'USD' : token}
             </div>
           </div>
         </div>

@@ -9,6 +9,9 @@ import { CampaignAdminDeployContractButton } from './admin/deploy-contract';
 import { CampaignAdminFeaturedDialog } from './admin/featured-dialog';
 import { CampaignAdminClaimTipButton } from './admin/claim-tip';
 import { CampaignAdminDisburseFeesButton } from './admin/disburse-fees';
+import { CampaignAdminCreateWithdrawalButton } from './admin/create-withdrawal-button';
+import { CampaignAdminExecuteWithdrawalButton } from './admin/execute-withdrawal-button';
+import { CampaignAdminAuthorizeWithdrawalsButton } from './admin/authorize-withdrawals-button';
 
 export function CampaignCardAdminActions({
   campaign,
@@ -68,17 +71,39 @@ export function CampaignCardAdminActions({
               buttonClassName="h-8 w-full border border-solar bg-solar px-2 py-1 text-xs text-white hover:bg-solar/90"
             />
           </div>
-          {/* Active campaigns past deadline: Show claim buttons */}
-          {campaign.treasuryAddress && new Date(campaign.endTime).getTime() < Date.now() && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <CampaignAdminClaimTipButton
-                campaign={campaign}
-                buttonClassName="h-8 w-full px-2 py-1 text-xs"
-              />
-              <CampaignAdminDisburseFeesButton
-                campaign={campaign}
-                buttonClassName="h-8 w-full px-2 py-1 text-xs"
-              />
+          {/* Treasury withdrawal authorization for active campaigns */}
+          {campaign.treasuryAddress && (
+            <div className="mt-2 space-y-2 border-t border-border pt-2">
+              {campaign.treasuryWithdrawalsEnabled ? (
+                <>
+                  <CampaignAdminCreateWithdrawalButton
+                    campaign={campaign}
+                    buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                  />
+                  <CampaignAdminExecuteWithdrawalButton
+                    campaign={campaign}
+                    buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                  />
+                </>
+              ) : (
+                <CampaignAdminAuthorizeWithdrawalsButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
+              )}
+              {/* Claim tips and disburse fees for active campaigns past deadline */}
+              {new Date(campaign.endTime).getTime() < Date.now() && (
+                <div className="grid grid-cols-2 gap-2">
+                  <CampaignAdminClaimTipButton
+                    campaign={campaign}
+                    buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                  />
+                  <CampaignAdminDisburseFeesButton
+                    campaign={campaign}
+                    buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                  />
+                </div>
+              )}
             </div>
           )}
         </>
@@ -100,26 +125,47 @@ export function CampaignCardAdminActions({
         />
       )}
 
-      {/* Completed/Failed campaigns: Treasury actions and remove button */}
+      {/* Completed/Failed campaigns: Withdrawal actions + Claim buttons + Remove button */}
       {(isCompleted || isFailed) && (
-        <div className="space-y-2">
+        <>
+          {/* Treasury withdrawal authorization for completed/failed campaigns */}
           {campaign.treasuryAddress && (
-            <div className="grid grid-cols-2 gap-2">
-              <CampaignAdminClaimTipButton
-                campaign={campaign}
-                buttonClassName="h-8 w-full px-2 py-1 text-xs"
-              />
-              <CampaignAdminDisburseFeesButton
-                campaign={campaign}
-                buttonClassName="h-8 w-full px-2 py-1 text-xs"
-              />
+            <div className="mb-2 space-y-2">
+              {campaign.treasuryWithdrawalsEnabled ? (
+                <>
+                  <CampaignAdminCreateWithdrawalButton
+                    campaign={campaign}
+                    buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                  />
+                  <CampaignAdminExecuteWithdrawalButton
+                    campaign={campaign}
+                    buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                  />
+                </>
+              ) : (
+                <CampaignAdminAuthorizeWithdrawalsButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
+              )}
+              {/* Claim tips and disburse fees */}
+              <div className="grid grid-cols-2 gap-2">
+                <CampaignAdminClaimTipButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
+                <CampaignAdminDisburseFeesButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
+              </div>
             </div>
           )}
           <CampaignAdminRemoveButton
             campaign={campaign}
             buttonClassName="h-8 w-full px-2 py-1 text-xs"
           />
-        </div>
+        </>
       )}
     </div>
   );

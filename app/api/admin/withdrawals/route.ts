@@ -41,6 +41,51 @@ export async function GET(req: Request) {
       }
     }
 
+    const requestTypeParam = searchParams.get('requestType');
+    let requestType:
+      | 'ON_CHAIN_AUTHORIZATION'
+      | 'WITHDRAWAL_AMOUNT'
+      | undefined = undefined;
+    if (requestTypeParam) {
+      if (
+        requestTypeParam === 'ON_CHAIN_AUTHORIZATION' ||
+        requestTypeParam === 'WITHDRAWAL_AMOUNT'
+      ) {
+        requestType = requestTypeParam;
+      } else {
+        throw new ApiParameterError(
+          'Invalid requestType. Use ON_CHAIN_AUTHORIZATION or WITHDRAWAL_AMOUNT.',
+        );
+      }
+    }
+
+    const createdByTypeParam = searchParams.get('createdByType');
+    let createdByType: 'admin' | 'user' | undefined = undefined;
+    if (createdByTypeParam) {
+      if (createdByTypeParam === 'admin' || createdByTypeParam === 'user') {
+        createdByType = createdByTypeParam;
+      } else {
+        throw new ApiParameterError(
+          'Invalid createdByType. Use admin or user.',
+        );
+      }
+    }
+
+    const executionStatusParam = searchParams.get('executionStatus');
+    let executionStatus: 'EXECUTED' | 'NOT_EXECUTED' | undefined = undefined;
+    if (executionStatusParam) {
+      if (
+        executionStatusParam === 'EXECUTED' ||
+        executionStatusParam === 'NOT_EXECUTED'
+      ) {
+        executionStatus = executionStatusParam;
+      } else {
+        throw new ApiParameterError(
+          'Invalid executionStatus. Use EXECUTED or NOT_EXECUTED.',
+        );
+      }
+    }
+
     const result = await listWithdrawals({
       page,
       pageSize,
@@ -49,6 +94,9 @@ export async function GET(req: Request) {
       createdByAddress,
       token,
       status,
+      requestType,
+      createdByType,
+      executionStatus,
     });
 
     return response(result);
