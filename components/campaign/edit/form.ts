@@ -93,7 +93,14 @@ export const CampaignFormSchema = z
         }),
       },
     ),
-    bannerImage: z.instanceof(File).or(z.null()).optional(),
+    bannerImage: z
+      .instanceof(File)
+      .refine(
+        (file) => file.size <= 4 * 1024 * 1024,
+        'Image must be smaller than 4MB',
+      )
+      .or(z.null())
+      .optional(),
   })
   .refine((data) => data.startTime < data.endTime, {
     message: 'startTime must be less than endTime',
