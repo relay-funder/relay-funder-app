@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { useAdminDisburseFees } from '@/lib/web3/hooks/useAdminDisburseFees';
@@ -14,10 +14,8 @@ export function CampaignAdminDisburseFeesButton({
   campaign: DbCampaign;
   buttonClassName?: string;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
-
   const { toast } = useToast();
-  const { disburseFees } = useAdminDisburseFees();
+  const { disburseFees, isDisbursing } = useAdminDisburseFees();
 
   const onDisburseFees = useCallback(async () => {
     if (!campaign.treasuryAddress) {
@@ -29,35 +27,23 @@ export function CampaignAdminDisburseFeesButton({
       return;
     }
 
-    setIsLoading(true);
+    const result = await disburseFees({ treasuryAddress: campaign.treasuryAddress });
 
-    try {
-      const result = await disburseFees({ treasuryAddress: campaign.treasuryAddress });
-
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Fees have been disbursed to protocol and platform admins',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to disburse fees',
-          variant: 'destructive',
-        });
-      }
-    } catch {
+    if (result.success) {
+      toast({
+        title: 'Success',
+        description: 'Fees have been disbursed to protocol and platform admins',
+      });
+    } else {
       toast({
         title: 'Error',
-        description: 'Failed to disburse fees',
+        description: result.error || 'Failed to disburse fees',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   }, [campaign.treasuryAddress, disburseFees, toast]);
 
-  // Only show for campaigns with treasury that have received donations
+  // Only show for campaigns with treasury
   if (!campaign.treasuryAddress) {
     return null;
   }
@@ -66,12 +52,12 @@ export function CampaignAdminDisburseFeesButton({
     <Button
       onClick={onDisburseFees}
       className={buttonClassName || 'w-full'}
-      disabled={isLoading}
+      disabled={isDisbursing}
       variant="outline"
       title="Disburse accumulated platform and protocol fees from the treasury"
     >
       <Banknote className="mr-2 h-4 w-4" />
-      {isLoading ? 'Disbursing...' : 'Disburse Fees'}
+      {isDisbursing ? 'Disbursing...' : 'Disburse Fees'}
     </Button>
   );
 }

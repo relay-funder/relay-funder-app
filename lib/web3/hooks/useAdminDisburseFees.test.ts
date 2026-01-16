@@ -1,27 +1,19 @@
 import { describe, test, expect, vi, afterEach, beforeEach } from 'vitest';
 
-// Mock React hooks
-vi.mock('react', () => ({
-  useState: vi.fn((initial) => [initial, vi.fn()]),
-  useCallback: vi.fn((fn) => fn),
-}));
-
-// Mock viem isAddress
-vi.mock('viem', () => ({
-  isAddress: (addr: string) => addr.startsWith('0x') && addr.length === 42,
-}));
-
-// Mock web3 dependencies
-const mockWriteContractAsync = vi.fn();
-vi.mock('@/lib/web3', () => ({
-  useWriteContract: () => ({
-    writeContractAsync: mockWriteContractAsync,
-  }),
-}));
-
-// Mock the ABI
-vi.mock('@/contracts/abi/KeepWhatsRaised', () => ({
-  KeepWhatsRaisedABI: [{ name: 'disburseFees', type: 'function' }],
+// Mock the shared treasury action hook
+const mockExecute = vi.fn();
+vi.mock('./useTreasuryAction', () => ({
+  useTreasuryAction: (functionName: string) => {
+    if (functionName !== 'disburseFees') {
+      throw new Error(`Expected disburseFees but got ${functionName}`);
+    }
+    return {
+      execute: mockExecute,
+      isExecuting: false,
+      error: null,
+      lastTxHash: undefined,
+    };
+  },
 }));
 
 describe('useAdminDisburseFees', () => {
@@ -33,56 +25,38 @@ describe('useAdminDisburseFees', () => {
     vi.restoreAllMocks();
   });
 
-  test('returns error for invalid treasury address', async () => {
+  test('exposes disburseFees function that calls execute', async () => {
+    mockExecute.mockResolvedValue({ success: true, hash: '0xdef456' });
     const { useAdminDisburseFees } = await import('./useAdminDisburseFees');
     const { disburseFees } = useAdminDisburseFees();
 
-    const result = await disburseFees({ treasuryAddress: 'invalid' });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Invalid treasury address');
-    expect(mockWriteContractAsync).not.toHaveBeenCalled();
-  });
-
-  test('calls writeContractAsync with correct parameters for valid address', async () => {
-    mockWriteContractAsync.mockResolvedValue('0xabcdef123456');
-    const { useAdminDisburseFees } = await import('./useAdminDisburseFees');
-    const { disburseFees } = useAdminDisburseFees();
-
-    const validAddress = '0x1234567890123456789012345678901234567890';
-    const result = await disburseFees({ treasuryAddress: validAddress });
+    const result = await disburseFees({ treasuryAddress: '0x1234567890123456789012345678901234567890' });
 
     expect(result.success).toBe(true);
-    expect(result.hash).toBe('0xabcdef123456');
-    expect(mockWriteContractAsync).toHaveBeenCalledWith({
-      address: validAddress,
-      abi: expect.any(Array),
-      functionName: 'disburseFees',
-      args: [],
+    expect(result.hash).toBe('0xdef456');
+    expect(mockExecute).toHaveBeenCalledWith({
+      treasuryAddress: '0x1234567890123456789012345678901234567890',
     });
   });
 
-  test('returns error when contract call fails', async () => {
-    mockWriteContractAsync.mockRejectedValue(new Error('Transaction reverted'));
+  test('exposes isDisbursing state', async () => {
     const { useAdminDisburseFees } = await import('./useAdminDisburseFees');
-    const { disburseFees } = useAdminDisburseFees();
+    const { isDisbursing } = useAdminDisburseFees();
 
-    const validAddress = '0x1234567890123456789012345678901234567890';
-    const result = await disburseFees({ treasuryAddress: validAddress });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Transaction reverted');
+    expect(isDisbursing).toBe(false);
   });
 
-  test('handles non-Error exceptions', async () => {
-    mockWriteContractAsync.mockRejectedValue('string error');
+  test('exposes error state', async () => {
     const { useAdminDisburseFees } = await import('./useAdminDisburseFees');
-    const { disburseFees } = useAdminDisburseFees();
+    const { error } = useAdminDisburseFees();
 
-    const validAddress = '0x1234567890123456789012345678901234567890';
-    const result = await disburseFees({ treasuryAddress: validAddress });
+    expect(error).toBe(null);
+  });
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Unknown error');
+  test('exposes lastTxHash state', async () => {
+    const { useAdminDisburseFees } = await import('./useAdminDisburseFees');
+    const { lastTxHash } = useAdminDisburseFees();
+
+    expect(lastTxHash).toBe(undefined);
   });
 });

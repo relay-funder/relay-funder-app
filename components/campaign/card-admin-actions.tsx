@@ -92,7 +92,7 @@ export function CampaignCardAdminActions({
                 />
               )}
               {/* Claim tips and disburse fees for active campaigns past deadline */}
-              {new Date(campaign.endTime).getTime() < Date.now() && (
+              {campaign.endTime && new Date(campaign.endTime).getTime() < Date.now() && (
                 <div className="grid grid-cols-2 gap-2">
                   <CampaignAdminClaimTipButton
                     campaign={campaign}

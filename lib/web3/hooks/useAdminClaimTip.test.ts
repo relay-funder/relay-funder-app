@@ -1,27 +1,19 @@
 import { describe, test, expect, vi, afterEach, beforeEach } from 'vitest';
 
-// Mock React hooks
-vi.mock('react', () => ({
-  useState: vi.fn((initial) => [initial, vi.fn()]),
-  useCallback: vi.fn((fn) => fn),
-}));
-
-// Mock viem isAddress
-vi.mock('viem', () => ({
-  isAddress: (addr: string) => addr.startsWith('0x') && addr.length === 42,
-}));
-
-// Mock web3 dependencies
-const mockWriteContractAsync = vi.fn();
-vi.mock('@/lib/web3', () => ({
-  useWriteContract: () => ({
-    writeContractAsync: mockWriteContractAsync,
-  }),
-}));
-
-// Mock the ABI
-vi.mock('@/contracts/abi/KeepWhatsRaised', () => ({
-  KeepWhatsRaisedABI: [{ name: 'claimTip', type: 'function' }],
+// Mock the shared treasury action hook
+const mockExecute = vi.fn();
+vi.mock('./useTreasuryAction', () => ({
+  useTreasuryAction: (functionName: string) => {
+    if (functionName !== 'claimTip') {
+      throw new Error(`Expected claimTip but got ${functionName}`);
+    }
+    return {
+      execute: mockExecute,
+      isExecuting: false,
+      error: null,
+      lastTxHash: undefined,
+    };
+  },
 }));
 
 describe('useAdminClaimTip', () => {
@@ -33,56 +25,38 @@ describe('useAdminClaimTip', () => {
     vi.restoreAllMocks();
   });
 
-  test('returns error for invalid treasury address', async () => {
+  test('exposes claimTip function that calls execute', async () => {
+    mockExecute.mockResolvedValue({ success: true, hash: '0xabc123' });
     const { useAdminClaimTip } = await import('./useAdminClaimTip');
     const { claimTip } = useAdminClaimTip();
 
-    const result = await claimTip({ treasuryAddress: 'invalid' });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Invalid treasury address');
-    expect(mockWriteContractAsync).not.toHaveBeenCalled();
-  });
-
-  test('calls writeContractAsync with correct parameters for valid address', async () => {
-    mockWriteContractAsync.mockResolvedValue('0xabcdef123456');
-    const { useAdminClaimTip } = await import('./useAdminClaimTip');
-    const { claimTip } = useAdminClaimTip();
-
-    const validAddress = '0x1234567890123456789012345678901234567890';
-    const result = await claimTip({ treasuryAddress: validAddress });
+    const result = await claimTip({ treasuryAddress: '0x1234567890123456789012345678901234567890' });
 
     expect(result.success).toBe(true);
-    expect(result.hash).toBe('0xabcdef123456');
-    expect(mockWriteContractAsync).toHaveBeenCalledWith({
-      address: validAddress,
-      abi: expect.any(Array),
-      functionName: 'claimTip',
-      args: [],
+    expect(result.hash).toBe('0xabc123');
+    expect(mockExecute).toHaveBeenCalledWith({
+      treasuryAddress: '0x1234567890123456789012345678901234567890',
     });
   });
 
-  test('returns error when contract call fails', async () => {
-    mockWriteContractAsync.mockRejectedValue(new Error('Transaction reverted'));
+  test('exposes isClaiming state', async () => {
     const { useAdminClaimTip } = await import('./useAdminClaimTip');
-    const { claimTip } = useAdminClaimTip();
+    const { isClaiming } = useAdminClaimTip();
 
-    const validAddress = '0x1234567890123456789012345678901234567890';
-    const result = await claimTip({ treasuryAddress: validAddress });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Transaction reverted');
+    expect(isClaiming).toBe(false);
   });
 
-  test('handles non-Error exceptions', async () => {
-    mockWriteContractAsync.mockRejectedValue('string error');
+  test('exposes error state', async () => {
     const { useAdminClaimTip } = await import('./useAdminClaimTip');
-    const { claimTip } = useAdminClaimTip();
+    const { error } = useAdminClaimTip();
 
-    const validAddress = '0x1234567890123456789012345678901234567890';
-    const result = await claimTip({ treasuryAddress: validAddress });
+    expect(error).toBe(null);
+  });
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Unknown error');
+  test('exposes lastTxHash state', async () => {
+    const { useAdminClaimTip } = await import('./useAdminClaimTip');
+    const { lastTxHash } = useAdminClaimTip();
+
+    expect(lastTxHash).toBe(undefined);
   });
 });

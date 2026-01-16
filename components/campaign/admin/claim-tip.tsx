@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui';
 import { useAdminClaimTip } from '@/lib/web3/hooks/useAdminClaimTip';
@@ -14,10 +14,8 @@ export function CampaignAdminClaimTipButton({
   campaign: DbCampaign;
   buttonClassName?: string;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
-
   const { toast } = useToast();
-  const { claimTip } = useAdminClaimTip();
+  const { claimTip, isClaiming } = useAdminClaimTip();
 
   const onClaimTip = useCallback(async () => {
     if (!campaign.treasuryAddress) {
@@ -29,31 +27,19 @@ export function CampaignAdminClaimTipButton({
       return;
     }
 
-    setIsLoading(true);
+    const result = await claimTip({ treasuryAddress: campaign.treasuryAddress });
 
-    try {
-      const result = await claimTip({ treasuryAddress: campaign.treasuryAddress });
-
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Tips have been claimed successfully',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to claim tips. Tips may only be available after campaign deadline.',
-          variant: 'destructive',
-        });
-      }
-    } catch {
+    if (result.success) {
+      toast({
+        title: 'Success',
+        description: 'Tips have been claimed successfully',
+      });
+    } else {
       toast({
         title: 'Error',
-        description: 'Failed to claim tips. Tips may only be available after campaign deadline.',
+        description: result.error || 'Failed to claim tips. Tips may only be available after campaign deadline.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   }, [campaign.treasuryAddress, claimTip, toast]);
 
@@ -74,12 +60,12 @@ export function CampaignAdminClaimTipButton({
     <Button
       onClick={onClaimTip}
       className={buttonClassName || 'w-full'}
-      disabled={isLoading}
+      disabled={isClaiming}
       variant="outline"
       title="Claim accumulated tips from the treasury. Only available after campaign ends."
     >
       <Gift className="mr-2 h-4 w-4" />
-      {isLoading ? 'Claiming...' : 'Claim Tips'}
+      {isClaiming ? 'Claiming...' : 'Claim Tips'}
     </Button>
   );
 }
