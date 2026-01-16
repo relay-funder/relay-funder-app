@@ -23,6 +23,7 @@ import { ScoreList } from '@/components/dashboard/score-list';
 import { useCallback, useState } from 'react';
 import { cn } from '@/lib/utils';
 
+
 const dashTabsClasses = {
   list: cn('mb-6 h-full w-full', 'grid grid-cols-2 gap-2', 'sm:grid-cols-4'),
   trigger: cn(
@@ -38,6 +39,8 @@ const dashTabsClasses = {
 };
 
 export default function DashboardPage() {
+
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { authenticated } = useAuth();
   const [removedFavorites, setRemovedFavorites] = useState<Set<number>>(

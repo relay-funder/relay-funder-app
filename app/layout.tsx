@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
 import { ConfirmProvider } from '@/contexts/ConfirmContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -34,7 +35,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme') || 'system';
+                  var actualTheme;
+                  if (theme === 'system') {
+                    actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  } else {
+                    actualTheme = theme;
+                  }
+                  document.documentElement.classList.add(actualTheme);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -43,6 +64,7 @@ export default function RootLayout({
             <PageMainLayout>{children}</PageMainLayout>
             <Toaster />
             <EnvironmentBadge />
+            <Analytics />
           </Providers>
         </ConfirmProvider>
       </body>

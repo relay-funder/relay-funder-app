@@ -3,6 +3,7 @@ import { handleApiErrors } from '@/lib/api/error';
 import type {
   PostCampaignWithdrawRouteResponse,
   GetCampaignWithdrawRouteResponse,
+  CampaignWithdrawal,
 } from '@/lib/api/types';
 import {
   CAMPAIGNS_QUERY_KEY,
@@ -90,15 +91,73 @@ export function useRequestWithdrawal() {
 
 /**
  * useWithdrawalApproval
- * Hook to check if a campaign has withdrawal approval (at least one approved withdrawal).
+ * Hook to check if a campaign has withdrawal approval and on-chain authorization.
  *
  * - GET /api/campaigns/[campaignId]/withdraw
- * - Returns { hasApproval: boolean }
+ * - Returns { hasApproval: boolean, onChainAuthorized: boolean }
  */
-export function useWithdrawalApproval(campaignId: number | string | undefined) {
+export function useWithdrawalApproval(
+  campaignId: number | string | undefined,
+  enabled: boolean = true,
+) {
   return useQuery({
     queryKey: [WITHDRAWALS_QUERY_KEY, 'approval', campaignId],
     queryFn: async () => fetchWithdrawApproval(campaignId),
-    enabled: !!campaignId,
+    enabled: enabled && !!campaignId,
+  });
+}
+
+/**
+ * Request treasury authorization (user-initiated)
+ * Creates an ON_CHAIN_AUTHORIZATION request that admin must approve
+ */
+async function requestTreasuryAuthorization(campaignId: number | string) {
+  const response = await fetch(
+    `/api/campaigns/${campaignId}/treasury-authorization`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+  await handleApiErrors(response, 'Failed to request treasury authorization');
+  return response.json();
+}
+
+export function useRequestTreasuryAuthorization() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: requestTreasuryAuthorization,
+    onSuccess: (_data, campaignId) => {
+      queryClient.invalidateQueries({ queryKey: [CAMPAIGNS_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [WITHDRAWALS_QUERY_KEY, 'approval', campaignId],
+      });
+      if (typeof campaignId === 'number') {
+        resetCampaign(campaignId, queryClient);
+      }
+    },
+  });
+}
+
+/**
+ * Fetch all withdrawals for a campaign (user-facing)
+ * GET /api/campaigns/[campaignId]/withdrawals
+ */
+async function fetchCampaignWithdrawals(campaignId: number | string) {
+  const response = await fetch(`/api/campaigns/${campaignId}/withdrawals`);
+  await handleApiErrors(response, 'Failed to fetch campaign withdrawals');
+  const data = await response.json();
+  return data.withdrawals as CampaignWithdrawal[];
+}
+
+export function useCampaignWithdrawals(
+  campaignId: number | string | undefined,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    queryKey: [WITHDRAWALS_QUERY_KEY, 'campaign', campaignId],
+    queryFn: () => fetchCampaignWithdrawals(campaignId!),
+    enabled: enabled && !!campaignId,
   });
 }

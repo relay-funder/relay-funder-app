@@ -3,12 +3,10 @@ import {
   defaultShouldDehydrateQuery,
   isServer,
 } from '@tanstack/react-query';
-import { ApiAuthError } from './api/error';
 
-function shouldThrowOnError(error: Error) {
-  if (error instanceof ApiAuthError) {
-    return true;
-  }
+// Auth errors should be handled by components (showing toasts, etc.)
+// not thrown to the React error boundary which auto-redirects to login
+function shouldThrowOnError() {
   return false;
 }
 

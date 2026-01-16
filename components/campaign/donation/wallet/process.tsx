@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useDonationContext } from '@/contexts';
+import { trackEvent } from '@/lib/analytics';
 
 export function CampaignDonationWalletProcess({
   campaign,
@@ -81,7 +82,11 @@ export function CampaignDonationWalletProcess({
         });
       }
 
-      // Proceed with donation (email will be included in payment metadata regardless)
+      trackEvent('funnel_payment_initiated', {
+        amount: numericAmount,
+        currency: 'USDC',
+        payment_method: 'wallet',
+      });
       await onDonate();
     } catch (error) {
       console.error('process:onDonate:catch', error);
@@ -135,7 +140,7 @@ export function CampaignDonationWalletProcess({
     !isValidEmail(email) ||
     (usdFormattedBalance.usdBalanceAmount > 0 &&
       numericAmount + parseFloat(tipAmount || '0') >
-        usdFormattedBalance.usdBalanceAmount);
+      usdFormattedBalance.usdBalanceAmount);
 
   return (
     <>

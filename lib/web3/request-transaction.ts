@@ -63,11 +63,19 @@ export async function requestTransaction({
     signer,
   );
 
-  const pledgeAmountInUSD = ethers.parseUnits(amount || '0', USD_DECIMALS);
+  // Protocol fee rate (1%) - added on top so creator receives full donation amount
+  const PROTOCOL_FEE_RATE = 0.01;
+
+  // Calculate amounts with protocol fee included
+  const baseAmountInUSD = ethers.parseUnits(amount || '0', USD_DECIMALS);
+  const protocolFeeInUSD = (baseAmountInUSD * BigInt(Math.round(PROTOCOL_FEE_RATE * 10000))) / 10000n;
+  const pledgeAmountInUSD = baseAmountInUSD + protocolFeeInUSD;
   const tipAmountInUSD = ethers.parseUnits(tipAmount || '0', USD_DECIMALS);
   const totalAmount = pledgeAmountInUSD + tipAmountInUSD;
 
-  debug && console.log('Pledge amount in USD:', pledgeAmountInUSD.toString());
+  debug && console.log('Base amount in USD:', baseAmountInUSD.toString());
+  debug && console.log('Protocol fee in USD:', protocolFeeInUSD.toString());
+  debug && console.log('Pledge amount in USD (with fee):', pledgeAmountInUSD.toString());
   debug && console.log('Tip amount in USD:', tipAmountInUSD.toString());
   debug && console.log('Total amount in USD:', totalAmount.toString());
 

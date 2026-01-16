@@ -91,7 +91,11 @@ export async function POST(req: Request) {
     const session = await checkAuth(['user']);
     const userAddress = session.user.address;
 
-    await checkUserLimit(userAddress, userLimiterRegisterPledge);
+    await checkUserLimit(
+      userAddress,
+      userLimiterRegisterPledge,
+      "You've reached the daily donation limit. To protect against abuse, each wallet can make up to 5 donations per day. Please try again tomorrow.",
+    );
 
     // Validate request body
     const body = await req.json();

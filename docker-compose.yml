@@ -8,15 +8,21 @@ volumes:
 x-app-environment: &app-environment
   DATABASE_URL: postgres://${POSTGRES_USER:-relayfunder}:${POSTGRES_PASSWORD:-relayfunder}@database:5432/${POSTGRES_DB:-relayfunder_dev}
   NODE_ENV: development
+  # Disable io_uring to prevent libuv assertion crashes during file watching
+  # See: https://github.com/nodejs/node/issues/48444
+  UV_USE_IO_URING: 0
+  CI: "true"
 
 services:
   database:
-    image: postgres:latest
+    image: postgres:16.11
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-relayfunder}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-relayfunder}
       POSTGRES_DB: ${POSTGRES_DB:-relayfunder_dev}
+    ports:
+      - "5432:5432"
     healthcheck:
       test:
         [
@@ -62,6 +68,12 @@ services:
       - ./dev_modules/pnpm_store:/app/.pnpm-store
     environment:
       <<: *app-environment
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
     networks:
       extern-net:
       aka-net:
@@ -98,3 +110,20 @@ services:
       - debug
     networks:
       extern-net:
+
+  app-warmup:
+    build:
+      context: .
+      target: devrunner
+    command: "pnpm warmup"
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes_from:
+      - app
+    environment:
+      <<: *app-environment
+      WARMUP_BASE_URL: http://app:3000
+    restart: "no"
+    networks:
+      aka-net:

@@ -16,9 +16,27 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'asset.captureapp.xyz',
       },
-      { protocol: 'https', hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL },
+      {
+        protocol: 'https',
+        hostname: 'amethyst-kind-cheetah-202.mypinata.cloud',
+      },
+      ...(NEXT_PUBLIC_PINATA_GATEWAY_URL
+        ? [
+          {
+            protocol: 'https' as const,
+            hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL,
+          },
+        ]
+        : []),
     ],
   },
+  // Turbopack uses serverExternalPackages instead of webpack externals
+  serverExternalPackages: ['pino-pretty', 'lokijs', 'encoding'],
+  // Turbopack configuration
+  turbopack: {
+    resolveExtensions: ['.mdx', '.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
+  },
+  // Keep webpack config for production builds (non-turbo)
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;
@@ -77,7 +95,10 @@ if (shouldInitSentry) {
   console.log(' ▲ sentry loading');
   module.exports = {
     ...sentryConfig,
-    serverExternalPackages: ['@sentry/profiling-node'],
+    serverExternalPackages: [
+      ...(nextConfig.serverExternalPackages ?? []),
+      '@sentry/profiling-node',
+    ],
   };
 } else {
   console.log(' ▲ sentry mocked');

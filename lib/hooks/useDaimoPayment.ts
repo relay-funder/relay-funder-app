@@ -44,11 +44,20 @@ export function useDaimoPayment({
   const { address } = useAccount();
   const config = useMemo(() => getDaimoPayConfig(), []);
 
+  // Fee rates (matching FeeInformation component)
+  const DAIMO_FEE_RATE = 0.01; // 1%
+  const PROTOCOL_FEE_RATE = 0.01; // 1%
+
   // Calculate amounts
   const baseAmount = useMemo(() => parseFloat(amount || '0'), [amount]);
   const tipAmountNum = useMemo(() => parseFloat(tipAmount || '0'), [tipAmount]);
+
+  // Total amount includes donation + tip + fees
+  // Fees are calculated on the base donation amount
   const totalAmount = useMemo(() => {
-    return (baseAmount + tipAmountNum).toFixed(2);
+    const daimoFee = baseAmount * DAIMO_FEE_RATE;
+    const protocolFee = baseAmount * PROTOCOL_FEE_RATE;
+    return (baseAmount + tipAmountNum + daimoFee + protocolFee).toFixed(2);
   }, [baseAmount, tipAmountNum]);
 
   // Generate pledge ID

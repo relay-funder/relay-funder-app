@@ -19,11 +19,12 @@ export async function handleError(error: unknown) {
   if (IS_PRODUCTION) {
     console.log('API::handleError', error);
   }
-  if (error instanceof ApiAuthError) {
-    return notAuthorized(error);
-  }
+  // Check subclass FIRST - ApiAuthNotAllowed extends ApiAuthError
   if (error instanceof ApiAuthNotAllowed) {
     return notAllowed(error);
+  }
+  if (error instanceof ApiAuthError) {
+    return notAuthorized(error);
   }
   if (error instanceof ApiRateLimitError) {
     return rateLimited(error);

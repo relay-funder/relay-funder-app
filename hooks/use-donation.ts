@@ -15,6 +15,7 @@ import {
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 import { debugHook as debug } from '@/lib/debug';
+import { trackEvent } from '@/lib/analytics';
 
 export function useDonationCallback({
   campaign,
@@ -130,6 +131,21 @@ export function useDonationCallback({
         paymentId,
         status: receipt.status === 1 ? 'confirmed' : 'failed',
       });
+
+      if (receipt.status === 1) {
+        trackEvent('funnel_payment_success', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'wallet',
+        });
+      } else {
+        trackEvent('funnel_payment_failed', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'wallet',
+          error_message: 'Transaction failed on-chain',
+        });
+      }
       onStateChanged('done');
 
       debug && console.log('Payment status updated');
@@ -139,6 +155,12 @@ export function useDonationCallback({
       setError(
         err instanceof Error ? err.message : 'Failed to process wallet payment',
       );
+      trackEvent('funnel_payment_failed', {
+        amount: parseFloat(amount),
+        currency: 'USDC',
+        payment_method: 'wallet',
+        error_message: err instanceof Error ? err.message : 'Unknown error',
+      });
     } finally {
       setIsProcessing(false);
     }

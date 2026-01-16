@@ -507,36 +507,27 @@ export class TreasuryManager extends TreasuryInterface {
 
   /**
    * Get balance information from the crypto treasury
+   * Throws on error to surface infrastructure failures rather than masking them as zero balances
    */
   async getBalance(treasuryAddress: string): Promise<TreasuryBalance> {
-    try {
-      const provider = new ethers.JsonRpcProvider(this.rpcUrl);
+    const provider = new ethers.JsonRpcProvider(this.rpcUrl);
 
-      // Use the full ABI from contracts/abi/KeepWhatsRaised.ts
-      const treasuryContract = new ethers.Contract(
-        treasuryAddress,
-        KeepWhatsRaisedABI,
-        provider,
-      );
+    const treasuryContract = new ethers.Contract(
+      treasuryAddress,
+      KeepWhatsRaisedABI,
+      provider,
+    );
 
-      const [totalRaised, availableAmount] = await Promise.all([
-        treasuryContract.getRaisedAmount(),
-        treasuryContract.getAvailableRaisedAmount(),
-      ]);
+    const [totalRaised, availableAmount] = await Promise.all([
+      treasuryContract.getRaisedAmount(),
+      treasuryContract.getAvailableRaisedAmount(),
+    ]);
 
-      return {
-        available: ethers.formatUnits(availableAmount, USD_CONFIG.DECIMALS),
-        totalPledged: ethers.formatUnits(totalRaised, USD_CONFIG.DECIMALS),
-        currency: USD_TOKEN,
-      };
-    } catch (error) {
-      console.error('Error getting crypto treasury balance:', error);
-      return {
-        available: '0',
-        totalPledged: '0',
-        currency: USD_TOKEN,
-      };
-    }
+    return {
+      available: ethers.formatUnits(availableAmount, USD_CONFIG.DECIMALS),
+      totalPledged: ethers.formatUnits(totalRaised, USD_CONFIG.DECIMALS),
+      currency: USD_TOKEN,
+    };
   }
 
   /**

@@ -4,15 +4,18 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import type { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
-import { useTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
+import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import {
   useRequestWithdrawal,
   useWithdrawalApproval,
+  useRequestTreasuryAuthorization,
+  useCampaignWithdrawals,
 } from '@/lib/hooks/useWithdrawals';
-import { useExecuteWithdrawal } from '@/lib/web3/hooks/useExecuteWithdrawal';
+import { useExecuteKeepWhatsRaisedWithdrawal } from '@/lib/web3/hooks/useExecuteKeepWhatsRaisedWithdrawal';
 import { formatUSD } from '@/lib/format-usd';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthErrorHandler } from '@/hooks/use-auth-error-handler';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -28,9 +31,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-import { AlertTriangle, Wallet, Loader2, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
 import { normalizeAddress } from '@/lib/normalize-address';
 import { USD_TOKEN } from '@/lib/constant';
+import { TreasuryAuthorizationStatus } from '@/components/campaign/treasury-authorization-status';
 
 type WithdrawalStep = 'amount' | 'review' | 'executing' | 'submitted';
 
@@ -75,32 +79,125 @@ export function WithdrawalDialog({
 
   // Load balances for available amount
   const treasuryAddress = campaign?.treasuryAddress ?? null;
-  const { data: treasuryBalance, isLoading: isBalanceLoading } =
-    useTreasuryBalance(treasuryAddress);
+  const { data: balanceData, isLoading: isBalanceLoading } =
+    useCampaignTreasuryBalance(campaign?.id);
+
+  // Fetch existing withdrawals to calculate truly available amount
+  // Only fetch when dialog is open to avoid exhausting connection pool
+  const { data: existingWithdrawalsData, isLoading: isWithdrawalsLoading } =
+    useCampaignWithdrawals(campaign?.id, dialogOpen);
 
   // User and profile (for recipient wallet)
   const { address: connectedAddress } = useAuth();
   const { data: profile } = useUserProfile();
 
   // Check if campaign has withdrawal approval
-  const { data: approvalData } = useWithdrawalApproval(campaign?.id);
+  // Only fetch when dialog is open to avoid exhausting connection pool
+  const {
+    data: approvalData,
+    isLoading: isApprovalLoading,
+  } = useWithdrawalApproval(campaign?.id, dialogOpen);
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
-    return treasuryBalance?.balance?.currency ?? USD_TOKEN;
-  }, [treasuryBalance]);
+    return balanceData?.balance?.currency ?? USD_TOKEN;
+  }, [balanceData]);
 
-  const availableFloat = useMemo<number>(() => {
-    const available = treasuryBalance?.balance?.available ?? '0';
-    const parsed = parseFloat(available || '0');
-    return Number.isFinite(parsed) ? parsed : 0;
-  }, [treasuryBalance]);
+  // Calculate available balance accounting for PENDING withdrawal requests
+  // Executed withdrawals are already reflected in the on-chain balance
+  const availableBalance = useMemo<number>(() => {
+    if (!balanceData?.balance) return 0;
+    const onChainAvailable = parseFloat(balanceData.balance.available || '0');
+
+    // Only subtract PENDING withdrawal requests (not yet executed)
+    const pendingAmount =
+      existingWithdrawalsData?.reduce((sum, w) => {
+        if (
+          w.token === currency &&
+          w.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !w.transactionHash // Only pending (not executed)
+        ) {
+          return sum + parseFloat(w.amount || '0');
+        }
+        return sum;
+      }, 0) || 0;
+
+    const trulyAvailable = onChainAvailable - pendingAmount;
+    return Math.max(0, trulyAvailable); // Don't go negative
+  }, [balanceData, existingWithdrawalsData, currency]);
+
+  const totalOnChainBalance = useMemo<number>(() => {
+    if (!balanceData?.balance) return 0;
+    return parseFloat(balanceData.balance.available || '0');
+  }, [balanceData]);
+
+  // Only count PENDING withdrawal requests (not yet executed)
+  const existingWithdrawalsTotal = useMemo<number>(() => {
+    return (
+      existingWithdrawalsData?.reduce((sum, w) => {
+        if (
+          w.token === currency &&
+          w.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !w.transactionHash // Only pending (not executed)
+        ) {
+          return sum + parseFloat(w.amount || '0');
+        }
+        return sum;
+      }, 0) || 0
+    );
+  }, [existingWithdrawalsData, currency]);
+
+  const executedWithdrawalsTotal = useMemo<number>(() => {
+    return (
+      existingWithdrawalsData?.reduce((sum, w) => {
+        if (
+          w.token === currency &&
+          w.requestType === 'WITHDRAWAL_AMOUNT' &&
+          w.transactionHash
+        ) {
+          return sum + parseFloat(w.amount || '0');
+        }
+        return sum;
+      }, 0) || 0
+    );
+  }, [existingWithdrawalsData, currency]);
+
   const token = currency; // use API token the same as currency string (ex. 'USDT')
 
-  const enabled = availableFloat > 0;
+  // Only disable if we're sure there's no balance (not while loading)
+  const enabled = useMemo<boolean>(() => {
+    // Don't disable while loading - wait for data
+    if (isBalanceLoading || isWithdrawalsLoading) return true;
+    return availableBalance > 0;
+  }, [availableBalance, isBalanceLoading, isWithdrawalsLoading]);
+
   const hasApproval = useMemo<boolean>(() => {
     return approvalData?.hasApproval ?? false;
   }, [approvalData]);
+  const onChainAuthorized = useMemo<boolean>(() => {
+    // If hasApproval is true, onChainAuthorized must also be true (can't have approval without authorization)
+    // But we still check the actual value from API
+    return approvalData?.onChainAuthorized ?? false;
+  }, [approvalData]);
+  
+  // Determine if we should show authorization request button
+  // Only show if not authorized AND not loading AND no approval exists
+  const shouldShowAuthRequest = useMemo<boolean>(() => {
+    if (isApprovalLoading) return false; // Don't show while loading
+    if (hasApproval) return false; // Don't show if approval exists (authorization must have happened)
+    return !onChainAuthorized; // Show if not authorized
+  }, [isApprovalLoading, hasApproval, onChainAuthorized]);
+  
+  // Determine if we should show amount input form
+  // Show if authorized OR if approval exists (approval implies authorization)
+  // If hasApproval is true, show immediately (don't wait for loading to complete)
+  const shouldShowAmountForm = useMemo<boolean>(() => {
+    // If we have approval, show form immediately (approval implies authorization happened)
+    if (hasApproval) return true;
+    // Otherwise, wait for loading to complete and check authorization
+    if (isApprovalLoading) return false;
+    return onChainAuthorized;
+  }, [isApprovalLoading, onChainAuthorized, hasApproval]);
 
   const recipientAddress = useMemo<string | null>(() => {
     // If user set a recipientWallet in profile, prefer that; else use profile.address
@@ -126,19 +223,33 @@ export function WithdrawalDialog({
     if (!amount || amount.trim() === '') return 'Enter an amount';
     if (Number.isNaN(amountNumber)) return 'Amount must be a number';
     if (amountNumber <= 0) return 'Amount must be greater than 0';
-    if (amountNumber > availableFloat)
-      return `Amount exceeds available balance (${formatUSD(availableFloat)} ${currency})`;
+    // Use rounded comparison to avoid floating point precision issues
+    // (e.g., 1.99 vs 1.9899999... from balance calculations)
+    const roundedAmount = Math.round(amountNumber * 100) / 100;
+    const roundedAvailable = Math.round(availableBalance * 100) / 100;
+    const roundedOnChain = Math.round(totalOnChainBalance * 100) / 100;
+    if (roundedAmount > roundedAvailable) {
+      return `Amount exceeds available balance. Available: ${formatUSD(availableBalance)} ${currency}`;
+    }
+    if (roundedAmount > roundedOnChain) {
+      return `Amount exceeds on-chain treasury balance. Treasury balance: ${formatUSD(totalOnChainBalance)} ${currency}`;
+    }
     return null;
-  }, [amount, amountNumber, availableFloat, currency]);
+  }, [amount, amountNumber, availableBalance, totalOnChainBalance, currency]);
 
   // Mutation to request a withdrawal
   const { toast } = useToast();
+  const { handleError: handleAuthError } = useAuthErrorHandler();
   const { mutateAsync: requestWithdrawal, isPending: isSubmitting } =
     useRequestWithdrawal();
+  const {
+    mutateAsync: requestAuthorization,
+    isPending: isRequestingAuthorization,
+  } = useRequestTreasuryAuthorization();
 
-  // Hook to execute direct withdrawal
+  // Hook to execute direct withdrawal (using KeepWhatsRaised contract)
   const { executeWithdrawal, isExecuting: isExecutingWithdrawal } =
-    useExecuteWithdrawal();
+    useExecuteKeepWhatsRaisedWithdrawal();
 
   const resetLocalState = useCallback(() => {
     setStep('amount');
@@ -152,6 +263,23 @@ export function WithdrawalDialog({
     }
   }, [dialogOpen, resetLocalState]);
 
+  // Default amount to available balance when dialog opens and balance loads
+  useEffect(() => {
+    if (dialogOpen && availableBalance > 0 && amount === '') {
+      setAmount(availableBalance.toFixed(2));
+    }
+  }, [dialogOpen, availableBalance, amount]);
+
+  // Prevent dialog from closing when data loads/changes
+  // Only close if explicitly requested via onOpenChange
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      // Don't auto-close when data loads - only close if user explicitly closes
+      setDialogOpen(open);
+    },
+    [setDialogOpen],
+  );
+
   const handleProceedToReview = useCallback(() => {
     if (!amountError) {
       setStep('review');
@@ -163,7 +291,7 @@ export function WithdrawalDialog({
   }, []);
 
   const handleConfirmAndSubmit = useCallback(async () => {
-    if (hasApproval) {
+    if (onChainAuthorized && hasApproval) {
       // Direct withdrawal: execute contract first
       setStep('executing');
       try {
@@ -188,16 +316,11 @@ export function WithdrawalDialog({
         });
       } catch (err) {
         setStep('review'); // Go back to review on error
-        const message =
-          err instanceof Error ? err.message : 'Failed to execute withdrawal';
-        toast({
-          title: 'Withdrawal failed',
-          description: message,
-          variant: 'destructive',
-        });
+        // handleAuthError shows appropriate toast (session expired or generic error)
+        handleAuthError(err, 'Failed to execute withdrawal');
       }
     } else {
-      // Request approval
+      // Request approval (will be queued until on-chain authorization is complete)
       try {
         await requestWithdrawal({
           campaignId: campaign.id,
@@ -205,22 +328,20 @@ export function WithdrawalDialog({
           token,
         });
         setStep('submitted');
+        const message = onChainAuthorized
+          ? 'Your withdrawal request has been submitted. An admin will review and approve it shortly.'
+          : 'Your withdrawal request has been submitted. It will be processed once the treasury is authorized on-chain by an admin.';
         toast({
           title: 'Withdrawal requested',
-          description:
-            'Your withdrawal request has been submitted. An admin will review and approve it shortly.',
+          description: message,
         });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Failed to request withdrawal';
-        toast({
-          title: 'Request failed',
-          description: message,
-          variant: 'destructive',
-        });
+        // handleAuthError shows appropriate toast (session expired or generic error)
+        handleAuthError(err, 'Failed to request withdrawal');
       }
     }
   }, [
+    onChainAuthorized,
     hasApproval,
     executeWithdrawal,
     treasuryAddress,
@@ -229,31 +350,50 @@ export function WithdrawalDialog({
     campaign.id,
     token,
     toast,
+    handleAuthError,
   ]);
 
   const handleDone = useCallback(() => {
     setDialogOpen(false);
   }, [setDialogOpen]);
 
+  const handleRequestAuthorization = useCallback(async () => {
+    try {
+      await requestAuthorization(campaign.id);
+      toast({
+        title: 'Authorization requested',
+        description:
+          'Your request has been submitted. An admin will review and authorize withdrawals for this treasury.',
+      });
+      setDialogOpen(false);
+    } catch (err) {
+      // handleAuthError shows appropriate toast (session expired or generic error)
+      handleAuthError(err, 'Failed to request authorization');
+    }
+  }, [requestAuthorization, campaign.id, toast, setDialogOpen, handleAuthError]);
+
   const defaultTrigger = (
-    <Button className="h-12 w-full text-lg" size="lg" disabled={!campaign}>
+    <Button
+      className="h-12 w-full text-lg"
+      size="lg"
+      disabled={!campaign || (!enabled && !isBalanceLoading && !isWithdrawalsLoading)}
+    >
       Withdraw funds
     </Button>
   );
-  if (!enabled) {
-    return null;
-  }
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       <DialogContent className={className}>
         <DialogHeader>
           <DialogTitle>
             {step === 'amount' &&
-              (hasApproval ? 'Withdraw Funds' : 'Request Withdrawal Approval')}
+              (onChainAuthorized && hasApproval
+                ? 'Withdraw Funds'
+                : 'Request Withdrawal')}
             {step === 'review' &&
-              (hasApproval
+              (onChainAuthorized && hasApproval
                 ? 'Confirm Withdrawal'
                 : 'Confirm Withdrawal Request')}
             {step === 'executing' && 'Executing Withdrawal'}
@@ -263,13 +403,13 @@ export function WithdrawalDialog({
             {step === 'amount' &&
               'Enter the amount you wish to withdraw from the available balance.'}
             {step === 'review' &&
-              (hasApproval
+              (onChainAuthorized && hasApproval
                 ? 'Please review the details below before executing the withdrawal.'
                 : 'Please review the details below before submitting your withdrawal request.')}
             {step === 'executing' &&
               'Executing the withdrawal on the blockchain. Please wait...'}
             {step === 'submitted' &&
-              (hasApproval
+              (onChainAuthorized && hasApproval
                 ? 'Your withdrawal has been executed and recorded.'
                 : 'Your withdrawal request was created. An admin must approve it before funds are sent.')}
           </DialogDescription>
@@ -277,64 +417,134 @@ export function WithdrawalDialog({
 
         {step === 'amount' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <div className="text-sm text-muted-foreground">
-                  Available balance
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {isBalanceLoading ? (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading...
+            <TreasuryAuthorizationStatus
+              treasuryAddress={treasuryAddress}
+              onChainAuthorized={onChainAuthorized || hasApproval}
+              showLabel={true}
+            />
+            {shouldShowAuthRequest && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">
+                        Treasury Not Authorized
+                      </p>
+                      <p className="text-sm text-amber-800">
+                        Withdrawals are not yet enabled for this treasury. You
+                        must request authorization before requesting withdrawal
+                        amounts.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleRequestAuthorization}
+                      disabled={isRequestingAuthorization}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      {isRequestingAuthorization ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Requesting...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Request Treasury Authorization
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-amber-700">
+                      Once authorized, you can request withdrawal amounts below.
+                    </p>
                   </div>
-                ) : (
-                  <>
-                    <span className="text-base font-medium">
-                      {formatUSD(availableFloat)}
-                    </span>
-                    <Badge variant="outline">{currency}</Badge>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="withdraw-amount">Amount to withdraw</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="withdraw-amount"
-                  placeholder="0.00"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="flex-1"
-                  disabled={isBalanceLoading}
-                />
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{currency}</Badge>
                 </div>
               </div>
-              {amountError ? (
-                <p className="text-sm text-red-600">{amountError}</p>
-              ) : null}
-              {treasuryAddress ? null : (
-                <p className="text-sm text-red-600">
-                  No treasury available for this campaign. You cannot withdraw
-                  funds yet.
-                </p>
+            )}
+            <div className="space-y-2 rounded-md border p-3">
+              <div className="text-sm font-medium">Available Balance</div>
+              {isBalanceLoading || isWithdrawalsLoading ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-blue-600">
+                    {formatUSD(availableBalance)} {currency}
+                  </div>
+                  {existingWithdrawalsTotal > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      On-chain: {formatUSD(totalOnChainBalance)} {currency} •
+                      Existing requests: {formatUSD(existingWithdrawalsTotal)}{' '}
+                      {currency}
+                    </div>
+                  )}
+                  {executedWithdrawalsTotal > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Already withdrawn: {formatUSD(executedWithdrawalsTotal)}{' '}
+                      {currency}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
+
+            {isApprovalLoading && (
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking withdrawal status...
+              </div>
+            )}
+            {shouldShowAmountForm && (
+              <div className="space-y-2">
+                <Label htmlFor="withdraw-amount">Amount to withdraw</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="withdraw-amount"
+                    placeholder="0.00"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    max={availableBalance}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className={`flex-1 ${amountError ? 'border-destructive' : ''}`}
+                    disabled={isBalanceLoading || isWithdrawalsLoading}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{currency}</Badge>
+                  </div>
+                </div>
+                {amountError ? (
+                  <p className="text-sm text-destructive">{amountError}</p>
+                ) : null}
+                {!amountError && amount && Number(amount) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Remaining after this request:{' '}
+                    {formatUSD(availableBalance - Number(amount))} {currency}
+                  </p>
+                )}
+              </div>
+            )}
+            {!treasuryAddress && (
+              <p className="text-sm text-red-600">
+                No treasury available for this campaign. You cannot withdraw
+                funds yet.
+              </p>
+            )}
           </div>
         )}
 
         {step === 'review' && (
           <div className="space-y-6">
+            <TreasuryAuthorizationStatus
+              treasuryAddress={treasuryAddress}
+              onChainAuthorized={onChainAuthorized}
+              showLabel={true}
+            />
             <div className="rounded-md border p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Amount</span>
@@ -350,7 +560,7 @@ export function WithdrawalDialog({
                   Withdrawal address
                 </span>
                 <div className="flex items-center gap-2">
-                  <code className="rounded bg-gray-50 px-2 py-1 text-sm">
+                  <code className="rounded bg-muted px-2 py-1 text-sm text-foreground">
                     {recipientAddress}
                   </code>
                 </div>
@@ -370,7 +580,7 @@ export function WithdrawalDialog({
                         <span className="text-xs uppercase tracking-wide">
                           Connected
                         </span>
-                        <code className="rounded bg-white px-2 py-0.5">
+                        <code className="rounded bg-muted px-2 py-0.5 text-foreground">
                           {connectedAddress || ''}
                         </code>
                       </div>
@@ -378,7 +588,7 @@ export function WithdrawalDialog({
                         <span className="text-xs uppercase tracking-wide">
                           Recipient
                         </span>
-                        <code className="rounded bg-white px-2 py-0.5">
+                        <code className="rounded bg-muted px-2 py-0.5 text-foreground">
                           {recipientAddress}
                         </code>
                       </div>
@@ -458,8 +668,11 @@ export function WithdrawalDialog({
                 disabled={
                   !!amountError ||
                   isBalanceLoading ||
+                  isWithdrawalsLoading ||
+                  isApprovalLoading ||
                   !treasuryAddress ||
-                  !campaign
+                  !campaign ||
+                  !shouldShowAmountForm
                 }
               >
                 Review
@@ -485,9 +698,11 @@ export function WithdrawalDialog({
                 {isSubmitting || isExecutingWithdrawal ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {hasApproval ? 'Executing...' : 'Submitting...'}
+                    {onChainAuthorized && hasApproval
+                      ? 'Executing...'
+                      : 'Submitting...'}
                   </div>
-                ) : hasApproval ? (
+                ) : onChainAuthorized && hasApproval ? (
                   'Confirm and withdraw'
                 ) : (
                   'Confirm and request'

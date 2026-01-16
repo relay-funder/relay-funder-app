@@ -9,9 +9,10 @@ import { CampaignDonationWalletTip } from './tip';
 import { CampaignDonationWalletProcess } from './process';
 import { CampaignDonationAnonymous } from '../anonymous';
 import { VisibilityToggle } from '@/components/visibility-toggle';
-import { PaymentTotalSummary } from '../payment-total-summary';
 import { AlertTriangle } from 'lucide-react';
 import { DonationProcessStates } from '@/types/campaign';
+import { FeeInformation } from '@/components/shared/fee-information';
+import { useQfMatchingEstimate } from '@/lib/hooks/useQfMatchingEstimate';
 
 export function CampaignDonationWalletDetails({
   campaign,
@@ -29,6 +30,14 @@ export function CampaignDonationWalletDetails({
 
   const [processState, setProcessState] =
     useState<keyof typeof DonationProcessStates>('idle');
+
+  const roundId = campaign.rounds?.[0]?.id;
+  const { data: qfEstimate } = useQfMatchingEstimate({
+    roundId: roundId ?? 0,
+    campaignId: campaign.id,
+    amount,
+    enabled: !!roundId && !!amount && parseFloat(amount) > 0,
+  });
 
   const numericAmount = useMemo(() => parseFloat(amount) || 0, [amount]);
   const numericTip = useMemo(() => {
@@ -66,20 +75,26 @@ export function CampaignDonationWalletDetails({
       {processState !== 'done' &&
         hasInsufficientBalance &&
         paymentType === 'wallet' && (
-        <div className="flex items-center gap-2 rounded-md border border-orange-200/60 bg-orange-50/70 p-3 text-sm text-orange-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100">
-          <AlertTriangle className="h-4 w-4 flex-shrink-0 text-orange-600 dark:text-blue-300" />
-          <span>
-            Insufficient balance. You have{' '}
-            <span className="font-medium text-orange-900 dark:text-blue-50">
-              {usdFormattedBalance.usdBalanceWithSymbol}
-            </span>{' '}
-            available.
-          </span>
-        </div>
-      )}
+          <div className="flex items-center gap-2 rounded-md border border-orange-200/60 bg-orange-50/70 p-3 text-sm text-orange-800 dark:border-blue-400/40 dark:bg-blue-500/15 dark:text-blue-100">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 text-orange-600 dark:text-blue-300" />
+            <span>
+              Insufficient balance. You have{' '}
+              <span className="font-medium text-orange-900 dark:text-blue-50">
+                {usdFormattedBalance.usdBalanceWithSymbol}
+              </span>{' '}
+              available.
+            </span>
+          </div>
+        )}
 
       {processState !== 'done' && (
-        <PaymentTotalSummary amount={amount} tipAmount={tipAmount} />
+        <FeeInformation
+          isDaimoPay={paymentType === 'daimo'}
+          donationAmount={parseFloat(amount || '0')}
+          tipAmount={parseFloat(tipAmount || '0')}
+          qfMatch={qfEstimate ? parseFloat(qfEstimate.marginalMatch) : undefined}
+          className="w-full"
+        />
       )}
 
       <CampaignDonationWalletProcess

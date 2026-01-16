@@ -15,6 +15,7 @@ import {
   getDefaultDisplayOptions,
   validateCampaignCardData,
 } from './types';
+import { trackEvent } from '@/lib/analytics';
 
 /**
  * Campaign Card Component
@@ -138,11 +139,10 @@ export function CampaignCard({
 
   const cardContent = (
     <Card
-      className={`flex h-full min-h-[400px] flex-col overflow-hidden transition-all duration-200 ${
-        isClickable
-          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md'
-          : 'hover:shadow-md'
-      } ${shouldDimCard ? 'opacity-50' : ''} ${className || ''}`}
+      className={`flex h-full min-h-[400px] flex-col overflow-hidden transition-all duration-200 ${isClickable
+        ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md'
+        : 'hover:shadow-md'
+        } ${shouldDimCard ? 'opacity-50' : ''} ${className || ''}`}
       onClick={
         isRoundMinimalType && onSelect ? () => onSelect(campaign) : undefined
       }
@@ -199,6 +199,11 @@ export function CampaignCard({
         href={`/campaigns/${campaign.slug}`}
         className="block transition-opacity active:opacity-75"
         target={linkTarget}
+        onClick={() => {
+          trackEvent('funnel_cta_click', {
+            path: `/campaigns/${campaign.slug}`,
+          });
+        }}
       >
         {cardContent}
       </Link>
