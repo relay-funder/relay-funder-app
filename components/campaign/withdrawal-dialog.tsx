@@ -93,10 +93,8 @@ export function WithdrawalDialog({
 
   // Check if campaign has withdrawal approval
   // Only fetch when dialog is open to avoid exhausting connection pool
-  const {
-    data: approvalData,
-    isLoading: isApprovalLoading,
-  } = useWithdrawalApproval(campaign?.id, dialogOpen);
+  const { data: approvalData, isLoading: isApprovalLoading } =
+    useWithdrawalApproval(campaign?.id, dialogOpen);
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
@@ -111,13 +109,13 @@ export function WithdrawalDialog({
 
     // Only subtract PENDING withdrawal requests (not yet executed)
     const pendingAmount =
-      existingWithdrawalsData?.reduce((sum, w) => {
+      existingWithdrawalsData?.reduce((sum, withdrawal) => {
         if (
-          w.token === currency &&
-          w.requestType === 'WITHDRAWAL_AMOUNT' &&
-          !w.transactionHash // Only pending (not executed)
+          withdrawal.token === currency &&
+          withdrawal.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !withdrawal.transactionHash // Only pending (not executed)
         ) {
-          return sum + parseFloat(w.amount || '0');
+          return sum + parseFloat(withdrawal.amount || '0');
         }
         return sum;
       }, 0) || 0;
@@ -134,13 +132,13 @@ export function WithdrawalDialog({
   // Only count PENDING withdrawal requests (not yet executed)
   const existingWithdrawalsTotal = useMemo<number>(() => {
     return (
-      existingWithdrawalsData?.reduce((sum, w) => {
+      existingWithdrawalsData?.reduce((sum, withdrawal) => {
         if (
-          w.token === currency &&
-          w.requestType === 'WITHDRAWAL_AMOUNT' &&
-          !w.transactionHash // Only pending (not executed)
+          withdrawal.token === currency &&
+          withdrawal.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !withdrawal.transactionHash // Only pending (not executed)
         ) {
-          return sum + parseFloat(w.amount || '0');
+          return sum + parseFloat(withdrawal.amount || '0');
         }
         return sum;
       }, 0) || 0
@@ -149,13 +147,13 @@ export function WithdrawalDialog({
 
   const executedWithdrawalsTotal = useMemo<number>(() => {
     return (
-      existingWithdrawalsData?.reduce((sum, w) => {
+      existingWithdrawalsData?.reduce((sum, withdrawal) => {
         if (
-          w.token === currency &&
-          w.requestType === 'WITHDRAWAL_AMOUNT' &&
-          w.transactionHash
+          withdrawal.token === currency &&
+          withdrawal.requestType === 'WITHDRAWAL_AMOUNT' &&
+          withdrawal.transactionHash
         ) {
-          return sum + parseFloat(w.amount || '0');
+          return sum + parseFloat(withdrawal.amount || '0');
         }
         return sum;
       }, 0) || 0
@@ -179,7 +177,7 @@ export function WithdrawalDialog({
     // But we still check the actual value from API
     return approvalData?.onChainAuthorized ?? false;
   }, [approvalData]);
-  
+
   // Determine if we should show authorization request button
   // Only show if not authorized AND not loading AND no approval exists
   const shouldShowAuthRequest = useMemo<boolean>(() => {
@@ -187,7 +185,7 @@ export function WithdrawalDialog({
     if (hasApproval) return false; // Don't show if approval exists (authorization must have happened)
     return !onChainAuthorized; // Show if not authorized
   }, [isApprovalLoading, hasApproval, onChainAuthorized]);
-  
+
   // Determine if we should show amount input form
   // Show if authorized OR if approval exists (approval implies authorization)
   // If hasApproval is true, show immediately (don't wait for loading to complete)
@@ -370,13 +368,21 @@ export function WithdrawalDialog({
       // handleAuthError shows appropriate toast (session expired or generic error)
       handleAuthError(err, 'Failed to request authorization');
     }
-  }, [requestAuthorization, campaign.id, toast, setDialogOpen, handleAuthError]);
+  }, [
+    requestAuthorization,
+    campaign.id,
+    toast,
+    setDialogOpen,
+    handleAuthError,
+  ]);
 
   const defaultTrigger = (
     <Button
       className="h-12 w-full text-lg"
       size="lg"
-      disabled={!campaign || (!enabled && !isBalanceLoading && !isWithdrawalsLoading)}
+      disabled={
+        !campaign || (!enabled && !isBalanceLoading && !isWithdrawalsLoading)
+      }
     >
       Withdraw funds
     </Button>
