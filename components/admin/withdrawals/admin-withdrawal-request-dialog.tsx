@@ -3,16 +3,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Button } from '@/components/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { handleApiErrors } from '@/lib/api/error';
-import { ADMIN_WITHDRAWALS_QUERY_KEY } from '@/lib/hooks/useAdminWithdrawals';
-import { resetCampaign } from '@/lib/hooks/useCampaigns';
 import { Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCampaignTreasuryBalance } from '@/lib/hooks/useTreasuryBalance';
 import { formatUSD } from '@/lib/format-usd';
-import { useAdminWithdrawals } from '@/lib/hooks/useAdminWithdrawals';
+import {
+  useAdminWithdrawals,
+  useCreateAdminWithdrawalRequest,
+} from '@/lib/hooks/useAdminWithdrawals';
 
 export type AdminWithdrawalRequestDialogProps = {
   open: boolean;
@@ -20,24 +19,6 @@ export type AdminWithdrawalRequestDialogProps = {
   campaignId: number;
   campaignTitle: string;
 };
-
-async function createAdminWithdrawalRequest(
-  campaignId: number,
-  amount: string,
-  token: string,
-  notes?: string | null,
-) {
-  const response = await fetch(
-    `/api/admin/campaigns/${campaignId}/withdrawals`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount, token, notes }),
-    },
-  );
-  await handleApiErrors(response, 'Failed to create withdrawal request');
-  return response.json();
-}
 
 export function AdminWithdrawalRequestDialog({
   open,
@@ -49,7 +30,8 @@ export function AdminWithdrawalRequestDialog({
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const initialFocusRef = useRef<HTMLInputElement | null>(null);
-  const queryClient = useQueryClient();
+
+  const createRequestMutation = useCreateAdminWithdrawalRequest();
 
   const { data: balanceData, isLoading: isBalanceLoading } =
     useCampaignTreasuryBalance(campaignId);
@@ -104,37 +86,6 @@ export function AdminWithdrawalRequestDialog({
       }, 0) || 0
     );
   }, [existingWithdrawalsData, currency]);
-
-  const createRequestMutation = useMutation({
-    mutationFn: ({
-      campaignId,
-      amount,
-      token,
-      notes,
-    }: {
-      campaignId: number;
-      amount: string;
-      token: string;
-      notes?: string | null;
-    }) => createAdminWithdrawalRequest(campaignId, amount, token, notes),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'infinite'],
-      });
-      resetCampaign(variables.campaignId, queryClient);
-      onOpenChange?.(false);
-      // Reset form
-      setAmount('');
-      setNotes('');
-      setError(null);
-    },
-    onError: (err) => {
-      setError(err.message || 'Failed to create withdrawal request');
-    },
-  });
 
   useEffect(() => {
     if (open) {
@@ -213,12 +164,26 @@ export function AdminWithdrawalRequestDialog({
       return;
     }
 
-    createRequestMutation.mutate({
-      campaignId,
-      amount,
-      token: currency,
-      notes: notes.trim() || null,
-    });
+    createRequestMutation.mutate(
+      {
+        campaignId,
+        amount,
+        token: currency,
+        notes: notes.trim() || null,
+      },
+      {
+        onSuccess: () => {
+          onOpenChange?.(false);
+          // Reset form
+          setAmount('');
+          setNotes('');
+          setError(null);
+        },
+        onError: (err) => {
+          setError(err.message || 'Failed to create withdrawal request');
+        },
+      },
+    );
   }
 
   const modal = (

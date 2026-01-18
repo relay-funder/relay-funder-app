@@ -499,3 +499,46 @@ export function useRecordWithdrawalExecution() {
     },
   });
 }
+
+// POST /api/admin/campaigns/[campaignId]/withdrawals
+type CreateAdminWithdrawalRequestVariables = {
+  campaignId: number;
+  amount: string;
+  token: string;
+  notes?: string | null;
+};
+
+async function createAdminWithdrawalRequest({
+  campaignId,
+  amount,
+  token,
+  notes,
+}: CreateAdminWithdrawalRequestVariables) {
+  const response = await fetch(
+    `/api/admin/campaigns/${campaignId}/withdrawals`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, token, notes }),
+    },
+  );
+  await handleApiErrors(response, 'Failed to create withdrawal request');
+  return response.json();
+}
+
+export function useCreateAdminWithdrawalRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createAdminWithdrawalRequest,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ADMIN_WITHDRAWALS_QUERY_KEY, 'infinite'],
+      });
+      resetCampaign(variables.campaignId, queryClient);
+    },
+  });
+}
