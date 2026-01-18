@@ -40,11 +40,15 @@ export function useAuthErrorHandler() {
    * Returns true if error was an auth error (so caller can skip generic handling)
    */
   const handleError = useCallback(
-    (error: unknown, fallbackMessage: string = 'An error occurred'): boolean => {
+    (
+      error: unknown,
+      fallbackMessage: string = 'An error occurred',
+    ): boolean => {
       if (isAuthError(error)) {
         toast({
           title: 'Session expired',
-          description: 'Your session has expired. Please sign in again to continue.',
+          description:
+            'Your session has expired. Please sign in again to continue.',
           variant: 'destructive',
           action: (
             <ToastAction altText="Sign in" onClick={() => signIn()}>
@@ -73,7 +77,8 @@ export function useAuthErrorHandler() {
   const showAuthError = useCallback(() => {
     toast({
       title: 'Session expired',
-      description: 'Your session has expired. Please sign in again to continue.',
+      description:
+        'Your session has expired. Please sign in again to continue.',
       variant: 'destructive',
       action: (
         <ToastAction altText="Sign in" onClick={() => signIn()}>

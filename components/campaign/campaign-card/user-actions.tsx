@@ -42,8 +42,7 @@ import { useInfiniteCampaignUpdates } from '@/lib/hooks/useUpdates';
 
 // Lazy load WithdrawalDialog to avoid loading Web3 dependencies on initial render
 const WithdrawalDialog = dynamic(
-  () =>
-    import('../withdrawal-dialog').then((mod) => mod.WithdrawalDialog),
+  () => import('../withdrawal-dialog').then((mod) => mod.WithdrawalDialog),
   { ssr: false },
 );
 

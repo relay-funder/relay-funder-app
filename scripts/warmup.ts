@@ -86,7 +86,7 @@ async function warmDatabase(): Promise<{
     ]);
 
     console.log(
-      `   Found ${campaigns.length} campaigns, ${collections.length} collections, ${rounds.length} rounds, ${users.length} users`
+      `   Found ${campaigns.length} campaigns, ${collections.length} collections, ${rounds.length} rounds, ${users.length} users`,
     );
 
     return {
@@ -112,11 +112,7 @@ function scanRoutes(appDir: string): string[] {
 
       if (stat.isDirectory()) {
         // Skip private folders, api routes, and special Next.js folders
-        if (
-          entry.startsWith('_') ||
-          entry.startsWith('.') ||
-          entry === 'api'
-        ) {
+        if (entry.startsWith('_') || entry.startsWith('.') || entry === 'api') {
           continue;
         }
 
@@ -167,7 +163,7 @@ function buildDynamicUrls(
     collectionIds: (string | number)[];
     roundIds: (string | number)[];
     userIds: (string | number)[];
-  }
+  },
 ): string[] {
   const urls: string[] = [];
 
@@ -262,7 +258,7 @@ async function runWarmup(): Promise<void> {
     categorizeRoutes(allRoutes);
 
   console.log(
-    `📍 Found ${staticRoutes.length} static routes, ${dynamicRoutes.length} dynamic route patterns`
+    `📍 Found ${staticRoutes.length} static routes, ${dynamicRoutes.length} dynamic route patterns`,
   );
 
   // Build all URLs to warm
@@ -283,9 +279,7 @@ async function runWarmup(): Promise<void> {
         : result.status === 'error'
           ? '✗'
           : `${result.status}`;
-    console.log(
-      `   ${statusIcon} ${result.route} (${result.timeMs}ms)`
-    );
+    console.log(`   ${statusIcon} ${result.route} (${result.timeMs}ms)`);
 
     // Small delay to avoid overwhelming the server
     await sleep(REQUEST_DELAY_MS);
@@ -294,7 +288,7 @@ async function runWarmup(): Promise<void> {
   // Summary
   const successful = results.filter((r) => r.status === 200).length;
   const authRequired = results.filter(
-    (r) => r.status === 401 || r.status === 403
+    (r) => r.status === 401 || r.status === 403,
   ).length;
   const notFound = results.filter((r) => r.status === 404).length;
   const errors = results.filter((r) => r.status === 'error').length;

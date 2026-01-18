@@ -97,7 +97,8 @@ export function AdminExecuteWithdrawalDialog({
     onOpenChange,
   ]);
 
-  const isSubmitting = isValidating || isExecutingOnChain || recordExecutionMutation.isPending;
+  const isSubmitting =
+    isValidating || isExecutingOnChain || recordExecutionMutation.isPending;
 
   async function handleExecute() {
     setError(null);

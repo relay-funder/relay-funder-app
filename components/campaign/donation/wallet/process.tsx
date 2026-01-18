@@ -140,7 +140,7 @@ export function CampaignDonationWalletProcess({
     !isValidEmail(email) ||
     (usdFormattedBalance.usdBalanceAmount > 0 &&
       numericAmount + parseFloat(tipAmount || '0') >
-      usdFormattedBalance.usdBalanceAmount);
+        usdFormattedBalance.usdBalanceAmount);
 
   return (
     <>

@@ -172,7 +172,12 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
     // Validate withdrawal amount against on-chain balance before approving
     // This ensures no money is approved for withdrawal without proper checks
     // Pass instance.id to exclude it from pending count (avoid double-counting)
-    await validateWithdrawalAmount(campaign, instance.amount, instance.token, instance.id);
+    await validateWithdrawalAmount(
+      campaign,
+      instance.amount,
+      instance.token,
+      instance.id,
+    );
 
     const withdrawal = await db.withdrawal.update({
       where: { id: instance.id },

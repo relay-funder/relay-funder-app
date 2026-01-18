@@ -69,10 +69,10 @@ export function TreasuryBalance({
       <CardContent>
         <div className="space-y-2">
           <div>
-            <div className="text-2xl font-bold">
-              {formatUSD(availableNum)}
-            </div>
-            <p className="text-xs text-muted-foreground">Available to Withdraw</p>
+            <div className="text-2xl font-bold">{formatUSD(availableNum)}</div>
+            <p className="text-xs text-muted-foreground">
+              Available to Withdraw
+            </p>
           </div>
         </div>
       </CardContent>

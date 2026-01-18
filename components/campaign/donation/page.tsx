@@ -15,7 +15,6 @@ import { Web3ContextProvider } from '@/lib/web3';
 import { Info } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
 
-
 export function CampaignDonationPage({ slug }: { slug: string }) {
   const { address, isAdmin } = useAuth();
   const { data: campaignInstance, isPending } = useCampaign(slug);
@@ -84,7 +83,6 @@ export function CampaignDonationPage({ slug }: { slug: string }) {
                       campaign={campaign}
                       variant="compact"
                     />
-
                   </div>
                 </div>
               </div>

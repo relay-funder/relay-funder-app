@@ -82,7 +82,9 @@ export function ApproveDialog({
   const isExecutingOnChain = isWithdrawalAmount
     ? isExecutingWithdrawal
     : isExecutingAuthorization;
-  const onChainError = isWithdrawalAmount ? withdrawalError : authorizationError;
+  const onChainError = isWithdrawalAmount
+    ? withdrawalError
+    : authorizationError;
   const onChainLastTxHash = isWithdrawalAmount
     ? withdrawalTxHash
     : authorizationTxHash;
@@ -310,8 +312,8 @@ export function ApproveDialog({
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  This will enable withdrawals for the treasury. The authorization
-                  is a one-time action that cannot be reversed.
+                  This will enable withdrawals for the treasury. The
+                  authorization is a one-time action that cannot be reversed.
                 </div>
                 <div className="break-all font-mono text-xs">
                   Treasury: {treasuryAddress}
@@ -370,14 +372,22 @@ export function ApproveDialog({
               variant="secondary"
               onClick={() => onOpenChange?.(false)}
               disabled={
-                isSubmitting || isExecutingOnChain || isExecutingTransaction || isValidating
+                isSubmitting ||
+                isExecutingOnChain ||
+                isExecutingTransaction ||
+                isValidating
               }
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || isExecutingOnChain || isExecutingTransaction || isValidating}
+              disabled={
+                isSubmitting ||
+                isExecutingOnChain ||
+                isExecutingTransaction ||
+                isValidating
+              }
             >
               {isSubmitting ? (
                 'Approving...'
@@ -392,7 +402,11 @@ export function ApproveDialog({
                   Executing...
                 </div>
               ) : (isWithdrawalAmount || isOnChainAuth) && !tx ? (
-                isOnChainAuth ? 'Approve & Authorize' : 'Approve & Execute'
+                isOnChainAuth ? (
+                  'Approve & Authorize'
+                ) : (
+                  'Approve & Execute'
+                )
               ) : (
                 confirmText
               )}

@@ -48,7 +48,8 @@ export async function checkUserLimit(
   const userResult = await userLimiter.check(user);
   if (!userResult.success) {
     throw new ApiRateLimitError(
-      customErrorMessage || 'Too many requests from this user. Please try later.',
+      customErrorMessage ||
+        'Too many requests from this user. Please try later.',
       userResult,
     );
   }
