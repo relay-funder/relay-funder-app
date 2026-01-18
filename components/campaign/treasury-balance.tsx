@@ -52,11 +52,11 @@ export function TreasuryBalance({
     );
   }
   // Safely parse balance values with fallbacks
-  const totalPledged = treasuryBalance.balance?.totalPledged ?? '0';
+  const available = treasuryBalance.balance?.available ?? '0';
   const currency = treasuryBalance.balance?.currency ?? USD_TOKEN;
 
   // Parse as numbers with fallback to 0
-  const totalPledgedNum = parseFloat(totalPledged) || 0;
+  const availableNum = parseFloat(available) || 0;
 
   return (
     <Card className={className}>
@@ -70,9 +70,9 @@ export function TreasuryBalance({
         <div className="space-y-2">
           <div>
             <div className="text-2xl font-bold">
-              {formatUSD(totalPledgedNum)}
+              {formatUSD(availableNum)}
             </div>
-            <p className="text-xs text-muted-foreground">Total Raised</p>
+            <p className="text-xs text-muted-foreground">Available to Withdraw</p>
           </div>
         </div>
       </CardContent>
@@ -112,19 +112,17 @@ export function TreasuryBalanceCompact({
   }
 
   // Safely parse balance values with fallbacks
-  const totalPledged = treasuryBalance.balance?.totalPledged ?? '0';
+  const available = treasuryBalance.balance?.available ?? '0';
   const currency = treasuryBalance.balance?.currency ?? USD_TOKEN;
 
   // Parse as numbers with fallback to 0
-  const totalPledgedNum = parseFloat(totalPledged) || 0;
+  const availableNum = parseFloat(available) || 0;
 
-  // For end users, just show total raised amount (totalPledged)
-  // Available balance is only relevant for creators doing withdrawals
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <Wallet className="h-3 w-3" />
       <span className="text-sm font-medium">
-        {formatUSD(totalPledgedNum)} {currency} raised
+        {formatUSD(availableNum)} {currency} available
       </span>
     </div>
   );
