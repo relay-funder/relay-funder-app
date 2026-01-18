@@ -27,7 +27,13 @@ function validateTimes(value: string) {
 
 function validateStartTimeNotInPast(value: string) {
   // Parse as local date, not UTC (YYYY-MM-DD strings are parsed as UTC by default)
-  const { year, month, day } = validateAndParseDateString(value);
+  let parsed;
+  try {
+    parsed = validateAndParseDateString(value);
+  } catch {
+    return false;
+  }
+  const { year, month, day } = parsed;
   const startDate = new Date(year, month - 1, day);
   const now = new Date();
 

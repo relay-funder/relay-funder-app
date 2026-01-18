@@ -36,6 +36,7 @@ export function CampaignCreateFormMedia() {
         form.setError('bannerImage', {
           message: FILE_SIZE_ERROR_MESSAGE,
         });
+        form.setValue('bannerImage', null);
         event.target.value = '';
         return;
       }
