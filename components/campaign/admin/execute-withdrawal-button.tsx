@@ -36,6 +36,16 @@ export function CampaignAdminExecuteWithdrawalButton({
     return withdrawalsData.filter((w) => w.approvedById && !w.transactionHash);
   }, [withdrawalsData]);
 
+  // Show loading state first, before checking data-dependent conditions
+  if (isLoading) {
+    return (
+      <Button className={buttonClassName} disabled>
+        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+        Loading...
+      </Button>
+    );
+  }
+
   // Only show if campaign has treasury, withdrawals enabled, and there are approved withdrawals
   if (
     !campaign.treasuryAddress ||
@@ -49,15 +59,6 @@ export function CampaignAdminExecuteWithdrawalButton({
   const withdrawalToExecute = selectedWithdrawalId
     ? approvedWithdrawals.find((w) => w.id === selectedWithdrawalId)
     : approvedWithdrawals[0];
-
-  if (isLoading) {
-    return (
-      <Button className={buttonClassName} disabled>
-        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-        Loading...
-      </Button>
-    );
-  }
 
   if (!withdrawalToExecute) {
     return null;

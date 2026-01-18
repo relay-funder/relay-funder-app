@@ -37,7 +37,7 @@ export function PassportVerificationCard({
   const { data: verificationData, error } = usePassportScore();
 
   const displayScore = verificationData?.humanityScore ?? currentScore;
-  const hasBeenVerified = verificationData !== null;
+  const hasBeenVerified = verificationData != null;
   const errorMessage = error instanceof Error ? error.message : null;
 
   const { scoreVariant, scoreStatus } = useMemo<{

@@ -299,7 +299,7 @@ export function CampaignAudit() {
               ))}
               {filteredCampaigns.length === 0 && !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-sm">
+                  <TableCell colSpan={7} className="py-10 text-center text-sm">
                     {searchTerm
                       ? 'No campaigns match your search.'
                       : 'No campaigns found.'}

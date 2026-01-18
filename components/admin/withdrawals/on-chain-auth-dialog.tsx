@@ -131,28 +131,26 @@ export function OnChainAuthDialog({
               </div>
             </div>
           ) : (
-            <>
-              <div className="space-y-2">
-                <label htmlFor="auth-notes" className="text-sm font-medium">
-                  Note (optional)
-                </label>
-                <textarea
-                  id="auth-notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Optional notes for this authorization"
-                  className="h-24 w-full resize-y rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                  disabled={isExecuting}
-                />
-              </div>
-
-              {error || hookError ? (
-                <div className="text-sm text-destructive">
-                  {error || hookError || 'An error occurred'}
-                </div>
-              ) : null}
-            </>
+            <div className="space-y-2">
+              <label htmlFor="auth-notes" className="text-sm font-medium">
+                Note (optional)
+              </label>
+              <textarea
+                id="auth-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional notes for this authorization"
+                className="h-24 w-full resize-y rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+                disabled={isExecuting}
+              />
+            </div>
           )}
+
+          {error || hookError ? (
+            <div className="text-sm text-destructive">
+              {error || hookError || 'An error occurred'}
+            </div>
+          ) : null}
         </div>
 
         <DialogFooter>
