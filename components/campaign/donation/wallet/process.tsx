@@ -100,6 +100,7 @@ export function CampaignDonationWalletProcess({
     updateProfileEmail,
     toast,
     profile,
+    numericAmount,
   ]);
   useEffect(() => {
     // auto-reset state when done
