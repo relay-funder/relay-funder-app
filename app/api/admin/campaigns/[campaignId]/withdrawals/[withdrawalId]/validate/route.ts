@@ -44,13 +44,18 @@ export async function POST(req: Request, { params }: ValidateWithdrawalParams) {
       throw new ApiParameterError('Withdrawal ID is required');
     }
 
+    const withdrawalIdNum = Number.parseInt(withdrawalId, 10);
+    if (Number.isNaN(withdrawalIdNum)) {
+      throw new ApiParameterError('Withdrawal ID must be a valid integer');
+    }
+
     const campaign = await getCampaign(campaignIdOrSlug);
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
     }
 
     const withdrawal = await db.withdrawal.findUnique({
-      where: { id: Number(withdrawalId) },
+      where: { id: withdrawalIdNum },
       include: {
         createdBy: true,
       },
