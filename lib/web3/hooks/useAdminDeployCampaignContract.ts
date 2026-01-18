@@ -92,6 +92,14 @@ export function useAdminDeployCampaignContract() {
           campaign.endTime instanceof Date
             ? campaign.endTime
             : new Date(campaign.endTime);
+
+        if (
+          Number.isNaN(startTime.getTime()) ||
+          Number.isNaN(endTime.getTime())
+        ) {
+          throw new Error('Invalid campaign startTime/endTime');
+        }
+
         const providedLaunchTime = Math.floor(startTime.getTime() / 1000);
         const providedDeadline = Math.floor(endTime.getTime() / 1000);
 

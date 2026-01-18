@@ -15,7 +15,10 @@ function verifyEnvFlag(
   value: string | undefined,
   defaultValue: boolean,
 ): boolean {
-  return value === 'true' || value === '1' || defaultValue;
+  if (value === undefined) {
+    return defaultValue;
+  }
+  return value === 'true' || value === '1';
 }
 
 // Initialize flags from environment variables or defaults
