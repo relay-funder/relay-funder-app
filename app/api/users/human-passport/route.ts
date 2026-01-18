@@ -21,6 +21,11 @@ export async function POST() {
     const session = await checkAuth(['user']);
     const address = session.user.address as Address;
 
+    // Guard against missing wallet address
+    if (!address) {
+      throw new Error('Missing wallet address in session');
+    }
+
     // Submit address for scoring (required before fetching score)
     await submitPassportForScoring(address);
 

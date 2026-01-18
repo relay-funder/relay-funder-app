@@ -98,10 +98,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [authenticated, address, isAdmin, isClient]);
   const logout = useCallback(async () => {
-    // Dynamically import disconnect to avoid blocking initial load
-    const { disconnectWallet } = await import('@/lib/web3/auth');
-    await disconnectWallet();
-    await signOut();
+    try {
+      // Dynamically import disconnect to avoid blocking initial load
+      const { disconnectWallet } = await import('@/lib/web3/auth');
+      await disconnectWallet();
+    } finally {
+      // Ensure signOut is called even if disconnect fails
+      await signOut();
+    }
   }, []);
   const value = useMemo(() => {
     return {
