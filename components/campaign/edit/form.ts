@@ -5,6 +5,10 @@ import {
   FUNDING_USAGE_MIN_LENGTH,
 } from '@/lib/constant/form';
 import { validateAndParseDateString } from '@/lib/utils/date';
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
 
 function validateTimes(value: string) {
   const date = new Date(value);
@@ -96,8 +100,8 @@ export const CampaignFormSchema = z
     bannerImage: z
       .instanceof(File)
       .refine(
-        (file) => file.size <= 4 * 1024 * 1024,
-        'Image must be smaller than 4MB',
+        (file) => file.size <= MAX_FILE_SIZE_BYTES,
+        FILE_SIZE_ERROR_MESSAGE,
       )
       .or(z.null())
       .optional(),

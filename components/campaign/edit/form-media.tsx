@@ -11,8 +11,10 @@ import {
 } from '@/components/ui';
 import { DbCampaign } from '@/types/campaign';
 import Image from 'next/image';
-
-const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4MB
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
 
 export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
   const form = useFormContext();
@@ -70,7 +72,7 @@ export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
                   const file = event.target.files?.[0] || null;
                   if (file && file.size > MAX_FILE_SIZE_BYTES) {
                     form.setError('bannerImage', {
-                      message: 'Image must be smaller than 4MB',
+                      message: FILE_SIZE_ERROR_MESSAGE,
                     });
                     event.target.value = '';
                     return;
