@@ -6,6 +6,10 @@ import {
   FUNDING_USAGE_MAX_LENGTH,
   FUNDING_USAGE_MIN_LENGTH,
 } from '@/lib/constant/form';
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
 import type { DbCampaign } from '@/types/campaign';
 import {
   ValidationStage,
@@ -163,7 +167,14 @@ export const CampaignFormSchema = z
         }),
       },
     ),
-    bannerImage: z.instanceof(File).or(z.null()).optional(),
+    bannerImage: z
+      .instanceof(File)
+      .refine(
+        (file) => file.size <= MAX_FILE_SIZE_BYTES,
+        FILE_SIZE_ERROR_MESSAGE,
+      )
+      .or(z.null())
+      .optional(),
   })
   .refine((data) => data.startTime < data.endTime, {
     message: 'startTime must be less than endTime',
