@@ -63,5 +63,8 @@ export {
 
 export { IS_PRODUCTION } from '../utils/env';
 
+// Fee rates
+export const PROTOCOL_FEE_RATE = 0.01; // 1% as decimal
+
 // RPC Endpoints
 export { CELO_RPC_ENDPOINTS } from './rpc-endpoints';

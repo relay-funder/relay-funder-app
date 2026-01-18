@@ -11,6 +11,7 @@ import {
   CardContent,
 } from '@/components/ui';
 import { Info } from 'lucide-react';
+import { PROTOCOL_FEE_RATE } from '@/lib/constant';
 
 /**
  * FeeInformation component displays transparent fee structure for donations
@@ -37,21 +38,16 @@ export function FeeInformation({
   showAllFeesForCampaign?: boolean;
   className?: string;
 }) {
-  // Fee rates (in percentage)
-  const DAIMO_FEE_RATE = 1;
-  const PROTOCOL_FEE_RATE = 1;
+  // Fee rates (as decimals)
+  const DAIMO_FEE_RATE = 0.01; // 1%
   const PLATFORM_FEE_RATE = 0; // Currently waived
 
   // Calculate fees
   // Fees are typically calculated on the donation amount (base)
   const daimoFee =
-    donationAmount && isDaimoPay ? (donationAmount * DAIMO_FEE_RATE) / 100 : 0;
-  const protocolFee = donationAmount
-    ? (donationAmount * PROTOCOL_FEE_RATE) / 100
-    : 0;
-  const platformFee = donationAmount
-    ? (donationAmount * PLATFORM_FEE_RATE) / 100
-    : 0;
+    donationAmount && isDaimoPay ? donationAmount * DAIMO_FEE_RATE : 0;
+  const protocolFee = donationAmount ? donationAmount * PROTOCOL_FEE_RATE : 0;
+  const platformFee = donationAmount ? donationAmount * PLATFORM_FEE_RATE : 0;
 
   const totalFees = daimoFee + protocolFee + platformFee;
   const totalUserPayment = (donationAmount || 0) + tipAmount + totalFees;
@@ -71,7 +67,11 @@ export function FeeInformation({
             </div>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-auto p-1 text-xs">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-1 text-xs"
+                >
                   Details →
                 </Button>
               </DialogTrigger>
@@ -126,9 +126,9 @@ export function FeeInformation({
 
           <div className="border-t border-border/50 pt-2">
             <p className="text-xs text-muted-foreground">
-              <strong>Transparent Fees:</strong> Relay Funder is committed to fee
-              transparency. Protocol fees support the network. Platform fees are
-              waived.
+              <strong>Transparent Fees:</strong> Relay Funder is committed to
+              fee transparency. Protocol fees support the network. Platform fees
+              are waived.
             </p>
           </div>
         </div>
@@ -212,7 +212,9 @@ function FeeBreakdownContent({
             <div className="flex items-center justify-between border-t py-2 pt-3">
               <span className="text-sm font-medium">Total Contribution</span>
               <span className="text-sm font-bold">
-                {donationAmount ? `$${(totalContribution || 0).toFixed(2)}` : '$0.00'}
+                {donationAmount
+                  ? `$${(totalContribution || 0).toFixed(2)}`
+                  : '$0.00'}
               </span>
             </div>
           </div>
