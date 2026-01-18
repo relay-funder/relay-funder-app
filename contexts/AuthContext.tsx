@@ -38,13 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const session = useSession();
   const [isClient, setIsClient] = useState(false);
 
-  // Preload appkit and wagmi in background after initial render
+  // Preload web3 adapter modules in background after initial render
   useEffect(() => {
-    Promise.all([
-      import('@reown/appkit/react'),
-      import('@wagmi/core'),
-      import('@/lib/web3/adapter/appkit/config'),
-    ]);
+    import('@/lib/web3/auth').then(({ preloadWeb3Modules }) =>
+      preloadWeb3Modules(),
+    );
   }, []);
 
   const authenticated = useMemo(() => {
@@ -100,12 +98,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [authenticated, address, isAdmin, isClient]);
   const logout = useCallback(async () => {
-    // Dynamically import wagmi core disconnect to avoid blocking initial load
-    const [{ disconnect }, { config }] = await Promise.all([
-      import('@wagmi/core'),
-      import('@/lib/web3/adapter/appkit/config'),
-    ]);
-    await disconnect(config);
+    // Dynamically import disconnect to avoid blocking initial load
+    const { disconnectWallet } = await import('@/lib/web3/auth');
+    await disconnectWallet();
     await signOut();
   }, []);
   const value = useMemo(() => {

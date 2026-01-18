@@ -1,7 +1,7 @@
 // wagmi/core  1837->2522 + 500ms
 
 // ~680 modules
-export { readContract, createConfig, disconnect as disconnectWagmi } from '@wagmi/core';
+export { readContract, createConfig, disconnect } from '@wagmi/core';
 // ~1250 modules
 export {
   useConnectorClient,
