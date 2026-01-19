@@ -13,6 +13,7 @@ import { CampaignCreate } from '@/components/campaign/create';
 import { Button } from '@/components/ui';
 import { useCallback, useState } from 'react';
 import { CampaignUserList } from '@/components/campaign/list-user';
+import { WithdrawalHistorySection } from '@/components/campaign/withdrawal-history-section';
 import { Web3ContextProvider } from '@/lib/web3';
 
 function CampaignsPageContent() {
@@ -119,6 +120,10 @@ function CampaignsPageContent() {
           )}
         </TabsContent>
       </Tabs>
+
+      <div className="mt-8">
+        <WithdrawalHistorySection />
+      </div>
     </PageLayout>
   );
 }
