@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import Script from 'next/script';
 import './globals.css';
 import Providers from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
 import { ConfirmProvider } from '@/contexts/ConfirmContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -34,7 +36,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script strategy="beforeInteractive" src="/theme-init.js" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -43,6 +48,7 @@ export default function RootLayout({
             <PageMainLayout>{children}</PageMainLayout>
             <Toaster />
             <EnvironmentBadge />
+            <Analytics />
           </Providers>
         </ConfirmProvider>
       </body>

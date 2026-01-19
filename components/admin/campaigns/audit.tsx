@@ -185,6 +185,7 @@ export function CampaignAudit() {
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Treasury</TableHead>
+                <TableHead>Withdrawals</TableHead>
                 <TableHead>Volume (incl. tips)</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -237,6 +238,27 @@ export function CampaignAudit() {
                       <Badge variant="secondary">Not Deployed</Badge>
                     )}
                   </TableCell>
+                  <TableCell>
+                    {campaign.treasuryAddress &&
+                    (campaign.status === 'ACTIVE' ||
+                      campaign.status === 'COMPLETED' ||
+                      campaign.status === 'FAILED') ? (
+                      campaign.treasuryWithdrawalsEnabled ? (
+                        <Badge className="bg-green-600 hover:bg-green-700">
+                          Authorized
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="bg-muted/50 text-muted-foreground"
+                        >
+                          Not Authorized
+                        </Badge>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="font-medium">
                       {(() => {
@@ -277,7 +299,7 @@ export function CampaignAudit() {
               ))}
               {filteredCampaigns.length === 0 && !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-sm">
+                  <TableCell colSpan={7} className="py-10 text-center text-sm">
                     {searchTerm
                       ? 'No campaigns match your search.'
                       : 'No campaigns found.'}

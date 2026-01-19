@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useDonationContext } from '@/contexts';
+import { trackEvent } from '@/lib/analytics';
+import { PROTOCOL_FEE_RATE } from '@/lib/constant';
 
 export function CampaignDonationWalletProcess({
   campaign,
@@ -81,7 +83,11 @@ export function CampaignDonationWalletProcess({
         });
       }
 
-      // Proceed with donation (email will be included in payment metadata regardless)
+      trackEvent('funnel_payment_initiated', {
+        amount: numericAmount,
+        currency: 'USDC',
+        payment_method: 'wallet',
+      });
       await onDonate();
     } catch (error) {
       console.error('process:onDonate:catch', error);
@@ -95,6 +101,7 @@ export function CampaignDonationWalletProcess({
     updateProfileEmail,
     toast,
     profile,
+    numericAmount,
   ]);
   useEffect(() => {
     // auto-reset state when done
@@ -128,14 +135,21 @@ export function CampaignDonationWalletProcess({
     };
   }, [processingOnDonate]);
 
+  // Calculate total with protocol fee for accurate balance check
+  const totalWithFee = useMemo(() => {
+    const base = numericAmount;
+    const tip = parseFloat(tipAmount || '0');
+    const protocolFee = base * PROTOCOL_FEE_RATE;
+    return base + protocolFee + tip;
+  }, [numericAmount, tipAmount]);
+
   const isButtonDisabled =
     !hasUsdBalance ||
     !numericAmount ||
     processing ||
     !isValidEmail(email) ||
     (usdFormattedBalance.usdBalanceAmount > 0 &&
-      numericAmount + parseFloat(tipAmount || '0') >
-        usdFormattedBalance.usdBalanceAmount);
+      totalWithFee > usdFormattedBalance.usdBalanceAmount);
 
   return (
     <>

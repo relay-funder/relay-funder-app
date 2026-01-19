@@ -6,6 +6,10 @@ import {
   FUNDING_USAGE_MAX_LENGTH,
   FUNDING_USAGE_MIN_LENGTH,
 } from '@/lib/constant/form';
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
 import type { DbCampaign } from '@/types/campaign';
 import {
   ValidationStage,
@@ -22,22 +26,30 @@ function validateTimes(value: string) {
 }
 
 function validateStartTimeNotInPast(value: string) {
-  const startDate = new Date(value);
+  // Parse as local date, not UTC (YYYY-MM-DD strings are parsed as UTC by default)
+  let parsed;
+  try {
+    parsed = validateAndParseDateString(value);
+  } catch {
+    return false;
+  }
+  const { year, month, day } = parsed;
+  const startDate = new Date(year, month - 1, day);
   const now = new Date();
 
-  // Check if the selected date is today
-  const isToday = startDate.toDateString() === now.toDateString();
+  // Check if the selected date is today using year/month/day comparison
+  const isToday =
+    now.getFullYear() === startDate.getFullYear() &&
+    now.getMonth() === startDate.getMonth() &&
+    now.getDate() === startDate.getDate();
 
   if (isToday) {
     // Allow selecting today - the transformation will set to 1 hour from now during submission
     return true;
   }
 
-  // For future dates, require minimum time buffer
-  const bufferTime = 60 * 60 * 1000; // 1 hour for all envs
-  const earliestAllowed = new Date(now.getTime() + bufferTime);
-
-  return startDate >= earliestAllowed;
+  // Future dates (not today) are always valid since we set them to start of day
+  return startDate > now;
 }
 
 function normalizeCampaignStartForForm(value: string) {
@@ -158,7 +170,14 @@ export const CampaignFormSchema = z
         }),
       },
     ),
-    bannerImage: z.instanceof(File).or(z.null()).optional(),
+    bannerImage: z
+      .instanceof(File)
+      .refine(
+        (file) => file.size <= MAX_FILE_SIZE_BYTES,
+        FILE_SIZE_ERROR_MESSAGE,
+      )
+      .or(z.null())
+      .optional(),
   })
   .refine((data) => data.startTime < data.endTime, {
     message: 'startTime must be less than endTime',

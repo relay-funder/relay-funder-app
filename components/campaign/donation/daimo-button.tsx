@@ -12,6 +12,7 @@ import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
 import { logFactory } from '@/lib/debug/log';
+import { trackEvent } from '@/lib/analytics';
 
 interface DaimoPayEvent {
   paymentId?: string;
@@ -119,6 +120,12 @@ export function DaimoPayButtonComponent({
           }
         }
 
+        trackEvent('funnel_payment_initiated', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'daimo',
+        });
+
         await daimoOnPaymentStarted(event);
         onPaymentStarted?.(event);
         onPaymentStartedCallback?.();
@@ -144,6 +151,7 @@ export function DaimoPayButtonComponent({
       onPaymentStarted,
       onPaymentStartedCallback,
       logVerbose,
+      amount,
     ],
   );
 
@@ -152,6 +160,13 @@ export function DaimoPayButtonComponent({
       logVerbose('Payment completed', { ...event, prefixId: event.paymentId });
       try {
         await daimoOnPaymentCompleted(event);
+
+        trackEvent('funnel_payment_success', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'daimo',
+        });
+
         toast({
           title: 'Payment Successful',
           description: 'Your donation has been processed successfully.',
@@ -168,6 +183,7 @@ export function DaimoPayButtonComponent({
       onPaymentCompleted,
       onPaymentCompletedCallback,
       logVerbose,
+      amount,
     ],
   );
 
@@ -176,6 +192,14 @@ export function DaimoPayButtonComponent({
       logVerbose('Payment bounced', { ...event, prefixId: event.paymentId });
       try {
         await daimoOnPaymentBounced(event);
+
+        trackEvent('funnel_payment_failed', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'daimo',
+          error_message: 'Payment bounced',
+        });
+
         toast({
           title: 'Payment Failed',
           description: 'Your payment could not be processed. Please try again.',
@@ -193,6 +217,7 @@ export function DaimoPayButtonComponent({
       onPaymentBounced,
       onPaymentBouncedCallback,
       logVerbose,
+      amount,
     ],
   );
 

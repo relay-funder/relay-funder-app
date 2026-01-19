@@ -20,6 +20,9 @@ VOLUME /app
 VOLUME /app/.next
 VOLUME /app/.pnpm-store
 
+COPY scripts/dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+
 ENV NODE_ENV=development
 ENV PORT=3000
 # this project deals with lots of small files from the web3
@@ -30,4 +33,4 @@ ENV NODE_OPTIONS=--max_old_space_size=8192
 # Expose port
 EXPOSE 3000
 
-CMD ["pnpm", "dev"]
+CMD ["/usr/local/bin/dev-entrypoint.sh"]

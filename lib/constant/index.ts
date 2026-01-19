@@ -7,6 +7,12 @@ export {
   CREATOR_EVENT_POINTS,
   RECEIVER_EVENT_POINTS,
 } from './user-score-points';
+export {
+  PASSPORT_API_BASE_URL,
+  PASSPORT_API_KEY,
+  PASSPORT_SCORER_ID,
+  PASSPORT_SCORE_THRESHOLD,
+} from './human-passport';
 export * from './tokens';
 
 export const PROJECT_NAME = 'Relay Funder';
@@ -56,6 +62,9 @@ export {
 } from './daimo';
 
 export { IS_PRODUCTION } from '../utils/env';
+
+// Fee rates
+export const PROTOCOL_FEE_RATE = 0.01; // 1% as decimal
 
 // RPC Endpoints
 export { CELO_RPC_ENDPOINTS } from './rpc-endpoints';

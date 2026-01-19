@@ -15,6 +15,7 @@ import {
   getDefaultDisplayOptions,
   validateCampaignCardData,
 } from './types';
+import { trackEvent } from '@/lib/analytics';
 
 /**
  * Campaign Card Component
@@ -199,6 +200,11 @@ export function CampaignCard({
         href={`/campaigns/${campaign.slug}`}
         className="block transition-opacity active:opacity-75"
         target={linkTarget}
+        onClick={() => {
+          trackEvent('funnel_cta_click', {
+            path: `/campaigns/${campaign.slug}`,
+          });
+        }}
       >
         {cardContent}
       </Link>

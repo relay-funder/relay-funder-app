@@ -12,8 +12,9 @@ import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import { useDonationContext } from '@/contexts';
-import { PaymentTotalSummary } from './payment-total-summary';
 import { NewsletterSignupLink } from '@/components/newsletter/newsletter-signup-link';
+import { FeeInformation } from '@/components/shared/fee-information';
+import { useQfMatchingEstimate } from '@/lib/hooks/useQfMatchingEstimate';
 
 export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
   const router = useRouter();
@@ -28,7 +29,16 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     setIsPaymentCompleted,
     clearDonation,
     setAmount,
+    paymentType,
   } = useDonationContext();
+
+  const roundId = campaign.rounds?.[0]?.id;
+  const { data: qfEstimate } = useQfMatchingEstimate({
+    roundId: roundId ?? 0,
+    campaignId: campaign.id,
+    amount,
+    enabled: !!roundId && !!amount && parseFloat(amount) > 0,
+  });
 
   useEffect(() => {
     return () => {
@@ -105,7 +115,18 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
         </VisibilityToggle>
 
         <VisibilityToggle isVisible={!isPaymentCompleted}>
-          <PaymentTotalSummary amount={amount} tipAmount={tipAmount} />
+          {/* Fee Information Breakdown */}
+          <div className="mb-6">
+            <FeeInformation
+              isDaimoPay={paymentType === 'daimo'}
+              donationAmount={parseFloat(amount || '0')}
+              tipAmount={parseFloat(tipAmount || '0')}
+              qfMatch={
+                qfEstimate ? parseFloat(qfEstimate.marginalMatch) : undefined
+              }
+              className="w-full"
+            />
+          </div>
 
           <DaimoPayButtonComponent
             campaign={campaign}

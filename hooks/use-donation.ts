@@ -15,6 +15,7 @@ import {
 import { useUserProfile } from '@/lib/hooks/useProfile';
 import { type DbCampaign, DonationProcessStates } from '@/types/campaign';
 import { debugHook as debug } from '@/lib/debug';
+import { trackEvent } from '@/lib/analytics';
 
 export function useDonationCallback({
   campaign,
@@ -130,15 +131,56 @@ export function useDonationCallback({
         paymentId,
         status: receipt.status === 1 ? 'confirmed' : 'failed',
       });
+
+      if (receipt.status === 1) {
+        trackEvent('funnel_payment_success', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'wallet',
+        });
+      } else {
+        trackEvent('funnel_payment_failed', {
+          amount: parseFloat(amount),
+          currency: 'USDC',
+          payment_method: 'wallet',
+          error_message: 'Transaction failed on-chain',
+        });
+      }
       onStateChanged('done');
 
       debug && console.log('Payment status updated');
     } catch (err) {
       debug && console.error('Donation error:', err);
       onStateChanged('failed');
-      setError(
-        err instanceof Error ? err.message : 'Failed to process wallet payment',
-      );
+
+      // Parse error for user-friendly message
+      let userMessage = 'Failed to process wallet payment';
+      if (err instanceof Error) {
+        const errMsg = err.message.toLowerCase();
+        if (
+          errMsg.includes('exceeds balance') ||
+          errMsg.includes('insufficient')
+        ) {
+          userMessage =
+            err.message.includes('Insufficient USDC')
+              ? err.message // Use our pre-flight check message
+              : 'Insufficient USDC balance. Please ensure you have enough funds including the 1% protocol fee.';
+        } else if (errMsg.includes('user rejected') || errMsg.includes('denied')) {
+          userMessage = 'Transaction was rejected in your wallet.';
+        } else if (errMsg.includes('nonce')) {
+          userMessage = 'Transaction conflict. Please wait a moment and try again.';
+        } else {
+          userMessage = err.message;
+        }
+      }
+
+      setError(userMessage);
+      trackEvent('funnel_payment_failed', {
+        amount: parseFloat(amount),
+        currency: 'USDC',
+        payment_method: 'wallet',
+        error_message: err instanceof Error ? err.message : 'Unknown error',
+      });
     } finally {
       setIsProcessing(false);
     }

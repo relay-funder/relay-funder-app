@@ -6,13 +6,10 @@ import type {
   StripePaymentElementChangeEvent,
 } from '@stripe/stripe-js';
 import { useStripeFormSubmission } from '@/hooks/use-stripe-form-submission';
-import { DEFAULT_USER_EMAIL } from '@/lib/constant';
-import { debugComponentData as debug } from '@/lib/debug';
 
 interface PaymentStripeFormProps {
   publicKey: string;
   campaign: DbCampaign;
-  amount: string;
 }
 
 /**
@@ -22,7 +19,6 @@ interface PaymentStripeFormProps {
 export function PaymentStripeForm({
   publicKey,
   campaign,
-  amount,
 }: PaymentStripeFormProps) {
   const { error, isProcessing, isReady, handleSubmit, clearError } =
     useStripeFormSubmission({
@@ -30,12 +26,9 @@ export function PaymentStripeForm({
       campaign,
     });
 
-  debug &&
-    console.log('Stripe form props:', {
-      publicKey,
-      campaign,
-      amount,
-    });
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    await handleSubmit(e);
+  };
 
   if (!isReady) {
     return (
@@ -47,18 +40,12 @@ export function PaymentStripeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} id="payment-form">
+    <form onSubmit={handleFormSubmit} id="payment-form">
       <div id="payment-element">
         <PaymentElement
           options={
             {
               layout: 'accordion',
-              defaultValues: {
-                billingDetails: {
-                  name: 'John Doe', // test user name
-                  email: DEFAULT_USER_EMAIL, // test user email
-                },
-              },
             } as StripePaymentElementOptions
           }
           onChange={(event: StripePaymentElementChangeEvent) => {

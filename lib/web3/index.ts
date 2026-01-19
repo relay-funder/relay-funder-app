@@ -23,6 +23,7 @@ export {
   // wagmi
   readContract,
   createConfig,
+  disconnect,
   useConnectorClient,
   useWriteContract,
   useWaitForTransactionReceipt,
@@ -44,3 +45,4 @@ export {
   isDummy,
 } from './adapter';
 export { useCurrentChain } from './use-current-chain';
+export { preloadWeb3Modules, disconnectWallet } from './auth';

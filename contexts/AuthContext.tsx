@@ -11,7 +11,6 @@ import React, {
 import { debugAuth as debug } from '@/lib/debug';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { useDisconnect } from '@reown/appkit/react';
 
 interface AuthContextType {
   address?: string;
@@ -37,8 +36,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const session = useSession();
-  const { disconnect } = useDisconnect();
   const [isClient, setIsClient] = useState(false);
+
+  // Preload web3 adapter modules in background after initial render
+  useEffect(() => {
+    import('@/lib/web3/auth')
+      .then(({ preloadWeb3Modules }) => preloadWeb3Modules())
+      .catch((err) => console.warn('Failed to preload web3 modules:', err));
+  }, []);
 
   const authenticated = useMemo(() => {
     debug &&
@@ -93,9 +98,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [authenticated, address, isAdmin, isClient]);
   const logout = useCallback(async () => {
-    await disconnect();
-    await signOut();
-  }, [disconnect]);
+    try {
+      // Dynamically import disconnect to avoid blocking initial load
+      const { disconnectWallet } = await import('@/lib/web3/auth');
+      await disconnectWallet();
+    } finally {
+      // Ensure signOut is called even if disconnect fails
+      await signOut();
+    }
+  }, []);
   const value = useMemo(() => {
     return {
       address,

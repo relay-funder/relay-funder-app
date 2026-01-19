@@ -418,6 +418,11 @@ export const KeepWhatsRaisedABI = [
   },
   {
     type: 'error',
+    name: 'KeepWhatsRaisedRewardExists',
+    inputs: [],
+  },
+  {
+    type: 'error',
     name: 'KeepWhatsRaisedDisabled',
     inputs: [],
   },
@@ -428,9 +433,17 @@ export const KeepWhatsRaisedABI = [
   },
   {
     type: 'error',
-    name: 'KeepWhatsRaisedWithdrawalOverload',
+    name: 'KeepWhatsRaisedInsufficientFundsForWithdrawalAndFee',
     inputs: [
       { name: 'availableAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'withdrawalAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'fee', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'KeepWhatsRaisedInsufficientFundsForFee',
+    inputs: [
       { name: 'withdrawalAmount', type: 'uint256', internalType: 'uint256' },
       { name: 'fee', type: 'uint256', internalType: 'uint256' },
     ],
@@ -459,5 +472,15 @@ export const KeepWhatsRaisedABI = [
     type: 'error',
     name: 'KeepWhatsRaisedConfigLocked',
     inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'KeepWhatsRaisedDisbursementBlocked',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'KeepWhatsRaisedPledgeAlreadyProcessed',
+    inputs: [{ name: 'pledgeId', type: 'bytes32', internalType: 'bytes32' }],
   },
 ];
