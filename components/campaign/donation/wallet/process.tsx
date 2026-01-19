@@ -11,6 +11,7 @@ import { useUpdateProfileEmail, useUserProfile } from '@/lib/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useDonationContext } from '@/contexts';
 import { trackEvent } from '@/lib/analytics';
+import { PROTOCOL_FEE_RATE } from '@/lib/constant';
 
 export function CampaignDonationWalletProcess({
   campaign,
@@ -134,14 +135,21 @@ export function CampaignDonationWalletProcess({
     };
   }, [processingOnDonate]);
 
+  // Calculate total with protocol fee for accurate balance check
+  const totalWithFee = useMemo(() => {
+    const base = numericAmount;
+    const tip = parseFloat(tipAmount || '0');
+    const protocolFee = base * PROTOCOL_FEE_RATE;
+    return base + protocolFee + tip;
+  }, [numericAmount, tipAmount]);
+
   const isButtonDisabled =
     !hasUsdBalance ||
     !numericAmount ||
     processing ||
     !isValidEmail(email) ||
     (usdFormattedBalance.usdBalanceAmount > 0 &&
-      numericAmount + parseFloat(tipAmount || '0') >
-        usdFormattedBalance.usdBalanceAmount);
+      totalWithFee > usdFormattedBalance.usdBalanceAmount);
 
   return (
     <>

@@ -83,6 +83,17 @@ export async function requestTransaction({
   debug && console.log('Tip amount in USD:', tipAmountInUSD.toString());
   debug && console.log('Total amount in USD:', totalAmount.toString());
 
+  // Pre-flight balance check to fail fast with clear error message
+  const userBalance = await usdContract.balanceOf(userAddress);
+  debug && console.log('User USDC balance:', userBalance.toString());
+  if (userBalance < totalAmount) {
+    const balanceFormatted = ethers.formatUnits(userBalance, USD_DECIMALS);
+    const totalFormatted = ethers.formatUnits(totalAmount, USD_DECIMALS);
+    throw new Error(
+      `Insufficient USDC balance. You have $${balanceFormatted} but need $${totalFormatted} (includes 1% protocol fee).`,
+    );
+  }
+
   // Generate pledge ID as per shell script pattern (must be done first)
   const pledgeId = ethers.keccak256(
     ethers.toUtf8Bytes(`pledge-${Date.now()}-${userAddress}`),
