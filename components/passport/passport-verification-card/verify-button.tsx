@@ -34,7 +34,13 @@ export function VerifyButton({ compact = false }: VerifyButtonProps) {
 
   if (compact) {
     return (
-      <Button variant="outline" onClick={verifyPassport}>
+      <Button
+        variant="outline"
+        onClick={verifyPassport}
+        disabled={isLoading}
+        aria-label="Verify passport"
+        aria-busy={isLoading}
+      >
         <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
       </Button>
     );

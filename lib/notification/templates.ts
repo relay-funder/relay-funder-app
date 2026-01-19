@@ -28,7 +28,7 @@ export function generateMessage(data: NotificationData): string {
       return `Withdrawal of ${data.amount} ${data.token} from "${data.campaignTitle}" has been executed${data.adminName ? ` by ${data.adminName}` : ''}`;
     case 'TreasuryAuthorized':
       return `Treasury withdrawals have been enabled for "${data.campaignTitle}" by ${data.adminName}`;
-    case 'WithdrawalUpdated':
+    case 'WithdrawalUpdated': {
       const changeParts: string[] = [];
       if (data.changes.transactionHash !== undefined) {
         changeParts.push(
@@ -52,6 +52,7 @@ export function generateMessage(data: NotificationData): string {
       const changesText =
         changeParts.length > 0 ? changeParts.join(', ') : 'details updated';
       return `Withdrawal for ${data.amount} ${data.token} from "${data.campaignTitle}" has been updated (${changesText}) by ${data.adminName}`;
+    }
     case 'WithdrawalDeleted':
       return `Withdrawal request for ${data.amount} ${data.token} from "${data.campaignTitle}" has been deleted by ${data.adminName}`;
     default:

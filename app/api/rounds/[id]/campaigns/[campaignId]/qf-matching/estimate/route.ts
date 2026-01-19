@@ -28,14 +28,16 @@ export async function GET(
       throw new ApiParameterError('Invalid campaign id');
     }
 
-    if (!amountStr || parseFloat(amountStr) <= 0) {
+    const parsedAmount = parseFloat(amountStr ?? '');
+    if (!amountStr || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
       return response({
         estimatedMatch: '0',
         marginalMatch: '0',
       });
     }
 
-    const state = await getQfRoundState(roundId);
+    // Deep clone state to avoid mutating the cached original
+    const state = structuredClone(await getQfRoundState(roundId));
 
     const baselineDistribution = calculateQfDistribution(state);
     const baselineCampaign = baselineDistribution.distribution.find(

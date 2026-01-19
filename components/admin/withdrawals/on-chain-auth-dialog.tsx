@@ -158,7 +158,7 @@ export function OnChainAuthDialog({
             type="button"
             variant="secondary"
             onClick={() => onOpenChange?.(false)}
-            disabled={isExecuting || isAuthorizing || !!txHash}
+            disabled={isExecuting || isAuthorizing}
           >
             {txHash ? 'Close' : 'Cancel'}
           </Button>

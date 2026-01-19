@@ -10,7 +10,6 @@ import { useStripeFormSubmission } from '@/hooks/use-stripe-form-submission';
 interface PaymentStripeFormProps {
   publicKey: string;
   campaign: DbCampaign;
-  amount: string;
 }
 
 /**

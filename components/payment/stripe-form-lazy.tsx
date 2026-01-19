@@ -11,7 +11,6 @@ interface LazyStripeFormProps {
   clientSecret: string;
   publicKey: string;
   campaign: DbCampaign;
-  amount: string;
 }
 
 /**
@@ -23,7 +22,6 @@ export function LazyStripeForm({
   clientSecret,
   publicKey,
   campaign,
-  amount,
 }: LazyStripeFormProps) {
   const handleRetry = () => {
     // Force re-render by re-creating the component
@@ -46,11 +44,7 @@ export function LazyStripeForm({
             },
           }}
         >
-          <PaymentStripeForm
-            publicKey={publicKey}
-            campaign={campaign}
-            amount={amount}
-          />
+          <PaymentStripeForm publicKey={publicKey} campaign={campaign} />
         </Elements>
       </Suspense>
     </PaymentErrorBoundary>

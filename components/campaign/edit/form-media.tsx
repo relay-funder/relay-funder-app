@@ -74,12 +74,19 @@ export function CampaignEditFormMedia({ campaign }: { campaign?: DbCampaign }) {
                     form.setError('bannerImage', {
                       message: FILE_SIZE_ERROR_MESSAGE,
                     });
-                    form.setValue('bannerImage', null);
+                    form.setValue('bannerImage', null, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
                     event.target.value = '';
                     return;
                   }
                   form.clearErrors('bannerImage');
-                  form.setValue('bannerImage', file);
+                  form.setValue('bannerImage', file, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  });
                 }}
               />
             </FormControl>

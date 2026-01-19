@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
@@ -76,6 +76,7 @@ export function WithdrawalDialog({
 
   const [step, setStep] = useState<WithdrawalStep>('amount');
   const [amount, setAmount] = useState<string>('');
+  const initialDefaultAppliedRef = useRef<boolean>(false);
 
   // Load balances for available amount
   const treasuryAddress = campaign?.treasuryAddress ?? null;
@@ -252,6 +253,7 @@ export function WithdrawalDialog({
   const resetLocalState = useCallback(() => {
     setStep('amount');
     setAmount('');
+    initialDefaultAppliedRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -261,12 +263,17 @@ export function WithdrawalDialog({
     }
   }, [dialogOpen, resetLocalState]);
 
-  // Default amount to available balance when dialog opens and balance loads
+  // Default amount to available balance when dialog opens and balance loads (only once per dialog open)
   useEffect(() => {
-    if (dialogOpen && availableBalance > 0 && amount === '') {
+    if (
+      dialogOpen &&
+      availableBalance > 0 &&
+      !initialDefaultAppliedRef.current
+    ) {
       setAmount(availableBalance.toFixed(2));
+      initialDefaultAppliedRef.current = true;
     }
-  }, [dialogOpen, availableBalance, amount]);
+  }, [dialogOpen, availableBalance]);
 
   // Prevent dialog from closing when data loads/changes
   // Only close if explicitly requested via onOpenChange
@@ -548,7 +555,7 @@ export function WithdrawalDialog({
           <div className="space-y-6">
             <TreasuryAuthorizationStatus
               treasuryAddress={treasuryAddress}
-              onChainAuthorized={onChainAuthorized}
+              onChainAuthorized={onChainAuthorized || hasApproval}
               showLabel={true}
             />
             <div className="rounded-md border p-4">

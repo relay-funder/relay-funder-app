@@ -40,9 +40,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Preload web3 adapter modules in background after initial render
   useEffect(() => {
-    import('@/lib/web3/auth').then(({ preloadWeb3Modules }) =>
-      preloadWeb3Modules(),
-    );
+    import('@/lib/web3/auth')
+      .then(({ preloadWeb3Modules }) => preloadWeb3Modules())
+      .catch((err) => console.warn('Failed to preload web3 modules:', err));
   }, []);
 
   const authenticated = useMemo(() => {

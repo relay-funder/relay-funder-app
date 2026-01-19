@@ -48,11 +48,8 @@ function validateStartTimeNotInPast(value: string) {
     return true;
   }
 
-  // For future dates, require minimum time buffer
-  const bufferTime = 60 * 60 * 1000; // 1 hour for all envs
-  const earliestAllowed = new Date(now.getTime() + bufferTime);
-
-  return startDate >= earliestAllowed;
+  // Future dates (not today) are always valid since we set them to start of day
+  return startDate > now;
 }
 
 function normalizeCampaignStartForForm(value: string) {
