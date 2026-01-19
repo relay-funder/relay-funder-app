@@ -9,6 +9,7 @@ import {
 } from '@/lib/web3/daimo/pledge';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
 import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
+import { PROTOCOL_FEE_RATE } from '@/lib/constant';
 import { EmailSchema } from '@/lib/api/types/common';
 
 interface UseDaimoPaymentParams {
@@ -44,9 +45,8 @@ export function useDaimoPayment({
   const { address } = useAccount();
   const config = useMemo(() => getDaimoPayConfig(), []);
 
-  // Fee rates (matching FeeInformation component)
-  const DAIMO_FEE_RATE = 0.01; // 1%
-  const PROTOCOL_FEE_RATE = 0.01; // 1%
+  // Fee rate for Daimo Pay (1%)
+  const DAIMO_FEE_RATE = 0.01;
 
   // Calculate amounts
   const baseAmount = useMemo(() => parseFloat(amount || '0'), [amount]);

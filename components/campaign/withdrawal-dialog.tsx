@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { DbCampaign } from '@/types/campaign';
 import { useAuth } from '@/contexts';
@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-import { AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
 import { normalizeAddress } from '@/lib/normalize-address';
 import { USD_TOKEN } from '@/lib/constant';
 import { TreasuryAuthorizationStatus } from '@/components/campaign/treasury-authorization-status';
@@ -76,6 +76,10 @@ export function WithdrawalDialog({
 
   const [step, setStep] = useState<WithdrawalStep>('amount');
   const [amount, setAmount] = useState<string>('');
+  const initialDefaultAppliedRef = useRef<boolean>(false);
+  // Track successful on-chain execution to prevent double-withdrawal if DB write fails
+  const [executedTxHash, setExecutedTxHash] = useState<string | null>(null);
+  const [dbRecordError, setDbRecordError] = useState<string | null>(null);
 
   // Load balances for available amount
   const treasuryAddress = campaign?.treasuryAddress ?? null;
@@ -93,10 +97,8 @@ export function WithdrawalDialog({
 
   // Check if campaign has withdrawal approval
   // Only fetch when dialog is open to avoid exhausting connection pool
-  const {
-    data: approvalData,
-    isLoading: isApprovalLoading,
-  } = useWithdrawalApproval(campaign?.id, dialogOpen);
+  const { data: approvalData, isLoading: isApprovalLoading } =
+    useWithdrawalApproval(campaign?.id, dialogOpen);
 
   // Prepare displayed data
   const currency = useMemo<string>(() => {
@@ -111,13 +113,13 @@ export function WithdrawalDialog({
 
     // Only subtract PENDING withdrawal requests (not yet executed)
     const pendingAmount =
-      existingWithdrawalsData?.reduce((sum, w) => {
+      existingWithdrawalsData?.reduce((sum, withdrawal) => {
         if (
-          w.token === currency &&
-          w.requestType === 'WITHDRAWAL_AMOUNT' &&
-          !w.transactionHash // Only pending (not executed)
+          withdrawal.token === currency &&
+          withdrawal.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !withdrawal.transactionHash // Only pending (not executed)
         ) {
-          return sum + parseFloat(w.amount || '0');
+          return sum + parseFloat(withdrawal.amount || '0');
         }
         return sum;
       }, 0) || 0;
@@ -134,13 +136,13 @@ export function WithdrawalDialog({
   // Only count PENDING withdrawal requests (not yet executed)
   const existingWithdrawalsTotal = useMemo<number>(() => {
     return (
-      existingWithdrawalsData?.reduce((sum, w) => {
+      existingWithdrawalsData?.reduce((sum, withdrawal) => {
         if (
-          w.token === currency &&
-          w.requestType === 'WITHDRAWAL_AMOUNT' &&
-          !w.transactionHash // Only pending (not executed)
+          withdrawal.token === currency &&
+          withdrawal.requestType === 'WITHDRAWAL_AMOUNT' &&
+          !withdrawal.transactionHash // Only pending (not executed)
         ) {
-          return sum + parseFloat(w.amount || '0');
+          return sum + parseFloat(withdrawal.amount || '0');
         }
         return sum;
       }, 0) || 0
@@ -149,13 +151,13 @@ export function WithdrawalDialog({
 
   const executedWithdrawalsTotal = useMemo<number>(() => {
     return (
-      existingWithdrawalsData?.reduce((sum, w) => {
+      existingWithdrawalsData?.reduce((sum, withdrawal) => {
         if (
-          w.token === currency &&
-          w.requestType === 'WITHDRAWAL_AMOUNT' &&
-          w.transactionHash
+          withdrawal.token === currency &&
+          withdrawal.requestType === 'WITHDRAWAL_AMOUNT' &&
+          withdrawal.transactionHash
         ) {
-          return sum + parseFloat(w.amount || '0');
+          return sum + parseFloat(withdrawal.amount || '0');
         }
         return sum;
       }, 0) || 0
@@ -179,7 +181,7 @@ export function WithdrawalDialog({
     // But we still check the actual value from API
     return approvalData?.onChainAuthorized ?? false;
   }, [approvalData]);
-  
+
   // Determine if we should show authorization request button
   // Only show if not authorized AND not loading AND no approval exists
   const shouldShowAuthRequest = useMemo<boolean>(() => {
@@ -187,7 +189,7 @@ export function WithdrawalDialog({
     if (hasApproval) return false; // Don't show if approval exists (authorization must have happened)
     return !onChainAuthorized; // Show if not authorized
   }, [isApprovalLoading, hasApproval, onChainAuthorized]);
-  
+
   // Determine if we should show amount input form
   // Show if authorized OR if approval exists (approval implies authorization)
   // If hasApproval is true, show immediately (don't wait for loading to complete)
@@ -254,6 +256,9 @@ export function WithdrawalDialog({
   const resetLocalState = useCallback(() => {
     setStep('amount');
     setAmount('');
+    initialDefaultAppliedRef.current = false;
+    setExecutedTxHash(null);
+    setDbRecordError(null);
   }, []);
 
   useEffect(() => {
@@ -263,10 +268,17 @@ export function WithdrawalDialog({
     }
   }, [dialogOpen, resetLocalState]);
 
-  // Default amount to available balance when dialog opens and balance loads
+  // Default amount to available balance when dialog opens and balance loads (only once per dialog open)
+  // Only set default if user hasn't already entered an amount
   useEffect(() => {
-    if (dialogOpen && availableBalance > 0 && amount === '') {
+    if (
+      dialogOpen &&
+      availableBalance > 0 &&
+      !initialDefaultAppliedRef.current &&
+      amount.trim() === ''
+    ) {
       setAmount(availableBalance.toFixed(2));
+      initialDefaultAppliedRef.current = true;
     }
   }, [dialogOpen, availableBalance, amount]);
 
@@ -290,6 +302,29 @@ export function WithdrawalDialog({
     setStep('amount');
   }, []);
 
+  // Retry recording a successful on-chain withdrawal in DB
+  const handleRetryDbRecord = useCallback(async () => {
+    if (!executedTxHash) return;
+    try {
+      setDbRecordError(null);
+      await requestWithdrawal({
+        campaignId: campaign.id,
+        amount: amountNumber,
+        token,
+        transactionHash: executedTxHash,
+      });
+      setExecutedTxHash(null);
+      setStep('submitted');
+      toast({
+        title: 'Withdrawal recorded',
+        description: 'Your withdrawal has been recorded successfully.',
+      });
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to record withdrawal';
+      setDbRecordError(errMsg);
+    }
+  }, [executedTxHash, requestWithdrawal, campaign.id, amountNumber, token, toast]);
+
   const handleConfirmAndSubmit = useCallback(async () => {
     if (onChainAuthorized && hasApproval) {
       // Direct withdrawal: execute contract first
@@ -302,20 +337,35 @@ export function WithdrawalDialog({
         if (!result.success || !result.hash) {
           throw new Error(result.error || 'Failed to execute withdrawal');
         }
+        // Track successful on-chain execution before attempting DB write
+        setExecutedTxHash(result.hash);
         // Now record in DB
-        await requestWithdrawal({
-          campaignId: campaign.id,
-          amount: amountNumber,
-          token,
-          transactionHash: result.hash,
-        });
-        setStep('submitted');
-        toast({
-          title: 'Withdrawal executed',
-          description: 'Your withdrawal has been completed successfully.',
-        });
+        try {
+          await requestWithdrawal({
+            campaignId: campaign.id,
+            amount: amountNumber,
+            token,
+            transactionHash: result.hash,
+          });
+          setExecutedTxHash(null);
+          setStep('submitted');
+          toast({
+            title: 'Withdrawal executed',
+            description: 'Your withdrawal has been completed successfully.',
+          });
+        } catch (dbErr) {
+          // On-chain succeeded but DB failed - show error but don't allow re-execution
+          const errMsg = dbErr instanceof Error ? dbErr.message : 'Failed to record withdrawal';
+          setDbRecordError(errMsg);
+          setStep('submitted'); // Move to submitted to prevent re-execution
+          toast({
+            title: 'Withdrawal executed but recording failed',
+            description: 'Your on-chain withdrawal succeeded. Please retry recording or contact support.',
+            variant: 'destructive',
+          });
+        }
       } catch (err) {
-        setStep('review'); // Go back to review on error
+        setStep('review'); // Only go back to review if on-chain failed
         // handleAuthError shows appropriate toast (session expired or generic error)
         handleAuthError(err, 'Failed to execute withdrawal');
       }
@@ -370,13 +420,21 @@ export function WithdrawalDialog({
       // handleAuthError shows appropriate toast (session expired or generic error)
       handleAuthError(err, 'Failed to request authorization');
     }
-  }, [requestAuthorization, campaign.id, toast, setDialogOpen, handleAuthError]);
+  }, [
+    requestAuthorization,
+    campaign.id,
+    toast,
+    setDialogOpen,
+    handleAuthError,
+  ]);
 
   const defaultTrigger = (
     <Button
       className="h-12 w-full text-lg"
       size="lg"
-      disabled={!campaign || (!enabled && !isBalanceLoading && !isWithdrawalsLoading)}
+      disabled={
+        !campaign || (!enabled && !isBalanceLoading && !isWithdrawalsLoading)
+      }
     >
       Withdraw funds
     </Button>
@@ -542,7 +600,7 @@ export function WithdrawalDialog({
           <div className="space-y-6">
             <TreasuryAuthorizationStatus
               treasuryAddress={treasuryAddress}
-              onChainAuthorized={onChainAuthorized}
+              onChainAuthorized={onChainAuthorized || hasApproval}
               showLabel={true}
             />
             <div className="rounded-md border p-4">
@@ -639,21 +697,46 @@ export function WithdrawalDialog({
 
         {step === 'submitted' && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 rounded-md border p-4">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-emerald-700">
-                  {hasApproval
-                    ? 'Withdrawal completed'
-                    : 'Withdrawal requested'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {hasApproval
-                    ? `Your withdrawal of ${formatUSD(amountNumber)} ${currency} has been executed and recorded.`
-                    : `Your request for ${formatUSD(amountNumber)} ${currency} has been created and will be reviewed by an admin. You will see the status update once it is approved.`}
-                </p>
+            {executedTxHash && dbRecordError ? (
+              // On-chain succeeded but DB recording failed
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 p-4">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-amber-700">
+                      Withdrawal executed but recording failed
+                    </p>
+                    <p className="text-sm text-amber-600">
+                      Your on-chain withdrawal of {formatUSD(amountNumber)} {currency} was successful, but we failed to record it in our system.
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Transaction Hash</p>
+                  <p className="font-mono text-xs break-all">{executedTxHash}</p>
+                </div>
+                {dbRecordError && (
+                  <p className="text-sm text-destructive">{dbRecordError}</p>
+                )}
               </div>
-            </div>
+            ) : (
+              // Normal success state
+              <div className="flex items-center gap-2 rounded-md border p-4">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-emerald-700">
+                    {hasApproval
+                      ? 'Withdrawal completed'
+                      : 'Withdrawal requested'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {hasApproval
+                      ? `Your withdrawal of ${formatUSD(amountNumber)} ${currency} has been executed and recorded.`
+                      : `Your request for ${formatUSD(amountNumber)} ${currency} has been created and will be reviewed by an admin. You will see the status update once it is approved.`}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -712,9 +795,16 @@ export function WithdrawalDialog({
           )}
 
           {step === 'submitted' && (
-            <Button onClick={handleDone} className="w-full">
-              Done
-            </Button>
+            <div className="flex w-full gap-2">
+              {executedTxHash && dbRecordError && (
+                <Button onClick={handleRetryDbRecord} variant="outline" className="flex-1">
+                  Retry Recording
+                </Button>
+              )}
+              <Button onClick={handleDone} className="flex-1">
+                Done
+              </Button>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>

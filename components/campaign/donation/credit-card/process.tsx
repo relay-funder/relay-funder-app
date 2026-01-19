@@ -44,7 +44,6 @@ export function CampaignDonationCreditCardProcess({
             clientSecret={stripeData.clientSecret}
             publicKey={stripeData.publicKey}
             campaign={campaign}
-            amount={amount}
           />
         </Suspense>
       )}

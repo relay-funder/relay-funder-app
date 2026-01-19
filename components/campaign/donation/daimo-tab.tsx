@@ -121,7 +121,9 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
               isDaimoPay={paymentType === 'daimo'}
               donationAmount={parseFloat(amount || '0')}
               tipAmount={parseFloat(tipAmount || '0')}
-              qfMatch={qfEstimate ? parseFloat(qfEstimate.marginalMatch) : undefined}
+              qfMatch={
+                qfEstimate ? parseFloat(qfEstimate.marginalMatch) : undefined
+              }
               className="w-full"
             />
           </div>

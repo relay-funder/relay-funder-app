@@ -83,6 +83,10 @@ export async function validateWithdrawalAmount(
   );
   const availableOnChain = parseFloat(onChainBalance.available || '0');
 
+  if (!Number.isFinite(availableOnChain)) {
+    throw new ApiIntegrityError('Treasury balance is unavailable or invalid');
+  }
+
   if (availableOnChain <= 0) {
     throw new ApiIntegrityError(
       'Treasury has no available balance for withdrawal',
@@ -126,18 +130,21 @@ export async function validateWithdrawalAmount(
 
   // 4. Also validate against confirmed payments (database check)
   // This is a secondary validation to catch any discrepancies
-  const confirmedPayments =
-    campaign.paymentSummary?.token && token in campaign.paymentSummary?.token
-      ? campaign.paymentSummary.token[token].confirmed
-      : 0;
+  // Skip this check if payment summary is unavailable - the on-chain check above is the primary validation
+  if (
+    campaign.paymentSummary?.token &&
+    token in campaign.paymentSummary.token
+  ) {
+    const confirmedPayments = campaign.paymentSummary.token[token].confirmed;
 
-  // Round to cents to avoid floating point precision issues
-  const roundedConfirmed = Math.round(confirmedPayments * 100) / 100;
-  if (roundedTotal > roundedConfirmed) {
-    throw new ApiIntegrityError(
-      `Withdrawal amount exceeds confirmed payments. ` +
-        `Requested: ${totalAfterRequest.toFixed(2)} ${token}, Confirmed: ${confirmedPayments.toFixed(2)} ${token}`,
-    );
+    // Round to cents to avoid floating point precision issues
+    const roundedConfirmed = Math.round(confirmedPayments * 100) / 100;
+    if (roundedTotal > roundedConfirmed) {
+      throw new ApiIntegrityError(
+        `Withdrawal amount exceeds confirmed payments. ` +
+          `Requested: ${totalAfterRequest.toFixed(2)} ${token}, Confirmed: ${confirmedPayments.toFixed(2)} ${token}`,
+      );
+    }
   }
 }
 

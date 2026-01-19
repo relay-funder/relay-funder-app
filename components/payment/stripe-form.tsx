@@ -7,12 +7,9 @@ import type {
 } from '@stripe/stripe-js';
 import { useStripeFormSubmission } from '@/hooks/use-stripe-form-submission';
 
-
-
 interface PaymentStripeFormProps {
   publicKey: string;
   campaign: DbCampaign;
-  amount: string;
 }
 
 /**
@@ -28,8 +25,6 @@ export function PaymentStripeForm({
       publicKey,
       campaign,
     });
-
-
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     await handleSubmit(e);

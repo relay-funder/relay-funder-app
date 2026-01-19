@@ -35,6 +35,7 @@ export {
   // wagmi
   readContract,
   createConfig,
+  disconnect,
   useConnectorClient,
   useWriteContract,
   useWaitForTransactionReceipt,

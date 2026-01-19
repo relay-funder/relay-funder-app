@@ -151,6 +151,7 @@ export function DaimoPayButtonComponent({
       onPaymentStarted,
       onPaymentStartedCallback,
       logVerbose,
+      amount,
     ],
   );
 
@@ -182,6 +183,7 @@ export function DaimoPayButtonComponent({
       onPaymentCompleted,
       onPaymentCompletedCallback,
       logVerbose,
+      amount,
     ],
   );
 
@@ -215,6 +217,7 @@ export function DaimoPayButtonComponent({
       onPaymentBounced,
       onPaymentBouncedCallback,
       logVerbose,
+      amount,
     ],
   );
 

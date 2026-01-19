@@ -59,7 +59,9 @@ export function CampaignDonationWalletDetails({
 
   return (
     <div className="relative flex flex-col gap-6">
-      <VisibilityToggle isVisible={!isProcessingPayment && processState !== 'done'}>
+      <VisibilityToggle
+        isVisible={!isProcessingPayment && processState !== 'done'}
+      >
         <div className="space-y-6">
           <CampaignDonationWalletAmount />
 
@@ -92,7 +94,9 @@ export function CampaignDonationWalletDetails({
           isDaimoPay={paymentType === 'daimo'}
           donationAmount={parseFloat(amount || '0')}
           tipAmount={parseFloat(tipAmount || '0')}
-          qfMatch={qfEstimate ? parseFloat(qfEstimate.marginalMatch) : undefined}
+          qfMatch={
+            qfEstimate ? parseFloat(qfEstimate.marginalMatch) : undefined
+          }
           className="w-full"
         />
       )}

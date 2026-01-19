@@ -96,10 +96,7 @@ export function RoundCreate({ onCreated }: { onCreated?: () => void }) {
     form.setValue('description', randomDescription);
     form.setValue('descriptionUrl', 'https://example.com');
     form.setValue('matchingPool', Math.round(Math.random() * 1000) + 100); // Ensure > 0
-    form.setValue('tags', [
-      'RULE_MATCHING_QF',
-      'RULE_DISTRIBUTION_AFTER',
-    ]);
+    form.setValue('tags', ['RULE_MATCHING_QF', 'RULE_DISTRIBUTION_AFTER']);
 
     // Set proper timeline according to validation rules:
     // applicationEndTime <= startTime (applications close before round starts)

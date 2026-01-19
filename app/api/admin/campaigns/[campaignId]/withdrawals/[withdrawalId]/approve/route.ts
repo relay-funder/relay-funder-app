@@ -48,6 +48,11 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
       throw new ApiParameterError('Withdrawal ID is required');
     }
 
+    const withdrawalIdNum = Number.parseInt(withdrawalId, 10);
+    if (Number.isNaN(withdrawalIdNum)) {
+      throw new ApiParameterError('Withdrawal ID must be a valid integer');
+    }
+
     const campaign = await getCampaign(campaignIdOrSlug);
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
@@ -61,7 +66,7 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
     }
 
     const instance = await db.withdrawal.findUnique({
-      where: { id: Number(withdrawalId) },
+      where: { id: withdrawalIdNum },
       include: {
         createdBy: true,
       },
@@ -172,7 +177,12 @@ export async function PATCH(req: Request, { params }: ApproveWithdrawalParams) {
     // Validate withdrawal amount against on-chain balance before approving
     // This ensures no money is approved for withdrawal without proper checks
     // Pass instance.id to exclude it from pending count (avoid double-counting)
-    await validateWithdrawalAmount(campaign, instance.amount, instance.token, instance.id);
+    await validateWithdrawalAmount(
+      campaign,
+      instance.amount,
+      instance.token,
+      instance.id,
+    );
 
     const withdrawal = await db.withdrawal.update({
       where: { id: instance.id },

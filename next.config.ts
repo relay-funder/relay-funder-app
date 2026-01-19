@@ -16,17 +16,13 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'asset.captureapp.xyz',
       },
-      {
-        protocol: 'https',
-        hostname: 'amethyst-kind-cheetah-202.mypinata.cloud',
-      },
       ...(NEXT_PUBLIC_PINATA_GATEWAY_URL
         ? [
-          {
-            protocol: 'https' as const,
-            hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL,
-          },
-        ]
+            {
+              protocol: 'https' as const,
+              hostname: NEXT_PUBLIC_PINATA_GATEWAY_URL,
+            },
+          ]
         : []),
     ],
   },

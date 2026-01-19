@@ -6,6 +6,10 @@ import {
   FUNDING_USAGE_MAX_LENGTH,
   FUNDING_USAGE_MIN_LENGTH,
 } from '@/lib/constant/form';
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
 import type { DbCampaign } from '@/types/campaign';
 import {
   ValidationStage,
@@ -23,7 +27,13 @@ function validateTimes(value: string) {
 
 function validateStartTimeNotInPast(value: string) {
   // Parse as local date, not UTC (YYYY-MM-DD strings are parsed as UTC by default)
-  const { year, month, day } = validateAndParseDateString(value);
+  let parsed;
+  try {
+    parsed = validateAndParseDateString(value);
+  } catch {
+    return false;
+  }
+  const { year, month, day } = parsed;
   const startDate = new Date(year, month - 1, day);
   const now = new Date();
 
@@ -38,11 +48,8 @@ function validateStartTimeNotInPast(value: string) {
     return true;
   }
 
-  // For future dates, require minimum time buffer
-  const bufferTime = 60 * 60 * 1000; // 1 hour for all envs
-  const earliestAllowed = new Date(now.getTime() + bufferTime);
-
-  return startDate >= earliestAllowed;
+  // Future dates (not today) are always valid since we set them to start of day
+  return startDate > now;
 }
 
 function normalizeCampaignStartForForm(value: string) {
@@ -163,7 +170,14 @@ export const CampaignFormSchema = z
         }),
       },
     ),
-    bannerImage: z.instanceof(File).or(z.null()).optional(),
+    bannerImage: z
+      .instanceof(File)
+      .refine(
+        (file) => file.size <= MAX_FILE_SIZE_BYTES,
+        FILE_SIZE_ERROR_MESSAGE,
+      )
+      .or(z.null())
+      .optional(),
   })
   .refine((data) => data.startTime < data.endTime, {
     message: 'startTime must be less than endTime',

@@ -44,13 +44,18 @@ export async function POST(req: Request, { params }: ValidateWithdrawalParams) {
       throw new ApiParameterError('Withdrawal ID is required');
     }
 
+    const withdrawalIdNum = Number.parseInt(withdrawalId, 10);
+    if (Number.isNaN(withdrawalIdNum)) {
+      throw new ApiParameterError('Withdrawal ID must be a valid integer');
+    }
+
     const campaign = await getCampaign(campaignIdOrSlug);
     if (!campaign) {
       throw new ApiNotFoundError('Campaign not found');
     }
 
     const withdrawal = await db.withdrawal.findUnique({
-      where: { id: Number(withdrawalId) },
+      where: { id: withdrawalIdNum },
       include: {
         createdBy: true,
       },
@@ -92,15 +97,18 @@ export async function POST(req: Request, { params }: ValidateWithdrawalParams) {
 
     // 3. Check already executed
     if (withdrawal.transactionHash) {
-      throw new ApiAuthNotAllowed(
-        'Withdrawal has already been executed',
-      );
+      throw new ApiAuthNotAllowed('Withdrawal has already been executed');
     }
 
     // 4. Validate withdrawal amount against on-chain balance
     // This will throw if balance is insufficient or if there's an RPC error
     // Pass withdrawal.id to exclude it from pending count (avoid double-counting)
-    await validateWithdrawalAmount(campaign, withdrawal.amount, withdrawal.token, withdrawal.id);
+    await validateWithdrawalAmount(
+      campaign,
+      withdrawal.amount,
+      withdrawal.token,
+      withdrawal.id,
+    );
 
     return response({
       valid: true,

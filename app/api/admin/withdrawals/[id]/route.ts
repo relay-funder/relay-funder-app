@@ -83,13 +83,15 @@ export async function PATCH(req: Request, { params }: WithdrawalWithIdParams) {
       changes.approvedById = body.approvedById;
     }
 
+    // Verify admin user exists before proceeding with notifications
+    const adminUser = await getUser(session.user.address);
+    if (!adminUser) {
+      throw new ApiNotFoundError('Admin user not found');
+    }
+
     // Only create event if meaningful changes occurred
     if (Object.keys(changes).length > 0) {
       try {
-        const adminUser = await getUser(session.user.address);
-        if (!adminUser) {
-          throw new ApiNotFoundError('Admin user not found');
-        }
         const campaignCreator = await getUser(updated.campaign.creatorAddress);
         const adminName =
           adminUser.username ||
@@ -154,12 +156,14 @@ export async function DELETE(
       throw new ApiNotFoundError('Withdrawal not found');
     }
 
+    // Verify admin user exists before proceeding with notifications
+    const adminUser = await getUser(session.user.address);
+    if (!adminUser) {
+      throw new ApiNotFoundError('Admin user not found');
+    }
+
     // Track withdrawal deletion event before deletion
     try {
-      const adminUser = await getUser(session.user.address);
-      if (!adminUser) {
-        throw new ApiNotFoundError('Admin user not found');
-      }
       const campaignCreator = await getUser(existing.campaign.creatorAddress);
       const adminName =
         adminUser.username ||

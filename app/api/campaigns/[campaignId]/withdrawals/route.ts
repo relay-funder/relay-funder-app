@@ -35,8 +35,11 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     }
 
     const campaign = await getCampaign(campaignIdOrSlug);
+    if (!campaign) {
+      throw new ApiNotFoundError('Campaign not found');
+    }
 
-    if (campaign?.creatorAddress != user.address) {
+    if (campaign.creatorAddress.toLowerCase() !== user.address.toLowerCase()) {
       throw new ApiAuthNotAllowed(
         'Only campaign owners may view withdrawals for their campaign.',
       );

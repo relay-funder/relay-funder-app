@@ -18,9 +18,7 @@ export function RoundVisibilityToggle({
   const handleToggleVisibility = useCallback(async () => {
     try {
       const numericRoundId =
-        typeof roundId === 'number'
-          ? roundId
-          : parseInt(roundId as string, 10);
+        typeof roundId === 'number' ? roundId : parseInt(roundId as string, 10);
 
       if (
         !Number.isInteger(numericRoundId) ||
