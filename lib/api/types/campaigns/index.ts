@@ -137,3 +137,35 @@ export type CampaignWithdrawal = {
   transactionHash?: string | null;
   createdAt: string;
 };
+
+export type UserWithdrawal = {
+  id: number;
+  amount: string;
+  token: string;
+  requestType: 'ON_CHAIN_AUTHORIZATION' | 'WITHDRAWAL_AMOUNT';
+  transactionHash: string | null;
+  createdAt: string;
+  approvedById: number | null;
+  campaign: {
+    id: number;
+    title: string;
+    slug: string;
+  };
+  approvedBy: {
+    id: number;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+};
+
+export type PaginatedUserWithdrawalsResponse = {
+  withdrawals: UserWithdrawal[];
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+};

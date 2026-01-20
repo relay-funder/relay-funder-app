@@ -1,9 +1,15 @@
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useQuery,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 import { handleApiErrors } from '@/lib/api/error';
 import type {
   PostCampaignWithdrawRouteResponse,
   GetCampaignWithdrawRouteResponse,
   CampaignWithdrawal,
+  PaginatedUserWithdrawalsResponse,
 } from '@/lib/api/types';
 import {
   CAMPAIGNS_QUERY_KEY,
@@ -71,6 +77,11 @@ export function useRequestWithdrawal() {
       });
       queryClient.invalidateQueries({
         queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
+      });
+
+      // Invalidate user withdrawals list
+      queryClient.invalidateQueries({
+        queryKey: [WITHDRAWALS_QUERY_KEY, 'user', 'infinite'],
       });
 
       // If we have a numeric campaign ID, reset the precise campaign data and its payments list
@@ -159,5 +170,48 @@ export function useCampaignWithdrawals(
     queryKey: [WITHDRAWALS_QUERY_KEY, 'campaign', campaignId],
     queryFn: () => fetchCampaignWithdrawals(campaignId!),
     enabled: enabled && !!campaignId,
+  });
+}
+
+async function fetchUserWithdrawals({
+  pageParam = 1,
+  pageSize = 10,
+}: {
+  pageParam?: number;
+  pageSize?: number;
+}) {
+  const url = `/api/users/me/withdrawals?page=${pageParam}&pageSize=${pageSize}`;
+  const response = await fetch(url);
+  await handleApiErrors(response, 'Failed to fetch withdrawals');
+  const data = await response.json();
+  return data as PaginatedUserWithdrawalsResponse;
+}
+
+export function useUserWithdrawals({
+  pageSize = 10,
+}: { pageSize?: number } = {}) {
+  return useQuery({
+    queryKey: [WITHDRAWALS_QUERY_KEY, 'user', 'page', pageSize],
+    queryFn: () => fetchUserWithdrawals({ pageParam: 1, pageSize }),
+    enabled: true,
+  });
+}
+
+export function useInfiniteUserWithdrawals({
+  pageSize = 10,
+}: { pageSize?: number } = {}) {
+  return useInfiniteQuery<PaginatedUserWithdrawalsResponse, Error>({
+    queryKey: [WITHDRAWALS_QUERY_KEY, 'user', 'infinite', pageSize],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchUserWithdrawals({ pageParam: pageParam as number, pageSize }),
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.hasMore
+        ? lastPage.pagination.currentPage + 1
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage.pagination.currentPage > 1
+        ? firstPage.pagination.currentPage - 1
+        : undefined,
+    initialPageParam: 1,
   });
 }
