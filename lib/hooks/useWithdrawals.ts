@@ -187,7 +187,9 @@ async function fetchUserWithdrawals({
   return data as PaginatedUserWithdrawalsResponse;
 }
 
-export function useUserWithdrawals({ pageSize = 10 }: { pageSize?: number } = {}) {
+export function useUserWithdrawals({
+  pageSize = 10,
+}: { pageSize?: number } = {}) {
   return useQuery({
     queryKey: [WITHDRAWALS_QUERY_KEY, 'user', 'page', pageSize],
     queryFn: () => fetchUserWithdrawals({ pageParam: 1, pageSize }),

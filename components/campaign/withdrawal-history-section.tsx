@@ -171,7 +171,9 @@ export function WithdrawalHistorySection() {
               variant="outline"
               size="sm"
               onClick={() =>
-                setSortOrder((prev) => (prev === 'newest' ? 'oldest' : 'newest'))
+                setSortOrder((prev) =>
+                  prev === 'newest' ? 'oldest' : 'newest',
+                )
               }
               className="h-8"
             >
@@ -184,7 +186,10 @@ export function WithdrawalHistorySection() {
       <CardContent>
         <div className="space-y-4">
           {filteredWithdrawals.map((withdrawal) => (
-            <WithdrawalHistoryCard key={withdrawal.id} withdrawal={withdrawal} />
+            <WithdrawalHistoryCard
+              key={withdrawal.id}
+              withdrawal={withdrawal}
+            />
           ))}
           {filteredWithdrawals.length === 0 && (
             <p className="py-4 text-center text-muted-foreground">

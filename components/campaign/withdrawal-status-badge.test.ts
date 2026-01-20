@@ -1,11 +1,15 @@
 import { describe, test, expect } from 'vitest';
-import { getWithdrawalStatus, type WithdrawalStatus } from './withdrawal-status-badge';
+import {
+  getWithdrawalStatus,
+  type WithdrawalStatus,
+} from './withdrawal-status-badge';
 
 describe('getWithdrawalStatus', () => {
   test('should return "executed" when transactionHash is present', () => {
     const withdrawal = {
       approvedById: 1,
-      transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      transactionHash:
+        '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
     };
     expect(getWithdrawalStatus(withdrawal)).toBe('executed');
   });
@@ -13,7 +17,8 @@ describe('getWithdrawalStatus', () => {
   test('should return "executed" when transactionHash is present even without approvedById', () => {
     const withdrawal = {
       approvedById: null,
-      transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      transactionHash:
+        '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
     };
     expect(getWithdrawalStatus(withdrawal)).toBe('executed');
   });
@@ -37,7 +42,8 @@ describe('getWithdrawalStatus', () => {
   test('should prioritize transactionHash over approvedById', () => {
     const withdrawal = {
       approvedById: 5,
-      transactionHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+      transactionHash:
+        '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
     };
     expect(getWithdrawalStatus(withdrawal)).toBe('executed');
   });

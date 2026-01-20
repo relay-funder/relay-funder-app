@@ -31,7 +31,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-import { AlertCircle, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Loader2,
+  CheckCircle2,
+} from 'lucide-react';
 import { normalizeAddress } from '@/lib/normalize-address';
 import { USD_TOKEN } from '@/lib/constant';
 import { TreasuryAuthorizationStatus } from '@/components/campaign/treasury-authorization-status';
@@ -320,10 +325,18 @@ export function WithdrawalDialog({
         description: 'Your withdrawal has been recorded successfully.',
       });
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : 'Failed to record withdrawal';
+      const errMsg =
+        err instanceof Error ? err.message : 'Failed to record withdrawal';
       setDbRecordError(errMsg);
     }
-  }, [executedTxHash, requestWithdrawal, campaign.id, amountNumber, token, toast]);
+  }, [
+    executedTxHash,
+    requestWithdrawal,
+    campaign.id,
+    amountNumber,
+    token,
+    toast,
+  ]);
 
   const handleConfirmAndSubmit = useCallback(async () => {
     if (onChainAuthorized && hasApproval) {
@@ -355,12 +368,16 @@ export function WithdrawalDialog({
           });
         } catch (dbErr) {
           // On-chain succeeded but DB failed - show error but don't allow re-execution
-          const errMsg = dbErr instanceof Error ? dbErr.message : 'Failed to record withdrawal';
+          const errMsg =
+            dbErr instanceof Error
+              ? dbErr.message
+              : 'Failed to record withdrawal';
           setDbRecordError(errMsg);
           setStep('submitted'); // Move to submitted to prevent re-execution
           toast({
             title: 'Withdrawal executed but recording failed',
-            description: 'Your on-chain withdrawal succeeded. Please retry recording or contact support.',
+            description:
+              'Your on-chain withdrawal succeeded. Please retry recording or contact support.',
             variant: 'destructive',
           });
         }
@@ -707,13 +724,19 @@ export function WithdrawalDialog({
                       Withdrawal executed but recording failed
                     </p>
                     <p className="text-sm text-amber-600">
-                      Your on-chain withdrawal of {formatUSD(amountNumber)} {currency} was successful, but we failed to record it in our system.
+                      Your on-chain withdrawal of {formatUSD(amountNumber)}{' '}
+                      {currency} was successful, but we failed to record it in
+                      our system.
                     </p>
                   </div>
                 </div>
                 <div className="rounded-md border p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Transaction Hash</p>
-                  <p className="font-mono text-xs break-all">{executedTxHash}</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Transaction Hash
+                  </p>
+                  <p className="break-all font-mono text-xs">
+                    {executedTxHash}
+                  </p>
                 </div>
                 {dbRecordError && (
                   <p className="text-sm text-destructive">{dbRecordError}</p>
@@ -797,7 +820,11 @@ export function WithdrawalDialog({
           {step === 'submitted' && (
             <div className="flex w-full gap-2">
               {executedTxHash && dbRecordError && (
-                <Button onClick={handleRetryDbRecord} variant="outline" className="flex-1">
+                <Button
+                  onClick={handleRetryDbRecord}
+                  variant="outline"
+                  className="flex-1"
+                >
                   Retry Recording
                 </Button>
               )}

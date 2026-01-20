@@ -1,41 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { db } from '@/server/db';
-import { checkAuth } from '@/lib/api/auth';
-
-vi.mock('@/server/db', () => ({
-  db: {
-    user: {
-      findUnique: vi.fn(),
-    },
-    campaign: {
-      findMany: vi.fn(),
-    },
-    withdrawal: {
-      findMany: vi.fn(),
-      count: vi.fn(),
-    },
-  },
-}));
-
-vi.mock('@/lib/api/auth', () => ({
-  checkAuth: vi.fn(),
-}));
-
-const mockSession = {
-  user: { dbId: 1, address: '0x1234567890123456789012345678901234567890', roles: ['user'] },
-  roles: ['user'],
-  expires: 'never',
-};
-
-const mockUser = {
-  id: 1,
-  address: '0x1234567890123456789012345678901234567890',
-};
-
-const mockCampaigns = [
-  { id: 1 },
-  { id: 2 },
-];
+import { describe, test, expect } from 'vitest';
 
 const mockWithdrawals = [
   {
@@ -47,7 +10,12 @@ const mockWithdrawals = [
     createdAt: new Date('2025-01-15'),
     approvedById: 1,
     campaign: { id: 1, title: 'Test Campaign', slug: 'test-campaign' },
-    approvedBy: { id: 1, username: 'admin', firstName: 'Admin', lastName: 'User' },
+    approvedBy: {
+      id: 1,
+      username: 'admin',
+      firstName: 'Admin',
+      lastName: 'User',
+    },
   },
   {
     id: 2,
@@ -62,16 +30,12 @@ const mockWithdrawals = [
   },
 ];
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 describe('GET /api/users/me/withdrawals - Business Logic', () => {
   test('should calculate pagination correctly for first page', () => {
     const page = 1;
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
-    
+
     expect(skip).toBe(0);
   });
 
@@ -79,21 +43,21 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
     const page = 2;
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
-    
+
     expect(skip).toBe(10);
   });
 
   test('should cap pageSize at 50', () => {
     const requestedPageSize = 100;
     const pageSize = Math.min(requestedPageSize, 50);
-    
+
     expect(pageSize).toBe(50);
   });
 
   test('should allow pageSize up to 50', () => {
     const requestedPageSize = 50;
     const pageSize = Math.min(requestedPageSize, 50);
-    
+
     expect(pageSize).toBe(50);
   });
 
@@ -102,7 +66,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
     const pageSize = 10;
     const totalCount = 25;
     const hasMore = skip + pageSize < totalCount;
-    
+
     expect(hasMore).toBe(true);
   });
 
@@ -111,7 +75,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
     const pageSize = 10;
     const totalCount = 25;
     const hasMore = skip + pageSize < totalCount;
-    
+
     expect(hasMore).toBe(false);
   });
 
@@ -119,7 +83,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
     const totalCount = 25;
     const pageSize = 10;
     const totalPages = Math.ceil(totalCount / pageSize);
-    
+
     expect(totalPages).toBe(3);
   });
 
@@ -127,7 +91,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
     const totalCount = 30;
     const pageSize = 10;
     const totalPages = Math.ceil(totalCount / pageSize);
-    
+
     expect(totalPages).toBe(3);
   });
 
@@ -135,7 +99,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
     const totalCount = 0;
     const pageSize = 10;
     const totalPages = Math.ceil(totalCount / pageSize);
-    
+
     expect(totalPages).toBe(0);
   });
 
@@ -144,7 +108,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
       campaignId: { in: [1, 2] },
       requestType: 'WITHDRAWAL_AMOUNT' as const,
     };
-    
+
     expect(whereClause.requestType).toBe('WITHDRAWAL_AMOUNT');
   });
 });
@@ -152,7 +116,7 @@ describe('GET /api/users/me/withdrawals - Business Logic', () => {
 describe('Withdrawal response structure', () => {
   test('should have correct structure for completed withdrawal', () => {
     const withdrawal = mockWithdrawals[0];
-    
+
     expect(withdrawal).toHaveProperty('id');
     expect(withdrawal).toHaveProperty('amount');
     expect(withdrawal).toHaveProperty('token');
@@ -166,7 +130,7 @@ describe('Withdrawal response structure', () => {
 
   test('should have correct campaign nested structure', () => {
     const withdrawal = mockWithdrawals[0];
-    
+
     expect(withdrawal.campaign).toHaveProperty('id');
     expect(withdrawal.campaign).toHaveProperty('title');
     expect(withdrawal.campaign).toHaveProperty('slug');
@@ -174,7 +138,7 @@ describe('Withdrawal response structure', () => {
 
   test('should have correct approvedBy nested structure when present', () => {
     const withdrawal = mockWithdrawals[0];
-    
+
     expect(withdrawal.approvedBy).toHaveProperty('id');
     expect(withdrawal.approvedBy).toHaveProperty('username');
     expect(withdrawal.approvedBy).toHaveProperty('firstName');
@@ -183,14 +147,14 @@ describe('Withdrawal response structure', () => {
 
   test('should allow null approvedBy for pending withdrawals', () => {
     const withdrawal = mockWithdrawals[1];
-    
+
     expect(withdrawal.approvedBy).toBeNull();
     expect(withdrawal.approvedById).toBeNull();
   });
 
   test('should allow null transactionHash for pending/approved withdrawals', () => {
     const withdrawal = mockWithdrawals[1];
-    
+
     expect(withdrawal.transactionHash).toBeNull();
   });
 });
@@ -204,7 +168,7 @@ describe('Pagination response structure', () => {
       totalItems: 25,
       hasMore: true,
     };
-    
+
     expect(pagination).toHaveProperty('currentPage');
     expect(pagination).toHaveProperty('pageSize');
     expect(pagination).toHaveProperty('totalPages');
@@ -220,7 +184,7 @@ describe('Pagination response structure', () => {
       totalItems: 25,
       hasMore: true,
     };
-    
+
     expect(typeof pagination.currentPage).toBe('number');
     expect(typeof pagination.pageSize).toBe('number');
     expect(typeof pagination.totalPages).toBe('number');
@@ -233,7 +197,7 @@ describe('Empty state handling', () => {
   test('should return empty array when no campaigns exist', () => {
     const campaignIds: number[] = [];
     const shouldReturnEmpty = campaignIds.length === 0;
-    
+
     expect(shouldReturnEmpty).toBe(true);
   });
 
@@ -247,7 +211,7 @@ describe('Empty state handling', () => {
       totalItems: 0,
       hasMore: false,
     };
-    
+
     expect(emptyPagination.totalPages).toBe(0);
     expect(emptyPagination.totalItems).toBe(0);
     expect(emptyPagination.hasMore).toBe(false);

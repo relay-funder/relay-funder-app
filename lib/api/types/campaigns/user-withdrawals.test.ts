@@ -1,8 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import type {
-  UserWithdrawal,
-  PaginatedUserWithdrawalsResponse,
-} from './index';
+import type { UserWithdrawal, PaginatedUserWithdrawalsResponse } from './index';
 
 describe('UserWithdrawal type structure', () => {
   test('should accept valid UserWithdrawal object', () => {
@@ -98,7 +95,12 @@ describe('PaginatedUserWithdrawalsResponse type structure', () => {
           createdAt: '2025-01-15T00:00:00.000Z',
           approvedById: 1,
           campaign: { id: 1, title: 'Test', slug: 'test' },
-          approvedBy: { id: 1, username: 'admin', firstName: 'A', lastName: 'B' },
+          approvedBy: {
+            id: 1,
+            username: 'admin',
+            firstName: 'A',
+            lastName: 'B',
+          },
         },
       ],
       pagination: {
