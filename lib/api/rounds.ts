@@ -404,7 +404,7 @@ export async function getUpcomingRound() {
   const upcomingRound = await db.round.findFirst({
     where: {
       isHidden: false, // Exclude hidden rounds
-      applicationClose: {
+      startDate: {
         gt: now, // Round hasn't started yet
       },
     },
