@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useWriteContract, ethers } from '@/lib/web3';
+import { useWriteContract, ethers, readContract, wagmiConfig } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_CONFIG } from '@/lib/constant/treasury';
 
@@ -44,8 +44,21 @@ export function useExecuteKeepWhatsRaisedWithdrawal() {
       try {
         setIsExecuting(true);
 
-        // Parse amount to wei (assuming USD decimals)
-        const amountWei = ethers.parseUnits(amount, USD_CONFIG.DECIMALS);
+        // Parse requested amount to wei (assuming USD decimals)
+        const requestedAmountWei = ethers.parseUnits(amount, USD_CONFIG.DECIMALS);
+
+        // Query on-chain available amount to avoid precision mismatches
+        const availableAmountWei = (await readContract(wagmiConfig, {
+          address: treasuryAddress as `0x${string}`,
+          abi: KeepWhatsRaisedABI,
+          functionName: 'getAvailableRaisedAmount',
+        })) as bigint;
+
+        // Use the smaller of requested vs available to handle rounding differences
+        const amountWei =
+          requestedAmountWei <= availableAmountWei
+            ? requestedAmountWei
+            : availableAmountWei;
 
         // Call the KeepWhatsRaised withdraw function
         // Note: Funds always go to INFO.owner() (campaign owner), not the caller
