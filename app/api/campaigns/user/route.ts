@@ -125,13 +125,27 @@ export async function PATCH(req: Request) {
 
     // Add optional fields if provided
     if (fundingGoal) {
+      const parsedGoal = parseFloat(fundingGoal);
+      if (Number.isNaN(parsedGoal) || parsedGoal <= 0) {
+        throw new ApiParameterError('fundingGoal must be a positive number');
+      }
       updateData.fundingGoal = fundingGoal;
     }
-    if (startTime) {
-      updateData.startTime = parseDate(startTime, 'startTime');
+
+    // Parse and validate dates
+    const parsedStartTime = startTime ? parseDate(startTime, 'startTime') : null;
+    const parsedEndTime = endTime ? parseDate(endTime, 'endTime') : null;
+
+    // Validate date range if both are provided
+    if (parsedStartTime && parsedEndTime && parsedEndTime <= parsedStartTime) {
+      throw new ApiParameterError('endTime must be after startTime');
     }
-    if (endTime) {
-      updateData.endTime = parseDate(endTime, 'endTime');
+
+    if (parsedStartTime) {
+      updateData.startTime = parsedStartTime;
+    }
+    if (parsedEndTime) {
+      updateData.endTime = parsedEndTime;
     }
 
     await db.campaign.update({

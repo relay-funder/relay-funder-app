@@ -27,7 +27,7 @@ function formatDate(iso: string): string {
 
 function formatAmount(amount: string, token: string): string {
   const num = parseFloat(amount);
-  if (isNaN(num)) return `${amount} ${token}`;
+  if (Number.isNaN(num)) return `${amount} ${token}`;
   return `${num.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${token}`;
 }
 
