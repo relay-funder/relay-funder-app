@@ -16,6 +16,14 @@ import {
   VALID_CATEGORY_IDS,
 } from '@/lib/constant/categories';
 
+const parseDate = (value: string, field: string): Date => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new ApiParameterError(`${field} must be a valid ISO date`);
+  }
+  return date;
+};
+
 export async function GET(req: Request) {
   try {
     const session = await checkAuth(['user']);
@@ -120,10 +128,10 @@ export async function PATCH(req: Request) {
       updateData.fundingGoal = fundingGoal;
     }
     if (startTime) {
-      updateData.startTime = new Date(startTime);
+      updateData.startTime = parseDate(startTime, 'startTime');
     }
     if (endTime) {
-      updateData.endTime = new Date(endTime);
+      updateData.endTime = parseDate(endTime, 'endTime');
     }
 
     await db.campaign.update({

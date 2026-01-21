@@ -7,7 +7,7 @@ const mockWithdrawals = [
     token: 'USDC',
     requestType: 'WITHDRAWAL_AMOUNT',
     transactionHash: '0xabcdef1234567890',
-    createdAt: new Date('2025-01-15'),
+    createdAt: '2025-01-15T00:00:00.000Z',
     approvedById: 1,
     campaign: { id: 1, title: 'Test Campaign', slug: 'test-campaign' },
     approvedBy: {
@@ -23,7 +23,7 @@ const mockWithdrawals = [
     token: 'USDC',
     requestType: 'WITHDRAWAL_AMOUNT',
     transactionHash: null,
-    createdAt: new Date('2025-01-16'),
+    createdAt: '2025-01-16T00:00:00.000Z',
     approvedById: null,
     campaign: { id: 2, title: 'Another Campaign', slug: 'another-campaign' },
     approvedBy: null,

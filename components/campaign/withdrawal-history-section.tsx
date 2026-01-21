@@ -128,7 +128,7 @@ export function WithdrawalHistorySection() {
               Withdrawal requests from your campaigns will appear here.
             </p>
             <Link
-              href="/"
+              href="/campaigns"
               className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
             >
               View Your Campaigns

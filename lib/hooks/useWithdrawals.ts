@@ -79,9 +79,9 @@ export function useRequestWithdrawal() {
         queryKey: [CAMPAIGNS_QUERY_KEY, 'user', 'infinite', 'active', 3],
       });
 
-      // Invalidate user withdrawals list
+      // Invalidate user withdrawals list (both infinite and page-based queries)
       queryClient.invalidateQueries({
-        queryKey: [WITHDRAWALS_QUERY_KEY, 'user', 'infinite'],
+        queryKey: [WITHDRAWALS_QUERY_KEY, 'user'],
       });
 
       // If we have a numeric campaign ID, reset the precise campaign data and its payments list

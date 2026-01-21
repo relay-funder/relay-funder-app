@@ -8,9 +8,11 @@ export async function GET(req: Request) {
     const session = await checkAuth(['user']);
     const { searchParams } = new URL(req.url);
 
-    const page = parseInt(searchParams.get('page') || '1');
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawPageSize = parseInt(searchParams.get('pageSize') || '10', 10);
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
     const pageSize = Math.min(
-      parseInt(searchParams.get('pageSize') || '10'),
+      Number.isFinite(rawPageSize) && rawPageSize > 0 ? rawPageSize : 10,
       50,
     );
     const skip = (page - 1) * pageSize;
