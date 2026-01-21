@@ -13,6 +13,10 @@ import {
 } from '@/components/ui';
 import Image from 'next/image';
 import { Media } from '@/types/campaign';
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
 
 export function UpdateFormMedia() {
   const form = useFormContext();
@@ -23,6 +27,18 @@ export function UpdateFormMedia() {
   const onFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
+      const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE_BYTES,
+      );
+      if (oversizedFile) {
+        form.setError('media', {
+          message: FILE_SIZE_ERROR_MESSAGE,
+        });
+        form.setValue('media', []);
+        event.target.value = '';
+        return;
+      }
+      form.clearErrors('media');
       form.setValue('media', files);
     },
     [form],

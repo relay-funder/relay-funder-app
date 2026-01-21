@@ -10,7 +10,6 @@ import { PageLayout } from '@/components/page/layout';
 import { useSearchParams } from 'next/navigation';
 import { useFunnelTracking } from '@/hooks/use-funnel-tracking';
 
-
 const CampaignCreate = dynamic(
   () =>
     import('@/components/campaign/create').then((mod) => mod.CampaignCreate),
@@ -27,8 +26,6 @@ const Web3ContextProvider = dynamic(
 
 export function ExploreStories() {
   useFunnelTracking();
-
-
 
   const [showCampaignCreate, setShowCampaignCreate] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');

@@ -67,14 +67,20 @@ function parseStrictNumeric(
 ): number {
   const rawValue = value ?? '';
   if (typeof rawValue !== 'string' || rawValue.trim() === '') {
-    throw new ApiParameterError(`Invalid ${fieldName}: must be a non-empty string`);
+    throw new ApiParameterError(
+      `Invalid ${fieldName}: must be a non-empty string`,
+    );
   }
   if (!/^\d+$/.test(rawValue.trim())) {
-    throw new ApiParameterError(`Invalid ${fieldName}: must contain only digits`);
+    throw new ApiParameterError(
+      `Invalid ${fieldName}: must contain only digits`,
+    );
   }
   const parsed = Number(rawValue.trim());
   if (!Number.isFinite(parsed)) {
-    throw new ApiParameterError(`Invalid ${fieldName}: must be a finite number`);
+    throw new ApiParameterError(
+      `Invalid ${fieldName}: must be a finite number`,
+    );
   }
   return parsed;
 }
@@ -180,10 +186,7 @@ export async function PATCH(req: Request) {
     const session = await checkAuth(['admin']);
     const formData = await req.formData();
     // Extract form fields
-    const id = parseStrictNumeric(
-      formData.get('roundId') as string,
-      'roundId',
-    );
+    const id = parseStrictNumeric(formData.get('roundId') as string, 'roundId');
 
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;

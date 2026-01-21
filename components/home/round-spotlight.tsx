@@ -55,6 +55,22 @@ export function RoundSpotlight() {
     );
   }, [round?.startTime, isUpcoming]);
 
+  // Check if applications are still open
+  const applicationsOpen = useMemo(() => {
+    if (!round?.applicationEndTime) {
+      return false;
+    }
+    return new Date(round.applicationEndTime) > new Date();
+  }, [round?.applicationEndTime]);
+
+  // Format application end date
+  const applicationEndDate = useMemo(() => {
+    if (!round?.applicationEndTime) {
+      return '';
+    }
+    return new Date(round.applicationEndTime).toLocaleDateString();
+  }, [round?.applicationEndTime]);
+
   // Don't render anything if there's no round or if loading/error
   if (isLoading || error || !round) {
     return null;
@@ -150,12 +166,19 @@ export function RoundSpotlight() {
             <div className="mb-4 rounded-lg border border-border bg-muted p-3">
               <p className="text-sm text-muted-foreground">
                 {isUpcoming ? (
-                  <>
-                    <strong>📅 Coming Soon:</strong> This round will feature{' '}
-                    {formatUSD(round.matchingPool)} in matching funds for
-                    approved campaigns. Applications are currently being
-                    reviewed.
-                  </>
+                  applicationsOpen ? (
+                    <>
+                      <strong>📅 Coming Soon:</strong> This round will feature{' '}
+                      {formatUSD(round.matchingPool)} in matching funds.
+                      Applications are open until {applicationEndDate}.
+                    </>
+                  ) : (
+                    <>
+                      <strong>📅 Coming Soon:</strong> This round will feature{' '}
+                      {formatUSD(round.matchingPool)} in matching funds for
+                      approved campaigns. Applications are now closed.
+                    </>
+                  )
                 ) : (
                   <>
                     <strong>💡 Match Funding:</strong> Your donation gets

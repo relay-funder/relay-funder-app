@@ -46,7 +46,6 @@ npm-debug.log*
 next-env.d.ts
 .cursorrules
 .qodo
-scripts/
 
 # docker dev environment
 dev_modules
@@ -60,3 +59,5 @@ dev_modules
 cc-protocol/.env.foundry
 !cc-protocol/.env.foundry.template
 .idea
+.beads
+.tldr

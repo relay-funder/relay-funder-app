@@ -83,10 +83,25 @@ export function useAdminDeployCampaignContract() {
         );
 
         // Prepare campaign data for contract deployment
-        const providedLaunchTime = Math.floor(
-          campaign.startTime.getTime() / 1000,
-        );
-        const providedDeadline = Math.floor(campaign.endTime.getTime() / 1000);
+        // Dates from JSON API may be ISO strings rather than Date objects
+        const startTime =
+          campaign.startTime instanceof Date
+            ? campaign.startTime
+            : new Date(campaign.startTime);
+        const endTime =
+          campaign.endTime instanceof Date
+            ? campaign.endTime
+            : new Date(campaign.endTime);
+
+        if (
+          Number.isNaN(startTime.getTime()) ||
+          Number.isNaN(endTime.getTime())
+        ) {
+          throw new Error('Invalid campaign startTime/endTime');
+        }
+
+        const providedLaunchTime = Math.floor(startTime.getTime() / 1000);
+        const providedDeadline = Math.floor(endTime.getTime() / 1000);
 
         const latestBlock = await ethersProvider.getBlock('latest');
         const blockchainNow = Number(

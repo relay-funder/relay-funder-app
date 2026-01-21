@@ -10,6 +10,11 @@ import {
   Button,
 } from '@/components/ui';
 import Image from 'next/image';
+import {
+  MAX_FILE_SIZE_BYTES,
+  FILE_SIZE_ERROR_MESSAGE,
+} from '@/components/campaign/constants';
+
 export function CampaignCreateFormMedia() {
   const form = useFormContext();
   const imageWatch = form.watch('bannerImage');
@@ -27,6 +32,15 @@ export function CampaignCreateFormMedia() {
   const onFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0] || null;
+      if (file && file.size > MAX_FILE_SIZE_BYTES) {
+        form.setError('bannerImage', {
+          message: FILE_SIZE_ERROR_MESSAGE,
+        });
+        form.setValue('bannerImage', null);
+        event.target.value = '';
+        return;
+      }
+      form.clearErrors('bannerImage');
       form.setValue('bannerImage', file);
     },
     [form],

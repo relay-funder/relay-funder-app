@@ -9,6 +9,7 @@ import {
 } from '@/lib/web3/daimo/pledge';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
 import { DAIMO_PAY_MIN_AMOUNT } from '@/lib/constant/daimo';
+import { PROTOCOL_FEE_RATE } from '@/lib/constant';
 import { EmailSchema } from '@/lib/api/types/common';
 
 interface UseDaimoPaymentParams {
@@ -44,11 +45,19 @@ export function useDaimoPayment({
   const { address } = useAccount();
   const config = useMemo(() => getDaimoPayConfig(), []);
 
+  // Fee rate for Daimo Pay (1%)
+  const DAIMO_FEE_RATE = 0.01;
+
   // Calculate amounts
   const baseAmount = useMemo(() => parseFloat(amount || '0'), [amount]);
   const tipAmountNum = useMemo(() => parseFloat(tipAmount || '0'), [tipAmount]);
+
+  // Total amount includes donation + tip + fees
+  // Fees are calculated on the base donation amount
   const totalAmount = useMemo(() => {
-    return (baseAmount + tipAmountNum).toFixed(2);
+    const daimoFee = baseAmount * DAIMO_FEE_RATE;
+    const protocolFee = baseAmount * PROTOCOL_FEE_RATE;
+    return (baseAmount + tipAmountNum + daimoFee + protocolFee).toFixed(2);
   }, [baseAmount, tipAmountNum]);
 
   // Generate pledge ID

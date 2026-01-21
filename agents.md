@@ -120,6 +120,14 @@ docker compose exec app pnpm <command>
 docker compose exec app bash  # shell access
 ```
 
+### Codebase Rules
+1. Never fetch directly in TSX files. Use hooks.
+2. Centralize query invalidation in hooks, not components.
+3. Use full variable names, not abbreviations.
+4. Keep components under 300 lines. Split if larger.
+5. Abstract third-party imports through adapter layer.
+6. Centralize shared constants in lib/constant/.
+
 ### TypeScript Standards
 
 - **Strict TypeScript**: Strict mode enabled with comprehensive type checking

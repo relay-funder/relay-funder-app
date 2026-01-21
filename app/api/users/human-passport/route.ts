@@ -21,6 +21,11 @@ export async function POST() {
     const session = await checkAuth(['user']);
     const address = session.user.address as Address;
 
+    // Guard against missing wallet address
+    if (!address) {
+      throw new Error('Missing wallet address in session');
+    }
+
     // Submit address for scoring (required before fetching score)
     await submitPassportForScoring(address);
 
@@ -28,8 +33,10 @@ export async function POST() {
     const passportData = await getPassportScore(address);
 
     // Use evidence.rawScore for threshold-based scorers, fall back to score field
-    const rawScore = passportData.evidence?.rawScore ?? Number(passportData.score || 0);
-    const passingScore = passportData.evidence?.success ?? passportData.passing_score ?? false;
+    const rawScore =
+      passportData.evidence?.rawScore ?? Number(passportData.score || 0);
+    const passingScore =
+      passportData.evidence?.success ?? passportData.passing_score ?? false;
 
     // Convert the Passport score to our humanity score format
     const humanityScore = convertPassportScoreToHumanityScore(String(rawScore));
@@ -41,7 +48,11 @@ export async function POST() {
     const stamps = Object.fromEntries(
       Object.entries(passportData.stamp_scores).map(([name, score]) => [
         name,
-        { score: String(score), dedup: false, expiration_date: passportData.expiration_date || '' },
+        {
+          score: String(score),
+          dedup: false,
+          expiration_date: passportData.expiration_date || '',
+        },
       ]),
     );
 
@@ -52,7 +63,8 @@ export async function POST() {
       humanityScore,
       passportScore: String(rawScore),
       passingScore,
-      threshold: passportData.evidence?.threshold?.toString() ?? passportData.threshold,
+      threshold:
+        passportData.evidence?.threshold?.toString() ?? passportData.threshold,
       lastScoreTimestamp: passportData.last_score_timestamp,
       expirationTimestamp: passportData.expiration_date,
       stamps,

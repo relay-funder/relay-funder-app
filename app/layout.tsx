@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import Script from 'next/script';
 import './globals.css';
 import Providers from './providers';
 import { Toaster } from '@/components/ui/toaster';
@@ -37,24 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('theme') || 'system';
-                  var actualTheme;
-                  if (theme === 'system') {
-                    actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  } else {
-                    actualTheme = theme;
-                  }
-                  document.documentElement.classList.add(actualTheme);
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+        <Script strategy="beforeInteractive" src="/theme-init.js" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

@@ -122,6 +122,9 @@ interface IUpdateCampaignData {
   location: string;
   category: string;
   fundingUsage: string;
+  fundingGoal?: string;
+  startTime?: string;
+  endTime?: string;
   bannerImage?: File | null;
 }
 async function updateCampaignData(variables: IUpdateCampaignData) {
@@ -132,6 +135,15 @@ async function updateCampaignData(variables: IUpdateCampaignData) {
   formDataToSend.append('location', variables.location);
   formDataToSend.append('category', variables.category);
   formDataToSend.append('fundingUsage', variables.fundingUsage);
+  if (variables.fundingGoal) {
+    formDataToSend.append('fundingGoal', variables.fundingGoal);
+  }
+  if (variables.startTime) {
+    formDataToSend.append('startTime', variables.startTime);
+  }
+  if (variables.endTime) {
+    formDataToSend.append('endTime', variables.endTime);
+  }
   if (variables.bannerImage) {
     formDataToSend.append('bannerImage', variables.bannerImage);
   }

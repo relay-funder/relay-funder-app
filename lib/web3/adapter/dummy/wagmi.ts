@@ -145,10 +145,14 @@ export function useAccount() {
   };
 }
 export function useDisconnect() {
-  console.log('dummy:wagmi:useConnect');
+  console.log('dummy:wagmi:useDisconnect');
   return {
     disconnectAsync: async () => {},
   };
+}
+
+export async function disconnect(config: unknown): Promise<void> {
+  console.log('dummy:wagmi:disconnect', config);
 }
 export function useConnect() {
   console.log('dummy:wagmi:useConnect');
