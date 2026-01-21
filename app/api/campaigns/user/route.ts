@@ -61,6 +61,9 @@ export async function PATCH(req: Request) {
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
     const fundingUsage = formData.get('fundingUsage') as string;
+    const fundingGoal = formData.get('fundingGoal') as string | null;
+    const startTime = formData.get('startTime') as string | null;
+    const endTime = formData.get('endTime') as string | null;
     const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
@@ -111,6 +114,17 @@ export async function PATCH(req: Request) {
       category,
       fundingUsage,
     };
+
+    // Add optional fields if provided
+    if (fundingGoal) {
+      updateData.fundingGoal = fundingGoal;
+    }
+    if (startTime) {
+      updateData.startTime = new Date(startTime);
+    }
+    if (endTime) {
+      updateData.endTime = new Date(endTime);
+    }
 
     await db.campaign.update({
       where: {
