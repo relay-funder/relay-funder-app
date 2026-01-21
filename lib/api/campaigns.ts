@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { db, Prisma } from '@/server/db';
+import { IS_DEVELOPMENT } from '@/lib/utils/env';
 import type {
   Campaign,
   CampaignImage,
@@ -92,7 +93,7 @@ function buildCampaignWhere({
   // Apply transactionHash filter only for non-admin users in production when not including draft campaigns
   const shouldApplyTransactionFilter = !(
     admin ||
-    process.env.NODE_ENV === 'development' ||
+    IS_DEVELOPMENT ||
     statusList.includes(CampaignStatus.DRAFT)
   );
 
@@ -130,8 +131,8 @@ async function queryCampaigns({
   skip: number;
   take: number;
   orderBy:
-    | Prisma.CampaignOrderByWithRelationInput
-    | Prisma.CampaignOrderByWithRelationInput[];
+  | Prisma.CampaignOrderByWithRelationInput
+  | Prisma.CampaignOrderByWithRelationInput[];
   rounds: boolean;
 }): Promise<{ rows: CampaignWithRoundCampaigns[]; totalCount: number }> {
   const [rows, totalCount] = await Promise.all([
@@ -584,7 +585,7 @@ export async function getPaymentSummaryListWithTips(
       paymentSummaryList[id].countConfirmed = countPaymentMap(id, confirmed);
       paymentSummaryList[id].countPending = countPaymentMap(id, pending);
     }
-  } catch {}
+  } catch { }
   return paymentSummaryList;
 }
 
@@ -606,7 +607,7 @@ export async function getPaymentSummaryList(idList: number[]) {
       paymentSummaryList[id].countConfirmed = countPaymentMap(id, confirmed);
       paymentSummaryList[id].countPending = countPaymentMap(id, pending);
     }
-  } catch {}
+  } catch { }
   return paymentSummaryList;
 }
 
@@ -659,24 +660,24 @@ export async function getPaymentSummaryWithTips(id: number) {
 
     paymentSummary.lastConfirmed = lastConfirmed
       ? {
-          id: lastConfirmed.id,
-          status: lastConfirmed.status,
-          amount: Number(lastConfirmed?.amount ?? 0),
-          token: lastConfirmed?.token,
-          user: getPaymentUser(lastConfirmed),
-          date: lastConfirmed?.updatedAt,
-        }
+        id: lastConfirmed.id,
+        status: lastConfirmed.status,
+        amount: Number(lastConfirmed?.amount ?? 0),
+        token: lastConfirmed?.token,
+        user: getPaymentUser(lastConfirmed),
+        date: lastConfirmed?.updatedAt,
+      }
       : null;
 
     paymentSummary.lastPending = lastPending
       ? {
-          id: lastPending.id,
-          status: lastPending.status,
-          amount: Number(lastPending?.amount ?? 0),
-          token: lastPending?.token,
-          user: getPaymentUser(lastPending),
-          date: lastPending?.updatedAt,
-        }
+        id: lastPending.id,
+        status: lastPending.status,
+        amount: Number(lastPending?.amount ?? 0),
+        token: lastPending?.token,
+        user: getPaymentUser(lastPending),
+        date: lastPending?.updatedAt,
+      }
       : null;
 
     return paymentSummary;
@@ -729,25 +730,25 @@ export async function getPaymentSummary(id: number) {
 
     paymentSummary.lastConfirmed = lastConfirmed
       ? {
-          id: lastConfirmed.id,
-          status: lastConfirmed.status,
-          amount: Number(lastConfirmed?.amount ?? 0),
-          token: lastConfirmed?.token,
-          user: getPaymentUser(lastConfirmed),
-          date: lastConfirmed?.updatedAt,
-        }
+        id: lastConfirmed.id,
+        status: lastConfirmed.status,
+        amount: Number(lastConfirmed?.amount ?? 0),
+        token: lastConfirmed?.token,
+        user: getPaymentUser(lastConfirmed),
+        date: lastConfirmed?.updatedAt,
+      }
       : null;
     paymentSummary.lastPending = lastPending
       ? {
-          id: lastPending.id,
-          status: lastPending.status,
-          amount: Number(lastPending?.amount ?? 0),
-          token: lastPending?.token,
-          user: getPaymentUser(lastPending),
-          date: lastPending?.updatedAt,
-        }
+        id: lastPending.id,
+        status: lastPending.status,
+        amount: Number(lastPending?.amount ?? 0),
+        token: lastPending?.token,
+        user: getPaymentUser(lastPending),
+        date: lastPending?.updatedAt,
+      }
       : null;
-  } catch {}
+  } catch { }
   return paymentSummary;
 }
 
