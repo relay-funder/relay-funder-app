@@ -251,27 +251,45 @@ export async function getRound(
         },
         where: admin
           ? {}
-          : {
-              AND: [
-                // Exclude hidden rounds for non-admins
-                { Round: { isHidden: false } },
-                {
-                  OR: [
-                    {
-                      status: 'APPROVED',
-                      Campaign: {
-                        status: {
-                          in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+          : sessionAddress
+            ? {
+                AND: [
+                  // Exclude hidden rounds for non-admins
+                  { Round: { isHidden: false } },
+                  {
+                    OR: [
+                      // Include approved campaigns with active status
+                      {
+                        status: 'APPROVED',
+                        Campaign: {
+                          status: {
+                            in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                          },
                         },
                       },
+                      // Include user's own campaigns (any status)
+                      {
+                        Campaign: { creatorAddress: sessionAddress },
+                      },
+                    ],
+                  },
+                ],
+              }
+            : {
+                AND: [
+                  // Exclude hidden rounds for non-admins
+                  { Round: { isHidden: false } },
+                  {
+                    // Non-authenticated users see only approved campaigns
+                    status: 'APPROVED',
+                    Campaign: {
+                      status: {
+                        in: ['ACTIVE', 'COMPLETED', 'FAILED'],
+                      },
                     },
-                    {
-                      Campaign: { creatorAddress: sessionAddress ?? undefined },
-                    },
-                  ],
-                },
-              ],
-            },
+                  },
+                ],
+              },
       },
     },
   });
