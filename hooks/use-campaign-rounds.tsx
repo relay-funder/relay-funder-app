@@ -61,6 +61,14 @@ export function useCampaignRounds({
   }, [rounds]);
   const futureRounds = useMemo(() => {
     const now = new Date();
+
+    // Don't show future rounds if campaign has ended or has no deployed contract
+    const campaignEnded = campaign?.endTime && new Date(campaign.endTime) < now;
+    const noContract = !campaign?.treasuryAddress;
+    if (campaignEnded || noContract) {
+      return [];
+    }
+
     return rounds.filter((round) => {
       const isFutureByTime = now < new Date(round.startTime);
       const isPending = round.recipientStatus === 'PENDING';
@@ -72,7 +80,7 @@ export function useCampaignRounds({
         return isFutureByTime && round.recipientStatus === 'APPROVED';
       }
     });
-  }, [rounds, includePendingInFuture]);
+  }, [rounds, includePendingInFuture, campaign]);
   const title = useMemo(() => {
     if (
       pastRounds.length === 0 &&

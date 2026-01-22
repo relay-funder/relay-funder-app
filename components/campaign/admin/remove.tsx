@@ -1,12 +1,39 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/hooks/use-confirm';
 import { Button } from '@/components/ui';
 import { useAdminRemoveCampaign } from '@/lib/hooks/useCampaigns';
 import { AdminRemoveProcessStates } from '@/types/admin';
 import type { DbCampaign } from '@/types/campaign';
 import { Trash2 } from 'lucide-react';
+
+function getRemoveWarningMessage(campaign: DbCampaign): string {
+  const isPastStartDate =
+    campaign.startTime && new Date(campaign.startTime) < new Date();
+
+  switch (campaign.status) {
+    case 'DRAFT':
+      return 'Remove this draft campaign? This cannot be undone.';
+    case 'PENDING_APPROVAL':
+      return isPastStartDate
+        ? "This campaign's start date has passed and cannot be approved. Remove it permanently?"
+        : 'This campaign is pending approval. Remove it permanently?';
+    case 'DISABLED':
+      return 'Remove this disabled campaign permanently?';
+    case 'COMPLETED':
+      return 'Remove this completed campaign? All historical data will be deleted.';
+    case 'FAILED':
+      return 'Remove this failed campaign permanently?';
+    case 'PAUSED':
+      return 'Remove this paused campaign permanently?';
+    case 'CANCELLED':
+      return 'Remove this cancelled campaign permanently?';
+    default:
+      return 'Remove this campaign permanently? This cannot be undone.';
+  }
+}
 
 export function CampaignAdminRemoveButton({
   campaign,
@@ -21,7 +48,13 @@ export function CampaignAdminRemoveButton({
     useState<keyof typeof AdminRemoveProcessStates>('idle');
 
   const { toast } = useToast();
+  const { confirm } = useConfirm();
   const { mutateAsync: adminRemoveCampaign } = useAdminRemoveCampaign();
+
+  const warningMessage = useMemo(
+    () => getRemoveWarningMessage(campaign),
+    [campaign],
+  );
 
   const onStateChanged = useCallback(
     (state: keyof typeof AdminRemoveProcessStates) => {
@@ -31,17 +64,17 @@ export function CampaignAdminRemoveButton({
   );
 
   const removeCampaign = useCallback(
-    async (campaign: DbCampaign) => {
+    async (campaignToRemove: DbCampaign) => {
       try {
         onStateChanged('setup');
         await adminRemoveCampaign({
-          campaignId: campaign.id,
+          campaignId: campaignToRemove.id,
         });
 
         onStateChanged('done');
       } catch (error) {
         onStateChanged('failed');
-        console.error('Error approving campaign:', error);
+        console.error('Error removing campaign:', error);
         setError(
           error instanceof Error ? error.message : 'Failed to remove campaign',
         );
@@ -49,11 +82,21 @@ export function CampaignAdminRemoveButton({
     },
     [adminRemoveCampaign, onStateChanged],
   );
+
   const onRemove = useCallback(async () => {
-    setIsLoading(true);
-    await removeCampaign(campaign);
-    setIsLoading(false);
-  }, [removeCampaign, campaign]);
+    await confirm({
+      title: 'Remove Campaign',
+      description: warningMessage,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      confirmVariant: 'destructive',
+      onConfirm: async () => {
+        setIsLoading(true);
+        await removeCampaign(campaign);
+        setIsLoading(false);
+      },
+    });
+  }, [confirm, warningMessage, removeCampaign, campaign]);
 
   useEffect(() => {
     if (processState === 'done') {
@@ -71,13 +114,11 @@ export function CampaignAdminRemoveButton({
     }
   }, [toast, processState, error]);
 
-  if (
-    campaign.status !== 'FAILED' &&
-    campaign.status !== 'COMPLETED' &&
-    campaign.status !== 'DRAFT'
-  ) {
+  // Only hide the button for ACTIVE campaigns - they must be disabled first
+  if (campaign.status === 'ACTIVE') {
     return null;
   }
+
   return (
     <Button
       onClick={onRemove}

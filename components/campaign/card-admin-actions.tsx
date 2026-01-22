@@ -7,6 +7,8 @@ import { CampaignAdminDeployButton } from './admin/deploy';
 import { CampaignAdminDisableButton } from './admin/disable';
 import { CampaignAdminDeployContractButton } from './admin/deploy-contract';
 import { CampaignAdminFeaturedDialog } from './admin/featured-dialog';
+import { CampaignAdminClaimTipButton } from './admin/claim-tip';
+import { CampaignAdminDisburseFeesButton } from './admin/disburse-fees';
 import { CampaignAdminCreateWithdrawalButton } from './admin/create-withdrawal-button';
 import { CampaignAdminExecuteWithdrawalButton } from './admin/execute-withdrawal-button';
 import { CampaignAdminAuthorizeWithdrawalsButton } from './admin/authorize-withdrawals-button';
@@ -89,28 +91,56 @@ export function CampaignCardAdminActions({
                   buttonClassName="h-8 w-full px-2 py-1 text-xs"
                 />
               )}
+              {/* Claim tips and disburse fees for active campaigns past deadline */}
+              {campaign.endTime &&
+                new Date(campaign.endTime).getTime() < Date.now() && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <CampaignAdminClaimTipButton
+                      campaign={campaign}
+                      buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                    />
+                    <CampaignAdminDisburseFeesButton
+                      campaign={campaign}
+                      buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                    />
+                  </div>
+                )}
             </div>
           )}
         </>
       )}
 
-      {/* Pending approval campaigns: Single full-width approve button */}
-      {isPendingApproval && campaign.campaignAddress && (
-        <CampaignAdminApproveButton
-          campaign={campaign}
-          buttonClassName="h-8 w-full px-2 py-1 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-        />
+      {/* Pending approval campaigns: Approve button + Remove button */}
+      {isPendingApproval && (
+        <>
+          {campaign.campaignAddress && (
+            <CampaignAdminApproveButton
+              campaign={campaign}
+              buttonClassName="h-8 w-full px-2 py-1 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+            />
+          )}
+          <CampaignAdminRemoveButton
+            campaign={campaign}
+            buttonClassName="h-8 w-full px-2 py-1 text-xs"
+          />
+        </>
       )}
 
-      {/* Disabled campaigns: Single full-width enable button */}
+      {/* Disabled campaigns: Enable button + Remove button */}
       {isDisabled && (
-        <CampaignAdminDisableButton
-          campaign={campaign}
-          buttonClassName="h-8 w-full border border-bio bg-bio px-2 py-1 text-xs text-white hover:bg-bio/90"
-        />
+        <>
+          <CampaignAdminDisableButton
+            campaign={campaign}
+            buttonClassName="h-8 w-full border border-bio bg-bio px-2 py-1 text-xs text-white hover:bg-bio/90"
+          />
+          <CampaignAdminRemoveButton
+            campaign={campaign}
+            buttonClassName="h-8 w-full px-2 py-1 text-xs"
+          />
+        </>
       )}
 
-      {/* Completed/Failed campaigns: Withdrawal actions + Remove button */}
+      {/* Completed/Failed campaigns: Withdrawal actions + Claim buttons + Remove button */}
       {(isCompleted || isFailed) && (
         <>
           {/* Treasury withdrawal authorization for completed/failed campaigns */}
@@ -133,6 +163,17 @@ export function CampaignCardAdminActions({
                   buttonClassName="h-8 w-full px-2 py-1 text-xs"
                 />
               )}
+              {/* Claim tips and disburse fees */}
+              <div className="grid grid-cols-2 gap-2">
+                <CampaignAdminClaimTipButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
+                <CampaignAdminDisburseFeesButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
+              </div>
             </div>
           )}
           <CampaignAdminRemoveButton

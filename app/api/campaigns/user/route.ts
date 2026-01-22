@@ -16,6 +16,14 @@ import {
   VALID_CATEGORY_IDS,
 } from '@/lib/constant/categories';
 
+const parseDate = (value: string, field: string): Date => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new ApiParameterError(`${field} must be a valid ISO date`);
+  }
+  return date;
+};
+
 export async function GET(req: Request) {
   try {
     const session = await checkAuth(['user']);
@@ -61,6 +69,9 @@ export async function PATCH(req: Request) {
     const location = formData.get('location') as string;
     const category = formData.get('category') as string;
     const fundingUsage = formData.get('fundingUsage') as string;
+    const fundingGoal = formData.get('fundingGoal') as string | null;
+    const startTime = formData.get('startTime') as string | null;
+    const endTime = formData.get('endTime') as string | null;
     const bannerImage = formData.get('bannerImage') as File | null;
 
     if (!campaignId) {
@@ -111,6 +122,43 @@ export async function PATCH(req: Request) {
       category,
       fundingUsage,
     };
+
+    // Add optional fields if provided
+    if (fundingGoal) {
+      const parsedGoal = parseFloat(fundingGoal);
+      if (Number.isNaN(parsedGoal) || parsedGoal <= 0) {
+        throw new ApiParameterError('fundingGoal must be a positive number');
+      }
+      updateData.fundingGoal = fundingGoal;
+    }
+
+    // Parse and validate dates
+    const parsedStartTime = startTime ? parseDate(startTime, 'startTime') : null;
+    const parsedEndTime = endTime ? parseDate(endTime, 'endTime') : null;
+
+    // Validate date range if both are provided
+    if (parsedStartTime && parsedEndTime && parsedEndTime <= parsedStartTime) {
+      throw new ApiParameterError('endTime must be after startTime');
+    }
+
+    // Validate against existing campaign dates when only one date is provided
+    if (parsedEndTime && !parsedStartTime && instance.startTime) {
+      if (parsedEndTime <= instance.startTime) {
+        throw new ApiParameterError('endTime must be after the existing startTime');
+      }
+    }
+    if (parsedStartTime && !parsedEndTime && instance.endTime) {
+      if (instance.endTime <= parsedStartTime) {
+        throw new ApiParameterError('startTime must be before the existing endTime');
+      }
+    }
+
+    if (parsedStartTime) {
+      updateData.startTime = parsedStartTime;
+    }
+    if (parsedEndTime) {
+      updateData.endTime = parsedEndTime;
+    }
 
     await db.campaign.update({
       where: {
