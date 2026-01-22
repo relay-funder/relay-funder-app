@@ -141,6 +141,18 @@ export async function PATCH(req: Request) {
       throw new ApiParameterError('endTime must be after startTime');
     }
 
+    // Validate against existing campaign dates when only one date is provided
+    if (parsedEndTime && !parsedStartTime && instance.startTime) {
+      if (parsedEndTime <= instance.startTime) {
+        throw new ApiParameterError('endTime must be after the existing startTime');
+      }
+    }
+    if (parsedStartTime && !parsedEndTime && instance.endTime) {
+      if (instance.endTime <= parsedStartTime) {
+        throw new ApiParameterError('startTime must be before the existing endTime');
+      }
+    }
+
     if (parsedStartTime) {
       updateData.startTime = parsedStartTime;
     }
