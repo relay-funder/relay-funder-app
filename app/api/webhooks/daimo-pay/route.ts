@@ -7,7 +7,7 @@ import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
 import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
-import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
+import { executeGatewayPledgeWithBalanceRetry } from '@/lib/api/pledges/execute-with-balance-retry';
 import { logFactory } from '@/lib/debug';
 import {
   DAIMO_PAY_CHAIN_ID,
@@ -889,6 +889,14 @@ export async function POST(req: Request) {
         // Fire-and-forget: don't await pledge execution
         // Launch IMMEDIATELY before notifications and round contributions
         // If execution fails, payment remains "confirmed" for manual retry
+        //
+        // IMPORTANT: Uses executeGatewayPledgeWithBalanceRetry to handle the timing
+        // issue where Daimo's webhook fires before on-chain transfer is confirmed.
+        // The function will:
+        // 1. Wait for Daimo's destination tx to be confirmed (if hash provided)
+        // 2. Retry with exponential backoff if balance is insufficient
+        const destinationTxHash = payload.payment.destination?.txHash;
+
         Promise.resolve().then(async () => {
           const promiseStartTime = Date.now();
           const delayFromQueue = promiseStartTime - pledgeLaunchTime;
@@ -903,10 +911,16 @@ export async function POST(req: Request) {
                 startedAt: new Date().toISOString(),
                 delayFromQueue: `${delayFromQueue}ms`,
                 delayFromWebhookStart: `${delayFromWebhookStart}ms`,
+                destinationTxHash: destinationTxHash || 'not available',
               },
             );
 
-            const executionResult = await executeGatewayPledge(dbPayment.id);
+            const executionResult = await executeGatewayPledgeWithBalanceRetry(
+              dbPayment.id,
+              destinationTxHash,
+              undefined, // Use default retry config
+              { prefixId, logAddress },
+            );
 
             const executionDuration = Date.now() - promiseStartTime;
             const totalTimeFromWebhook = Date.now() - webhookStartTime;
