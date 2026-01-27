@@ -183,42 +183,73 @@ export async function executeGatewayPledgeWithBalanceRetry(
     baseDelayMs: config.baseDelayMs,
   });
 
+  // If we don't have a destination tx hash, execute once without retries.
+  // This avoids long-running retry loops with incomplete webhook data.
+  if (!destinationTxHash) {
+    logVerbose(
+      'No destination tx hash provided - executing once without retries',
+      executionContext,
+    );
+    try {
+      return await executeGatewayPledge(paymentId);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logError('Gateway pledge execution failed without destination tx hash', {
+        ...executionContext,
+        error: errorMessage,
+      });
+      return {
+        success: false,
+        paymentId,
+        error: errorMessage,
+      } as ExecuteGatewayPledgeResponse;
+    }
+  }
+
   // Step 1: If destination tx hash is provided, wait for it to be confirmed
   // This is the primary fix - ensure funds have actually arrived before checking balance
-  if (destinationTxHash) {
-    logVerbose('Destination tx hash provided - waiting for confirmation first', {
+  logVerbose('Destination tx hash provided - waiting for confirmation first', {
+    ...executionContext,
+    destinationTxHash,
+  });
+
+  const { confirmed, receipt } = await waitForDaimoDestinationTx(
+    destinationTxHash,
+    config,
+    { ...executionContext, paymentId },
+  );
+
+  // If we have a receipt and it failed/reverted, stop here.
+  if (receipt && receipt.status !== 1) {
+    const errorMessage = `Daimo destination tx failed or reverted: ${destinationTxHash}`;
+    logError('Destination tx failed - skipping pledge execution', {
       ...executionContext,
       destinationTxHash,
+      status: receipt.status,
     });
+    return {
+      success: false,
+      paymentId,
+      error: errorMessage,
+    } as ExecuteGatewayPledgeResponse;
+  }
 
-    const { confirmed, receipt } = await waitForDaimoDestinationTx(
+  if (confirmed) {
+    logVerbose('Destination tx confirmed - proceeding with pledge execution', {
+      ...executionContext,
       destinationTxHash,
-      config,
-      { ...executionContext, paymentId },
-    );
-
-    if (confirmed) {
-      logVerbose('Destination tx confirmed - proceeding with pledge execution', {
+      blockNumber: receipt?.blockNumber,
+    });
+  } else {
+    // Even if we couldn't confirm the destination tx, we'll still try pledge execution
+    // with retries as a fallback. The funds might have arrived but RPC is slow.
+    logVerbose(
+      'Could not confirm destination tx - proceeding with retry-based approach',
+      {
         ...executionContext,
         destinationTxHash,
-        blockNumber: receipt?.blockNumber,
-      });
-    } else {
-      // Even if we couldn't confirm the destination tx, we'll still try pledge execution
-      // with retries as a fallback. The funds might have arrived but RPC is slow.
-      logVerbose(
-        'Could not confirm destination tx - proceeding with retry-based approach',
-        {
-          ...executionContext,
-          destinationTxHash,
-          note: 'Will retry with exponential backoff if balance insufficient',
-        },
-      );
-    }
-  } else {
-    logVerbose(
-      'No destination tx hash provided - will use retry-based approach only',
-      executionContext,
+        note: 'Will retry with exponential backoff if balance insufficient',
+      },
     );
   }
 
