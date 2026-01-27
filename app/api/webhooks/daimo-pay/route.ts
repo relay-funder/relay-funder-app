@@ -575,15 +575,67 @@ export async function POST(req: Request) {
         );
       }
 
-      // Find user by address (normalized)
-      const user = await db.user.findUnique({
-        where: { address: userAddress.toLowerCase() },
+      // Find or create user by address (normalized)
+      const normalizedUserAddress = userAddress.toLowerCase();
+      let user = await db.user.findUnique({
+        where: { address: normalizedUserAddress },
       });
 
       if (!user) {
-        throw new ApiNotFoundError(
-          `User not found for address ${userAddress}. User must exist before making payments.`,
-        );
+        // Auto-create user for Daimo payments - user creation is just storing the wallet address
+        // This allows donations from wallets that haven't explicitly signed in yet
+        logVerbose('Auto-creating user for Daimo payment', {
+          prefixId,
+          logAddress,
+          userAddress: normalizedUserAddress,
+          note: 'User will be created with default roles',
+        });
+
+        try {
+          user = await db.user.create({
+            data: {
+              address: normalizedUserAddress,
+              rawAddress: userAddress,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              roles: ['user'],
+            },
+          });
+
+          logVerbose('User auto-created successfully', {
+            prefixId,
+            logAddress,
+            userId: user.id,
+            userAddress: normalizedUserAddress,
+          });
+        } catch (createError) {
+          // Handle race condition - user might have been created by another request
+          if (
+            createError instanceof Prisma.PrismaClientKnownRequestError &&
+            createError.code === 'P2002'
+          ) {
+            logVerbose('User creation race condition - fetching existing user', {
+              prefixId,
+              logAddress,
+            });
+            user = await db.user.findUnique({
+              where: { address: normalizedUserAddress },
+            });
+
+            if (!user) {
+              logError('User creation failed and user not found after race condition', {
+                prefixId,
+                logAddress,
+                userAddress: normalizedUserAddress,
+              });
+              throw new ApiNotFoundError(
+                `Failed to create or find user for address ${userAddress}`,
+              );
+            }
+          } else {
+            throw createError;
+          }
+        }
       }
 
       // Create payment record
