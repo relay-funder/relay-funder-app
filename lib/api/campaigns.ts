@@ -420,11 +420,12 @@ export async function getCampaignBySlug(
 }
 
 // Prefetching homepage campaigns (infinite)
+// Note: rounds=false must match the default in useInfiniteCampaigns and CampaignList
 export async function prefetchCampaigns(queryClient: QueryClient) {
   return queryClient.prefetchInfiniteQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10],
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10, false],
     initialPageParam: 1,
-    queryFn: () => listCampaigns({ rounds: true }),
+    queryFn: () => listCampaigns({ rounds: false }),
   });
 }
 
