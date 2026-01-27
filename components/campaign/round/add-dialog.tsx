@@ -61,23 +61,34 @@ export function CampaignAddRoundDialog({
   }, [onClosed]);
 
   // Filter out rounds where the application deadline has passed or campaign is already applied
+  // Admins can add campaigns to any non-ended round (bypass application deadline)
   const availableRounds = useMemo(() => {
     if (roundsData && Array.isArray(roundsData)) {
       const now = new Date();
 
       const filtered = roundsData.filter((round: GetRoundResponseInstance) => {
         const applicationEndTime = new Date(round.applicationEndTime);
-        const deadlinePassed = applicationEndTime < now;
+        const endTime = new Date(round.endTime);
+        const applicationDeadlinePassed = applicationEndTime < now;
+        const roundEnded = endTime < now;
         const alreadyApplied = campaign.rounds?.find((campaignRound) => {
           return campaignRound.id === round.id;
         });
 
-        // Check if application deadline has passed
-        if (deadlinePassed) {
+        // Never allow adding to ended rounds
+        if (roundEnded) {
           return false;
         }
         // Check if campaign is already applied to this round
         if (alreadyApplied) {
+          return false;
+        }
+        // Admins can add to any non-ended round, even after application deadline
+        if (isAdmin) {
+          return true;
+        }
+        // Non-admins can only apply before application deadline
+        if (applicationDeadlinePassed) {
           return false;
         }
         return true;
@@ -86,7 +97,7 @@ export function CampaignAddRoundDialog({
       return filtered;
     }
     return [] as GetRoundResponseInstance[];
-  }, [roundsData, campaign]);
+  }, [roundsData, campaign, isAdmin]);
 
   const onRoundSelected = useCallback(
     (roundId: string) => {

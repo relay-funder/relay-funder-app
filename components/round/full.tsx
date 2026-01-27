@@ -22,6 +22,7 @@ import { debugComponentData as debug } from '@/lib/debug';
 import { RoundManageResults } from './manage-results';
 import { RoundAdminInlineEdit } from './admin/inline-edit';
 import { RoundApplyDialog } from './apply-dialog';
+import { RoundAddDialog } from './campaign/add-dialog';
 import { Button } from '@/components/ui';
 import { RoundQfPreview } from './qf-preview';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ export function RoundFull({
   // Force user view if specified, otherwise use actual admin status
   const isAdmin = forceUserView ? false : authIsAdmin;
   const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [showAddCampaignDialog, setShowAddCampaignDialog] = useState(false);
 
   // Call hooks with safe defaults for when round might be undefined
   const round = roundInstance?.round;
@@ -232,6 +234,16 @@ export function RoundFull({
                   Apply Campaign
                 </Button>
               )}
+              {/* Add Campaign Button - For admins on non-ended rounds */}
+              {isAdmin && !isEnded && (
+                <Button
+                  onClick={() => setShowAddCampaignDialog(true)}
+                  variant="default"
+                  className="shrink-0"
+                >
+                  Add Campaign
+                </Button>
+              )}
             </div>
 
             {numberOfCampaigns > 0 ? (
@@ -263,6 +275,14 @@ export function RoundFull({
           <RoundApplyDialog
             round={round}
             onClosed={() => setShowApplyDialog(false)}
+          />
+        )}
+
+        {/* Admin Add Campaign Dialog */}
+        {showAddCampaignDialog && (
+          <RoundAddDialog
+            round={round}
+            onClosed={() => setShowAddCampaignDialog(false)}
           />
         )}
       </div>
