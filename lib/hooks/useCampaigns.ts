@@ -335,7 +335,7 @@ export function useInfiniteCampaigns(
   rounds = false,
 ) {
   return useInfiniteQuery<PaginatedCampaignResponse, Error>({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize],
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize, rounds],
     queryFn: ({ pageParam = 1 }) =>
       fetchCampaignPage({
         pageParam: pageParam as number,

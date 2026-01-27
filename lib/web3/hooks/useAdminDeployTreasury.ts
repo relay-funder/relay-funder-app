@@ -61,7 +61,10 @@ export function useAdminDeployTreasury() {
           TREASURY_IMPLEMENTATIONS.KEEP_WHATS_RAISED, // implementationId
           'RelayTreasury', // name
           'RLY', // symbol
-          { gasLimit: TREASURY_GAS_LIMITS.DEPLOY },
+          {
+            gasLimit: TREASURY_GAS_LIMITS.DEPLOY,
+            type: 0, // Use legacy transaction type for proper encoding
+          },
         );
 
         const receipt = await tx.wait();

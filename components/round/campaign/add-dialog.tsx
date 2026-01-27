@@ -110,10 +110,12 @@ export function RoundAddDialog({
         roundId: round.id,
         campaignId: selectedCampaign.id,
         applicationReason,
+        // Auto-approve when admin adds a campaign
+        ...(isAdmin && { status: 'APPROVED' as const }),
       });
       toast({
-        title: 'Campaign Added',
-        description: `Campaign "${selectedCampaign.title}" has been added to the round.`,
+        title: isAdmin ? 'Campaign Added & Approved' : 'Campaign Added',
+        description: `Campaign "${selectedCampaign.title}" has been ${isAdmin ? 'added and approved for' : 'added to'} the round.`,
       });
       onClose();
     } catch (error) {
@@ -133,6 +135,7 @@ export function RoundAddDialog({
     onClose,
     applicationReason,
     toast,
+    isAdmin,
   ]);
   const onAdd = useCallback(async () => {
     if (isAdmin) {
