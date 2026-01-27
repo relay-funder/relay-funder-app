@@ -236,6 +236,15 @@ export async function POST(req: Request) {
   const webhookStartTime = Date.now();
 
   try {
+    if (!NEXT_PUBLIC_PLATFORM_ADMIN) {
+      logError('Missing NEXT_PUBLIC_PLATFORM_ADMIN configuration', {
+        note: 'Daimo webhook requires admin address for gateway safety checks',
+      });
+      throw new ApiParameterError(
+        'Server configuration error: NEXT_PUBLIC_PLATFORM_ADMIN is missing',
+      );
+    }
+
     const headers = Array.from(req.headers.entries())
       .filter(
         ([key]) =>
@@ -901,6 +910,18 @@ export async function POST(req: Request) {
         const destinationTxHash = payload.payment.destination?.txHash;
         const destinationAddress =
           payload.payment.destination?.destinationAddress || '';
+
+        if (!destinationAddress) {
+          logWarn(
+            'Daimo payload missing destinationAddress - safety check skipped',
+            {
+              prefixId,
+              logAddress,
+              dbPaymentId: dbPayment.id,
+              destinationTxHash: destinationTxHash || 'not available',
+            },
+          );
+        }
 
         // Safety: the gateway flow assumes Daimo delivers funds to the platform admin wallet
         // and ONLY THEN do we pledge into the campaign treasury. If Daimo delivers to some

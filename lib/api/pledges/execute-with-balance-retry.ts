@@ -167,6 +167,10 @@ async function waitForDaimoDestinationTx(
  * @param config - Retry configuration (uses defaults if not provided)
  * @param context - Logging context
  * @returns Execution result
+ *
+ * NOTE: This can run for ~2+ minutes (destination tx wait + backoff retries).
+ * Ensure the caller can outlive this duration (e.g. background worker/queue) or
+ * accept that retries may not complete in short-lived runtimes.
  */
 export async function executeGatewayPledgeWithBalanceRetry(
   paymentId: number,
