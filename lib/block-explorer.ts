@@ -31,6 +31,26 @@ interface BlockExplorerTokenTransferRaw {
   to?: string | { hash?: string };
 }
 
+interface BlockExplorerAddressTokenTransferRaw {
+  transaction_hash?: string;
+  timestamp?: string | number;
+  block?: string;
+  block_number?: string;
+  token?: {
+    symbol?: string;
+    address?: string;
+    decimals?: string;
+  };
+  total?: {
+    value?: string;
+  };
+  value?: string;
+  from?: string | { hash?: string };
+  to?: string | { hash?: string };
+  token_type?: string;
+  type?: string;
+}
+
 interface BlockExplorerTransactionRaw {
   hash?: string;
   timestamp?: string | number;
@@ -56,6 +76,12 @@ export interface TokenTransfer {
   decimals: number;
   from: string;
   to: string;
+}
+
+export interface AddressTokenTransfer extends TokenTransfer {
+  transactionHash: string;
+  timestamp: number;
+  blockNumber: number;
 }
 
 export interface BlockExplorerTransaction {
@@ -285,6 +311,106 @@ export async function getBlockExplorerTransactions(
     return transactions;
   } catch (error) {
     logVerbose('Error fetching block explorer transactions:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch ERC-20 token transfer events involving an address.
+ *
+ * This is more complete than `/addresses/:address/transactions` for cases where the
+ * address only appears in logs (e.g. relayers paying the treasury in the same tx).
+ */
+export async function getBlockExplorerAddressTokenTransfers(
+  address: string,
+): Promise<AddressTokenTransfer[]> {
+  const normalizedAddress = address.toLowerCase();
+
+  try {
+    const apiUrl = getBlockExplorerApiUrl(
+      `/addresses/${normalizedAddress}/token-transfers`,
+    );
+
+    logVerbose(`Fetching token transfers from: ${apiUrl}`);
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      logVerbose(
+        `Block explorer token transfers API failed with status ${response.status}`,
+      );
+      return [];
+    }
+
+    const data = (await response.json()) as {
+      items?: BlockExplorerAddressTokenTransferRaw[];
+    };
+    const rawTransfers: BlockExplorerAddressTokenTransferRaw[] = data.items || [];
+
+    if (rawTransfers.length === 0) {
+      return [];
+    }
+
+    return rawTransfers
+      .map((transfer) => {
+        const transactionHash = transfer.transaction_hash || '';
+
+        // Parse timestamp (same rules as transactions)
+        let timestamp = 0;
+        const timestampField = transfer.timestamp;
+        if (timestampField) {
+          if (typeof timestampField === 'string') {
+            const parsedDate = new Date(timestampField);
+            if (!isNaN(parsedDate.getTime())) {
+              timestamp = Math.floor(parsedDate.getTime() / 1000);
+            }
+          } else if (typeof timestampField === 'number') {
+            timestamp =
+              timestampField > 1000000000000
+                ? Math.floor(timestampField / 1000)
+                : timestampField;
+          }
+        }
+
+        const blockNumber = parseInt(transfer.block || transfer.block_number || '0');
+
+        const tokenSymbol = transfer.token?.symbol || 'UNKNOWN';
+        const tokenAddress = transfer.token?.address || '';
+        const decimals = parseInt(transfer.token?.decimals || '0');
+        const amount = transfer.total?.value || transfer.value || '0';
+
+        const transferFrom =
+          typeof transfer.from === 'object' && transfer.from?.hash
+            ? transfer.from.hash
+            : typeof transfer.from === 'string'
+              ? transfer.from
+              : '';
+        const transferTo =
+          typeof transfer.to === 'object' && transfer.to?.hash
+            ? transfer.to.hash
+            : typeof transfer.to === 'string'
+              ? transfer.to
+              : '';
+
+        return {
+          transactionHash,
+          timestamp,
+          blockNumber,
+          tokenSymbol,
+          tokenAddress,
+          amount,
+          decimals,
+          from: transferFrom,
+          to: transferTo,
+        } satisfies AddressTokenTransfer;
+      })
+      .filter((t) => t.transactionHash.startsWith('0x') && t.transactionHash.length === 66);
+  } catch (error) {
+    logVerbose('Error fetching block explorer token transfers:', error);
     return [];
   }
 }

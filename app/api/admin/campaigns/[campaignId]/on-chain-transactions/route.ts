@@ -6,10 +6,50 @@ import { getTreasuryTransactions } from '@/lib/treasury/transactions';
 import {
   getBlockExplorerTransactions,
   getBlockExplorerTransactionDetails,
+  getBlockExplorerAddressTokenTransfers,
+  type BlockExplorerTransaction,
 } from '@/lib/block-explorer';
 import { logFactory } from '@/lib/debug/log';
 
 const logVerbose = logFactory('verbose', '⛓️ OnChainTx', { flag: 'api' });
+
+type BlockExplorerTransactionLike = { hash: string };
+type BlockExplorerTransactionList = Array<
+  BlockExplorerTransaction | BlockExplorerTransactionLike
+>;
+
+async function augmentWithTokenTransfers(
+  treasuryAddress: string,
+  transactions: BlockExplorerTransactionList,
+): Promise<BlockExplorerTransactionList> {
+  try {
+    const tokenTransfers = await getBlockExplorerAddressTokenTransfers(
+      treasuryAddress,
+    );
+    const relevantTransfers = tokenTransfers.filter(
+      (t) => t.tokenSymbol === 'USDC' || t.tokenSymbol === 'USDT',
+    );
+
+    const existingHashes = new Set(
+      transactions
+        .map((t) => t?.hash)
+        .filter((h: unknown): h is string => typeof h === 'string'),
+    );
+
+    const missingTxHashes = Array.from(
+      new Set(relevantTransfers.map((t) => t.transactionHash)),
+    ).filter((h) => !existingHashes.has(h));
+
+    for (const hash of missingTxHashes) {
+      transactions.push({ hash });
+    }
+
+    return transactions;
+  } catch (error) {
+    logVerbose('Failed to augment tx list with token transfers', error);
+    return transactions;
+  }
+}
 
 /**
  * Create a streaming response that sends transactions progressively
@@ -35,8 +75,13 @@ async function createStreamingResponse(treasuryAddress: string) {
 
         // Step 2: Get basic transaction list from block explorer
         logVerbose('Fetching block explorer transactions');
-        let blockExplorerTransactions =
+        let blockExplorerTransactions: BlockExplorerTransactionList =
           await getBlockExplorerTransactions(treasuryAddress);
+
+        blockExplorerTransactions = await augmentWithTokenTransfers(
+          treasuryAddress,
+          blockExplorerTransactions,
+        );
 
         if (blockExplorerTransactions.length === 0) {
           // Try alternative approach if no transactions found
@@ -166,8 +211,7 @@ export async function GET(
       { transactionHashes },
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let blockExplorerTransactions: any[] = [];
+    let blockExplorerTransactions: BlockExplorerTransactionList = [];
 
     // If no smart contract transactions, try to fetch regular transactions involving the treasury address
     if (transactionHashes.length === 0) {
@@ -284,6 +328,18 @@ export async function GET(
         );
         blockExplorerTransactions = [];
       }
+    }
+
+    const beforeAugmentCount = blockExplorerTransactions.length;
+    blockExplorerTransactions = await augmentWithTokenTransfers(
+      campaign.treasuryAddress,
+      blockExplorerTransactions,
+    );
+    const afterAugmentCount = blockExplorerTransactions.length;
+    if (afterAugmentCount > beforeAugmentCount) {
+      logVerbose('Augmented block explorer tx list using token transfers', {
+        added: afterAugmentCount - beforeAugmentCount,
+      });
     }
 
     // Now fetch detailed data for ALL transactions to get token transfer amounts

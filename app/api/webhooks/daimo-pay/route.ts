@@ -5,9 +5,12 @@ import { response, handleError } from '@/lib/api/response';
 import { notify } from '@/lib/api/event-feed';
 import { getUserNameFromInstance } from '@/lib/api/user';
 import { formatCrypto } from '@/lib/format-crypto';
-import { DAIMO_PAY_WEBHOOK_SECRET } from '@/lib/constant/server';
+import {
+  DAIMO_PAY_WEBHOOK_SECRET,
+  NEXT_PUBLIC_PLATFORM_ADMIN,
+} from '@/lib/constant/server';
 import { DaimoPayWebhookPayloadSchema } from '@/lib/api/types/webhooks';
-import { executeGatewayPledge } from '@/lib/api/pledges/execute-gateway-pledge';
+import { executeGatewayPledgeWithBalanceRetry } from '@/lib/api/pledges/execute-with-balance-retry';
 import { logFactory } from '@/lib/debug';
 import {
   DAIMO_PAY_CHAIN_ID,
@@ -233,6 +236,15 @@ export async function POST(req: Request) {
   const webhookStartTime = Date.now();
 
   try {
+    if (!NEXT_PUBLIC_PLATFORM_ADMIN) {
+      logError('Missing NEXT_PUBLIC_PLATFORM_ADMIN configuration', {
+        note: 'Daimo webhook requires admin address for gateway safety checks',
+      });
+      throw new ApiParameterError(
+        'Server configuration error: NEXT_PUBLIC_PLATFORM_ADMIN is missing',
+      );
+    }
+
     const headers = Array.from(req.headers.entries())
       .filter(
         ([key]) =>
@@ -889,46 +901,135 @@ export async function POST(req: Request) {
         // Fire-and-forget: don't await pledge execution
         // Launch IMMEDIATELY before notifications and round contributions
         // If execution fails, payment remains "confirmed" for manual retry
-        Promise.resolve().then(async () => {
-          const promiseStartTime = Date.now();
-          const delayFromQueue = promiseStartTime - pledgeLaunchTime;
-          const delayFromWebhookStart = promiseStartTime - webhookStartTime;
+        //
+        // IMPORTANT: Uses executeGatewayPledgeWithBalanceRetry to handle the timing
+        // issue where Daimo's webhook fires before on-chain transfer is confirmed.
+        // The function will:
+        // 1. Wait for Daimo's destination tx to be confirmed (if hash provided)
+        // 2. Retry with exponential backoff if balance is insufficient
+        const destinationTxHash = payload.payment.destination?.txHash;
+        const destinationAddress =
+          payload.payment.destination?.destinationAddress || '';
 
-          try {
-            logVerbose(
-              `⚡ PLEDGE EXECUTION STARTING for payment ${dbPayment.id}`,
-              {
-                prefixId,
-                logAddress,
-                startedAt: new Date().toISOString(),
-                delayFromQueue: `${delayFromQueue}ms`,
-                delayFromWebhookStart: `${delayFromWebhookStart}ms`,
-              },
-            );
+        if (!destinationAddress) {
+          logWarn(
+            'Daimo payload missing destinationAddress - safety check skipped',
+            {
+              prefixId,
+              logAddress,
+              dbPaymentId: dbPayment.id,
+              destinationTxHash: destinationTxHash || 'not available',
+            },
+          );
+        }
 
-            const executionResult = await executeGatewayPledge(dbPayment.id);
+        // Safety: the gateway flow assumes Daimo delivers funds to the platform admin wallet
+        // and ONLY THEN do we pledge into the campaign treasury. If Daimo delivers to some
+        // other address (e.g. the treasury), executing the gateway pledge would drain the
+        // admin wallet and/or double-fund the treasury.
+        if (
+          destinationAddress &&
+          NEXT_PUBLIC_PLATFORM_ADMIN &&
+          destinationAddress.toLowerCase() !==
+            NEXT_PUBLIC_PLATFORM_ADMIN.toLowerCase()
+        ) {
+          const errorMessage = `Daimo destinationAddress mismatch: expected ${NEXT_PUBLIC_PLATFORM_ADMIN}, got ${destinationAddress}`;
 
-            const executionDuration = Date.now() - promiseStartTime;
-            const totalTimeFromWebhook = Date.now() - webhookStartTime;
+          logError('🚨 Skipping gateway pledge: destination address mismatch', {
+            prefixId,
+            logAddress,
+            dbPaymentId: dbPayment.id,
+            daimoPaymentId: payload.paymentId,
+            destinationTxHash: destinationTxHash || 'not available',
+            destinationAddress,
+            expectedDestinationAddress: NEXT_PUBLIC_PLATFORM_ADMIN,
+            note: 'This indicates Daimo delivered funds somewhere other than the admin wallet (e.g. treasury).',
+          });
 
-            // Check if execution succeeded or failed
-            if (executionResult.success) {
+          // Persist failure state for visibility in the admin UI (do not override SUCCESS).
+          await db.payment.updateMany({
+            where: {
+              id: dbPayment.id,
+              pledgeExecutionStatus: { in: ['NOT_STARTED', 'FAILED'] },
+            },
+            data: {
+              pledgeExecutionStatus: 'FAILED',
+              pledgeExecutionError: errorMessage,
+              pledgeExecutionAttempts: { increment: 1 },
+              pledgeExecutionLastAttempt: new Date(),
+            },
+          });
+        } else {
+          Promise.resolve().then(async () => {
+            const promiseStartTime = Date.now();
+            const delayFromQueue = promiseStartTime - pledgeLaunchTime;
+            const delayFromWebhookStart = promiseStartTime - webhookStartTime;
+
+            try {
               logVerbose(
-                `✅ Pledge execution SUCCESS for payment ${dbPayment.id}:`,
+                `⚡ PLEDGE EXECUTION STARTING for payment ${dbPayment.id}`,
                 {
                   prefixId,
                   logAddress,
-                  executionDuration: `${executionDuration}ms`,
+                  startedAt: new Date().toISOString(),
                   delayFromQueue: `${delayFromQueue}ms`,
-                  totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
-                  completedAt: new Date().toISOString(),
-                  ...executionResult,
+                  delayFromWebhookStart: `${delayFromWebhookStart}ms`,
+                  destinationTxHash: destinationTxHash || 'not available',
                 },
               );
-            } else {
-              // Execution failed but was handled gracefully (FAILED status persisted)
+
+              const executionResult =
+                await executeGatewayPledgeWithBalanceRetry(
+                  dbPayment.id,
+                  destinationTxHash,
+                  undefined, // Use default retry config
+                  { prefixId, logAddress },
+                );
+
+              const executionDuration = Date.now() - promiseStartTime;
+              const totalTimeFromWebhook = Date.now() - webhookStartTime;
+
+              // Check if execution succeeded or failed
+              if (executionResult.success) {
+                logVerbose(
+                  `✅ Pledge execution SUCCESS for payment ${dbPayment.id}:`,
+                  {
+                    prefixId,
+                    logAddress,
+                    executionDuration: `${executionDuration}ms`,
+                    delayFromQueue: `${delayFromQueue}ms`,
+                    totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
+                    completedAt: new Date().toISOString(),
+                    ...executionResult,
+                  },
+                );
+              } else {
+                // Execution failed but was handled gracefully (FAILED status persisted)
+                logError(
+                  `❌ Pledge execution FAILED (handled) for payment ${dbPayment.id}:`,
+                  {
+                    prefixId,
+                    logAddress,
+                    executionDuration: `${executionDuration}ms`,
+                    delayFromQueue: `${delayFromQueue}ms`,
+                    totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
+                    failedAt: new Date().toISOString(),
+                    error: executionResult.error || 'Unknown error',
+                    dbPaymentId: dbPayment.id,
+                    daimoPaymentId: payload.paymentId,
+                    campaignId: dbPayment.campaign.id,
+                    treasuryAddress: dbPayment.campaign.treasuryAddress,
+                    note: 'FAILED status persisted in database',
+                  },
+                );
+              }
+            } catch (executionError) {
+              // Unexpected error (should rarely happen now)
+              const executionDuration = Date.now() - promiseStartTime;
+              const totalTimeFromWebhook = Date.now() - webhookStartTime;
+
               logError(
-                `❌ Pledge execution FAILED (handled) for payment ${dbPayment.id}:`,
+                `❌ Pledge execution CRASHED (unexpected) for payment ${dbPayment.id}:`,
                 {
                   prefixId,
                   logAddress,
@@ -936,46 +1037,24 @@ export async function POST(req: Request) {
                   delayFromQueue: `${delayFromQueue}ms`,
                   totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
                   failedAt: new Date().toISOString(),
-                  error: executionResult.error || 'Unknown error',
+                  error:
+                    executionError instanceof Error
+                      ? executionError.message
+                      : 'Unknown error',
+                  errorStack:
+                    executionError instanceof Error
+                      ? executionError.stack
+                      : undefined,
                   dbPaymentId: dbPayment.id,
                   daimoPaymentId: payload.paymentId,
                   campaignId: dbPayment.campaign.id,
                   treasuryAddress: dbPayment.campaign.treasuryAddress,
-                  note: 'FAILED status persisted in database',
+                  note: 'Unexpected error - database state may be inconsistent',
                 },
               );
             }
-          } catch (executionError) {
-            // Unexpected error (should rarely happen now)
-            const executionDuration = Date.now() - promiseStartTime;
-            const totalTimeFromWebhook = Date.now() - webhookStartTime;
-
-            logError(
-              `❌ Pledge execution CRASHED (unexpected) for payment ${dbPayment.id}:`,
-              {
-                prefixId,
-                logAddress,
-                executionDuration: `${executionDuration}ms`,
-                delayFromQueue: `${delayFromQueue}ms`,
-                totalTimeFromWebhook: `${totalTimeFromWebhook}ms`,
-                failedAt: new Date().toISOString(),
-                error:
-                  executionError instanceof Error
-                    ? executionError.message
-                    : 'Unknown error',
-                errorStack:
-                  executionError instanceof Error
-                    ? executionError.stack
-                    : undefined,
-                dbPaymentId: dbPayment.id,
-                daimoPaymentId: payload.paymentId,
-                campaignId: dbPayment.campaign.id,
-                treasuryAddress: dbPayment.campaign.treasuryAddress,
-                note: 'Unexpected error - database state may be inconsistent',
-              },
-            );
-          }
-        });
+          });
+        }
       }
 
       // If payment is confirmed
