@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useDaimoPayUI } from '@daimo/pay';
 import { getDaimoPayConfig } from '@/lib/web3/daimo/config';
+import { ADMIN_ADDRESS } from '@/lib/constant';
 import { DAIMO_PAY_DEBOUNCE_DELAY } from '@/lib/constant/daimo';
 import { debugHook as debug } from '@/lib/debug';
 
@@ -35,6 +36,13 @@ export function useDaimoReset({
     }
 
     if (!isValid || !resetPayment || !validatedTreasuryAddress) {
+      return;
+    }
+
+    if (!ADMIN_ADDRESS) {
+      console.error(
+        'Daimo Pay: Missing NEXT_PUBLIC_PLATFORM_ADMIN; cannot reset payment intent',
+      );
       return;
     }
 
@@ -94,7 +102,9 @@ export function useDaimoReset({
         resetPayment({
           toChain: daimoConfig.chainId,
           toToken: daimoConfig.tokenAddress,
-          toAddress: validatedTreasuryAddress,
+          // Keep resetPayment aligned with the actual button config (gateway flow).
+          // If this diverges, Daimo can deliver funds to the wrong address.
+          toAddress: ADMIN_ADDRESS as `0x${string}`,
           toUnits: totalAmount,
           metadata,
         });

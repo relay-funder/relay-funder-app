@@ -6,6 +6,7 @@ import { getTreasuryTransactions } from '@/lib/treasury/transactions';
 import {
   getBlockExplorerTransactions,
   getBlockExplorerTransactionDetails,
+  getBlockExplorerAddressTokenTransfers,
 } from '@/lib/block-explorer';
 import { logFactory } from '@/lib/debug/log';
 
@@ -35,8 +36,34 @@ async function createStreamingResponse(treasuryAddress: string) {
 
         // Step 2: Get basic transaction list from block explorer
         logVerbose('Fetching block explorer transactions');
-        let blockExplorerTransactions =
+        let blockExplorerTransactions: any[] =
           await getBlockExplorerTransactions(treasuryAddress);
+
+        // Augment tx list using token transfers so we don't miss transactions where the
+        // treasury is only present in logs (e.g. relayers paying the treasury).
+        try {
+          const tokenTransfers =
+            await getBlockExplorerAddressTokenTransfers(treasuryAddress);
+          const relevantTransfers = tokenTransfers.filter(
+            (t) => t.tokenSymbol === 'USDC' || t.tokenSymbol === 'USDT',
+          );
+
+          const existingHashes = new Set(
+            blockExplorerTransactions
+              .map((t) => t?.hash)
+              .filter((h: unknown): h is string => typeof h === 'string'),
+          );
+
+          const missingTxHashes = Array.from(
+            new Set(relevantTransfers.map((t) => t.transactionHash)),
+          ).filter((h) => !existingHashes.has(h));
+
+          for (const hash of missingTxHashes) {
+            blockExplorerTransactions.push({ hash });
+          }
+        } catch (error) {
+          logVerbose('Failed to augment tx list with token transfers', error);
+        }
 
         if (blockExplorerTransactions.length === 0) {
           // Try alternative approach if no transactions found
@@ -284,6 +311,39 @@ export async function GET(
         );
         blockExplorerTransactions = [];
       }
+    }
+
+    // Augment tx list using token transfers so we don't miss transactions where the
+    // treasury is only present in logs (e.g. relayers paying the treasury).
+    try {
+      const tokenTransfers = await getBlockExplorerAddressTokenTransfers(
+        campaign.treasuryAddress,
+      );
+      const relevantTransfers = tokenTransfers.filter(
+        (t) => t.tokenSymbol === 'USDC' || t.tokenSymbol === 'USDT',
+      );
+
+      const existingHashes = new Set(
+        blockExplorerTransactions
+          .map((t) => t?.hash)
+          .filter((h: unknown): h is string => typeof h === 'string'),
+      );
+
+      const missingTxHashes = Array.from(
+        new Set(relevantTransfers.map((t) => t.transactionHash)),
+      ).filter((h) => !existingHashes.has(h));
+
+      for (const hash of missingTxHashes) {
+        blockExplorerTransactions.push({ hash });
+      }
+
+      if (missingTxHashes.length > 0) {
+        logVerbose('Augmented block explorer tx list using token transfers', {
+          added: missingTxHashes.length,
+        });
+      }
+    } catch (error) {
+      logVerbose('Failed to augment tx list with token transfers', error);
     }
 
     // Now fetch detailed data for ALL transactions to get token transfer amounts
