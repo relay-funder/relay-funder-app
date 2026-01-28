@@ -221,6 +221,27 @@ model Payment {
   @@index([pledgeExecutionStatus, provider])
 }
 
+model DaimoWebhookEvent {
+  id               Int      @id @default(autoincrement())
+  daimoPaymentId   String?
+  paymentId        String?
+  eventType        String
+  paymentStatus    String?
+  idempotencyKey   String?
+  replayedFromId   Int?
+  replayedAt       DateTime?
+  replayedKey      String?
+  payload          Json
+  receivedAt       DateTime @default(now())
+  processedAt      DateTime?
+  processingStatus String   @default("PENDING")
+  processingError  String?
+
+  @@index([daimoPaymentId])
+  @@index([idempotencyKey])
+  @@index([replayedFromId])
+}
+
 model PaymentMethod {
   id         Int      @id @default(autoincrement())
   provider   String

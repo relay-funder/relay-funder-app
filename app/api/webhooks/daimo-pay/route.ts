@@ -232,6 +232,7 @@ const logError = logFactory('error', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 const logWarn = logFactory('warn', '🚨 DaimoPayWebhook', { flag: 'daimo' });
 
 export async function POST(req: Request) {
+  let webhookEventId: number | null = null;
   // Track webhook processing time from the very start
   const webhookStartTime = Date.now();
 
@@ -291,10 +292,10 @@ export async function POST(req: Request) {
 
       if (!bodyText || bodyText.trim() === '') {
         logWarn('Received empty body (possible duplicate/retry)');
-        // Return 200 to prevent retries
+        // Return 500 to encourage retries from Daimo
         return NextResponse.json(
-          { acknowledged: true, message: 'Empty body - possible retry' },
-          { status: 200 },
+          { error: 'Empty body - retry expected' },
+          { status: 500, headers: { 'Retry-After': '5' } },
         );
       }
 
@@ -307,10 +308,10 @@ export async function POST(req: Request) {
       });
     } catch (parseError) {
       logError('JSON parse error:', { error: parseError });
-      // Return 200 to prevent retries
+      // Return 500 to encourage retries from Daimo
       return NextResponse.json(
-        { acknowledged: true, error: 'Parse error - possible retry' },
-        { status: 200 },
+        { error: 'Parse error - retry expected' },
+        { status: 500, headers: { 'Retry-After': '5' } },
       );
     }
 
@@ -335,6 +336,61 @@ export async function POST(req: Request) {
     const isTestEvent = payload.isTestEvent;
     const idempotencyKey = req.headers.get('idempotency-key');
 
+    // Persist webhook payload for audit/replay
+    try {
+      const createdEvent = await db.daimoWebhookEvent.create({
+        data: {
+          daimoPaymentId,
+          paymentId,
+          eventType: type,
+          paymentStatus: daimoStatus,
+          idempotencyKey: idempotencyKey || undefined,
+          payload: rawPayload as Prisma.InputJsonValue,
+        },
+        select: { id: true },
+      });
+      webhookEventId = createdEvent.id;
+    } catch (eventCreateError) {
+      logWarn('Failed to persist Daimo webhook event', {
+        prefixId,
+        logAddress,
+        error:
+          eventCreateError instanceof Error
+            ? eventCreateError.message
+            : 'Unknown error',
+      });
+    }
+
+    const markWebhookEvent = async (
+      status: 'SUCCESS' | 'FAILED' | 'SKIPPED',
+      error?: string,
+    ) => {
+      if (!webhookEventId) {
+        return;
+      }
+
+      try {
+        await db.daimoWebhookEvent.update({
+          where: { id: webhookEventId },
+          data: {
+            processingStatus: status,
+            processingError: error,
+            processedAt: new Date(),
+          },
+        });
+      } catch (eventUpdateError) {
+        logWarn('Failed to update Daimo webhook event status', {
+          prefixId,
+          logAddress,
+          status,
+          error:
+            eventUpdateError instanceof Error
+              ? eventUpdateError.message
+              : 'Unknown error',
+        });
+      }
+    };
+
     // Check for idempotency key to prevent duplicate processing
     if (idempotencyKey) {
       const existingEvent = await db.eventFeed.findFirst({
@@ -347,6 +403,7 @@ export async function POST(req: Request) {
           logAddress,
           idempotencyKey,
         });
+        await markWebhookEvent('SKIPPED', 'Duplicate webhook event');
         return response({
           acknowledged: true,
           message: 'Event already processed',
@@ -373,6 +430,7 @@ export async function POST(req: Request) {
         prefixId,
         logAddress,
       });
+      await markWebhookEvent('SKIPPED', 'Test event');
       return response({
         acknowledged: true,
         message: 'Test event acknowledged',
@@ -406,16 +464,18 @@ export async function POST(req: Request) {
       include: paymentInclude,
     });
 
-    // Create payment on payment_started if it doesn't exist
-    if (!dbPayment && payload.type === 'payment_started') {
-      logVerbose(
-        'Daimo Pay webhook: Creating payment from payment_started event',
-        {
-          prefixId,
-          logAddress,
-          daimoPaymentId,
-        },
-      );
+    // Create payment on payment_started or payment_completed if it doesn't exist
+    if (
+      !dbPayment &&
+      (payload.type === 'payment_started' ||
+        payload.type === 'payment_completed')
+    ) {
+      logVerbose('Daimo Pay webhook: Creating payment from event', {
+        prefixId,
+        logAddress,
+        daimoPaymentId,
+        type,
+      });
 
       // Extract metadata from Daimo payload
       const metadata = payload.payment.metadata;
@@ -735,7 +795,7 @@ export async function POST(req: Request) {
 
     prefixId = `${prefixId}/${dbPayment?.id}`;
 
-    // Handle case where payment still doesn't exist (shouldn't happen for payment_started)
+    // Handle case where payment still doesn't exist (shouldn't happen for payment events)
     if (!dbPayment) {
       logVerbose('Payment not found and could not be created for', {
         prefixId,
@@ -761,18 +821,15 @@ export async function POST(req: Request) {
     // Map Daimo Pay status to our internal status
     let newStatus: string;
 
-    switch (daimoStatus) {
-      case 'payment_completed':
-        newStatus = 'confirmed';
-        break;
-      case 'payment_bounced':
-      case 'payment_refunded':
-        newStatus = 'failed';
-        break;
-      case 'payment_started':
-      default:
-        newStatus = 'confirming';
-        break;
+    if (type === 'payment_bounced' || type === 'payment_refunded') {
+      newStatus = 'failed';
+    } else if (
+      type === 'payment_completed' ||
+      daimoStatus === 'payment_completed'
+    ) {
+      newStatus = 'confirmed';
+    } else {
+      newStatus = 'confirming';
     }
 
     // Define state transition hierarchy (higher = more final)
@@ -824,19 +881,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Allow same-state updates (idempotency)
-    if (currentStatus === newStatus) {
-      logVerbose('Idempotent update, status unchanged', {
-        prefixId,
-        logAddress,
-      });
-      return response({
-        acknowledged: true,
-        paymentId: dbPayment.id,
-        daimoPaymentId: payload.paymentId,
-        status: currentStatus,
-      });
-    }
+    const isStatusChange = currentStatus !== newStatus;
 
     // Prepare update data with comprehensive Daimo Pay metadata
     const baseUpdateData: Prisma.PaymentUpdateInput = {
@@ -917,7 +962,7 @@ export async function POST(req: Request) {
 
     if (
       newStatus === 'confirmed' &&
-      currentStatus !== 'confirmed' &&
+      isStatusChange &&
       dbPayment.campaign.creatorAddress
     ) {
       // Execute on-chain pledge, before any other blocking operations
@@ -1322,6 +1367,8 @@ export async function POST(req: Request) {
       completedAt: new Date().toISOString(),
     });
 
+    await markWebhookEvent('SUCCESS');
+
     return response({
       acknowledged: true,
       paymentId: dbPayment.id,
@@ -1331,6 +1378,27 @@ export async function POST(req: Request) {
       previousStatus: currentStatus,
     });
   } catch (error: unknown) {
+    if (webhookEventId) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      try {
+        await db.daimoWebhookEvent.update({
+          where: { id: webhookEventId },
+          data: {
+            processingStatus: 'FAILED',
+            processingError: errorMessage,
+            processedAt: new Date(),
+          },
+        });
+      } catch (eventUpdateError) {
+        logWarn('Failed to update Daimo webhook event on error', {
+          error:
+            eventUpdateError instanceof Error
+              ? eventUpdateError.message
+              : 'Unknown error',
+        });
+      }
+    }
     logError('Daimo Pay webhook error:', { error });
     return handleError(error);
   }

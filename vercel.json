@@ -1,3 +1,13 @@
 {
-  "buildCommand": "pnpm run build:production"
+  "buildCommand": "pnpm run build:production",
+  "crons": [
+    {
+      "path": "/api/cron/retry-failed-pledges",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/reprocess-daimo-webhooks",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
