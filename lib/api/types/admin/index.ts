@@ -62,3 +62,20 @@ export type PatchAdminCampaignFeaturedRouteBody = z.infer<
 >;
 
 export type PatchAdminCampaignFeaturedRouteResponse = GetCampaignResponse;
+
+export const ReprocessDaimoWebhookSchema = z
+  .object({
+    paymentId: z.coerce.number().int().positive().optional(),
+    daimoPaymentId: z.string().min(1).optional(),
+    eventId: z.coerce.number().int().positive().optional(),
+    dryRun: z.boolean().optional(),
+  })
+  .refine(
+    (data) => Boolean(data.eventId || data.paymentId || data.daimoPaymentId),
+    {
+      message: 'Provide eventId, paymentId, or daimoPaymentId',
+    },
+  );
+export type ReprocessDaimoWebhookInput = z.infer<
+  typeof ReprocessDaimoWebhookSchema
+>;
