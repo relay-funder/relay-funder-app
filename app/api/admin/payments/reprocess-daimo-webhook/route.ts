@@ -83,9 +83,8 @@ export async function POST(req: Request) {
       authorization: `Basic ${DAIMO_PAY_WEBHOOK_SECRET}`,
     });
 
-    if (webhookEvent.idempotencyKey) {
-      replayHeaders.set('idempotency-key', webhookEvent.idempotencyKey);
-    }
+    const replayIdempotencyKey = `replay-${webhookEvent.id}-${Date.now()}`;
+    replayHeaders.set('idempotency-key', replayIdempotencyKey);
 
     const replayRequest = new Request(
       'http://localhost/api/webhooks/daimo-pay',
@@ -108,6 +107,9 @@ export async function POST(req: Request) {
           ? null
           : `Replay failed with status ${replayResponse.status}`,
         processedAt: new Date(),
+        replayedAt: new Date(),
+        replayedKey: replayIdempotencyKey,
+        replayedFromId: webhookEvent.id,
       },
     });
 

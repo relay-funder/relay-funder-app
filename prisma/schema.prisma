@@ -228,6 +228,9 @@ model DaimoWebhookEvent {
   eventType        String
   paymentStatus    String?
   idempotencyKey   String?
+  replayedFromId   Int?
+  replayedAt       DateTime?
+  replayedKey      String?
   payload          Json
   receivedAt       DateTime @default(now())
   processedAt      DateTime?
@@ -236,6 +239,7 @@ model DaimoWebhookEvent {
 
   @@index([daimoPaymentId])
   @@index([idempotencyKey])
+  @@index([replayedFromId])
 }
 
 model PaymentMethod {
