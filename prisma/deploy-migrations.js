@@ -22,7 +22,8 @@ const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
 
 // Environment detection
-const isDevelopment = process.env.NODE_ENV === 'development';
+const appEnv = process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV;
+const isDevelopment = appEnv === 'development';
 const isVercelBuild = process.env.VERCEL === '1';
 const vercelEnv = process.env.VERCEL_ENV;
 const databaseUrl = process.env.DATABASE_URL;
