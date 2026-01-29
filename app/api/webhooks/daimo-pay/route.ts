@@ -778,24 +778,26 @@ export async function POST(req: Request) {
         if (!dbPayment) {
           throw new ApiParameterError('Failed to fetch created payment');
         }
+      }
 
-        // Link webhook event to internal payment for relational integrity
-        if (webhookEventId) {
-          try {
-            await db.daimoWebhookEvent.update({
-              where: { id: webhookEventId },
-              data: { internalPaymentId: dbPayment.id },
-            });
-          } catch (linkError) {
-            logWarn('Failed to link webhook event to payment', {
-              prefixId,
-              logAddress,
-              webhookEventId,
-              paymentId: dbPayment.id,
-              error:
-                linkError instanceof Error ? linkError.message : 'Unknown error',
-            });
-          }
+      // Link webhook event to internal payment for relational integrity
+      // This runs for BOTH new payment creation AND P2002 duplicate path
+      if (webhookEventId && dbPayment) {
+        try {
+          await db.daimoWebhookEvent.update({
+            where: { id: webhookEventId },
+            data: { internalPaymentId: dbPayment.id },
+          });
+        } catch (linkError) {
+          logWarn('Failed to link webhook event to payment', {
+            prefixId,
+            logAddress,
+            webhookEventId,
+            paymentId: dbPayment.id,
+            daimoPaymentId,
+            error:
+              linkError instanceof Error ? linkError.message : 'Unknown error',
+          });
         }
       }
 
