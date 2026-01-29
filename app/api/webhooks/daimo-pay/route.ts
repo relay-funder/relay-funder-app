@@ -780,27 +780,6 @@ export async function POST(req: Request) {
         }
       }
 
-      // Link webhook event to internal payment for relational integrity
-      // This runs for BOTH new payment creation AND P2002 duplicate path
-      if (webhookEventId && dbPayment) {
-        try {
-          await db.daimoWebhookEvent.update({
-            where: { id: webhookEventId },
-            data: { internalPaymentId: dbPayment.id },
-          });
-        } catch (linkError) {
-          logWarn('Failed to link webhook event to payment', {
-            prefixId,
-            logAddress,
-            webhookEventId,
-            paymentId: dbPayment.id,
-            daimoPaymentId,
-            error:
-              linkError instanceof Error ? linkError.message : 'Unknown error',
-          });
-        }
-      }
-
       logVerbose('Payment record created:', {
         prefixId,
         logAddress,
@@ -815,6 +794,27 @@ export async function POST(req: Request) {
     }
 
     prefixId = `${prefixId}/${dbPayment?.id}`;
+
+    // Link webhook event to internal payment for relational integrity
+    // This runs for ALL webhooks (new payment, P2002 duplicate, or existing payment)
+    if (webhookEventId && dbPayment) {
+      try {
+        await db.daimoWebhookEvent.update({
+          where: { id: webhookEventId },
+          data: { internalPaymentId: dbPayment.id },
+        });
+      } catch (linkError) {
+        logWarn('Failed to link webhook event to payment', {
+          prefixId,
+          logAddress,
+          webhookEventId,
+          paymentId: dbPayment.id,
+          daimoPaymentId,
+          error:
+            linkError instanceof Error ? linkError.message : 'Unknown error',
+        });
+      }
+    }
 
     // Handle case where payment still doesn't exist (shouldn't happen for payment events)
     if (!dbPayment) {
