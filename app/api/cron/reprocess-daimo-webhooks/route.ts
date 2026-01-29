@@ -22,6 +22,15 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
+    // Debug logging to diagnose env var issue
+    logInfo('Cron auth debug', {
+      hasCronSecret: !!cronSecret,
+      cronSecretLength: cronSecret?.length ?? 0,
+      cronSecretPrefix: cronSecret?.substring(0, 4) ?? 'N/A',
+      hasAuthHeader: !!authHeader,
+      authHeaderPrefix: authHeader?.substring(0, 10) ?? 'N/A',
+    });
+
     if (!cronSecret) {
       logError('CRON_SECRET environment variable is not configured');
       throw new ApiAuthNotAllowed('Cron endpoint not configured');
