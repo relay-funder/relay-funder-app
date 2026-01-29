@@ -328,7 +328,7 @@ export async function POST(req: Request) {
     const logAddress = payload.payment.source?.payerAddress ?? '';
     const type = payload.type;
     let prefixId = payload.payment.id;
-    const paymentId = payload.payment.id;
+    const daimoNestedId = payload.payment.id; // Daimo's nested payment.id
     const daimoPaymentId = payload.paymentId;
     const daimoStatus = payload.payment.status;
     const chainId = payload.chainId;
@@ -341,7 +341,7 @@ export async function POST(req: Request) {
       const createdEvent = await db.daimoWebhookEvent.create({
         data: {
           daimoPaymentId,
-          paymentId,
+          daimoNestedId, // Daimo's nested payment.id (renamed from paymentId)
           eventType: type,
           paymentStatus: daimoStatus,
           idempotencyKey: idempotencyKey || undefined,
@@ -416,7 +416,7 @@ export async function POST(req: Request) {
       prefixId,
       logAddress,
       type,
-      paymentId,
+      daimoNestedId,
       daimoPaymentId,
       isTestEvent,
       daimoStatus,
@@ -442,7 +442,7 @@ export async function POST(req: Request) {
       throw new ApiParameterError('Missing paymentId in webhook payload');
     }
 
-    if (!paymentId) {
+    if (!daimoNestedId) {
       throw new ApiParameterError('Missing payment.id in webhook payload');
     }
 
@@ -794,6 +794,27 @@ export async function POST(req: Request) {
     }
 
     prefixId = `${prefixId}/${dbPayment?.id}`;
+
+    // Link webhook event to internal payment for relational integrity
+    // This runs for ALL webhooks (new payment, P2002 duplicate, or existing payment)
+    if (webhookEventId && dbPayment) {
+      try {
+        await db.daimoWebhookEvent.update({
+          where: { id: webhookEventId },
+          data: { internalPaymentId: dbPayment.id },
+        });
+      } catch (linkError) {
+        logWarn('Failed to link webhook event to payment', {
+          prefixId,
+          logAddress,
+          webhookEventId,
+          paymentId: dbPayment.id,
+          daimoPaymentId,
+          error:
+            linkError instanceof Error ? linkError.message : 'Unknown error',
+        });
+      }
+    }
 
     // Handle case where payment still doesn't exist (shouldn't happen for payment events)
     if (!dbPayment) {

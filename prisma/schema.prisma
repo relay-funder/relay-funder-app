@@ -214,6 +214,7 @@ model Payment {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   RoundContribution RoundContribution[]
+  webhookEvents     DaimoWebhookEvent[]
 
   @@index([campaignId])
   @@index([userId])
@@ -222,24 +223,28 @@ model Payment {
 }
 
 model DaimoWebhookEvent {
-  id               Int      @id @default(autoincrement())
-  daimoPaymentId   String?
-  paymentId        String?
-  eventType        String
-  paymentStatus    String?
-  idempotencyKey   String?
-  replayedFromId   Int?
-  replayedAt       DateTime?
-  replayedKey      String?
-  payload          Json
-  receivedAt       DateTime @default(now())
-  processedAt      DateTime?
-  processingStatus String   @default("PENDING")
-  processingError  String?
+  id                Int      @id @default(autoincrement())
+  daimoPaymentId    String? // payload.paymentId - Daimo's top-level payment ID
+  daimoNestedId     String? // payload.payment.id - Daimo's nested payment ID (renamed from paymentId)
+  internalPaymentId Int? // Our Payment.id - for relational integrity
+  eventType         String
+  paymentStatus     String?
+  idempotencyKey    String?
+  replayedFromId    Int?
+  replayedAt        DateTime?
+  replayedKey       String?
+  payload           Json
+  receivedAt        DateTime @default(now())
+  processedAt       DateTime?
+  processingStatus  String   @default("PENDING")
+  processingError   String?
+
+  payment Payment? @relation(fields: [internalPaymentId], references: [id], onDelete: SetNull)
 
   @@index([daimoPaymentId])
   @@index([idempotencyKey])
   @@index([replayedFromId])
+  @@index([internalPaymentId])
 }
 
 model PaymentMethod {
