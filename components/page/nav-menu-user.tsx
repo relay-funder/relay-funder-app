@@ -96,15 +96,16 @@ export function PageNavMenuUser() {
               >
                 {name.short}
               </span>
-              <span title="Logout">
-                <LogOut
-                  className="h-5 w-5 cursor-pointer text-muted-foreground transition-colors group-hover:text-red-600"
-                  onClick={async () => {
-                    await logout();
-                    window.location.href = '/';
-                  }}
-                />
-              </span>
+              <div
+                title="Logout"
+                className="group cursor-pointer p-1"
+                onClick={async () => {
+                  await logout();
+                  window.location.href = '/';
+                }}
+              >
+                <LogOut className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-red-600" />
+              </div>
             </div>
           )}
         </span>
