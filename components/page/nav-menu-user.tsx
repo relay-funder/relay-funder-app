@@ -49,6 +49,7 @@ export function PageNavMenuUser() {
     <nav className="flex-1 space-y-1 p-3">
       <div
         className={cn(
+          'group',
           'flex items-center rounded-lg px-1 py-4 text-foreground hover:bg-accent hover:text-accent-foreground md:py-6',
           transition,
           isOpen ? 'px-4' : 'px-[9px]',
@@ -105,7 +106,7 @@ export function PageNavMenuUser() {
               </span>
               <div
                 title="Logout"
-                className="group p-1"
+                className="p-1"
               >
                 <LogOut className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-red-600" />
               </div>
