@@ -1,5 +1,6 @@
 import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
+import { auth } from '@/server/auth';
 import {
   ApiAuthNotAllowed,
   ApiParameterError,
@@ -12,7 +13,7 @@ import { listPayments } from '@/lib/api/payments';
 
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
-    const session = await checkAuth(['user']);
+    const session = await auth();
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');
@@ -25,7 +26,9 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     if (pageSize > 10) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
-    const admin = await isAdmin();
+
+    const admin = session?.user?.roles?.includes('admin') ?? false;
+
     const instance = await getCampaign(campaignId);
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
@@ -34,7 +37,10 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
     // Check access control for non-active campaigns
     if (instance.status !== 'ACTIVE') {
       // Only campaign owners and admins can access payments for non-active campaigns
-      if (instance.creatorAddress !== session.user.address && !admin) {
+      if (
+        !session?.user?.address ||
+        (instance.creatorAddress !== session.user.address && !admin)
+      ) {
         throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
