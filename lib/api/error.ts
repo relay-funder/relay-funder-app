@@ -25,6 +25,7 @@ export async function handleApiErrors(
         throw new ApiNotFoundError(fullMessage);
       case 409:
         throw new ApiConflictError(fullMessage);
+      case 400:
       case 422:
         throw new ApiParameterError(baseMessage, errorMessage?.details);
       case 429:

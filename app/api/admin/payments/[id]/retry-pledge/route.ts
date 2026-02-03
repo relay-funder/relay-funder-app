@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { checkAuth } from '@/lib/api/auth';
 import {
   ApiNotFoundError,
@@ -9,12 +10,62 @@ import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
+import { NEXT_PUBLIC_RPC_URL } from '@/lib/constant/server';
+import { ethers } from '@/lib/web3';
+import {
+  waitWithTimeout,
+  TIMEOUT_VALUES,
+} from '@/lib/web3/transaction-timeout';
+import { keccak256, toBytes } from 'viem';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge', {
   flag: 'daimo',
 });
 
 const logError = logFactory('error', '🚨 DaimoRetryPledge', { flag: 'daimo' });
+
+type TxResolution = 'CONFIRMED_SUCCESS' | 'CONFIRMED_FAILED' | 'NOT_FOUND';
+
+async function resolveCeloTxHash(
+  txHash: string,
+  { prefixId, logAddress }: { prefixId: string; logAddress: string },
+): Promise<TxResolution> {
+  const rpcUrl = NEXT_PUBLIC_RPC_URL;
+  if (!rpcUrl) {
+    logError('Missing NEXT_PUBLIC_RPC_URL; cannot verify pledge tx hash', {
+      prefixId,
+      logAddress,
+      txHash,
+    });
+    throw new ApiParameterError(
+      'Server configuration missing RPC URL; cannot verify pledge transaction',
+    );
+  }
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const receipt = await waitWithTimeout(
+    provider.getTransactionReceipt(txHash),
+    TIMEOUT_VALUES.READ_OPERATION,
+    'read transaction receipt',
+    { prefixId, logAddress, txHash },
+  );
+
+  if (!receipt) return 'NOT_FOUND';
+  if (receipt.status === 1) return 'CONFIRMED_SUCCESS';
+  return 'CONFIRMED_FAILED';
+}
+
+function computeDeterministicPledgeId(input: {
+  treasuryAddress: string;
+  userAddress: string;
+  paymentId: number;
+}): string {
+  return keccak256(
+    toBytes(
+      `pledge-${input.treasuryAddress}-${input.userAddress}-${input.paymentId}`,
+    ),
+  );
+}
 
 /**
  * POST /api/admin/payments/[id]/retry-pledge
@@ -78,6 +129,12 @@ export async function POST(
       );
     }
 
+    if (!payment.campaign.treasuryAddress) {
+      throw new ApiParameterError(
+        `Campaign ${payment.campaign.id} is missing treasuryAddress; cannot execute/reconcile pledge`,
+      );
+    }
+
     // Prevent retry if pledge execution already succeeded
     if (payment.pledgeExecutionStatus === 'SUCCESS') {
       logError('Retry blocked: Payment already has SUCCESS status', {
@@ -93,28 +150,109 @@ export async function POST(
       );
     }
 
-    // Prevent retry if transaction was already submitted on-chain
-    // If we have a transaction hash, the pledge may have succeeded even if DB shows FAILED/PENDING
-    // Require manual verification and admin override for these cases
+    // If a pledge tx hash exists, reconcile it BEFORE attempting a retry.
+    // This avoids overpayment while still letting admins "fix" stuck records.
     if (payment.pledgeExecutionTxHash) {
-      logError(
-        'Retry blocked: Transaction hash exists (pledge may have succeeded on-chain)',
-        {
-          prefixId,
-          logAddress,
-          paymentId,
-          pledgeExecutionStatus: payment.pledgeExecutionStatus,
-          pledgeExecutionTxHash: payment.pledgeExecutionTxHash,
-          note: 'Verify transaction status on CeloScan before retrying',
-        },
-      );
+      const txHash = payment.pledgeExecutionTxHash;
 
-      throw new ApiParameterError(
-        `Payment ${paymentId} has transaction hash ${payment.pledgeExecutionTxHash}. ` +
-          `Verify the transaction status on CeloScan. If transaction failed on-chain, ` +
-          `clear the pledgeExecutionTxHash field in database before retrying. ` +
-          `This safety check prevents accidental overpayment.`,
-      );
+      logVerbose('Pledge tx hash present; reconciling on-chain status', {
+        prefixId,
+        logAddress,
+        paymentId,
+        pledgeExecutionStatus: payment.pledgeExecutionStatus,
+        pledgeExecutionTxHash: txHash,
+      });
+
+      const txResolution = await resolveCeloTxHash(txHash, {
+        prefixId,
+        logAddress,
+      });
+
+      if (txResolution === 'CONFIRMED_SUCCESS') {
+        const existingMetadata =
+          (payment.metadata as Record<string, unknown>) || {};
+        const deterministicPledgeId =
+          typeof existingMetadata.generatedPledgeId === 'string'
+            ? existingMetadata.generatedPledgeId
+            : computeDeterministicPledgeId({
+                treasuryAddress: payment.campaign.treasuryAddress,
+                userAddress: payment.user.address,
+                paymentId: payment.id,
+              });
+
+        await db.payment.update({
+          where: { id: payment.id },
+          data: {
+            pledgeExecutionStatus: 'SUCCESS',
+            pledgeExecutionError: null,
+            metadata: {
+              ...existingMetadata,
+              onChainPledgeId:
+                (existingMetadata.onChainPledgeId as string | undefined) ??
+                deterministicPledgeId,
+              treasuryTxHash:
+                (existingMetadata.treasuryTxHash as string | undefined) ??
+                txHash,
+              reconciledFromPledgeExecutionTxHash: txHash,
+              reconciledAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        return response({
+          success: true,
+          paymentId,
+          message:
+            'Pledge already executed on-chain; reconciled database record without retrying.',
+          pledgeExecutionTxHash: txHash,
+        });
+      }
+
+      if (txResolution === 'CONFIRMED_FAILED') {
+        const existingMetadata =
+          (payment.metadata as Record<string, unknown>) || {};
+        const previous =
+          Array.isArray(existingMetadata.previousPledgeExecutionTxHashes) &&
+          existingMetadata.previousPledgeExecutionTxHashes.every(
+            (v) => typeof v === 'string',
+          )
+            ? (existingMetadata.previousPledgeExecutionTxHashes as string[])
+            : [];
+
+        await db.payment.update({
+          where: { id: payment.id },
+          data: {
+            pledgeExecutionStatus: 'FAILED',
+            pledgeExecutionError: `Previous pledge transaction reverted: ${txHash}`,
+            pledgeExecutionTxHash: null,
+            metadata: {
+              ...existingMetadata,
+              previousPledgeExecutionTxHashes: Array.from(
+                new Set([...previous, txHash]),
+              ),
+              lastFailedPledgeExecutionTxHash: txHash,
+              lastFailedPledgeExecutionTxCheckedAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        logVerbose(
+          'Previous pledge tx confirmed failed; cleared tx hash and proceeding with retry',
+          { prefixId, logAddress, paymentId, pledgeExecutionTxHash: txHash },
+        );
+      } else if (txResolution === 'NOT_FOUND') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Pledge transaction not found on-chain yet',
+            message:
+              'This payment has a pledge tx hash, but it is not yet indexed/finalized via RPC. Retry is blocked to prevent overpayment; try again later.',
+            paymentId,
+            pledgeExecutionTxHash: txHash,
+          },
+          { status: 409 },
+        );
+      }
     }
 
     // Validate pledge execution status is retryable
