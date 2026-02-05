@@ -45,6 +45,10 @@ import { ContractLink } from '@/components/page/contract-link';
 import { chainConfig } from '@/lib/web3';
 import { ExternalLink } from 'lucide-react';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 function StatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
   if (s === 'confirmed' || s === 'completed') {
@@ -202,10 +206,33 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
 
   const handleRetry = async (paymentId: number) => {
     try {
-      await retryMutation.mutateAsync(paymentId);
+      const retryResult = await retryMutation.mutateAsync(paymentId);
+
+      const message =
+        isRecord(retryResult) && typeof retryResult.message === 'string'
+          ? retryResult.message
+          : 'Pledge execution updated.';
+
+      const executionResult =
+        isRecord(retryResult) && isRecord(retryResult.result)
+          ? retryResult.result
+          : null;
+
+      const reconciliationReason =
+        executionResult &&
+        executionResult.reconciled === true &&
+        typeof executionResult.reconciliationReason === 'string'
+          ? executionResult.reconciliationReason
+          : null;
+
+      const wasReconciled =
+        executionResult &&
+        executionResult.reconciled === true &&
+        typeof reconciliationReason === 'string';
+
       toast({
-        title: 'Pledge execution retried',
-        description: 'The pledge execution has been queued for retry.',
+        title: wasReconciled ? 'Pledge reconciled' : 'Pledge execution updated',
+        description: reconciliationReason ?? message,
       });
     } catch (error) {
       toast({

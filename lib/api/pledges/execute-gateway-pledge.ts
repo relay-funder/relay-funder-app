@@ -1,7 +1,7 @@
 import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
-import { keccak256, toBytes, zeroHash, encodePacked } from 'viem';
+import { keccak256, toBytes, encodePacked } from 'viem';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
@@ -24,6 +24,159 @@ import { waitForTransactionWithPolling } from '@/lib/web3/transaction-polling';
 const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 
 const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
+
+/** Selector for KeepWhatsRaisedPledgeAlreadyProcessed(bytes32) custom error */
+const PLEDGE_ALREADY_PROCESSED_SELECTOR = '0x7c730b08';
+const PLEDGE_ALREADY_PROCESSED_ERROR_NAME =
+  'KeepWhatsRaisedPledgeAlreadyProcessed';
+
+const keepWhatsRaisedInterface = new ethers.Interface(KeepWhatsRaisedABI);
+
+function isHexData(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  if (!value.startsWith('0x')) return false;
+  if (value.length < 10) return false; // 4-byte selector + 0x
+
+  for (let i = 2; i < value.length; i++) {
+    const charCode = value.charCodeAt(i);
+    const isHexDigit =
+      (charCode >= 48 && charCode <= 57) || // 0-9
+      (charCode >= 65 && charCode <= 70) || // A-F
+      (charCode >= 97 && charCode <= 102); // a-f
+    if (!isHexDigit) return false;
+  }
+
+  return true;
+}
+
+function extractRevertDataCandidates(error: unknown): string[] {
+  const candidates: string[] = [];
+  const seen = new WeakSet<object>();
+  const queue: Array<{ value: unknown; depth: number }> = [
+    { value: error, depth: 0 },
+  ];
+  const maxDepth = 6;
+  const maxNodes = 200;
+  let visited = 0;
+
+  while (queue.length > 0 && visited < maxNodes) {
+    const current = queue.shift();
+    if (!current) break;
+
+    const { value, depth } = current;
+    visited++;
+
+    if (isHexData(value)) {
+      candidates.push(value);
+    } else if (typeof value === 'string') {
+      // Some libraries embed revert data as a substring in a larger message.
+      const matches = value.match(/0x[0-9a-fA-F]{8,}/g);
+      if (matches) {
+        for (const match of matches) {
+          if (isHexData(match)) candidates.push(match);
+        }
+      }
+    }
+
+    if (!value || typeof value !== 'object' || depth >= maxDepth) continue;
+    if (seen.has(value as object)) continue;
+    seen.add(value as object);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        queue.push({ value: item, depth: depth + 1 });
+      }
+      continue;
+    }
+
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      queue.push({ value: record[key], depth: depth + 1 });
+    }
+  }
+
+  // Normalize + dedupe.
+  return Array.from(
+    new Set(candidates.map((candidate) => candidate.toLowerCase())),
+  );
+}
+
+function extractErrorMessageCandidates(error: unknown): string[] {
+  const candidates: string[] = [];
+  const seen = new WeakSet<object>();
+  const queue: Array<{ value: unknown; depth: number }> = [
+    { value: error, depth: 0 },
+  ];
+  const maxDepth = 4;
+  const maxNodes = 120;
+  let visited = 0;
+
+  while (queue.length > 0 && visited < maxNodes) {
+    const current = queue.shift();
+    if (!current) break;
+
+    const { value, depth } = current;
+    visited++;
+
+    if (typeof value === 'string' && value.length > 0) {
+      candidates.push(value);
+    }
+
+    if (!value || typeof value !== 'object' || depth >= maxDepth) continue;
+    if (seen.has(value as object)) continue;
+    seen.add(value as object);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        queue.push({ value: item, depth: depth + 1 });
+      }
+      continue;
+    }
+
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      queue.push({ value: record[key], depth: depth + 1 });
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Check if an error is a KeepWhatsRaisedPledgeAlreadyProcessed revert.
+ * ethers v6 CALL_EXCEPTION errors can carry revert data in different shapes
+ * depending on whether it failed in `estimateGas` vs `sendTransaction`.
+ */
+function isPledgeAlreadyProcessedError(error: unknown): boolean {
+  const selector = PLEDGE_ALREADY_PROCESSED_SELECTOR.toLowerCase();
+  const errorName = PLEDGE_ALREADY_PROCESSED_ERROR_NAME.toLowerCase();
+
+  // Fast-path: message fields sometimes include the custom error name.
+  const messageCandidates = extractErrorMessageCandidates(error);
+  for (const message of messageCandidates) {
+    if (message.toLowerCase().includes(errorName)) {
+      return true;
+    }
+  }
+
+  // Robust-path: search for revert data and match selector or decode via ABI.
+  const revertDataCandidates = extractRevertDataCandidates(error);
+  for (const data of revertDataCandidates) {
+    if (!data.startsWith('0x')) continue;
+    if (data.startsWith(selector)) return true;
+
+    try {
+      const parsed = keepWhatsRaisedInterface.parseError(data);
+      if (parsed?.name === PLEDGE_ALREADY_PROCESSED_ERROR_NAME) {
+        return true;
+      }
+    } catch {
+      // Ignore: data might be a tx hash or a different contract's revert.
+    }
+  }
+
+  return false;
+}
 
 /**
  * Check if a pledge already exists on the blockchain by calling the s_processedPledges getter.
@@ -63,9 +216,10 @@ async function isPledgeExecutedOnChain(
 
     return isProcessed;
   } catch (error) {
-    // If the call fails, assume pledge doesn't exist (safer default)
-    logVerbose(
-      'On-chain pledge check via s_processedPledges failed, assuming pledge does not exist',
+    // Log prominently - silent failures here cause duplicate execution attempts
+    // that revert with KeepWhatsRaisedPledgeAlreadyProcessed
+    logError(
+      'On-chain pledge check via s_processedPledges FAILED - cannot verify pledge status',
       {
         pledgeId,
         adminAddress,
@@ -632,10 +786,11 @@ async function _executeGatewayPledgeInternal(
       success: true,
       paymentId: payment.id,
       pledgeId, // Deterministic pledgeId returned
-      transactionHash: zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
-      blockNumber: 0,
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',
+      reconciled: true,
+      reconciliationReason:
+        's_processedPledges indicates pledge already executed',
     };
   }
 
@@ -785,19 +940,73 @@ async function _executeGatewayPledgeInternal(
     isPledgeForAReward: false,
   });
 
-  const treasuryTx = await treasuryContract.setFeeAndPledge(
-    pledgeId, // Deterministic hash from stable fields
-    payment.user.address,
-    pledgeAmountUnits,
-    tipAmountUnits,
-    gatewayFee,
-    [],
-    false,
-    {
-      maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-      maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-    },
-  );
+  let treasuryTx;
+  try {
+    treasuryTx = await treasuryContract.setFeeAndPledge(
+      pledgeId, // Deterministic hash from stable fields
+      payment.user.address,
+      pledgeAmountUnits,
+      tipAmountUnits,
+      gatewayFee,
+      [],
+      false,
+      {
+        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
+      },
+    );
+  } catch (error) {
+    // If the contract reverts with PledgeAlreadyProcessed, the pledge was already
+    // executed on-chain but the DB wasn't updated (e.g. lambda timeout after tx confirmed).
+    // Reconcile the database instead of marking as failed.
+    if (isPledgeAlreadyProcessedError(error)) {
+      logVerbose(
+        'Pledge already processed on-chain (detected via contract revert), reconciling database',
+        {
+          prefixId,
+          logAddress,
+          paymentId: payment.id,
+          pledgeId,
+          note: 'Previous execution succeeded on-chain but DB was not updated. Fixing status now.',
+        },
+      );
+
+      const existingTreasuryTxHash =
+        typeof payment.pledgeExecutionTxHash === 'string'
+          ? payment.pledgeExecutionTxHash
+          : typeof metadata.treasuryTxHash === 'string'
+            ? metadata.treasuryTxHash
+            : null;
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          pledgeExecutionStatus: 'SUCCESS',
+          pledgeExecutionError: null,
+          pledgeExecutionTxHash: existingTreasuryTxHash,
+          metadata: {
+            ...metadata,
+            onChainPledgeId: pledgeId,
+            recoveredFromPledgeAlreadyProcessed: true,
+            recoveredAt: new Date().toISOString(),
+            treasuryTxHash: existingTreasuryTxHash ?? undefined,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        paymentId: payment.id,
+        pledgeId,
+        pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+        tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+        reconciled: true,
+        reconciliationReason:
+          'setFeeAndPledge reverted with KeepWhatsRaisedPledgeAlreadyProcessed',
+      };
+    }
+    throw error;
+  }
 
   logVerbose('Transaction submitted:', {
     prefixId,

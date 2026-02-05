@@ -32,6 +32,8 @@ export interface ExecuteGatewayPledgeResponse {
   blockNumber?: number;
   pledgeAmount?: string;
   tipAmount?: string;
+  reconciled?: boolean;
+  reconciliationReason?: string;
   error?: string;
 }
 
