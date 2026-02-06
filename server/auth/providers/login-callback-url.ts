@@ -20,7 +20,7 @@ export function loginCallbackUrl() {
     }
     paramCallbackUrl = params.get('callbackUrl') ?? '/dashboard';
     if (paramCallbackUrl.startsWith('/')) {
-      return '/dashboard';
+      return paramCallbackUrl;
     }
   } catch {
     return '/dashboard';
