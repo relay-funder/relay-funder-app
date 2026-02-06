@@ -193,42 +193,57 @@ async function isPledgeExecutedOnChain(
   pledgeId: string,
   adminAddress: string,
 ): Promise<boolean> {
-  try {
-    // Compute the internal pledge ID used by the contract
-    // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
-    // where msg.sender is the admin address
-    const internalPledgeId = keccak256(
-      encodePacked(
-        ['bytes32', 'address'],
-        [pledgeId as `0x${string}`, adminAddress as `0x${string}`],
-      ),
-    );
+  // Compute the internal pledge ID used by the contract
+  // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
+  // where msg.sender is the admin address
+  const internalPledgeId = keccak256(
+    encodePacked(
+      ['bytes32', 'address'],
+      [pledgeId as `0x${string}`, adminAddress as `0x${string}`],
+    ),
+  );
 
-    // Call the s_processedPledges getter (available in ABI)
-    const isProcessed =
-      await treasuryContract.s_processedPledges(internalPledgeId);
+  let lastError: unknown;
 
-    logVerbose('On-chain pledge verification via s_processedPledges', {
-      pledgeId,
-      adminAddress,
-      internalPledgeId,
-      isProcessed,
-    });
+  // Retry once to handle transient RPC failures before aborting
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const isProcessed =
+        await treasuryContract.s_processedPledges(internalPledgeId);
 
-    return isProcessed;
-  } catch (error) {
-    // Log prominently - silent failures here cause duplicate execution attempts
-    // that revert with KeepWhatsRaisedPledgeAlreadyProcessed
-    logError(
-      'On-chain pledge check via s_processedPledges FAILED - cannot verify pledge status',
-      {
+      logVerbose('On-chain pledge verification via s_processedPledges', {
         pledgeId,
         adminAddress,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-    );
-    return false;
+        internalPledgeId,
+        isProcessed,
+        attempt,
+      });
+
+      return isProcessed;
+    } catch (error) {
+      lastError = error;
+      logError(
+        `On-chain pledge check attempt ${attempt + 1}/2 FAILED`,
+        {
+          pledgeId,
+          adminAddress,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      );
+
+      // Brief pause before retry
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
   }
+
+  // Both attempts failed — abort execution so the payment is marked FAILED
+  // rather than risking a duplicate on-chain pledge
+  throw new ApiUpstreamError(
+    `Cannot verify on-chain pledge status after 2 attempts: ${lastError instanceof Error ? lastError.message : 'Unknown RPC error'}. ` +
+      'Aborting to prevent potential duplicate execution. Retry later when RPC is healthy.',
+  );
 }
 
 /**

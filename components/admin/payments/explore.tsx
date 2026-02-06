@@ -213,22 +213,26 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
           ? retryResult.message
           : 'Pledge execution updated.';
 
+      // Reconciliation info can appear at the top level (direct reconciliation
+      // in retry-pledge route) or nested inside result (from retryGatewayPledge).
       const executionResult =
         isRecord(retryResult) && isRecord(retryResult.result)
           ? retryResult.result
           : null;
 
+      const wasReconciled =
+        (isRecord(retryResult) && retryResult.reconciled === true) ||
+        (executionResult && executionResult.reconciled === true);
+
       const reconciliationReason =
-        executionResult &&
-        executionResult.reconciled === true &&
+        (isRecord(retryResult) &&
+        typeof retryResult.reconciliationReason === 'string'
+          ? retryResult.reconciliationReason
+          : null) ??
+        (executionResult &&
         typeof executionResult.reconciliationReason === 'string'
           ? executionResult.reconciliationReason
-          : null;
-
-      const wasReconciled =
-        executionResult &&
-        executionResult.reconciled === true &&
-        typeof reconciliationReason === 'string';
+          : null);
 
       toast({
         title: wasReconciled ? 'Pledge reconciled' : 'Pledge execution updated',

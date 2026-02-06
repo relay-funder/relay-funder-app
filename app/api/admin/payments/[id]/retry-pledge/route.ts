@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { checkAuth } from '@/lib/api/auth';
 import {
+  ApiConflictError,
   ApiNotFoundError,
   ApiParameterError,
   ApiUpstreamError,
@@ -193,6 +193,9 @@ export async function POST(
           message:
             'Pledge already executed on-chain; reconciled database record without retrying.',
           pledgeExecutionTxHash: txHash,
+          reconciled: true,
+          reconciliationReason:
+            'On-chain transaction confirmed successful; database reconciled without re-execution.',
         });
       }
 
@@ -233,16 +236,9 @@ export async function POST(
         payment.pledgeExecutionStatus = 'FAILED';
         payment.pledgeExecutionTxHash = null;
       } else if (txResolution === 'NOT_FOUND') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Pledge transaction not found on-chain yet',
-            message:
-              'This payment has a pledge tx hash, but it is not yet indexed/finalized via RPC. Retry is blocked to prevent overpayment; try again later.',
-            paymentId,
-            pledgeExecutionTxHash: txHash,
-          },
-          { status: 409 },
+        throw new ApiConflictError(
+          `Payment ${paymentId} has pledge tx hash ${txHash} that is not yet indexed/finalized via RPC. ` +
+            'Retry is blocked to prevent overpayment; try again later.',
         );
       }
     }
