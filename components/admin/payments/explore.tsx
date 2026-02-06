@@ -43,6 +43,7 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
 import { ContractLink } from '@/components/page/contract-link';
 import { chainConfig } from '@/lib/web3';
+import { PLEDGE_PENDING_RETRY_WINDOW_MS } from '@/lib/constant/pledges';
 import { ExternalLink } from 'lucide-react';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -85,13 +86,13 @@ function PledgeExecutionBadge({
   status: PledgeExecutionStatus;
   payment?: AdminPaymentListItem;
 }) {
-  // Check if PENDING payment is stuck (> 5 minutes)
+  // Check if PENDING payment is stuck (> shared retry window)
   const isStuck =
     status === 'PENDING' &&
     payment &&
     (!payment.pledgeExecutionLastAttempt ||
       new Date(payment.pledgeExecutionLastAttempt) <
-        new Date(Date.now() - 5 * 60 * 1000));
+        new Date(Date.now() - PLEDGE_PENDING_RETRY_WINDOW_MS));
 
   switch (status) {
     case 'SUCCESS':
@@ -194,14 +195,14 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
   const { toast } = useToast();
   const retryMutation = useRetryPledgeExecution();
 
-  // Check if payment is stuck in PENDING (> 5 minutes since last attempt)
+  // Check if payment is stuck in PENDING (> shared retry window since last attempt)
   const isStuckPending = (payment: AdminPaymentListItem): boolean => {
     if (payment.pledgeExecutionStatus !== 'PENDING') return false;
     if (!payment.pledgeExecutionLastAttempt) return true; // No last attempt = stuck
 
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const retryWindowCutoff = new Date(Date.now() - PLEDGE_PENDING_RETRY_WINDOW_MS);
     const lastAttempt = new Date(payment.pledgeExecutionLastAttempt);
-    return lastAttempt < fiveMinutesAgo;
+    return lastAttempt < retryWindowCutoff;
   };
 
   const handleRetry = async (paymentId: number) => {

@@ -2,7 +2,7 @@ import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
 import { keccak256, encodePacked } from 'viem';
-import { computeDeterministicPledgeId } from '@/lib/web3/pledge-id';
+import { computeDeterministicPledgeIdCandidates } from '@/lib/web3/pledge-id';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
@@ -695,12 +695,23 @@ async function _executeGatewayPledgeInternal(
     treasuryContractAddress: payment.campaign.treasuryAddress,
   });
 
+  const deterministicPledgeInput = {
+    treasuryAddress: payment.campaign.treasuryAddress,
+    userAddress: payment.user.address,
+    paymentId: payment.id,
+  };
+  const { canonicalPledgeId, legacyPledgeId } =
+    computeDeterministicPledgeIdCandidates(deterministicPledgeInput);
+
   // Generate or retrieve pledge ID BEFORE any blockchain operations
   // This ensures we can check on-chain status with the correct pledge ID
   // DETERMINISTIC generation: Same inputs always produce same pledge ID
   let pledgeId: string;
+  const hasStoredGeneratedPledgeId =
+    typeof metadata?.generatedPledgeId === 'string' &&
+    metadata.generatedPledgeId.length > 0;
 
-  if (metadata?.generatedPledgeId) {
+  if (hasStoredGeneratedPledgeId) {
     // RETRY case: Use existing pledge ID from previous attempt
     pledgeId = metadata.generatedPledgeId as string;
     logVerbose('Using existing pledge ID from previous attempt', {
@@ -713,11 +724,7 @@ async function _executeGatewayPledgeInternal(
     // FIRST ATTEMPT: Generate deterministic pledge ID
     // Using stable fields (treasuryAddress, user address, payment ID)
     // to ensure the same pledge ID is generated even after crashes
-    pledgeId = computeDeterministicPledgeId({
-      treasuryAddress: payment.campaign.treasuryAddress,
-      userAddress: payment.user.address,
-      paymentId: payment.id,
-    });
+    pledgeId = canonicalPledgeId;
 
     logVerbose('Generated NEW deterministic pledge ID', {
       prefixId,
@@ -737,6 +744,8 @@ async function _executeGatewayPledgeInternal(
         metadata: {
           ...(payment.metadata as Record<string, unknown>),
           generatedPledgeId: pledgeId,
+          generatedPledgeIdVersion: 'normalized-lowercase-v2',
+          legacyGeneratedPledgeId: legacyPledgeId ?? undefined,
           pledgeGeneratedAt: new Date().toISOString(),
         },
       },
@@ -754,23 +763,45 @@ async function _executeGatewayPledgeInternal(
     });
   }
 
-  // Verify pledge doesn't already exist on-chain using s_processedPledges getter
-  // This prevents overpayment if previous execution succeeded but DB wasn't updated
-  // Because pledgeId is deterministic, retries after crashes check for the SAME pledge ID
-  const pledgeExistsOnChain = await isPledgeExecutedOnChain(
-    treasuryContract,
-    pledgeId,
-    adminAddress,
-  );
+  // Verify pledge doesn't already exist on-chain using s_processedPledges getter.
+  // Backward-compatibility: when no generatedPledgeId is stored yet, also check the
+  // legacy pre-normalization pledge ID to avoid duplicate execution on older records.
+  const pledgeIdsToCheck = hasStoredGeneratedPledgeId
+    ? [pledgeId]
+    : legacyPledgeId
+      ? [pledgeId, legacyPledgeId]
+      : [pledgeId];
+  let matchedOnChainPledgeId: string | null = null;
+
+  for (const candidatePledgeId of pledgeIdsToCheck) {
+    const exists = await isPledgeExecutedOnChain(
+      treasuryContract,
+      candidatePledgeId,
+      adminAddress,
+    );
+
+    if (exists) {
+      matchedOnChainPledgeId = candidatePledgeId;
+      break;
+    }
+  }
+
+  const pledgeExistsOnChain = matchedOnChainPledgeId !== null;
 
   if (pledgeExistsOnChain) {
+    const reconciledPledgeId = matchedOnChainPledgeId ?? pledgeId;
+    const usedLegacyPledgeId =
+      !!legacyPledgeId && reconciledPledgeId === legacyPledgeId;
+
     logVerbose(
       '⚠️  SAFETY CHECK: Pledge already exists on-chain, skipping execution',
       {
         prefixId,
         logAddress,
         paymentId: payment.id,
-        pledgeId,
+        pledgeId: reconciledPledgeId,
+        pledgeIdsChecked: pledgeIdsToCheck,
+        usedLegacyPledgeId,
         note: 'Previous execution succeeded on-chain but DB was not updated. Fixing status now.',
       },
     );
@@ -784,7 +815,8 @@ async function _executeGatewayPledgeInternal(
         pledgeExecutionError: null,
         metadata: {
           ...metadata,
-          onChainPledgeId: pledgeId, // Deterministic hash ensures consistency
+          onChainPledgeId: reconciledPledgeId,
+          recoveredFromLegacyPledgeId: usedLegacyPledgeId || undefined,
           recoveredFromIncompleteExecution: true,
           recoveredAt: new Date().toISOString(),
         },
@@ -801,12 +833,14 @@ async function _executeGatewayPledgeInternal(
     return {
       success: true,
       paymentId: payment.id,
-      pledgeId, // Deterministic pledgeId returned
+      pledgeId: reconciledPledgeId,
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',
       reconciled: true,
       reconciliationReason:
-        's_processedPledges indicates pledge already executed',
+        usedLegacyPledgeId
+          ? 's_processedPledges indicates pledge already executed (legacy pledge ID)'
+          : 's_processedPledges indicates pledge already executed',
     };
   }
 

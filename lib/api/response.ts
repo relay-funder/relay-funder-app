@@ -46,12 +46,16 @@ export async function handleError(error: unknown) {
     );
   }
   if (error instanceof ApiConflictError) {
+    const publicConflictMessage =
+      error.publicMessage ||
+      ('Application Error' +
+        (IS_PRODUCTION ? '' : `, data conflict: ${error?.message}`));
+
     return NextResponse.json(
       {
         success: false,
-        error:
-          'Application Error' +
-          (IS_PRODUCTION ? '' : `, data conflict: ${error?.message}`),
+        error: publicConflictMessage,
+        code: error.code,
         details: IS_PRODUCTION
           ? undefined
           : error instanceof Error

@@ -11,12 +11,16 @@ import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
 import { NEXT_PUBLIC_RPC_URL } from '@/lib/constant/server';
+import {
+  PLEDGE_PENDING_RETRY_WINDOW_MS,
+  PLEDGE_PENDING_RETRY_WINDOW_SECONDS,
+} from '@/lib/constant/pledges';
 import { ethers } from '@/lib/web3';
 import {
   waitWithTimeout,
   TIMEOUT_VALUES,
 } from '@/lib/web3/transaction-timeout';
-import { computeDeterministicPledgeId } from '@/lib/web3/pledge-id';
+import { computeDeterministicPledgeIdCandidates } from '@/lib/web3/pledge-id';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge', {
   flag: 'daimo',
@@ -159,14 +163,16 @@ export async function POST(
       if (txResolution === 'CONFIRMED_SUCCESS') {
         const existingMetadata =
           (payment.metadata as Record<string, unknown>) || {};
+        const { canonicalPledgeId, legacyPledgeId } =
+          computeDeterministicPledgeIdCandidates({
+            treasuryAddress: payment.campaign.treasuryAddress,
+            userAddress: payment.user.address,
+            paymentId: payment.id,
+          });
         const deterministicPledgeId =
           typeof existingMetadata.generatedPledgeId === 'string'
             ? existingMetadata.generatedPledgeId
-            : computeDeterministicPledgeId({
-                treasuryAddress: payment.campaign.treasuryAddress,
-                userAddress: payment.user.address,
-                paymentId: payment.id,
-              });
+            : canonicalPledgeId;
 
         await db.payment.update({
           where: { id: payment.id },
@@ -175,6 +181,18 @@ export async function POST(
             pledgeExecutionError: null,
             metadata: {
               ...existingMetadata,
+              generatedPledgeId:
+                (existingMetadata.generatedPledgeId as string | undefined) ??
+                deterministicPledgeId,
+              generatedPledgeIdVersion:
+                (existingMetadata.generatedPledgeIdVersion as
+                  | string
+                  | undefined) ?? 'normalized-lowercase-v2',
+              legacyGeneratedPledgeId:
+                (existingMetadata.legacyGeneratedPledgeId as
+                  | string
+                  | undefined) ??
+                (legacyPledgeId ?? undefined),
               onChainPledgeId:
                 (existingMetadata.onChainPledgeId as string | undefined) ??
                 deterministicPledgeId,
@@ -239,6 +257,11 @@ export async function POST(
         throw new ApiConflictError(
           `Payment ${paymentId} has pledge tx hash ${txHash} that is not yet indexed/finalized via RPC. ` +
             'Retry is blocked to prevent overpayment; try again later.',
+          {
+            code: 'PLEDGE_TX_NOT_FINALIZED',
+            publicMessage:
+              'Pledge transaction is not indexed/finalized on-chain yet. Retry is blocked to prevent overpayment; please try again later.',
+          },
         );
       }
     }
@@ -246,7 +269,7 @@ export async function POST(
     // Validate pledge execution status is retryable
     // Allow retry for:
     // 1. FAILED or NOT_STARTED (only if no tx hash exists)
-    // 2. PENDING payments that are stuck (>10 minutes old) and have no tx hash
+    // 2. PENDING payments that are stuck (> configured retry window) and have no tx hash
     const retryableStatuses: PledgeExecutionStatus[] = [
       'FAILED',
       'NOT_STARTED',
@@ -256,7 +279,7 @@ export async function POST(
       payment.pledgeExecutionStatus === 'PENDING' &&
       payment.pledgeExecutionLastAttempt &&
       Date.now() - payment.pledgeExecutionLastAttempt.getTime() >
-        10 * 60 * 1000; // 10 minutes
+        PLEDGE_PENDING_RETRY_WINDOW_MS;
 
     const isRetryable =
       retryableStatuses.includes(payment.pledgeExecutionStatus) ||
@@ -280,15 +303,15 @@ export async function POST(
         lastAttemptSecondsAgo: lastAttemptAgo,
         reason:
           payment.pledgeExecutionStatus === 'PENDING'
-            ? 'PENDING but not stuck (< 10 minutes since last attempt)'
+            ? `PENDING but not stuck (< ${PLEDGE_PENDING_RETRY_WINDOW_SECONDS} seconds since last attempt)`
             : 'Status not retryable (must be FAILED, NOT_STARTED, or stuck PENDING)',
       });
 
       throw new ApiParameterError(
         `Payment not eligible for retry. Status: ${payment.pledgeExecutionStatus}` +
           (payment.pledgeExecutionStatus === 'PENDING' && lastAttemptAgo
-            ? ` (last attempt ${lastAttemptAgo}s ago, need >600s to retry)`
-            : '. Must be FAILED, NOT_STARTED, or stuck PENDING (>10 minutes)'),
+            ? ` (last attempt ${lastAttemptAgo}s ago, need >${PLEDGE_PENDING_RETRY_WINDOW_SECONDS}s to retry)`
+            : `. Must be FAILED, NOT_STARTED, or stuck PENDING (>${PLEDGE_PENDING_RETRY_WINDOW_SECONDS}s)`),
       );
     }
 

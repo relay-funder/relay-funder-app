@@ -95,10 +95,21 @@ export class ApiNotFoundError extends Error {
  * conflict with the current state.
  */
 export class ApiConflictError extends Error {
-  constructor(message: string) {
+  public code?: string;
+  public publicMessage?: string;
+
+  constructor(
+    message: string,
+    options?: {
+      code?: string;
+      publicMessage?: string;
+    },
+  ) {
     super(message);
     Object.setPrototypeOf(this, ApiConflictError.prototype);
     this.name = 'ConflictError';
+    this.code = options?.code;
+    this.publicMessage = options?.publicMessage;
   }
 }
 /**
