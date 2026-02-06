@@ -55,6 +55,15 @@ export function PageNavMenuUser() {
           isOpen ? 'px-4' : 'px-[9px]',
           authenticated && 'cursor-pointer',
         )}
+        role={authenticated ? 'button' : undefined}
+        tabIndex={authenticated ? 0 : undefined}
+        onKeyDown={async (e) => {
+          if (authenticated && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            await logout();
+            window.location.href = '/';
+          }
+        }}
         onClick={async () => {
           if (authenticated) {
             await logout();

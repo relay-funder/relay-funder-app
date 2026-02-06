@@ -16,7 +16,7 @@ import {
   waitWithTimeout,
   TIMEOUT_VALUES,
 } from '@/lib/web3/transaction-timeout';
-import { keccak256, toBytes } from 'viem';
+import { computeDeterministicPledgeId } from '@/lib/web3/pledge-id';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge', {
   flag: 'daimo',
@@ -53,18 +53,6 @@ async function resolveCeloTxHash(
   if (!receipt) return 'NOT_FOUND';
   if (receipt.status === 1) return 'CONFIRMED_SUCCESS';
   return 'CONFIRMED_FAILED';
-}
-
-function computeDeterministicPledgeId(input: {
-  treasuryAddress: string;
-  userAddress: string;
-  paymentId: number;
-}): string {
-  return keccak256(
-    toBytes(
-      `pledge-${input.treasuryAddress}-${input.userAddress}-${input.paymentId}`,
-    ),
-  );
 }
 
 /**
@@ -240,6 +228,10 @@ export async function POST(
           'Previous pledge tx confirmed failed; cleared tx hash and proceeding with retry',
           { prefixId, logAddress, paymentId, pledgeExecutionTxHash: txHash },
         );
+
+        // Refresh in-memory status so the retry-eligibility check below sees FAILED
+        payment.pledgeExecutionStatus = 'FAILED';
+        payment.pledgeExecutionTxHash = null;
       } else if (txResolution === 'NOT_FOUND') {
         return NextResponse.json(
           {

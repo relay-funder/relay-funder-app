@@ -1,7 +1,8 @@
 import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
-import { keccak256, toBytes, encodePacked } from 'viem';
+import { keccak256, encodePacked } from 'viem';
+import { computeDeterministicPledgeId } from '@/lib/web3/pledge-id';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
@@ -697,11 +698,11 @@ async function _executeGatewayPledgeInternal(
     // FIRST ATTEMPT: Generate deterministic pledge ID
     // Using stable fields (treasuryAddress, user address, payment ID)
     // to ensure the same pledge ID is generated even after crashes
-    pledgeId = keccak256(
-      toBytes(
-        `pledge-${payment.campaign.treasuryAddress}-${payment.user.address}-${payment.id}`,
-      ),
-    );
+    pledgeId = computeDeterministicPledgeId({
+      treasuryAddress: payment.campaign.treasuryAddress,
+      userAddress: payment.user.address,
+      paymentId: payment.id,
+    });
 
     logVerbose('Generated NEW deterministic pledge ID', {
       prefixId,
