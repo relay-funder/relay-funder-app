@@ -2,6 +2,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { type User } from 'next-auth';
 import { setupUser, handleError } from './common';
+import { IS_DEVELOPMENT } from '@/lib/utils/env';
 
 export function PrivyFakeProvider() {
   return CredentialsProvider({
@@ -23,7 +24,7 @@ export function PrivyFakeProvider() {
         console.warn(
           'PrivyFake Authentication used that bypasses any token verification and just assumes the wallet-address',
         );
-        if (process.env.NODE_ENV !== 'development') {
+        if (!IS_DEVELOPMENT) {
           throw new Error(
             'PrivyFake Authentication must not be used in production',
           );

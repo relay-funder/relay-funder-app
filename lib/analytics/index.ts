@@ -1,4 +1,5 @@
 import { track } from '@vercel/analytics';
+import { SHOULD_LOG_ANALYTICS } from '@/lib/utils/env';
 import { FunnelEvent, FunnelEventProperties } from './types';
 import { getFunnelProperties } from './funnel';
 
@@ -13,9 +14,9 @@ export function trackEvent(
     ...properties,
   };
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Analytics] ${eventName}`, finalProperties);
-  }
+    if (SHOULD_LOG_ANALYTICS) {
+        console.log(`[Analytics] ${eventName}`, finalProperties);
+    }
 
   track(eventName, finalProperties);
 }

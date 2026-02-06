@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
+import { APP_ENV } from '@/lib/utils/env';
 
 export function EnvironmentBadge() {
   const [env, setEnv] = useState<string>('development');
@@ -11,9 +12,8 @@ export function EnvironmentBadge() {
   useEffect(() => {
     const gitRef = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF;
     const gitSha = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA;
-    const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
 
-    // Ensure we do not display placeholder values such as "$VERCEL_GIT_COMMIT_REF"
+
     const sanitizedGitRef =
       gitRef && gitRef !== '$VERCEL_GIT_COMMIT_REF' ? gitRef : null;
     const sanitizedGitSha =
@@ -21,7 +21,7 @@ export function EnvironmentBadge() {
 
     const displayInfo = sanitizedGitRef || sanitizedGitSha || '';
 
-    setEnv(vercelEnv || 'development');
+    setEnv(APP_ENV);
     setGitInfo(displayInfo);
     setIsLoading(false);
   }, []);
@@ -30,7 +30,7 @@ export function EnvironmentBadge() {
     switch (env) {
       case 'production':
         return 'bg-green-600 hover:bg-green-700';
-      case 'preview':
+      case 'staging':
         return 'bg-yellow-600 hover:bg-yellow-700';
       default:
         return 'bg-blue-600 hover:bg-blue-700';
