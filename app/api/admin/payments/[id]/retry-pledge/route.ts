@@ -1,5 +1,6 @@
 import { checkAuth } from '@/lib/api/auth';
 import {
+  ApiConflictError,
   ApiNotFoundError,
   ApiParameterError,
   ApiUpstreamError,
@@ -9,12 +10,54 @@ import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
+import { NEXT_PUBLIC_RPC_URL } from '@/lib/constant/server';
+import {
+  PLEDGE_PENDING_RETRY_WINDOW_MS,
+  PLEDGE_PENDING_RETRY_WINDOW_SECONDS,
+} from '@/lib/constant/pledges';
+import { ethers } from '@/lib/web3';
+import {
+  waitWithTimeout,
+  TIMEOUT_VALUES,
+} from '@/lib/web3/transaction-timeout';
+import { computeDeterministicPledgeIdCandidates } from '@/lib/web3/pledge-id';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge', {
   flag: 'daimo',
 });
 
 const logError = logFactory('error', '🚨 DaimoRetryPledge', { flag: 'daimo' });
+
+type TxResolution = 'CONFIRMED_SUCCESS' | 'CONFIRMED_FAILED' | 'NOT_FOUND';
+
+async function resolveCeloTxHash(
+  txHash: string,
+  { prefixId, logAddress }: { prefixId: string; logAddress: string },
+): Promise<TxResolution> {
+  const rpcUrl = NEXT_PUBLIC_RPC_URL;
+  if (!rpcUrl) {
+    logError('Missing NEXT_PUBLIC_RPC_URL; cannot verify pledge tx hash', {
+      prefixId,
+      logAddress,
+      txHash,
+    });
+    throw new ApiParameterError(
+      'Server configuration missing RPC URL; cannot verify pledge transaction',
+    );
+  }
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const receipt = await waitWithTimeout(
+    provider.getTransactionReceipt(txHash),
+    TIMEOUT_VALUES.READ_OPERATION,
+    'read transaction receipt',
+    { prefixId, logAddress, txHash },
+  );
+
+  if (!receipt) return 'NOT_FOUND';
+  if (receipt.status === 1) return 'CONFIRMED_SUCCESS';
+  return 'CONFIRMED_FAILED';
+}
 
 /**
  * POST /api/admin/payments/[id]/retry-pledge
@@ -78,6 +121,12 @@ export async function POST(
       );
     }
 
+    if (!payment.campaign.treasuryAddress) {
+      throw new ApiParameterError(
+        `Campaign ${payment.campaign.id} is missing treasuryAddress; cannot execute/reconcile pledge`,
+      );
+    }
+
     // Prevent retry if pledge execution already succeeded
     if (payment.pledgeExecutionStatus === 'SUCCESS') {
       logError('Retry blocked: Payment already has SUCCESS status', {
@@ -93,34 +142,134 @@ export async function POST(
       );
     }
 
-    // Prevent retry if transaction was already submitted on-chain
-    // If we have a transaction hash, the pledge may have succeeded even if DB shows FAILED/PENDING
-    // Require manual verification and admin override for these cases
+    // If a pledge tx hash exists, reconcile it BEFORE attempting a retry.
+    // This avoids overpayment while still letting admins "fix" stuck records.
     if (payment.pledgeExecutionTxHash) {
-      logError(
-        'Retry blocked: Transaction hash exists (pledge may have succeeded on-chain)',
-        {
-          prefixId,
-          logAddress,
-          paymentId,
-          pledgeExecutionStatus: payment.pledgeExecutionStatus,
-          pledgeExecutionTxHash: payment.pledgeExecutionTxHash,
-          note: 'Verify transaction status on CeloScan before retrying',
-        },
-      );
+      const txHash = payment.pledgeExecutionTxHash;
 
-      throw new ApiParameterError(
-        `Payment ${paymentId} has transaction hash ${payment.pledgeExecutionTxHash}. ` +
-          `Verify the transaction status on CeloScan. If transaction failed on-chain, ` +
-          `clear the pledgeExecutionTxHash field in database before retrying. ` +
-          `This safety check prevents accidental overpayment.`,
-      );
+      logVerbose('Pledge tx hash present; reconciling on-chain status', {
+        prefixId,
+        logAddress,
+        paymentId,
+        pledgeExecutionStatus: payment.pledgeExecutionStatus,
+        pledgeExecutionTxHash: txHash,
+      });
+
+      const txResolution = await resolveCeloTxHash(txHash, {
+        prefixId,
+        logAddress,
+      });
+
+      if (txResolution === 'CONFIRMED_SUCCESS') {
+        const existingMetadata =
+          (payment.metadata as Record<string, unknown>) || {};
+        const { canonicalPledgeId, legacyPledgeId } =
+          computeDeterministicPledgeIdCandidates({
+            treasuryAddress: payment.campaign.treasuryAddress,
+            userAddress: payment.user.address,
+            paymentId: payment.id,
+          });
+        const deterministicPledgeId =
+          typeof existingMetadata.generatedPledgeId === 'string'
+            ? existingMetadata.generatedPledgeId
+            : canonicalPledgeId;
+
+        await db.payment.update({
+          where: { id: payment.id },
+          data: {
+            pledgeExecutionStatus: 'SUCCESS',
+            pledgeExecutionError: null,
+            metadata: {
+              ...existingMetadata,
+              generatedPledgeId:
+                (existingMetadata.generatedPledgeId as string | undefined) ??
+                deterministicPledgeId,
+              generatedPledgeIdVersion:
+                (existingMetadata.generatedPledgeIdVersion as
+                  | string
+                  | undefined) ?? 'normalized-lowercase-v2',
+              legacyGeneratedPledgeId:
+                (existingMetadata.legacyGeneratedPledgeId as
+                  | string
+                  | undefined) ??
+                (legacyPledgeId ?? undefined),
+              onChainPledgeId:
+                (existingMetadata.onChainPledgeId as string | undefined) ??
+                deterministicPledgeId,
+              treasuryTxHash:
+                (existingMetadata.treasuryTxHash as string | undefined) ??
+                txHash,
+              reconciledFromPledgeExecutionTxHash: txHash,
+              reconciledAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        return response({
+          success: true,
+          paymentId,
+          message:
+            'Pledge already executed on-chain; reconciled database record without retrying.',
+          pledgeExecutionTxHash: txHash,
+          reconciled: true,
+          reconciliationReason:
+            'On-chain transaction confirmed successful; database reconciled without re-execution.',
+        });
+      }
+
+      if (txResolution === 'CONFIRMED_FAILED') {
+        const existingMetadata =
+          (payment.metadata as Record<string, unknown>) || {};
+        const previous =
+          Array.isArray(existingMetadata.previousPledgeExecutionTxHashes) &&
+          existingMetadata.previousPledgeExecutionTxHashes.every(
+            (v) => typeof v === 'string',
+          )
+            ? (existingMetadata.previousPledgeExecutionTxHashes as string[])
+            : [];
+
+        await db.payment.update({
+          where: { id: payment.id },
+          data: {
+            pledgeExecutionStatus: 'FAILED',
+            pledgeExecutionError: `Previous pledge transaction reverted: ${txHash}`,
+            pledgeExecutionTxHash: null,
+            metadata: {
+              ...existingMetadata,
+              previousPledgeExecutionTxHashes: Array.from(
+                new Set([...previous, txHash]),
+              ),
+              lastFailedPledgeExecutionTxHash: txHash,
+              lastFailedPledgeExecutionTxCheckedAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        logVerbose(
+          'Previous pledge tx confirmed failed; cleared tx hash and proceeding with retry',
+          { prefixId, logAddress, paymentId, pledgeExecutionTxHash: txHash },
+        );
+
+        // Refresh in-memory status so the retry-eligibility check below sees FAILED
+        payment.pledgeExecutionStatus = 'FAILED';
+        payment.pledgeExecutionTxHash = null;
+      } else if (txResolution === 'NOT_FOUND') {
+        throw new ApiConflictError(
+          `Payment ${paymentId} has pledge tx hash ${txHash} that is not yet indexed/finalized via RPC. ` +
+            'Retry is blocked to prevent overpayment; try again later.',
+          {
+            code: 'PLEDGE_TX_NOT_FINALIZED',
+            publicMessage:
+              'Pledge transaction is not indexed/finalized on-chain yet. Retry is blocked to prevent overpayment; please try again later.',
+          },
+        );
+      }
     }
 
     // Validate pledge execution status is retryable
     // Allow retry for:
     // 1. FAILED or NOT_STARTED (only if no tx hash exists)
-    // 2. PENDING payments that are stuck (>10 minutes old) and have no tx hash
+    // 2. PENDING payments that are stuck (> configured retry window) and have no tx hash
     const retryableStatuses: PledgeExecutionStatus[] = [
       'FAILED',
       'NOT_STARTED',
@@ -130,7 +279,7 @@ export async function POST(
       payment.pledgeExecutionStatus === 'PENDING' &&
       payment.pledgeExecutionLastAttempt &&
       Date.now() - payment.pledgeExecutionLastAttempt.getTime() >
-        10 * 60 * 1000; // 10 minutes
+        PLEDGE_PENDING_RETRY_WINDOW_MS;
 
     const isRetryable =
       retryableStatuses.includes(payment.pledgeExecutionStatus) ||
@@ -154,15 +303,15 @@ export async function POST(
         lastAttemptSecondsAgo: lastAttemptAgo,
         reason:
           payment.pledgeExecutionStatus === 'PENDING'
-            ? 'PENDING but not stuck (< 10 minutes since last attempt)'
+            ? `PENDING but not stuck (< ${PLEDGE_PENDING_RETRY_WINDOW_SECONDS} seconds since last attempt)`
             : 'Status not retryable (must be FAILED, NOT_STARTED, or stuck PENDING)',
       });
 
       throw new ApiParameterError(
         `Payment not eligible for retry. Status: ${payment.pledgeExecutionStatus}` +
           (payment.pledgeExecutionStatus === 'PENDING' && lastAttemptAgo
-            ? ` (last attempt ${lastAttemptAgo}s ago, need >600s to retry)`
-            : '. Must be FAILED, NOT_STARTED, or stuck PENDING (>10 minutes)'),
+            ? ` (last attempt ${lastAttemptAgo}s ago, need >${PLEDGE_PENDING_RETRY_WINDOW_SECONDS}s to retry)`
+            : `. Must be FAILED, NOT_STARTED, or stuck PENDING (>${PLEDGE_PENDING_RETRY_WINDOW_SECONDS}s)`),
       );
     }
 

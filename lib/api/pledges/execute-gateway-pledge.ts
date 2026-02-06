@@ -1,7 +1,8 @@
 import { db, type Prisma } from '@/server/db';
 import { ApiParameterError, ApiUpstreamError } from '@/lib/api/error';
 import { ethers, erc20Abi } from '@/lib/web3';
-import { keccak256, toBytes, zeroHash, encodePacked } from 'viem';
+import { keccak256, encodePacked } from 'viem';
+import { computeDeterministicPledgeIdCandidates } from '@/lib/web3/pledge-id';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
@@ -25,6 +26,159 @@ const logVerbose = logFactory('verbose', '🚀 DaimoPledge', { flag: 'daimo' });
 
 const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
 
+/** Selector for KeepWhatsRaisedPledgeAlreadyProcessed(bytes32) custom error */
+const PLEDGE_ALREADY_PROCESSED_SELECTOR = '0x7c730b08';
+const PLEDGE_ALREADY_PROCESSED_ERROR_NAME =
+  'KeepWhatsRaisedPledgeAlreadyProcessed';
+
+const keepWhatsRaisedInterface = new ethers.Interface(KeepWhatsRaisedABI);
+
+function isHexData(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  if (!value.startsWith('0x')) return false;
+  if (value.length < 10) return false; // 4-byte selector + 0x
+
+  for (let i = 2; i < value.length; i++) {
+    const charCode = value.charCodeAt(i);
+    const isHexDigit =
+      (charCode >= 48 && charCode <= 57) || // 0-9
+      (charCode >= 65 && charCode <= 70) || // A-F
+      (charCode >= 97 && charCode <= 102); // a-f
+    if (!isHexDigit) return false;
+  }
+
+  return true;
+}
+
+function extractRevertDataCandidates(error: unknown): string[] {
+  const candidates: string[] = [];
+  const seen = new WeakSet<object>();
+  const queue: Array<{ value: unknown; depth: number }> = [
+    { value: error, depth: 0 },
+  ];
+  const maxDepth = 6;
+  const maxNodes = 200;
+  let visited = 0;
+
+  while (queue.length > 0 && visited < maxNodes) {
+    const current = queue.shift();
+    if (!current) break;
+
+    const { value, depth } = current;
+    visited++;
+
+    if (isHexData(value)) {
+      candidates.push(value);
+    } else if (typeof value === 'string') {
+      // Some libraries embed revert data as a substring in a larger message.
+      const matches = value.match(/0x[0-9a-fA-F]{8,}/g);
+      if (matches) {
+        for (const match of matches) {
+          if (isHexData(match)) candidates.push(match);
+        }
+      }
+    }
+
+    if (!value || typeof value !== 'object' || depth >= maxDepth) continue;
+    if (seen.has(value as object)) continue;
+    seen.add(value as object);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        queue.push({ value: item, depth: depth + 1 });
+      }
+      continue;
+    }
+
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      queue.push({ value: record[key], depth: depth + 1 });
+    }
+  }
+
+  // Normalize + dedupe.
+  return Array.from(
+    new Set(candidates.map((candidate) => candidate.toLowerCase())),
+  );
+}
+
+function extractErrorMessageCandidates(error: unknown): string[] {
+  const candidates: string[] = [];
+  const seen = new WeakSet<object>();
+  const queue: Array<{ value: unknown; depth: number }> = [
+    { value: error, depth: 0 },
+  ];
+  const maxDepth = 4;
+  const maxNodes = 120;
+  let visited = 0;
+
+  while (queue.length > 0 && visited < maxNodes) {
+    const current = queue.shift();
+    if (!current) break;
+
+    const { value, depth } = current;
+    visited++;
+
+    if (typeof value === 'string' && value.length > 0) {
+      candidates.push(value);
+    }
+
+    if (!value || typeof value !== 'object' || depth >= maxDepth) continue;
+    if (seen.has(value as object)) continue;
+    seen.add(value as object);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        queue.push({ value: item, depth: depth + 1 });
+      }
+      continue;
+    }
+
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      queue.push({ value: record[key], depth: depth + 1 });
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Check if an error is a KeepWhatsRaisedPledgeAlreadyProcessed revert.
+ * ethers v6 CALL_EXCEPTION errors can carry revert data in different shapes
+ * depending on whether it failed in `estimateGas` vs `sendTransaction`.
+ */
+function isPledgeAlreadyProcessedError(error: unknown): boolean {
+  const selector = PLEDGE_ALREADY_PROCESSED_SELECTOR.toLowerCase();
+  const errorName = PLEDGE_ALREADY_PROCESSED_ERROR_NAME.toLowerCase();
+
+  // Fast-path: message fields sometimes include the custom error name.
+  const messageCandidates = extractErrorMessageCandidates(error);
+  for (const message of messageCandidates) {
+    if (message.toLowerCase().includes(errorName)) {
+      return true;
+    }
+  }
+
+  // Robust-path: search for revert data and match selector or decode via ABI.
+  const revertDataCandidates = extractRevertDataCandidates(error);
+  for (const data of revertDataCandidates) {
+    if (!data.startsWith('0x')) continue;
+    if (data.startsWith(selector)) return true;
+
+    try {
+      const parsed = keepWhatsRaisedInterface.parseError(data);
+      if (parsed?.name === PLEDGE_ALREADY_PROCESSED_ERROR_NAME) {
+        return true;
+      }
+    } catch {
+      // Ignore: data might be a tx hash or a different contract's revert.
+    }
+  }
+
+  return false;
+}
+
 /**
  * Check if a pledge already exists on the blockchain by calling the s_processedPledges getter.
  * The contract tracks processed pledges using internalPledgeId = keccak256(abi.encodePacked(pledgeId, adminAddress)).
@@ -39,41 +193,57 @@ async function isPledgeExecutedOnChain(
   pledgeId: string,
   adminAddress: string,
 ): Promise<boolean> {
-  try {
-    // Compute the internal pledge ID used by the contract
-    // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
-    // where msg.sender is the admin address
-    const internalPledgeId = keccak256(
-      encodePacked(
-        ['bytes32', 'address'],
-        [pledgeId as `0x${string}`, adminAddress as `0x${string}`],
-      ),
-    );
+  // Compute the internal pledge ID used by the contract
+  // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
+  // where msg.sender is the admin address
+  const internalPledgeId = keccak256(
+    encodePacked(
+      ['bytes32', 'address'],
+      [pledgeId as `0x${string}`, adminAddress as `0x${string}`],
+    ),
+  );
 
-    // Call the s_processedPledges getter (available in ABI)
-    const isProcessed =
-      await treasuryContract.s_processedPledges(internalPledgeId);
+  let lastError: unknown;
 
-    logVerbose('On-chain pledge verification via s_processedPledges', {
-      pledgeId,
-      adminAddress,
-      internalPledgeId,
-      isProcessed,
-    });
+  // Retry once to handle transient RPC failures before aborting
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const isProcessed =
+        await treasuryContract.s_processedPledges(internalPledgeId);
 
-    return isProcessed;
-  } catch (error) {
-    // If the call fails, assume pledge doesn't exist (safer default)
-    logVerbose(
-      'On-chain pledge check via s_processedPledges failed, assuming pledge does not exist',
-      {
+      logVerbose('On-chain pledge verification via s_processedPledges', {
         pledgeId,
         adminAddress,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-    );
-    return false;
+        internalPledgeId,
+        isProcessed,
+        attempt,
+      });
+
+      return isProcessed;
+    } catch (error) {
+      lastError = error;
+      logError(
+        `On-chain pledge check attempt ${attempt + 1}/2 FAILED`,
+        {
+          pledgeId,
+          adminAddress,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      );
+
+      // Brief pause before retry
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
   }
+
+  // Both attempts failed — abort execution so the payment is marked FAILED
+  // rather than risking a duplicate on-chain pledge
+  throw new ApiUpstreamError(
+    `Cannot verify on-chain pledge status after 2 attempts: ${lastError instanceof Error ? lastError.message : 'Unknown RPC error'}. ` +
+      'Aborting to prevent potential duplicate execution. Retry later when RPC is healthy.',
+  );
 }
 
 /**
@@ -525,12 +695,23 @@ async function _executeGatewayPledgeInternal(
     treasuryContractAddress: payment.campaign.treasuryAddress,
   });
 
+  const deterministicPledgeInput = {
+    treasuryAddress: payment.campaign.treasuryAddress,
+    userAddress: payment.user.address,
+    paymentId: payment.id,
+  };
+  const { canonicalPledgeId, legacyPledgeId } =
+    computeDeterministicPledgeIdCandidates(deterministicPledgeInput);
+
   // Generate or retrieve pledge ID BEFORE any blockchain operations
   // This ensures we can check on-chain status with the correct pledge ID
   // DETERMINISTIC generation: Same inputs always produce same pledge ID
   let pledgeId: string;
+  const hasStoredGeneratedPledgeId =
+    typeof metadata?.generatedPledgeId === 'string' &&
+    metadata.generatedPledgeId.length > 0;
 
-  if (metadata?.generatedPledgeId) {
+  if (hasStoredGeneratedPledgeId) {
     // RETRY case: Use existing pledge ID from previous attempt
     pledgeId = metadata.generatedPledgeId as string;
     logVerbose('Using existing pledge ID from previous attempt', {
@@ -543,11 +724,7 @@ async function _executeGatewayPledgeInternal(
     // FIRST ATTEMPT: Generate deterministic pledge ID
     // Using stable fields (treasuryAddress, user address, payment ID)
     // to ensure the same pledge ID is generated even after crashes
-    pledgeId = keccak256(
-      toBytes(
-        `pledge-${payment.campaign.treasuryAddress}-${payment.user.address}-${payment.id}`,
-      ),
-    );
+    pledgeId = canonicalPledgeId;
 
     logVerbose('Generated NEW deterministic pledge ID', {
       prefixId,
@@ -567,6 +744,8 @@ async function _executeGatewayPledgeInternal(
         metadata: {
           ...(payment.metadata as Record<string, unknown>),
           generatedPledgeId: pledgeId,
+          generatedPledgeIdVersion: 'normalized-lowercase-v2',
+          legacyGeneratedPledgeId: legacyPledgeId ?? undefined,
           pledgeGeneratedAt: new Date().toISOString(),
         },
       },
@@ -584,23 +763,45 @@ async function _executeGatewayPledgeInternal(
     });
   }
 
-  // Verify pledge doesn't already exist on-chain using s_processedPledges getter
-  // This prevents overpayment if previous execution succeeded but DB wasn't updated
-  // Because pledgeId is deterministic, retries after crashes check for the SAME pledge ID
-  const pledgeExistsOnChain = await isPledgeExecutedOnChain(
-    treasuryContract,
-    pledgeId,
-    adminAddress,
-  );
+  // Verify pledge doesn't already exist on-chain using s_processedPledges getter.
+  // Backward-compatibility: when no generatedPledgeId is stored yet, also check the
+  // legacy pre-normalization pledge ID to avoid duplicate execution on older records.
+  const pledgeIdsToCheck = hasStoredGeneratedPledgeId
+    ? [pledgeId]
+    : legacyPledgeId
+      ? [pledgeId, legacyPledgeId]
+      : [pledgeId];
+  let matchedOnChainPledgeId: string | null = null;
+
+  for (const candidatePledgeId of pledgeIdsToCheck) {
+    const exists = await isPledgeExecutedOnChain(
+      treasuryContract,
+      candidatePledgeId,
+      adminAddress,
+    );
+
+    if (exists) {
+      matchedOnChainPledgeId = candidatePledgeId;
+      break;
+    }
+  }
+
+  const pledgeExistsOnChain = matchedOnChainPledgeId !== null;
 
   if (pledgeExistsOnChain) {
+    const reconciledPledgeId = matchedOnChainPledgeId ?? pledgeId;
+    const usedLegacyPledgeId =
+      !!legacyPledgeId && reconciledPledgeId === legacyPledgeId;
+
     logVerbose(
       '⚠️  SAFETY CHECK: Pledge already exists on-chain, skipping execution',
       {
         prefixId,
         logAddress,
         paymentId: payment.id,
-        pledgeId,
+        pledgeId: reconciledPledgeId,
+        pledgeIdsChecked: pledgeIdsToCheck,
+        usedLegacyPledgeId,
         note: 'Previous execution succeeded on-chain but DB was not updated. Fixing status now.',
       },
     );
@@ -614,7 +815,8 @@ async function _executeGatewayPledgeInternal(
         pledgeExecutionError: null,
         metadata: {
           ...metadata,
-          onChainPledgeId: pledgeId, // Deterministic hash ensures consistency
+          onChainPledgeId: reconciledPledgeId,
+          recoveredFromLegacyPledgeId: usedLegacyPledgeId || undefined,
           recoveredFromIncompleteExecution: true,
           recoveredAt: new Date().toISOString(),
         },
@@ -631,11 +833,14 @@ async function _executeGatewayPledgeInternal(
     return {
       success: true,
       paymentId: payment.id,
-      pledgeId, // Deterministic pledgeId returned
-      transactionHash: zeroHash, // zeroHash indicates recovered from blockchain without stored tx hash
-      blockNumber: 0,
+      pledgeId: reconciledPledgeId,
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',
+      reconciled: true,
+      reconciliationReason:
+        usedLegacyPledgeId
+          ? 's_processedPledges indicates pledge already executed (legacy pledge ID)'
+          : 's_processedPledges indicates pledge already executed',
     };
   }
 
@@ -785,19 +990,73 @@ async function _executeGatewayPledgeInternal(
     isPledgeForAReward: false,
   });
 
-  const treasuryTx = await treasuryContract.setFeeAndPledge(
-    pledgeId, // Deterministic hash from stable fields
-    payment.user.address,
-    pledgeAmountUnits,
-    tipAmountUnits,
-    gatewayFee,
-    [],
-    false,
-    {
-      maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-      maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-    },
-  );
+  let treasuryTx;
+  try {
+    treasuryTx = await treasuryContract.setFeeAndPledge(
+      pledgeId, // Deterministic hash from stable fields
+      payment.user.address,
+      pledgeAmountUnits,
+      tipAmountUnits,
+      gatewayFee,
+      [],
+      false,
+      {
+        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
+      },
+    );
+  } catch (error) {
+    // If the contract reverts with PledgeAlreadyProcessed, the pledge was already
+    // executed on-chain but the DB wasn't updated (e.g. lambda timeout after tx confirmed).
+    // Reconcile the database instead of marking as failed.
+    if (isPledgeAlreadyProcessedError(error)) {
+      logVerbose(
+        'Pledge already processed on-chain (detected via contract revert), reconciling database',
+        {
+          prefixId,
+          logAddress,
+          paymentId: payment.id,
+          pledgeId,
+          note: 'Previous execution succeeded on-chain but DB was not updated. Fixing status now.',
+        },
+      );
+
+      const existingTreasuryTxHash =
+        typeof payment.pledgeExecutionTxHash === 'string'
+          ? payment.pledgeExecutionTxHash
+          : typeof metadata.treasuryTxHash === 'string'
+            ? metadata.treasuryTxHash
+            : null;
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          pledgeExecutionStatus: 'SUCCESS',
+          pledgeExecutionError: null,
+          pledgeExecutionTxHash: existingTreasuryTxHash,
+          metadata: {
+            ...metadata,
+            onChainPledgeId: pledgeId,
+            recoveredFromPledgeAlreadyProcessed: true,
+            recoveredAt: new Date().toISOString(),
+            treasuryTxHash: existingTreasuryTxHash ?? undefined,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        paymentId: payment.id,
+        pledgeId,
+        pledgeAmount: ethers.formatUnits(pledgeAmountUnits, USD_DECIMALS),
+        tipAmount: ethers.formatUnits(tipAmountUnits, USD_DECIMALS),
+        reconciled: true,
+        reconciliationReason:
+          'setFeeAndPledge reverted with KeepWhatsRaisedPledgeAlreadyProcessed',
+      };
+    }
+    throw error;
+  }
 
   logVerbose('Transaction submitted:', {
     prefixId,

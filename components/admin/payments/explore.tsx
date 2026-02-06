@@ -43,7 +43,12 @@ import { FormattedDate } from '@/components/formatted-date';
 import { useToast } from '@/hooks/use-toast';
 import { ContractLink } from '@/components/page/contract-link';
 import { chainConfig } from '@/lib/web3';
+import { PLEDGE_PENDING_RETRY_WINDOW_MS } from '@/lib/constant/pledges';
 import { ExternalLink } from 'lucide-react';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
 
 function StatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
@@ -81,13 +86,13 @@ function PledgeExecutionBadge({
   status: PledgeExecutionStatus;
   payment?: AdminPaymentListItem;
 }) {
-  // Check if PENDING payment is stuck (> 5 minutes)
+  // Check if PENDING payment is stuck (> shared retry window)
   const isStuck =
     status === 'PENDING' &&
     payment &&
     (!payment.pledgeExecutionLastAttempt ||
       new Date(payment.pledgeExecutionLastAttempt) <
-        new Date(Date.now() - 5 * 60 * 1000));
+        new Date(Date.now() - PLEDGE_PENDING_RETRY_WINDOW_MS));
 
   switch (status) {
     case 'SUCCESS':
@@ -190,22 +195,49 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
   const { toast } = useToast();
   const retryMutation = useRetryPledgeExecution();
 
-  // Check if payment is stuck in PENDING (> 5 minutes since last attempt)
+  // Check if payment is stuck in PENDING (> shared retry window since last attempt)
   const isStuckPending = (payment: AdminPaymentListItem): boolean => {
     if (payment.pledgeExecutionStatus !== 'PENDING') return false;
     if (!payment.pledgeExecutionLastAttempt) return true; // No last attempt = stuck
 
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const retryWindowCutoff = new Date(Date.now() - PLEDGE_PENDING_RETRY_WINDOW_MS);
     const lastAttempt = new Date(payment.pledgeExecutionLastAttempt);
-    return lastAttempt < fiveMinutesAgo;
+    return lastAttempt < retryWindowCutoff;
   };
 
   const handleRetry = async (paymentId: number) => {
     try {
-      await retryMutation.mutateAsync(paymentId);
+      const retryResult = await retryMutation.mutateAsync(paymentId);
+
+      const message =
+        isRecord(retryResult) && typeof retryResult.message === 'string'
+          ? retryResult.message
+          : 'Pledge execution updated.';
+
+      // Reconciliation info can appear at the top level (direct reconciliation
+      // in retry-pledge route) or nested inside result (from retryGatewayPledge).
+      const executionResult =
+        isRecord(retryResult) && isRecord(retryResult.result)
+          ? retryResult.result
+          : null;
+
+      const wasReconciled =
+        (isRecord(retryResult) && retryResult.reconciled === true) ||
+        (executionResult && executionResult.reconciled === true);
+
+      const reconciliationReason =
+        (isRecord(retryResult) &&
+        typeof retryResult.reconciliationReason === 'string'
+          ? retryResult.reconciliationReason
+          : null) ??
+        (executionResult &&
+        typeof executionResult.reconciliationReason === 'string'
+          ? executionResult.reconciliationReason
+          : null);
+
       toast({
-        title: 'Pledge execution retried',
-        description: 'The pledge execution has been queued for retry.',
+        title: wasReconciled ? 'Pledge reconciled' : 'Pledge execution updated',
+        description: reconciliationReason ?? message,
       });
     } catch (error) {
       toast({
