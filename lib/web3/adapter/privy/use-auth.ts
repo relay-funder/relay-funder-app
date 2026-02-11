@@ -10,6 +10,7 @@ import type { IWeb3UseAuthHook } from '@/lib/web3/types';
 import { normalizeAddress } from '@/lib/normalize-address';
 import { useSession } from 'next-auth/react';
 import { useWallet } from './use-wallet';
+import { IS_PRODUCTION } from '@/lib/utils/env';
 export function useAuth(): IWeb3UseAuthHook {
   const { user, ready, logout: privyLogout, getAccessToken } = usePrivy();
   const wallet = useWallet();
@@ -42,7 +43,7 @@ export function useAuth(): IWeb3UseAuthHook {
         // any user (in development) may authenticate as any wallet-address
         const address = privyParams?.user?.wallet?.address;
         let authResult = undefined;
-        if (process.env.NODE_ENV === 'production') {
+        if (IS_PRODUCTION) {
           // in production the server can validate the access token
           // acquire the user & their wallet and optionally create their wallet
           authResult = await nextAuthSignIn('privy-token', {

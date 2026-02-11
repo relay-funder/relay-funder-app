@@ -1,3 +1,5 @@
+import { ALLOW_DEMO_DATA, IS_DEVELOPMENT } from '@/lib/utils/env';
+
 /**
  * Demo campaign data for development environment only.
  * This data is dynamically generated to ensure all values are always valid.
@@ -253,7 +255,7 @@ function generateValidDemoCampaignData(): DemoCampaignData {
   const now = new Date();
 
   // Calculate future start time based on environment
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = IS_DEVELOPMENT;
   const baseMinutes = isDev ? 5 : 3 * 24 * 60; // 5 min dev, 3 days prod
 
   // For demo data, ensure we generate dates that are actually in the future
@@ -291,7 +293,7 @@ function generateValidDemoCampaignData(): DemoCampaignData {
  */
 function getFreshDemoData(): DemoCampaignData[] {
   // Only generate demo data when dev tools are explicitly enabled
-  const isDevToolsEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLS === 'true';
+  const isDevToolsEnabled = ALLOW_DEMO_DATA;
 
   if (!isDevToolsEnabled) {
     console.warn(

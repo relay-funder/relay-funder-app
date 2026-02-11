@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@/.generated/prisma/client';
+import { IS_PRODUCTION } from '@/lib/utils/env';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
@@ -28,4 +29,4 @@ export const prisma =
     log: getPrismaLogLevels(),
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (!IS_PRODUCTION) globalForPrisma.prisma = prisma;

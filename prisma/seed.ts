@@ -9,6 +9,7 @@ import {
 } from '../lib/seed/contract-deployment';
 import { USER_FLAGS } from '../lib/constant/user-flags';
 import { normalizeAddress } from '../lib/normalize-address';
+import { IS_PRODUCTION } from '../lib/utils/env';
 // Environment variables should already be loaded by Docker container
 
 // Check for dummy mode via environment variable or command line argument
@@ -16,7 +17,7 @@ const isDummyMode =
   process.env.SEED_DUMMY_MODE === 'true' || process.argv.includes('--dummy');
 
 // Enable debug logging for treasury operations in development
-if (process.env.NODE_ENV !== 'production') {
+if (!IS_PRODUCTION) {
   process.env.DEBUG_WEB3 = 'true';
 }
 
@@ -1945,10 +1946,10 @@ async function main() {
     const successRate =
       totalAttemptedDeployments > 0
         ? Math.round(
-            (deploymentStats.successfulCampaignDeployments /
-              totalAttemptedDeployments) *
-              100,
-          )
+          (deploymentStats.successfulCampaignDeployments /
+            totalAttemptedDeployments) *
+          100,
+        )
         : 0;
 
     if (successRate === 100) {
