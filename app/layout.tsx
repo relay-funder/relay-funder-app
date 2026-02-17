@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import Script from 'next/script';
 import './globals.css';
@@ -8,6 +7,7 @@ import { PageMainLayout } from '@/components/page/main-layout';
 import { EnvironmentBadge } from '@/components/environment-badge';
 import { ConfirmProvider } from '@/contexts/ConfirmContext';
 import { Analytics } from '@vercel/analytics/react';
+import { generateMetadata as generateBaseMetadata } from '@/lib/utils/metadata';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -20,15 +20,11 @@ const geistMono = localFont({
   weight: '100 900',
 });
 
-export const metadata: Metadata = {
+export const metadata = generateBaseMetadata({
   title: 'Relay Funder',
   description:
     'Fundraising platform for refugee communities and humanitarian projects',
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-  },
-};
+});
 
 export default function RootLayout({
   children,
