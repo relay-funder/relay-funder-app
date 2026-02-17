@@ -65,7 +65,7 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
     title,
     description,
     url = baseUrl,
-    image = `${baseUrl}/relay-funder-logo.png`, // Default OG image
+    image,
     type = 'website',
     siteName = 'Relay Funder',
     locale = 'en_US',
@@ -129,15 +129,17 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
       description: optimizedDescription,
       url,
       siteName,
-      images: [
-        {
-          url: image,
-          width: 1200,
-          height: 630,
-          alt: optimizedTitle,
-          type: 'image/png',
-        },
-      ],
+      ...(image && {
+        images: [
+          {
+            url: image,
+            width: 1200,
+            height: 630,
+            alt: optimizedTitle,
+            type: 'image/png',
+          },
+        ],
+      }),
       locale,
       type,
     },
@@ -146,12 +148,14 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
       card: 'summary_large_image',
       title: optimizedTitle,
       description: optimizedDescription,
-      images: [
-        {
-          url: image,
-          alt: optimizedTitle,
-        },
-      ],
+      ...(image && {
+        images: [
+          {
+            url: image,
+            alt: optimizedTitle,
+          },
+        ],
+      }),
       creator: '@relayfunder',
       site: '@relayfunder',
     },
@@ -161,10 +165,12 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
     },
     // Additional meta tags
     other: {
-      'og:image:width': '1200',
-      'og:image:height': '630',
-      'og:image:alt': optimizedTitle,
-      'twitter:image:alt': optimizedTitle,
+      ...(image && {
+        'og:image:width': '1200',
+        'og:image:height': '630',
+        'og:image:alt': optimizedTitle,
+        'twitter:image:alt': optimizedTitle,
+      }),
       'og:type': type,
       'og:site_name': siteName,
       'og:locale': locale,
@@ -201,8 +207,8 @@ export function generateCampaignMetadata(
       ? campaignDescription.substring(0, 157) + '...'
       : campaignDescription;
 
-  // Use campaign image if available, otherwise default
-  const image = campaignImage || `${baseUrl}/relay-funder-logo.png`;
+  // Use campaign image if available, otherwise let file-based OG image handle it
+  const image = campaignImage;
 
   // Format funding information for description
   const fundingInfo = currentRaised
