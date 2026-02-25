@@ -1,4 +1,6 @@
 import { QfCalculationResult, QfDistributionItem } from '@/lib/qf/types';
+import { formatUnits, parseUnits } from 'viem';
+import { USD_DECIMALS } from '@/lib/constant';
 import { triggerCsvDownloadOnClient, formatCsvField } from '@/lib/utils/csv';
 
 export interface QfCsvOptions {
@@ -24,6 +26,8 @@ export function downloadQfDistributionCsv(
     'Campaign ID',
     'Campaign Title',
     'Matching Amount',
+    'Donations',
+    'Total (Donations + Matching)',
     'Unique Contributors',
     'Total Contributions',
   ];
@@ -35,10 +39,15 @@ export function downloadQfDistributionCsv(
   rows.push(headers.join(','));
 
   data.distribution.forEach((item: QfDistributionItem) => {
+    const matchingAmount = parseUnits(item.matchingAmount, USD_DECIMALS);
+    const donations = parseUnits(item.totalDonations, USD_DECIMALS);
+    const total = matchingAmount + donations;
     const row = [
       item.id,
       formatCsvField(item.title),
       item.matchingAmount,
+      item.totalDonations,
+      formatUnits(total, USD_DECIMALS),
       item.nUniqueContributors,
       item.nContributions,
     ];
@@ -48,7 +57,18 @@ export function downloadQfDistributionCsv(
 
   // Add total row if requested
   if (includeTotal) {
-    const totalRow = ['TOTAL', '', data.totalAllocated];
+    const totalAllocated = parseUnits(data.totalAllocated, USD_DECIMALS);
+    const totalDonations = parseUnits(data.totalDonations, USD_DECIMALS);
+    const totalCombined = totalAllocated + totalDonations;
+    const totalRow = [
+      'TOTAL',
+      '',
+      data.totalAllocated,
+      data.totalDonations,
+      formatUnits(totalCombined, USD_DECIMALS),
+      '',
+      '',
+    ];
 
     rows.push(''); // Empty row separator
     rows.push(totalRow.join(','));

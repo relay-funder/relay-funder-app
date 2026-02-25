@@ -419,13 +419,33 @@ export async function getCampaignBySlug(
   }
 }
 
+interface PrefetchCampaignsOptions {
+  admin?: boolean;
+  status?: string;
+  pageSize?: number;
+  rounds?: boolean;
+}
+
 // Prefetching homepage campaigns (infinite)
-// Note: rounds=false must match the default in useInfiniteCampaigns and CampaignList
-export async function prefetchCampaigns(queryClient: QueryClient) {
+// Note: default params must match useInfiniteCampaigns and CampaignList defaults
+export async function prefetchCampaigns(
+  queryClient: QueryClient,
+  options: PrefetchCampaignsOptions = {},
+) {
+  const { admin = false, status = 'active', pageSize = 10, rounds = false } =
+    options;
+
   return queryClient.prefetchInfiniteQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', 'active', 10, false],
+    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize, rounds],
     initialPageParam: 1,
-    queryFn: () => listCampaigns({ rounds: false }),
+    queryFn: () =>
+      listCampaigns({
+        admin,
+        status,
+        page: 1,
+        pageSize,
+        rounds,
+      }),
   });
 }
 

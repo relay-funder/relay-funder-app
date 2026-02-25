@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { parseUnits } from 'viem';
 import {
   TrendingUp,
   Users,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { formatUSD } from '@/lib/format-usd';
+import { USD_DECIMALS } from '@/lib/constant';
 import { useAdminQfRoundCalculation } from '@/lib/hooks/useAdminQfRoundCalculation';
 import { downloadQfDistributionCsv } from '@/lib/qf';
 
@@ -43,17 +45,35 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     enabled: isAdmin && round.matchingPool > 0,
   });
 
-  const { nContributions, nUniqueContributors } = useMemo(() => {
+  const {
+    nContributions,
+    nUniqueContributors,
+    totalAllocated,
+    totalDonations,
+  } = useMemo(() => {
     if (!qfData?.distribution)
-      return { nContributions: 0, nUniqueContributors: 0 };
-    return qfData.distribution.reduce(
+      return {
+        nContributions: 0,
+        nUniqueContributors: 0,
+        totalAllocated: 0n,
+        totalDonations: 0n,
+      };
+
+    const totalAllocated = parseUnits(qfData.totalAllocated, USD_DECIMALS);
+    const totalDonations = parseUnits(qfData.totalDonations, USD_DECIMALS);
+
+    const contributionTotals = qfData.distribution.reduce(
       (sum, item) => ({
         nContributions: sum.nContributions + item.nContributions,
         nUniqueContributors: sum.nUniqueContributors + item.nUniqueContributors,
       }),
       { nContributions: 0, nUniqueContributors: 0 },
     );
-  }, [qfData?.distribution]);
+
+    return { ...contributionTotals, totalAllocated, totalDonations };
+  }, [qfData]);
+
+  const totalCombined = totalAllocated + totalDonations;
 
   // Don't show if not admin or no matching pool
   if (!isAdmin || round.matchingPool <= 0) {
@@ -118,7 +138,14 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     );
   }
 
-  const totalAllocated = parseFloat(qfData.totalAllocated);
+  const sortedDistribution = [...qfData.distribution].sort((a, b) => {
+    const aMatching = parseUnits(a.matchingAmount, USD_DECIMALS);
+    const bMatching = parseUnits(b.matchingAmount, USD_DECIMALS);
+
+    if (aMatching > bMatching) return -1;
+    if (aMatching < bMatching) return 1;
+    return 0;
+  });
 
   const handleExportCsv = () => {
     if (qfData) {
@@ -163,6 +190,13 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <DollarSign className="h-3 w-3" />
+              Total Donations
+            </div>
+            <div className="font-semibold">{formatUSD(totalDonations)}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Users className="h-3 w-3" />
               Contributors
             </div>
@@ -174,6 +208,13 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
               Contributions
             </div>
             <div className="font-semibold">{nContributions}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              Total (Match + Donations)
+            </div>
+            <div className="font-semibold">{formatUSD(totalCombined)}</div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -193,6 +234,9 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                 <TableRow>
                   <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Campaign</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">
+                    Donations
+                  </TableHead>
                   <TableHead className="hidden text-right md:table-cell">
                     Contributors
                   </TableHead>
@@ -200,48 +244,53 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                     Contributions
                   </TableHead>
                   <TableHead className="text-right">Matching Amount</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">
+                    Total
+                  </TableHead>
                   <TableHead className="hidden text-right md:table-cell">
                     Share
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {qfData.distribution
-                  .sort(
-                    (a, b) =>
-                      parseFloat(b.matchingAmount) -
-                      parseFloat(a.matchingAmount),
-                  )
-                  .map((item) => {
-                    const share =
-                      totalAllocated > 0
-                        ? (parseFloat(item.matchingAmount) / totalAllocated) *
-                          100
-                        : 0;
+                {sortedDistribution.map((item) => {
+                  const matchingAmount = parseUnits(item.matchingAmount, USD_DECIMALS);
+                  const campaignDonations = parseUnits(item.totalDonations, USD_DECIMALS);
+                  const campaignTotal = matchingAmount + campaignDonations;
+                  const share =
+                    totalAllocated > 0n
+                      ? Number((matchingAmount * 10000n) / totalAllocated) / 100
+                      : 0;
 
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="hidden max-w-[120px] truncate text-sm text-muted-foreground sm:table-cell">
-                          {item.id}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate font-medium">
-                          {item.title}
-                        </TableCell>
-                        <TableCell className="hidden text-right md:table-cell">
-                          {item.nUniqueContributors}
-                        </TableCell>
-                        <TableCell className="hidden text-right md:table-cell">
-                          {item.nContributions}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatUSD(parseFloat(item.matchingAmount))}
-                        </TableCell>
-                        <TableCell className="hidden text-right md:table-cell">
-                          <Badge variant="outline">{share.toFixed(1)}%</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="hidden max-w-[120px] truncate text-sm text-muted-foreground sm:table-cell">
+                        {item.id}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate font-medium">
+                        {item.title}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {formatUSD(campaignDonations)}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {item.nUniqueContributors}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {item.nContributions}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatUSD(matchingAmount)}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {formatUSD(campaignTotal)}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        <Badge variant="outline">{share.toFixed(1)}%</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

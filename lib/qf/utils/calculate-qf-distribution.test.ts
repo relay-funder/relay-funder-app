@@ -79,6 +79,7 @@ describe('calculateQfDistribution', () => {
           {
             id: 100,
             matchingAmount: '500.063456',
+            totalDonations: '400',
             nContributions: 1,
             nUniqueContributors: 1,
             title: 'Campaign 1',
@@ -86,11 +87,13 @@ describe('calculateQfDistribution', () => {
           {
             id: 101,
             matchingAmount: '500.06',
+            totalDonations: '100',
             nContributions: 4,
             nUniqueContributors: 4,
             title: 'Campaign 2',
           },
         ],
+        totalDonations: '500',
         totalAllocated: '1000.123456',
       };
 

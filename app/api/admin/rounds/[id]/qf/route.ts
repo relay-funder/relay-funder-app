@@ -12,10 +12,10 @@ export async function GET(req: Request, { params }: RoundsWithIdParams) {
     if (!Number.isInteger(roundId)) {
       throw new ApiParameterError('Invalid round id');
     }
-    const { distribution, totalAllocated } =
+    const { distribution, totalAllocated, totalDonations } =
       await getRoundQfDistribution(roundId);
 
-    return response({ distribution, totalAllocated });
+    return response({ distribution, totalAllocated, totalDonations });
   } catch (error: unknown) {
     return handleError(error);
   }
