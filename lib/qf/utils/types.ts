@@ -59,6 +59,7 @@ export type QfRoundState = z.infer<typeof QfRoundStateSchema>;
 export const QfDistributionItemSchema = z.object({
   ...QfCampaignBaseSchema.shape,
   matchingAmount: z.string(),
+  totalDonations: z.string(),
 });
 
 export type QfDistributionItem = z.infer<typeof QfDistributionItemSchema>;
@@ -69,6 +70,7 @@ export type QfDistribution = z.infer<typeof QfDistributionSchema>;
 
 export const QfCalculationResultSchema = z.object({
   totalAllocated: z.string(),
+  totalDonations: z.string(),
   distribution: QfDistributionSchema,
 });
 
@@ -104,6 +106,7 @@ export const QfCampaignMatchingSchema = z.object({
   id: z.number(),
   title: z.string(),
   matchingAmount: z.string(),
+  totalDonations: z.string(),
   nUniqueContributors: z.number(),
   nContributions: z.number(),
 });

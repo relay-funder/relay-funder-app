@@ -74,12 +74,23 @@ export function calculateQfDistribution(
   debug && console.log(`[QF Calc]  - Token decimals: ${tokenDecimals}`);
   debug && console.log(`[QF Calc]  - Precision: ${precision}`);
 
+  const getTotalDonationsForCampaign = (campaign: {
+    aggregatedContributionsByUser: Record<number | string, string>;
+  }) => {
+    return Object.values(campaign.aggregatedContributionsByUser).reduce(
+      (sum, amount) => sum + parseUnits(amount, tokenDecimals),
+      0n,
+    );
+  };
+
   const distribution: QfDistribution = [];
 
   // Early return optimization: if only one campaign with contributions, give it all the matching pool
   if (campaigns.length === 1) {
     const campaign = campaigns[0];
     const hasContributions = campaign.nContributions > 0;
+    const totalDonations = getTotalDonationsForCampaign(campaign);
+    const totalDonationsString = formatUnits(totalDonations, tokenDecimals);
 
     if (hasContributions) {
       debug &&
@@ -95,12 +106,14 @@ export function calculateQfDistribution(
         id: campaign.id,
         title: campaign.title,
         matchingAmount,
+        totalDonations: totalDonationsString,
         nUniqueContributors: campaign.nUniqueContributors,
         nContributions: campaign.nContributions,
       });
       const totalAllocated = matchingAmount;
       return {
         totalAllocated,
+        totalDonations: totalDonationsString,
         distribution,
       };
     } else {
@@ -112,14 +125,18 @@ export function calculateQfDistribution(
         id: campaign.id,
         title: campaign.title,
         matchingAmount: '0',
+        totalDonations: totalDonationsString,
         nUniqueContributors: campaign.nUniqueContributors,
         nContributions: campaign.nContributions,
       });
-      return { totalAllocated: '0', distribution };
+      return {
+        totalAllocated: '0',
+        totalDonations: totalDonationsString,
+        distribution,
+      };
     }
   }
 
-  let totalScore = 0n;
   let totalAllocated = 0n;
 
   // Compute score per campaign based on quadratic funding formula
@@ -136,15 +153,30 @@ export function calculateQfDistribution(
         (amount) => parseUnits(amount, tokenDecimals),
       );
       const score = calculateQfScore(amounts);
+      const totalDonations = amounts.reduce((sum, amount) => sum + amount, 0n);
 
       debug &&
         console.log(
           `[QF Calc] Campaign ${id} score: ${score} (${amounts.length} contributors)`,
         );
 
-      totalScore += score;
-      return { id, title, score, nUniqueContributors, nContributions };
+      return {
+        id,
+        title,
+        score,
+        totalDonations,
+        nUniqueContributors,
+        nContributions,
+      };
     },
+  );
+  const totalScore = campaignScores.reduce(
+    (sum, campaign) => sum + campaign.score,
+    0n,
+  );
+  const grandTotalDonations = campaignScores.reduce(
+    (sum, campaign) => sum + campaign.totalDonations,
+    0n,
   );
 
   debug &&
@@ -157,16 +189,27 @@ export function calculateQfDistribution(
         `[QF Calc] No contributions found, returning zero allocations`,
       );
 
-    campaigns.forEach(({ id, title, nUniqueContributors, nContributions }) => {
+    campaignScores.forEach(({
+      id,
+      title,
+      totalDonations,
+      nUniqueContributors,
+      nContributions,
+    }) => {
       distribution.push({
         id,
         title,
         matchingAmount: '0',
+        totalDonations: formatUnits(totalDonations, tokenDecimals),
         nUniqueContributors,
         nContributions,
       });
     });
-    return { totalAllocated: '0', distribution };
+    return {
+      totalAllocated: '0',
+      totalDonations: formatUnits(grandTotalDonations, tokenDecimals),
+      distribution,
+    };
   }
 
   // Proportional allocation (integer math), rounded down per the requested precision.
@@ -174,7 +217,17 @@ export function calculateQfDistribution(
   let maxAllocation = { index: 0, matchingAmount: 0n };
 
   const preliminaryAllocations = campaignScores.map(
-    ({ id, title, score, nUniqueContributors, nContributions }, i) => {
+    (
+      {
+        id,
+        title,
+        score,
+        totalDonations,
+        nUniqueContributors,
+        nContributions,
+      },
+      i,
+    ) => {
       const amount = (matchingPool * score) / totalScore;
 
       // Apply precision rounding (truncate).
@@ -193,7 +246,14 @@ export function calculateQfDistribution(
       if (matchingAmount > maxAllocation.matchingAmount) {
         maxAllocation = { index: i, matchingAmount };
       }
-      return { id, title, matchingAmount, nUniqueContributors, nContributions };
+      return {
+        id,
+        title,
+        matchingAmount,
+        totalDonations,
+        nUniqueContributors,
+        nContributions,
+      };
     },
   );
 
@@ -214,11 +274,19 @@ export function calculateQfDistribution(
 
   // Convert to output structure, formatting units for display/API output.
   preliminaryAllocations.forEach(
-    ({ id, title, matchingAmount, nUniqueContributors, nContributions }) => {
+    ({
+      id,
+      title,
+      matchingAmount,
+      totalDonations,
+      nUniqueContributors,
+      nContributions,
+    }) => {
       distribution.push({
         id,
         title,
         matchingAmount: formatUnits(matchingAmount, tokenDecimals),
+        totalDonations: formatUnits(totalDonations, tokenDecimals),
         nUniqueContributors,
         nContributions,
       });
@@ -232,6 +300,7 @@ export function calculateQfDistribution(
     );
   return {
     totalAllocated: formatUnits(totalAllocated, tokenDecimals),
+    totalDonations: formatUnits(grandTotalDonations, tokenDecimals),
     distribution,
   };
 }

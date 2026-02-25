@@ -12,15 +12,24 @@ import {
 } from '@/components/metadata';
 import { generateOrganizationStructuredData } from '@/lib/utils/metadata';
 import { Suspense } from 'react';
+import { auth } from '@/server/auth';
 
 export const metadata: Metadata = getHomePageMetadata();
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const queryClient = getQueryClient();
+  const session = await auth();
+  const isUserAdmin = session?.user?.roles?.includes('admin') ?? false;
 
   // Prefetch campaigns, categories, and active round in parallel for instant loading
   await Promise.all([
-    prefetchCampaigns(queryClient),
+    prefetchCampaigns(queryClient, {
+      admin: isUserAdmin,
+      status: 'active',
+      pageSize: 10,
+      rounds: false,
+    }),
     prefetchActiveCategories(queryClient),
     prefetchActiveRound(queryClient),
   ]);

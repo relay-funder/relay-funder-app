@@ -174,12 +174,14 @@ export const mockedQfRoundMultipleCampaigns: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '75',
     totalAllocated: '1000',
     distribution: [
       {
         id: 1,
         title: 'Campaign 1',
         matchingAmount: '469.359675',
+        totalDonations: '35',
         nUniqueContributors: 2,
         nContributions: 3,
       },
@@ -187,6 +189,7 @@ export const mockedQfRoundMultipleCampaigns: MockedQfRound = {
         id: 2,
         title: 'Campaign 2',
         matchingAmount: '530.640325',
+        totalDonations: '40',
         nUniqueContributors: 2,
         nContributions: 2,
       },
@@ -319,12 +322,14 @@ export const mockedQfRoundSameScoreCampaigns: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '500',
     totalAllocated: '1000',
     distribution: [
       {
         id: 100,
         title: 'Campaign 1',
         matchingAmount: '500',
+        totalDonations: '400',
         nUniqueContributors: 1,
         nContributions: 1,
       },
@@ -332,6 +337,7 @@ export const mockedQfRoundSameScoreCampaigns: MockedQfRound = {
         id: 101,
         title: 'Campaign 2',
         matchingAmount: '500',
+        totalDonations: '100',
         nUniqueContributors: 4,
         nContributions: 4,
       },
@@ -413,12 +419,14 @@ export const mockedQfRoundSingleCampaign: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '35',
     totalAllocated: '1000',
     distribution: [
       {
         id: 100,
         title: 'Campaign 1',
         matchingAmount: '1000',
+        totalDonations: '35',
         nUniqueContributors: 2,
         nContributions: 3,
       },
@@ -444,12 +452,14 @@ export const mockedQfRoundDecimalPool: MockedQfRound = {
     matchingPool: '1000.123456',
   },
   distribution: {
+    totalDonations: '500',
     totalAllocated: '1000.123456',
     distribution: [
       {
         id: 100,
         title: 'Campaign 1',
         matchingAmount: '500.061728',
+        totalDonations: '400',
         nUniqueContributors: 1,
         nContributions: 1,
       },
@@ -457,6 +467,7 @@ export const mockedQfRoundDecimalPool: MockedQfRound = {
         id: 101,
         title: 'Campaign 2',
         matchingAmount: '500.061728',
+        totalDonations: '100',
         nUniqueContributors: 4,
         nContributions: 4,
       },
@@ -521,12 +532,14 @@ export const mockedQfRoundNoPayments: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '0',
     totalAllocated: '0',
     distribution: [
       {
         id: 100,
         title: 'No Payments Campaign',
         matchingAmount: '0',
+        totalDonations: '0',
         nUniqueContributors: 0,
         nContributions: 0,
       },
@@ -783,12 +796,14 @@ export const mockedQfRoundSmallContributions: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '0.000002',
     totalAllocated: '1000',
     distribution: [
       {
         id: 100,
         title: 'Small Contributions Campaign',
         matchingAmount: '1000',
+        totalDonations: '0.000002',
         nUniqueContributors: 1,
         nContributions: 2,
       },
@@ -860,12 +875,14 @@ export const mockedQfRoundLargeContributions: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '1500000.5',
     totalAllocated: '1000',
     distribution: [
       {
         id: 100,
         title: 'Large Contributions Campaign',
         matchingAmount: '1000',
+        totalDonations: '1500000.5',
         nUniqueContributors: 2,
         nContributions: 2,
       },
@@ -956,12 +973,14 @@ export const mockedQfRoundPendingPayments: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '0',
     totalAllocated: '0',
     distribution: [
       {
         id: 100,
         title: 'Pending Campaign',
         matchingAmount: '0',
+        totalDonations: '0',
         nUniqueContributors: 0,
         nContributions: 0,
       },
@@ -1049,10 +1068,12 @@ export const mockedQfRoundMixedStatus: MockedQfRound = {
     ],
   },
   distribution: {
+    totalDonations: '40',
     distribution: [
       {
         id: 100,
         matchingAmount: '1000',
+        totalDonations: '40',
         nContributions: 2,
         nUniqueContributors: 2,
         title: 'Mixed Status Campaign',

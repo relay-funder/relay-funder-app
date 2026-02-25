@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { formatUnits, parseUnits } from 'viem';
 import {
   TrendingUp,
   Users,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui';
 import { GetRoundResponseInstance } from '@/lib/api/types';
 import { formatUSD } from '@/lib/format-usd';
+import { USD_DECIMALS } from '@/lib/constant';
 import { useAdminQfRoundCalculation } from '@/lib/hooks/useAdminQfRoundCalculation';
 import { downloadQfDistributionCsv } from '@/lib/qf';
 
@@ -31,6 +33,20 @@ interface RoundQfPreviewProps {
   round: GetRoundResponseInstance;
   isAdmin: boolean;
 }
+
+type QfDistributionDisplayRow = {
+  id: number;
+  title: string;
+  nContributions: number;
+  nUniqueContributors: number;
+  matchingAmount: bigint;
+  campaignDonations: bigint;
+  campaignTotal: bigint;
+  sharePercent: number;
+};
+
+const formatUsdFromTokenUnits = (value: bigint) =>
+  formatUSD(Number(formatUnits(value, USD_DECIMALS)));
 
 export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
   const {
@@ -43,17 +59,67 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     enabled: isAdmin && round.matchingPool > 0,
   });
 
-  const { nContributions, nUniqueContributors } = useMemo(() => {
+  const {
+    nContributions,
+    nUniqueContributors,
+    totalAllocated,
+    totalDonations,
+    totalCombined,
+    sortedDistribution,
+  } = useMemo(() => {
     if (!qfData?.distribution)
-      return { nContributions: 0, nUniqueContributors: 0 };
-    return qfData.distribution.reduce(
+      return {
+        nContributions: 0,
+        nUniqueContributors: 0,
+        totalAllocated: 0n,
+        totalDonations: 0n,
+        totalCombined: 0n,
+        sortedDistribution: [] as QfDistributionDisplayRow[],
+      };
+
+    const totalAllocated = parseUnits(qfData.totalAllocated, USD_DECIMALS);
+    const totalDonations = parseUnits(qfData.totalDonations, USD_DECIMALS);
+    const totalCombined = totalAllocated + totalDonations;
+    const parsedDistribution = qfData.distribution.map((item) => {
+      const matchingAmount = parseUnits(item.matchingAmount, USD_DECIMALS);
+      const campaignDonations = parseUnits(item.totalDonations, USD_DECIMALS);
+      const campaignTotal = matchingAmount + campaignDonations;
+
+      return {
+        ...item,
+        matchingAmount,
+        campaignDonations,
+        campaignTotal,
+        sharePercent:
+          totalAllocated > 0n
+            ? Number((matchingAmount * 10000n) / totalAllocated) / 100
+            : 0,
+      };
+    });
+
+    const contributionTotals = parsedDistribution.reduce(
       (sum, item) => ({
         nContributions: sum.nContributions + item.nContributions,
-        nUniqueContributors: sum.nUniqueContributors + item.nUniqueContributors,
+        nUniqueContributors:
+          sum.nUniqueContributors + item.nUniqueContributors,
       }),
       { nContributions: 0, nUniqueContributors: 0 },
     );
-  }, [qfData?.distribution]);
+
+    return {
+      ...contributionTotals,
+      totalAllocated,
+      totalDonations,
+      totalCombined,
+      sortedDistribution: parsedDistribution.sort((a, b) =>
+        a.matchingAmount > b.matchingAmount
+          ? -1
+          : a.matchingAmount < b.matchingAmount
+            ? 1
+            : 0,
+      ),
+    };
+  }, [qfData]);
 
   // Don't show if not admin or no matching pool
   if (!isAdmin || round.matchingPool <= 0) {
@@ -118,8 +184,6 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     );
   }
 
-  const totalAllocated = parseFloat(qfData.totalAllocated);
-
   const handleExportCsv = () => {
     if (qfData) {
       downloadQfDistributionCsv(qfData, {
@@ -159,7 +223,18 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
               <DollarSign className="h-3 w-3" />
               Total Allocated
             </div>
-            <div className="font-semibold">{formatUSD(totalAllocated)}</div>
+            <div className="font-semibold">
+              {formatUsdFromTokenUnits(totalAllocated)}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <DollarSign className="h-3 w-3" />
+              Total Donations
+            </div>
+            <div className="font-semibold">
+              {formatUsdFromTokenUnits(totalDonations)}
+            </div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -174,6 +249,15 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
               Contributions
             </div>
             <div className="font-semibold">{nContributions}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              Total (Match + Donations)
+            </div>
+            <div className="font-semibold">
+              {formatUsdFromTokenUnits(totalCombined)}
+            </div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -193,6 +277,9 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                 <TableRow>
                   <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Campaign</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">
+                    Donations
+                  </TableHead>
                   <TableHead className="hidden text-right md:table-cell">
                     Contributors
                   </TableHead>
@@ -200,48 +287,47 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                     Contributions
                   </TableHead>
                   <TableHead className="text-right">Matching Amount</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">
+                    Total
+                  </TableHead>
                   <TableHead className="hidden text-right md:table-cell">
                     Share
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {qfData.distribution
-                  .sort(
-                    (a, b) =>
-                      parseFloat(b.matchingAmount) -
-                      parseFloat(a.matchingAmount),
-                  )
-                  .map((item) => {
-                    const share =
-                      totalAllocated > 0
-                        ? (parseFloat(item.matchingAmount) / totalAllocated) *
-                          100
-                        : 0;
-
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="hidden max-w-[120px] truncate text-sm text-muted-foreground sm:table-cell">
-                          {item.id}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate font-medium">
-                          {item.title}
-                        </TableCell>
-                        <TableCell className="hidden text-right md:table-cell">
-                          {item.nUniqueContributors}
-                        </TableCell>
-                        <TableCell className="hidden text-right md:table-cell">
-                          {item.nContributions}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatUSD(parseFloat(item.matchingAmount))}
-                        </TableCell>
-                        <TableCell className="hidden text-right md:table-cell">
-                          <Badge variant="outline">{share.toFixed(1)}%</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                {sortedDistribution.map((item) => {
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="hidden max-w-[120px] truncate text-sm text-muted-foreground sm:table-cell">
+                        {item.id}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate font-medium">
+                        {item.title}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {formatUsdFromTokenUnits(item.campaignDonations)}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {item.nUniqueContributors}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {item.nContributions}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatUsdFromTokenUnits(item.matchingAmount)}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        {formatUsdFromTokenUnits(item.campaignTotal)}
+                      </TableCell>
+                      <TableCell className="hidden text-right md:table-cell">
+                        <Badge variant="outline">
+                          {item.sharePercent.toFixed(1)}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

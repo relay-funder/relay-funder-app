@@ -51,6 +51,7 @@ export async function getQfCampaignMatching(
     id: campaignDistribution.id,
     title: campaignDistribution.title,
     matchingAmount: campaignDistribution.matchingAmount,
+    totalDonations: campaignDistribution.totalDonations,
     nUniqueContributors: campaignDistribution.nUniqueContributors,
     nContributions: campaignDistribution.nContributions,
   };

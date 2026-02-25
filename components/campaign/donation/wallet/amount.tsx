@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, WheelEvent } from 'react';
 import { Input, Label } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useUserProfile } from '@/lib/hooks/useProfile';
@@ -18,6 +18,13 @@ export function CampaignDonationWalletAmount() {
       setAmount(e.target.value);
     },
     [setAmount],
+  );
+
+  const handleAmountWheel = useCallback(
+    (event: WheelEvent<HTMLInputElement>) => {
+      event.preventDefault();
+    },
+    [],
   );
 
   const handleEmailChange = useCallback(
@@ -97,6 +104,7 @@ export function CampaignDonationWalletAmount() {
               type="number"
               value={amount}
               onChange={handleAmountChange}
+              onWheel={handleAmountWheel}
               placeholder="Enter amount"
               className="h-10 pr-20 text-sm"
             />

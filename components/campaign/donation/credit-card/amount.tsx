@@ -2,7 +2,7 @@ import { Input } from '@/components/ui';
 import { CampaignDonationSuggestions } from '../suggestions';
 import { useDonationContext } from '@/contexts';
 import { useCallback } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, WheelEvent } from 'react';
 
 export function CampaignDonationCreditCardAmount() {
   const { amount, setAmount } = useDonationContext();
@@ -12,6 +12,13 @@ export function CampaignDonationCreditCardAmount() {
       setAmount(e.target.value);
     },
     [setAmount],
+  );
+
+  const handleAmountWheel = useCallback(
+    (event: WheelEvent<HTMLInputElement>) => {
+      event.preventDefault();
+    },
+    [],
   );
 
   return (
@@ -28,6 +35,7 @@ export function CampaignDonationCreditCardAmount() {
             type="number"
             value={amount}
             onChange={handleAmountChange}
+            onWheel={handleAmountWheel}
             className="ml-1 rounded-l-none border-0"
           />
           <div className="flex items-center px-3 text-sm text-muted-foreground">
