@@ -137,9 +137,7 @@ export function calculateQfDistribution(
     }
   }
 
-  let totalScore = 0n;
   let totalAllocated = 0n;
-  let grandTotalDonations = 0n;
 
   // Compute score per campaign based on quadratic funding formula
   // score = (sum of sqrt(user contributions))^2
@@ -156,14 +154,12 @@ export function calculateQfDistribution(
       );
       const score = calculateQfScore(amounts);
       const totalDonations = amounts.reduce((sum, amount) => sum + amount, 0n);
-      grandTotalDonations += totalDonations;
 
       debug &&
         console.log(
           `[QF Calc] Campaign ${id} score: ${score} (${amounts.length} contributors)`,
         );
 
-      totalScore += score;
       return {
         id,
         title,
@@ -173,6 +169,14 @@ export function calculateQfDistribution(
         nContributions,
       };
     },
+  );
+  const totalScore = campaignScores.reduce(
+    (sum, campaign) => sum + campaign.score,
+    0n,
+  );
+  const grandTotalDonations = campaignScores.reduce(
+    (sum, campaign) => sum + campaign.totalDonations,
+    0n,
   );
 
   debug &&

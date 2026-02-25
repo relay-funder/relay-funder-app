@@ -65,8 +65,17 @@ async function fetchCampaignPage({
   status = 'active',
   rounds = false,
   pageSize = 10,
+  admin = false,
 }) {
-  const url = `/api/campaigns?status=${status}&page=${pageParam}&pageSize=${pageSize}&rounds=${rounds}`;
+  const params = new URLSearchParams({
+    page: pageParam.toString(),
+    pageSize: pageSize.toString(),
+    rounds: rounds.toString(),
+    admin: admin.toString(),
+    status,
+  });
+
+  const url = `/api/campaigns?${params.toString()}`;
   const response = await fetch(url);
   await handleApiErrors(response, 'Failed to fetch campaigns');
   const data = await response.json();
@@ -333,15 +342,24 @@ export function useInfiniteCampaigns(
   status = 'active',
   pageSize = 10,
   rounds = false,
+  admin = false,
 ) {
   return useInfiniteQuery<PaginatedCampaignResponse, Error>({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize, rounds],
+    queryKey: [
+      CAMPAIGNS_QUERY_KEY,
+      'infinite',
+      admin,
+      status,
+      pageSize,
+      rounds,
+    ],
     queryFn: ({ pageParam = 1 }) =>
       fetchCampaignPage({
         pageParam: pageParam as number,
         status,
         pageSize,
         rounds,
+        admin,
       }),
     getNextPageParam: (lastPage: PaginatedCampaignResponse) => {
       return lastPage.pagination.hasMore

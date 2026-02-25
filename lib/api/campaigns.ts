@@ -436,7 +436,14 @@ export async function prefetchCampaigns(
     options;
 
   return queryClient.prefetchInfiniteQuery({
-    queryKey: [CAMPAIGNS_QUERY_KEY, 'infinite', status, pageSize, rounds],
+    queryKey: [
+      CAMPAIGNS_QUERY_KEY,
+      'infinite',
+      admin,
+      status,
+      pageSize,
+      rounds,
+    ],
     initialPageParam: 1,
     queryFn: () =>
       listCampaigns({

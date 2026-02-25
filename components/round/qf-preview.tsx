@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { parseUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import {
   TrendingUp,
   Users,
@@ -34,6 +34,20 @@ interface RoundQfPreviewProps {
   isAdmin: boolean;
 }
 
+type QfDistributionDisplayRow = {
+  id: number;
+  title: string;
+  nContributions: number;
+  nUniqueContributors: number;
+  matchingAmount: bigint;
+  campaignDonations: bigint;
+  campaignTotal: bigint;
+  sharePercent: number;
+};
+
+const formatUsdFromTokenUnits = (value: bigint) =>
+  formatUSD(Number(formatUnits(value, USD_DECIMALS)));
+
 export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
   const {
     data: qfData,
@@ -50,6 +64,8 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     nUniqueContributors,
     totalAllocated,
     totalDonations,
+    totalCombined,
+    sortedDistribution,
   } = useMemo(() => {
     if (!qfData?.distribution)
       return {
@@ -57,23 +73,53 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
         nUniqueContributors: 0,
         totalAllocated: 0n,
         totalDonations: 0n,
+        totalCombined: 0n,
+        sortedDistribution: [] as QfDistributionDisplayRow[],
       };
 
     const totalAllocated = parseUnits(qfData.totalAllocated, USD_DECIMALS);
     const totalDonations = parseUnits(qfData.totalDonations, USD_DECIMALS);
+    const totalCombined = totalAllocated + totalDonations;
+    const parsedDistribution = qfData.distribution.map((item) => {
+      const matchingAmount = parseUnits(item.matchingAmount, USD_DECIMALS);
+      const campaignDonations = parseUnits(item.totalDonations, USD_DECIMALS);
+      const campaignTotal = matchingAmount + campaignDonations;
 
-    const contributionTotals = qfData.distribution.reduce(
+      return {
+        ...item,
+        matchingAmount,
+        campaignDonations,
+        campaignTotal,
+        sharePercent:
+          totalAllocated > 0n
+            ? Number((matchingAmount * 10000n) / totalAllocated) / 100
+            : 0,
+      };
+    });
+
+    const contributionTotals = parsedDistribution.reduce(
       (sum, item) => ({
         nContributions: sum.nContributions + item.nContributions,
-        nUniqueContributors: sum.nUniqueContributors + item.nUniqueContributors,
+        nUniqueContributors:
+          sum.nUniqueContributors + item.nUniqueContributors,
       }),
       { nContributions: 0, nUniqueContributors: 0 },
     );
 
-    return { ...contributionTotals, totalAllocated, totalDonations };
+    return {
+      ...contributionTotals,
+      totalAllocated,
+      totalDonations,
+      totalCombined,
+      sortedDistribution: parsedDistribution.sort((a, b) =>
+        a.matchingAmount > b.matchingAmount
+          ? -1
+          : a.matchingAmount < b.matchingAmount
+            ? 1
+            : 0,
+      ),
+    };
   }, [qfData]);
-
-  const totalCombined = totalAllocated + totalDonations;
 
   // Don't show if not admin or no matching pool
   if (!isAdmin || round.matchingPool <= 0) {
@@ -138,15 +184,6 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     );
   }
 
-  const sortedDistribution = [...qfData.distribution].sort((a, b) => {
-    const aMatching = parseUnits(a.matchingAmount, USD_DECIMALS);
-    const bMatching = parseUnits(b.matchingAmount, USD_DECIMALS);
-
-    if (aMatching > bMatching) return -1;
-    if (aMatching < bMatching) return 1;
-    return 0;
-  });
-
   const handleExportCsv = () => {
     if (qfData) {
       downloadQfDistributionCsv(qfData, {
@@ -186,14 +223,18 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
               <DollarSign className="h-3 w-3" />
               Total Allocated
             </div>
-            <div className="font-semibold">{formatUSD(totalAllocated)}</div>
+            <div className="font-semibold">
+              {formatUsdFromTokenUnits(totalAllocated)}
+            </div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <DollarSign className="h-3 w-3" />
               Total Donations
             </div>
-            <div className="font-semibold">{formatUSD(totalDonations)}</div>
+            <div className="font-semibold">
+              {formatUsdFromTokenUnits(totalDonations)}
+            </div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -214,7 +255,9 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
               <TrendingUp className="h-3 w-3" />
               Total (Match + Donations)
             </div>
-            <div className="font-semibold">{formatUSD(totalCombined)}</div>
+            <div className="font-semibold">
+              {formatUsdFromTokenUnits(totalCombined)}
+            </div>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -254,14 +297,6 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
               </TableHeader>
               <TableBody>
                 {sortedDistribution.map((item) => {
-                  const matchingAmount = parseUnits(item.matchingAmount, USD_DECIMALS);
-                  const campaignDonations = parseUnits(item.totalDonations, USD_DECIMALS);
-                  const campaignTotal = matchingAmount + campaignDonations;
-                  const share =
-                    totalAllocated > 0n
-                      ? Number((matchingAmount * 10000n) / totalAllocated) / 100
-                      : 0;
-
                   return (
                     <TableRow key={item.id}>
                       <TableCell className="hidden max-w-[120px] truncate text-sm text-muted-foreground sm:table-cell">
@@ -271,7 +306,7 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                         {item.title}
                       </TableCell>
                       <TableCell className="hidden text-right md:table-cell">
-                        {formatUSD(campaignDonations)}
+                        {formatUsdFromTokenUnits(item.campaignDonations)}
                       </TableCell>
                       <TableCell className="hidden text-right md:table-cell">
                         {item.nUniqueContributors}
@@ -280,13 +315,15 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                         {item.nContributions}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        {formatUSD(matchingAmount)}
+                        {formatUsdFromTokenUnits(item.matchingAmount)}
                       </TableCell>
                       <TableCell className="hidden text-right md:table-cell">
-                        {formatUSD(campaignTotal)}
+                        {formatUsdFromTokenUnits(item.campaignTotal)}
                       </TableCell>
                       <TableCell className="hidden text-right md:table-cell">
-                        <Badge variant="outline">{share.toFixed(1)}%</Badge>
+                        <Badge variant="outline">
+                          {item.sharePercent.toFixed(1)}%
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   );
