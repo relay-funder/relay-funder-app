@@ -7,6 +7,7 @@ import {
   DAIMO_PAY_CHAIN_ID,
   DAIMO_PAY_CHAIN_NAME,
 } from '@/lib/constant/daimo';
+import { daimoPayChains } from '@/lib/web3/config/chains';
 
 /**
  * Daimo Pay configuration with token selection based on USD_TOKEN
@@ -19,7 +20,10 @@ export interface DaimoPayConfig {
   tokenSymbol: string;
   isValid: boolean;
   tokenMismatchWarning?: string;
+  supportedSourceChainIds: number[];
 }
+
+const SUPPORTED_SOURCE_CHAIN_IDS = daimoPayChains.map((chain) => chain.id);
 
 /**
  * Get Daimo Pay configuration - uses USDT if USD_TOKEN=USDT, otherwise USDC
@@ -74,5 +78,6 @@ export function getDaimoPayConfig(): DaimoPayConfig {
     tokenSymbol,
     isValid: isTokenValid && isChainValid,
     tokenMismatchWarning,
+    supportedSourceChainIds: SUPPORTED_SOURCE_CHAIN_IDS,
   };
 }
