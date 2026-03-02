@@ -1,3 +1,27 @@
+const BLOCKED_CALLBACK_DOMAIN_PATTERNS =
+  process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map((p) =>
+    p.trim(),
+  ) || [];
+
+function isBlockedDomainMatch(domain: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => {
+    if (!pattern) {
+      return false;
+    }
+
+    if (pattern.includes('*')) {
+      const escapedPattern = pattern
+        .split('*')
+        .map((chunk) => chunk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*');
+      const regex = new RegExp(`^${escapedPattern}$`);
+      return regex.test(domain);
+    }
+
+    return domain === pattern || domain.endsWith(`.${pattern}`);
+  });
+}
+
 export function loginCallbackUrl() {
   if (
     typeof window === 'undefined' ||
@@ -31,21 +55,11 @@ export function loginCallbackUrl() {
     const callbackDomain = new URL(paramCallbackUrl).hostname;
     const currentDomain = window.location.hostname;
 
-    // Get domain patterns from environment variable
-    const blockPatterns =
-      process.env.NEXT_PUBLIC_BLOCK_EXTERNAL_CALLBACK_DOMAINS?.split(',').map(
-        (p) => p.trim(),
-      ) || [];
-
     if (currentDomain !== callbackDomain) {
-      const shouldBlock = blockPatterns.some((pattern) => {
-        // Support wildcards and exact matches
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(currentDomain);
-        }
-        return currentDomain.includes(pattern);
-      });
+      const shouldBlock = isBlockedDomainMatch(
+        currentDomain,
+        BLOCKED_CALLBACK_DOMAIN_PATTERNS,
+      );
 
       if (shouldBlock) {
         console.warn(

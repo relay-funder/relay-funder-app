@@ -16,7 +16,7 @@ export type UserAddress = z.infer<typeof UserAddressSchema>;
 export const UserAddressTestSchema = z
   .string()
   .startsWith('0x', '(test)Address must start with 0x');
-export type UserAddressTest = z.infer<typeof UserAddressSchema>;
+export type UserAddressTest = z.infer<typeof UserAddressTestSchema>;
 
 const QfCampaignBaseSchema = z.object({
   id: z.number(),
