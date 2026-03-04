@@ -118,6 +118,8 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
               title={round.title}
               description={round.description}
               logoUrl={round.media?.[0]?.url}
+              startTime={round.startTime}
+              endTime={round.endTime}
               sponsor={roundView.sponsor}
               matchingPool={round.matchingPool}
               totalDonations={roundView.totalDonations}
@@ -141,10 +143,21 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
   );
 }
 
+function formatCategoryLabel(category: string): string {
+  return category
+    .split('-')
+    .map((word) =>
+      word.length > 0 ? `${word[0].toUpperCase()}${word.slice(1)}` : word,
+    )
+    .join(' ');
+}
+
 function RoundHeaderSection({
   title,
   description,
   logoUrl,
+  startTime,
+  endTime,
   sponsor,
   matchingPool,
   totalDonations,
@@ -155,6 +168,8 @@ function RoundHeaderSection({
   title: string;
   description: string;
   logoUrl: string | undefined;
+  startTime: string;
+  endTime: string;
   sponsor: {
     name: string;
     logo: string;
@@ -183,6 +198,7 @@ function RoundHeaderSection({
   const hasSponsorLogo =
     typeof sponsor.logo === 'string' && sponsor.logo.length > 0;
   const hasRoundLogo = typeof logoUrl === 'string' && logoUrl.length > 0;
+  const roundPeriodLabel = `${new Date(startTime).toLocaleDateString()} - ${new Date(endTime).toLocaleDateString()}`;
 
   return (
     <Card className="bg-card">
@@ -211,6 +227,7 @@ function RoundHeaderSection({
 
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-foreground">Round Sponsor: {sponsor.name}</h2>
+            <p className="text-sm text-muted-foreground">Round Period: {roundPeriodLabel}</p>
             {hasSponsorWebsite && (
               <a
                 href={sponsor.website}
@@ -261,21 +278,32 @@ function RoundHeaderSection({
           </h3>
           <div className="grid gap-4 lg:grid-cols-[240px_1fr] lg:items-center">
             <SimplePieChart categories={categories} />
-            <div className="grid gap-2 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               {categories.map((category, index) => {
                 const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
                 return (
                 <div
                   key={category.category}
-                  className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
+                  className="rounded-lg border border-border bg-muted/20 p-3"
                 >
-                  <span
-                    className="mr-2 inline-block h-3 w-3 rounded-full align-middle ring-1 ring-border"
-                    style={{ backgroundColor: categoryColor }}
-                  />
-                  {category.category} - {category.campaignCount}{' '}
-                  {category.campaignCount === 1 ? 'campaign' : 'campaigns'} (
-                  {category.percentage.toFixed(1)}%)
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-3 w-3 rounded-full ring-1 ring-border"
+                      style={{ backgroundColor: categoryColor }}
+                    />
+                    <p className="text-sm font-medium text-foreground">
+                      {formatCategoryLabel(category.category)}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-full border border-border px-2 py-0.5">
+                      {category.campaignCount}{' '}
+                      {category.campaignCount === 1 ? 'Campaign' : 'Campaigns'}
+                    </span>
+                    <span className="rounded-full border border-border px-2 py-0.5">
+                      {category.percentage.toFixed(1)}% Share
+                    </span>
+                  </div>
                 </div>
                 );
               })}
@@ -497,7 +525,6 @@ function RoundCampaignTableSection({
                 <TableHead>Round Partner</TableHead>
                 <TableHead className="text-right">Donations</TableHead>
                 <TableHead className="text-right">Contributors</TableHead>
-                <TableHead className="text-right">Contributions</TableHead>
                 <TableHead className="text-right">Matching Amount</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Share</TableHead>
@@ -552,9 +579,6 @@ function RoundCampaignTableSection({
                   </TableCell>
                   <TableCell className="text-right">
                     {campaign.contributors.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {campaign.contributions.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right">
                     {formatUSD(campaign.matchFunding)}

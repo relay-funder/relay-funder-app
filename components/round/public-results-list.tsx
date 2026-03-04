@@ -162,21 +162,34 @@ export function PublicRoundResultsList() {
                     </h3>
                     <div className="grid gap-4 lg:grid-cols-[240px_1fr] lg:items-center">
                       <SimplePieChart categories={roundView.categories} />
-                      <div className="grid gap-2 md:grid-cols-2">
+                      <div className="grid gap-3 md:grid-cols-2">
                         {roundView.categories.map((category, index) => {
                           const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
                           return (
                           <div
                             key={`${round.id}-${category.category}`}
-                            className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
+                            className="rounded-lg border border-border bg-muted/20 p-3"
                           >
-                            <span
-                              className="mr-2 inline-block h-2.5 w-2.5 rounded-full align-middle"
-                              style={{ backgroundColor: categoryColor }}
-                            />
-                            {category.category} - {category.campaignCount}{' '}
-                            {category.campaignCount === 1 ? 'campaign' : 'campaigns'} (
-                            {category.percentage.toFixed(1)}%)
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-block h-3 w-3 rounded-full ring-1 ring-border"
+                                style={{ backgroundColor: categoryColor }}
+                              />
+                              <p className="text-sm font-medium text-foreground">
+                                {formatCategoryLabel(category.category)}
+                              </p>
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span className="rounded-full border border-border px-2 py-0.5">
+                                {category.campaignCount}{' '}
+                                {category.campaignCount === 1
+                                  ? 'Campaign'
+                                  : 'Campaigns'}
+                              </span>
+                              <span className="rounded-full border border-border px-2 py-0.5">
+                                {category.percentage.toFixed(1)}% Share
+                              </span>
+                            </div>
                           </div>
                           );
                         })}
@@ -191,6 +204,15 @@ export function PublicRoundResultsList() {
       </div>
     </PageLayout>
   );
+}
+
+function formatCategoryLabel(category: string): string {
+  return category
+    .split('-')
+    .map((word) =>
+      word.length > 0 ? `${word[0].toUpperCase()}${word.slice(1)}` : word,
+    )
+    .join(' ');
 }
 
 const PIE_COLORS = [

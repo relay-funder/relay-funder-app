@@ -72,7 +72,7 @@ export const ROUND_RESULTS_PARTNERS: RoundResultsPartner[] = [
     id: 'vulnerable-ugandan-communities',
     name: 'Vulnerable Ugandan Communities',
     logo: '/images/logo-vuc.jpg',
-    website: 'https://www.vuc-uganda.org',
+    website: 'https://x.com/Save_Vuc',
     description:
       'A Ugandan nonprofit supporting marginalized populations through economic empowerment, education, healthcare access, advocacy, and broader community development initiatives.',
   },
