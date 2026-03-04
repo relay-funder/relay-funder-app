@@ -31,7 +31,7 @@ export const ROUND_RESULTS_PARTNERS: RoundResultsPartner[] = [
   {
     id: 'refunite',
     name: 'REFUNITE',
-    logo: '/images/logo-refunite.webp',
+    logo: '/images/logo-refunite.svg',
     website: 'https://refunite.org',
     description:
       'A global nonprofit and digital platform that helps refugees and displaced people reconnect with missing family members through secure mobile and online tools, operating across multiple countries.',

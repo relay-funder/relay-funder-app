@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="REFUNITE logo">
+  <g fill="#14A5E5">
+    <ellipse cx="78" cy="55" rx="16" ry="32" transform="rotate(-22 78 55)" />
+    <ellipse cx="62" cy="96" rx="20" ry="34" transform="rotate(-62 62 96)" />
+    <ellipse cx="71" cy="151" rx="20" ry="34" transform="rotate(-24 71 151)" />
+    <ellipse cx="99" cy="128" rx="16" ry="31" transform="rotate(8 99 128)" />
+
+    <ellipse cx="178" cy="55" rx="16" ry="32" transform="rotate(22 178 55)" />
+    <ellipse cx="194" cy="96" rx="20" ry="34" transform="rotate(62 194 96)" />
+    <ellipse cx="185" cy="151" rx="20" ry="34" transform="rotate(24 185 151)" />
+    <ellipse cx="157" cy="128" rx="16" ry="31" transform="rotate(-8 157 128)" />
+  </g>
+</svg>
