@@ -167,6 +167,12 @@ function RoundHeaderSection({
   campaignsCount: number;
   categories: Array<{ category: string; campaignCount: number; percentage: number }>;
 }) {
+  const hasSponsorWebsite =
+    typeof sponsor.website === 'string' && sponsor.website.length > 0;
+  const hasDistinctSponsorDescription =
+    sponsor.description.trim().length > 0 &&
+    sponsor.description.trim() !== description.trim();
+
   return (
     <Card className="bg-card">
       <CardContent className="space-y-6 p-6">
@@ -187,23 +193,27 @@ function RoundHeaderSection({
             <h2 className="text-2xl font-bold text-foreground">
               Round Sponsor - {sponsor.name}
             </h2>
-            <a
-              href={sponsor.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              onClick={() =>
-                trackEvent('funnel_cta_click', {
-                  source: 'round_sponsor_link',
-                  path: sponsor.website,
-                })
-              }
-            >
-              Visit sponsor
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            {hasSponsorWebsite && (
+              <a
+                href={sponsor.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                onClick={() =>
+                  trackEvent('funnel_cta_click', {
+                    source: 'round_sponsor_link',
+                    path: sponsor.website,
+                  })
+                }
+              >
+                Visit sponsor
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
             <h3 className="text-sm font-medium text-foreground">About this round</h3>
-            <p className="text-sm text-muted-foreground">{sponsor.description}</p>
+            {hasDistinctSponsorDescription && (
+              <p className="text-sm text-muted-foreground">{sponsor.description}</p>
+            )}
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>

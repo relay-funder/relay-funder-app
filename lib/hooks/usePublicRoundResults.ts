@@ -15,12 +15,14 @@ interface PaginatedRoundsResponse {
   };
 }
 
+const MAX_ROUNDS_PAGES = 50;
+
 async function fetchPublicRoundResults(): Promise<GetRoundResponseInstance[]> {
   const allRounds: GetRoundResponseInstance[] = [];
   let currentPage = 1;
   let hasMore = true;
 
-  while (hasMore) {
+  while (hasMore && currentPage <= MAX_ROUNDS_PAGES) {
     const response = await fetch(
       `/api/rounds?page=${currentPage}&pageSize=10&forceUserView=true`,
     );
@@ -64,4 +66,3 @@ export function usePublicRoundResult(roundId: number) {
     enabled: Number.isFinite(roundId) && roundId > 0,
   });
 }
-

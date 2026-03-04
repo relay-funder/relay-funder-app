@@ -13,7 +13,7 @@ export default async function RoundPage({
 }) {
   const { id: paramId } = await params;
   const roundId = Number.parseInt(paramId, 10);
-  if (Number.isNaN(roundId)) {
+  if (Number.isNaN(roundId) || roundId <= 0) {
     notFound();
   }
 

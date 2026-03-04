@@ -61,6 +61,34 @@ export interface RoundResultsView {
   grandTotal: number;
 }
 
+function isCeloPrezentiRound(round: GetRoundResponseInstance): boolean {
+  const normalizedRoundTitle = normalizeCampaignName(round.title);
+  return (
+    normalizedRoundTitle.includes('prezenti') &&
+    normalizedRoundTitle.includes('celo')
+  );
+}
+
+function buildRoundSponsor(
+  round: GetRoundResponseInstance,
+  useStaticBindings: boolean,
+): RoundResultsSponsor {
+  if (useStaticBindings) {
+    return CELO_PREZENTI_SPONSOR;
+  }
+
+  const sponsorLogo = round.media?.[0]?.url ?? '';
+  const sponsorWebsite =
+    typeof round.descriptionUrl === 'string' ? round.descriptionUrl : '';
+
+  return {
+    name: round.title,
+    logo: sponsorLogo,
+    description: round.description,
+    website: sponsorWebsite,
+  };
+}
+
 function parseApprovedResult(
   round: GetRoundResponseInstance,
 ): ResultReport | null {
@@ -198,8 +226,13 @@ export function buildRoundResultsView(
   round: GetRoundResponseInstance,
 ): RoundResultsView {
   const report = parseApprovedResult(round);
-  const campaignPartnerLookup = buildCampaignPartnerLookup();
-  const partnerLookup = buildPartnerLookup();
+  const useStaticBindings = isCeloPrezentiRound(round);
+  const campaignPartnerLookup = useStaticBindings
+    ? buildCampaignPartnerLookup()
+    : new Map<string, string>();
+  const partnerLookup = useStaticBindings
+    ? buildPartnerLookup()
+    : new Map<string, RoundResultsPartner>();
 
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();
   const campaignsByCampaignId = new Map<number, CampaignDistribution>();
@@ -237,9 +270,11 @@ export function buildRoundResultsView(
     const total = donations + matchFunding;
     const category = roundCampaign.campaign?.category || 'Uncategorized';
     const partnerId =
-      campaignPartnerLookup.get(
-        normalizeCampaignName(roundCampaign.campaign?.title || ''),
-      ) ||
+      (useStaticBindings
+        ? campaignPartnerLookup.get(
+            normalizeCampaignName(roundCampaign.campaign?.title || ''),
+          )
+        : undefined) ||
       roundCampaign.campaign?.creatorAddress ||
       'unknown';
 
@@ -333,7 +368,7 @@ export function buildRoundResultsView(
     totalDonations,
     contributorsCount,
     campaignsCount,
-    sponsor: CELO_PREZENTI_SPONSOR,
+    sponsor: buildRoundSponsor(round, useStaticBindings),
     categories,
     partners,
     campaigns: campaignsWithShare.sort((a, b) => b.total - a.total),

@@ -24,6 +24,8 @@ interface PaginatedRoundsResponse extends PaginatedResponse {
   rounds: GetRoundResponseInstance[];
 }
 
+const MAX_ROUNDS_PAGES = 50;
+
 async function fetchRounds(status?: string) {
   const url = status ? `/api/rounds?status=${status}` : '/api/rounds';
   const response = await fetch(url);
@@ -264,7 +266,7 @@ async function fetchLatestCompletedRound() {
   let currentPage = 1;
   let hasMore = true;
 
-  while (hasMore) {
+  while (hasMore && currentPage <= MAX_ROUNDS_PAGES) {
     const response = await fetch(
       `/api/rounds?page=${currentPage}&pageSize=10&forceUserView=true`,
     );
