@@ -9,6 +9,7 @@ export interface RoundResultsPartner {
 export interface RoundResultsCampaignBinding {
   name: string;
   partnerId: string;
+  partner?: RoundResultsPartner;
 }
 
 export interface RoundResultsSponsor {
@@ -77,7 +78,13 @@ export const ROUND_RESULTS_PARTNERS: RoundResultsPartner[] = [
   },
 ];
 
-export const ROUND_RESULTS_CAMPAIGN_BINDINGS: RoundResultsCampaignBinding[] = [
+const ROUND_RESULTS_PARTNER_LOOKUP = new Map<string, RoundResultsPartner>(
+  ROUND_RESULTS_PARTNERS.map((partner) => [partner.id, partner]),
+);
+
+const ROUND_RESULTS_CAMPAIGN_BINDINGS_BASE: Array<
+  Omit<RoundResultsCampaignBinding, 'partner'>
+> = [
   {
     name: 'From Ideas to Income: SINA Loketa Entrepreneurship Program 2026 Cohort',
     partnerId: 'sina-loketa',
@@ -176,3 +183,8 @@ export const ROUND_RESULTS_CAMPAIGN_BINDINGS: RoundResultsCampaignBinding[] = [
   },
 ];
 
+export const ROUND_RESULTS_CAMPAIGN_BINDINGS: RoundResultsCampaignBinding[] =
+  ROUND_RESULTS_CAMPAIGN_BINDINGS_BASE.map((binding) => ({
+    ...binding,
+    partner: ROUND_RESULTS_PARTNER_LOOKUP.get(binding.partnerId),
+  }));

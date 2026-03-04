@@ -11,7 +11,6 @@ import { computeResultReportFromCsv, computeResultReportFromJson } from '@/lib/q
 import {
   CELO_PREZENTI_SPONSOR,
   ROUND_RESULTS_CAMPAIGN_BINDINGS,
-  ROUND_RESULTS_PARTNERS,
   type RoundResultsPartner,
   type RoundResultsSponsor,
 } from '@/lib/constant/round-results-partners';
@@ -59,6 +58,18 @@ export interface RoundResultsView {
   partners: RoundPartnerItem[];
   campaigns: RoundCampaignResultItem[];
   grandTotal: number;
+}
+
+interface CampaignPartnerBinding {
+  normalizedName: string;
+  partnerId: string;
+  tokens: string[];
+  partner?: RoundResultsPartner;
+}
+
+interface CampaignPartnerLookup {
+  exactByNormalizedName: Map<string, CampaignPartnerBinding>;
+  bindings: CampaignPartnerBinding[];
 }
 
 function isCeloPrezentiRound(round: GetRoundResponseInstance): boolean {
@@ -145,36 +156,182 @@ function parseApprovedResult(
   return null;
 }
 
-function toShortAddress(address: string): string {
-  if (!address || address.length < 12) {
-    return address;
-  }
-
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
 function normalizeCampaignName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function buildCampaignPartnerLookup(): Map<string, string> {
-  const map = new Map<string, string>();
-
-  ROUND_RESULTS_CAMPAIGN_BINDINGS.forEach((binding) => {
-    map.set(normalizeCampaignName(binding.name), binding.partnerId);
-  });
-
-  return map;
+function tokenizeCampaignName(name: string): string[] {
+  return Array.from(
+    new Set(
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter((token) => token.length >= 4),
+    ),
+  );
 }
 
-function buildPartnerLookup(): Map<string, RoundResultsPartner> {
-  const map = new Map<string, RoundResultsPartner>();
+function calculateTokenOverlap(left: string[], right: string[]): number {
+  if (left.length === 0 || right.length === 0) {
+    return 0;
+  }
 
-  ROUND_RESULTS_PARTNERS.forEach((partner) => {
-    map.set(partner.id, partner);
+  const rightTokens = new Set(right);
+  const matches = left.filter((token) => rightTokens.has(token)).length;
+  return matches / Math.max(left.length, right.length);
+}
+
+function createBigrams(value: string): string[] {
+  if (value.length < 2) {
+    return [value];
+  }
+
+  const bigrams: string[] = [];
+  for (let index = 0; index < value.length - 1; index += 1) {
+    bigrams.push(value.slice(index, index + 2));
+  }
+
+  return bigrams;
+}
+
+function calculateBigramSimilarity(left: string, right: string): number {
+  if (!left || !right) {
+    return 0;
+  }
+
+  if (left === right) {
+    return 1;
+  }
+
+  const leftBigrams = createBigrams(left);
+  const rightBigrams = createBigrams(right);
+  const rightCounts = new Map<string, number>();
+
+  rightBigrams.forEach((bigram) => {
+    rightCounts.set(bigram, (rightCounts.get(bigram) ?? 0) + 1);
   });
 
-  return map;
+  let intersection = 0;
+  leftBigrams.forEach((bigram) => {
+    const current = rightCounts.get(bigram) ?? 0;
+    if (current > 0) {
+      intersection += 1;
+      rightCounts.set(bigram, current - 1);
+    }
+  });
+
+  return (2 * intersection) / (leftBigrams.length + rightBigrams.length);
+}
+
+function buildCampaignPartnerLookup(): CampaignPartnerLookup {
+  const exactByNormalizedName = new Map<string, CampaignPartnerBinding>();
+  const bindings: CampaignPartnerBinding[] = ROUND_RESULTS_CAMPAIGN_BINDINGS.map(
+    (binding) => {
+      const normalizedName = normalizeCampaignName(binding.name);
+      const bindingWithMetadata: CampaignPartnerBinding = {
+        normalizedName,
+        partnerId: binding.partnerId,
+        tokens: tokenizeCampaignName(binding.name),
+        partner: binding.partner,
+      };
+
+      exactByNormalizedName.set(normalizedName, bindingWithMetadata);
+
+      return bindingWithMetadata;
+    },
+  );
+
+  return {
+    exactByNormalizedName,
+    bindings,
+  };
+}
+
+function resolveCampaignPartnerId(
+  campaignName: string,
+  lookup: CampaignPartnerLookup,
+): CampaignPartnerBinding | undefined {
+  const normalizedName = normalizeCampaignName(campaignName);
+  if (normalizedName.length === 0) {
+    return undefined;
+  }
+
+  const exactMatch = lookup.exactByNormalizedName.get(normalizedName);
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  const campaignTokens = tokenizeCampaignName(campaignName);
+
+  let bestCandidate: {
+    binding: CampaignPartnerBinding;
+    combinedScore: number;
+    tokenScore: number;
+  } | null = null;
+
+  lookup.bindings.forEach((binding) => {
+    const tokenScore = calculateTokenOverlap(campaignTokens, binding.tokens);
+    const bigramScore = calculateBigramSimilarity(
+      normalizedName,
+      binding.normalizedName,
+    );
+    const combinedScore = bigramScore * 0.75 + tokenScore * 0.25;
+
+    if (!bestCandidate || combinedScore > bestCandidate.combinedScore) {
+      bestCandidate = {
+        binding,
+        combinedScore,
+        tokenScore,
+      };
+    }
+  });
+
+  if (!bestCandidate) {
+    return undefined;
+  }
+
+  const meetsSimilarityThreshold = bestCandidate.combinedScore >= 0.52;
+  const meetsTokenThreshold =
+    bestCandidate.tokenScore >= 0.2 || campaignTokens.length <= 2;
+
+  if (!meetsSimilarityThreshold || !meetsTokenThreshold) {
+    return undefined;
+  }
+
+  return bestCandidate.binding;
+}
+
+function shouldUseStaticPartnerBindings(
+  round: GetRoundResponseInstance,
+  lookup: CampaignPartnerLookup,
+): boolean {
+  if (isCeloPrezentiRound(round)) {
+    return true;
+  }
+
+  const roundCampaigns = round.roundCampaigns ?? [];
+  if (roundCampaigns.length === 0) {
+    return false;
+  }
+
+  const matchedCampaigns = roundCampaigns.reduce((matchedCount, roundCampaign) => {
+    const campaignName = roundCampaign.campaign?.title;
+    if (!campaignName) {
+      return matchedCount;
+    }
+
+    return resolveCampaignPartnerId(campaignName, lookup)
+      ? matchedCount + 1
+      : matchedCount;
+  }, 0);
+
+  if (matchedCampaigns < 2) {
+    return false;
+  }
+
+  return matchedCampaigns / roundCampaigns.length >= 0.35;
 }
 
 function findReportCampaign(
@@ -241,13 +398,12 @@ export function buildRoundResultsView(
   round: GetRoundResponseInstance,
 ): RoundResultsView {
   const report = parseApprovedResult(round);
-  const useStaticBindings = isCeloPrezentiRound(round);
-  const campaignPartnerLookup = useStaticBindings
-    ? buildCampaignPartnerLookup()
-    : new Map<string, string>();
-  const partnerLookup = useStaticBindings
-    ? buildPartnerLookup()
-    : new Map<string, RoundResultsPartner>();
+  const campaignPartnerLookup = buildCampaignPartnerLookup();
+  const useStaticBindings = shouldUseStaticPartnerBindings(
+    round,
+    campaignPartnerLookup,
+  );
+  const boundPartnerLookup = new Map<string, RoundResultsPartner>();
 
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();
   const campaignsByCampaignId = new Map<number, CampaignDistribution>();
@@ -284,14 +440,17 @@ export function buildRoundResultsView(
       : roundCampaign.campaign?.paymentSummary?.countConfirmed ?? 0;
     const total = donations + matchFunding;
     const category = roundCampaign.campaign?.category || 'Uncategorized';
+    const matchedPartnerBinding = useStaticBindings
+      ? resolveCampaignPartnerId(roundCampaign.campaign?.title || '', campaignPartnerLookup)
+      : undefined;
+    if (matchedPartnerBinding?.partner) {
+      boundPartnerLookup.set(
+        matchedPartnerBinding.partnerId,
+        matchedPartnerBinding.partner,
+      );
+    }
     const partnerId =
-      (useStaticBindings
-        ? campaignPartnerLookup.get(
-            normalizeCampaignName(roundCampaign.campaign?.title || ''),
-          )
-        : undefined) ||
-      roundCampaign.campaign?.creatorAddress ||
-      'unknown';
+      matchedPartnerBinding?.partnerId ?? '';
 
     return {
       id: roundCampaign.campaignId,
@@ -345,6 +504,15 @@ export function buildRoundResultsView(
 
   const partnerMap = new Map<string, RoundPartnerItem>();
   campaignsWithShare.forEach((campaign) => {
+    if (!campaign.partnerId) {
+      return;
+    }
+
+    const partnerMetadata = boundPartnerLookup.get(campaign.partnerId);
+    if (!partnerMetadata) {
+      return;
+    }
+
     const existingPartner = partnerMap.get(campaign.partnerId);
     if (existingPartner) {
       existingPartner.campaignCount += 1;
@@ -354,20 +522,12 @@ export function buildRoundResultsView(
       return;
     }
 
-    const partnerMetadata = partnerLookup.get(campaign.partnerId);
-
     partnerMap.set(campaign.partnerId, {
       id: campaign.partnerId,
-      name: partnerMetadata?.name ?? toShortAddress(campaign.partnerId),
-      logo: partnerMetadata?.logo ?? '',
-      description:
-        partnerMetadata?.description ??
-        'Campaigns grouped by payout recipient or creator wallet.',
-      website:
-        partnerMetadata?.website ??
-        (campaign.partnerId.startsWith('0x') && campaign.partnerId.length === 42
-          ? `https://celoscan.io/address/${campaign.partnerId}`
-          : '#'),
+      name: partnerMetadata.name,
+      logo: partnerMetadata.logo,
+      description: partnerMetadata.description,
+      website: partnerMetadata.website,
       campaignCount: 1,
       donations: campaign.donations,
       matchFunding: campaign.matchFunding,

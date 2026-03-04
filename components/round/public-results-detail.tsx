@@ -348,11 +348,11 @@ function RoundAmountsSection({
   const largestTotal = campaigns[0]?.total ?? 0;
 
   const truncateCampaignName = (name: string) => {
-    if (name.length <= 25) {
+    if (name.length <= 22) {
       return name;
     }
 
-    return `${name.slice(0, 25)}...`;
+    return `${name.slice(0, 22)}...`;
   };
 
   return (
@@ -363,28 +363,45 @@ function RoundAmountsSection({
           Amounts Raised
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {campaigns.map((campaign) => {
-          const percentage = largestTotal > 0 ? (campaign.total / largestTotal) * 100 : 0;
-          return (
-            <div key={campaign.id} className="space-y-1">
-              <div className="flex items-center justify-between gap-4 text-sm">
-                <span className="text-muted-foreground" title={campaign.name}>
-                  {truncateCampaignName(campaign.name)}
-                </span>
-                <span className="font-medium text-foreground">
-                  {formatUSD(campaign.total)}
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-muted">
-                <div
-                  className="h-2 rounded-full bg-primary"
-                  style={{ width: `${Math.max(2, percentage)}%` }}
-                />
+      <CardContent>
+        {campaigns.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No campaign totals available.</p>
+        ) : (
+          <div className="overflow-x-auto pb-2">
+            <div className="min-w-[780px]">
+              <div className="flex h-[320px] items-end gap-3">
+                {campaigns.map((campaign) => {
+                  const percentage =
+                    largestTotal > 0 ? (campaign.total / largestTotal) * 100 : 0;
+
+                  return (
+                    <div
+                      key={campaign.id}
+                      className="flex min-w-[110px] flex-1 flex-col justify-end gap-2"
+                    >
+                      <div className="flex h-[230px] items-end">
+                        <div
+                          className="w-full rounded-t-md bg-primary/90"
+                          style={{ height: `${Math.max(4, percentage)}%` }}
+                          title={`${campaign.name}: ${formatUSD(campaign.total)}`}
+                        />
+                      </div>
+                      <p
+                        className="text-center text-xs text-muted-foreground"
+                        title={campaign.name}
+                      >
+                        {truncateCampaignName(campaign.name)}
+                      </p>
+                      <p className="text-center text-xs font-medium text-foreground">
+                        {formatUSD(campaign.total)}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -474,7 +491,7 @@ function RoundCampaignTableSection({
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-muted-foreground">
-                            {(partnerLookup.get(campaign.partnerId)?.name ?? campaign.partnerId)
+                            {(partnerLookup.get(campaign.partnerId)?.name ?? 'Organization')
                               .slice(0, 2)
                               .toUpperCase()}
                           </div>
@@ -482,7 +499,7 @@ function RoundCampaignTableSection({
                       </div>
                       <span>
                         {partnerLookup.get(campaign.partnerId)?.name ??
-                          campaign.partnerId}
+                          'Organization pending binding'}
                       </span>
                     </div>
                   </TableCell>
