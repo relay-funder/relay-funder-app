@@ -20,6 +20,9 @@ export interface RoundCategoryItem {
   category: string;
   campaignCount: number;
   percentage: number;
+  donations: number;
+  matchFunding: number;
+  totalRaised: number;
 }
 
 export interface RoundPartnerItem {
@@ -532,19 +535,42 @@ export function buildRoundResultsView(
     share: grandTotal > 0 ? (campaign.total / grandTotal) * 100 : 0,
   }));
 
-  const categoryMap = new Map<string, number>();
+  const categoryMap = new Map<
+    string,
+    {
+      campaignCount: number;
+      donations: number;
+      matchFunding: number;
+      totalRaised: number;
+    }
+  >();
   campaignsWithShare.forEach((campaign) => {
-    categoryMap.set(
-      campaign.category,
-      (categoryMap.get(campaign.category) ?? 0) + 1,
-    );
+    const existingCategory = categoryMap.get(campaign.category) ?? {
+      campaignCount: 0,
+      donations: 0,
+      matchFunding: 0,
+      totalRaised: 0,
+    };
+
+    existingCategory.campaignCount += 1;
+    existingCategory.donations += campaign.donations;
+    existingCategory.matchFunding += campaign.matchFunding;
+    existingCategory.totalRaised += campaign.total;
+
+    categoryMap.set(campaign.category, existingCategory);
   });
 
   const categories = Array.from(categoryMap.entries())
-    .map(([category, campaignCount]) => ({
+    .map(([category, aggregate]) => ({
       category,
-      campaignCount,
-      percentage: campaignsCount > 0 ? (campaignCount / campaignsCount) * 100 : 0,
+      campaignCount: aggregate.campaignCount,
+      percentage:
+        campaignsCount > 0
+          ? (aggregate.campaignCount / campaignsCount) * 100
+          : 0,
+      donations: aggregate.donations,
+      matchFunding: aggregate.matchFunding,
+      totalRaised: aggregate.totalRaised,
     }))
     .sort((a, b) => b.campaignCount - a.campaignCount);
 

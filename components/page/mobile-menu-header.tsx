@@ -16,9 +16,9 @@ export function MobileMenuHeader() {
         <ThemeAwareImage
           src="/relay-funder-logo.png"
           alt="RelayFunder"
-          width={160}
-          height={42}
-          className="h-10 w-auto"
+          width={190}
+          height={50}
+          className="h-12 w-auto"
         />
       </Link>
     </div>
