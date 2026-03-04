@@ -3,7 +3,7 @@ import { handleApiErrors } from '@/lib/api/error';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 
 const PUBLIC_ROUND_RESULTS_QUERY_KEY = 'public_round_results';
-const PUBLIC_ROUNDS_PAGE_SIZE = 50;
+const PUBLIC_ROUNDS_PAGE_SIZE = 10;
 
 interface PaginatedRoundsResponse {
   rounds: GetRoundResponseInstance[];

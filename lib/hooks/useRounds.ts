@@ -25,7 +25,7 @@ interface PaginatedRoundsResponse extends PaginatedResponse {
 }
 
 const MAX_ROUNDS_PAGES = 50;
-const LATEST_COMPLETED_ROUND_PAGE_SIZE = 50;
+const LATEST_COMPLETED_ROUND_PAGE_SIZE = 10;
 
 async function fetchRounds(status?: string) {
   const url = status ? `/api/rounds?status=${status}` : '/api/rounds';
