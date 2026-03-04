@@ -382,7 +382,6 @@ export function DaimoPayButtonComponent({
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
         preferredChains={preferredChains}
-        evmChains={paymentData.config.supportedSourceChainIds}
         toAddress={ADMIN_ADDRESS as `0x${string}`}
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}
