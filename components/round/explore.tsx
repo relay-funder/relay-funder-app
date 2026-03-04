@@ -23,8 +23,9 @@ export function RoundExplore({
   // Use actual admin status for content visibility decisions
   // Only force user view for UI controls (create button, etc.)
   const isAdmin = authIsAdmin;
-  // Hide rounds listing unless rounds visibility is enabled or user is admin
-  if (!(isRoundsVisibilityEnabled || isAdmin)) {
+  // Hide rounds listing unless rounds visibility is enabled/user is admin,
+  // except for explicitly forced public view routes.
+  if (!forceUserView && !(isRoundsVisibilityEnabled || isAdmin)) {
     return (
       <PageLayout
         title="Funding Rounds"

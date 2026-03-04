@@ -1,9 +1,13 @@
 'use client';
 
-import { useActiveRound, useUpcomingRound } from '@/lib/hooks/useRounds';
+import {
+  useActiveRound,
+  useLatestCompletedRound,
+  useUpcomingRound,
+} from '@/lib/hooks/useRounds';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Clock, Calendar, ArrowRight } from 'lucide-react';
+import { Sparkles, Clock, Calendar, ArrowRight, BarChart3 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatUSD } from '@/lib/format-usd';
@@ -20,18 +24,39 @@ export function RoundSpotlight() {
     isLoading: upcomingLoading,
     error: upcomingError,
   } = useUpcomingRound();
+  const {
+    data: latestCompletedRound,
+    isLoading: latestCompletedLoading,
+    error: latestCompletedError,
+  } = useLatestCompletedRound();
 
-  // Determine the selected round first (active takes priority)
-  const selectedRound = activeRound ?? upcomingRound;
+  // Determine the selected round:
+  // 1) Active round
+  // 2) Latest completed round (results fallback)
+  // 3) Upcoming round
+  const selectedRound = activeRound ?? latestCompletedRound ?? upcomingRound;
   const round = selectedRound;
   const isLoading =
-    selectedRound === activeRound ? activeLoading : upcomingLoading;
-  const error = selectedRound === activeRound ? activeError : upcomingError;
-  const isUpcoming = selectedRound === upcomingRound;
+    activeLoading ||
+    (!activeRound && latestCompletedLoading) ||
+    (!activeRound && !latestCompletedRound && upcomingLoading);
+  const error =
+    activeError ??
+    (!activeRound ? latestCompletedError : undefined) ??
+    (!activeRound && !latestCompletedRound ? upcomingError : undefined);
+  const roundState = activeRound
+    ? 'active'
+    : latestCompletedRound
+      ? 'completed'
+      : upcomingRound
+        ? 'upcoming'
+        : null;
+  const isUpcoming = roundState === 'upcoming';
+  const isCompleted = roundState === 'completed';
 
   // Calculate days left for countdown (only for active rounds)
   const daysLeft = useMemo(() => {
-    if (!round?.endTime || isUpcoming) {
+    if (!round?.endTime || roundState !== 'active') {
       return 0;
     }
     const now = new Date();
@@ -40,11 +65,11 @@ export function RoundSpotlight() {
       0,
       Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
     );
-  }, [round?.endTime, isUpcoming]);
+  }, [round?.endTime, roundState]);
 
   // Calculate days until start (for upcoming rounds)
   const daysUntilStart = useMemo(() => {
-    if (!round?.startTime || !isUpcoming) {
+    if (!round?.startTime || roundState !== 'upcoming') {
       return 0;
     }
     const now = new Date();
@@ -53,26 +78,37 @@ export function RoundSpotlight() {
       0,
       Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
     );
-  }, [round?.startTime, isUpcoming]);
+  }, [round?.startTime, roundState]);
 
   // Check if applications are still open
   const applicationsOpen = useMemo(() => {
-    if (!round?.applicationEndTime) {
+    if (!round?.applicationEndTime || roundState !== 'upcoming') {
       return false;
     }
     return new Date(round.applicationEndTime) > new Date();
-  }, [round?.applicationEndTime]);
+  }, [round?.applicationEndTime, roundState]);
 
   // Format application end date
   const applicationEndDate = useMemo(() => {
-    if (!round?.applicationEndTime) {
+    if (!round?.applicationEndTime || roundState !== 'upcoming') {
       return '';
     }
     return new Date(round.applicationEndTime).toLocaleDateString();
-  }, [round?.applicationEndTime]);
+  }, [round?.applicationEndTime, roundState]);
 
-  // Don't render anything if there's no round or if loading/error
-  if (isLoading || error || !round) {
+  const roundEndDate = useMemo(() => {
+    if (!round?.endTime || roundState !== 'completed') {
+      return '';
+    }
+    return new Date(round.endTime).toLocaleDateString();
+  }, [round?.endTime, roundState]);
+
+  // Don't render anything if there is no usable round data
+  if (!round && (isLoading || error)) {
+    return null;
+  }
+
+  if (!round) {
     return null;
   }
 
@@ -87,12 +123,18 @@ export function RoundSpotlight() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
               {isUpcoming ? (
                 <Calendar className="h-4 w-4 text-muted-foreground" />
+              ) : isCompleted ? (
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
             <h2 className="font-display text-lg font-semibold text-foreground">
-              {isUpcoming ? 'Upcoming Matching Round' : 'Active Matching Round'}
+              {isUpcoming
+                ? 'Upcoming Matching Round'
+                : isCompleted
+                  ? 'Latest Round Results'
+                  : 'Active Matching Round'}
             </h2>
           </div>
           <Button asChild variant="outline" size="sm">
@@ -100,7 +142,7 @@ export function RoundSpotlight() {
               href={`/rounds/${round.id}`}
               className="flex items-center gap-2"
             >
-              View Round
+              {isCompleted ? 'View Results' : 'View Round'}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </Button>
@@ -152,6 +194,13 @@ export function RoundSpotlight() {
                       Starts in {daysUntilStart} days
                     </span>
                   </>
+                ) : isCompleted ? (
+                  <>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-bold text-muted-foreground">
+                      Ended on {roundEndDate}
+                    </span>
+                  </>
                 ) : (
                   <>
                     <Clock className="h-4 w-4 text-orange-500" />
@@ -179,6 +228,11 @@ export function RoundSpotlight() {
                       approved campaigns. Applications are now closed.
                     </>
                   )
+                ) : isCompleted ? (
+                  <>
+                    <strong>Round Results:</strong> This round has ended. View
+                    detailed campaign-level outcomes and funding distribution.
+                  </>
                 ) : (
                   <>
                     <strong>💡 Match Funding:</strong> Your donation gets

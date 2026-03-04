@@ -259,6 +259,47 @@ export function useUpcomingRound() {
   });
 }
 
+async function fetchLatestCompletedRound() {
+  const allRounds: GetRoundResponseInstance[] = [];
+  let currentPage = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await fetch(
+      `/api/rounds?page=${currentPage}&pageSize=10&forceUserView=true`,
+    );
+    await handleApiErrors(response, 'Failed to fetch latest completed round');
+    const data = (await response.json()) as PaginatedRoundsResponse;
+
+    allRounds.push(...(data.rounds ?? []));
+
+    hasMore = Boolean(data.pagination?.hasMore);
+    currentPage += 1;
+  }
+
+  return (
+    allRounds
+      .filter((round) => {
+        if (!round?.endTime) {
+          return false;
+        }
+
+        return new Date(round.endTime).getTime() < Date.now();
+      })
+      .sort(
+        (a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime(),
+      )[0] ?? null
+  );
+}
+
+export function useLatestCompletedRound() {
+  return useQuery<GetRoundResponseInstance | null>({
+    queryKey: [ROUNDS_QUERY_KEY, 'latest-completed'],
+    queryFn: fetchLatestCompletedRound,
+    enabled: true,
+  });
+}
+
 export function useUpcomingRounds() {
   return useQuery({
     queryKey: [ROUNDS_QUERY_KEY, 'upcoming-list'],
