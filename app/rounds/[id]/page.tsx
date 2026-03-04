@@ -1,9 +1,6 @@
-import { prefetchRound } from '@/lib/api/rounds';
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { Metadata } from 'next';
-import { getQueryClient } from '@/lib/query-client';
-import { RoundFull } from '@/components/round/full';
-import { auth } from '@/server/auth';
+import { PublicRoundResultsDetail } from '@/components/round/public-results-detail';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Round | Relay Funder',
@@ -15,15 +12,10 @@ export default async function RoundPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: paramId } = await params;
-  const session = await auth();
-  const sessionAddress = session?.user.address ?? null;
-  const id = parseInt(paramId);
-  const queryClient = getQueryClient();
-  // Force user-only view even for admins - this is the public user-facing round page
-  await prefetchRound(queryClient, id, false, sessionAddress);
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <RoundFull id={id} forceUserView={true} />
-    </HydrationBoundary>
-  );
+  const roundId = Number.parseInt(paramId, 10);
+  if (Number.isNaN(roundId) || roundId <= 0) {
+    notFound();
+  }
+
+  return <PublicRoundResultsDetail roundId={roundId} />;
 }

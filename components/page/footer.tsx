@@ -2,6 +2,7 @@
 
 import { EXTERNAL_LINKS, SUPPORT_EMAIL } from '@/lib/constant';
 import { Mail } from 'lucide-react';
+import Link from 'next/link';
 
 export function PageFooter() {
   const currentYear = new Date().getFullYear();
@@ -63,6 +64,12 @@ export function PageFooter() {
               >
                 About
               </a>
+              <Link
+                href="/rounds"
+                className="text-text-muted transition-colors hover:text-text-primary"
+              >
+                Round Results
+              </Link>
               <a
                 href={EXTERNAL_LINKS.PARTNERS}
                 target="_blank"

@@ -13,9 +13,11 @@ import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
 import { logFactory } from '@/lib/debug/log';
 import { trackEvent } from '@/lib/analytics';
+import { useCurrentChain, useSwitchChain } from '@/lib/web3';
 
 interface DaimoPayEvent {
   paymentId?: string;
+  chainId?: number;
   status?: string;
   amount?: string;
   [key: string]: unknown;
@@ -94,6 +96,24 @@ export function DaimoPayButtonComponent({
     onPaymentCompleted: daimoOnPaymentCompleted,
     onPaymentBounced: daimoOnPaymentBounced,
   } = useDaimoDonationCallback();
+  const { chainId: currentWalletChainId } = useCurrentChain();
+  const { switchChainAsync } = useSwitchChain();
+
+  const preferredChains = useMemo(() => {
+    const availableChainIds = [...paymentData.config.supportedSourceChainIds];
+    if (
+      currentWalletChainId &&
+      availableChainIds.includes(currentWalletChainId) &&
+      availableChainIds[0] !== currentWalletChainId
+    ) {
+      return [
+        currentWalletChainId,
+        ...availableChainIds.filter((chainId) => chainId !== currentWalletChainId),
+      ];
+    }
+
+    return availableChainIds;
+  }, [currentWalletChainId, paymentData.config.supportedSourceChainIds]);
 
   const handlePaymentStarted = useCallback(
     async (event: DaimoPayEvent) => {
@@ -126,6 +146,24 @@ export function DaimoPayButtonComponent({
           payment_method: 'daimo',
         });
 
+        if (
+          event.chainId != null &&
+          currentWalletChainId !== event.chainId
+        ) {
+          try {
+            await switchChainAsync({ chainId: event.chainId });
+          } catch (error) {
+            console.error(
+              'Daimo Pay: Failed to switch to selected source chain:',
+              event.chainId,
+              error,
+            );
+            throw new Error(
+              `Please switch your wallet to chain ${event.chainId} to complete this payment.`,
+            );
+          }
+        }
+
         await daimoOnPaymentStarted(event);
         onPaymentStarted?.(event);
         onPaymentStartedCallback?.();
@@ -148,6 +186,8 @@ export function DaimoPayButtonComponent({
       profile?.email,
       updateProfileEmail,
       daimoOnPaymentStarted,
+      currentWalletChainId,
+      switchChainAsync,
       onPaymentStarted,
       onPaymentStartedCallback,
       logVerbose,
@@ -341,6 +381,7 @@ export function DaimoPayButtonComponent({
         intent={dynamicIntent}
         toChain={paymentData.config.chainId}
         toToken={paymentData.config.tokenAddress}
+        preferredChains={preferredChains}
         toAddress={ADMIN_ADDRESS as `0x${string}`}
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}

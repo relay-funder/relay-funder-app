@@ -24,6 +24,9 @@ interface PaginatedRoundsResponse extends PaginatedResponse {
   rounds: GetRoundResponseInstance[];
 }
 
+const MAX_ROUNDS_PAGES = 50;
+const LATEST_COMPLETED_ROUND_PAGE_SIZE = 10;
+
 async function fetchRounds(status?: string) {
   const url = status ? `/api/rounds?status=${status}` : '/api/rounds';
   const response = await fetch(url);
@@ -255,6 +258,47 @@ export function useUpcomingRound() {
   return useQuery({
     queryKey: [ROUNDS_QUERY_KEY, 'upcoming'],
     queryFn: fetchUpcomingRound,
+    enabled: true,
+  });
+}
+
+async function fetchLatestCompletedRound() {
+  const allRounds: GetRoundResponseInstance[] = [];
+  let currentPage = 1;
+  let hasMore = true;
+
+  while (hasMore && currentPage <= MAX_ROUNDS_PAGES) {
+    const response = await fetch(
+      `/api/rounds?page=${currentPage}&pageSize=${LATEST_COMPLETED_ROUND_PAGE_SIZE}&forceUserView=true`,
+    );
+    await handleApiErrors(response, 'Failed to fetch latest completed round');
+    const data = (await response.json()) as PaginatedRoundsResponse;
+
+    allRounds.push(...(data.rounds ?? []));
+
+    hasMore = Boolean(data.pagination?.hasMore);
+    currentPage += 1;
+  }
+
+  return (
+    allRounds
+      .filter((round) => {
+        if (!round?.endTime) {
+          return false;
+        }
+
+        return new Date(round.endTime).getTime() < Date.now();
+      })
+      .sort(
+        (a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime(),
+      )[0] ?? null
+  );
+}
+
+export function useLatestCompletedRound() {
+  return useQuery<GetRoundResponseInstance | null>({
+    queryKey: [ROUNDS_QUERY_KEY, 'latest-completed'],
+    queryFn: fetchLatestCompletedRound,
     enabled: true,
   });
 }
