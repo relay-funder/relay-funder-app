@@ -4,6 +4,7 @@ import type {
 } from '@/lib/api/types';
 import type {
   ApprovedResultsLike,
+  CampaignResultInput,
   CampaignDistribution,
   ResultReport,
 } from '@/lib/qf/result-report';
@@ -129,10 +130,11 @@ function parseApprovedResult(
     }
 
     if (Array.isArray(round.approvedResult)) {
+      const normalizedCampaigns = normalizeApprovedCampaigns(round.approvedResult);
       return computeResultReportFromJson(
         {
           roundId: round.id,
-          campaigns: round.approvedResult,
+          campaigns: normalizedCampaigns,
         },
         {
           matchingPool,
@@ -142,9 +144,18 @@ function parseApprovedResult(
 
     const approvedResultsLike = round.approvedResult as ApprovedResultsLike;
     if (Array.isArray(approvedResultsLike?.campaigns)) {
-      return computeResultReportFromJson(approvedResultsLike, {
-        matchingPool,
-      });
+      const normalizedCampaigns = normalizeApprovedCampaigns(
+        approvedResultsLike.campaigns as unknown[],
+      );
+      return computeResultReportFromJson(
+        {
+          ...approvedResultsLike,
+          campaigns: normalizedCampaigns,
+        },
+        {
+          matchingPool,
+        },
+      );
     }
   } catch {
     return null;
@@ -155,6 +166,126 @@ function parseApprovedResult(
 
 function normalizeCampaignName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function toNumberOrUndefined(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[$, ]/g, ''));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function toStringOrUndefined(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function getFirstValue(
+  source: Record<string, unknown>,
+  keys: string[],
+): unknown {
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      return source[key];
+    }
+  }
+  return undefined;
+}
+
+function normalizeApprovedCampaignEntry(
+  input: unknown,
+): CampaignResultInput | null {
+  if (!input || typeof input !== 'object') {
+    return null;
+  }
+
+  const record = input as Record<string, unknown>;
+  const roundCampaignId = toNumberOrUndefined(
+    getFirstValue(record, ['roundCampaignId', 'round_campaign_id']),
+  );
+  const campaignId = toNumberOrUndefined(
+    getFirstValue(record, ['campaignId', 'campaign_id', 'id']),
+  );
+  const campaignTitle = toStringOrUndefined(
+    getFirstValue(record, ['campaignTitle', 'campaign_title', 'title', 'name']),
+  );
+  const recipientAddress = toStringOrUndefined(
+    getFirstValue(record, ['recipientAddress', 'recipient_address', 'recipient']),
+  );
+  const onchainRecipientId = toStringOrUndefined(
+    getFirstValue(record, [
+      'onchainRecipientId',
+      'onchain_recipient_id',
+      'recipientId',
+      'recipient_id',
+    ]),
+  );
+  const contributionsCount = toNumberOrUndefined(
+    getFirstValue(record, [
+      'contributionsCount',
+      'contributions_count',
+      'contributions',
+    ]),
+  );
+  const uniqueContributors = toNumberOrUndefined(
+    getFirstValue(record, [
+      'uniqueContributors',
+      'unique_contributors',
+      'contributors',
+      'uniqueDonors',
+      'donors',
+    ]),
+  );
+  const totalDonations = toNumberOrUndefined(
+    getFirstValue(record, [
+      'totalDonations',
+      'total_donations',
+      'donations',
+      'totalRaised',
+      'amountRaised',
+    ]),
+  );
+  const qfScore = toNumberOrUndefined(
+    getFirstValue(record, ['qfScore', 'qf_score', 'score']),
+  );
+  const suggestedMatch = toNumberOrUndefined(
+    getFirstValue(record, [
+      'suggestedMatch',
+      'suggested_match',
+      'match',
+      'matchingAmount',
+      'matching_amount',
+      'matchFunding',
+      'payoutScaled',
+      'payout_scaled',
+    ]),
+  );
+
+  return {
+    roundCampaignId,
+    campaignId,
+    campaignTitle,
+    recipientAddress,
+    onchainRecipientId,
+    contributionsCount,
+    uniqueContributors,
+    totalDonations,
+    qfScore,
+    suggestedMatch,
+  };
+}
+
+function normalizeApprovedCampaigns(campaigns: unknown[]): CampaignResultInput[] {
+  return campaigns
+    .map((campaign) => normalizeApprovedCampaignEntry(campaign))
+    .filter((campaign): campaign is CampaignResultInput => campaign !== null);
 }
 
 function buildCampaignPartnerLookup(): CampaignPartnerLookup {
@@ -192,13 +323,24 @@ function findReportCampaign(
   roundCampaign: GetRoundCampaignResponseInstance,
   campaignsByRoundCampaignId: Map<number, CampaignDistribution>,
   campaignsByCampaignId: Map<number, CampaignDistribution>,
+  campaignsByNormalizedTitle: Map<string, CampaignDistribution>,
 ): CampaignDistribution | undefined {
   const roundCampaignMatch = campaignsByRoundCampaignId.get(roundCampaign.id);
   if (roundCampaignMatch) {
     return roundCampaignMatch;
   }
 
-  return campaignsByCampaignId.get(roundCampaign.campaignId);
+  const campaignIdMatch = campaignsByCampaignId.get(roundCampaign.campaignId);
+  if (campaignIdMatch) {
+    return campaignIdMatch;
+  }
+
+  const campaignTitle = roundCampaign.campaign?.title;
+  if (!campaignTitle) {
+    return undefined;
+  }
+
+  return campaignsByNormalizedTitle.get(normalizeCampaignName(campaignTitle));
 }
 
 function getCampaignImageUrl(
@@ -235,6 +377,36 @@ function sumConfirmedDonations(roundCampaign: GetRoundCampaignResponseInstance):
   }, 0);
 }
 
+function sumUniqueConfirmedContributors(
+  roundCampaign: GetRoundCampaignResponseInstance,
+): number {
+  const payments = roundCampaign.campaign?.payments;
+  if (!Array.isArray(payments) || payments.length === 0) {
+    return 0;
+  }
+
+  const uniqueContributors = new Set<string>();
+  payments.forEach((payment) => {
+    const paymentStatus =
+      typeof payment.status === 'string' ? payment.status.toUpperCase() : '';
+    if (paymentStatus !== 'CONFIRMED') {
+      return;
+    }
+
+    if (typeof payment.userId === 'number') {
+      uniqueContributors.add(`id:${payment.userId}`);
+      return;
+    }
+
+    const userAddress = payment.user?.address;
+    if (typeof userAddress === 'string' && userAddress.length > 0) {
+      uniqueContributors.add(`address:${userAddress.toLowerCase()}`);
+    }
+  });
+
+  return uniqueContributors.size;
+}
+
 function toCountry(location: string | null | undefined): string {
   if (!location) {
     return 'Unknown';
@@ -258,6 +430,7 @@ export function buildRoundResultsView(
 
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();
   const campaignsByCampaignId = new Map<number, CampaignDistribution>();
+  const campaignsByNormalizedTitle = new Map<string, CampaignDistribution>();
 
   if (report?.campaigns) {
     report.campaigns.forEach((campaign) => {
@@ -267,6 +440,15 @@ export function buildRoundResultsView(
       if (typeof campaign.campaignId === 'number') {
         campaignsByCampaignId.set(campaign.campaignId, campaign);
       }
+      if (
+        typeof campaign.campaignTitle === 'string' &&
+        campaign.campaignTitle.length > 0
+      ) {
+        const normalizedTitle = normalizeCampaignName(campaign.campaignTitle);
+        if (normalizedTitle.length > 0) {
+          campaignsByNormalizedTitle.set(normalizedTitle, campaign);
+        }
+      }
     });
   }
 
@@ -275,20 +457,29 @@ export function buildRoundResultsView(
       roundCampaign,
       campaignsByRoundCampaignId,
       campaignsByCampaignId,
+      campaignsByNormalizedTitle,
     );
 
-    const donations = reportCampaign
+    const fallbackDonations = sumConfirmedDonations(roundCampaign);
+    const donationsFromReport = reportCampaign
       ? Number(reportCampaign.totalDonations)
-      : sumConfirmedDonations(roundCampaign);
+      : NaN;
+    const donations =
+      Number.isFinite(donationsFromReport) && donationsFromReport > 0
+        ? donationsFromReport
+        : fallbackDonations;
     const matchFunding = reportCampaign
       ? Number(reportCampaign.payoutScaled)
       : 0;
-    const contributors = reportCampaign
-      ? Number(reportCampaign.uniqueContributors)
-      : 0;
+    const fallbackContributors = sumUniqueConfirmedContributors(roundCampaign);
     const contributions = reportCampaign
       ? Number(reportCampaign.contributionsCount)
       : roundCampaign.campaign?.paymentSummary?.countConfirmed ?? 0;
+    const contributors = reportCampaign
+      ? Number(reportCampaign.uniqueContributors)
+      : fallbackContributors > 0
+        ? fallbackContributors
+        : contributions;
     const total = donations + matchFunding;
     const category = roundCampaign.campaign?.category || 'Uncategorized';
     const matchedPartnerBinding = useStaticBindings
@@ -323,9 +514,13 @@ export function buildRoundResultsView(
   const totalDonations = report
     ? Number(report.totals.totalDonations)
     : campaigns.reduce((total, campaign) => total + campaign.donations, 0);
-  const contributorsCount = report
+  const contributorsFromReport = report
     ? Number(report.totals.uniqueContributors)
-    : campaigns.reduce((total, campaign) => total + campaign.contributors, 0);
+    : 0;
+  const contributorsCount =
+    contributorsFromReport > 0
+      ? contributorsFromReport
+      : campaigns.reduce((total, campaign) => total + campaign.contributors, 0);
   const campaignsCount = campaigns.length;
   const grandTotal = campaigns.reduce(
     (total, campaign) => total + campaign.total,

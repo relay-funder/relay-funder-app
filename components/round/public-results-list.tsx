@@ -72,14 +72,14 @@ export function PublicRoundResultsList() {
                 <CardHeader>
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="flex min-w-0 flex-1 items-center gap-4">
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-white">
                         {typeof sponsor.logo === 'string' &&
                         sponsor.logo.length > 0 ? (
                           <Image
                             src={sponsor.logo}
                             alt={sponsor.name}
                             fill
-                            className="object-cover"
+                            className="object-contain p-2"
                           />
                         ) : typeof logoUrl === 'string' && logoUrl.length > 0 ? (
                           <Image
@@ -96,7 +96,7 @@ export function PublicRoundResultsList() {
                       </div>
                       <div className="min-w-0">
                         <CardTitle className="truncate text-xl">
-                          Round Sponsor - {sponsor.name}
+                          Round Sponsor: {sponsor.name}
                         </CardTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Round Period:{' '}
@@ -162,15 +162,22 @@ export function PublicRoundResultsList() {
                     <div className="grid gap-4 lg:grid-cols-[240px_1fr] lg:items-center">
                       <SimplePieChart categories={roundView.categories} />
                       <div className="grid gap-2 md:grid-cols-2">
-                        {roundView.categories.map((category) => (
+                        {roundView.categories.map((category, index) => {
+                          const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
+                          return (
                           <div
                             key={`${round.id}-${category.category}`}
                             className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
                           >
+                            <span
+                              className="mr-2 inline-block h-2.5 w-2.5 rounded-full align-middle"
+                              style={{ backgroundColor: categoryColor }}
+                            />
                             {category.category} - {category.campaignCount}{' '}
                             campaigns ({category.percentage.toFixed(1)}%)
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

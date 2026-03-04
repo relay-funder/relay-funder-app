@@ -169,18 +169,31 @@ function RoundHeaderSection({
 }) {
   const hasSponsorWebsite =
     typeof sponsor.website === 'string' && sponsor.website.length > 0;
-  const hasDistinctSponsorDescription =
-    sponsor.description.trim().length > 0 &&
-    sponsor.description.trim() !== description.trim();
+  const sponsorDescription = sponsor.description.trim();
+  const roundDescription = description.trim();
+  const headerDescription =
+    sponsorDescription.length > 0 ? sponsorDescription : roundDescription;
+  const hasSponsorLogo =
+    typeof sponsor.logo === 'string' && sponsor.logo.length > 0;
+  const hasRoundLogo = typeof logoUrl === 'string' && logoUrl.length > 0;
 
   return (
     <Card className="bg-card">
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
-            {typeof sponsor.logo === 'string' && sponsor.logo.length > 0 ? (
-              <Image src={sponsor.logo} alt={sponsor.name} fill className="object-cover" />
-            ) : typeof logoUrl === 'string' && logoUrl.length > 0 ? (
+          <div
+            className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-border ${
+              hasSponsorLogo ? 'bg-white' : 'bg-muted'
+            }`}
+          >
+            {hasSponsorLogo ? (
+              <Image
+                src={sponsor.logo}
+                alt={sponsor.name}
+                fill
+                className="object-contain p-2"
+              />
+            ) : hasRoundLogo ? (
               <Image src={logoUrl} alt={title} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-muted-foreground">
@@ -190,9 +203,7 @@ function RoundHeaderSection({
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">
-              Round Sponsor - {sponsor.name}
-            </h2>
+            <h2 className="text-2xl font-bold text-foreground">Round Sponsor: {sponsor.name}</h2>
             {hasSponsorWebsite && (
               <a
                 href={sponsor.website}
@@ -210,11 +221,7 @@ function RoundHeaderSection({
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
-            <h3 className="text-sm font-medium text-foreground">About this round</h3>
-            {hasDistinctSponsorDescription && (
-              <p className="text-sm text-muted-foreground">{sponsor.description}</p>
-            )}
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-sm text-muted-foreground">{headerDescription}</p>
           </div>
         </div>
 
@@ -246,15 +253,21 @@ function RoundHeaderSection({
           <div className="grid gap-4 lg:grid-cols-[240px_1fr] lg:items-center">
             <SimplePieChart categories={categories} />
             <div className="grid gap-2 md:grid-cols-2">
-              {categories.map((category) => (
+              {categories.map((category, index) => {
+                const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
+                return (
                 <div
                   key={category.category}
                   className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
                 >
-                  {category.category} - {category.campaignCount} campaigns (
-                  {category.percentage.toFixed(1)}%)
+                  <span
+                    className="mr-2 inline-block h-2.5 w-2.5 rounded-full align-middle"
+                    style={{ backgroundColor: categoryColor }}
+                  />
+                  {category.category} - {category.campaignCount} campaigns ({category.percentage.toFixed(1)}%)
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
