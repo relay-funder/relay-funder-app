@@ -54,6 +54,8 @@ export function RoundSpotlight() {
         : null;
   const isUpcoming = roundState === 'upcoming';
   const isCompleted = roundState === 'completed';
+  const actionHref = isCompleted ? `/rounds/${round.id}` : '/campaigns';
+  const actionLabel = isCompleted ? 'View Results' : 'Explore Campaigns';
 
   // Calculate days left for countdown (only for active rounds)
   const daysLeft = useMemo(() => {
@@ -140,16 +142,16 @@ export function RoundSpotlight() {
           </div>
           <Button asChild variant="outline" size="sm">
             <Link
-              href={`/rounds/${round.id}`}
+              href={actionHref}
               className="flex items-center gap-2"
               onClick={() =>
                 trackEvent('funnel_cta_click', {
                   source: 'round_spotlight',
-                  path: `/rounds/${round.id}`,
+                  path: actionHref,
                 })
               }
             >
-              {isCompleted ? 'View Results' : 'View Round'}
+              {actionLabel}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </Button>

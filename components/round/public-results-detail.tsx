@@ -51,6 +51,12 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
   }, [isLoading, isError, round, router]);
 
   useEffect(() => {
+    if (!isLoading && !isError && round && !roundHasEnded(round)) {
+      router.replace('/rounds');
+    }
+  }, [isLoading, isError, round, router]);
+
+  useEffect(() => {
     if (!round) {
       return;
     }
@@ -106,17 +112,8 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
           </Card>
         )}
 
-        {round && roundView && (
+        {round && roundView && roundHasEnded(round) && (
           <>
-            {!roundHasEnded(round) && (
-              <Card className="bg-card">
-                <CardContent className="p-4 text-sm text-muted-foreground">
-                  This round is still active. Results below are live preview values and
-                  will finalize after the round ends.
-                </CardContent>
-              </Card>
-            )}
-
             <RoundHeaderSection
               title={round.title}
               description={round.description}
@@ -340,6 +337,14 @@ function RoundAmountsSection({
 }) {
   const largestTotal = campaigns[0]?.total ?? 0;
 
+  const truncateCampaignName = (name: string) => {
+    if (name.length <= 25) {
+      return name;
+    }
+
+    return `${name.slice(0, 25)}...`;
+  };
+
   return (
     <Card className="bg-card">
       <CardHeader>
@@ -354,7 +359,9 @@ function RoundAmountsSection({
           return (
             <div key={campaign.id} className="space-y-1">
               <div className="flex items-center justify-between gap-4 text-sm">
-                <span className="truncate text-muted-foreground">{campaign.name}</span>
+                <span className="text-muted-foreground" title={campaign.name}>
+                  {truncateCampaignName(campaign.name)}
+                </span>
                 <span className="font-medium text-foreground">
                   {formatUSD(campaign.total)}
                 </span>
