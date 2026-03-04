@@ -121,6 +121,7 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
               title={round.title}
               description={round.description}
               logoUrl={round.media?.[0]?.url}
+              sponsor={roundView.sponsor}
               matchingPool={round.matchingPool}
               totalDonations={roundView.totalDonations}
               contributorsCount={roundView.contributorsCount}
@@ -147,6 +148,7 @@ function RoundHeaderSection({
   title,
   description,
   logoUrl,
+  sponsor,
   matchingPool,
   totalDonations,
   contributorsCount,
@@ -156,6 +158,12 @@ function RoundHeaderSection({
   title: string;
   description: string;
   logoUrl: string | undefined;
+  sponsor: {
+    name: string;
+    logo: string;
+    description: string;
+    website: string;
+  };
   matchingPool: number;
   totalDonations: number;
   contributorsCount: number;
@@ -167,7 +175,9 @@ function RoundHeaderSection({
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
-            {typeof logoUrl === 'string' && logoUrl.length > 0 ? (
+            {typeof sponsor.logo === 'string' && sponsor.logo.length > 0 ? (
+              <Image src={sponsor.logo} alt={sponsor.name} fill className="object-cover" />
+            ) : typeof logoUrl === 'string' && logoUrl.length > 0 ? (
               <Image src={logoUrl} alt={title} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-muted-foreground">
@@ -178,9 +188,25 @@ function RoundHeaderSection({
 
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-foreground">
-              Round Sponsor - {title}
+              Round Sponsor - {sponsor.name}
             </h2>
+            <a
+              href={sponsor.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+              onClick={() =>
+                trackEvent('funnel_cta_click', {
+                  source: 'round_sponsor_link',
+                  path: sponsor.website,
+                })
+              }
+            >
+              Visit sponsor
+              <ExternalLink className="h-3 w-3" />
+            </a>
             <h3 className="text-sm font-medium text-foreground">About this round</h3>
+            <p className="text-sm text-muted-foreground">{sponsor.description}</p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
@@ -236,6 +262,7 @@ function RoundPartnersSection({
   partners: Array<{
     id: string;
     name: string;
+    logo: string;
     description: string;
     website: string;
     campaignCount: number;
@@ -267,8 +294,19 @@ function RoundPartnersSection({
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-xs font-semibold text-muted-foreground">
-                    {partner.name.slice(0, 2).toUpperCase()}
+                  <div className="relative h-8 w-8 overflow-hidden rounded-full border border-border bg-background">
+                    {partner.logo ? (
+                      <Image
+                        src={partner.logo}
+                        alt={partner.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
+                        {partner.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <p className="text-base font-semibold text-foreground">
                     {partner.name}
@@ -352,12 +390,15 @@ function RoundCampaignTableSection({
     total: number;
     share: number;
   }>;
-  partners: Array<{ id: string; name: string }>;
+  partners: Array<{ id: string; name: string; logo: string }>;
 }) {
   const partnerLookup = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, { name: string; logo: string }>();
     partners.forEach((partner) => {
-      map.set(partner.id, partner.name);
+      map.set(partner.id, {
+        name: partner.name,
+        logo: partner.logo,
+      });
     });
     return map;
   }, [partners]);
@@ -406,13 +447,25 @@ function RoundCampaignTableSection({
                   <TableCell>{campaign.country}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full border border-border bg-background text-[10px] font-semibold text-muted-foreground">
-                        {(partnerLookup.get(campaign.partnerId) ?? campaign.partnerId)
-                          .slice(0, 2)
-                          .toUpperCase()}
+                      <div className="relative h-5 w-5 overflow-hidden rounded-full border border-border bg-background">
+                        {partnerLookup.get(campaign.partnerId)?.logo ? (
+                          <Image
+                            src={partnerLookup.get(campaign.partnerId)?.logo || ''}
+                            alt={partnerLookup.get(campaign.partnerId)?.name || ''}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-muted-foreground">
+                            {(partnerLookup.get(campaign.partnerId)?.name ?? campaign.partnerId)
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                        )}
                       </div>
                       <span>
-                        {partnerLookup.get(campaign.partnerId) ?? campaign.partnerId}
+                        {partnerLookup.get(campaign.partnerId)?.name ??
+                          campaign.partnerId}
                       </span>
                     </div>
                   </TableCell>

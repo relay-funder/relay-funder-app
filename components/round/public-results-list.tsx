@@ -65,6 +65,7 @@ export function PublicRoundResultsList() {
           {completedRounds.map((round) => {
             const roundView = buildRoundResultsView(round);
             const logoUrl = round.media?.[0]?.url;
+            const sponsor = roundView.sponsor;
 
             return (
               <Card key={round.id} className="bg-card">
@@ -72,7 +73,15 @@ export function PublicRoundResultsList() {
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="flex min-w-0 flex-1 items-center gap-4">
                       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                        {typeof logoUrl === 'string' && logoUrl.length > 0 ? (
+                        {typeof sponsor.logo === 'string' &&
+                        sponsor.logo.length > 0 ? (
+                          <Image
+                            src={sponsor.logo}
+                            alt={sponsor.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : typeof logoUrl === 'string' && logoUrl.length > 0 ? (
                           <Image
                             src={logoUrl}
                             alt={round.title}
@@ -87,7 +96,7 @@ export function PublicRoundResultsList() {
                       </div>
                       <div className="min-w-0">
                         <CardTitle className="truncate text-xl">
-                          Round Sponsor - {round.title}
+                          Round Sponsor - {sponsor.name}
                         </CardTitle>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Round Period:{' '}

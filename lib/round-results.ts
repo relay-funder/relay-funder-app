@@ -8,6 +8,13 @@ import type {
   ResultReport,
 } from '@/lib/qf/result-report';
 import { computeResultReportFromCsv, computeResultReportFromJson } from '@/lib/qf/result-report';
+import {
+  CELO_PREZENTI_SPONSOR,
+  ROUND_RESULTS_CAMPAIGN_BINDINGS,
+  ROUND_RESULTS_PARTNERS,
+  type RoundResultsPartner,
+  type RoundResultsSponsor,
+} from '@/lib/constant/round-results-partners';
 
 export interface RoundCategoryItem {
   category: string;
@@ -18,6 +25,7 @@ export interface RoundCategoryItem {
 export interface RoundPartnerItem {
   id: string;
   name: string;
+  logo: string;
   description: string;
   website: string;
   campaignCount: number;
@@ -46,6 +54,7 @@ export interface RoundResultsView {
   totalDonations: number;
   contributorsCount: number;
   campaignsCount: number;
+  sponsor: RoundResultsSponsor;
   categories: RoundCategoryItem[];
   partners: RoundPartnerItem[];
   campaigns: RoundCampaignResultItem[];
@@ -101,12 +110,28 @@ function toShortAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-function toPartnerWebsite(partnerId: string): string {
-  if (partnerId.startsWith('0x') && partnerId.length === 42) {
-    return `https://celoscan.io/address/${partnerId}`;
-  }
+function normalizeCampaignName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
 
-  return '#';
+function buildCampaignPartnerLookup(): Map<string, string> {
+  const map = new Map<string, string>();
+
+  ROUND_RESULTS_CAMPAIGN_BINDINGS.forEach((binding) => {
+    map.set(normalizeCampaignName(binding.name), binding.partnerId);
+  });
+
+  return map;
+}
+
+function buildPartnerLookup(): Map<string, RoundResultsPartner> {
+  const map = new Map<string, RoundResultsPartner>();
+
+  ROUND_RESULTS_PARTNERS.forEach((partner) => {
+    map.set(partner.id, partner);
+  });
+
+  return map;
 }
 
 function findReportCampaign(
@@ -173,6 +198,8 @@ export function buildRoundResultsView(
   round: GetRoundResponseInstance,
 ): RoundResultsView {
   const report = parseApprovedResult(round);
+  const campaignPartnerLookup = buildCampaignPartnerLookup();
+  const partnerLookup = buildPartnerLookup();
 
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();
   const campaignsByCampaignId = new Map<number, CampaignDistribution>();
@@ -209,7 +236,12 @@ export function buildRoundResultsView(
       : roundCampaign.campaign?.paymentSummary?.countConfirmed ?? 0;
     const total = donations + matchFunding;
     const category = roundCampaign.campaign?.category || 'Uncategorized';
-    const partnerId = roundCampaign.campaign?.creatorAddress || 'unknown';
+    const partnerId =
+      campaignPartnerLookup.get(
+        normalizeCampaignName(roundCampaign.campaign?.title || ''),
+      ) ||
+      roundCampaign.campaign?.creatorAddress ||
+      'unknown';
 
     return {
       id: roundCampaign.campaignId,
@@ -272,11 +304,20 @@ export function buildRoundResultsView(
       return;
     }
 
+    const partnerMetadata = partnerLookup.get(campaign.partnerId);
+
     partnerMap.set(campaign.partnerId, {
       id: campaign.partnerId,
-      name: toShortAddress(campaign.partnerId),
-      description: 'Campaigns grouped by payout recipient or creator wallet.',
-      website: toPartnerWebsite(campaign.partnerId),
+      name: partnerMetadata?.name ?? toShortAddress(campaign.partnerId),
+      logo: partnerMetadata?.logo ?? '',
+      description:
+        partnerMetadata?.description ??
+        'Campaigns grouped by payout recipient or creator wallet.',
+      website:
+        partnerMetadata?.website ??
+        (campaign.partnerId.startsWith('0x') && campaign.partnerId.length === 42
+          ? `https://celoscan.io/address/${campaign.partnerId}`
+          : '#'),
       campaignCount: 1,
       donations: campaign.donations,
       matchFunding: campaign.matchFunding,
@@ -292,6 +333,7 @@ export function buildRoundResultsView(
     totalDonations,
     contributorsCount,
     campaignsCount,
+    sponsor: CELO_PREZENTI_SPONSOR,
     categories,
     partners,
     campaigns: campaignsWithShare.sort((a, b) => b.total - a.total),
