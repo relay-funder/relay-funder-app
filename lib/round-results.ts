@@ -61,15 +61,12 @@ export interface RoundResultsView {
 }
 
 interface CampaignPartnerBinding {
-  normalizedName: string;
   partnerId: string;
-  tokens: string[];
   partner?: RoundResultsPartner;
 }
 
 interface CampaignPartnerLookup {
   exactByNormalizedName: Map<string, CampaignPartnerBinding>;
-  bindings: CampaignPartnerBinding[];
 }
 
 function isCeloPrezentiRound(round: GetRoundResponseInstance): boolean {
@@ -160,92 +157,18 @@ function normalizeCampaignName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function tokenizeCampaignName(name: string): string[] {
-  return Array.from(
-    new Set(
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter((token) => token.length >= 4),
-    ),
-  );
-}
-
-function calculateTokenOverlap(left: string[], right: string[]): number {
-  if (left.length === 0 || right.length === 0) {
-    return 0;
-  }
-
-  const rightTokens = new Set(right);
-  const matches = left.filter((token) => rightTokens.has(token)).length;
-  return matches / Math.max(left.length, right.length);
-}
-
-function createBigrams(value: string): string[] {
-  if (value.length < 2) {
-    return [value];
-  }
-
-  const bigrams: string[] = [];
-  for (let index = 0; index < value.length - 1; index += 1) {
-    bigrams.push(value.slice(index, index + 2));
-  }
-
-  return bigrams;
-}
-
-function calculateBigramSimilarity(left: string, right: string): number {
-  if (!left || !right) {
-    return 0;
-  }
-
-  if (left === right) {
-    return 1;
-  }
-
-  const leftBigrams = createBigrams(left);
-  const rightBigrams = createBigrams(right);
-  const rightCounts = new Map<string, number>();
-
-  rightBigrams.forEach((bigram) => {
-    rightCounts.set(bigram, (rightCounts.get(bigram) ?? 0) + 1);
-  });
-
-  let intersection = 0;
-  leftBigrams.forEach((bigram) => {
-    const current = rightCounts.get(bigram) ?? 0;
-    if (current > 0) {
-      intersection += 1;
-      rightCounts.set(bigram, current - 1);
-    }
-  });
-
-  return (2 * intersection) / (leftBigrams.length + rightBigrams.length);
-}
-
 function buildCampaignPartnerLookup(): CampaignPartnerLookup {
   const exactByNormalizedName = new Map<string, CampaignPartnerBinding>();
-  const bindings: CampaignPartnerBinding[] = ROUND_RESULTS_CAMPAIGN_BINDINGS.map(
-    (binding) => {
-      const normalizedName = normalizeCampaignName(binding.name);
-      const bindingWithMetadata: CampaignPartnerBinding = {
-        normalizedName,
-        partnerId: binding.partnerId,
-        tokens: tokenizeCampaignName(binding.name),
-        partner: binding.partner,
-      };
-
-      exactByNormalizedName.set(normalizedName, bindingWithMetadata);
-
-      return bindingWithMetadata;
-    },
-  );
+  ROUND_RESULTS_CAMPAIGN_BINDINGS.forEach((binding) => {
+    const normalizedName = normalizeCampaignName(binding.name);
+    exactByNormalizedName.set(normalizedName, {
+      partnerId: binding.partnerId,
+      partner: binding.partner,
+    });
+  });
 
   return {
     exactByNormalizedName,
-    bindings,
   };
 }
 
@@ -258,80 +181,11 @@ function resolveCampaignPartnerId(
     return undefined;
   }
 
-  const exactMatch = lookup.exactByNormalizedName.get(normalizedName);
-  if (exactMatch) {
-    return exactMatch;
-  }
-
-  const campaignTokens = tokenizeCampaignName(campaignName);
-
-  let bestCandidate: {
-    binding: CampaignPartnerBinding;
-    combinedScore: number;
-    tokenScore: number;
-  } | null = null;
-
-  lookup.bindings.forEach((binding) => {
-    const tokenScore = calculateTokenOverlap(campaignTokens, binding.tokens);
-    const bigramScore = calculateBigramSimilarity(
-      normalizedName,
-      binding.normalizedName,
-    );
-    const combinedScore = bigramScore * 0.75 + tokenScore * 0.25;
-
-    if (!bestCandidate || combinedScore > bestCandidate.combinedScore) {
-      bestCandidate = {
-        binding,
-        combinedScore,
-        tokenScore,
-      };
-    }
-  });
-
-  if (!bestCandidate) {
-    return undefined;
-  }
-
-  const meetsSimilarityThreshold = bestCandidate.combinedScore >= 0.52;
-  const meetsTokenThreshold =
-    bestCandidate.tokenScore >= 0.2 || campaignTokens.length <= 2;
-
-  if (!meetsSimilarityThreshold || !meetsTokenThreshold) {
-    return undefined;
-  }
-
-  return bestCandidate.binding;
+  return lookup.exactByNormalizedName.get(normalizedName);
 }
 
-function shouldUseStaticPartnerBindings(
-  round: GetRoundResponseInstance,
-  lookup: CampaignPartnerLookup,
-): boolean {
-  if (isCeloPrezentiRound(round)) {
-    return true;
-  }
-
-  const roundCampaigns = round.roundCampaigns ?? [];
-  if (roundCampaigns.length === 0) {
-    return false;
-  }
-
-  const matchedCampaigns = roundCampaigns.reduce((matchedCount, roundCampaign) => {
-    const campaignName = roundCampaign.campaign?.title;
-    if (!campaignName) {
-      return matchedCount;
-    }
-
-    return resolveCampaignPartnerId(campaignName, lookup)
-      ? matchedCount + 1
-      : matchedCount;
-  }, 0);
-
-  if (matchedCampaigns < 2) {
-    return false;
-  }
-
-  return matchedCampaigns / roundCampaigns.length >= 0.35;
+function shouldUseStaticPartnerBindings(round: GetRoundResponseInstance): boolean {
+  return isCeloPrezentiRound(round);
 }
 
 function findReportCampaign(
@@ -399,10 +253,7 @@ export function buildRoundResultsView(
 ): RoundResultsView {
   const report = parseApprovedResult(round);
   const campaignPartnerLookup = buildCampaignPartnerLookup();
-  const useStaticBindings = shouldUseStaticPartnerBindings(
-    round,
-    campaignPartnerLookup,
-  );
+  const useStaticBindings = shouldUseStaticPartnerBindings(round);
   const boundPartnerLookup = new Map<string, RoundResultsPartner>();
 
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();

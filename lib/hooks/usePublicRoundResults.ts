@@ -3,6 +3,7 @@ import { handleApiErrors } from '@/lib/api/error';
 import type { GetRoundResponseInstance } from '@/lib/api/types';
 
 const PUBLIC_ROUND_RESULTS_QUERY_KEY = 'public_round_results';
+const PUBLIC_ROUNDS_PAGE_SIZE = 50;
 
 interface PaginatedRoundsResponse {
   rounds: GetRoundResponseInstance[];
@@ -24,7 +25,7 @@ async function fetchPublicRoundResults(): Promise<GetRoundResponseInstance[]> {
 
   while (hasMore && currentPage <= MAX_ROUNDS_PAGES) {
     const response = await fetch(
-      `/api/rounds?page=${currentPage}&pageSize=10&forceUserView=true`,
+      `/api/rounds?page=${currentPage}&pageSize=${PUBLIC_ROUNDS_PAGE_SIZE}&forceUserView=true`,
     );
     await handleApiErrors(response, 'Failed to fetch public rounds');
     const data = (await response.json()) as PaginatedRoundsResponse;

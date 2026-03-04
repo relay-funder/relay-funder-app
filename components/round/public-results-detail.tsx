@@ -284,57 +284,63 @@ function RoundPartnersSection({
         <CardTitle>Round Partners</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {partners.map((partner) => (
-            <a
-              key={partner.id}
-              href={partner.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() =>
-                trackEvent('funnel_cta_click', {
-                  source: 'round_partner_card',
-                  path: partner.website,
-                })
-              }
-              className="rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
-            >
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-8 w-8 overflow-hidden rounded-full border border-border bg-background">
-                    {partner.logo ? (
-                      <Image
-                        src={partner.logo}
-                        alt={partner.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
-                        {partner.name.slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
+        {partners.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No organization bindings are configured for this round yet.
+          </p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {partners.map((partner) => (
+              <a
+                key={partner.id}
+                href={partner.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackEvent('funnel_cta_click', {
+                    source: 'round_partner_card',
+                    path: partner.website,
+                  })
+                }
+                className="rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-8 w-8 overflow-hidden rounded-full border border-border bg-background">
+                      {partner.logo ? (
+                        <Image
+                          src={partner.logo}
+                          alt={partner.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
+                          {partner.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-base font-semibold text-foreground">
+                      {partner.name}
+                    </p>
                   </div>
-                  <p className="text-base font-semibold text-foreground">
-                    {partner.name}
+                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">{partner.description}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {partner.campaignCount} campaigns in this round
+                </p>
+                <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                  <p>Donations: {formatUSD(partner.donations)}</p>
+                  <p>Match funding: {formatUSD(partner.matchFunding)}</p>
+                  <p className="font-medium text-foreground">
+                    Total raised: {formatUSD(partner.totalRaised)}
                   </p>
                 </div>
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">{partner.description}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {partner.campaignCount} campaigns in this round
-              </p>
-              <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-                <p>Donations: {formatUSD(partner.donations)}</p>
-                <p>Match funding: {formatUSD(partner.matchFunding)}</p>
-                <p className="font-medium text-foreground">
-                  Total raised: {formatUSD(partner.totalRaised)}
-                </p>
-              </div>
-            </a>
-          ))}
-        </div>
+              </a>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

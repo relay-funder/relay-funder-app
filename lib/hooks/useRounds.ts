@@ -25,6 +25,7 @@ interface PaginatedRoundsResponse extends PaginatedResponse {
 }
 
 const MAX_ROUNDS_PAGES = 50;
+const LATEST_COMPLETED_ROUND_PAGE_SIZE = 50;
 
 async function fetchRounds(status?: string) {
   const url = status ? `/api/rounds?status=${status}` : '/api/rounds';
@@ -268,7 +269,7 @@ async function fetchLatestCompletedRound() {
 
   while (hasMore && currentPage <= MAX_ROUNDS_PAGES) {
     const response = await fetch(
-      `/api/rounds?page=${currentPage}&pageSize=10&forceUserView=true`,
+      `/api/rounds?page=${currentPage}&pageSize=${LATEST_COMPLETED_ROUND_PAGE_SIZE}&forceUserView=true`,
     );
     await handleApiErrors(response, 'Failed to fetch latest completed round');
     const data = (await response.json()) as PaginatedRoundsResponse;
