@@ -79,7 +79,9 @@ function buildRoundSponsor(
 
   const sponsorLogo = round.media?.[0]?.url ?? '';
   const sponsorWebsite =
-    typeof round.descriptionUrl === 'string' ? round.descriptionUrl : '';
+    typeof round.descriptionUrl === 'string'
+      ? toSafeExternalUrl(round.descriptionUrl)
+      : '';
 
   return {
     name: round.title,
@@ -87,6 +89,19 @@ function buildRoundSponsor(
     description: round.description,
     website: sponsorWebsite,
   };
+}
+
+function toSafeExternalUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return url;
+    }
+  } catch {
+    // fall through
+  }
+
+  return '';
 }
 
 function parseApprovedResult(
