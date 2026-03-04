@@ -179,13 +179,19 @@ export async function POST(req: Request, { params }: ParamType) {
     } else {
       throw new ApiParameterError('Unsupported content type');
     }
-    if (!Array.isArray(approvedResult)) {
+    const approvedResultIsArray = Array.isArray(approvedResult);
+    const approvedResultHasCampaignsArray =
+      typeof approvedResult === 'object' &&
+      approvedResult !== null &&
+      Array.isArray((approvedResult as { campaigns?: unknown[] }).campaigns);
+
+    if (!approvedResultIsArray && !approvedResultHasCampaignsArray) {
       throw new ApiParameterError('Unsupported content');
     }
 
     await db.round.update({
       where: { id: roundId },
-      data: { approvedResult: approvedResult ?? [] },
+      data: { approvedResult: approvedResult as InputJsonValue },
     });
 
     return response({ ok: true, roundId });
