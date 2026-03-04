@@ -23,7 +23,7 @@ export const CELO_PREZENTI_SPONSOR: RoundResultsSponsor = {
   name: 'Prezenti, Celo',
   logo: '/images/logo-prezenti.svg',
   description:
-    'Prezenti is a community-powered funding organisation that provides fast, flexible grants to local leaders and projects in the Celo community.',
+    'Prezenti is a community-powered funding organisation that provides fast, flexible grants to local leaders and projects in the Celo community. Their mission is to boost teams doing meaningful work, often before traditional funders even notice them, by removing barriers and centering trust. Prezenti grants are designed to help ideas take shape quickly, giving organizers the push they need to turn intention into action.',
   website: 'https://prezenti.xyz',
 };
 
