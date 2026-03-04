@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Calendar, Users, Wallet, Target } from 'lucide-react';
@@ -9,6 +9,7 @@ import { PageLayout } from '@/components/page/layout';
 import { formatUSD } from '@/lib/format-usd';
 import { roundHasEnded, buildRoundResultsView } from '@/lib/round-results';
 import { usePublicRoundResults } from '@/lib/hooks/usePublicRoundResults';
+import { trackEvent } from '@/lib/analytics';
 
 export function PublicRoundResultsList() {
   const { data, isLoading, isError } = usePublicRoundResults();
@@ -21,6 +22,13 @@ export function PublicRoundResultsList() {
           new Date(b.endTime).getTime() - new Date(a.endTime).getTime(),
       );
   }, [data]);
+
+  useEffect(() => {
+    trackEvent('funnel_homepage_view', {
+      source: 'round_results_list',
+      path: '/rounds',
+    });
+  }, []);
 
   return (
     <PageLayout title="Funding Rounds">
@@ -96,6 +104,12 @@ export function PublicRoundResultsList() {
                         <Link
                           href={`/rounds/${round.id}`}
                           className="flex items-center gap-2"
+                          onClick={() =>
+                            trackEvent('funnel_cta_click', {
+                              source: 'round_results_list',
+                              path: `/rounds/${round.id}`,
+                            })
+                          }
                         >
                           View Details
                           <ArrowRight className="h-3 w-3" />
@@ -136,16 +150,19 @@ export function PublicRoundResultsList() {
                     <h3 className="text-sm font-semibold text-foreground">
                       Share by Category
                     </h3>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {roundView.categories.map((category) => (
-                        <div
-                          key={`${round.id}-${category.category}`}
-                          className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
-                        >
-                          {category.category} - {category.campaignCount}{' '}
-                          campaigns ({category.percentage.toFixed(1)}%)
-                        </div>
-                      ))}
+                    <div className="grid gap-4 lg:grid-cols-[240px_1fr] lg:items-center">
+                      <SimplePieChart categories={roundView.categories} />
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {roundView.categories.map((category) => (
+                          <div
+                            key={`${round.id}-${category.category}`}
+                            className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
+                          >
+                            {category.category} - {category.campaignCount}{' '}
+                            campaigns ({category.percentage.toFixed(1)}%)
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -155,6 +172,49 @@ export function PublicRoundResultsList() {
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+const PIE_COLORS = [
+  'hsl(210 100% 45%)',
+  'hsl(150 65% 40%)',
+  'hsl(25 95% 50%)',
+  'hsl(270 60% 50%)',
+  'hsl(180 50% 45%)',
+  'hsl(350 65% 52%)',
+];
+
+function SimplePieChart({
+  categories,
+}: {
+  categories: Array<{ category: string; campaignCount: number; percentage: number }>;
+}) {
+  const pieBackground = useMemo(() => {
+    if (categories.length === 0) {
+      return 'hsl(var(--muted))';
+    }
+
+    let start = 0;
+    const segments = categories.map((category, index) => {
+      const end = start + category.percentage;
+      const color = PIE_COLORS[index % PIE_COLORS.length];
+      const segment = `${color} ${start}% ${end}%`;
+      start = end;
+      return segment;
+    });
+
+    return `conic-gradient(${segments.join(', ')})`;
+  }, [categories]);
+
+  return (
+    <div className="flex items-center justify-center">
+      <div
+        className="relative h-44 w-44 rounded-full border border-border"
+        style={{ background: pieBackground }}
+      >
+        <div className="absolute inset-8 rounded-full border border-border bg-background" />
+      </div>
+    </div>
   );
 }
 

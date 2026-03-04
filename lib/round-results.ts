@@ -18,6 +18,8 @@ export interface RoundCategoryItem {
 export interface RoundPartnerItem {
   id: string;
   name: string;
+  description: string;
+  website: string;
   campaignCount: number;
   donations: number;
   matchFunding: number;
@@ -97,6 +99,14 @@ function toShortAddress(address: string): string {
   }
 
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function toPartnerWebsite(partnerId: string): string {
+  if (partnerId.startsWith('0x') && partnerId.length === 42) {
+    return `https://celoscan.io/address/${partnerId}`;
+  }
+
+  return '#';
 }
 
 function findReportCampaign(
@@ -265,6 +275,8 @@ export function buildRoundResultsView(
     partnerMap.set(campaign.partnerId, {
       id: campaign.partnerId,
       name: toShortAddress(campaign.partnerId),
+      description: 'Campaigns grouped by payout recipient or creator wallet.',
+      website: toPartnerWebsite(campaign.partnerId),
       campaignCount: 1,
       donations: campaign.donations,
       matchFunding: campaign.matchFunding,
@@ -294,4 +306,3 @@ export function roundHasEnded(round: GetRoundResponseInstance): boolean {
 
   return new Date(round.endTime).getTime() < Date.now();
 }
-

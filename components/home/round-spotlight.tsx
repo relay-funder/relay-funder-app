@@ -12,6 +12,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { formatUSD } from '@/lib/format-usd';
 import { useMemo } from 'react';
+import { trackEvent } from '@/lib/analytics';
 
 export function RoundSpotlight() {
   const {
@@ -141,6 +142,12 @@ export function RoundSpotlight() {
             <Link
               href={`/rounds/${round.id}`}
               className="flex items-center gap-2"
+              onClick={() =>
+                trackEvent('funnel_cta_click', {
+                  source: 'round_spotlight',
+                  path: `/rounds/${round.id}`,
+                })
+              }
             >
               {isCompleted ? 'View Results' : 'View Round'}
               <ArrowRight className="h-3 w-3" />

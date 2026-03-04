@@ -11,6 +11,7 @@ import {
   Users,
   Wallet,
   BarChart3,
+  ExternalLink,
 } from 'lucide-react';
 import {
   Card,
@@ -29,6 +30,7 @@ import { PageLayout } from '@/components/page/layout';
 import { formatUSD } from '@/lib/format-usd';
 import { buildRoundResultsView, roundHasEnded } from '@/lib/round-results';
 import { usePublicRoundResult } from '@/lib/hooks/usePublicRoundResults';
+import { trackEvent } from '@/lib/analytics';
 
 export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
   const { data: round, isLoading, isError } = usePublicRoundResult(roundId);
@@ -48,12 +50,32 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
     }
   }, [isLoading, isError, round, router]);
 
+  useEffect(() => {
+    if (!round) {
+      return;
+    }
+
+    trackEvent('funnel_homepage_view', {
+      source: 'round_results_detail',
+      path: `/rounds/${round.id}`,
+    });
+  }, [round]);
+
   return (
     <PageLayout title="Round Results">
       <div className="mx-auto w-full max-w-[1600px] space-y-8 px-4 pb-8 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="/rounds" className="flex items-center gap-2">
+            <Link
+              href="/rounds"
+              className="flex items-center gap-2"
+              onClick={() =>
+                trackEvent('funnel_cta_click', {
+                  source: 'round_results_detail',
+                  path: '/rounds',
+                })
+              }
+            >
               <ArrowLeft className="h-4 w-4" />
               Back to Rounds
             </Link>
@@ -110,7 +132,10 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
 
             <RoundAmountsSection campaigns={roundView.campaigns} />
 
-            <RoundCampaignTableSection campaigns={roundView.campaigns} />
+            <RoundCampaignTableSection
+              campaigns={roundView.campaigns}
+              partners={roundView.partners}
+            />
           </>
         )}
       </div>
@@ -185,16 +210,19 @@ function RoundHeaderSection({
 
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Share by Category</h3>
-          <div className="grid gap-2 md:grid-cols-2">
-            {categories.map((category) => (
-              <div
-                key={category.category}
-                className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
-              >
-                {category.category} - {category.campaignCount} campaigns (
-                {category.percentage.toFixed(1)}%)
-              </div>
-            ))}
+          <div className="grid gap-4 lg:grid-cols-[240px_1fr] lg:items-center">
+            <SimplePieChart categories={categories} />
+            <div className="grid gap-2 md:grid-cols-2">
+              {categories.map((category) => (
+                <div
+                  key={category.category}
+                  className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground"
+                >
+                  {category.category} - {category.campaignCount} campaigns (
+                  {category.percentage.toFixed(1)}%)
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </CardContent>
@@ -208,6 +236,8 @@ function RoundPartnersSection({
   partners: Array<{
     id: string;
     name: string;
+    description: string;
+    website: string;
     campaignCount: number;
     donations: number;
     matchFunding: number;
@@ -222,11 +252,31 @@ function RoundPartnersSection({
       <CardContent>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {partners.map((partner) => (
-            <div
+            <a
               key={partner.id}
-              className="rounded-lg border border-border bg-muted/30 p-4"
+              href={partner.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                trackEvent('funnel_cta_click', {
+                  source: 'round_partner_card',
+                  path: partner.website,
+                })
+              }
+              className="rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
             >
-              <p className="text-base font-semibold text-foreground">{partner.name}</p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-xs font-semibold text-muted-foreground">
+                    {partner.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <p className="text-base font-semibold text-foreground">
+                    {partner.name}
+                  </p>
+                </div>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">{partner.description}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {partner.campaignCount} campaigns in this round
               </p>
@@ -237,7 +287,7 @@ function RoundPartnersSection({
                   Total raised: {formatUSD(partner.totalRaised)}
                 </p>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </CardContent>
@@ -287,6 +337,7 @@ function RoundAmountsSection({
 
 function RoundCampaignTableSection({
   campaigns,
+  partners,
 }: {
   campaigns: Array<{
     id: number;
@@ -301,7 +352,16 @@ function RoundCampaignTableSection({
     total: number;
     share: number;
   }>;
+  partners: Array<{ id: string; name: string }>;
 }) {
+  const partnerLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    partners.forEach((partner) => {
+      map.set(partner.id, partner.name);
+    });
+    return map;
+  }, [partners]);
+
   return (
     <Card className="bg-card">
       <CardHeader>
@@ -344,7 +404,18 @@ function RoundCampaignTableSection({
                     </div>
                   </TableCell>
                   <TableCell>{campaign.country}</TableCell>
-                  <TableCell>{campaign.partnerId}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full border border-border bg-background text-[10px] font-semibold text-muted-foreground">
+                        {(partnerLookup.get(campaign.partnerId) ?? campaign.partnerId)
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <span>
+                        {partnerLookup.get(campaign.partnerId) ?? campaign.partnerId}
+                      </span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     {formatUSD(campaign.donations)}
                   </TableCell>
@@ -368,6 +439,49 @@ function RoundCampaignTableSection({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+const PIE_COLORS = [
+  'hsl(210 100% 45%)',
+  'hsl(150 65% 40%)',
+  'hsl(25 95% 50%)',
+  'hsl(270 60% 50%)',
+  'hsl(180 50% 45%)',
+  'hsl(350 65% 52%)',
+];
+
+function SimplePieChart({
+  categories,
+}: {
+  categories: Array<{ category: string; campaignCount: number; percentage: number }>;
+}) {
+  const pieBackground = useMemo(() => {
+    if (categories.length === 0) {
+      return 'hsl(var(--muted))';
+    }
+
+    let start = 0;
+    const segments = categories.map((category, index) => {
+      const end = start + category.percentage;
+      const color = PIE_COLORS[index % PIE_COLORS.length];
+      const segment = `${color} ${start}% ${end}%`;
+      start = end;
+      return segment;
+    });
+
+    return `conic-gradient(${segments.join(', ')})`;
+  }, [categories]);
+
+  return (
+    <div className="flex items-center justify-center">
+      <div
+        className="relative h-44 w-44 rounded-full border border-border"
+        style={{ background: pieBackground }}
+      >
+        <div className="absolute inset-8 rounded-full border border-border bg-background" />
+      </div>
+    </div>
   );
 }
 
