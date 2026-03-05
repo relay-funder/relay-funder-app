@@ -123,7 +123,6 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
               sponsor={roundView.sponsor}
               matchingPool={round.matchingPool}
               totalDonations={roundView.totalDonations}
-              contributorsCount={roundView.contributorsCount}
               campaignsCount={roundView.campaignsCount}
               categories={roundView.categories}
             />
@@ -161,7 +160,6 @@ function RoundHeaderSection({
   sponsor,
   matchingPool,
   totalDonations,
-  contributorsCount,
   campaignsCount,
   categories,
 }: {
@@ -178,7 +176,6 @@ function RoundHeaderSection({
   };
   matchingPool: number;
   totalDonations: number;
-  contributorsCount: number;
   campaignsCount: number;
   categories: Array<{
     category: string;
@@ -187,6 +184,7 @@ function RoundHeaderSection({
     donations: number;
     matchFunding: number;
     totalRaised: number;
+    donationCount: number;
   }>;
 }) {
   const hasSponsorWebsite =
@@ -199,6 +197,10 @@ function RoundHeaderSection({
     typeof sponsor.logo === 'string' && sponsor.logo.length > 0;
   const hasRoundLogo = typeof logoUrl === 'string' && logoUrl.length > 0;
   const roundPeriodLabel = `${new Date(startTime).toLocaleDateString()} - ${new Date(endTime).toLocaleDateString()}`;
+  const contributionsCount = categories.reduce(
+    (total, category) => total + category.donationCount,
+    0,
+  );
 
   return (
     <Card className="bg-card">
@@ -257,13 +259,13 @@ function RoundHeaderSection({
           />
           <RoundStat
             icon={<Target className="h-4 w-4" />}
-            label="Total Donations"
+            label="Donations"
             value={formatUSD(totalDonations)}
           />
           <RoundStat
             icon={<Users className="h-4 w-4" />}
-            label="Contributors"
-            value={contributorsCount.toLocaleString()}
+            label="Contributions"
+            value={contributionsCount.toLocaleString()}
           />
           <RoundStat
             icon={<Calendar className="h-4 w-4" />}
@@ -434,12 +436,12 @@ function RoundAmountsSection({
     donationCount: number;
   }>;
 }) {
-  const categoriesByRaised = useMemo(
-    () => [...categories].sort((left, right) => right.totalRaised - left.totalRaised),
-    [categories],
+  const largestTotal = categories.reduce(
+    (maximum, category) =>
+      Math.max(maximum, Number.isFinite(category.totalRaised) ? category.totalRaised : 0),
+    0,
   );
-  const largestTotal = categoriesByRaised[0]?.totalRaised ?? 0;
-  const highestContributionCount = categoriesByRaised.reduce(
+  const highestContributionCount = categories.reduce(
     (maximum, category) =>
       Math.max(maximum, Number.isFinite(category.donationCount) ? category.donationCount : 0),
     0,
@@ -457,7 +459,7 @@ function RoundAmountsSection({
         </p>
       </CardHeader>
       <CardContent>
-        {categoriesByRaised.length === 0 ? (
+        {categories.length === 0 ? (
           <p className="text-sm text-muted-foreground">No campaign totals available.</p>
         ) : (
           <div className="overflow-x-auto pb-2">
@@ -471,7 +473,7 @@ function RoundAmountsSection({
                 </span>
               </div>
               <div className="flex h-[300px] items-end gap-3">
-                {categoriesByRaised.map((category, index) => {
+                {categories.map((category, index) => {
                   const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
                   const totalPercentage =
                     largestTotal > 0 ? (category.totalRaised / largestTotal) * 100 : 0;
