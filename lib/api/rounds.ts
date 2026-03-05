@@ -10,6 +10,15 @@ import { ApiNotFoundError } from './error';
 import { mapCampaign, getPaymentSummaryList } from './campaigns';
 import { isFuture, isPast } from 'date-fns';
 
+const ROUND_CAMPAIGN_PAYMENT_STATUSES = [
+  'confirmed',
+  'pending',
+  'confirming',
+  'CONFIRMED',
+  'PENDING',
+  'CONFIRMING',
+] as const;
+
 export function mapRound(
   round: Round & {
     roundCampaigns?: (RoundCampaigns & {
@@ -115,7 +124,7 @@ export async function listRounds({
                   },
                   where: {
                     status: {
-                      in: ['CONFIRMED', 'PENDING'],
+                      in: [...ROUND_CAMPAIGN_PAYMENT_STATUSES],
                     },
                   },
                 },
@@ -242,7 +251,7 @@ export async function getRound(
                 },
                 where: {
                   status: {
-                    in: ['CONFIRMED', 'PENDING'],
+                    in: [...ROUND_CAMPAIGN_PAYMENT_STATUSES],
                   },
                 },
               },
