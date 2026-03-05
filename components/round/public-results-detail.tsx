@@ -341,7 +341,7 @@ function RoundPartnersSection({
             No organization bindings are configured for this round yet.
           </p>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             {partners.map((partner) => (
               <a
                 key={partner.id}
@@ -354,42 +354,65 @@ function RoundPartnersSection({
                     path: partner.website,
                   })
                 }
-                className="rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+                className="rounded-xl border border-border bg-muted/20 p-5 transition-colors hover:bg-muted/40"
               >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative h-8 w-8 overflow-hidden rounded-full border border-border bg-background">
-                      {partner.logo ? (
-                        <Image
-                          src={partner.logo}
-                          alt={partner.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
-                          {partner.name.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
+                <div className="flex items-start gap-4">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-background">
+                    {partner.logo ? (
+                      <Image
+                        src={partner.logo}
+                        alt={partner.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
+                        {partner.name.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <p className="text-lg font-semibold leading-tight text-foreground">
+                        {partner.name}
+                      </p>
+                      <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     </div>
-                    <p className="text-base font-semibold text-foreground">
-                      {partner.name}
+                    <p className="text-sm text-muted-foreground">
+                      {partner.description}
                     </p>
                   </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <p className="text-sm text-muted-foreground">{partner.description}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-3 text-sm text-muted-foreground">
                   {partner.campaignCount}{' '}
                   {partner.campaignCount === 1 ? 'campaign' : 'campaigns'} in this
                   round
                 </p>
-                <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <p>Donations: {formatUSD(partner.donations)}</p>
-                  <p>Match funding: {formatUSD(partner.matchFunding)}</p>
-                  <p className="font-medium text-foreground">
-                    Total raised: {formatUSD(partner.totalRaised)}
-                  </p>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+                  <div className="rounded-md border border-border/70 bg-background/40 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Donations
+                    </p>
+                    <p className="font-medium text-foreground">
+                      {formatUSD(partner.donations)}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border/70 bg-background/40 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Match
+                    </p>
+                    <p className="font-medium text-foreground">
+                      {formatUSD(partner.matchFunding)}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-primary/40 bg-primary/10 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Total
+                    </p>
+                    <p className="font-semibold text-foreground">
+                      {formatUSD(partner.totalRaised)}
+                    </p>
+                  </div>
                 </div>
               </a>
             ))}
@@ -408,6 +431,7 @@ function RoundAmountsSection({
     donations: number;
     matchFunding: number;
     totalRaised: number;
+    donationCount: number;
   }>;
 }) {
   const categoriesByRaised = useMemo(
@@ -415,14 +439,11 @@ function RoundAmountsSection({
     [categories],
   );
   const largestTotal = categoriesByRaised[0]?.totalRaised ?? 0;
-
-  const truncateCategoryName = (name: string) => {
-    if (name.length <= 18) {
-      return name;
-    }
-
-    return `${name.slice(0, 18)}...`;
-  };
+  const highestContributionCount = categoriesByRaised.reduce(
+    (maximum, category) =>
+      Math.max(maximum, Number.isFinite(category.donationCount) ? category.donationCount : 0),
+    0,
+  );
 
   return (
     <Card className="bg-card">
@@ -432,7 +453,7 @@ function RoundAmountsSection({
           Amounts Raised by Category
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Totals include donations + match funding.
+          Each category includes two bars: total raised (donations + match) and contribution count.
         </p>
       </CardHeader>
       <CardContent>
@@ -441,32 +462,80 @@ function RoundAmountsSection({
         ) : (
           <div className="overflow-x-auto pb-2">
             <div className="min-w-[620px]">
-              <div className="flex h-[260px] items-end gap-3">
-                {categoriesByRaised.map((category) => {
-                  const percentage =
+              <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
+                  Solid bar = Total raised
+                </span>
+                <span className="rounded-full border border-border px-2 py-1 text-muted-foreground">
+                  Soft bar = Contributions
+                </span>
+              </div>
+              <div className="flex h-[300px] items-end gap-3">
+                {categoriesByRaised.map((category, index) => {
+                  const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
+                  const totalPercentage =
                     largestTotal > 0 ? (category.totalRaised / largestTotal) * 100 : 0;
+                  const contributionPercentage =
+                    highestContributionCount > 0
+                      ? (category.donationCount / highestContributionCount) * 100
+                      : 0;
 
                   return (
                     <div
                       key={category.category}
-                      className="flex min-w-[110px] flex-1 flex-col justify-end gap-2"
+                      className="flex min-w-[130px] flex-1 flex-col justify-end gap-2"
                     >
-                      <div className="flex h-[170px] items-end">
-                        <div
-                          className="w-full rounded-t-md bg-primary/90"
-                          style={{ height: `${Math.max(4, percentage)}%` }}
-                          title={`${category.category}: ${formatUSD(category.totalRaised)} (Donations: ${formatUSD(category.donations)}, Match: ${formatUSD(category.matchFunding)})`}
-                        />
+                      <div className="flex h-[180px] items-end gap-2 rounded-lg border border-border/70 bg-muted/20 p-2">
+                        <div className="flex h-full flex-1 items-end">
+                          <div
+                            className="w-full rounded-t-md"
+                            style={{
+                              height: `${Math.max(6, totalPercentage)}%`,
+                              backgroundColor: categoryColor,
+                            }}
+                            title={`${formatCategoryLabel(category.category)} total raised: ${formatUSD(category.totalRaised)} (Donations: ${formatUSD(category.donations)}, Match: ${formatUSD(category.matchFunding)})`}
+                          />
+                        </div>
+                        <div className="flex h-full flex-1 items-end">
+                          <div
+                            className="w-full rounded-t-md border border-border/60"
+                            style={{
+                              height: `${Math.max(6, contributionPercentage)}%`,
+                              backgroundColor: categoryColor,
+                              opacity: 0.45,
+                            }}
+                            title={`${formatCategoryLabel(category.category)} contributions: ${category.donationCount.toLocaleString()}`}
+                          />
+                        </div>
                       </div>
-                      <p
-                        className="text-center text-xs text-muted-foreground"
-                        title={category.category}
-                      >
-                        {truncateCategoryName(category.category)}
-                      </p>
-                      <p className="text-center text-xs font-medium text-foreground">
-                        {formatUSD(category.totalRaised)}
-                      </p>
+                      <div className="rounded-lg border border-border bg-muted/20 p-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-block h-3.5 w-3.5 rounded-full ring-1 ring-border"
+                            style={{ backgroundColor: categoryColor }}
+                          />
+                          <p
+                            className="text-sm font-semibold text-foreground"
+                            title={formatCategoryLabel(category.category)}
+                          >
+                            {formatCategoryLabel(category.category)}
+                          </p>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-muted-foreground">Total Raised</p>
+                            <p className="font-semibold text-foreground">
+                              {formatUSD(category.totalRaised)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Contributions</p>
+                            <p className="font-semibold text-foreground">
+                              {category.donationCount.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
