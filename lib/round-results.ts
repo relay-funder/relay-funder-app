@@ -415,6 +415,119 @@ function sumUniqueConfirmedContributors(
   return uniqueContributors.size;
 }
 
+function isConfirmedPaymentStatus(status: unknown): boolean {
+  return typeof status === 'string' && status.toUpperCase() === 'CONFIRMED';
+}
+
+function parsePaymentAmount(amount: unknown): number {
+  const parsedAmount = toNumberOrUndefined(amount);
+  return parsedAmount && parsedAmount > 0 ? parsedAmount : 0;
+}
+
+type RoundCampaignPaymentLike = NonNullable<
+  NonNullable<GetRoundCampaignResponseInstance['campaign']>['payments']
+>[number];
+
+function getPaymentContributorKey(payment: RoundCampaignPaymentLike): string | null {
+  if (typeof payment.userId === 'number' && Number.isFinite(payment.userId)) {
+    return `id:${payment.userId}`;
+  }
+
+  const userAddress = payment.user?.address;
+  if (typeof userAddress === 'string' && userAddress.length > 0) {
+    return `address:${userAddress.toLowerCase()}`;
+  }
+
+  if (typeof payment.id === 'number' && Number.isFinite(payment.id)) {
+    return `payment:${payment.id}`;
+  }
+
+  return null;
+}
+
+function computeFallbackMatchFundingByRoundCampaignId(
+  round: GetRoundResponseInstance,
+): Map<number, number> {
+  const matchingPool = Number(round.matchingPool || 0);
+  if (!Number.isFinite(matchingPool) || matchingPool <= 0) {
+    return new Map();
+  }
+
+  const campaignScores: Array<{ roundCampaignId: number; qfScore: number }> = [];
+
+  (round.roundCampaigns ?? []).forEach((roundCampaign) => {
+    const payments = roundCampaign.campaign?.payments;
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return;
+    }
+
+    const contributorTotals = new Map<string, number>();
+    payments.forEach((payment) => {
+      if (!isConfirmedPaymentStatus(payment.status)) {
+        return;
+      }
+
+      const amount = parsePaymentAmount(payment.amount);
+      if (amount <= 0) {
+        return;
+      }
+
+      const contributorKey = getPaymentContributorKey(payment);
+      if (!contributorKey) {
+        return;
+      }
+
+      contributorTotals.set(
+        contributorKey,
+        (contributorTotals.get(contributorKey) ?? 0) + amount,
+      );
+    });
+
+    if (contributorTotals.size === 0) {
+      return;
+    }
+
+    let qfSum = 0;
+    contributorTotals.forEach((contributorTotal) => {
+      qfSum += Math.sqrt(Math.max(contributorTotal, 0));
+    });
+
+    const qfScore = Math.pow(qfSum, 2);
+    if (!Number.isFinite(qfScore) || qfScore <= 0) {
+      return;
+    }
+
+    campaignScores.push({
+      roundCampaignId: roundCampaign.id,
+      qfScore,
+    });
+  });
+
+  const totalQfScore = campaignScores.reduce(
+    (total, campaign) => total + campaign.qfScore,
+    0,
+  );
+  if (!Number.isFinite(totalQfScore) || totalQfScore <= 0) {
+    return new Map();
+  }
+
+  const fallbackMatchFundingByRoundCampaignId = new Map<number, number>();
+  campaignScores.forEach((campaign) => {
+    const matchFunding = Number(
+      ((campaign.qfScore / totalQfScore) * matchingPool).toFixed(2),
+    );
+
+    if (Number.isFinite(matchFunding) && matchFunding > 0) {
+      fallbackMatchFundingByRoundCampaignId.set(
+        campaign.roundCampaignId,
+        matchFunding,
+      );
+    }
+  });
+
+  return fallbackMatchFundingByRoundCampaignId;
+}
+
 function toCountry(location: string | null | undefined): string {
   if (!location) {
     return 'Unknown';
@@ -439,6 +552,8 @@ export function buildRoundResultsView(
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();
   const campaignsByCampaignId = new Map<number, CampaignDistribution>();
   const campaignsByNormalizedTitle = new Map<string, CampaignDistribution>();
+  const fallbackMatchFundingByRoundCampaignId =
+    computeFallbackMatchFundingByRoundCampaignId(round);
 
   if (report?.campaigns) {
     report.campaigns.forEach((campaign) => {
@@ -482,12 +597,16 @@ export function buildRoundResultsView(
     const suggestedMatchFromReport = reportCampaign
       ? Number(reportCampaign.suggestedMatch)
       : NaN;
+    const fallbackMatchFunding =
+      fallbackMatchFundingByRoundCampaignId.get(roundCampaign.id) ?? 0;
     const matchFunding =
       Number.isFinite(matchFundingFromReport) && matchFundingFromReport > 0
         ? matchFundingFromReport
         : Number.isFinite(suggestedMatchFromReport) && suggestedMatchFromReport > 0
           ? suggestedMatchFromReport
-          : 0;
+          : Number.isFinite(fallbackMatchFunding) && fallbackMatchFunding > 0
+            ? fallbackMatchFunding
+            : 0;
     const fallbackContributors = sumUniqueConfirmedContributors(roundCampaign);
     const contributions = reportCampaign
       ? Number(reportCampaign.contributionsCount)
