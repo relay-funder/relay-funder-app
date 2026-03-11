@@ -86,6 +86,14 @@ export async function POST(req: Request, { params }: ExecuteWithdrawalParams) {
       );
     }
 
+    if (withdrawal.transactionHash === transactionHash) {
+      return response({ withdrawal });
+    }
+
+    if (withdrawal.transactionHash) {
+      throw new ApiAuthNotAllowed('Withdrawal has already been executed');
+    }
+
     // Update withdrawal with transaction hash
     const updated = await db.withdrawal.update({
       where: { id: withdrawal.id },

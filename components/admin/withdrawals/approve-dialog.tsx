@@ -56,7 +56,16 @@ export function ApproveDialog({
   const [error, setError] = useState<string | null>(null);
   const [isExecutingTransaction, setIsExecutingTransaction] = useState(false);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
-  const initialFocusRef = useRef<HTMLInputElement | null>(null);
+  const initialFocusRef = useRef<HTMLTextAreaElement | null>(null);
+  const onConfirmRef = useRef(onConfirm);
+  onConfirmRef.current = onConfirm;
+  // Track which tx hash has already been consumed to prevent stale auto-submits
+  // when the dialog is reopened (hooks persist since ApproveDialog is always mounted)
+  const consumedTxHashRef = useRef<string | undefined>(undefined);
+  const pendingTransactionRef = useRef<{
+    requestKey: string;
+    transactionHash: string;
+  } | null>(null);
 
   const {
     executeWithdrawal,
@@ -88,21 +97,23 @@ export function ApproveDialog({
   const onChainLastTxHash = isWithdrawalAmount
     ? withdrawalTxHash
     : authorizationTxHash;
+  const requestKey = `${requestType}:${campaignId ?? 'none'}:${withdrawalId ?? 'none'}:${treasuryAddress ?? 'none'}`;
 
   useEffect(() => {
     if (open) {
-      setTx(defaultTransactionHash ?? '');
+      const pendingTransaction =
+        pendingTransactionRef.current?.requestKey === requestKey
+          ? pendingTransactionRef.current.transactionHash
+          : '';
+      setTx(defaultTransactionHash ?? pendingTransaction);
       setNotes(defaultNotes ?? '');
       setError(null);
       setIsExecutingTransaction(false);
       setHasAutoSubmitted(false);
-      // small delay to ensure element exists in DOM before focusing
-      if (!isWithdrawalAmount) {
-        const t = setTimeout(() => initialFocusRef.current?.focus(), 10);
-        return () => clearTimeout(t);
-      }
+      const t = setTimeout(() => initialFocusRef.current?.focus(), 10);
+      return () => clearTimeout(t);
     }
-  }, [open, defaultTransactionHash, defaultNotes, isWithdrawalAmount]);
+  }, [open, defaultTransactionHash, defaultNotes, requestKey]);
 
   // Handle transaction execution result for both WITHDRAWAL_AMOUNT and ON_CHAIN_AUTHORIZATION requests
   useEffect(() => {
@@ -112,14 +123,20 @@ export function ApproveDialog({
       !isExecutingOnChain &&
       !onChainError &&
       onChainLastTxHash !== tx &&
+      onChainLastTxHash !== consumedTxHashRef.current &&
       !hasAutoSubmitted
     ) {
       // Transaction successful, automatically proceed with approval
+      consumedTxHashRef.current = onChainLastTxHash;
+      pendingTransactionRef.current = {
+        requestKey,
+        transactionHash: onChainLastTxHash,
+      };
       setTx(onChainLastTxHash);
       setIsExecutingTransaction(false);
       setHasAutoSubmitted(true);
       // Automatically submit approval after transaction completes
-      onConfirm?.({
+      onConfirmRef.current?.({
         transactionHash: onChainLastTxHash,
         notes: notes.trim() ? notes.trim() : null,
       });
@@ -127,16 +144,17 @@ export function ApproveDialog({
       setError(onChainError);
       setIsExecutingTransaction(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isWithdrawalAmount,
     isOnChainAuth,
     onChainLastTxHash,
     isExecutingOnChain,
     onChainError,
-    tx,
     notes,
+    requestKey,
+    tx,
     hasAutoSubmitted,
-    onConfirm,
   ]);
 
   const isBrowser = useMemo(
@@ -354,6 +372,7 @@ export function ApproveDialog({
               </label>
               <textarea
                 id="approve-notes"
+                ref={initialFocusRef}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional notes for this approval"
@@ -407,6 +426,9 @@ export function ApproveDialog({
                 ) : (
                   'Approve & Execute'
                 )
+              ) : pendingTransactionRef.current?.requestKey === requestKey &&
+                pendingTransactionRef.current.transactionHash === tx ? (
+                'Retry Approval'
               ) : (
                 confirmText
               )}

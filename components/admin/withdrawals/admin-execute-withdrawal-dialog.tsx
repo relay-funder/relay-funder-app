@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui';
 import {
   Dialog,
@@ -45,6 +45,8 @@ export function AdminExecuteWithdrawalDialog({
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
 
   const {
     executeWithdrawal,
@@ -55,47 +57,51 @@ export function AdminExecuteWithdrawalDialog({
 
   const recordExecutionMutation = useRecordWithdrawalExecution();
   const validateMutation = useValidateWithdrawal();
+  const hasRecordedRef = useRef(false);
+  const recordExecutionMutationRef = useRef(recordExecutionMutation);
+  recordExecutionMutationRef.current = recordExecutionMutation;
+
+  const recordExecution = useCallback(
+    async (transactionHash: string) => {
+      hasRecordedRef.current = true;
+      setTxHash(transactionHash);
+
+      try {
+        await recordExecutionMutationRef.current.mutateAsync({
+          campaignId,
+          withdrawalId,
+          transactionHash,
+        });
+        onOpenChangeRef.current?.(false);
+        setTxHash(null);
+        setError(null);
+      } catch (err) {
+        hasRecordedRef.current = false;
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to record withdrawal execution',
+        );
+      }
+    },
+    [campaignId, withdrawalId],
+  );
 
   useEffect(() => {
     if (open) {
-      setTxHash(null);
       setError(null);
+      hasRecordedRef.current = false;
     }
   }, [open]);
 
   useEffect(() => {
+    if (hasRecordedRef.current) return;
     if (onChainLastTxHash && !isExecutingOnChain && !onChainError) {
-      // On-chain transaction successful, now record in DB
-      setTxHash(onChainLastTxHash);
-      recordExecutionMutation.mutate(
-        {
-          campaignId,
-          withdrawalId,
-          transactionHash: onChainLastTxHash,
-        },
-        {
-          onSuccess: () => {
-            onOpenChange?.(false);
-            setTxHash(null);
-            setError(null);
-          },
-          onError: (err) => {
-            setError(err.message || 'Failed to record withdrawal execution');
-          },
-        },
-      );
+      void recordExecution(onChainLastTxHash);
     } else if (onChainError) {
       setError(onChainError);
     }
-  }, [
-    onChainLastTxHash,
-    isExecutingOnChain,
-    onChainError,
-    campaignId,
-    withdrawalId,
-    recordExecutionMutation,
-    onOpenChange,
-  ]);
+  }, [onChainLastTxHash, isExecutingOnChain, onChainError, recordExecution]);
 
   const isSubmitting =
     isValidating || isExecutingOnChain || recordExecutionMutation.isPending;
@@ -105,6 +111,11 @@ export function AdminExecuteWithdrawalDialog({
 
     if (!treasuryAddress) {
       setError('Treasury address is missing.');
+      return;
+    }
+
+    if (txHash) {
+      await recordExecution(txHash);
       return;
     }
 
@@ -217,7 +228,7 @@ export function AdminExecuteWithdrawalDialog({
           <Button
             type="button"
             variant="secondary"
-            onClick={() => onOpenChange?.(false)}
+            onClick={() => onOpenChangeRef.current?.(false)}
             disabled={isSubmitting}
           >
             Cancel
@@ -233,6 +244,8 @@ export function AdminExecuteWithdrawalDialog({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Executing...
               </div>
+            ) : txHash ? (
+              'Retry Recording'
             ) : (
               'Execute Withdrawal'
             )}

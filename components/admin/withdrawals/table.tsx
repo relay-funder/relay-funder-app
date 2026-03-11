@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   useAdminApproveWithdrawal,
@@ -133,6 +133,8 @@ export function WithdrawalsTable({
     useState<AdminWithdrawalListItem | null>(null);
 
   const approveMutation = useAdminApproveWithdrawal();
+  const approveMutationRef = useRef(approveMutation);
+  approveMutationRef.current = approveMutation;
   const updateMutation = useUpdateAdminWithdrawal();
 
   const openApproveDialog = useCallback((w: AdminWithdrawalListItem) => {
@@ -146,7 +148,7 @@ export function WithdrawalsTable({
       if (!w) return;
       try {
         setBusy((b) => ({ ...b, approving: w.id }));
-        await approveMutation.mutateAsync({
+        await approveMutationRef.current.mutateAsync({
           campaignId: w.campaignId,
           withdrawalId: w.id,
           transactionHash: payload.transactionHash,
@@ -160,7 +162,7 @@ export function WithdrawalsTable({
         setBusy((b) => ({ ...b, approving: undefined }));
       }
     },
-    [approveMutation, approveTarget],
+    [approveTarget],
   );
 
   const handleRevoke = useCallback((w: AdminWithdrawalListItem) => {
