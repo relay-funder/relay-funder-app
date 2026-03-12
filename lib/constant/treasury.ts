@@ -6,8 +6,8 @@ import { USD_TOKEN, USDC_DECIMALS, USDT_DECIMALS } from './tokens';
 
 // Time delays in seconds
 export const TREASURY_DELAYS = {
-  WITHDRAWAL_DELAY: 3600, // 1 hour
-  REFUND_DELAY: 7200, // 2 hours
+  WITHDRAWAL_DELAY: 30 * 24 * 60 * 60, // 30 days
+  REFUND_DELAY: 7 * 24 * 60 * 60, // 7 days
   CONFIG_LOCK_PERIOD: 1800, // 30 minutes
 } as const;
 
