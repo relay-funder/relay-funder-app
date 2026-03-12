@@ -8,6 +8,7 @@ import { CampaignAdminDisableButton } from './admin/disable';
 import { CampaignAdminDeployContractButton } from './admin/deploy-contract';
 import { CampaignAdminFeaturedDialog } from './admin/featured-dialog';
 import { CampaignAdminClaimTipButton } from './admin/claim-tip';
+import { CampaignAdminClaimFundButton } from './admin/claim-fund';
 import { CampaignAdminDisburseFeesButton } from './admin/disburse-fees';
 import { CampaignAdminCreateWithdrawalButton } from './admin/create-withdrawal-button';
 import { CampaignAdminExecuteWithdrawalButton } from './admin/execute-withdrawal-button';
@@ -94,7 +95,11 @@ export function CampaignCardAdminActions({
               {/* Claim tips and disburse fees for active campaigns past deadline */}
               {campaign.endTime &&
                 new Date(campaign.endTime).getTime() < Date.now() && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <CampaignAdminClaimFundButton
+                      campaign={campaign}
+                      buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                    />
                     <CampaignAdminClaimTipButton
                       campaign={campaign}
                       buttonClassName="h-8 w-full px-2 py-1 text-xs"
@@ -164,7 +169,11 @@ export function CampaignCardAdminActions({
                 />
               )}
               {/* Claim tips and disburse fees */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <CampaignAdminClaimFundButton
+                  campaign={campaign}
+                  buttonClassName="h-8 w-full px-2 py-1 text-xs"
+                />
                 <CampaignAdminClaimTipButton
                   campaign={campaign}
                   buttonClassName="h-8 w-full px-2 py-1 text-xs"

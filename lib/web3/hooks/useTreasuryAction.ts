@@ -13,7 +13,10 @@ export interface TreasuryActionResult {
   error?: string;
 }
 
-export type TreasuryActionFunctionName = 'claimTip' | 'disburseFees';
+export type TreasuryActionFunctionName =
+  | 'claimTip'
+  | 'claimFund'
+  | 'disburseFees';
 
 export function useTreasuryAction(functionName: TreasuryActionFunctionName) {
   const [isExecuting, setIsExecuting] = useState(false);

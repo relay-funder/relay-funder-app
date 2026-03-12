@@ -23,6 +23,7 @@ vi.mock('@/lib/web3', () => ({
 vi.mock('@/contracts/abi/KeepWhatsRaised', () => ({
   KeepWhatsRaisedABI: [
     { name: 'claimTip', type: 'function' },
+    { name: 'claimFund', type: 'function' },
     { name: 'disburseFees', type: 'function' },
   ],
 }));
@@ -106,6 +107,26 @@ describe('useTreasuryAction', () => {
         address: validAddress,
         abi: expect.any(Array),
         functionName: 'disburseFees',
+        args: [],
+      });
+    });
+  });
+
+  describe('with claimFund function', () => {
+    test('calls writeContractAsync with claimFund function name', async () => {
+      mockWriteContractAsync.mockResolvedValue('0xfeed123456');
+      const { useTreasuryAction } = await import('./useTreasuryAction');
+      const { execute } = useTreasuryAction('claimFund');
+
+      const validAddress = '0x1234567890123456789012345678901234567890';
+      const result = await execute({ treasuryAddress: validAddress });
+
+      expect(result.success).toBe(true);
+      expect(result.hash).toBe('0xfeed123456');
+      expect(mockWriteContractAsync).toHaveBeenCalledWith({
+        address: validAddress,
+        abi: expect.any(Array),
+        functionName: 'claimFund',
         args: [],
       });
     });
