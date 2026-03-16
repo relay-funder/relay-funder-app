@@ -2,10 +2,11 @@ import { FILE_STORAGE_PROVIDER } from '@/lib/constant';
 import { writeFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
+import { IS_DEVELOPMENT } from '@/lib/utils/env';
 
 if (
   FILE_STORAGE_PROVIDER === 'LOCAL' &&
-  process.env.NODE_ENV !== 'development'
+  !IS_DEVELOPMENT
 ) {
   throw new Error('Local file storage only supported during development');
 }

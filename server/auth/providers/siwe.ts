@@ -11,6 +11,7 @@ import {
   getChainIdFromMessage,
 } from '@reown/appkit-siwe';
 import { REOWN_CLOUD_PROJECT_ID } from '@/lib/constant';
+import { IS_PRODUCTION } from '@/lib/utils/env';
 
 // An indicator to show that system environment variables have been exposed to your project's Deployments.
 const VERCEL = process.env.VERCEL ?? '0';
@@ -112,7 +113,7 @@ export function SiweProvider() {
           // on production, the auth should always be active, the only
           // exception is when we want to deploy with the dummy-web3-context
           // (which needs a changed & committed @/lib/web3/adapter import
-          (process.env.NODE_ENV !== 'production' ||
+          (!IS_PRODUCTION ||
             process.env.NEXT_PUBLIC_MOCK_AUTH === 'true') &&
           credentials.message === credentials.signature
         ) {
