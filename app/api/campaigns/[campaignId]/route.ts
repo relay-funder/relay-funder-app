@@ -1,6 +1,6 @@
 import { getCampaign } from '@/lib/api/campaigns';
 import { db } from '@/server/db';
-import { checkAuth, isAdmin, isContentEditor } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiParameterError,
@@ -13,8 +13,8 @@ import { CampaignsWithIdParams, GetCampaignResponse } from '@/lib/api/types';
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user', 'content_editor']);
-    const admin = await isAdmin();
-    const contentEditor = await isContentEditor();
+    const admin = session.user.roles.includes('admin');
+    const contentEditor = session.user.roles.includes('content_editor');
 
     const { campaignId: campaignIdOrSlug } = await params;
     const instance = await getCampaign(campaignIdOrSlug);
@@ -45,7 +45,7 @@ export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
 
-    if (await isContentEditor()) {
+    if (session.user.roles.includes('content_editor')) {
       throw new ApiAuthNotAllowed('Content editors cannot delete campaigns');
     }
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { db } from '@/server/db';
-import { checkAuth, isAdmin, isContentEditor } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
@@ -56,8 +56,9 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     const session = await auth();
     const isCreator = session?.user.address === campaign.creatorAddress;
-    const isSessionAdmin = await isAdmin();
-    const isSessionContentEditor = await isContentEditor();
+    const isSessionAdmin = session?.user?.roles?.includes('admin') ?? false;
+    const isSessionContentEditor =
+      session?.user?.roles?.includes('content_editor') ?? false;
 
     // Check access control for non-active campaigns
     if (campaign.status !== 'ACTIVE') {
@@ -138,7 +139,7 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiNotFoundError('Campaign not found');
     }
 
-    const canPost = await isContentEditor();
+    const canPost = session.user.roles.includes('content_editor');
     if (session.user.address !== campaign.creatorAddress && !canPost) {
       throw new ApiAuthNotAllowed(
         'Only the campaign creator or a content editor can post updates',
