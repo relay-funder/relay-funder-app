@@ -59,6 +59,8 @@ export async function checkAuth(roles: string[]) {
   );
 }
 
+export const VALID_ROLES = ['user', 'admin', 'content_editor'] as const;
+
 /**
  * IsAdmin: evaluates if the current header belongs to a user
  *          that has been marked as admin
@@ -66,6 +68,19 @@ export async function checkAuth(roles: string[]) {
 export async function isAdmin() {
   const session = await auth();
   if (session?.user?.roles?.includes('admin')) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * isContentEditor: evaluates if the current session belongs to a user
+ *                  with the content_editor role. Content editors can create
+ *                  and edit campaign content but have no access to funds or wallets.
+ */
+export async function isContentEditor() {
+  const session = await auth();
+  if (session?.user?.roles?.includes('content_editor')) {
     return true;
   }
   return false;

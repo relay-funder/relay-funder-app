@@ -1,4 +1,4 @@
-import { checkAuth } from '@/lib/api/auth';
+import { checkAuth, VALID_ROLES } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
@@ -35,6 +35,11 @@ export async function PATCH(req: Request, { params }: UserWithAddressParams) {
     for (const role of roles) {
       if (typeof role !== 'string' || role.trim().length === 0) {
         throw new ApiParameterError('Role must be a nonempty string');
+      }
+      if (!(VALID_ROLES as readonly string[]).includes(role)) {
+        throw new ApiParameterError(
+          `Invalid role "${role}". Valid roles: ${VALID_ROLES.join(', ')}`,
+        );
       }
     }
 

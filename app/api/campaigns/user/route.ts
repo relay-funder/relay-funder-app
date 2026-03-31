@@ -1,5 +1,5 @@
 import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { checkAuth, isAdmin, isContentEditor } from '@/lib/api/auth';
 import { response, handleError } from '@/lib/api/response';
 import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
 import {
@@ -57,8 +57,9 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await checkAuth(['user']);
+    const session = await checkAuth(['user', 'content_editor']);
     const asAdmin = await isAdmin();
+    const asContentEditor = await isContentEditor();
     const formData = await req.formData();
 
     // Extract form fields
@@ -99,7 +100,11 @@ export async function PATCH(req: Request) {
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
     }
-    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
+    if (
+      instance.creatorAddress !== session?.user?.address &&
+      !asAdmin &&
+      !asContentEditor
+    ) {
       throw new ApiAuthNotAllowed('User cannot modify this campaign');
     }
 
