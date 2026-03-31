@@ -42,6 +42,9 @@ export async function PATCH(req: Request, { params }: UserWithAddressParams) {
         );
       }
     }
+    if (!roles.includes('user')) {
+      throw new ApiParameterError('Roles must always include "user"');
+    }
 
     await updateUserRoles(address, roles);
     const updatedInstance = await getUser(address);

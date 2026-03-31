@@ -44,6 +44,11 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
+
+    if (await isContentEditor()) {
+      throw new ApiAuthNotAllowed('Content editors cannot delete campaigns');
+    }
+
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');
