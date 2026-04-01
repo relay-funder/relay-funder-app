@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
@@ -56,12 +56,14 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     const session = await auth();
     const isCreator = session?.user.address === campaign.creatorAddress;
-    const isSessionAdmin = await isAdmin();
+    const isSessionAdmin = session?.user?.roles?.includes('admin') ?? false;
+    const isSessionContentEditor =
+      session?.user?.roles?.includes('content_editor') ?? false;
 
     // Check access control for non-active campaigns
     if (campaign.status !== 'ACTIVE') {
-      // Only campaign owners and admins can access updates for non-active campaigns
-      if (!isCreator && !isSessionAdmin) {
+      // Only campaign owners, admins, and content editors can access updates for non-active campaigns
+      if (!isCreator && !isSessionAdmin && !isSessionContentEditor) {
         throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
@@ -85,10 +87,10 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     const skip = (page - 1) * pageSize;
 
-    const whereClause =
-      isCreator || isSessionAdmin
-        ? { campaignId }
-        : { campaignId, isHidden: false };
+    const canSeeHidden = isCreator || isSessionAdmin || isSessionContentEditor;
+    const whereClause = canSeeHidden
+      ? { campaignId }
+      : { campaignId, isHidden: false };
 
     const [updates, totalCount] = await Promise.all([
       db.campaignUpdate.findMany({
@@ -105,9 +107,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     return response({
       updates: updates.map((update) =>
-        isCreator || isSessionAdmin
-          ? update
-          : { ...update, isHidden: undefined },
+        canSeeHidden ? update : { ...update, isHidden: undefined },
       ),
       pagination: {
         currentPage: page,
@@ -124,7 +124,7 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
 export async function POST(req: Request, { params }: CampaignsWithIdParams) {
   try {
-    const session = await checkAuth(['user']);
+    const session = await checkAuth(['user', 'content_editor']);
     const user = await getUser(session.user.address);
     if (!user) {
       throw new ApiNotFoundError('Admin user not found');
@@ -139,8 +139,11 @@ export async function POST(req: Request, { params }: CampaignsWithIdParams) {
       throw new ApiNotFoundError('Campaign not found');
     }
 
-    if (session.user.address !== campaign.creatorAddress) {
-      throw new ApiAuthNotAllowed('Only the campaign creator can post updates');
+    const canPost = session.user.roles.includes('content_editor');
+    if (session.user.address !== campaign.creatorAddress && !canPost) {
+      throw new ApiAuthNotAllowed(
+        'Only the campaign creator or a content editor can post updates',
+      );
     }
 
     const formData = await req.formData();

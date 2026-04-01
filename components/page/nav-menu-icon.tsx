@@ -22,16 +22,16 @@ export function PageNavMenuIcon() {
       >
         <div
           className={cn(
-            'relative h-[56px] overflow-hidden',
+            'relative h-[68px] overflow-hidden',
             transition,
-            isOpen ? 'w-[240px]' : 'w-[75px]',
+            isOpen ? 'w-[260px]' : 'w-[86px]',
           )}
         >
           <div
             className={cn(
               'absolute left-0 top-0',
               transition,
-              !isOpen ? 'w-[150px] opacity-0' : 'w-[200px] opacity-100',
+              !isOpen ? 'w-[180px] opacity-0' : 'w-[230px] opacity-100',
             )}
           >
             <ThemeAwareImage
@@ -46,7 +46,7 @@ export function PageNavMenuIcon() {
             className={cn(
               'absolute left-0 top-0',
               transition,
-              isOpen ? 'w-[55px] opacity-0' : 'w-[38px] opacity-100',
+              isOpen ? 'w-[60px] opacity-0' : 'w-[46px] opacity-100',
             )}
           >
             <ThemeAwareImage

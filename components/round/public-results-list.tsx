@@ -4,7 +4,14 @@ import { type ReactNode, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Calendar, Users, Wallet, Target } from 'lucide-react';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui';
 import { PageLayout } from '@/components/page/layout';
 import { formatUSD } from '@/lib/format-usd';
 import { roundHasEnded, buildRoundResultsView } from '@/lib/round-results';
@@ -18,8 +25,7 @@ export function PublicRoundResultsList() {
     return (data ?? [])
       .filter((round) => roundHasEnded(round))
       .sort(
-        (a, b) =>
-          new Date(b.endTime).getTime() - new Date(a.endTime).getTime(),
+        (a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime(),
       );
   }, [data]);
 
@@ -81,7 +87,8 @@ export function PublicRoundResultsList() {
                             fill
                             className="object-contain p-2"
                           />
-                        ) : typeof logoUrl === 'string' && logoUrl.length > 0 ? (
+                        ) : typeof logoUrl === 'string' &&
+                          logoUrl.length > 0 ? (
                           <Image
                             src={logoUrl}
                             alt={round.title}
@@ -103,7 +110,9 @@ export function PublicRoundResultsList() {
                           {new Date(round.startTime).toLocaleDateString()} -{' '}
                           {new Date(round.endTime).toLocaleDateString()} |{' '}
                           {roundView.campaignsCount}{' '}
-                          {roundView.campaignsCount === 1 ? 'Campaign' : 'Campaigns'}
+                          {roundView.campaignsCount === 1
+                            ? 'Campaign'
+                            : 'Campaigns'}
                         </p>
                       </div>
                     </div>
@@ -164,33 +173,34 @@ export function PublicRoundResultsList() {
                       <SimplePieChart categories={roundView.categories} />
                       <div className="grid gap-3 md:grid-cols-2">
                         {roundView.categories.map((category, index) => {
-                          const categoryColor = PIE_COLORS[index % PIE_COLORS.length];
+                          const categoryColor =
+                            PIE_COLORS[index % PIE_COLORS.length];
                           return (
-                          <div
-                            key={`${round.id}-${category.category}`}
-                            className="rounded-lg border border-border bg-muted/20 p-3"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="inline-block h-3 w-3 rounded-full ring-1 ring-border"
-                                style={{ backgroundColor: categoryColor }}
-                              />
-                              <p className="text-sm font-medium text-foreground">
-                                {formatCategoryLabel(category.category)}
-                              </p>
+                            <div
+                              key={`${round.id}-${category.category}`}
+                              className="rounded-lg border border-border bg-muted/20 p-3"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="inline-block h-3 w-3 rounded-full ring-1 ring-border"
+                                  style={{ backgroundColor: categoryColor }}
+                                />
+                                <p className="text-sm font-medium text-foreground">
+                                  {formatCategoryLabel(category.category)}
+                                </p>
+                              </div>
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span className="rounded-full border border-border px-2 py-0.5">
+                                  {category.campaignCount}{' '}
+                                  {category.campaignCount === 1
+                                    ? 'Campaign'
+                                    : 'Campaigns'}
+                                </span>
+                                <span className="rounded-full border border-border px-2 py-0.5">
+                                  {category.percentage.toFixed(1)}% Share
+                                </span>
+                              </div>
                             </div>
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                              <span className="rounded-full border border-border px-2 py-0.5">
-                                {category.campaignCount}{' '}
-                                {category.campaignCount === 1
-                                  ? 'Campaign'
-                                  : 'Campaigns'}
-                              </span>
-                              <span className="rounded-full border border-border px-2 py-0.5">
-                                {category.percentage.toFixed(1)}% Share
-                              </span>
-                            </div>
-                          </div>
                           );
                         })}
                       </div>
@@ -227,7 +237,11 @@ const PIE_COLORS = [
 function SimplePieChart({
   categories,
 }: {
-  categories: Array<{ category: string; campaignCount: number; percentage: number }>;
+  categories: Array<{
+    category: string;
+    campaignCount: number;
+    percentage: number;
+  }>;
 }) {
   const pieBackground = useMemo(() => {
     if (categories.length === 0) {

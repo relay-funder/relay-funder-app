@@ -11,17 +11,17 @@ export function MobileLogo() {
       className={cn(
         'relative z-20 md:hidden',
         'flex cursor-pointer items-center justify-start',
-        'xs:h-14 xs:w-36', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
-        'xxs:h-14 xxs:w-32', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
-        'h-14 w-20', // Allocated area for logo (slightly increased) Original dimensions are 1:4 ratio
+        'xs:h-16 xs:w-40',
+        'xxs:h-16 xxs:w-36',
+        'h-16 w-24',
         'xs:px-1 xs:py-2', // Healthy padding around logo
       )}
     >
       <ThemeAwareImage
         src="/relay-funder-logo.svg"
         alt="RelayFunder"
-        width={150}
-        height={38}
+        width={178}
+        height={46}
         className="object-contain"
       />
     </Link>

@@ -1,5 +1,5 @@
 import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
 import { response, handleError } from '@/lib/api/response';
 import { getCampaign, listCampaigns } from '@/lib/api/campaigns';
 import {
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
       throw new ApiParameterError('Maximum Page size exceeded');
     }
     // status active should be enforced if access-token is not admin
-    const admin = await isAdmin();
+    const admin = session.user.roles.includes('admin');
     return response(
       await listCampaigns({
         creatorAddress: session.user.address,
@@ -57,8 +57,9 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await checkAuth(['user']);
-    const asAdmin = await isAdmin();
+    const session = await checkAuth(['user', 'content_editor']);
+    const asAdmin = session.user.roles.includes('admin');
+    const asContentEditor = session.user.roles.includes('content_editor');
     const formData = await req.formData();
 
     // Extract form fields
@@ -99,7 +100,11 @@ export async function PATCH(req: Request) {
     if (!instance) {
       throw new ApiNotFoundError('Campaign not found');
     }
-    if (instance.creatorAddress !== session?.user?.address && !asAdmin) {
+    if (
+      instance.creatorAddress !== session?.user?.address &&
+      !asAdmin &&
+      !asContentEditor
+    ) {
       throw new ApiAuthNotAllowed('User cannot modify this campaign');
     }
 

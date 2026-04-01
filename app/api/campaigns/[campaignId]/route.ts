@@ -1,6 +1,6 @@
 import { getCampaign } from '@/lib/api/campaigns';
 import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiParameterError,
@@ -12,8 +12,9 @@ import { CampaignsWithIdParams, GetCampaignResponse } from '@/lib/api/types';
 
 export async function GET(req: Request, { params }: CampaignsWithIdParams) {
   try {
-    const session = await checkAuth(['user']);
-    const admin = await isAdmin();
+    const session = await checkAuth(['user', 'content_editor']);
+    const admin = session.user.roles.includes('admin');
+    const contentEditor = session.user.roles.includes('content_editor');
 
     const { campaignId: campaignIdOrSlug } = await params;
     const instance = await getCampaign(campaignIdOrSlug);
@@ -23,8 +24,12 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 
     // Check access control for non-active campaigns
     if (instance.status !== 'ACTIVE') {
-      // Only campaign owners and admins can access non-active campaigns
-      if (instance.creatorAddress !== session.user.address && !admin) {
+      // Only campaign owners, admins, and content editors can access non-active campaigns
+      if (
+        instance.creatorAddress !== session.user.address &&
+        !admin &&
+        !contentEditor
+      ) {
         throw new ApiAuthNotAllowed('Campaign not found');
       }
     }
@@ -39,6 +44,11 @@ export async function GET(req: Request, { params }: CampaignsWithIdParams) {
 export async function DELETE(req: Request, { params }: CampaignsWithIdParams) {
   try {
     const session = await checkAuth(['user']);
+
+    if (session.user.roles.includes('content_editor')) {
+      throw new ApiAuthNotAllowed('Content editors cannot delete campaigns');
+    }
+
     const campaignId = parseInt((await params).campaignId);
     if (!campaignId) {
       throw new ApiParameterError('campaignId is required');

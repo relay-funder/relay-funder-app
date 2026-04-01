@@ -1,5 +1,5 @@
 import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
+import { checkAuth } from '@/lib/api/auth';
 import {
   ApiAuthNotAllowed,
   ApiNotFoundError,
@@ -31,9 +31,11 @@ export async function PATCH(req: Request, { params }: UpdateParams) {
       throw new ApiNotFoundError('Campaign not found');
     }
     if (campaign.creatorAddress !== session.user.address) {
-      if (!(await isAdmin())) {
+      const isAdminUser = session.user.roles.includes('admin');
+      const isContentEditorUser = session.user.roles.includes('content_editor');
+      if (!isAdminUser && !isContentEditorUser) {
         throw new ApiAuthNotAllowed(
-          'Only the campaign creator can hide updates',
+          'Only the campaign creator, an admin, or a content editor can hide updates',
         );
       }
     }

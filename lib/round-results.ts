@@ -8,7 +8,10 @@ import type {
   CampaignDistribution,
   ResultReport,
 } from '@/lib/qf/result-report';
-import { computeResultReportFromCsv, computeResultReportFromJson } from '@/lib/qf/result-report';
+import {
+  computeResultReportFromCsv,
+  computeResultReportFromJson,
+} from '@/lib/qf/result-report';
 import {
   CELO_PREZENTI_SPONSOR,
   ROUND_RESULTS_CAMPAIGN_BINDINGS,
@@ -134,7 +137,9 @@ function parseApprovedResult(
     }
 
     if (Array.isArray(round.approvedResult)) {
-      const normalizedCampaigns = normalizeApprovedCampaigns(round.approvedResult);
+      const normalizedCampaigns = normalizeApprovedCampaigns(
+        round.approvedResult,
+      );
       return computeResultReportFromJson(
         {
           roundId: round.id,
@@ -221,7 +226,11 @@ function normalizeApprovedCampaignEntry(
     getFirstValue(record, ['campaignTitle', 'campaign_title', 'title', 'name']),
   );
   const recipientAddress = toStringOrUndefined(
-    getFirstValue(record, ['recipientAddress', 'recipient_address', 'recipient']),
+    getFirstValue(record, [
+      'recipientAddress',
+      'recipient_address',
+      'recipient',
+    ]),
   );
   const onchainRecipientId = toStringOrUndefined(
     getFirstValue(record, [
@@ -255,6 +264,7 @@ function normalizeApprovedCampaignEntry(
       'total_donations',
       'donations',
       'amount',
+      'totalRaised',
       'amountRaised',
       'amount_raised',
     ]),
@@ -290,7 +300,9 @@ function normalizeApprovedCampaignEntry(
   };
 }
 
-function normalizeApprovedCampaigns(campaigns: unknown[]): CampaignResultInput[] {
+function normalizeApprovedCampaigns(
+  campaigns: unknown[],
+): CampaignResultInput[] {
   return campaigns
     .map((campaign) => normalizeApprovedCampaignEntry(campaign))
     .filter((campaign): campaign is CampaignResultInput => campaign !== null);
@@ -323,7 +335,9 @@ function resolveCampaignPartnerId(
   return lookup.exactByNormalizedName.get(normalizedName);
 }
 
-function shouldUseStaticPartnerBindings(round: GetRoundResponseInstance): boolean {
+function shouldUseStaticPartnerBindings(
+  round: GetRoundResponseInstance,
+): boolean {
   return isCeloPrezentiRound(round);
 }
 
@@ -361,7 +375,9 @@ function getCampaignImageUrl(
     return mediaUrl;
   }
 
-  const mainImage = campaign?.images?.find((image) => image.isMainImage)?.imageUrl;
+  const mainImage = campaign?.images?.find(
+    (image) => image.isMainImage,
+  )?.imageUrl;
   if (typeof mainImage === 'string' && mainImage.length > 0) {
     return mainImage;
   }
@@ -374,7 +390,9 @@ function getCampaignImageUrl(
   return null;
 }
 
-function sumConfirmedDonations(roundCampaign: GetRoundCampaignResponseInstance): number {
+function sumConfirmedDonations(
+  roundCampaign: GetRoundCampaignResponseInstance,
+): number {
   const tokenTotals = roundCampaign.campaign?.paymentSummary?.token;
   if (!tokenTotals) {
     return 0;
@@ -428,7 +446,9 @@ type RoundCampaignPaymentLike = NonNullable<
   NonNullable<GetRoundCampaignResponseInstance['campaign']>['payments']
 >[number];
 
-function getPaymentContributorKey(payment: RoundCampaignPaymentLike): string | null {
+function getPaymentContributorKey(
+  payment: RoundCampaignPaymentLike,
+): string | null {
   if (typeof payment.userId === 'number' && Number.isFinite(payment.userId)) {
     return `id:${payment.userId}`;
   }
@@ -453,7 +473,8 @@ function computeFallbackMatchFundingByRoundCampaignId(
     return new Map();
   }
 
-  const campaignScores: Array<{ roundCampaignId: number; qfScore: number }> = [];
+  const campaignScores: Array<{ roundCampaignId: number; qfScore: number }> =
+    [];
 
   (round.roundCampaigns ?? []).forEach((roundCampaign) => {
     const payments = roundCampaign.campaign?.payments;
@@ -527,7 +548,6 @@ function computeFallbackMatchFundingByRoundCampaignId(
 
   return fallbackMatchFundingByRoundCampaignId;
 }
-
 function toCountry(location: string | null | undefined): string {
   if (!location) {
     return 'Unknown';
@@ -602,7 +622,8 @@ export function buildRoundResultsView(
     const matchFunding =
       Number.isFinite(matchFundingFromReport) && matchFundingFromReport > 0
         ? matchFundingFromReport
-        : Number.isFinite(suggestedMatchFromReport) && suggestedMatchFromReport > 0
+        : Number.isFinite(suggestedMatchFromReport) &&
+            suggestedMatchFromReport > 0
           ? suggestedMatchFromReport
           : Number.isFinite(fallbackMatchFunding) && fallbackMatchFunding > 0
             ? fallbackMatchFunding
@@ -610,7 +631,7 @@ export function buildRoundResultsView(
     const fallbackContributors = sumUniqueConfirmedContributors(roundCampaign);
     const contributions = reportCampaign
       ? Number(reportCampaign.contributionsCount)
-      : roundCampaign.campaign?.paymentSummary?.countConfirmed ?? 0;
+      : (roundCampaign.campaign?.paymentSummary?.countConfirmed ?? 0);
     const reportContributors = reportCampaign
       ? Number(reportCampaign.uniqueContributors)
       : 0;
@@ -623,7 +644,10 @@ export function buildRoundResultsView(
     const total = donations + matchFunding;
     const category = roundCampaign.campaign?.category || 'Uncategorized';
     const matchedPartnerBinding = useStaticBindings
-      ? resolveCampaignPartnerId(roundCampaign.campaign?.title || '', campaignPartnerLookup)
+      ? resolveCampaignPartnerId(
+          roundCampaign.campaign?.title || '',
+          campaignPartnerLookup,
+        )
       : undefined;
     if (matchedPartnerBinding?.partner) {
       boundPartnerLookup.set(
@@ -631,13 +655,14 @@ export function buildRoundResultsView(
         matchedPartnerBinding.partner,
       );
     }
-    const partnerId =
-      matchedPartnerBinding?.partnerId ?? '';
+    const partnerId = matchedPartnerBinding?.partnerId ?? '';
 
     return {
       id: roundCampaign.campaignId,
       roundCampaignId: roundCampaign.id,
-      name: roundCampaign.campaign?.title || `Campaign #${roundCampaign.campaignId}`,
+      name:
+        roundCampaign.campaign?.title ||
+        `Campaign #${roundCampaign.campaignId}`,
       imageUrl: getCampaignImageUrl(roundCampaign),
       country: toCountry(roundCampaign.campaign?.location),
       category,

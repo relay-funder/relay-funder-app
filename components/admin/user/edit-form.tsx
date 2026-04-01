@@ -37,6 +37,7 @@ const AdminUserEditSchema = PatchUserRouteBodySchema.extend({
   // UI-only fields
   roleUser: z.boolean().optional(),
   roleAdmin: z.boolean().optional(),
+  roleContentEditor: z.boolean().optional(),
   selectedFlags: z.array(z.string()).optional(),
   preservedUnknownFlags: z.array(z.string()).optional(),
 
@@ -116,6 +117,7 @@ export function AdminUserEditForm({ address }: { address: string }) {
       recipientWallet: '',
       roleUser: false,
       roleAdmin: false,
+      roleContentEditor: false,
       selectedFlags: [],
       preservedUnknownFlags: [],
     },
@@ -141,6 +143,9 @@ export function AdminUserEditForm({ address }: { address: string }) {
       roleUser: Array.isArray(user.roles) ? user.roles.includes('user') : false,
       roleAdmin: Array.isArray(user.roles)
         ? user.roles.includes('admin')
+        : false,
+      roleContentEditor: Array.isArray(user.roles)
+        ? user.roles.includes('content_editor')
         : false,
       selectedFlags: currentKnownFlags,
       preservedUnknownFlags: currentUnknownFlags,
@@ -199,13 +204,15 @@ export function AdminUserEditForm({ address }: { address: string }) {
         ]),
       );
 
-      // Preserve any existing roles other than 'user'/'admin'
+      // Preserve any existing roles not managed by this form
+      const knownRoles = new Set(['user', 'admin', 'content_editor']);
       const preserved = Array.isArray(user?.roles)
-        ? user.roles.filter((r) => r !== 'user' && r !== 'admin')
+        ? user.roles.filter((r) => !knownRoles.has(r))
         : [];
       const selected: string[] = [];
       if (values.roleUser) selected.push('user');
       if (values.roleAdmin) selected.push('admin');
+      if (values.roleContentEditor) selected.push('content_editor');
       const roles = Array.from(new Set([...preserved, ...selected]));
 
       try {
@@ -433,8 +440,11 @@ export function AdminUserEditForm({ address }: { address: string }) {
             <h3 className="text-base font-semibold">Roles</h3>
             <p className="text-xs text-muted-foreground">
               {Array.isArray(user.roles) &&
-              user.roles.filter((r) => r !== 'user' && r !== 'admin').length
-                ? `Other roles (preserved): ${user.roles.filter((r) => r !== 'user' && r !== 'admin').join(', ')}`
+              user.roles.filter(
+                (r) =>
+                  r !== 'user' && r !== 'admin' && r !== 'content_editor',
+              ).length
+                ? `Other roles (preserved): ${user.roles.filter((r) => r !== 'user' && r !== 'admin' && r !== 'content_editor').join(', ')}`
                 : 'Select one or more roles below.'}
             </p>
           </div>
@@ -470,6 +480,23 @@ export function AdminUserEditForm({ address }: { address: string }) {
                     />
                   </FormControl>
                   <FormLabel>Admin</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="roleContentEditor"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={!!field.value}
+                      onCheckedChange={(checked) =>
+                        field.onChange(Boolean(checked))
+                      }
+                    />
+                  </FormControl>
+                  <FormLabel>Campaign Content Editor</FormLabel>
                 </FormItem>
               )}
             />
