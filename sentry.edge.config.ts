@@ -4,10 +4,11 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import { Sentry } from '@/lib/sentry';
+import { APP_ENV } from '@/lib/utils/env';
 
 if (process.env.SENTRY_DSN) {
   const environment =
-    process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV;
+    process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || APP_ENV;
 
   Sentry.init({
     dsn: process.env.SENTRY_DSN,

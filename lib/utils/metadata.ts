@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { IS_PRODUCTION, IS_STAGING } from '@/lib/utils/env';
 
 export interface BaseMetadataOptions {
   title: string;
@@ -31,13 +32,12 @@ export function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
 
-  // Environment-based URLs - check staging first to prevent production NODE_ENV override
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging') {
+  // Environment-based URLs
+  if (IS_STAGING) {
     return 'https://staging.app.relayfunder.com';
   }
 
-  const environment = process.env.NODE_ENV;
-  if (environment === 'production') {
+  if (IS_PRODUCTION) {
     return 'https://app.relayfunder.com';
   }
 
@@ -69,8 +69,7 @@ export function generateMetadata(options: BaseMetadataOptions): Metadata {
     type = 'website',
     siteName = 'Relay Funder',
     locale = 'en_US',
-    robots = process.env.NODE_ENV === 'production' &&
-    process.env.NEXT_PUBLIC_ENVIRONMENT !== 'staging'
+    robots = IS_PRODUCTION
       ? 'index,follow'
       : 'noindex, nofollow',
     keywords = ['crowdfunding', 'humanitarian', 'blockchain', 'relay funder'],
