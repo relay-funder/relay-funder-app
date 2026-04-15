@@ -138,7 +138,6 @@ export default function CampaignsPage() {
         searchPlaceholder="Search Your Campaigns"
         onSearchChanged={() => {}}
       >
-        <DashboardOverview />
         <DashboardNotAuthenticated />
       </PageLayout>
     );
