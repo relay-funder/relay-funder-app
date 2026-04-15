@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui';
 import { PageLayout } from '@/components/page/layout';
+import { ACTIVE_ROUNDS_PATH, ROUND_RESULTS_PATH } from '@/lib/constant';
 import { formatUSD } from '@/lib/format-usd';
 import { roundHasEnded, buildRoundResultsView } from '@/lib/round-results';
 import { usePublicRoundResults } from '@/lib/hooks/usePublicRoundResults';
@@ -32,13 +33,29 @@ export function PublicRoundResultsList() {
   useEffect(() => {
     trackEvent('funnel_homepage_view', {
       source: 'round_results_list',
-      path: '/rounds',
+      path: ROUND_RESULTS_PATH,
     });
   }, []);
 
   return (
     <PageLayout title="Funding Rounds">
       <div className="mx-auto w-full max-w-[1600px] px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="mb-6 flex justify-end">
+          <Button asChild variant="outline" size="sm">
+            <Link
+              href={ACTIVE_ROUNDS_PATH}
+              onClick={() =>
+                trackEvent('funnel_cta_click', {
+                  source: 'round_results_list',
+                  path: ACTIVE_ROUNDS_PATH,
+                })
+              }
+            >
+              Active Rounds
+            </Link>
+          </Button>
+        </div>
+
         <p className="mb-6 text-sm text-muted-foreground sm:text-base">
           Explore completed rounds and review final distribution details.
         </p>

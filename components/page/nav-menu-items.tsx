@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { useMemo, type JSX } from 'react';
 import { useSidebar, useAuth } from '@/contexts';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Home,
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { transition } from './sidebar-constants';
 import { cn } from '@/lib/utils';
+import { ACTIVE_ROUNDS_PATH, ROUND_RESULTS_PATH } from '@/lib/constant';
 interface NavItem {
   icon: JSX.Element;
   label: string;
@@ -26,12 +27,22 @@ export function PageNavMenuItems() {
   const { authenticated, isAdmin } = useAuth();
 
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Separate user and admin items for visual grouping
   const userItems = useMemo(() => {
     const baseItems = [
       { icon: <Home className="h-6 w-6" />, label: 'Home', href: '/' },
-      { icon: <Coins className="h-6 w-6" />, label: 'Round Results', href: '/rounds' },
+      {
+        icon: <Coins className="h-6 w-6" />,
+        label: 'Active Rounds',
+        href: ACTIVE_ROUNDS_PATH,
+      },
+      {
+        icon: <BarChart3 className="h-6 w-6" />,
+        label: 'Round Results',
+        href: ROUND_RESULTS_PATH,
+      },
     ];
 
     // Show Dashboard and Campaigns for all authenticated users
@@ -96,9 +107,21 @@ export function PageNavMenuItems() {
   }, [authenticated, isAdmin]);
 
   const renderNavItem = (item: NavItem) => {
+    const [itemPath, itemQueryString] = item.href.split('?');
+    const isPathMatch =
+      pathname === itemPath ||
+      (itemPath !== '/' && pathname?.startsWith(`${itemPath}/`));
+    const isQueryMatch = itemQueryString
+      ? Array.from(new URLSearchParams(itemQueryString).entries()).every(
+          ([key, value]) => searchParams.get(key) === value,
+        )
+      : true;
+    const isResultsPathWithoutCurrentView =
+      item.href === ROUND_RESULTS_PATH
+        ? searchParams.get('view') !== 'current'
+        : true;
     const isActivePath =
-      pathname === item.href ||
-      (item.href !== '/' && pathname?.startsWith(`${item.href}/`));
+      isPathMatch && isQueryMatch && isResultsPathWithoutCurrentView;
 
     return (
       <Link

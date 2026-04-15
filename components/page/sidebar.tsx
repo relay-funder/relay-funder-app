@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/contexts';
 import { PageNavMenuIcon } from './nav-menu-icon';
@@ -51,7 +52,9 @@ export const PageSidebar = () => {
               )}
             >
               <div className="grow">
-                <PageNavMenuItems />
+                <Suspense fallback={null}>
+                  <PageNavMenuItems />
+                </Suspense>
               </div>
               <div className="grow-0 border-t">
                 <PageNavMenuSettings />
