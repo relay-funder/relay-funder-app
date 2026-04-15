@@ -587,6 +587,7 @@ function RoundCampaignTableSection({
   campaigns: Array<{
     id: number;
     name: string;
+    slug: string | null;
     imageUrl: string | null;
     country: string;
     partnerId: string;
@@ -648,7 +649,22 @@ function RoundCampaignTableSection({
                           />
                         ) : null}
                       </div>
-                      <span className="line-clamp-2">{campaign.name}</span>
+                      {campaign.slug ? (
+                        <Link
+                          href={`/campaigns/${campaign.slug}`}
+                          className="line-clamp-2 hover:underline"
+                          onClick={() =>
+                            trackEvent('funnel_cta_click', {
+                              source: 'round_results_detail',
+                              path: `/campaigns/${campaign.slug}`,
+                            })
+                          }
+                        >
+                          {campaign.name}
+                        </Link>
+                      ) : (
+                        <span className="line-clamp-2">{campaign.name}</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{campaign.country}</TableCell>

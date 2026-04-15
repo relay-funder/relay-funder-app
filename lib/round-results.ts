@@ -45,6 +45,7 @@ export interface RoundCampaignResultItem {
   id: number;
   roundCampaignId: number;
   name: string;
+  slug: string | null;
   imageUrl: string | null;
   country: string;
   category: string;
@@ -663,6 +664,7 @@ export function buildRoundResultsView(
       name:
         roundCampaign.campaign?.title ||
         `Campaign #${roundCampaign.campaignId}`,
+      slug: roundCampaign.campaign?.slug ?? null,
       imageUrl: getCampaignImageUrl(roundCampaign),
       country: toCountry(roundCampaign.campaign?.location),
       category,

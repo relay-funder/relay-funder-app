@@ -14,7 +14,7 @@ import {
 } from '@/components/ui';
 import { CampaignCard } from '@/components/campaign/campaign-card';
 import { PageLayout } from '@/components/page/layout';
-import { ACTIVE_ROUNDS_PATH, ROUND_RESULTS_PATH } from '@/lib/constant';
+import { ACTIVE_ROUNDS_PATH } from '@/lib/constant';
 import { formatUSD } from '@/lib/format-usd';
 import { trackEvent } from '@/lib/analytics';
 import {
@@ -122,12 +122,6 @@ export function PublicCurrentRoundPage() {
     return (
       <PageLayout title="Active Rounds">
         <div className="mx-auto w-full max-w-[1600px] px-4 pb-8 sm:px-6 lg:px-8">
-          <div className="mb-6 flex justify-end">
-            <Button asChild variant="outline" size="sm">
-              <Link href={ROUND_RESULTS_PATH}>Round Results</Link>
-            </Button>
-          </div>
-
           <Card className="bg-card">
             <CardContent className="p-6 text-sm text-muted-foreground">
               There is no active or upcoming public round right now.
@@ -149,22 +143,6 @@ export function PublicCurrentRoundPage() {
   return (
     <PageLayout title="Active Rounds">
       <div className="mx-auto w-full max-w-[1600px] px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="mb-6 flex justify-end">
-          <Button asChild variant="outline" size="sm">
-            <Link
-              href={ROUND_RESULTS_PATH}
-              onClick={() =>
-                trackEvent('funnel_cta_click', {
-                  source: 'public_current_round',
-                  path: ROUND_RESULTS_PATH,
-                })
-              }
-            >
-              Round Results
-            </Link>
-          </Button>
-        </div>
-
         <p className="mb-6 text-sm text-muted-foreground sm:text-base">
           {isActiveRound
             ? 'The currently active public round is shown here. Upcoming rounds only appear when nothing is live yet.'
