@@ -409,6 +409,15 @@ export async function prefetchActiveRound(queryClient: QueryClient) {
   });
 }
 
+export async function prefetchUpcomingRound(queryClient: QueryClient) {
+  const upcomingRound = await getUpcomingRound();
+
+  return queryClient.prefetchQuery({
+    queryKey: [ROUNDS_QUERY_KEY, 'upcoming'],
+    queryFn: async () => (upcomingRound ? mapRound(upcomingRound) : null),
+  });
+}
+
 export function roundIsActive(round: GetRoundResponseInstance) {
   if (typeof round.recipientStatus !== 'number') {
     return false;

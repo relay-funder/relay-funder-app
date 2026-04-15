@@ -77,18 +77,22 @@ export function useSignInToBackend() {
       console.log('web3/hooks/use-signin-to-backend: login to next-auth');
     const authResult = await nextAuthSignIn('siwe', {
       redirect: false,
-      message: JSON.stringify(preparedMessage),
+      message: preparedMessage,
       signature,
       callbackUrl,
     });
-    if (authResult?.ok && !authResult.error) {
-      const session = await getSession();
+    const session = await getSession();
+
+    if (authResult?.ok && !authResult.error && session?.user) {
       console.info(
         'web3/hooks/use-signin-to-backend: user signed in',
         session?.user?.name,
         session?.user?.address,
       );
-    } else if (authResult?.error) {
+      return authResult.url ?? callbackUrl;
+    }
+
+    if (authResult?.error) {
       const errorMessage =
         'web3/hooks/use-signin-to-backend:' +
         ' An error occurred while signin in.' +
@@ -103,7 +107,10 @@ export function useSignInToBackend() {
       });
       throw new Error(errorMessage);
     }
-    return callbackUrl;
+
+    throw new Error(
+      `web3/hooks/use-signin-to-backend: Sign-in completed without a session (Domain: ${window.location.host})`,
+    );
   }, [callbackUrl, signMessageAsync, account]);
   return signInToBackend;
 }

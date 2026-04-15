@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import { ExploreStories } from '@/components/explore-stories';
 import { prefetchCampaigns } from '@/lib/api/campaigns';
 import { prefetchActiveCategories } from '@/lib/api/categories';
-import { prefetchActiveRound } from '@/lib/api/rounds';
+import { prefetchActiveRound, prefetchUpcomingRound } from '@/lib/api/rounds';
 import { getQueryClient } from '@/lib/query-client';
 import {
   getHomePageMetadata,
@@ -22,7 +22,7 @@ export default async function HomePage() {
   const session = await auth();
   const isUserAdmin = session?.user?.roles?.includes('admin') ?? false;
 
-  // Prefetch campaigns, categories, and active round in parallel for instant loading
+  // Prefetch campaigns, categories, and homepage round data in parallel.
   await Promise.all([
     prefetchCampaigns(queryClient, {
       admin: isUserAdmin,
@@ -32,6 +32,7 @@ export default async function HomePage() {
     }),
     prefetchActiveCategories(queryClient),
     prefetchActiveRound(queryClient),
+    prefetchUpcomingRound(queryClient),
   ]);
 
   // Generate organization structured data

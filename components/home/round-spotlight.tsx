@@ -33,25 +33,21 @@ export function RoundSpotlight() {
 
   // Determine the selected round:
   // 1) Active round
-  // 2) Latest completed round (results fallback)
-  // 3) Upcoming round
-  const selectedRound = activeRound ?? latestCompletedRound ?? upcomingRound;
-  const round = selectedRound;
-  const isLoading =
-    activeLoading ||
-    (!activeRound && latestCompletedLoading) ||
-    (!activeRound && !latestCompletedRound && upcomingLoading);
-  const error =
-    activeError ??
-    (!activeRound ? latestCompletedError : undefined) ??
-    (!activeRound && !latestCompletedRound ? upcomingError : undefined);
+  // 2) Upcoming round
+  // 3) Latest completed round (results fallback)
   const roundState = activeRound
     ? 'active'
-    : latestCompletedRound
-      ? 'completed'
-      : upcomingRound
-        ? 'upcoming'
+    : upcomingRound
+      ? 'upcoming'
+      : latestCompletedRound
+        ? 'completed'
         : null;
+  const round =
+    roundState === 'active'
+      ? activeRound
+      : roundState === 'upcoming'
+        ? upcomingRound
+        : latestCompletedRound;
   const isUpcoming = roundState === 'upcoming';
   const isCompleted = roundState === 'completed';
   const actionHref = isCompleted ? `/rounds/${round.id}` : '/campaigns';
@@ -106,8 +102,22 @@ export function RoundSpotlight() {
     return new Date(round.endTime).toLocaleDateString();
   }, [round?.endTime, roundState]);
 
-  // Don't render anything if there is no usable round data
-  if (!round && (isLoading || error)) {
+  // Wait for higher-priority queries before rendering a lower-priority fallback.
+  if (activeLoading || (!activeRound && upcomingLoading)) {
+    return null;
+  }
+
+  if (
+    !activeRound &&
+    !upcomingRound &&
+    latestCompletedLoading &&
+    !latestCompletedRound
+  ) {
+    return null;
+  }
+
+  // Don't render anything if there is no usable round data.
+  if (!round && (activeError || upcomingError || latestCompletedError)) {
     return null;
   }
 

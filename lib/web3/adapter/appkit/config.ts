@@ -108,19 +108,47 @@ export const siweConfig = createSIWEConfig({
   },
   verifyMessage: async ({ message, signature }: SIWEVerifyMessageArgs) => {
     try {
-      const session = await getSession();
-      if (session?.user) {
+      const existingSession = await getSession();
+      if (existingSession?.user) {
         return true;
       }
+
       const callbackUrl = loginCallbackUrl();
-      await signIn('siwe', {
+      const authResult = await signIn('siwe', {
         message,
-        redirect: true,
+        redirect: false,
         signature,
         callbackUrl,
       });
+
+      if (authResult?.error) {
+        console.error('AppKit SIWE sign-in failed', {
+          status: authResult.status,
+          error: authResult.error,
+          domain: typeof window !== 'undefined' ? window.location.host : '',
+          callbackUrl,
+        });
+        return false;
+      }
+
+      const session = await getSession();
+      if (!session?.user) {
+        console.error('AppKit SIWE sign-in completed without a session', {
+          domain: typeof window !== 'undefined' ? window.location.host : '',
+          callbackUrl,
+        });
+        return false;
+      }
+
+      if (typeof window !== 'undefined') {
+        window.setTimeout(() => {
+          window.location.assign(authResult?.url ?? callbackUrl);
+        }, 0);
+      }
+
       return true;
     } catch (error) {
+      console.error('AppKit SIWE verifyMessage threw', error);
       return false;
     }
   },
