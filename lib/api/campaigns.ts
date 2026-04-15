@@ -15,7 +15,7 @@ import {
   GetCampaignResponseInstance,
   GetCampaignsStatsResponse,
 } from './types';
-import { getPaymentUser, getUserWithStates } from './user';
+import { getPaymentUser, getUserWithStates, getUsersWithStates } from './user';
 import { ApiConflictError } from './error';
 import { mapRound } from './rounds';
 import { JsonValue } from '@/.generated/prisma/client/runtime/library';
@@ -158,13 +158,12 @@ async function combineCampaigns({
   includeTips?: boolean;
 }) {
   // Compute payment summaries for listed IDs (conditionally include tips)
-  const paymentSummaryList = includeTips
-    ? await getPaymentSummaryListWithTips(dbCampaigns.map(({ id }) => id))
-    : await getPaymentSummaryList(dbCampaigns.map(({ id }) => id));
-  // Fetch creators
-  const creators = await Promise.all(
-    dbCampaigns.map(({ creatorAddress }) => getUserWithStates(creatorAddress)),
-  );
+  const [paymentSummaryList, creatorsByAddress] = await Promise.all([
+    includeTips
+      ? getPaymentSummaryListWithTips(dbCampaigns.map(({ id }) => id))
+      : getPaymentSummaryList(dbCampaigns.map(({ id }) => id)),
+    getUsersWithStates(dbCampaigns.map(({ creatorAddress }) => creatorAddress)),
+  ]);
 
   // Combine and map
   const combined = dbCampaigns
@@ -172,9 +171,11 @@ async function combineCampaigns({
       return {
         ...campaign,
         paymentSummary: paymentSummaryList[campaign.id] ?? {},
-        creator: creators.find(
-          ({ address }) => address === campaign.creatorAddress,
-        ),
+        creator:
+          creatorsByAddress[campaign.creatorAddress] ??
+          ({ name: null, address: null } satisfies Awaited<
+            ReturnType<typeof getUserWithStates>
+          >),
       };
     })
     .map((campaign) => {
@@ -432,8 +433,12 @@ export async function prefetchCampaigns(
   queryClient: QueryClient,
   options: PrefetchCampaignsOptions = {},
 ) {
-  const { admin = false, status = 'active', pageSize = 10, rounds = false } =
-    options;
+  const {
+    admin = false,
+    status = 'active',
+    pageSize = 10,
+    rounds = false,
+  } = options;
 
   return queryClient.prefetchInfiniteQuery({
     queryKey: [

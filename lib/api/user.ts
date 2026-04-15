@@ -47,6 +47,39 @@ export async function getUserWithStates(address?: string | null) {
   } catch {}
   return creator;
 }
+
+export async function getUsersWithStates(
+  addresses: Array<string | null | undefined>,
+): Promise<Record<string, DisplayUserWithStates>> {
+  const uniqueAddresses = [...new Set(addresses.filter(Boolean))] as string[];
+
+  if (uniqueAddresses.length === 0) {
+    return {};
+  }
+
+  const users = await db.user.findMany({
+    where: {
+      address: {
+        in: uniqueAddresses,
+      },
+    },
+    select: {
+      address: true,
+      username: true,
+      firstName: true,
+    },
+  });
+
+  return Object.fromEntries(
+    users.map((user) => [
+      user.address,
+      {
+        name: getUserNameFromInstance(user),
+        address: user.address,
+      },
+    ]),
+  );
+}
 /**
  * Get the user sanitized depending on their request to anonymize the payment
  *

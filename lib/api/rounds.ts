@@ -7,7 +7,7 @@ import type { GetCampaignPaymentSummary } from './types/campaigns';
 import { ROUND_QUERY_KEY, ROUNDS_QUERY_KEY } from '../hooks/useRounds';
 import { QueryClient } from '@tanstack/react-query';
 import { ApiNotFoundError } from './error';
-import { mapCampaign, getPaymentSummaryList } from './campaigns';
+import { getEmptyPaymentSummary, mapCampaign } from './campaigns';
 import { isFuture, isPast } from 'date-fns';
 
 const ROUND_CAMPAIGN_PAYMENT_STATUSES = [
@@ -18,6 +18,144 @@ const ROUND_CAMPAIGN_PAYMENT_STATUSES = [
   'PENDING',
   'CONFIRMING',
 ] as const;
+
+const ANONYM_ADDRESS = '0x00000000000000000000000000000000';
+
+type RoundCampaignPayment = {
+  id: number;
+  status: string;
+  amount: number | string;
+  token: string | null;
+  updatedAt: Date;
+  isAnonymous: boolean;
+  user: {
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    address: string;
+  } | null;
+};
+
+function getPaymentBucket(status: string): 'confirmed' | 'pending' | null {
+  const normalizedStatus = status.toLowerCase();
+
+  if (normalizedStatus === 'confirmed') {
+    return 'confirmed';
+  }
+  if (normalizedStatus === 'pending' || normalizedStatus === 'confirming') {
+    return 'pending';
+  }
+
+  return null;
+}
+
+function getPaymentDisplayUser(payment: RoundCampaignPayment) {
+  if (payment.isAnonymous) {
+    return {
+      name: 'Anonym',
+      address: ANONYM_ADDRESS,
+    };
+  }
+
+  return {
+    name: payment.user?.username ?? payment.user?.firstName ?? null,
+    address: payment.user?.address ?? null,
+  };
+}
+
+function buildPaymentSummaryFromPayments(
+  payments: RoundCampaignPayment[] | undefined,
+): GetCampaignPaymentSummary {
+  const paymentSummary = getEmptyPaymentSummary();
+
+  if (!payments?.length) {
+    return paymentSummary;
+  }
+
+  const tokenSummary: NonNullable<GetCampaignPaymentSummary['token']> = {};
+
+  for (const payment of payments) {
+    const bucket = getPaymentBucket(payment.status);
+
+    if (!bucket) {
+      continue;
+    }
+
+    if (bucket === 'confirmed') {
+      paymentSummary.countConfirmed += 1;
+    } else {
+      paymentSummary.countPending += 1;
+    }
+
+    if (payment.token) {
+      tokenSummary[payment.token] ??= { pending: 0, confirmed: 0 };
+
+      const amount = Number(payment.amount ?? 0);
+      if (!Number.isNaN(amount)) {
+        tokenSummary[payment.token][bucket] += amount;
+      }
+    }
+
+    const paymentContribution = {
+      id: payment.id,
+      status: payment.status,
+      amount: Number(payment.amount ?? 0),
+      token: payment.token,
+      user: getPaymentDisplayUser(payment),
+      date: payment.updatedAt,
+    };
+
+    if (
+      bucket === 'confirmed' &&
+      (!paymentSummary.lastConfirmed ||
+        payment.updatedAt > paymentSummary.lastConfirmed.date!)
+    ) {
+      paymentSummary.lastConfirmed = paymentContribution;
+    }
+
+    if (
+      bucket === 'pending' &&
+      (!paymentSummary.lastPending ||
+        payment.updatedAt > paymentSummary.lastPending.date!)
+    ) {
+      paymentSummary.lastPending = paymentContribution;
+    }
+  }
+
+  if (Object.keys(tokenSummary).length > 0) {
+    paymentSummary.token = tokenSummary;
+  }
+
+  return paymentSummary;
+}
+
+function addRoundPaymentSummaries<
+  TRound extends {
+    roundCampaigns?: Array<{
+      campaignId: number;
+      Campaign:
+        | ({
+            payments?: RoundCampaignPayment[];
+          } & Campaign)
+        | null;
+    }>;
+  },
+>(round: TRound): TRound {
+  return {
+    ...round,
+    roundCampaigns: round.roundCampaigns?.map((roundCampaign) => ({
+      ...roundCampaign,
+      Campaign: roundCampaign.Campaign
+        ? {
+            ...roundCampaign.Campaign,
+            paymentSummary: buildPaymentSummaryFromPayments(
+              roundCampaign.Campaign.payments,
+            ),
+          }
+        : roundCampaign.Campaign,
+    })),
+  };
+}
 
 export function mapRound(
   round: Round & {
@@ -194,32 +332,8 @@ export async function listRounds({
     }),
   ]);
 
-  // Calculate payment summaries for all campaigns in all rounds
-  const allCampaignIds = rounds.flatMap(
-    (round) =>
-      round.roundCampaigns?.map((rc) => rc.campaignId).filter(Boolean) || [],
-  );
-  const paymentSummaryList =
-    allCampaignIds.length > 0
-      ? await getPaymentSummaryList(allCampaignIds)
-      : {};
-
-  // Add payment summaries to campaigns in rounds
-  const roundsWithPaymentSummaries = rounds.map((round) => ({
-    ...round,
-    roundCampaigns: round.roundCampaigns?.map((rc) => ({
-      ...rc,
-      Campaign: rc.Campaign
-        ? {
-            ...rc.Campaign,
-            paymentSummary: paymentSummaryList[rc.campaignId] || {},
-          }
-        : rc.Campaign,
-    })),
-  }));
-
   return {
-    rounds: roundsWithPaymentSummaries.map((round) => mapRound(round)), // Remove hardcoded status
+    rounds: rounds.map((round) => mapRound(addRoundPaymentSummaries(round))),
     pagination: {
       currentPage: page,
       pageSize,
@@ -307,27 +421,7 @@ export async function getRound(
     throw new ApiNotFoundError(`Round with id ${id} does not exist`);
   }
 
-  // Calculate payment summaries for campaigns
-  const campaignIds =
-    round.roundCampaigns?.map((rc) => rc.campaignId).filter(Boolean) || [];
-  const paymentSummaryList =
-    campaignIds.length > 0 ? await getPaymentSummaryList(campaignIds) : {};
-
-  // Add payment summaries to campaigns
-  const roundWithPaymentSummaries = {
-    ...round,
-    roundCampaigns: round.roundCampaigns?.map((rc) => ({
-      ...rc,
-      Campaign: rc.Campaign
-        ? {
-            ...rc.Campaign,
-            paymentSummary: paymentSummaryList[rc.campaignId] || {},
-          }
-        : rc.Campaign,
-    })),
-  };
-
-  return mapRound(roundWithPaymentSummaries);
+  return mapRound(addRoundPaymentSummaries(round));
 }
 export async function getStats() {
   const stats: GetRoundsStatsResponse = {
