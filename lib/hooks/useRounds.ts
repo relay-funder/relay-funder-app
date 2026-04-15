@@ -323,7 +323,7 @@ export function useRound(id: number, forceUserView = false) {
   return useQuery({
     queryKey: [ROUND_QUERY_KEY, id, forceUserView],
     queryFn: () => fetchRound(id, forceUserView),
-    enabled: true,
+    enabled: Number.isFinite(id) && id > 0,
   });
 }
 

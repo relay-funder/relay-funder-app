@@ -3,15 +3,7 @@
 import { type ReactNode, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Calendar,
-  Clock,
-  Sparkles,
-  Target,
-  Users,
-  Wallet,
-} from 'lucide-react';
+import { Calendar, Clock, Sparkles, Target, Users, Wallet } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -20,11 +12,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { PageLayout } from '@/components/page/layout';
 import { ACTIVE_ROUNDS_PATH, ROUND_RESULTS_PATH } from '@/lib/constant';
 import { formatUSD } from '@/lib/format-usd';
 import { trackEvent } from '@/lib/analytics';
-import { useActiveRound, useUpcomingRound } from '@/lib/hooks/useRounds';
+import {
+  useActiveRound,
+  useRound,
+  useUpcomingRound,
+} from '@/lib/hooks/useRounds';
 
 export function PublicCurrentRoundPage() {
   const {
@@ -44,6 +41,12 @@ export function PublicCurrentRoundPage() {
     : upcomingRound
       ? 'upcoming'
       : null;
+  const currentRoundId = currentRound?.id ?? 0;
+  const {
+    data: currentRoundDetail,
+    isLoading: isCurrentRoundDetailLoading,
+    error: currentRoundDetailError,
+  } = useRound(currentRoundId, true);
 
   useEffect(() => {
     trackEvent('funnel_homepage_view', {
@@ -79,6 +82,13 @@ export function PublicCurrentRoundPage() {
 
     return `Applications closed ${applicationEndDate}`;
   }, [currentRound, currentRoundState]);
+
+  const publicCampaigns = useMemo(() => {
+    const roundCampaigns = currentRoundDetail?.round?.roundCampaigns ?? [];
+    return roundCampaigns.flatMap((roundCampaign) =>
+      roundCampaign.campaign ? [roundCampaign.campaign] : [],
+    );
+  }, [currentRoundDetail]);
 
   if (isActiveRoundLoading || (!activeRound && isUpcomingRoundLoading)) {
     return (
@@ -129,8 +139,12 @@ export function PublicCurrentRoundPage() {
   }
 
   const logoUrl = currentRound.media?.[0]?.url;
-  const campaignCount = currentRound._count?.roundCampaigns ?? 0;
+  const campaignCount =
+    currentRoundDetail?.round?.roundCampaigns?.length ??
+    currentRound._count?.roundCampaigns ??
+    0;
   const isActiveRound = currentRoundState === 'active';
+  const canJumpToCampaigns = publicCampaigns.length > 0;
 
   return (
     <PageLayout title="Active Rounds">
@@ -191,21 +205,24 @@ export function PublicCurrentRoundPage() {
                 </div>
               </div>
 
-              <Button asChild>
-                <Link
-                  href="/campaigns"
-                  className="flex items-center gap-2"
-                  onClick={() =>
-                    trackEvent('funnel_cta_click', {
-                      source: 'public_current_round',
-                      path: '/campaigns',
-                    })
-                  }
-                >
-                  Explore Campaigns
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              {canJumpToCampaigns ? (
+                <Button asChild>
+                  <Link
+                    href="#round-campaigns"
+                    className="flex items-center gap-2"
+                    onClick={() =>
+                      trackEvent('funnel_cta_click', {
+                        source: 'public_current_round',
+                        path: '#round-campaigns',
+                      })
+                    }
+                  >
+                    View Round Campaigns
+                  </Link>
+                </Button>
+              ) : (
+                <Button disabled>View Round Campaigns</Button>
+              )}
             </div>
           </CardHeader>
 
@@ -268,6 +285,49 @@ export function PublicCurrentRoundPage() {
             </div>
           </CardContent>
         </Card>
+
+        <section id="round-campaigns" className="mt-8 scroll-mt-24 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Round Campaigns
+            </h2>
+            <p className="text-muted-foreground">
+              {campaignCount > 0
+                ? `Showing ${campaignCount} public campaigns participating in this round.`
+                : 'No public campaigns are visible in this round yet.'}
+            </p>
+          </div>
+
+          {isCurrentRoundDetailLoading ? (
+            <Card className="bg-card">
+              <CardContent className="p-6 text-sm text-muted-foreground">
+                Loading participating campaigns...
+              </CardContent>
+            </Card>
+          ) : currentRoundDetailError ? (
+            <Card className="bg-card">
+              <CardContent className="p-6 text-sm text-muted-foreground">
+                Unable to load participating campaigns right now.
+              </CardContent>
+            </Card>
+          ) : publicCampaigns.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {publicCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  type="standard"
+                />
+              ))}
+            </div>
+          ) : (
+            <Card className="bg-card">
+              <CardContent className="p-6 text-sm text-muted-foreground">
+                This round does not have any publicly visible campaigns yet.
+              </CardContent>
+            </Card>
+          )}
+        </section>
       </div>
     </PageLayout>
   );
