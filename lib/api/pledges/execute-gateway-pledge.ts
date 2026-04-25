@@ -16,6 +16,7 @@ import type {
 } from '@/lib/api/types/pledges';
 import { logFactory } from '@/lib/debug';
 import { withExecutionLock } from '@/lib/api/pledges/execution-lock';
+import { getCeloTransactionOverrides } from '@/lib/api/pledges/transaction-overrides';
 import {
   waitWithTimeout,
   TIMEOUT_VALUES,
@@ -34,22 +35,6 @@ const TOKEN_APPROVAL_GAS_LIMIT = 100_000n;
 const GATEWAY_PLEDGE_GAS_LIMIT = 700_000n;
 
 const keepWhatsRaisedInterface = new ethers.Interface(KeepWhatsRaisedABI);
-
-function getTokenApprovalOverrides() {
-  return {
-    gasLimit: TOKEN_APPROVAL_GAS_LIMIT,
-    maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-    maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-  };
-}
-
-function getGatewayPledgeOverrides() {
-  return {
-    gasLimit: GATEWAY_PLEDGE_GAS_LIMIT,
-    maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-    maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-  };
-}
 
 function isHexData(value: unknown): value is string {
   if (typeof value !== 'string') return false;
@@ -269,10 +254,15 @@ async function submitTokenApproval(
   operation: string,
   context: Record<string, unknown>,
 ): Promise<void> {
+  const approvalOverrides = await getCeloTransactionOverrides(provider, {
+    operation,
+    gasLimit: TOKEN_APPROVAL_GAS_LIMIT,
+    context,
+  });
   const approveTx = await usdContract.approve(
     spenderAddress,
     amount,
-    getTokenApprovalOverrides(),
+    approvalOverrides,
   );
 
   logVerbose('Approval transaction submitted', {
@@ -1046,6 +1036,12 @@ async function _executeGatewayPledgeInternal(
 
   let treasuryTx;
   try {
+    const gatewayPledgeOverrides = await getCeloTransactionOverrides(provider, {
+      operation: 'setFeeAndPledge transaction',
+      gasLimit: GATEWAY_PLEDGE_GAS_LIMIT,
+      context: { prefixId, logAddress },
+    });
+
     treasuryTx = await treasuryContract.setFeeAndPledge(
       pledgeId, // Deterministic hash from stable fields
       payment.user.address,
@@ -1054,7 +1050,7 @@ async function _executeGatewayPledgeInternal(
       gatewayFee,
       [],
       false,
-      getGatewayPledgeOverrides(),
+      gatewayPledgeOverrides,
     );
   } catch (error) {
     // If the contract reverts with PledgeAlreadyProcessed, the pledge was already

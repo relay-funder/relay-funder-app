@@ -25,6 +25,8 @@ const logError = logFactory('error', '🚨 ExecutionLock');
  */
 
 const LOCK_CLASS_ID = 1000; // Namespace for pledge execution locks
+const ADMIN_WALLET_LOCK_CLASS_ID = 1001;
+const ADMIN_WALLET_LOCK_ID = 1;
 
 type TransactionClient = Omit<
   typeof db,
@@ -86,6 +88,39 @@ async function acquireExecutionLockOnTransaction(
     logError('Failed to acquire execution lock', {
       paymentId,
       lockClassId: LOCK_CLASS_ID,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw error;
+  }
+}
+
+async function acquireAdminWalletLockOnTransaction(
+  tx: TransactionClient,
+  paymentId: number,
+): Promise<void> {
+  try {
+    logVerbose('Waiting to acquire admin wallet execution lock', {
+      paymentId,
+      lockClassId: ADMIN_WALLET_LOCK_CLASS_ID,
+      lockId: ADMIN_WALLET_LOCK_ID,
+      lockType: 'pg_advisory_xact_lock',
+      note: 'Serializes transactions from the shared platform admin wallet.',
+    });
+
+    await tx.$queryRaw`
+      SELECT pg_advisory_xact_lock(${ADMIN_WALLET_LOCK_CLASS_ID}::int, ${ADMIN_WALLET_LOCK_ID}::int)
+    `;
+
+    logVerbose('Admin wallet execution lock acquired successfully', {
+      paymentId,
+      lockClassId: ADMIN_WALLET_LOCK_CLASS_ID,
+      lockId: ADMIN_WALLET_LOCK_ID,
+    });
+  } catch (error) {
+    logError('Failed to acquire admin wallet execution lock', {
+      paymentId,
+      lockClassId: ADMIN_WALLET_LOCK_CLASS_ID,
+      lockId: ADMIN_WALLET_LOCK_ID,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
     throw error;
@@ -185,6 +220,8 @@ export async function withExecutionLock<T>(
           `Cannot execute: payment ${paymentId} is already being processed by another transaction`,
         );
       }
+
+      await acquireAdminWalletLockOnTransaction(tx, paymentId);
 
       // Execute callback with the same transaction client
       // Lock will automatically release when transaction commits or rolls back

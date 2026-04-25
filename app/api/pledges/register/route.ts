@@ -4,6 +4,7 @@ import { response, handleError } from '@/lib/api/response';
 import { ethers } from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { debugApi as debug } from '@/lib/debug';
+import { getCeloTransactionOverrides } from '@/lib/api/pledges/transaction-overrides';
 import { z } from 'zod';
 import {
   checkIpLimit,
@@ -167,8 +168,11 @@ export async function POST(req: Request) {
           gatewayFee,
           {
             nonce, // Explicitly set nonce
-            maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'), // Tip for validators
-            maxFeePerGas: ethers.parseUnits('100', 'gwei'), // Max total fee
+            ...(await getCeloTransactionOverrides(provider, {
+              operation: 'setPaymentGatewayFee transaction',
+              gasLimit: 500_000n,
+              context: { userAddress, treasuryAddress, pledgeId },
+            })),
           },
         );
 
