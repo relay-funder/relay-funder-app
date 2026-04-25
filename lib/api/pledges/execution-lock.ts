@@ -107,7 +107,7 @@ async function acquireAdminWalletLockOnTransaction(
       note: 'Serializes transactions from the shared platform admin wallet.',
     });
 
-    await tx.$queryRaw`
+    await tx.$executeRaw`
       SELECT pg_advisory_xact_lock(${ADMIN_WALLET_LOCK_CLASS_ID}::int, ${ADMIN_WALLET_LOCK_ID}::int)
     `;
 
