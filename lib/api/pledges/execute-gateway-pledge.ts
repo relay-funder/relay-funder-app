@@ -30,8 +30,26 @@ const logError = logFactory('error', '🚨 DaimoPledge', { flag: 'daimo' });
 const PLEDGE_ALREADY_PROCESSED_SELECTOR = '0x7c730b08';
 const PLEDGE_ALREADY_PROCESSED_ERROR_NAME =
   'KeepWhatsRaisedPledgeAlreadyProcessed';
+const TOKEN_APPROVAL_GAS_LIMIT = 100_000n;
+const GATEWAY_PLEDGE_GAS_LIMIT = 700_000n;
 
 const keepWhatsRaisedInterface = new ethers.Interface(KeepWhatsRaisedABI);
+
+function getTokenApprovalOverrides() {
+  return {
+    gasLimit: TOKEN_APPROVAL_GAS_LIMIT,
+    maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+    maxFeePerGas: ethers.parseUnits('100', 'gwei'),
+  };
+}
+
+function getGatewayPledgeOverrides() {
+  return {
+    gasLimit: GATEWAY_PLEDGE_GAS_LIMIT,
+    maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+    maxFeePerGas: ethers.parseUnits('100', 'gwei'),
+  };
+}
 
 function isHexData(value: unknown): value is string {
   if (typeof value !== 'string') return false;
@@ -222,14 +240,11 @@ async function isPledgeExecutedOnChain(
       return isProcessed;
     } catch (error) {
       lastError = error;
-      logError(
-        `On-chain pledge check attempt ${attempt + 1}/2 FAILED`,
-        {
-          pledgeId,
-          adminAddress,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
-      );
+      logError(`On-chain pledge check attempt ${attempt + 1}/2 FAILED`, {
+        pledgeId,
+        adminAddress,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
 
       // Brief pause before retry
       if (attempt === 0) {
@@ -244,6 +259,43 @@ async function isPledgeExecutedOnChain(
     `Cannot verify on-chain pledge status after 2 attempts: ${lastError instanceof Error ? lastError.message : 'Unknown RPC error'}. ` +
       'Aborting to prevent potential duplicate execution. Retry later when RPC is healthy.',
   );
+}
+
+async function submitTokenApproval(
+  usdContract: ethers.Contract,
+  provider: ethers.JsonRpcProvider,
+  spenderAddress: string,
+  amount: bigint,
+  operation: string,
+  context: Record<string, unknown>,
+): Promise<void> {
+  const approveTx = await usdContract.approve(
+    spenderAddress,
+    amount,
+    getTokenApprovalOverrides(),
+  );
+
+  logVerbose('Approval transaction submitted', {
+    ...context,
+    hash: approveTx.hash,
+    amount: ethers.formatUnits(amount, USD_DECIMALS),
+  });
+
+  // Wait for approval using polling with fallback.
+  // This handles slow RPC providers that are common cause of timeouts.
+  await waitForTransactionWithPolling(
+    approveTx,
+    provider,
+    operation,
+    TIMEOUT_VALUES.APPROVAL_TX,
+    TIMEOUT_VALUES.APPROVAL_TX,
+    context,
+  );
+
+  logVerbose('Approval confirmed', {
+    ...context,
+    hash: approveTx.hash,
+  });
 }
 
 /**
@@ -837,10 +889,9 @@ async function _executeGatewayPledgeInternal(
       pledgeAmount: (metadata.pledgeAmount as string) || payment.amount,
       tipAmount: (metadata.tipAmount as string) || '0',
       reconciled: true,
-      reconciliationReason:
-        usedLegacyPledgeId
-          ? 's_processedPledges indicates pledge already executed (legacy pledge ID)'
-          : 's_processedPledges indicates pledge already executed',
+      reconciliationReason: usedLegacyPledgeId
+        ? 's_processedPledges indicates pledge already executed (legacy pledge ID)'
+        : 's_processedPledges indicates pledge already executed',
     };
   }
 
@@ -928,45 +979,47 @@ async function _executeGatewayPledgeInternal(
 
   // Approve treasury for total amount if needed
   if (currentAllowance < totalAmountUnits) {
+    const approvalContext = {
+      prefixId,
+      logAddress,
+      adminAddress: adminSigner.address,
+      spenderAddress: payment.campaign.treasuryAddress,
+    };
+
+    if (currentAllowance > 0n) {
+      logVerbose('Resetting existing token allowance before approval', {
+        ...approvalContext,
+        currentAllowance: ethers.formatUnits(currentAllowance, USD_DECIMALS),
+        required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+        note: 'USDT-style tokens can reject nonzero-to-nonzero approve calls.',
+      });
+
+      await submitTokenApproval(
+        usdContract,
+        provider,
+        payment.campaign.treasuryAddress,
+        0n,
+        'token allowance reset transaction',
+        approvalContext,
+      );
+    }
+
     logVerbose('Approving treasury for total amount (pledge + tip)', {
       prefixId,
       logAddress,
       currentAllowance: ethers.formatUnits(currentAllowance, USD_DECIMALS),
       required: ethers.formatUnits(totalAmountUnits, USD_DECIMALS),
+      gasLimit: TOKEN_APPROVAL_GAS_LIMIT.toString(),
     });
 
-    const approveTx = await usdContract.approve(
+    await submitTokenApproval(
+      usdContract,
+      provider,
       payment.campaign.treasuryAddress,
       totalAmountUnits,
-      {
-        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-      },
-    );
-
-    logVerbose('Approval transaction submitted', {
-      prefixId,
-      logAddress,
-      hash: approveTx.hash,
-    });
-
-    // Wait for approval using polling with fallback
-    // This handles slow RPC providers that are common cause of timeouts
-    // Total max time: 60s (wait) + 60s (poll) = 120s
-    await waitForTransactionWithPolling(
-      approveTx,
-      provider,
       'token approval transaction',
-      TIMEOUT_VALUES.APPROVAL_TX, // Try tx.wait() for 60 seconds
-      TIMEOUT_VALUES.APPROVAL_TX, // Then poll for up to 60 seconds more
-      { prefixId, logAddress },
+      approvalContext,
     );
-
-    logVerbose('Approval confirmed', {
-      prefixId,
-      logAddress,
-      hash: approveTx.hash,
-    });
   }
 
   // Execute setFeeAndPledge - transfers pledge + tip to treasury
@@ -986,6 +1039,7 @@ async function _executeGatewayPledgeInternal(
       pledgeAmountUnits + tipAmountUnits,
       USD_DECIMALS,
     ),
+    gasLimit: GATEWAY_PLEDGE_GAS_LIMIT.toString(),
     reward: '[]',
     isPledgeForAReward: false,
   });
@@ -1000,10 +1054,7 @@ async function _executeGatewayPledgeInternal(
       gatewayFee,
       [],
       false,
-      {
-        maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
-        maxFeePerGas: ethers.parseUnits('100', 'gwei'),
-      },
+      getGatewayPledgeOverrides(),
     );
   } catch (error) {
     // If the contract reverts with PledgeAlreadyProcessed, the pledge was already
