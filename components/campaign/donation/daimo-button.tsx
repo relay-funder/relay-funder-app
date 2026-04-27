@@ -13,7 +13,7 @@ import { useDaimoPayment } from '@/lib/hooks/useDaimoPayment';
 import { useDaimoReset } from '@/lib/hooks/useDaimoReset';
 import { logFactory } from '@/lib/debug/log';
 import { trackEvent } from '@/lib/analytics';
-import { useCurrentChain, useSwitchChain } from '@/lib/web3';
+import { useCurrentChain } from '@/lib/web3';
 
 interface DaimoPayEvent {
   paymentId?: string;
@@ -97,7 +97,6 @@ export function DaimoPayButtonComponent({
     onPaymentBounced: daimoOnPaymentBounced,
   } = useDaimoDonationCallback();
   const { chainId: currentWalletChainId } = useCurrentChain();
-  const { switchChainAsync } = useSwitchChain();
 
   const preferredChains = useMemo(() => {
     const availableChainIds = [...paymentData.config.supportedSourceChainIds];
@@ -108,7 +107,9 @@ export function DaimoPayButtonComponent({
     ) {
       return [
         currentWalletChainId,
-        ...availableChainIds.filter((chainId) => chainId !== currentWalletChainId),
+        ...availableChainIds.filter(
+          (chainId) => chainId !== currentWalletChainId,
+        ),
       ];
     }
 
@@ -146,38 +147,20 @@ export function DaimoPayButtonComponent({
           payment_method: 'daimo',
         });
 
-        if (
-          event.chainId != null &&
-          currentWalletChainId !== event.chainId
-        ) {
-          try {
-            await switchChainAsync({ chainId: event.chainId });
-          } catch (error) {
-            console.error(
-              'Daimo Pay: Failed to switch to selected source chain:',
-              event.chainId,
-              error,
-            );
-            throw new Error(
-              `Please switch your wallet to chain ${event.chainId} to complete this payment.`,
-            );
-          }
-        }
-
         await daimoOnPaymentStarted(event);
-        onPaymentStarted?.(event);
-        onPaymentStartedCallback?.();
       } catch (error) {
-        console.error('Daimo Pay: Payment initialization failed:', error);
+        console.error('Daimo Pay: Payment started handler failed:', error);
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         toast({
-          title: 'Payment Initialization Failed',
-          description: `Failed to initialize payment: ${errorMessage}. Please try again.`,
+          title: 'Payment Submitted',
+          description: `We received the payment event, but the local page update failed: ${errorMessage}. You can refresh to check status.`,
           variant: 'destructive',
         });
-        throw error;
       }
+
+      onPaymentStarted?.(event);
+      onPaymentStartedCallback?.();
     },
     [
       email,
@@ -186,8 +169,6 @@ export function DaimoPayButtonComponent({
       profile?.email,
       updateProfileEmail,
       daimoOnPaymentStarted,
-      currentWalletChainId,
-      switchChainAsync,
       onPaymentStarted,
       onPaymentStartedCallback,
       logVerbose,
@@ -211,11 +192,12 @@ export function DaimoPayButtonComponent({
           title: 'Payment Successful',
           description: 'Your donation has been processed successfully.',
         });
-        onPaymentCompleted?.(event);
-        onPaymentCompletedCallback?.();
       } catch (error) {
         console.error('Error in payment completed handler:', error);
       }
+
+      onPaymentCompleted?.(event);
+      onPaymentCompletedCallback?.();
     },
     [
       daimoOnPaymentCompleted,
@@ -245,11 +227,12 @@ export function DaimoPayButtonComponent({
           description: 'Your payment could not be processed. Please try again.',
           variant: 'destructive',
         });
-        onPaymentBounced?.(event);
-        onPaymentBouncedCallback?.();
       } catch (error) {
         console.error('Error in payment bounced handler:', error);
       }
+
+      onPaymentBounced?.(event);
+      onPaymentBouncedCallback?.();
     },
     [
       daimoOnPaymentBounced,
@@ -386,6 +369,8 @@ export function DaimoPayButtonComponent({
         toUnits={paymentData.totalAmount}
         refundAddress={paymentData.validatedRefundAddress}
         metadata={paymentData.metadata}
+        closeOnSuccess
+        resetOnSuccess
         onPaymentStarted={handlePaymentStarted}
         onPaymentCompleted={handlePaymentCompleted}
         onPaymentBounced={handlePaymentBounced}

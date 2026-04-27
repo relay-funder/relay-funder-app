@@ -1,5 +1,6 @@
 import { ethers } from '@/lib/web3';
 import { logFactory } from '@/lib/debug';
+import { readFromCeloRpc } from '@/lib/api/pledges/celo-rpc';
 
 const logVerbose = logFactory('verbose', '⛽ TransactionFees');
 const logWarn = logFactory('warn', '⛽ TransactionFees');
@@ -25,15 +26,29 @@ function maxBigInt(...values: bigint[]): bigint {
   );
 }
 
-export async function getCeloTransactionOverrides(
-  provider: ethers.Provider,
-  { operation, gasLimit, context }: TransactionOverridesContext,
-): Promise<TransactionFeeOverrides> {
+export async function getCeloTransactionOverrides({
+  operation,
+  gasLimit,
+  context,
+}: TransactionOverridesContext): Promise<TransactionFeeOverrides> {
   try {
-    const [feeData, latestBlock] = await Promise.all([
-      provider.getFeeData(),
-      provider.getBlock('latest'),
-    ]);
+    const { feeData, latestBlock } = await readFromCeloRpc(
+      {
+        operation: `read Celo fee data for ${operation}`,
+        context,
+      },
+      async (readProvider) => {
+        const [feeDataResult, latestBlockResult] = await Promise.all([
+          readProvider.getFeeData(),
+          readProvider.getBlock('latest'),
+        ]);
+
+        return {
+          feeData: feeDataResult,
+          latestBlock: latestBlockResult,
+        };
+      },
+    );
 
     const baseFeePerGas =
       latestBlock?.baseFeePerGas ?? feeData.gasPrice ?? MIN_MAX_FEE_PER_GAS;

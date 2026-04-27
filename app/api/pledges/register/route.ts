@@ -168,7 +168,7 @@ export async function POST(req: Request) {
           gatewayFee,
           {
             nonce, // Explicitly set nonce
-            ...(await getCeloTransactionOverrides(provider, {
+            ...(await getCeloTransactionOverrides({
               operation: 'setPaymentGatewayFee transaction',
               gasLimit: 500_000n,
               context: { userAddress, treasuryAddress, pledgeId },

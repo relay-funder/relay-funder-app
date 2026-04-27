@@ -8,7 +8,6 @@ import { USD_ADDRESS, USD_DECIMALS } from '@/lib/constant';
 import {
   NEXT_PUBLIC_PLATFORM_ADMIN,
   PLATFORM_ADMIN_PRIVATE_KEY,
-  NEXT_PUBLIC_RPC_URL,
 } from '@/lib/constant/server';
 import type {
   ExecuteGatewayPledgeResponse,
@@ -17,6 +16,13 @@ import type {
 import { logFactory } from '@/lib/debug';
 import { withExecutionLock } from '@/lib/api/pledges/execution-lock';
 import { getCeloTransactionOverrides } from '@/lib/api/pledges/transaction-overrides';
+import {
+  coerceRpcBigInt,
+  coerceRpcBoolean,
+  createCeloRpcProvider,
+  getPrimaryCeloRpcUrl,
+  readFromCeloRpc,
+} from '@/lib/api/pledges/celo-rpc';
 import {
   waitWithTimeout,
   TIMEOUT_VALUES,
@@ -192,9 +198,10 @@ function isPledgeAlreadyProcessedError(error: unknown): boolean {
  * @returns true if pledge exists on-chain, false otherwise
  */
 async function isPledgeExecutedOnChain(
-  treasuryContract: ethers.Contract,
+  treasuryAddress: string,
   pledgeId: string,
   adminAddress: string,
+  context: Record<string, unknown>,
 ): Promise<boolean> {
   // Compute the internal pledge ID used by the contract
   // internalPledgeId = keccak256(abi.encodePacked(pledgeId, msg.sender))
@@ -206,44 +213,38 @@ async function isPledgeExecutedOnChain(
     ),
   );
 
-  let lastError: unknown;
-
-  // Retry once to handle transient RPC failures before aborting
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const isProcessed =
-        await treasuryContract.s_processedPledges(internalPledgeId);
-
-      logVerbose('On-chain pledge verification via s_processedPledges', {
+  const isProcessed = await readFromCeloRpc(
+    {
+      operation: 'read processed pledge flag',
+      context: {
+        ...context,
         pledgeId,
         adminAddress,
         internalPledgeId,
-        isProcessed,
-        attempt,
-      });
-
-      return isProcessed;
-    } catch (error) {
-      lastError = error;
-      logError(`On-chain pledge check attempt ${attempt + 1}/2 FAILED`, {
-        pledgeId,
-        adminAddress,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-
-      // Brief pause before retry
-      if (attempt === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-  }
-
-  // Both attempts failed — abort execution so the payment is marked FAILED
-  // rather than risking a duplicate on-chain pledge
-  throw new ApiUpstreamError(
-    `Cannot verify on-chain pledge status after 2 attempts: ${lastError instanceof Error ? lastError.message : 'Unknown RPC error'}. ` +
-      'Aborting to prevent potential duplicate execution. Retry later when RPC is healthy.',
+        treasuryAddress,
+      },
+    },
+    async (provider) => {
+      const readTreasuryContract = new ethers.Contract(
+        treasuryAddress,
+        KeepWhatsRaisedABI,
+        provider,
+      );
+      const processedResult: unknown =
+        await readTreasuryContract.s_processedPledges(internalPledgeId);
+      return coerceRpcBoolean(processedResult, 'processed pledge flag');
+    },
   );
+
+  logVerbose('On-chain pledge verification via s_processedPledges', {
+    ...context,
+    pledgeId,
+    adminAddress,
+    internalPledgeId,
+    isProcessed,
+  });
+
+  return isProcessed;
 }
 
 async function submitTokenApproval(
@@ -254,7 +255,7 @@ async function submitTokenApproval(
   operation: string,
   context: Record<string, unknown>,
 ): Promise<void> {
-  const approvalOverrides = await getCeloTransactionOverrides(provider, {
+  const approvalOverrides = await getCeloTransactionOverrides({
     operation,
     gasLimit: TOKEN_APPROVAL_GAS_LIMIT,
     context,
@@ -656,11 +657,11 @@ async function _executeGatewayPledgeInternal(
   }
 
   // Verify required environment variables
-  const rpcUrl = NEXT_PUBLIC_RPC_URL;
+  const rpcUrl = getPrimaryCeloRpcUrl();
   const adminPrivateKey = PLATFORM_ADMIN_PRIVATE_KEY;
   const adminAddress = NEXT_PUBLIC_PLATFORM_ADMIN;
 
-  if (!rpcUrl || !adminPrivateKey || !adminAddress || !USD_ADDRESS) {
+  if (!adminPrivateKey || !adminAddress || !USD_ADDRESS) {
     logError('Missing environment variables', {
       prefixId,
       logAddress,
@@ -687,7 +688,7 @@ async function _executeGatewayPledgeInternal(
   }
 
   // Initialize provider and admin signer
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const provider = createCeloRpcProvider(rpcUrl);
   const adminSigner = new ethers.Wallet(adminPrivateKey, provider);
 
   logVerbose('Admin signer initialized', {
@@ -817,9 +818,10 @@ async function _executeGatewayPledgeInternal(
 
   for (const candidatePledgeId of pledgeIdsToCheck) {
     const exists = await isPledgeExecutedOnChain(
-      treasuryContract,
+      payment.campaign.treasuryAddress,
       candidatePledgeId,
       adminAddress,
+      { prefixId, logAddress, paymentId: payment.id },
     );
 
     if (exists) {
@@ -893,11 +895,22 @@ async function _executeGatewayPledgeInternal(
   });
 
   // Check admin wallet balance (with timeout to prevent hangs)
-  const adminBalance = await waitWithTimeout(
-    usdContract.balanceOf(adminSigner.address),
-    TIMEOUT_VALUES.READ_OPERATION,
-    'read admin wallet balance',
-    { prefixId, logAddress, adminAddress: adminSigner.address },
+  const adminBalance = await readFromCeloRpc(
+    {
+      operation: 'read admin wallet balance',
+      context: { prefixId, logAddress, adminAddress: adminSigner.address },
+    },
+    async (readProvider) => {
+      const readUsdContract = new ethers.Contract(
+        USD_ADDRESS as string,
+        erc20Abi,
+        readProvider,
+      );
+      const balanceResult: unknown = await readUsdContract.balanceOf(
+        adminSigner.address,
+      );
+      return coerceRpcBigInt(balanceResult, 'admin wallet balance');
+    },
   );
   const adminBalanceFormatted = ethers.formatUnits(adminBalance, USD_DECIMALS);
 
@@ -950,14 +963,23 @@ async function _executeGatewayPledgeInternal(
   // This ensures retries after crashes use the same pledge ID, preventing duplicate on-chain executions
 
   // Check current allowance (with timeout to prevent hangs)
-  const currentAllowance = await waitWithTimeout(
-    usdContract.allowance(
-      adminSigner.address,
-      payment.campaign.treasuryAddress,
-    ),
-    TIMEOUT_VALUES.READ_OPERATION,
-    'read token allowance',
-    { prefixId, logAddress, adminAddress: adminSigner.address },
+  const currentAllowance = await readFromCeloRpc(
+    {
+      operation: 'read token allowance',
+      context: { prefixId, logAddress, adminAddress: adminSigner.address },
+    },
+    async (readProvider) => {
+      const readUsdContract = new ethers.Contract(
+        USD_ADDRESS as string,
+        erc20Abi,
+        readProvider,
+      );
+      const allowanceResult: unknown = await readUsdContract.allowance(
+        adminSigner.address,
+        payment.campaign.treasuryAddress,
+      );
+      return coerceRpcBigInt(allowanceResult, 'token allowance');
+    },
   );
 
   logVerbose('Current allowance', {
@@ -1036,7 +1058,7 @@ async function _executeGatewayPledgeInternal(
 
   let treasuryTx;
   try {
-    const gatewayPledgeOverrides = await getCeloTransactionOverrides(provider, {
+    const gatewayPledgeOverrides = await getCeloTransactionOverrides({
       operation: 'setFeeAndPledge transaction',
       gasLimit: GATEWAY_PLEDGE_GAS_LIMIT,
       context: { prefixId, logAddress },
@@ -1157,11 +1179,22 @@ async function _executeGatewayPledgeInternal(
   });
 
   // Get final admin wallet balance (with timeout)
-  const finalAdminBalance = await waitWithTimeout(
-    usdContract.balanceOf(adminSigner.address),
-    TIMEOUT_VALUES.READ_OPERATION,
-    'read final admin wallet balance',
-    { prefixId, logAddress, adminAddress: adminSigner.address },
+  const finalAdminBalance = await readFromCeloRpc(
+    {
+      operation: 'read final admin wallet balance',
+      context: { prefixId, logAddress, adminAddress: adminSigner.address },
+    },
+    async (readProvider) => {
+      const readUsdContract = new ethers.Contract(
+        USD_ADDRESS as string,
+        erc20Abi,
+        readProvider,
+      );
+      const balanceResult: unknown = await readUsdContract.balanceOf(
+        adminSigner.address,
+      );
+      return coerceRpcBigInt(balanceResult, 'final admin wallet balance');
+    },
   );
   const finalAdminBalanceFormatted = ethers.formatUnits(
     finalAdminBalance,

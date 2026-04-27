@@ -1,9 +1,9 @@
 import { ethers } from '@/lib/web3';
 import { executeGatewayPledge } from './execute-gateway-pledge';
 import { pollForTransactionReceipt } from '@/lib/web3/transaction-polling';
-import { NEXT_PUBLIC_RPC_URL } from '@/lib/constant/server';
 import { logFactory } from '@/lib/debug';
 import type { ExecuteGatewayPledgeResponse } from '@/lib/api/types/pledges';
+import { createCeloRpcProvider } from '@/lib/api/pledges/celo-rpc';
 
 const logVerbose = logFactory('verbose', '🔄 BalanceRetry', { flag: 'daimo' });
 const logError = logFactory('error', '🚨 BalanceRetry', { flag: 'daimo' });
@@ -89,13 +89,6 @@ async function waitForDaimoDestinationTx(
   config: BalanceRetryConfig,
   context: { prefixId: string; logAddress: string; paymentId: number },
 ): Promise<{ confirmed: boolean; receipt?: ethers.TransactionReceipt }> {
-  const rpcUrl = NEXT_PUBLIC_RPC_URL;
-
-  if (!rpcUrl) {
-    logError('Missing RPC URL for destination tx verification', context);
-    return { confirmed: false };
-  }
-
   logVerbose('Waiting for Daimo destination transaction confirmation', {
     ...context,
     destinationTxHash,
@@ -104,14 +97,19 @@ async function waitForDaimoDestinationTx(
   });
 
   try {
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const receipt = await pollForTransactionReceipt(
-      provider,
-      destinationTxHash,
-      config.destinationTxPollIntervalMs,
-      config.destinationTxTimeoutMs,
-      context,
-    );
+    const provider = createCeloRpcProvider();
+    let receipt: ethers.TransactionReceipt | null = null;
+    try {
+      receipt = await pollForTransactionReceipt(
+        provider,
+        destinationTxHash,
+        config.destinationTxPollIntervalMs,
+        config.destinationTxTimeoutMs,
+        context,
+      );
+    } finally {
+      provider.destroy();
+    }
 
     if (receipt && receipt.status === 1) {
       logVerbose('Daimo destination transaction confirmed successfully', {
@@ -197,7 +195,8 @@ export async function executeGatewayPledgeWithBalanceRetry(
     try {
       return await executeGatewayPledge(paymentId);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       logError('Gateway pledge execution failed without destination tx hash', {
         ...executionContext,
         error: errorMessage,
@@ -285,7 +284,10 @@ export async function executeGatewayPledgeWithBalanceRetry(
       }
 
       // Check if this is an insufficient balance error that should be retried
-      if (isInsufficientBalanceError(result.error) && attempt <= config.maxRetries) {
+      if (
+        isInsufficientBalanceError(result.error) &&
+        attempt <= config.maxRetries
+      ) {
         const delay = calculateBackoffDelay(
           attempt,
           config.baseDelayMs,
@@ -319,7 +321,8 @@ export async function executeGatewayPledgeWithBalanceRetry(
       return result;
     } catch (error) {
       // Unexpected exception during execution
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
 
       // Check if the exception message indicates insufficient balance
       if (

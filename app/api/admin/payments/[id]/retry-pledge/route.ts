@@ -10,16 +10,11 @@ import { retryGatewayPledge } from '@/lib/api/pledges/retry-gateway-execution';
 import { db } from '@/server/db';
 import { logFactory } from '@/lib/debug';
 import type { PledgeExecutionStatus } from '@/server/db';
-import { NEXT_PUBLIC_RPC_URL } from '@/lib/constant/server';
 import {
   PLEDGE_PENDING_RETRY_WINDOW_MS,
   PLEDGE_PENDING_RETRY_WINDOW_SECONDS,
 } from '@/lib/constant/pledges';
-import { ethers } from '@/lib/web3';
-import {
-  waitWithTimeout,
-  TIMEOUT_VALUES,
-} from '@/lib/web3/transaction-timeout';
+import { readFromCeloRpc } from '@/lib/api/pledges/celo-rpc';
 import { computeDeterministicPledgeIdCandidates } from '@/lib/web3/pledge-id';
 
 const logVerbose = logFactory('verbose', '🚀 DaimoRetryPledge', {
@@ -34,24 +29,12 @@ async function resolveCeloTxHash(
   txHash: string,
   { prefixId, logAddress }: { prefixId: string; logAddress: string },
 ): Promise<TxResolution> {
-  const rpcUrl = NEXT_PUBLIC_RPC_URL;
-  if (!rpcUrl) {
-    logError('Missing NEXT_PUBLIC_RPC_URL; cannot verify pledge tx hash', {
-      prefixId,
-      logAddress,
-      txHash,
-    });
-    throw new ApiParameterError(
-      'Server configuration missing RPC URL; cannot verify pledge transaction',
-    );
-  }
-
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const receipt = await waitWithTimeout(
-    provider.getTransactionReceipt(txHash),
-    TIMEOUT_VALUES.READ_OPERATION,
-    'read transaction receipt',
-    { prefixId, logAddress, txHash },
+  const receipt = await readFromCeloRpc(
+    {
+      operation: 'read transaction receipt',
+      context: { prefixId, logAddress, txHash },
+    },
+    async (provider) => provider.getTransactionReceipt(txHash),
   );
 
   if (!receipt) return 'NOT_FOUND';
@@ -192,7 +175,8 @@ export async function POST(
                 (existingMetadata.legacyGeneratedPledgeId as
                   | string
                   | undefined) ??
-                (legacyPledgeId ?? undefined),
+                legacyPledgeId ??
+                undefined,
               onChainPledgeId:
                 (existingMetadata.onChainPledgeId as string | undefined) ??
                 deterministicPledgeId,

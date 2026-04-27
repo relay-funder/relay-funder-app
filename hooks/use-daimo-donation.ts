@@ -32,8 +32,9 @@ export function useDaimoDonationCallback() {
       debug && console.log('Daimo Pay: Payment started', event);
 
       if (!authenticated) {
-        console.error('Daimo Pay: User not authenticated');
-        throw new Error('Not signed in');
+        console.warn(
+          'Daimo Pay: User not authenticated when payment started; webhook will still reconcile by payer address',
+        );
       }
 
       // Extract Daimo payment ID for logging/tracking
@@ -41,7 +42,7 @@ export function useDaimoDonationCallback() {
         event?.payment?.id || event?.id || event?.paymentId;
       if (!daimoPaymentId) {
         console.error('Daimo Pay: Missing payment ID in event');
-        throw new Error('Daimo Pay event missing payment ID');
+        return;
       }
 
       debug && console.log('Daimo Pay: Payment ID extracted:', daimoPaymentId);
