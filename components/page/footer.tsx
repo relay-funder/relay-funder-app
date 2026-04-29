@@ -1,6 +1,10 @@
 'use client';
 
-import { EXTERNAL_LINKS, SUPPORT_EMAIL } from '@/lib/constant';
+import {
+  EXTERNAL_LINKS,
+  ROUND_RESULTS_PATH,
+  SUPPORT_EMAIL,
+} from '@/lib/constant';
 import { Mail } from 'lucide-react';
 import Link from 'next/link';
 
@@ -65,7 +69,7 @@ export function PageFooter() {
                 About
               </a>
               <Link
-                href="/rounds"
+                href={ROUND_RESULTS_PATH}
                 className="text-text-muted transition-colors hover:text-text-primary"
               >
                 Round Results

@@ -31,6 +31,7 @@ import { formatUSD } from '@/lib/format-usd';
 import { buildRoundResultsView, roundHasEnded } from '@/lib/round-results';
 import { usePublicRoundResult } from '@/lib/hooks/usePublicRoundResults';
 import { trackEvent } from '@/lib/analytics';
+import { ROUND_RESULTS_PATH } from '@/lib/constant';
 
 export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
   const { data: round, isLoading, isError } = usePublicRoundResult(roundId);
@@ -46,13 +47,13 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
 
   useEffect(() => {
     if (!isLoading && !isError && round === null) {
-      router.replace('/rounds');
+      router.replace(ROUND_RESULTS_PATH);
     }
   }, [isLoading, isError, round, router]);
 
   useEffect(() => {
     if (!isLoading && !isError && round && !roundHasEnded(round)) {
-      router.replace('/rounds');
+      router.replace(ROUND_RESULTS_PATH);
     }
   }, [isLoading, isError, round, router]);
 
@@ -73,12 +74,12 @@ export function PublicRoundResultsDetail({ roundId }: { roundId: number }) {
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
             <Link
-              href="/rounds"
+              href={ROUND_RESULTS_PATH}
               className="flex items-center gap-2"
               onClick={() =>
                 trackEvent('funnel_cta_click', {
                   source: 'round_results_detail',
-                  path: '/rounds',
+                  path: ROUND_RESULTS_PATH,
                 })
               }
             >

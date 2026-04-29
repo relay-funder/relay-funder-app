@@ -37,8 +37,8 @@ export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
 export const DEFAULT_USER_EMAIL = 'test.donor@relayfunder.com';
 export const SUPPORT_EMAIL = 'support@relayfunder.com';
 export const DEFAULT_SUGGESTED_DONATION_AMOUNTS = [5, 10, 25, 50, 100];
-export const ROUND_RESULTS_PATH = '/rounds';
-export const ACTIVE_ROUNDS_PATH = '/rounds?view=current';
+export const ROUND_RESULTS_PATH = '/rounds/past';
+export const ACTIVE_ROUNDS_PATH = '/rounds/current';
 
 export const FILE_STORAGE_PROVIDER =
   process.env.FILE_STORAGE_PROVIDER ?? 'LOCAL';
