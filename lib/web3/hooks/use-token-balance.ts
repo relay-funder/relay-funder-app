@@ -92,7 +92,9 @@ export interface CeloFormattedBalance {
   isPending: boolean;
 }
 
-export function useCeloBalance({ enabled = true }: { enabled?: boolean } = {}) {
+export function useCeloBalance({
+  enabled = true,
+}: { enabled?: boolean } = {}): CeloFormattedBalance {
   const defaultSymbol = chainConfig.nativeCurrency.symbol;
   const {
     balance,
@@ -105,12 +107,15 @@ export function useCeloBalance({ enabled = true }: { enabled?: boolean } = {}) {
     symbol: defaultSymbol,
     enabled,
   });
-  return {
-    celoBalance: balance,
-    celoBalanceAmount: balanceAmount,
-    celoSymbol: symbol,
-    celoBalanceWithSymbol: balanceWithSymbol,
-    hasCeloBalance: hasBalance,
-    isPending,
-  };
+  return useMemo(
+    () => ({
+      celoBalance: balance,
+      celoBalanceAmount: balanceAmount,
+      celoSymbol: symbol,
+      celoBalanceWithSymbol: balanceWithSymbol,
+      hasCeloBalance: hasBalance,
+      isPending,
+    }),
+    [balance, balanceAmount, symbol, balanceWithSymbol, hasBalance, isPending],
+  );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MessageSquareWarning } from 'lucide-react';
 import { useAuth, useDonationContext } from '@/contexts';
 import { CampaignDonationDetails } from './details';
@@ -16,11 +16,13 @@ export function CampaignDonationCreditCardTab({
   const { authenticated, login } = useAuth();
   const { clearDonation } = useDonationContext();
 
+  const clearDonationRef = useRef(clearDonation);
+  clearDonationRef.current = clearDonation;
   useEffect(() => {
     return () => {
-      clearDonation();
+      clearDonationRef.current();
     };
-  }, [clearDonation]);
+  }, []);
 
   if (!authenticated) {
     return (

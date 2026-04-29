@@ -18,6 +18,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from 'react';
 
@@ -102,7 +103,7 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
       }
       setAmountIntern(input);
     },
-    [setAmountIntern, usdFormattedBalance.usdBalanceAmount, paymentType],
+    [setAmountIntern],
   );
   const clearDonation = useCallback(() => {
     setAmount('0');
@@ -112,29 +113,47 @@ export const DonationProvider: React.FC<{ children: ReactNode }> = ({
     setIsPaymentCompleted(false);
   }, [setAmount]);
 
-  const value: DonationContextType = {
-    amount,
-    setAmount,
-    celoFormattedBalance,
-    email,
-    setEmail,
-    isAnonymous,
-    setIsAnonymous,
-    isPaymentCompleted,
-    setIsPaymentCompleted,
-    isProcessingPayment,
-    setIsProcessingPayment,
-    paymentType,
-    setPaymentType,
-    tipAmount,
-    setTipAmount,
-    token,
-    setToken,
-    usdFormattedBalance,
-    showDaimoPay,
-    showCryptoWallet,
-    clearDonation,
-  };
+  const value = useMemo<DonationContextType>(
+    () => ({
+      amount,
+      setAmount,
+      celoFormattedBalance,
+      email,
+      setEmail,
+      isAnonymous,
+      setIsAnonymous,
+      isPaymentCompleted,
+      setIsPaymentCompleted,
+      isProcessingPayment,
+      setIsProcessingPayment,
+      paymentType,
+      setPaymentType,
+      tipAmount,
+      setTipAmount,
+      token,
+      setToken,
+      usdFormattedBalance,
+      showDaimoPay,
+      showCryptoWallet,
+      clearDonation,
+    }),
+    [
+      amount,
+      setAmount,
+      celoFormattedBalance,
+      email,
+      isAnonymous,
+      isPaymentCompleted,
+      isProcessingPayment,
+      paymentType,
+      tipAmount,
+      token,
+      usdFormattedBalance,
+      showDaimoPay,
+      showCryptoWallet,
+      clearDonation,
+    ],
+  );
 
   return (
     <DonationContext.Provider value={value}>

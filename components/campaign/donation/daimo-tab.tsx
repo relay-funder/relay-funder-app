@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { DaimoPayButtonComponent } from './daimo-button';
 import { CampaignDonationWalletAmount } from './wallet/amount';
@@ -40,11 +40,13 @@ export function DaimoPayTab({ campaign }: { campaign: DbCampaign }) {
     enabled: !!roundId && !!amount && parseFloat(amount) > 0,
   });
 
+  const clearDonationRef = useRef(clearDonation);
+  clearDonationRef.current = clearDonation;
   useEffect(() => {
     return () => {
-      clearDonation();
+      clearDonationRef.current();
     };
-  }, [clearDonation]);
+  }, []);
 
   const handlePaymentStarted = useCallback(() => {
     setIsProcessingPayment(true);

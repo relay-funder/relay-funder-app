@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { USD_ADDRESS, USD_TOKEN } from '@/lib/constant';
 import { useFormattedTokenBalance } from '@/lib/web3/hooks/use-token-balance';
 
@@ -12,7 +13,9 @@ export interface UsdFormattedBalance {
   isPending: boolean;
 }
 
-export function useUsdBalance({ enabled = true }: { enabled?: boolean } = {}) {
+export function useUsdBalance({
+  enabled = true,
+}: { enabled?: boolean } = {}): UsdFormattedBalance {
   const {
     balance,
     balanceAmount,
@@ -26,12 +29,15 @@ export function useUsdBalance({ enabled = true }: { enabled?: boolean } = {}) {
     enabled,
   });
 
-  return {
-    usdBalance: balance,
-    usdBalanceAmount: balanceAmount,
-    usdSymbol: symbol,
-    usdBalanceWithSymbol: balanceWithSymbol,
-    hasUsdBalance: hasBalance,
-    isPending,
-  };
+  return useMemo(
+    () => ({
+      usdBalance: balance,
+      usdBalanceAmount: balanceAmount,
+      usdSymbol: symbol,
+      usdBalanceWithSymbol: balanceWithSymbol,
+      hasUsdBalance: hasBalance,
+      isPending,
+    }),
+    [balance, balanceAmount, symbol, balanceWithSymbol, hasBalance, isPending],
+  );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { DbCampaign } from '@/types/campaign';
 import { useDonationContext } from '@/contexts';
@@ -51,11 +51,13 @@ export function CampaignDonationWalletDetails({
     );
   }, [numericAmount, numericTip, usdFormattedBalance.usdBalanceAmount]);
 
+  const clearDonationRef = useRef(clearDonation);
+  clearDonationRef.current = clearDonation;
   useEffect(() => {
     return () => {
-      clearDonation();
+      clearDonationRef.current();
     };
-  }, [clearDonation]);
+  }, []);
 
   return (
     <div className="relative flex flex-col gap-6">
