@@ -20,16 +20,6 @@ Relay Funder App is a Next.js 15 fundraising platform for refugee communities an
 - **Code Quality**: ESLint, Prettier with Tailwind plugin, Husky for git hooks
 - **Deployment**: Vercel with custom build configurations
 
-### Key Features
-
-1. **Campaign Management**: Create, edit, and manage fundraising campaigns
-2. **Web3 Integration**: Wallet connectivity with multiple adapters (Privy, Silk, Dummy)
-3. **Dual Payment System**: Support for both crypto (USDC) and credit card payments
-4. **Admin Dashboard**: Administrative functionality for campaign approval and management
-5. **Collections & Rounds**: Curated campaign collections and quadratic funding rounds
-6. **Real-time Notifications**: In-app notification system for user actions
-7. **File Storage**: Decentralized IPFS storage with Pinata integration
-
 ### Project Structure
 
 **You MUST get permission with the user before creating new folders**
@@ -143,25 +133,8 @@ docker compose exec app bash  # shell access
 **Safe Alternatives:**
 
 1. **Use `unknown` and Type Guards**
-
-   ```typescript
-   function processData(data: unknown) {
-     if (typeof data === 'object' && data !== null && 'id' in data) {
-       return (data as { id: string }).id;
-     }
-     throw new Error('Invalid data structure');
-   }
-   ```
-
-2. **Use Zod for Runtime Validation** (see API section for full Zod patterns)
-
-   ```typescript
-   const CampaignSchema = z.object({ id: z.string(), title: z.string() });
-   type Campaign = z.infer<typeof CampaignSchema>;
-   const campaign = CampaignSchema.parse(unknownData);
-   ```
-
-3. **Type Narrowing with Conditionals** (see Error Handling section)
+2. **Use Zod for Runtime Validation**
+3. **Type Narrowing with Conditionals** 
 
 **Acceptable Use Cases (Sparingly):**
 
@@ -215,89 +188,21 @@ docker compose exec app bash  # shell access
 
 ## React
 
-### Component Naming and Architecture (MANDATORY)
-
-#### Domain-Meaningful Component Names (CRITICAL)
-
-- **NEVER** name shared UI components using implementation or refactoring-oriented terms
-- **FORBIDDEN TERMS**: "unified", "unified-card", "generic", "shared", "common", "base", "wrapper"
-- **REQUIRED**: Use domain-meaningful names that reflect the component's actual purpose
-- **EXAMPLES**:
-  - ✅ `CampaignCard` - clearly indicates it's for displaying campaigns
-  - ✅ `UserProfileSection` - describes the specific domain functionality
-  - ❌ `UnifiedCard` - implementation detail, not domain meaning
-  - ❌ `GenericDisplay` - too abstract, no domain context
+### Component Naming and Architecture
 
 #### Component Size Limits (ENFORCED)
 
 - **MAXIMUM**: 200-300 lines of code per component file
-- **REQUIRED**: Break down large components into smaller, focused sub-components
 - **STRUCTURE**: Use folder structure with index.ts for complex components
-- **EXAMPLE**: Split a 800+ line component into:
-  - `campaign-card/campaign-card.tsx` (main component, ~170 LOC)
-  - `campaign-card/header.tsx` (header logic, ~120 LOC)
-  - `campaign-card/content.tsx` (content logic, ~250 LOC)
-  - `campaign-card/footer.tsx` (footer logic, ~180 LOC)
-  - `campaign-card/index.ts` (exports and documentation)
 
 ### Component Patterns
 
-- **Function Components**: Use function components with TypeScript
-- **Props Interface**: Define component props with explicit interfaces
-- **UI Components**: Import from single barrel export (`@/components/ui`)
-- **Custom Hooks**: Extract complex logic into reusable hooks (`lib/hooks/`)
-- **Single Responsibility**: Each component should have one clear purpose
-- **Forward Ref Pattern**: Use `React.forwardRef` for components that need refs
-- **Display Name**: Set `Component.displayName` for debugging
 - **Radix UI Integration**: Extensive use of Radix UI primitives for accessibility
 - **Toast State Management**: Avoid direct toast calls in catch/business logic. Set state instead and use useEffect to trigger toasts
 
-### Data Fetching (MANDATORY)
+### Data Fetching 
 
 > **NEVER USE DIRECT FETCH IN COMPONENTS**: Always use TanStack Query hooks for data fetching.
-
-**Recommended Pattern:**
-
-```typescript
-import { useQuery } from '@tanstack/react-query';
-
-function CampaignList() {
-  const { data: campaigns, isLoading, error } = useQuery({
-    queryKey: ['campaigns'],
-    queryFn: () => fetch('/api/campaigns').then(res => res.json()),
-  });
-
-  if (isLoading) return <Loading />;
-  if (error) return <ErrorMessage error={error} />;
-  return <div>{campaigns?.map(c => <CampaignCard key={c.id} campaign={c} />)}</div>;
-}
-```
-
-**Custom Hook Pattern (PREFERRED):**
-
-```typescript
-// Create reusable custom hooks in lib/hooks/
-export function useCampaigns() {
-  return useQuery({
-    queryKey: ['campaigns'],
-    queryFn: async () => {
-      const response = await fetch('/api/campaigns');
-      if (!response.ok) throw new Error('Failed to fetch campaigns');
-      return response.json();
-    },
-  });
-}
-```
-
-**For Mutations:**
-
-```typescript
-const createMutation = useMutation({
-  mutationFn: (data) =>
-    fetch('/api/campaigns', { method: 'POST', body: JSON.stringify(data) }),
-  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['campaigns'] }),
-});
-```
 
 ---
 
@@ -371,50 +276,6 @@ For the full playbook on adding new API routes and hooks, see **[docs/API_INTEGR
 
 Follow the exact pattern from `app/api/_template/route.ts`:
 
-```typescript
-import { db } from '@/server/db';
-import { checkAuth, isAdmin } from '@/lib/api/auth';
-import {
-  ApiAuthNotAllowed,
-  ApiIntegrityError,
-  ApiNotFoundError,
-  ApiParameterError,
-} from '@/lib/api/error';
-import { response, handleError } from '@/lib/api/response';
-
-export async function POST/GET/PUT/DELETE(req: Request) {
-  try {
-    // 1. ALWAYS start with authentication
-    const session = await checkAuth(['user']);
-
-    // 2. Extract and validate parameters
-    const { searchParams } = new URL(req.url);
-    // or: const data = await req.json();
-
-    // 3. Validate user exists and has permissions
-    const user = await db.user.findUnique({
-      where: { address: session.user.address },
-    });
-
-    if (!user) {
-      throw new ApiNotFoundError('User not found');
-    }
-
-    // 4. Additional role checks if needed
-    if (requiresAdmin && !await isAdmin()) {
-      throw new ApiAuthNotAllowed('Admin privileges required');
-    }
-
-    // 5. Business logic here
-
-    // 6. Return response
-    return response(result);
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-}
-```
-
 #### Required Imports for All API Routes
 
 ```typescript
@@ -455,15 +316,6 @@ export async function POST(req: Request) {
   }
 }
 ```
-
-### Key Patterns
-
-- Server routes: `checkAuth()` → validate with Zod → `response()`/`handleError()`
-- Client hooks: `useQuery`/`useInfiniteQuery`/`useMutation` with proper cache invalidation
-- Pagination envelope: `{ items: T[], pagination: { currentPage, pageSize, totalPages, totalItems, hasMore } }`
-
----
-
 ## Error Handling and Logging
 
 ### Standardized Error Types
@@ -492,14 +344,6 @@ function handleError(error: unknown) {
   }
 }
 ```
-
-### Logging Standards
-
-- **Clean Logging**: Avoid excessive emoji use in console logging - keep logs professional and readable
-- **Consistent Format**: Use consistent indentation and formatting for log messages
-- **Error Logging**: Use appropriate log levels (console.error, console.warn, console.log)
-- **Context Information**: Include relevant context in log messages without overwhelming output
-
 ---
 
 ## Web3
@@ -524,11 +368,9 @@ interface WalletAdapter {
 }
 ```
 
-### Dummy Wallet Adapter (ABSOLUTELY ESSENTIAL)
+### Dummy Wallet Adapter
 
 Every Web3 feature MUST have a corresponding dummy implementation for testing.
-
-#### Critical Dummy Features
 
 1. **Authentication Simulation**
 
@@ -573,17 +415,6 @@ Every Web3 feature MUST have a corresponding dummy implementation for testing.
    - Must handle chain switching events
    - Must persist dummy auth state in localStorage
 
-#### Implementation Checklist
-
-- ✅ Mock wallet connection/disconnection
-- ✅ Simulate transaction signing with delays
-- ✅ Handle contract read/write operations
-- ✅ Provide realistic gas estimates
-- ✅ Support chain switching simulation
-- ✅ Generate valid-looking addresses and transaction hashes
-- ✅ Implement admin testing mode
-- ✅ Provide equivalent error scenarios for testing
-
 #### Testing with Dummy Wallet
 
 - **ALWAYS** verify dummy wallet provides equivalent functionality
@@ -618,39 +449,3 @@ import { readContract } from '@/lib/web3/adapter/dummy/wagmi';
 - `pending`: Transaction submitted, waiting for confirmation
 - `confirmed`: Transaction confirmed on blockchain
 - `failed`: Transaction failed or reverted
-
-#### State Tracking Pattern
-
-```typescript
-const [transactionState, setTransactionState] = useState<{
-  status: 'idle' | 'pending' | 'confirmed' | 'failed';
-  hash?: string;
-  error?: string;
-}>({ status: 'idle' });
-```
-
-## Landing the Plane (Session Completion)
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
