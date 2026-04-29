@@ -61,3 +61,4 @@ cc-protocol/.env.foundry
 .idea
 .beads
 .tldr
+.env*.local

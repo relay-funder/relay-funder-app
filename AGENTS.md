@@ -449,3 +449,21 @@ import { readContract } from '@/lib/web3/adapter/dummy/wagmi';
 - `pending`: Transaction submitted, waiting for confirmation
 - `confirmed`: Transaction confirmed on blockchain
 - `failed`: Transaction failed or reverted
+
+---
+
+## Production Logs (Vercel)
+
+Repo is linked to `relay-funder/relay-funder-app` (`.vercel/`). Use `vercel logs` directly — no Docker.
+
+Always pass `--no-branch` for prod (default filters by current git branch). Source glyphs: `λ` serverless · `ε` edge · `◇` static.
+
+```bash
+vercel logs --environment=production --level=error -n 50 --no-branch       # recent errors
+vercel logs --environment=production --status-code=5xx -n 50 --no-branch   # 5xx only
+vercel logs --environment=production --since=1h -x --no-branch             # last hour, expanded
+vercel logs --environment=production -q "url:/api/<route>" -n 20 --no-branch
+vercel logs --environment=production -f --no-branch                        # live tail
+```
+
+Flags: `-x` expand · `-f` follow · `--since 1h|30m` · `-q` filter syntax (e.g. `"status:500 error"`) · `--request-id` · `-j` JSONL.
