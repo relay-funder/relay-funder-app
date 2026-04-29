@@ -22,7 +22,10 @@ export function CampaignDonationWalletAmount() {
 
   const handleAmountWheel = useCallback(
     (event: WheelEvent<HTMLInputElement>) => {
-      event.preventDefault();
+      // React attaches wheel listeners as passive, so preventDefault is a
+      // no-op. Blurring instead lets the page scroll while stopping the
+      // number input from reacting to wheel.
+      event.currentTarget.blur();
     },
     [],
   );
