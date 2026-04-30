@@ -6,6 +6,7 @@ export const metadata: Metadata = generateListingMetadata(
   'Current Funding Round',
   'Discover the active or upcoming quadratic funding round on Relay Funder. Support campaigns through matching funds and community voting.',
   '/rounds/current',
+  '/opengraph-image',
 );
 
 export default function RoundsCurrentPage() {
