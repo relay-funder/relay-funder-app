@@ -16,6 +16,7 @@ import {
   CELO_PREZENTI_SPONSOR,
   ROUND_RESULTS_CAMPAIGN_BINDINGS,
   STATIC_ROUND_SPONSORS,
+  getRoundDefaultPartner,
   type RoundResultsPartner,
   type RoundResultsSponsor,
 } from '@/lib/constant/round-results-partners';
@@ -574,6 +575,7 @@ export function buildRoundResultsView(
   const report = parseApprovedResult(round);
   const campaignPartnerLookup = buildCampaignPartnerLookup();
   const useStaticBindings = shouldUseStaticPartnerBindings(round);
+  const defaultPartner = getRoundDefaultPartner(round.id);
   const boundPartnerLookup = new Map<string, RoundResultsPartner>();
 
   const campaignsByRoundCampaignId = new Map<number, CampaignDistribution>();
@@ -656,13 +658,13 @@ export function buildRoundResultsView(
           campaignPartnerLookup,
         )
       : undefined;
-    if (matchedPartnerBinding?.partner) {
-      boundPartnerLookup.set(
-        matchedPartnerBinding.partnerId,
-        matchedPartnerBinding.partner,
-      );
+    const resolvedPartner = matchedPartnerBinding?.partner ?? defaultPartner;
+    const resolvedPartnerId =
+      matchedPartnerBinding?.partnerId ?? defaultPartner?.id ?? '';
+    if (resolvedPartner && resolvedPartnerId) {
+      boundPartnerLookup.set(resolvedPartnerId, resolvedPartner);
     }
-    const partnerId = matchedPartnerBinding?.partnerId ?? '';
+    const partnerId = resolvedPartnerId;
 
     return {
       id: roundCampaign.campaignId,

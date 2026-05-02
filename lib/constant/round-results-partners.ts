@@ -94,6 +94,20 @@ const ROUND_RESULTS_PARTNER_LOOKUP = new Map<string, RoundResultsPartner>(
   ROUND_RESULTS_PARTNERS.map((partner) => [partner.id, partner]),
 );
 
+export const STATIC_ROUND_DEFAULT_PARTNER_IDS: Record<number, string> = {
+  6: 'refunite',
+};
+
+export function getRoundDefaultPartner(
+  roundId: number,
+): RoundResultsPartner | undefined {
+  const partnerId = STATIC_ROUND_DEFAULT_PARTNER_IDS[roundId];
+  if (!partnerId) {
+    return undefined;
+  }
+  return ROUND_RESULTS_PARTNER_LOOKUP.get(partnerId);
+}
+
 const ROUND_RESULTS_CAMPAIGN_BINDINGS_BASE: Array<
   Omit<RoundResultsCampaignBinding, 'partner'>
 > = [
