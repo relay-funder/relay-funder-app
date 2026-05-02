@@ -27,16 +27,16 @@ export const CELO_PREZENTI_SPONSOR: RoundResultsSponsor = {
   website: 'https://prezenti.xyz',
 };
 
-export const REFUNITE_SPONSOR: RoundResultsSponsor = {
-  name: 'REFUNITE',
-  logo: '/images/logo-refunite.svg',
+export const XCAPIT_SPONSOR: RoundResultsSponsor = {
+  name: 'Xcapit',
+  logo: '',
   description:
-    'A global nonprofit and digital platform that helps refugees and displaced people reconnect with missing family members through secure mobile and online tools, operating across multiple countries.',
-  website: 'https://refunite.org',
+    'Xcapit brings financial access to underserved communities through SMS-based wallet infrastructure, enabling beneficiaries to receive funds via basic mobile phones and off-ramp to local mobile money systems.',
+  website: 'https://www.xcapit.com',
 };
 
 export const STATIC_ROUND_SPONSORS: Record<number, RoundResultsSponsor> = {
-  6: REFUNITE_SPONSOR,
+  6: XCAPIT_SPONSOR,
 };
 
 export const ROUND_RESULTS_PARTNERS: RoundResultsPartner[] = [
