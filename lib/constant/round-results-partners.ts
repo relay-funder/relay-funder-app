@@ -27,6 +27,18 @@ export const CELO_PREZENTI_SPONSOR: RoundResultsSponsor = {
   website: 'https://prezenti.xyz',
 };
 
+export const REFUNITE_SPONSOR: RoundResultsSponsor = {
+  name: 'REFUNITE',
+  logo: '/images/logo-refunite.svg',
+  description:
+    'A global nonprofit and digital platform that helps refugees and displaced people reconnect with missing family members through secure mobile and online tools, operating across multiple countries.',
+  website: 'https://refunite.org',
+};
+
+export const STATIC_ROUND_SPONSORS: Record<number, RoundResultsSponsor> = {
+  6: REFUNITE_SPONSOR,
+};
+
 export const ROUND_RESULTS_PARTNERS: RoundResultsPartner[] = [
   {
     id: 'refunite',

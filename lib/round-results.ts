@@ -15,6 +15,7 @@ import {
 import {
   CELO_PREZENTI_SPONSOR,
   ROUND_RESULTS_CAMPAIGN_BINDINGS,
+  STATIC_ROUND_SPONSORS,
   type RoundResultsPartner,
   type RoundResultsSponsor,
 } from '@/lib/constant/round-results-partners';
@@ -92,6 +93,11 @@ function buildRoundSponsor(
 ): RoundResultsSponsor {
   if (useStaticBindings) {
     return CELO_PREZENTI_SPONSOR;
+  }
+
+  const sponsorOverride = STATIC_ROUND_SPONSORS[round.id];
+  if (sponsorOverride) {
+    return sponsorOverride;
   }
 
   const sponsorLogo = round.media?.[0]?.url ?? '';
