@@ -48,7 +48,7 @@ export function CampaignUpdateForm({
   const { toast } = useToast();
   const { mutateAsync: createCampaignUpdate, isPending } =
     useCreateCampaignUpdate();
-  const { address: userAddress } = useAuth();
+  const { address: userAddress, isContentEditor } = useAuth();
 
   const form = useForm<CampaignUpdateFormValues>({
     resolver: zodResolver(campaignUpdateFormSchema),
@@ -60,8 +60,9 @@ export function CampaignUpdateForm({
   });
 
   const isOwner = userAddress === creatorAddress;
+  const canPost = isOwner || isContentEditor;
 
-  if (!isOwner) {
+  if (!canPost) {
     return null;
   }
 

@@ -16,6 +16,8 @@ interface AuthContextType {
   address?: string;
   authenticated: boolean;
   isAdmin: boolean;
+  isContentEditor: boolean;
+  roles: string[];
   isClient: boolean;
   isReady: boolean;
   login: () => void;
@@ -26,6 +28,8 @@ const AuthContext = createContext<AuthContextType>({
   address: undefined,
   authenticated: false,
   isAdmin: false,
+  isContentEditor: false,
+  roles: [],
   isClient: false,
   isReady: false,
   login: () => {},
@@ -80,9 +84,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsClient(true);
   }, []);
 
-  const isAdmin = useMemo(() => {
-    return session?.data?.user?.roles?.includes('admin') ?? false;
+  const roles = useMemo(() => {
+    return session?.data?.user?.roles ?? [];
   }, [session?.data?.user?.roles]);
+
+  const isAdmin = useMemo(() => {
+    return roles.includes('admin');
+  }, [roles]);
+
+  const isContentEditor = useMemo(() => {
+    return roles.includes('content_editor');
+  }, [roles]);
   // Debugging logs
   useEffect(() => {
     if (!isClient || !debug) {
@@ -113,11 +125,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       authenticated,
       isReady,
       isAdmin,
+      isContentEditor,
+      roles,
       isClient,
       login: signIn,
       logout,
     };
-  }, [address, authenticated, isReady, isAdmin, isClient, logout]);
+  }, [
+    address,
+    authenticated,
+    isReady,
+    isAdmin,
+    isContentEditor,
+    roles,
+    isClient,
+    logout,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
