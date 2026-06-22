@@ -14,7 +14,7 @@ export function CampaignDetailTabUpdates({
   campaign: DbCampaign;
 }) {
   const { ref, inView } = useInView();
-  const { address } = useAuth();
+  const { address, isContentEditor } = useAuth();
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const {
     data,
@@ -29,6 +29,7 @@ export function CampaignDetailTabUpdates({
     address &&
     campaign.creatorAddress &&
     address.toLowerCase() === campaign.creatorAddress.toLowerCase();
+  const canPost = Boolean(isOwner) || isContentEditor;
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -71,7 +72,7 @@ export function CampaignDetailTabUpdates({
         </div>
       ) : updates.length > 0 ? (
         <>
-          {isOwner && (
+          {canPost && (
             <div className="flex justify-start">
               <Button
                 onClick={() => setIsUpdateModalOpen(true)}
@@ -112,7 +113,7 @@ export function CampaignDetailTabUpdates({
           <p className="text-sm text-muted-foreground">
             Check back later for updates on this campaign&apos;s progress.
           </p>
-          {isOwner && (
+          {canPost && (
             <div className="mt-6">
               <Button
                 onClick={() => setIsUpdateModalOpen(true)}
@@ -128,7 +129,7 @@ export function CampaignDetailTabUpdates({
 
       {!error && <div ref={ref} className="h-10" />}
 
-      {isOwner && (
+      {canPost && (
         <CampaignUpdateModal
           campaign={campaign}
           open={isUpdateModalOpen}
