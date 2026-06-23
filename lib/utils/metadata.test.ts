@@ -2,19 +2,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getBaseUrl } from './metadata';
 
 describe('getBaseUrl', () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
-    // Reset environment variables before each test
-    vi.stubEnv('NODE_ENV', originalEnv.NODE_ENV);
-    vi.stubEnv('VERCEL_URL', originalEnv.VERCEL_URL);
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', originalEnv.NEXT_PUBLIC_SITE_URL);
-    vi.stubEnv('NEXT_PUBLIC_ENVIRONMENT', originalEnv.NEXT_PUBLIC_ENVIRONMENT);
+    // Start each test from a clean, deterministic env. Clearing the URL-related
+    // vars (rather than copying from a live process.env reference) prevents one
+    // test's stubbed value — e.g. VERCEL_URL — from leaking into the next.
+    vi.unstubAllEnvs();
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('VERCEL_URL', '');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', '');
+    vi.stubEnv('NEXT_PUBLIC_ENVIRONMENT', '');
   });
 
   afterEach(() => {
-    // Restore original environment after each test
-    vi.restoreAllMocks();
+    // Remove all env stubs so nothing carries over between tests.
+    vi.unstubAllEnvs();
   });
 
   it('should return Vercel URL when VERCEL_URL is set', () => {

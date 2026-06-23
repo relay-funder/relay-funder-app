@@ -7,6 +7,11 @@ import { Session } from 'next-auth';
 vi.mock('@/server/auth', () => ({
   auth: vi.fn(),
 }));
+// checkAuth confirms the session's user exists in the DB (Web3 principle:
+// valid session = valid user). Mock that lookup so it resolves without a DB.
+vi.mock('./user', () => ({
+  getUser: vi.fn(async () => ({ id: 0, address: '0x0', roles: [] })),
+}));
 function mockSession(roles: string[]) {
   return {
     user: { dbId: 0, address: '0x0', roles },
