@@ -63,7 +63,7 @@ describe('getQfCampaignMatching', () => {
         ApiParameterError,
       );
       await expect(getQfCampaignMatching(1, 999)).rejects.toThrow(
-        'Campaign matching amount not found',
+        'Campaign 999 not found in round 1 distribution',
       );
     });
   });

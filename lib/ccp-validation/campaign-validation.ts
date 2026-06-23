@@ -120,6 +120,28 @@ export const CAMPAIGN_VALIDATION_RULES: ValidationRule[] = [
     prevention: 'Prevents operations on failed campaigns',
   },
 
+  {
+    id: 'campaign-paused',
+    stage: ValidationStage.ACTIVE,
+    severity: ValidationSeverity.ERROR,
+    contractError: 'PausedError',
+    condition: (campaign) => campaign.status === 'PAUSED',
+    message: 'Campaign is currently paused',
+    userMessage: 'Cannot perform operations on a paused campaign.',
+    prevention: 'Prevents operations on paused campaigns',
+  },
+
+  {
+    id: 'campaign-cancelled',
+    stage: ValidationStage.ACTIVE,
+    severity: ValidationSeverity.ERROR,
+    contractError: 'CancelledError',
+    condition: (campaign) => campaign.status === 'CANCELLED',
+    message: 'Campaign has been cancelled',
+    userMessage: 'Cannot perform operations on a cancelled campaign.',
+    prevention: 'Prevents operations on cancelled campaigns',
+  },
+
   // ========== CONTRACT DEPLOYMENT VALIDATION ==========
   {
     id: 'campaign-contract-missing',
