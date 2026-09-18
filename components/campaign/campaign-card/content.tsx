@@ -5,6 +5,14 @@ import { Category } from '@/types';
 import { CampaignCardDisplayOptions } from './types';
 import { MapPin } from 'lucide-react';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { useCampaignMatchFunding } from '@/lib/hooks/useCampaignMatchFunding';
+import { formatUSD } from '@/lib/format-usd';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface CampaignStatusInfo {
   status: string;
@@ -41,9 +49,11 @@ export function CampaignCardContent({
   children,
 }: CampaignCardContentProps) {
   // Get campaign stats using the hook
-  const { amountRaised, amountGoal, progress } = useCampaignStatsFromInstance({
-    campaign,
-  });
+  const { amountRaised, amountRaisedFloat, amountGoal, progress } =
+    useCampaignStatsFromInstance({
+      campaign,
+    });
+  const { matchFunding } = useCampaignMatchFunding(campaign?.id);
 
   return (
     <CardContent className="flex-1 p-6">
@@ -88,31 +98,64 @@ export function CampaignCardContent({
           </div>
 
           {/* Funding Progress - Only show if enabled */}
-          {displayOptions.showFundingProgress !== false && (
-            <div className="space-y-3">
-              {/* Progress Bar */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-quantum transition-all duration-300"
-                  style={{ width: `${Math.min(progress, 100)}%` }}
-                />
-              </div>
-
-              {/* Funding Stats */}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-foreground">
-                    {amountRaised}
-                  </span>
-                  <span className="text-muted-foreground">raised</span>
-                </div>
-                <span className="text-muted-foreground">
-                  of{' '}
-                  <span className="text-base font-semibold">{amountGoal}</span>
+          {displayOptions.showFundingProgress !== false && matchFunding > 0 && (
+            <TooltipProvider delayDuration={100}>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-xl font-bold text-foreground">
+                  {formatUSD(amountRaisedFloat + matchFunding)}
                 </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="rounded-md bg-quantum/10 px-2 py-0.5 font-medium text-quantum"
+                      onClick={(event) => event.preventDefault()}
+                    >
+                      with matching
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="grid grid-cols-[auto_auto] gap-x-4 tabular-nums">
+                      <span>Donations</span>
+                      <span className="text-right">{amountRaised}</span>
+                      <span>Matching</span>
+                      <span className="text-right">
+                        {formatUSD(matchFunding)}
+                      </span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            </div>
+            </TooltipProvider>
           )}
+          {displayOptions.showFundingProgress !== false &&
+            matchFunding <= 0 && (
+              <div className="space-y-3">
+                {/* Progress Bar */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-quantum transition-all duration-300"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+
+                {/* Funding Stats */}
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-foreground">
+                      {amountRaised}
+                    </span>
+                    <span className="text-muted-foreground">raised</span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    of{' '}
+                    <span className="text-base font-semibold">
+                      {amountGoal}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
         </div>
       </div>
 
