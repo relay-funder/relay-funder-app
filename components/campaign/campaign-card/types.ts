@@ -47,6 +47,7 @@ export interface CampaignCardDisplayOptions {
   showDonateButton?: boolean;
   showStatusBasedButton?: boolean;
   showFundingProgress?: boolean; // Control visibility of progress bar and funding stats
+  showTotalWithMatching?: boolean; // Replace progress bar with total raised including round matching
   showInfoIcon?: boolean; // Control visibility of campaign info modal icon
   truncateDescription?: boolean;
   useCardImage?: boolean; // Use CampaignMainImageCard instead of CampaignMainImage
@@ -264,6 +265,7 @@ export function getDefaultDisplayOptions(
     showDonateButton: false, // Removed since whole card is clickable
     showStatusBasedButton: false, // Simplified design
     showFundingProgress: true, // Show progress by default
+    showTotalWithMatching: false, // Progress bar by default; home page opts in
     showInfoIcon: false, // Hidden by default - only show in admin contexts
     truncateDescription: true,
     useCardImage: false,

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui';
 import { CampaignList } from '@/components/campaign/list';
+import { CampaignCard } from '@/components/campaign/campaign-card';
 import { HomeCategorySelect } from '@/components/home/category-select';
 import { HomeExplore } from '@/components/home/explore';
 import { RoundSpotlight } from '@/components/home/round-spotlight';
@@ -63,6 +64,13 @@ export function ExploreStories() {
               searchTerm={searchTerm}
               categoryFilter={selectedCategory}
               withRounds={false}
+              item={(props) => (
+                <CampaignCard
+                  {...props}
+                  type="standard"
+                  displayOptions={{ showTotalWithMatching: true }}
+                />
+              )}
             />
             <RoundSpotlight />
           </div>
