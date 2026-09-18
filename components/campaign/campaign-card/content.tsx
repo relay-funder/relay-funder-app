@@ -5,6 +5,7 @@ import { Category } from '@/types';
 import { CampaignCardDisplayOptions } from './types';
 import { MapPin } from 'lucide-react';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
+import { CampaignCardFundingTotal } from './funding-total';
 
 interface CampaignStatusInfo {
   status: string;
@@ -88,31 +89,38 @@ export function CampaignCardContent({
           </div>
 
           {/* Funding Progress - Only show if enabled */}
-          {displayOptions.showFundingProgress !== false && (
-            <div className="space-y-3">
-              {/* Progress Bar */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-quantum transition-all duration-300"
-                  style={{ width: `${Math.min(progress, 100)}%` }}
-                />
-              </div>
-
-              {/* Funding Stats */}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-foreground">
-                    {amountRaised}
-                  </span>
-                  <span className="text-muted-foreground">raised</span>
+          {displayOptions.showFundingProgress !== false &&
+            displayOptions.showTotalWithMatching && (
+              <CampaignCardFundingTotal campaign={campaign} />
+            )}
+          {displayOptions.showFundingProgress !== false &&
+            !displayOptions.showTotalWithMatching && (
+              <div className="space-y-3">
+                {/* Progress Bar */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-quantum transition-all duration-300"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
                 </div>
-                <span className="text-muted-foreground">
-                  of{' '}
-                  <span className="text-base font-semibold">{amountGoal}</span>
-                </span>
+
+                {/* Funding Stats */}
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-foreground">
+                      {amountRaised}
+                    </span>
+                    <span className="text-muted-foreground">raised</span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    of{' '}
+                    <span className="text-base font-semibold">
+                      {amountGoal}
+                    </span>
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </div>
 
