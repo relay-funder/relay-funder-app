@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:20-alpine3.20 AS devrunner
+FROM node:24-alpine3.22 AS devrunner
 RUN apk add --no-cache libc6-compat git \
     jq bash zip mc expect curl python3 openssl \
     postgresql
