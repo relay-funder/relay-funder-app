@@ -101,7 +101,9 @@ export const KeepWhatsRaisedABI = [
   {
     type: 'function',
     name: 's_processedPledges',
-    inputs: [{ name: 'internalPledgeId', type: 'bytes32', internalType: 'bytes32' }],
+    inputs: [
+      { name: 'internalPledgeId', type: 'bytes32', internalType: 'bytes32' },
+    ],
     outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'view',
   },

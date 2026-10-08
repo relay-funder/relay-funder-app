@@ -22,6 +22,7 @@ This doc explains:
 Goal: keep treasury contract accounting consistent (pledge receipts, round accounting) and keep fees at the platform.
 
 1. Client configures Daimo checkout:
+
    - `toAddress = NEXT_PUBLIC_PLATFORM_ADMIN` (platform admin hot wallet)
    - `toUnits = base + tip + fees`
    - metadata includes `campaignId`, `treasuryAddress`, etc.
@@ -30,6 +31,7 @@ Goal: keep treasury contract accounting consistent (pledge receipts, round accou
 2. Daimo completes payment and delivers funds **to the admin wallet** (destination tx on Celo).
 
 3. Daimo webhook hits our server (`/api/webhooks/daimo-pay`):
+
    - We update the DB payment to `status=confirmed`.
    - We launch a fire-and-forget pledge execution:
      - `executeGatewayPledgeWithBalanceRetry(paymentId, destinationTxHash)`
@@ -78,6 +80,7 @@ DB snapshot (from admin UI):
 On-chain:
 
 1. **Daimo destination tx**: `0x1bdf4e4dd33084ed1840f28074cbb0e5f5ca5df3ad1363416741ce2339f389de`
+
    - Timestamp (Blockscout): `2026-01-27T00:14:54Z`
    - Final token transfer: **10.7 USDT -> treasury `0x3Ace...`**
 
@@ -105,6 +108,7 @@ DB snapshot (from admin UI):
 On-chain:
 
 1. **Daimo destination tx**: `0xe8d6156938b747f010c2f0a28f8ecdd9b37422f2302c0a779e7325467a7f75f9`
+
    - Timestamp (Blockscout): `2026-01-27T00:30:53Z`
    - Final token transfer: **53.5 USDT -> campaign 95 treasury `0x914705...`**
 
@@ -195,5 +199,4 @@ The mismatch was created on **November 4, 2025**:
 3. Fix reconciliation to count token transfers that reach the treasury via relayer contracts.
 4. Decide how to handle already-misrouted payments (119, 121):
    - They are in the treasury token balance, but not necessarily counted by `getRaisedAmount()`.
-   - Executing the gateway pledge now would likely *double-transfer* unless you first move the misrouted funds out of the treasury (if possible).
-
+   - Executing the gateway pledge now would likely _double-transfer_ unless you first move the misrouted funds out of the treasury (if possible).

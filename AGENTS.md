@@ -111,6 +111,7 @@ docker compose exec app bash  # shell access
 ```
 
 ### Codebase Rules
+
 1. Never fetch directly in TSX files. Use hooks.
 2. Centralize query invalidation in hooks, not components.
 3. Use full variable names, not abbreviations.
@@ -134,7 +135,7 @@ docker compose exec app bash  # shell access
 
 1. **Use `unknown` and Type Guards**
 2. **Use Zod for Runtime Validation**
-3. **Type Narrowing with Conditionals** 
+3. **Type Narrowing with Conditionals**
 
 **Acceptable Use Cases (Sparingly):**
 
@@ -200,7 +201,7 @@ docker compose exec app bash  # shell access
 - **Radix UI Integration**: Extensive use of Radix UI primitives for accessibility
 - **Toast State Management**: Avoid direct toast calls in catch/business logic. Set state instead and use useEffect to trigger toasts
 
-### Data Fetching 
+### Data Fetching
 
 > **NEVER USE DIRECT FETCH IN COMPONENTS**: Always use TanStack Query hooks for data fetching.
 
@@ -316,6 +317,7 @@ export async function POST(req: Request) {
   }
 }
 ```
+
 ## Error Handling and Logging
 
 ### Standardized Error Types
@@ -344,6 +346,7 @@ function handleError(error: unknown) {
   }
 }
 ```
+
 ---
 
 ## Web3

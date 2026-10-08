@@ -68,7 +68,9 @@ describe('useTreasuryAction', () => {
     });
 
     test('returns error when contract call fails', async () => {
-      mockWriteContractAsync.mockRejectedValue(new Error('Transaction reverted'));
+      mockWriteContractAsync.mockRejectedValue(
+        new Error('Transaction reverted'),
+      );
       const { useTreasuryAction } = await import('./useTreasuryAction');
       const { execute } = useTreasuryAction('claimTip');
 

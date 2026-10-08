@@ -54,8 +54,7 @@ export function CampaignAdminClaimFundButton({
     : 0;
   const claimableAfterDeadline =
     campaignEndTime > 0 &&
-    Date.now() >
-      campaignEndTime + TREASURY_DELAYS.WITHDRAWAL_DELAY * 1000;
+    Date.now() > campaignEndTime + TREASURY_DELAYS.WITHDRAWAL_DELAY * 1000;
   const isEligible =
     !!campaign.treasuryAddress &&
     (campaign.status === 'CANCELLED' || claimableAfterDeadline);

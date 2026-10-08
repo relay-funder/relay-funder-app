@@ -30,7 +30,9 @@ describe('useAdminClaimTip', () => {
     const { useAdminClaimTip } = await import('./useAdminClaimTip');
     const { claimTip } = useAdminClaimTip();
 
-    const result = await claimTip({ treasuryAddress: '0x1234567890123456789012345678901234567890' });
+    const result = await claimTip({
+      treasuryAddress: '0x1234567890123456789012345678901234567890',
+    });
 
     expect(result.success).toBe(true);
     expect(result.hash).toBe('0xabc123');

@@ -58,7 +58,9 @@ describe('computeDeterministicPledgeIdCandidates', () => {
     };
     const candidates = computeDeterministicPledgeIdCandidates(input);
 
-    expect(candidates.canonicalPledgeId).toBe(computeDeterministicPledgeId(input));
+    expect(candidates.canonicalPledgeId).toBe(
+      computeDeterministicPledgeId(input),
+    );
     expect(candidates.legacyPledgeId).toBe(
       computeLegacyDeterministicPledgeId(input),
     );

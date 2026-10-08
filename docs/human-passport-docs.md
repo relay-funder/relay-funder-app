@@ -1,9 +1,10 @@
 ---
-title: "xyz-passport-docs Documentation"
-source: "https://docs.passport.xyz/"
-scraped: "2026-01-09T20:32:09.245Z"
+title: 'xyz-passport-docs Documentation'
+source: 'https://docs.passport.xyz/'
+scraped: '2026-01-09T20:32:09.245Z'
 tokens: 68656
 ---
+
 # xyz-passport-docs Documentation
 
 > Source: https://docs.passport.xyz/
@@ -11,7 +12,7 @@ tokens: 68656
 
 ### xyz-passport-docs
 
-#### _building-with-passport_custom-passport.md
+#### \_building-with-passport_custom-passport.md
 
 > Source: https://docs.passport.xyz/building-with-passport/custom-passport
 > Scraped: 1/9/2026, 1:32:03 PM
@@ -44,8 +45,8 @@ You can find the current Passport Stamp and credentialweights in the following l
 
 Please let us know the following if you’d like to customize the score:
 
-*   Which Stamps and credentials would you like to remove
-*   How you would like to reweight each of the individual Stamps
+- Which Stamps and credentials would you like to remove
+- How you would like to reweight each of the individual Stamps
 
 We can then review your request and let you know if it will still provide effective Sybil defense for your program.
 
@@ -61,9 +62,9 @@ If you would like to create a Stamp that awards points for developer contributio
 
 For example, you can build a Stamp that awards developers for having made the following level of commitments:
 
-*   1 commit – 1 point
-*   5 commits – 2 points (additional, on top of the earlier tier)
-*   10 commits – 3 points (same as the above)
+- 1 commit – 1 point
+- 5 commits – 2 points (additional, on top of the earlier tier)
+- 10 commits – 3 points (same as the above)
 
 ### Elevated Rate Limits
 
@@ -83,7 +84,7 @@ If, instead, you're enabling your users to push their Passport onchain and you a
 
 [Custom client-side Passport scoring](_building-with-passport_stamps_passport-api-v1_tutorials_client-side-scoring.md)[Introduction](_building-with-passport_stamps_smart-contracts_introduction.md)
 
-#### _building-with-passport_data-services.md
+#### \_building-with-passport_data-services.md
 
 > Source: https://docs.passport.xyz/building-with-passport/data-services
 > Scraped: 1/9/2026, 1:32:03 PM
@@ -100,9 +101,9 @@ Passport’s Data Services offer batch analysis of wallet addresses, designed sp
 
 Common scenarios where Passport’s Data Services deliver significant value include:
 
-*   **Airdrops and Token Distributions**: Vet wallet addresses before distributing tokens to ensure only legitimate users receive rewards.
-*   **Community Campaign Audits**: Identify bot-driven farming in referral campaigns, growth initiatives, or contests.
-*   **Sybil Attack Investigations**: Assess and remediate suspected Sybil activities post-event or campaign.
+- **Airdrops and Token Distributions**: Vet wallet addresses before distributing tokens to ensure only legitimate users receive rewards.
+- **Community Campaign Audits**: Identify bot-driven farming in referral campaigns, growth initiatives, or contests.
+- **Sybil Attack Investigations**: Assess and remediate suspected Sybil activities post-event or campaign.
 
 ## How It Works
 
@@ -116,10 +117,10 @@ Securely share the wallet addresses you want analyzed.
 
 Passport’s data team conducts comprehensive analysis, including:
 
-*   **ML-based Sybil Classification**: Our machine learning models analyze wallet transaction patterns across multiple chains (Ethereum, Arbitrum, Optimism, Base, Polygon, zkSync), assigning a Unique Humanity Score from 0-100.
-*   **Sybil Clustering Analysis**: Detect related wallets based on funding patterns, behavior similarities, and transaction clustering.
-*   **Low-Activity Wallet Handling**: Special handling and heuristics for wallets with minimal activity, ensuring fair evaluation without compromising security.
-*   **Expert Consultation**: Human analysts review findings, validate results, and provide tailored insights and recommendations.
+- **ML-based Sybil Classification**: Our machine learning models analyze wallet transaction patterns across multiple chains (Ethereum, Arbitrum, Optimism, Base, Polygon, zkSync), assigning a Unique Humanity Score from 0-100.
+- **Sybil Clustering Analysis**: Detect related wallets based on funding patterns, behavior similarities, and transaction clustering.
+- **Low-Activity Wallet Handling**: Special handling and heuristics for wallets with minimal activity, ensuring fair evaluation without compromising security.
+- **Expert Consultation**: Human analysts review findings, validate results, and provide tailored insights and recommendations.
 
 ### 3\. Actionable Reports
 
@@ -131,8 +132,8 @@ Continuous monitoring and periodic analyses for long-term campaigns or community
 
 ## Pricing
 
-*   $0.05 per address analyzed.
-*   Bulk discounts available starting at 500,000 addresses.
+- $0.05 per address analyzed.
+- Bulk discounts available starting at 500,000 addresses.
 
 ## Getting Started
 
@@ -142,7 +143,7 @@ Ready to leverage Passport’s Data Services? Fill out our [Data Services partne
 
 [API reference](_building-with-passport_models_api-reference.md)[How to Contribute](_community_getting-involved.md)
 
-#### _building-with-passport_embed.md
+#### \_building-with-passport_embed.md
 
 > Source: https://docs.passport.xyz/building-with-passport/embed
 > Scraped: 1/9/2026, 1:32:04 PM
@@ -153,18 +154,18 @@ Passport Embeds is a premium offering that lets websites integrate Human Passpor
 
 Core Benefits:
 
-*   **Frictionless User Experience:** Users can verify their identity within your app or site (no external redirects), leading to higher conversion and less drop-off​. The verification process is quick and preserves privacy, requiring only a crypto wallet and approved credentials rather than personal data.
-*   **Powerful Sybil Protection:** Backed by the Human Passport scoring system, it effectively distinguishes real users from bots. You can gate content or features based on Unique Humanity Scores (for example, only users above a certain score can access an airdrop) to keep out malicious actors​.
-*   **Targeted for Web3 Communities:** Ideal for dApps, DAOs, forums, or any platform where one-person-one-account is vital. It enables ecosystems to protect and grow their communities organically by ensuring each participant is unique​.
-*   **Key Differentiators:** Passport Embeds is a privacy-preserving alternative to traditional KYC or CAPTCHA. It uses verifiable credentials ("Stamps") to calculate a humanity score, so site owners never receive sensitive personal info – only a score or pass/fail status. Unlike other solutions, Passport Embeds is decentralized and user-first​, meaning users maintain control over their data and can prove their humanity without sacrificing anonymity.
+- **Frictionless User Experience:** Users can verify their identity within your app or site (no external redirects), leading to higher conversion and less drop-off​. The verification process is quick and preserves privacy, requiring only a crypto wallet and approved credentials rather than personal data.
+- **Powerful Sybil Protection:** Backed by the Human Passport scoring system, it effectively distinguishes real users from bots. You can gate content or features based on Unique Humanity Scores (for example, only users above a certain score can access an airdrop) to keep out malicious actors​.
+- **Targeted for Web3 Communities:** Ideal for dApps, DAOs, forums, or any platform where one-person-one-account is vital. It enables ecosystems to protect and grow their communities organically by ensuring each participant is unique​.
+- **Key Differentiators:** Passport Embeds is a privacy-preserving alternative to traditional KYC or CAPTCHA. It uses verifiable credentials ("Stamps") to calculate a humanity score, so site owners never receive sensitive personal info – only a score or pass/fail status. Unlike other solutions, Passport Embeds is decentralized and user-first​, meaning users maintain control over their data and can prove their humanity without sacrificing anonymity.
 
 Overall, the Passport Embeds component brings the power of Human Passport's identity verification directly into your application. It's designed for both developers and decision-makers who want to boost security and trust in their platform while keeping the user experience seamless and on-brand.
 
 Want to see Passport Embed in action? Check out our complete sample application:
 
-*   **[Live Demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/)** - Try the full implementation
-*   **[Source Code (opens in a new tab)](https://github.com/passportxyz/passport-sample-embed-demo)** - Browse the complete codebase
-*   **[Tutorial](_building-with-passport_stamps_passport-embed_tutorials_protecting-sensitive-programs-with-passport-embed.md)** - Step-by-step implementation guide
+- **[Live Demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/)** - Try the full implementation
+- **[Source Code (opens in a new tab)](https://github.com/passportxyz/passport-sample-embed-demo)** - Browse the complete codebase
+- **[Tutorial](_building-with-passport_stamps_passport-embed_tutorials_protecting-sensitive-programs-with-passport-embed.md)** - Step-by-step implementation guide
 
 ## User flow
 
@@ -181,21 +182,21 @@ The user flow for Passport Embeds is as follows:
 
 The component can be [customized](_building-with-passport_stamps_passport-embed_customization.md) in a number of ways, including:
 
-*   Set the theme to dark or light.
-*   Adjust several color, font, and spacing options.
-*   Set the component to collapse to a smaller size, and the behavior of surrounding content when it expands.
-*   \[Future customization\] Choose which Stamps display, which order those Stamps are displayed, and what each Stamp's weighting is.
-*   \[Future customization\] Require users to mint their Passport onchain to one of Passport's supported networks.
+- Set the theme to dark or light.
+- Adjust several color, font, and spacing options.
+- Set the component to collapse to a smaller size, and the behavior of surrounding content when it expands.
+- \[Future customization\] Choose which Stamps display, which order those Stamps are displayed, and what each Stamp's weighting is.
+- \[Future customization\] Require users to mint their Passport onchain to one of Passport's supported networks.
 
 ## Sample Application
 
-*   **[Live Demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/)** - Try the full implementation
-*   **[Source Code (opens in a new tab)](https://github.com/passportxyz/passport-sample-embed-demo)** - Browse the complete codebase
-*   **[Tutorial](_building-with-passport_stamps_passport-embed_tutorials_protecting-sensitive-programs-with-passport-embed.md)** - Step-by-step implementation guide
+- **[Live Demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/)** - Try the full implementation
+- **[Source Code (opens in a new tab)](https://github.com/passportxyz/passport-sample-embed-demo)** - Browse the complete codebase
+- **[Tutorial](_building-with-passport_stamps_passport-embed_tutorials_protecting-sensitive-programs-with-passport-embed.md)** - Step-by-step implementation guide
 
 [Submission Checklist](_building-with-passport_stamps_create-a-stamp_integrating-a-new-stamp.md)[Getting access](_building-with-passport_embed_getting-access.md)
 
-#### _building-with-passport_embed_component-reference.md
+#### \_building-with-passport_embed_component-reference.md
 
 > Source: https://docs.passport.xyz/building-with-passport/embed/component-reference
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -250,15 +251,15 @@ To review a more in-depth example, see our [tutorial](_building-with-passport_st
 
 ## Component Behavior
 
-*   **Initial State:** The component will detect if an `address` is provided. If not, it typically shows a prompt or button to connect a wallet (assuming `connectWalletCallback` is given). If an address is already provided, it will immediately attempt to fetch the Passport score for that address (calling `generateSignatureCallback` internally when needed).
-*   **Loading & Error Handling:** While the score is being fetched, the component may show a loading indicator. If an error occurs (e.g., network issues or invalid API key), the component will handle it by showing an error message in the UI (and you might see errors in the console for debugging). You don’t need to manually catch errors from the callbacks – the component will display a user-friendly message (“Failed to load score,” etc.) if something goes wrong.
-*   **Display of Score:** Once retrieved, the component will display a user's Stamp-based unique humanity score. A partner's score threshold can be set via the Developer Portal. This threshold will be used to identify if a user is passing or failing the verification.
-*   **Verify additional stamps:** If the user’s score is below the score threshold, the component will guide them on next steps, which involves verifying additional stamps via the embed component. After the user verifies additional stamps, the component will automatically update the score via the UI.
-*   **Collapsing/Expanding:** With `collapseMode` set to `"shift"` or `"overlay"`, the component will start in a minimized state – often an icon or small bar. When clicked, it expands to show the full details (score, message, etc.). If "off" is used, it’s always expanded. The expanded component could be a panel that either pushes content (shift) or overlays above it. The user can likely collapse it back after viewing. This behavior allows the verification UI to stay out of the way until needed, which is especially useful on content-heavy pages.
+- **Initial State:** The component will detect if an `address` is provided. If not, it typically shows a prompt or button to connect a wallet (assuming `connectWalletCallback` is given). If an address is already provided, it will immediately attempt to fetch the Passport score for that address (calling `generateSignatureCallback` internally when needed).
+- **Loading & Error Handling:** While the score is being fetched, the component may show a loading indicator. If an error occurs (e.g., network issues or invalid API key), the component will handle it by showing an error message in the UI (and you might see errors in the console for debugging). You don’t need to manually catch errors from the callbacks – the component will display a user-friendly message (“Failed to load score,” etc.) if something goes wrong.
+- **Display of Score:** Once retrieved, the component will display a user's Stamp-based unique humanity score. A partner's score threshold can be set via the Developer Portal. This threshold will be used to identify if a user is passing or failing the verification.
+- **Verify additional stamps:** If the user’s score is below the score threshold, the component will guide them on next steps, which involves verifying additional stamps via the embed component. After the user verifies additional stamps, the component will automatically update the score via the UI.
+- **Collapsing/Expanding:** With `collapseMode` set to `"shift"` or `"overlay"`, the component will start in a minimized state – often an icon or small bar. When clicked, it expands to show the full details (score, message, etc.). If "off" is used, it’s always expanded. The expanded component could be a panel that either pushes content (shift) or overlays above it. The user can likely collapse it back after viewing. This behavior allows the verification UI to stay out of the way until needed, which is especially useful on content-heavy pages.
 
 [Customization](_building-with-passport_embed_customization.md)[Introduction](_building-with-passport_models_introduction.md)
 
-#### _building-with-passport_embed_customization.md
+#### \_building-with-passport_embed_customization.md
 
 > Source: https://docs.passport.xyz/building-with-passport/embed/customization
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -271,9 +272,9 @@ With Passport Embed, you can control the component’s **collapsible behavior** 
 
 There are three options for collapse mode:
 
-*   **`"shift"`** (default): the component is embedded in the flow and expanding it will push/shift surrounding content (useful if placing at top of a page, for example).
-*   **`"overlay"`**: the component will overlay on top of content when expanded (using CSS `position:absolute` or similar, on top of the page, with an overlay background perhaps – the `overlayZIndex` theme can be used to adjust stacking).
-*   **`"off"`**: collapse functionality is disabled; the component is always fully expanded (use this if you want the full component visible at all times in a particular spot).
+- **`"shift"`** (default): the component is embedded in the flow and expanding it will push/shift surrounding content (useful if placing at top of a page, for example).
+- **`"overlay"`**: the component will overlay on top of content when expanded (using CSS `position:absolute` or similar, on top of the page, with an overlay background perhaps – the `overlayZIndex` theme can be used to adjust stacking).
+- **`"off"`**: collapse functionality is disabled; the component is always fully expanded (use this if you want the full component visible at all times in a particular spot).
 
 You can experiment with these modes to see which best fits your UI.
 
@@ -297,11 +298,11 @@ All fields are optional — if a value is not specified, the defaults from the s
 
 ### Tips & Requirements
 
-*   `colors.*` must be defined using RGB format — for example: "255, 255, 0" (Hex codes and named colors are not supported)
-*   Font families must reference fonts that are already loaded on the page, except for the component defaults
-*   `overlayZIndex` is only applied when `collapseMode` is set to `overlay`
-*   Use `transition.speed` to fine-tune component animation timing (e.g. `0.2s`, `0.5s`)
-*   All values are optional — anything you omit will fall back to the base theme
+- `colors.*` must be defined using RGB format — for example: "255, 255, 0" (Hex codes and named colors are not supported)
+- Font families must reference fonts that are already loaded on the page, except for the component defaults
+- `overlayZIndex` is only applied when `collapseMode` is set to `overlay`
+- Use `transition.speed` to fine-tune component animation timing (e.g. `0.2s`, `0.5s`)
+- All values are optional — anything you omit will fall back to the base theme
 
 ### Example
 
@@ -311,7 +312,7 @@ Once your theme is set, head over to the [Component Reference](_building-with-pa
 
 [Protecting programs with Embed](_building-with-passport_embed_tutorials_protecting-sensitive-programs-with-passport-embed.md)[Component reference](_building-with-passport_embed_component-reference.md)
 
-#### _building-with-passport_embed_getting-access.md
+#### \_building-with-passport_embed_getting-access.md
 
 > Source: https://docs.passport.xyz/building-with-passport/embed/getting-access
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -338,13 +339,13 @@ A Scorer is an developer element that can be used to organize different use case
 
 ### Next step
 
-* [Quick start guide to Passport Embed](_building-with-passport_embed_quick-start-guide.md)
-* [Review the Component Reference guide](_building-with-passport_embed_component-reference.md)
-* [Try our live demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/) to see Passport Embed in action
+- [Quick start guide to Passport Embed](_building-with-passport_embed_quick-start-guide.md)
+- [Review the Component Reference guide](_building-with-passport_embed_component-reference.md)
+- [Try our live demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/) to see Passport Embed in action
 
 [Introduction](_building-with-passport_embed_introduction.md)[Quick start](_building-with-passport_embed_quick-start-guide.md)
 
-#### _building-with-passport_embed_quick-start-guide.md
+#### \_building-with-passport_embed_quick-start-guide.md
 
 > Source: https://docs.passport.xyz/building-with-passport/embed/quick-start-guide
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -391,8 +392,8 @@ If you don't already have the user's wallet address, you can pass a `connectWall
 
 This is only necessary if:
 
-*   You aren't already managing wallet connection elsewhere in your app, and
-*   You're not using a wallet abstraction like Reown AppKit, which automatically provides the connected wallet address via a hook (e.g. `account?.address`).
+- You aren't already managing wallet connection elsewhere in your app, and
+- You're not using a wallet abstraction like Reown AppKit, which automatically provides the connected wallet address via a hook (e.g. `account?.address`).
 
 Here's an example of a simple function that could be passed to the `connectWalletCallback` prop:
 
@@ -400,12 +401,12 @@ Here's an example of a simple function that could be passed to the `connectWalle
 
 Want to see a complete working example? Check out our sample application that demonstrates all the concepts from this guide:
 
-*   **[Live Demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/)** - Interactive example you can test with your wallet
-*   **[Source Code (opens in a new tab)](https://github.com/passportxyz/passport-sample-embed-demo)** - Complete implementation with detailed README
+- **[Live Demo (opens in a new tab)](https://passport-sample-embed-demo.vercel.app/)** - Interactive example you can test with your wallet
+- **[Source Code (opens in a new tab)](https://github.com/passportxyz/passport-sample-embed-demo)** - Complete implementation with detailed README
 
 [Getting access](_building-with-passport_embed_getting-access.md)[Protecting programs with Embed](_building-with-passport_embed_tutorials_protecting-sensitive-programs-with-passport-embed.md)
 
-#### _building-with-passport_embed_tutorials_protecting-sensitive-programs-with-passport-embed.md
+#### \_building-with-passport_embed_tutorials_protecting-sensitive-programs-with-passport-embed.md
 
 > Source: https://docs.passport.xyz/building-with-passport/embed/tutorials/protecting-sensitive-programs-with-passport-embed
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -416,19 +417,19 @@ This tutorial walks you through building a complete application that uses Passpo
 
 By the end of this tutorial, you'll have a Next.js application featuring:
 
-*   **Wallet Connection**: Users can connect their Ethereum wallet using Reown AppKit
-*   **Passport Embed Component**: Display the user's Unique Humanity Score and verification interface
-*   **Protected Content**: Content that's only accessible when the user meets your score threshold
-*   **Secure Verification**: Both client-side and server-side score validation for security
+- **Wallet Connection**: Users can connect their Ethereum wallet using Reown AppKit
+- **Passport Embed Component**: Display the user's Unique Humanity Score and verification interface
+- **Protected Content**: Content that's only accessible when the user meets your score threshold
+- **Secure Verification**: Both client-side and server-side score validation for security
 
 ## Prerequisites
 
 Before starting, make sure you have:
 
-*   Node.js 18+ installed
-*   Basic familiarity with React and Next.js
-*   A Passport API key and Scorer ID ([get access here](_building-with-passport_embed_getting-access.md))
-*   A Reown Project ID ([create one here (opens in a new tab)](https://cloud.reown.com/))
+- Node.js 18+ installed
+- Basic familiarity with React and Next.js
+- A Passport API key and Scorer ID ([get access here](_building-with-passport_embed_getting-access.md))
+- A Reown Project ID ([create one here (opens in a new tab)](https://cloud.reown.com/))
 
 ## Project Setup
 
@@ -438,20 +439,22 @@ Let's start by creating a new Next.js project and installing the required depend
 
 We're using Next.js 14 for its excellent TypeScript support and API routes, which we'll need for secure server-side score verification. The configuration ensures compatibility with our wallet connection and Passport integration libraries.
 
-**Key choices explained:**   `--typescript`: Essential for type safety with web3 libraries
-*   `--tailwind`: For utility-first styling that matches Passport's design system
-*   `--app=false`: Using Pages Router for simpler API routes
-*   `--eslint`: Code quality enforcement for production readiness
+**Key choices explained:** `--typescript`: Essential for type safety with web3 libraries
+
+- `--tailwind`: For utility-first styling that matches Passport's design system
+- `--app=false`: Using Pages Router for simpler API routes
+- `--eslint`: Code quality enforcement for production readiness
 
 ### Step 2: Install Dependencies
 
 These packages provide the core functionality for wallet connection, Passport integration, and secure state management:
 
-**Package breakdown:**   `@human.tech/passport-embed`: Passport Embed component and hooks
-*   `@reown/appkit`: Multi-wallet connection UI and management
-*   `@reown/appkit-adapter-wagmi`: Bridge between Reown and Wagmi React hooks
-*   `@tanstack/react-query`: Server state management for async blockchain data
-*   `wagmi`: React hooks for Ethereum, handles caching and synchronization
+**Package breakdown:** `@human.tech/passport-embed`: Passport Embed component and hooks
+
+- `@reown/appkit`: Multi-wallet connection UI and management
+- `@reown/appkit-adapter-wagmi`: Bridge between Reown and Wagmi React hooks
+- `@tanstack/react-query`: Server state management for async blockchain data
+- `wagmi`: React hooks for Ethereum, handles caching and synchronization
 
 ### Step 3: Environment Configuration
 
@@ -463,12 +466,13 @@ You can also generate your Reown project ID in the [Reown Cloud (opens in a new 
 
 Create a `.env.local` file in your project root:
 
-**Environment variables explained:**   **NEXT\_PUBLIC\_PASSPORT\_API\_KEY**: Client-side Embed API key (accessible in browser)
-*   **PASSPORT\_API\_KEY**: Server-side Stamps API key (secure, server-only)
-*   **NEXT\_PUBLIC\_PASSPORT\_SCORER\_ID**: Your scorer configuration ID (same for both client and server)
-*   **NEXT\_PUBLIC\_REOWN\_PROJECT\_ID**: Wallet connection configuration
-*   Variables with `NEXT_PUBLIC_` prefix are accessible in the browser
-*   Non-prefixed variables like `PASSPORT_API_KEY` remain server-only for security
+**Environment variables explained:** **NEXT_PUBLIC_PASSPORT_API_KEY**: Client-side Embed API key (accessible in browser)
+
+- **PASSPORT_API_KEY**: Server-side Stamps API key (secure, server-only)
+- **NEXT_PUBLIC_PASSPORT_SCORER_ID**: Your scorer configuration ID (same for both client and server)
+- **NEXT_PUBLIC_REOWN_PROJECT_ID**: Wallet connection configuration
+- Variables with `NEXT_PUBLIC_` prefix are accessible in the browser
+- Non-prefixed variables like `PASSPORT_API_KEY` remain server-only for security
 
 ## Building the Application
 
@@ -480,10 +484,11 @@ Modern web3 applications need to support various wallet providers (MetaMask, Wal
 
 Create `config/wallet.ts` to set up Reown AppKit:
 
-**Key concepts explained:**   **WagmiAdapter**: Creates a bridge between Reown AppKit's UI components and Wagmi's React hooks for blockchain interaction
-*   **Networks array**: Defines which blockchains your app supports (we're using Ethereum mainnet)
-*   **Metadata**: Shows in wallet connection prompts to build user trust
-*   **SSR: true**: Enables server-side rendering compatibility
+**Key concepts explained:** **WagmiAdapter**: Creates a bridge between Reown AppKit's UI components and Wagmi's React hooks for blockchain interaction
+
+- **Networks array**: Defines which blockchains your app supports (we're using Ethereum mainnet)
+- **Metadata**: Shows in wallet connection prompts to build user trust
+- **SSR: true**: Enables server-side rendering compatibility
 
 ### Step 5: Set Up App Configuration
 
@@ -491,9 +496,10 @@ Web3 applications have unique state management needs. Blockchain data is asynchr
 
 Update `pages/_app.tsx` to configure React Query and Wagmi:
 
-**Critical setup notes:**   **Provider order matters**: `WagmiProvider` must wrap `QueryClientProvider` because Wagmi hooks depend on React Query internally
-*   **QueryClient**: Handles caching and synchronization of blockchain state across your entire application
-*   **Config import**: Uses the wallet configuration we set up in Step 4
+**Critical setup notes:** **Provider order matters**: `WagmiProvider` must wrap `QueryClientProvider` because Wagmi hooks depend on React Query internally
+
+- **QueryClient**: Handles caching and synchronization of blockchain state across your entire application
+- **Config import**: Uses the wallet configuration we set up in Step 4
 
 ### Step 6: Create the Main Page Component
 
@@ -513,10 +519,11 @@ This step creates a cohesive design system that works well with the Passport Emb
 
 Create `styles/globals.css`:
 
-**Key styling features:**   **Dark theme**: Professional gray-900 background matching web3 conventions
-*   **Inter font**: Clean, readable font that works well for wallet addresses and technical content
-*   **Component integration**: Specific overrides ensure the Passport Embed component fits seamlessly
-*   **Component consistency**: Unified styling between Reown AppKit and custom components
+**Key styling features:** **Dark theme**: Professional gray-900 background matching web3 conventions
+
+- **Inter font**: Clean, readable font that works well for wallet addresses and technical content
+- **Component integration**: Specific overrides ensure the Passport Embed component fits seamlessly
+- **Component consistency**: Unified styling between Reown AppKit and custom components
 
 For advanced customization, see the [Passport Embed Customization Guide](_building-with-passport_embed_customization.md).
 
@@ -537,11 +544,11 @@ Visit `http://localhost:3000` and you should see:
 
 This tutorial demonstrates a security-first approach with smart monitoring:
 
-*   **Client-side hook** (`usePassportScore`) provides immediate UI feedback and monitors score changes
-*   **Smart triggering** - Server-side verification only occurs when client-side shows a passing score
-*   **Server-side API** (`/api/verify-score`) validates scores securely via the Stamps API v2
-*   **Conditional rendering** shows different states based on verified scores
-*   **Guard conditions** prevent redundant API calls with `!verifiedScore` check
+- **Client-side hook** (`usePassportScore`) provides immediate UI feedback and monitors score changes
+- **Smart triggering** - Server-side verification only occurs when client-side shows a passing score
+- **Server-side API** (`/api/verify-score`) validates scores securely via the Stamps API v2
+- **Conditional rendering** shows different states based on verified scores
+- **Guard conditions** prevent redundant API calls with `!verifiedScore` check
 
 ### Score Monitoring Pattern
 
@@ -549,38 +556,38 @@ The implementation uses an intelligent monitoring approach:
 
 This pattern ensures:
 
-*   **Efficient API usage** - No unnecessary server calls
-*   **Real-time updates** - Responds immediately when users reach threshold
-*   **Security validation** - Server confirms client-side results
+- **Efficient API usage** - No unnecessary server calls
+- **Real-time updates** - Responds immediately when users reach threshold
+- **Security validation** - Server confirms client-side results
 
 ### Wallet Integration
 
 The Reown AppKit integration provides:
 
-*   **Multiple wallet support** (MetaMask, WalletConnect, etc.)
-*   **ENS name resolution** for better UX
-*   **Ethereum address management** with automatic updates
+- **Multiple wallet support** (MetaMask, WalletConnect, etc.)
+- **ENS name resolution** for better UX
+- **Ethereum address management** with automatic updates
 
 ### Score Threshold Logic
 
 The application checks for a minimum score of 20:
 
-*   Scores below 20 show locked state with encouragement to verify more Stamps
-*   Scores 20+ unlock exclusive content (Telegram access in this example)
-*   Real-time updates as users complete additional verifications
+- Scores below 20 show locked state with encouragement to verify more Stamps
+- Scores 20+ unlock exclusive content (Telegram access in this example)
+- Real-time updates as users complete additional verifications
 
 ## Next Steps
 
 Congratulations! You've built a complete Passport Embed integration. To extend this further, consider:
 
-*   Adding more sophisticated protected content
-*   Creating custom themes to match your brand using the [Customization Guide](_building-with-passport_embed_customization.md)
-*   Integrating with your existing authentication system
-*   Implementing SIWE (Sign-In with Ethereum) for additional security
+- Adding more sophisticated protected content
+- Creating custom themes to match your brand using the [Customization Guide](_building-with-passport_embed_customization.md)
+- Integrating with your existing authentication system
+- Implementing SIWE (Sign-In with Ethereum) for additional security
 
 [Quick start](_building-with-passport_embed_quick-start-guide.md)[Customization](_building-with-passport_embed_customization.md)
 
-#### _building-with-passport_getting-access.md
+#### \_building-with-passport_getting-access.md
 
 > Source: https://docs.passport.xyz/building-with-passport/getting-access
 > Scraped: 1/9/2026, 1:32:05 PM
@@ -607,12 +614,12 @@ A Scorer is an developer element that can be used to organize different use case
 
 ### Next step
 
-* [Make your first API request](_building-with-passport_stamps_passport-api_quick-start-guide.md)
-* [Review the API Reference to learn more about the available endpoints](_building-with-passport_stamps_passport-api_api-reference.md)
+- [Make your first API request](_building-with-passport_stamps_passport-api_quick-start-guide.md)
+- [Review the API Reference to learn more about the available endpoints](_building-with-passport_stamps_passport-api_api-reference.md)
 
 [Introduction](_building-with-passport_stamps_passport-api_introduction.md)[Quick start](_building-with-passport_stamps_passport-api_quick-start-guide.md)
 
-#### _building-with-passport_major-concepts_api-pagination.md
+#### \_building-with-passport_major-concepts_api-pagination.md
 
 > Source: https://docs.passport.xyz/building-with-passport/major-concepts/api-pagination
 > Scraped: 1/9/2026, 1:32:05 PM
@@ -631,7 +638,7 @@ To retrieve the next page of results you can use the URL provided in the `next` 
 
 [Stamp and score expiry](_building-with-passport_stamps_major-concepts_expirations.md)[Educating users](_building-with-passport_stamps_major-concepts_educating-users.md)
 
-#### _building-with-passport_major-concepts_credential-map-and-weights.md
+#### \_building-with-passport_major-concepts_credential-map-and-weights.md
 
 > Source: https://docs.passport.xyz/building-with-passport/major-concepts/credential-map-and-weights
 > Scraped: 1/9/2026, 1:32:07 PM
@@ -650,9 +657,9 @@ If you'd like to customize these credentials, you can do so with [Custom Passpor
 
 Custom Passport enables you to customize the Passport Stamp lineup around your ecosystem's unique needs. You can make the following adjustments:
 
-*   Remove Stamps that don't fit your needs
-*   Adjust the weights of existing Stamps
-*   Create your own allowlist-based or GitHub activity-based Stamps
+- Remove Stamps that don't fit your needs
+- Adjust the weights of existing Stamps
+- Create your own allowlist-based or GitHub activity-based Stamps
 
 If you're interested in learning more about how to customize the Passport Stamp lineup, please reach out to us via this [form (opens in a new tab)](https://tally.so/r/3X81KL).
 
@@ -670,7 +677,7 @@ We launched several additions, subtractions, and updates to the Passport Stamp l
 
 [Scoring thresholds](_building-with-passport_stamps_major-concepts_scoring-thresholds.md)[Deduplicating Stamps](_building-with-passport_stamps_major-concepts_deduplicating-stamps.md)
 
-#### _building-with-passport_major-concepts_data-dictionary.md
+#### \_building-with-passport_major-concepts_data-dictionary.md
 
 > Source: https://docs.passport.xyz/building-with-passport/major-concepts/data-dictionary
 > Scraped: 1/9/2026, 1:32:06 PM
@@ -689,7 +696,7 @@ If this specific credential is deduped, this expiration date will represent when
 
 This information can be displayed to users to help them understand when their credential will expire.
 
-#### _building-with-passport_major-concepts_status-and-error-codes.md
+#### \_building-with-passport_major-concepts_status-and-error-codes.md
 
 > Source: https://docs.passport.xyz/building-with-passport/major-concepts/status-and-error-codes
 > Scraped: 1/9/2026, 1:32:05 PM
@@ -704,14 +711,14 @@ Status and error codes
 
 ## HTTP Status codes
 
-| Code | Title | Description |
-| --- | --- | --- |
-| 200 | OK | The request was successful. |
-| 400 | Bad request | Bad request |
-| 401 | Unauthorized | Your API key is invalid. |
-| 404 | Not found | The resource does not exist. |
-| 429 | Too Many Requests | The rate limit was exceeded. |
-| 500 | Internal Server Error | An error occurred with our API. |
+| Code | Title                 | Description                     |
+| ---- | --------------------- | ------------------------------- |
+| 200  | OK                    | The request was successful.     |
+| 400  | Bad request           | Bad request                     |
+| 401  | Unauthorized          | Your API key is invalid.        |
+| 404  | Not found             | The resource does not exist.    |
+| 429  | Too Many Requests     | The rate limit was exceeded.    |
+| 500  | Internal Server Error | An error occurred with our API. |
 
 ## Error types
 
@@ -719,16 +726,16 @@ All errors are returned in the form of JSON with a detail explaining the error
 
 > Example error response.
 
-| Error Detail | Description |
-| --- | --- |
-| Invalid nonce | The `nonce` used in the submit Stamps API request could not be verified |
-| Address does not match signature | The signer could not be verified |
-| Invalid limit | The page limit of the Stamps API request is greater than 1000 |
+| Error Detail                               | Description                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| Invalid nonce                              | The `nonce` used in the submit Stamps API request could not be verified          |
+| Address does not match signature           | The signer could not be verified                                                 |
+| Invalid limit                              | The page limit of the Stamps API request is greater than 1000                    |
 | Unable to get score for provided Scorer ID | Unable to validate that the Scorer ID belongs to the account holding the API key |
-| Unauthorized | `X-API-Key` was not specified in the header or an invalid API key was provided |
-| Internal Server Error | Something went wrong on our end |
+| Unauthorized                               | `X-API-Key` was not specified in the header or an invalid API key was provided   |
+| Internal Server Error                      | Something went wrong on our end                                                  |
 
-* * *
+---
 
 If you have questions about the API, please reach out to us in our [developer support channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh).
 
@@ -736,7 +743,7 @@ More detailed information about this API's endpoints can be found in the [API re
 
 [Data dictionary](_building-with-passport_stamps_passport-api_data-dictionary.md)[Migrate: v1 to v2](_building-with-passport_stamps_passport-api_migrate.md)
 
-#### _building-with-passport_models.md
+#### \_building-with-passport_models.md
 
 > Source: https://docs.passport.xyz/building-with-passport/models
 > Scraped: 1/9/2026, 1:32:04 PM
@@ -749,24 +756,24 @@ Ready to get started?
 
 The current [available models](_building-with-passport_models_available-models.md) include the following:
 
-*   Aggregate unique humanity model
-*   Ethereum (L1) unique humanity model
-*   NFT (L1) unique humanity model
-*   Arbitrum unique humanity model
-*   Base unique humanity model
-*   Optimism unique humanity model
-*   Polygon unique humanity model
-*   zkSync unique humanity model
+- Aggregate unique humanity model
+- Ethereum (L1) unique humanity model
+- NFT (L1) unique humanity model
+- Arbitrum unique humanity model
+- Base unique humanity model
+- Optimism unique humanity model
+- Polygon unique humanity model
+- zkSync unique humanity model
 
 This essentially opens up Sybil detection and defense to all EVM wallet addresses, regardless of whether the user has a Passport with verified Stamps or not.
 
 This new API is the perfect compliment to the existing [Stamps API](_building-with-passport_stamps_passport-api.md) as it offers the following benefits:
 
-*   **Score any address:** Any EVM wallet address can be scored, regardless of whether they have a Passport or not.
-*   **Reduced user friction:** Users don't need to do anything to be scored by this endpoint.
-*   **More difficult for Sybils:** When we make adjustments to our Stamp offering and weights, we are essentially providing a roadmap for Sybils, requiring us to make changes periodically which can add friction for users. The model features are hidden from the public, making it more difficult for Sybils to cheat.
-*   **Modular verification:** Using the Models API along with the [Stamp-based verification](_building-with-passport_stamps_passport-api.md) approach made available via the Stamps API can enable you to provide multiple verification options that reduce user friction for the majority of users while offering an additional verification tool for users who don't pass the initial check.
-*   **Faster and less impactful iteration cycles:** Sybil behavior changes, and so should Passport. While we know updates to our [Stamp-based verification](_building-with-passport_stamps_passport-api.md) are both required and help improve ease and effectiveness, those changes can cause user friction. The model-based verification enables us to tune our the models more frequently without this friction, allowing us to respond to changes in Sybil behavior more quickly.
+- **Score any address:** Any EVM wallet address can be scored, regardless of whether they have a Passport or not.
+- **Reduced user friction:** Users don't need to do anything to be scored by this endpoint.
+- **More difficult for Sybils:** When we make adjustments to our Stamp offering and weights, we are essentially providing a roadmap for Sybils, requiring us to make changes periodically which can add friction for users. The model features are hidden from the public, making it more difficult for Sybils to cheat.
+- **Modular verification:** Using the Models API along with the [Stamp-based verification](_building-with-passport_stamps_passport-api.md) approach made available via the Stamps API can enable you to provide multiple verification options that reduce user friction for the majority of users while offering an additional verification tool for users who don't pass the initial check.
+- **Faster and less impactful iteration cycles:** Sybil behavior changes, and so should Passport. While we know updates to our [Stamp-based verification](_building-with-passport_stamps_passport-api.md) are both required and help improve ease and effectiveness, those changes can cause user friction. The model-based verification enables us to tune our the models more frequently without this friction, allowing us to respond to changes in Sybil behavior more quickly.
 
 ## Getting Access
 
@@ -793,9 +800,9 @@ Protecting access is Passport's primary [use case](_overview_use-cases.md). Ther
 
 In this section, we will describe a few different developer flows that can be used to protect access to programs:
 
-*   Single verification using a Model Based Detection score
-*   Double verification using a Model Based Detection score and the Unique Humanity Score
-*   Double verification using a Model Based Detection score and other verification methods
+- Single verification using a Model Based Detection score
+- Double verification using a Model Based Detection score and the Unique Humanity Score
+- Double verification using a Model Based Detection score and other verification methods
 
 ### Single verification using Models API
 
@@ -805,9 +812,10 @@ If you'd like to quickly verify if potential participants are likely human or sy
 
 However, this verification method does not provide a secondary verification option for users, such as crypto beginners. If this is a concern, we recommend that you explore using one of the double verification methods.
 
-**Technical integration details:**   Collect the wallet address from the user
-*   Pass the wallet address to the [`GET /v2/models/score/{address}`](_building-with-passport_models_api-reference.md) endpoint, which will deliver the specified model score (0-100).
-*   Compare this score against a predetermined [score threshold](_building-with-passport_models_available-models.md), and either grant or deny access depending on that evaluation.
+**Technical integration details:** Collect the wallet address from the user
+
+- Pass the wallet address to the [`GET /v2/models/score/{address}`](_building-with-passport_models_api-reference.md) endpoint, which will deliver the specified model score (0-100).
+- Compare this score against a predetermined [score threshold](_building-with-passport_models_available-models.md), and either grant or deny access depending on that evaluation.
 
 ### Double verification using Models API and Unique Humanity score
 
@@ -817,11 +825,12 @@ This verification method will cause the least amount of user friction for the ma
 
 Many users will be able pass the initial Models API check with no user friction, while a portion of them will need to go through the Stamp-based process (in other words, creating a Passport, verifying Stamps, and building up a unique humanity score).
 
-**Technical integration details:**   Collect the wallet address from the user
-*   Pass the wallet address to the [`GET /v2/models/score/{address}`](_building-with-passport_models_api-reference.md) endpoint, which will deliver the specified model score (-1 for addresses without enough transaction data, 0-100 for those that do).
-*   Compare this model score against a predetermined [score threshold](_building-with-passport_stamps_major-concepts_scoring-thresholds.md), and will either grant or deny access based on that evaluation.
-*   Assuming the user didn't pass primary verification, retrieve the user's Stamp-based Unique Humanity Score from the Stamps API v2 using the [`GET /v2/stamps/{scorer_id}/score/{address}`](_building-with-passport_stamps_passport-api_api-reference.md#retrieve-latest-score-for-a-single-address) endpoint.
-*   Evaluate the Unique Humanity Score against a predetermined [score threshold](_building-with-passport_stamps_major-concepts_scoring-thresholds.md), and will either grant or deny access based on that evaluation.
+**Technical integration details:** Collect the wallet address from the user
+
+- Pass the wallet address to the [`GET /v2/models/score/{address}`](_building-with-passport_models_api-reference.md) endpoint, which will deliver the specified model score (-1 for addresses without enough transaction data, 0-100 for those that do).
+- Compare this model score against a predetermined [score threshold](_building-with-passport_stamps_major-concepts_scoring-thresholds.md), and will either grant or deny access based on that evaluation.
+- Assuming the user didn't pass primary verification, retrieve the user's Stamp-based Unique Humanity Score from the Stamps API v2 using the [`GET /v2/stamps/{scorer_id}/score/{address}`](_building-with-passport_stamps_passport-api_api-reference.md#retrieve-latest-score-for-a-single-address) endpoint.
+- Evaluate the Unique Humanity Score against a predetermined [score threshold](_building-with-passport_stamps_major-concepts_scoring-thresholds.md), and will either grant or deny access based on that evaluation.
 
 ### Double verification using Models API and other verification methods
 
@@ -839,7 +848,7 @@ Review our page that describes all [available models and recommended score thres
 
 [Component reference](_building-with-passport_embed_component-reference.md)[Getting access](_building-with-passport_models_getting-access.md)
 
-#### _building-with-passport_models_api-reference.md
+#### \_building-with-passport_models_api-reference.md
 
 > Source: https://docs.passport.xyz/building-with-passport/models/api-reference
 > Scraped: 1/9/2026, 1:32:03 PM
@@ -860,9 +869,9 @@ If you'd like to request elevated rate limits, please fill out our [rate limit e
 
 Use this endpoint to request a model-based score for a specified user. You can find all of the available models and recommended score thresholds via our [available models](_building-with-passport_models_available-models.md) page.
 
-*   **Endpoint:** `GET /v2/models/score/{address}`
-*   **Base URL:** `https://api.passport.xyz`
-*   **Authentication:** API Key – Can be the same [API Key](_building-with-passport_stamps_passport-api_getting-access.md) that is used with the Stamps API
+- **Endpoint:** `GET /v2/models/score/{address}`
+- **Base URL:** `https://api.passport.xyz`
+- **Authentication:** API Key – Can be the same [API Key](_building-with-passport_stamps_passport-api_getting-access.md) that is used with the Stamps API
 
 ### Parameters
 
@@ -870,11 +879,11 @@ Use this endpoint to request a model-based score for a specified user. You can f
 
 The Models API returns scores in the range of -1 to 100:
 
-*   **\-1**: Indicates insufficient data available to generate a score
-*   **0-100**: Represents the score range where:
-    *   Lower scores indicate higher likelihood of being a Sybil account
-    *   Higher scores indicate higher likelihood of being a legitimate human account
-    *   The exact interpretation of scores depends on the [specific model](_building-with-passport_models_available-models.md) being used
+- **\-1**: Indicates insufficient data available to generate a score
+- **0-100**: Represents the score range where:
+  - Lower scores indicate higher likelihood of being a Sybil account
+  - Higher scores indicate higher likelihood of being a legitimate human account
+  - The exact interpretation of scores depends on the [specific model](_building-with-passport_models_available-models.md) being used
 
 Scores are calculated based on various on-chain and off-chain data points specific to each model. The aggregate model combines multiple model scores to provide a comprehensive assessment.
 
@@ -892,7 +901,7 @@ Scores are calculated based on various on-chain and off-chain data points specif
 
 [Available models and score thresholds](_building-with-passport_models_available-models.md)[Data services](_building-with-passport_data-services.md)
 
-#### _building-with-passport_models_available-models.md
+#### \_building-with-passport_models_available-models.md
 
 > Source: https://docs.passport.xyz/building-with-passport/models/available-models
 > Scraped: 1/9/2026, 1:32:03 PM
@@ -901,21 +910,21 @@ At this time, we have deployed a few different models to help verify unique huma
 
 We currently offer the following models via the Models API:
 
-*   Aggregate unique humanity score - `aggregate`
-*   Ethereum (L1) unique humanity model - `ethereum_activity`
-*   NFT (L1) unique humanity model - `nft`
-*   Arbitrum unique humanity model - `arbitrum`
-*   Base unique humanity model - `base`
-*   Optimism unique humanity model - `optimism`
-*   Polygon unique humanity model - `polygon`
-*   zkSync unique humanity model - `zksync`
+- Aggregate unique humanity score - `aggregate`
+- Ethereum (L1) unique humanity model - `ethereum_activity`
+- NFT (L1) unique humanity model - `nft`
+- Arbitrum unique humanity model - `arbitrum`
+- Base unique humanity model - `base`
+- Optimism unique humanity model - `optimism`
+- Polygon unique humanity model - `polygon`
+- zkSync unique humanity model - `zksync`
 
 Each model will assign a score of -1 for addresses without enough transaction data, and 0 - 100 for those that do. A score of 0 represents likely Sybil, while a score of 100 represents likely human.
 
 For each model, we will provide a table that describes the different score thresholds you can use to gate access or classify addresses. We define the columns of those tables here:
 
-*   **% of qualifying verified humans** - This metric represents the number of Passport users who qualified for the score threshold and scored a 20 or higher with the Stamp-based verification system.
-*   **% of verified Sybil penetration** - This metric represents the number of verified Sybils from our list that were able to qualify for the score threshold.
+- **% of qualifying verified humans** - This metric represents the number of Passport users who qualified for the score threshold and scored a 20 or higher with the Stamp-based verification system.
+- **% of verified Sybil penetration** - This metric represents the number of verified Sybils from our list that were able to qualify for the score threshold.
 
 ## Aggregate unique humanity model
 
@@ -979,7 +988,7 @@ Learn how to use these models and score thresholds by working through our [tutor
 
 [Double Verification with the Model Based Detection and Stamp-based APIs](_building-with-passport_models_tutorials_double-verification.md)[API reference](_building-with-passport_models_api-reference.md)
 
-#### _building-with-passport_models_getting-access.md
+#### \_building-with-passport_models_getting-access.md
 
 > Source: https://docs.passport.xyz/building-with-passport/models/getting-access
 > Scraped: 1/9/2026, 1:32:01 PM
@@ -999,12 +1008,12 @@ Once you have your API key, you need to include it with each request you make to
 
 Review one of the following pages to learn how you can use your API key with the Models API.
 
-* [Review the API Reference](_building-with-passport_models_api-reference.md)
-* [Review the tutorial explaining how to use this score](_building-with-passport_models_tutorials_double-verification.md)
+- [Review the API Reference](_building-with-passport_models_api-reference.md)
+- [Review the tutorial explaining how to use this score](_building-with-passport_models_tutorials_double-verification.md)
 
 [Introduction](_building-with-passport_models_introduction.md)[Double Verification with the Model Based Detection and Stamp-based APIs](_building-with-passport_models_tutorials_double-verification.md)
 
-#### _building-with-passport_models_tutorials_double-verification.md
+#### \_building-with-passport_models_tutorials_double-verification.md
 
 > Source: https://docs.passport.xyz/building-with-passport/models/tutorials/double-verification
 > Scraped: 1/9/2026, 1:32:03 PM
@@ -1015,10 +1024,10 @@ The ETH activity model is one of the [available machine learning models](_buildi
 
 Passport exposes an API endpoint that accepts an Ethereum account as a query parameter and returns scores in the range of -1 to 100:
 
-*   **\-1**: Indicates insufficient data available to generate a score (e.g., new wallet with no transaction history)
-*   **0-100**: Represents the score range where:
-    *   Lower scores indicate higher likelihood of being a Sybil account
-    *   Higher scores indicate higher likelihood of being a legitimate human account
+- **\-1**: Indicates insufficient data available to generate a score (e.g., new wallet with no transaction history)
+- **0-100**: Represents the score range where:
+  - Lower scores indicate higher likelihood of being a Sybil account
+  - Higher scores indicate higher likelihood of being a legitimate human account
 
 The model itself is a black box whose outcome is based on 50+ features. Some applications may be happy to rely on these models alone; however, it is advisable to offer the Stamp-based verification method as a fallback to support those users who might not have had the chance to build up a strong account history, such as crypto beginners or experts who utilize multiple wallets for different activities, or in cases where the model returns a -1 score due to insufficient data.
 
@@ -1037,9 +1046,9 @@ This tutorial will guide you through creating a very simple app using nextjs.
 
 The app will present you with three buttons:
 
-*   `Connect`: use this to connect your Ethereum wallet to the app.
-*   `Check Ethereum Activity`: clicking this button will check your Ethereum activity score. If it is above a threshold then you will see a notice of success - you may proceed to access the protected content! If you do not meet the threshold you will be denied access and directed to check your Passport unique humanity score (Stamp-based) instead.
-*   `Check Passport score`: clicking this button checks your Passport score on the Stamps API. If your score is above a threshold then you will be allowed to proceed to the protected content!
+- `Connect`: use this to connect your Ethereum wallet to the app.
+- `Check Ethereum Activity`: clicking this button will check your Ethereum activity score. If it is above a threshold then you will see a notice of success - you may proceed to access the protected content! If you do not meet the threshold you will be denied access and directed to check your Passport unique humanity score (Stamp-based) instead.
+- `Check Passport score`: clicking this button checks your Passport score on the Stamps API. If your score is above a threshold then you will be allowed to proceed to the protected content!
 
 ## Getting started
 
@@ -1063,7 +1072,7 @@ Your app should look like this:
 
 [Getting access](_building-with-passport_models_getting-access.md)[Available models and score thresholds](_building-with-passport_models_available-models.md)
 
-#### _building-with-passport_passport-api.md
+#### \_building-with-passport_passport-api.md
 
 > Source: https://docs.passport.xyz/building-with-passport/passport-api
 > Scraped: 1/9/2026, 1:32:03 PM
@@ -1083,7 +1092,7 @@ All Passport Stamps user data can be accessed via the Stamps API, whereas only a
 An excellent [use case](_overview_use-cases.md) for Human Passport is to protect access to a reward or governance program. To make this happen, follow these steps:
 
 1.  [Creating a Passport Project/Scorer and API key](_building-with-passport_stamps_passport-api_getting-access.md)
-2.  Retrieve a user's Passport score and Stamp data using the [GET /v2/stamps/{scorer\_id}/score/{address}](_building-with-passport_stamps_passport-api_api-reference.md#retrieve-latest-score-for-a-single-address) endpoint.
+2.  Retrieve a user's Passport score and Stamp data using the [GET /v2/stamps/{scorer_id}/score/{address}](_building-with-passport_stamps_passport-api_api-reference.md#retrieve-latest-score-for-a-single-address) endpoint.
 3.  Find the user's Unique Humanity Score or `passing_score` within the returned data.
 4.  Compare the Unique Humanity Score against a [threshold](_building-with-passport_stamps_major-concepts_scoring-thresholds.md) that you set, or utilize the binary `passing_score` field that uses our recommended threshold of 20.
 
@@ -1097,14 +1106,14 @@ Learn more about each of these endpoints on our [API Reference](_building-with-p
 
 ## Next steps
 
-* [Set up an API key and Scorer/Project](_building-with-passport_stamps_passport-api_getting-access.md)
-* [Make your first API request](_building-with-passport_stamps_passport-api_quick-start-guide.md)
-* [Review the API Reference to get to know the available endpoints](_building-with-passport_stamps_passport-api_api-reference.md)
-* [Get support via our Telegram channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh)
+- [Set up an API key and Scorer/Project](_building-with-passport_stamps_passport-api_getting-access.md)
+- [Make your first API request](_building-with-passport_stamps_passport-api_quick-start-guide.md)
+- [Review the API Reference to get to know the available endpoints](_building-with-passport_stamps_passport-api_api-reference.md)
+- [Get support via our Telegram channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh)
 
 [Educating users](_building-with-passport_stamps_major-concepts_educating-users.md)[Getting access](_building-with-passport_stamps_passport-api_getting-access.md)
 
-#### _building-with-passport_smart-contracts.md
+#### \_building-with-passport_smart-contracts.md
 
 > Source: https://docs.passport.xyz/building-with-passport/smart-contracts
 > Scraped: 1/9/2026, 1:32:05 PM
@@ -1115,9 +1124,9 @@ Human Passport's onchain functionality enables users to store their verified Sta
 
 We also discuss the onchain use cases in the following resources:
 
-* [Quick start: Get to "Hello World" with the smart contracts](_building-with-passport_stamps_smart-contracts_quick-start-guide.md)
-* [Tutorial: Building an app using onchain Passport data](_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md)
-* [Reference: Learn about the available smart contracts and typical onchain developer flow](_building-with-passport_stamps_smart-contracts_contract-reference.md)
+- [Quick start: Get to "Hello World" with the smart contracts](_building-with-passport_stamps_smart-contracts_quick-start-guide.md)
+- [Tutorial: Building an app using onchain Passport data](_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md)
+- [Reference: Learn about the available smart contracts and typical onchain developer flow](_building-with-passport_stamps_smart-contracts_contract-reference.md)
 
 ## Why onchain?
 
@@ -1148,21 +1157,21 @@ This onchain smart contract stack is currently deployed to the following network
 
 Mainnet
 
-*   Arbitrum
-*   Base
-*   Linea
-*   Optimism
-*   Scroll
-*   Shape
-*   ZkSync
+- Arbitrum
+- Base
+- Linea
+- Optimism
+- Scroll
+- Shape
+- ZkSync
 
 Testnet
 
-*   Base Goerli
-*   Optimism Sepolia
-*   Scroll Sepolia
-*   Shape Sepolia
-*   ZkSync Sepolia
+- Base Goerli
+- Optimism Sepolia
+- Scroll Sepolia
+- Shape Sepolia
+- ZkSync Sepolia
 
 Please note that you can explore our testnet functionality via the app using [Test Mode](_building-with-passport_stamps_smart-contracts_test-mode.md).
 
@@ -1170,8 +1179,8 @@ Please note that you can explore our testnet functionality via the app using [Te
 
 Attestations will be minted to one or two different registries, depending on which network the user chose to push their Passport.
 
-*   All onchain Passports will be minted to EAS, regardless of which network the user selects.
-*   If the user selects Linea or Linea Goerli, the full attestation will be written to EAS, and a partial attestation will be written to Verax.
+- All onchain Passports will be minted to EAS, regardless of which network the user selects.
+- If the user selects Linea or Linea Goerli, the full attestation will be written to EAS, and a partial attestation will be written to Verax.
 
 ## Why isn't Human Passport onchain by default?
 
@@ -1183,16 +1192,16 @@ While onchain Passports are in their infancy, the offchain Passport is useful as
 
 Learn more about onchain Passports:
 
-* [Quick start](_building-with-passport_stamps_smart-contracts_quick-start-guide.md)
-* [Tutorial](_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md)
-* [Contract reference](_building-with-passport_stamps_smart-contracts_contract-reference.md)
-* [Attestation schema](_building-with-passport_stamps_smart-contracts_attestation-schema.md)
+- [Quick start](_building-with-passport_stamps_smart-contracts_quick-start-guide.md)
+- [Tutorial](_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md)
+- [Contract reference](_building-with-passport_stamps_smart-contracts_contract-reference.md)
+- [Attestation schema](_building-with-passport_stamps_smart-contracts_attestation-schema.md)
 
 You can also ask questions about onchain Passports in our [developer support channel on Telegram (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh)
 
 [Custom Passport](_building-with-passport_stamps_custom-passport.md)[Quick start](_building-with-passport_stamps_smart-contracts_quick-start-guide.md)
 
-#### _building-with-passport_smart-contracts_attestation-schema.md
+#### \_building-with-passport_smart-contracts_attestation-schema.md
 
 > Source: https://docs.passport.xyz/building-with-passport/smart-contracts/attestation-schema
 > Scraped: 1/9/2026, 1:32:05 PM
@@ -1219,14 +1228,14 @@ You can see an example Human Passport attestation on the Optimism network by vis
 
 The fields in the Human Passport attestation are as follows:
 
-*   `passing_score` (bool): A boolean flag indicating whether the address's score meets or exceeds the threshold value.
-*   `score_decimals` (uint8): The number of decimal places used for score precision. Set to `4`
-*   `scorer_id` (uint128): A unique identifier for the scoring algorithm instance.
-*   `score` (uint32): The raw numerical score calculated for the address.
-*   `threshold` (uint32): The minimum score required to achieve a passing grade. Default is set to `200000`, the recommendation from the Passport team. However, this can be updated by partners who have set a custom threshold using Custom Passport.
-*   `stamps` (tuple\[\]): An array of tuples containing verified credentials and their weights, where each tuple contains:
-    *   A string representing the stamp provider/type (e.g., "CoinbaseDualVerification2", "HolonymGovIdProvider")
-    *   A uint256 representing the weight/score contribution to the overall score
+- `passing_score` (bool): A boolean flag indicating whether the address's score meets or exceeds the threshold value.
+- `score_decimals` (uint8): The number of decimal places used for score precision. Set to `4`
+- `scorer_id` (uint128): A unique identifier for the scoring algorithm instance.
+- `score` (uint32): The raw numerical score calculated for the address.
+- `threshold` (uint32): The minimum score required to achieve a passing grade. Default is set to `200000`, the recommendation from the Passport team. However, this can be updated by partners who have set a custom threshold using Custom Passport.
+- `stamps` (tuple\[\]): An array of tuples containing verified credentials and their weights, where each tuple contains:
+  - A string representing the stamp provider/type (e.g., "CoinbaseDualVerification2", "HolonymGovIdProvider")
+  - A uint256 representing the weight/score contribution to the overall score
 
 Example raw data:
 
@@ -1250,11 +1259,11 @@ You can see an example of a Stamp attestation on the Optimism network by visitin
 
 The fields are as follows:
 
-*   `providers`: a u256 that is actually a bitmap where each position maps to a provider name. The mapping is made available offchain.
-*   `hashes`: an ordered array of elements, with each element being 32 raw bytes. Each element in the array is a 32-byte hash that maps to a known Stamp. A provider might have multiple Stamps that each have a hash. The mapping is made available offchain.
-*   `issuanceDates`: an ordered array of elements, with each element being 32 raw bytes. Each element represents the UNIX timestamp when the Stamp was verified.
-*   `expirationDates`: an ordered array of elements, with each element being 32 raw bytes. Each element represents the UNIX timestamp when the Stamp expires.
-*   `providerMapVersion`: an unsigned integer specifying which version of the `providers` mapping the Attestation conforms to. This allows updates as providers are added and removed from the canonical set.
+- `providers`: a u256 that is actually a bitmap where each position maps to a provider name. The mapping is made available offchain.
+- `hashes`: an ordered array of elements, with each element being 32 raw bytes. Each element in the array is a 32-byte hash that maps to a known Stamp. A provider might have multiple Stamps that each have a hash. The mapping is made available offchain.
+- `issuanceDates`: an ordered array of elements, with each element being 32 raw bytes. Each element represents the UNIX timestamp when the Stamp was verified.
+- `expirationDates`: an ordered array of elements, with each element being 32 raw bytes. Each element represents the UNIX timestamp when the Stamp expires.
+- `providerMapVersion`: an unsigned integer specifying which version of the `providers` mapping the Attestation conforms to. This allows updates as providers are added and removed from the canonical set.
 
 ### Score attestation schema
 
@@ -1268,13 +1277,13 @@ You can see an example of a score attestation on the Optimism network by visitin
 
 The fields are as follows:
 
-*   `score`: the user's Passport score as an unsigned integer
-*   `scorer_id`: the ID number for the specific Scorer instance that issued the `score`
-*   `score_decimals`: number of decimals in `score`, similar to how ETH is divided into 1e18 Wei.
+- `score`: the user's Passport score as an unsigned integer
+- `scorer_id`: the ID number for the specific Scorer instance that issued the `score`
+- `score_decimals`: number of decimals in `score`, similar to how ETH is divided into 1e18 Wei.
 
 [Tutorial](_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md)[Onchain expirations](_building-with-passport_stamps_smart-contracts_onchain-expirations.md)
 
-#### _building-with-passport_smart-contracts_contract-reference.md
+#### \_building-with-passport_smart-contracts_contract-reference.md
 
 > Source: https://docs.passport.xyz/building-with-passport/smart-contracts/contract-reference
 > Scraped: 1/9/2026, 1:32:07 PM
@@ -1285,8 +1294,8 @@ This page will outline the Human Passport smart contract stack and provide all t
 
 This page is broken into two sections:
 
-* [How Passport adds metadata to the blockchain](_building-with-passport_stamps_smart-contracts_contract-reference.md#how-passport-adds-data-to-the-blockchain)
-* [How to query for onchain Passport data](_building-with-passport_stamps_smart-contracts_contract-reference.md#how-to-query-for-onchain-passport-data)
+- [How Passport adds metadata to the blockchain](_building-with-passport_stamps_smart-contracts_contract-reference.md#how-passport-adds-data-to-the-blockchain)
+- [How to query for onchain Passport data](_building-with-passport_stamps_smart-contracts_contract-reference.md#how-to-query-for-onchain-passport-data)
 
 You can always chat in our [Telegram developer support channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh) if you have questions about the Passport smart contracts.
 
@@ -1304,8 +1313,8 @@ Human Passport, EAS, and Verax have created several smart contracts that can be 
 
 Available flows:
 
-*   **\[Recommended\]** [Decoder contract flow](_building-with-passport_stamps_smart-contracts_contract-reference.md#decoder-contract)
-* [GitcoinResolver >> EAS/Verax flow](_building-with-passport_stamps_smart-contracts_contract-reference.md#alternative-flow)
+- **\[Recommended\]** [Decoder contract flow](_building-with-passport_stamps_smart-contracts_contract-reference.md#decoder-contract)
+- [GitcoinResolver >> EAS/Verax flow](_building-with-passport_stamps_smart-contracts_contract-reference.md#alternative-flow)
 
 ### Decoder contract
 
@@ -1319,9 +1328,9 @@ Here is a rundown of the decoder contract flow:
 
 #### GitHub links
 
-*   Smart contract: [https://github.com/passportxyz/eas-proxy/blob/main/contracts/GitcoinPassportDecoder.sol (opens in a new tab)](https://github.com/passportxyz/eas-proxy/blob/main/contracts/GitcoinPassportDecoder.sol)
-*   Interface contract: [https://github.com/passportxyz/eas-proxy/blob/main/contracts/IGitcoinPassportDecoder.sol (opens in a new tab)](https://github.com/passportxyz/eas-proxy/blob/main/contracts/IGitcoinPassportDecoder.sol)
-*   ABI: [https://github.com/passportxyz/eas-proxy/blob/main/deployments/abi/GitcoinPassportDecoder.json (opens in a new tab)](https://github.com/passportxyz/eas-proxy/blob/main/deployments/abi/GitcoinPassportDecoder.json)
+- Smart contract: [https://github.com/passportxyz/eas-proxy/blob/main/contracts/GitcoinPassportDecoder.sol (opens in a new tab)](https://github.com/passportxyz/eas-proxy/blob/main/contracts/GitcoinPassportDecoder.sol)
+- Interface contract: [https://github.com/passportxyz/eas-proxy/blob/main/contracts/IGitcoinPassportDecoder.sol (opens in a new tab)](https://github.com/passportxyz/eas-proxy/blob/main/contracts/IGitcoinPassportDecoder.sol)
+- ABI: [https://github.com/passportxyz/eas-proxy/blob/main/deployments/abi/GitcoinPassportDecoder.json (opens in a new tab)](https://github.com/passportxyz/eas-proxy/blob/main/deployments/abi/GitcoinPassportDecoder.json)
 
 #### Decoder contract addresses
 
@@ -1331,7 +1340,7 @@ You can learn more about working with testnets via our guide on [Test Mode](_bui
 
 #### Available methods
 
-* * *
+---
 
 ### Alternative flow -- Deprecated
 
@@ -1353,8 +1362,8 @@ The Attestations are stored in a mapping, where the Attestation is stored as raw
 
 In order to ensure the integrity of the data that the contract stores, the resolver smart contract shall only validate and store date from trusted sources:
 
-*   a trusted EAS contract
-*   a trusted Attester
+- a trusted EAS contract
+- a trusted Attester
 
 #### EAS contract
 
@@ -1444,7 +1453,7 @@ We discuss the Human Passport attestation schema in our [Attestation schema](_bu
 
 [Onchain testing](_building-with-passport_stamps_smart-contracts_test-mode.md)[Introduction](_building-with-passport_stamps_create-a-stamp_introduction.md)
 
-#### _building-with-passport_stamps_create-a-stamp.md
+#### \_building-with-passport_stamps_create-a-stamp.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/create-a-stamp
 > Scraped: 1/9/2026, 1:32:04 PM
@@ -1461,25 +1470,25 @@ The Passport team is highly selective about the new Stamps that are added to the
 
 When new Stamps are proposed we evaluate them according to some key criteria:
 
-*   **Strong non-Sybil signal**
+- **Strong non-Sybil signal**
 
-    Stamps should represent some strong method for identifying Sybils vs non-Sybils so that we can ensure that each Stamp helps to improve the Sybil-defense that Passport offers. We prioritize new signals that are unique or different to the signals we have already have in Passport. It’s ideal if there’s already data, from internal efforts, indicating the effectiveness of the credentials.
+  Stamps should represent some strong method for identifying Sybils vs non-Sybils so that we can ensure that each Stamp helps to improve the Sybil-defense that Passport offers. We prioritize new signals that are unique or different to the signals we have already have in Passport. It’s ideal if there’s already data, from internal efforts, indicating the effectiveness of the credentials.
 
-*   **Free** (or very cheap)
+- **Free** (or very cheap)
 
-    We have heard feedback from end users who are frustrated by the costs of some of the existing Stamps. Where possible we'd like to expand the set of free or very cheap options available to our users.
+  We have heard feedback from end users who are frustrated by the costs of some of the existing Stamps. Where possible we'd like to expand the set of free or very cheap options available to our users.
 
-*   **Easy to use**
+- **Easy to use**
 
-    Ensuring that a user can quickly get set up and verified is important to the overall Passport and partner platform's success. We’ll prioritize those Stamps and credentials that can be included in the existing ‘1-click’ verification flow.
+  Ensuring that a user can quickly get set up and verified is important to the overall Passport and partner platform's success. We’ll prioritize those Stamps and credentials that can be included in the existing ‘1-click’ verification flow.
 
-*   **Strong partnership**
+- **Strong partnership**
 
-    We pass Sybil data back and forth in an aggregate and anonymized way with our strongest partners to help all parties improve Sybil defense. We expect future partners to participate in this program as well.
+  We pass Sybil data back and forth in an aggregate and anonymized way with our strongest partners to help all parties improve Sybil defense. We expect future partners to participate in this program as well.
 
-*   **Substantial user base**
+- **Substantial user base**
 
-    The more users you have, the more users we can start offering Sybil defense to. This also helps grow the Passport ecosystem as each new partner helps grow all partners.
+  The more users you have, the more users we can start offering Sybil defense to. This also helps grow the Passport ecosystem as each new partner helps grow all partners.
 
 ## What types of Stamps would we like to see more of?
 
@@ -1497,7 +1506,7 @@ If we decide to move forward with your Stamp, the next step is to follow the ins
 
 [Contract reference](_building-with-passport_stamps_smart-contracts_contract-reference.md)[Developer Integration Guide](_building-with-passport_stamps_create-a-stamp_integration-guide.md)
 
-#### _building-with-passport_stamps_create-a-stamp_examples_oauth-pattern.md
+#### \_building-with-passport_stamps_create-a-stamp_examples_oauth-pattern.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/create-a-stamp/examples/oauth-pattern
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -1510,11 +1519,11 @@ This example demonstrates a complete OAuth-based Stamp integration for a fiction
 **Verification:** User has verified email, 100+ reputation points, and account >30 days old
 **OAuth Flow:** Standard OAuth 2.0 with access token exchange
 
-* * *
+---
 
 ## Complete File Structure
 
-* * *
+---
 
 ## Implementation Files
 
@@ -1530,7 +1539,7 @@ This example demonstrates a complete OAuth-based Stamp integration for a fiction
 
 ### 6\. Complete Test Suite (`__tests__/devCommunity.test.ts`)
 
-* * *
+---
 
 ## Integration Setup
 
@@ -1542,22 +1551,22 @@ Add these to your `.env` files:
 
 Add these updates to integrate with the core system:
 
-**`platforms/src/platforms.ts`***`types/src/index.d.ts`***`app/config/platformMap.ts`**
+**`platforms/src/platforms.ts`\***`types/src/index.d.ts`**\*`app/config/platformMap.ts`**
 
 ### OAuth Application Setup
 
 Configure your OAuth application with:
 
-1.  **Redirect URIs:**   Development: `http://localhost:3000/auth/devcommunity/callback`
-    *   Staging: `https://staging.passport.xyz/auth/devcommunity/callback`
-    *   Production: `https://passport.xyz/auth/devcommunity/callback`
-2.  **Required Scopes:**   `read:user` - Access to basic user information
-    *   `read:profile` - Access to profile and reputation data
-3.  **Application Settings:**   Application Type: Web Application
-    *   Grant Types: Authorization Code
-    *   Token Endpoint Auth Method: Client Secret Post
+1.  **Redirect URIs:** Development: `http://localhost:3000/auth/devcommunity/callback`
+    - Staging: `https://staging.passport.xyz/auth/devcommunity/callback`
+    - Production: `https://passport.xyz/auth/devcommunity/callback`
+2.  **Required Scopes:** `read:user` - Access to basic user information
+    - `read:profile` - Access to profile and reputation data
+3.  **Application Settings:** Application Type: Web Application
+    - Grant Types: Authorization Code
+    - Token Endpoint Auth Method: Client Secret Post
 
-* * *
+---
 
 ## Testing Your Integration
 
@@ -1565,7 +1574,7 @@ Run the test suite to verify your implementation:
 
 Expected test output:
 
-* * *
+---
 
 ## Customization Guide
 
@@ -1573,9 +1582,9 @@ To adapt this example for your platform:
 
 ### 1\. Replace Platform Names
 
-*   Change `DevCommunity` to your platform name throughout
-*   Update API endpoints to your actual URLs
-*   Modify environment variable names
+- Change `DevCommunity` to your platform name throughout
+- Update API endpoints to your actual URLs
+- Modify environment variable names
 
 ### 2\. Customize Validation Logic
 
@@ -1583,9 +1592,9 @@ Modify the `validateUser()` method to match your requirements:
 
 ### 3\. Update OAuth Configuration
 
-*   Modify OAuth scopes for your platform's requirements
-*   Update API endpoints for token exchange and user data
-*   Adjust request headers as needed for your API
+- Modify OAuth scopes for your platform's requirements
+- Update API endpoints for token exchange and user data
+- Adjust request headers as needed for your API
 
 ### 4\. Customize UI Content
 
@@ -1595,7 +1604,7 @@ This complete example provides a solid foundation for any OAuth-based Stamp inte
 
 [Testing & Security](_building-with-passport_stamps_create-a-stamp_testing-and-security.md)[On-Chain Verification Example](_building-with-passport_stamps_create-a-stamp_examples_oauth-pattern.md)
 
-#### _building-with-passport_stamps_create-a-stamp_implementation-patterns.md
+#### \_building-with-passport_stamps_create-a-stamp_implementation-patterns.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/create-a-stamp/implementation-patterns
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -1604,7 +1613,7 @@ This guide covers the four main implementation patterns for Human Passport Stamp
 
 ## Pattern Selection Guide
 
-* * *
+---
 
 ## OAuth Integration Pattern
 
@@ -1612,7 +1621,7 @@ This guide covers the four main implementation patterns for Human Passport Stamp
 
 ### Backend Implementation (Providers/yourProvider.ts)
 
-* * *
+---
 
 ## Onchain Verification Pattern
 
@@ -1620,47 +1629,47 @@ This guide covers the four main implementation patterns for Human Passport Stamp
 
 ### Backend Implementation (Providers/yourOnChainProvider.ts)
 
-* * *
+---
 
 ## Configuration Template
 
 All patterns use the same `Providers-config.ts` structure:
 
-* * *
+---
 
 ## Pattern-Specific Considerations
 
 ### OAuth Pattern
 
-*   **Security**: Never log access tokens or user data
-*   **Rate Limiting**: Implement exponential backoff for API calls
-*   **Token Validation**: Always validate token scopes and expiration
-*   **Error Handling**: Provide clear error messages for OAuth failures
+- **Security**: Never log access tokens or user data
+- **Rate Limiting**: Implement exponential backoff for API calls
+- **Token Validation**: Always validate token scopes and expiration
+- **Error Handling**: Provide clear error messages for OAuth failures
 
 ### Onchain Pattern
 
-*   **RPC Reliability**: Use multiple RPC endpoints for redundancy
-*   **Gas Optimization**: Batch multiple contract calls when possible
-*   **Network Support**: Consider multi-chain support if applicable
-*   **Anti-Sybil**: Implement transaction history checks to prevent fresh wallet attacks
+- **RPC Reliability**: Use multiple RPC endpoints for redundancy
+- **Gas Optimization**: Batch multiple contract calls when possible
+- **Network Support**: Consider multi-chain support if applicable
+- **Anti-Sybil**: Implement transaction history checks to prevent fresh wallet attacks
 
 ### Custom API Pattern
 
-*   **Authentication**: Use secure authentication methods (API keys, JWT, etc.)
-*   **Data Validation**: Validate all external API responses
-*   **Caching**: Cache API responses when appropriate to reduce load
-*   **Monitoring**: Implement comprehensive error logging and monitoring
+- **Authentication**: Use secure authentication methods (API keys, JWT, etc.)
+- **Data Validation**: Validate all external API responses
+- **Caching**: Cache API responses when appropriate to reduce load
+- **Monitoring**: Implement comprehensive error logging and monitoring
 
 ### Wallet Signature Pattern
 
-*   **Message Format**: Use standardized message formats for consistency
-*   **Signature Validation**: Properly validate signature format and recovery
-*   **Replay Protection**: Include nonces or timestamps to prevent replay attacks
-*   **User Experience**: Provide clear explanation of what users are signing
+- **Message Format**: Use standardized message formats for consistency
+- **Signature Validation**: Properly validate signature format and recovery
+- **Replay Protection**: Include nonces or timestamps to prevent replay attacks
+- **User Experience**: Provide clear explanation of what users are signing
 
 [Developer Integration Guide](_building-with-passport_stamps_create-a-stamp_integration-guide.md)[Testing & Security](_building-with-passport_stamps_create-a-stamp_testing-and-security.md)
 
-#### _building-with-passport_stamps_create-a-stamp_integrating-a-new-stamp.md
+#### \_building-with-passport_stamps_create-a-stamp_integrating-a-new-stamp.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/create-a-stamp/integrating-a-new-stamp
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -1669,7 +1678,7 @@ Creating a new Stamp involved defining verification logic and adding configurati
 
 We have a standardized format for Stamps and this page will help you to understand all the information you need to provide. The process begins by creating your own copy of our GitHub repository. The instructions on this page will walk you through how to change the codebase to support your Stamp and submit the changes back to the Passport team.
 
-* * *
+---
 
 ### 1\. Fork the Passport GitHub repository
 
@@ -1679,7 +1688,7 @@ Here is our [GitHub repository (opens in a new tab)](https://github.com/passport
 
 This is the [`platforms` directory (opens in a new tab)](https://github.com/passportxyz/passport/tree/main/platforms), located at `passport/platforms.`
 
-* * *
+---
 
 ### 2\. Create new files
 
@@ -1721,7 +1730,7 @@ Copy the following code into `Providers-config.ts` replacing `<EXAMPLE>` with yo
 
 Copy and paste the following code into `index.ts` replacing `<EXAMPLE>` with your Stamp name. This code is used to export the providers, provider config data and app bindings.
 
-* * *
+---
 
 #### `Providers/example.ts`
 
@@ -1831,7 +1840,7 @@ You can ask questions in our [developer support channel on Telegram (opens in a 
 
 [On-Chain Verification Example](_building-with-passport_stamps_create-a-stamp_integrating-a-new-stamp.md)[Introduction](_building-with-passport_embed_introduction.md)
 
-#### _building-with-passport_stamps_create-a-stamp_integration-guide.md
+#### \_building-with-passport_stamps_create-a-stamp_integration-guide.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/create-a-stamp/integration-guide
 > Scraped: 1/9/2026, 1:32:00 PM
@@ -1842,17 +1851,18 @@ You can ask questions in our [developer support channel on Telegram (opens in a 
 
 A Human Passport Stamp is a verifiable credential that proves a user has completed identity verification or demonstrated specific onchain/offchain activity. Each Stamp consists of:
 
-*   **Platform**: The service/protocol providing verification (e.g., Discord, GitHub, Binance)
-*   **Provider(s)**: Specific verification types within a platform (e.g., "Discord Account", "GitHub >30 commits")
-*   **Verification Logic**: Backend code that validates user claims
-*   **UI Integration**: Frontend components for user interaction
+- **Platform**: The service/protocol providing verification (e.g., Discord, GitHub, Binance)
+- **Provider(s)**: Specific verification types within a platform (e.g., "Discord Account", "GitHub >30 commits")
+- **Verification Logic**: Backend code that validates user claims
+- **UI Integration**: Frontend components for user interaction
 
 ## Architecture Overview
 
-**Key Components:**   **App-Bindings**: Frontend platform implementation (user flows, OAuth, wallet connection)
-*   **Providers**: Backend verification logic (API calls, onchain checks, credential issuance)
-*   **Providers-config**: UI metadata, user guidance, display configuration
-*   **Integration**: Registration with core system (platforms.ts, types, app config)
+**Key Components:** **App-Bindings**: Frontend platform implementation (user flows, OAuth, wallet connection)
+
+- **Providers**: Backend verification logic (API calls, onchain checks, credential issuance)
+- **Providers-config**: UI metadata, user guidance, display configuration
+- **Integration**: Registration with core system (platforms.ts, types, app config)
 
 ## Integration Patterns
 
@@ -1900,9 +1910,9 @@ All Stamp integrations need appropriate environment variables:
 
 For OAuth integrations, configure your application with these redirect URIs:
 
-*   Development: `http://localhost:3000/auth/yourplatform/callback`
-*   Staging: `https://staging.passport.xyz/auth/yourplatform/callback`
-*   Production: `https://passport.xyz/auth/yourplatform/callback`
+- Development: `http://localhost:3000/auth/yourplatform/callback`
+- Staging: `https://staging.passport.xyz/auth/yourplatform/callback`
+- Production: `https://passport.xyz/auth/yourplatform/callback`
 
 ## UI Configuration (Post-Reskin)
 
@@ -1910,11 +1920,11 @@ The July 2024 reskin introduced new required metadata fields in `PlatformDetails
 
 ### Required Fields
 
-*   `timeToGet`: Estimated completion time (e.g., "5 minutes", "10 minutes")
-*   `price`: Cost information (e.g., "Free", "$5 + gas fees")
-*   `guide`: Structured user guidance with two types:
-    *   `steps`: Sequential instructions with optional action buttons
-    *   `list`: Requirements, warnings, or considerations
+- `timeToGet`: Estimated completion time (e.g., "5 minutes", "10 minutes")
+- `price`: Cost information (e.g., "Free", "$5 + gas fees")
+- `guide`: Structured user guidance with two types:
+  - `steps`: Sequential instructions with optional action buttons
+  - `list`: Requirements, warnings, or considerations
 
 ### Example Configuration
 
@@ -1922,20 +1932,20 @@ The July 2024 reskin introduced new required metadata fields in `PlatformDetails
 
 For technical questions during development:
 
-*   Review the [troubleshooting guide](_building-with-passport_stamps_create-a-stamp_testing-and-security.md#troubleshooting)
-*   Check existing implementations in the repository
-*   Contact the Human Passport team for complex integration questions
+- Review the [troubleshooting guide](_building-with-passport_stamps_create-a-stamp_testing-and-security.md#troubleshooting)
+- Check existing implementations in the repository
+- Contact the Human Passport team for complex integration questions
 
 [Introduction](_building-with-passport_stamps_create-a-stamp_introduction.md)[Implementation Patterns](_building-with-passport_stamps_create-a-stamp_implementation-patterns.md)
 
-#### _building-with-passport_stamps_create-a-stamp_testing-and-security.md
+#### \_building-with-passport_stamps_create-a-stamp_testing-and-security.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/create-a-stamp/testing-and-security
 > Scraped: 1/9/2026, 1:32:00 PM
 
 This guide covers comprehensive testing requirements and security best practices for Human Passport Stamp development.
 
-* * *
+---
 
 ## Testing Requirements
 
@@ -1965,7 +1975,7 @@ Test boundary conditions and unusual scenarios:
 
 Test your implementation with these commands:
 
-* * *
+---
 
 ## Security Best Practices
 
@@ -1999,7 +2009,7 @@ Test your implementation with these commands:
 
 Implement multiple checks to prevent Sybil attacks:
 
-* * *
+---
 
 ## Troubleshooting
 
@@ -2009,62 +2019,62 @@ Implement multiple checks to prevent Sybil attacks:
 
 **Issue:** `redirect_uri_mismatch`
 
-*   **Cause:** OAuth redirect URI doesn't match registered URI exactly
-*   **Solution:** Ensure exact match including protocol, domain, path, and trailing slashes
-*   **Debug:** Log the constructed OAuth URL and compare with registered URIs
+- **Cause:** OAuth redirect URI doesn't match registered URI exactly
+- **Solution:** Ensure exact match including protocol, domain, path, and trailing slashes
+- **Debug:** Log the constructed OAuth URL and compare with registered URIs
 
 **Issue:** `invalid_grant`
 
-*   **Cause:** Authorization code expired, already used, or invalid
-*   **Solution:** Implement proper error handling and direct users to restart OAuth flow
-*   **Prevention:** Don't cache or reuse authorization codes
+- **Cause:** Authorization code expired, already used, or invalid
+- **Solution:** Implement proper error handling and direct users to restart OAuth flow
+- **Prevention:** Don't cache or reuse authorization codes
 
 **Issue:** Token exchange fails
 
-*   **Cause:** Incorrect client credentials or malformed request
-*   **Solution:** Verify environment variables and request format
-*   **Debug:** Check API documentation for exact token exchange format
+- **Cause:** Incorrect client credentials or malformed request
+- **Solution:** Verify environment variables and request format
+- **Debug:** Check API documentation for exact token exchange format
 
 #### Integration Issues
 
 **Issue:** Provider not appearing in UI
 
-*   **Checklist:**   Platform registered in `platforms/src/platforms.ts`
-    *   App config added to `app/config/platformMap.ts`
-    *   PROVIDER\_ID added to `types/src/index.d.ts`
-    *   Feature flag enabled (if applicable)
-    *   Environment variables set correctly
+- **Checklist:** Platform registered in `platforms/src/platforms.ts`
+  - App config added to `app/config/platformMap.ts`
+  - PROVIDER_ID added to `types/src/index.d.ts`
+  - Feature flag enabled (if applicable)
+  - Environment variables set correctly
 
 **Issue:** Tests failing
 
-*   **Common causes:**   External dependencies not mocked properly
-    *   Environment variables not set in test environment
-    *   Async/await handling issues
-    *   TypeScript type mismatches
+- **Common causes:** External dependencies not mocked properly
+  - Environment variables not set in test environment
+  - Async/await handling issues
+  - TypeScript type mismatches
 
 **Issue:** Verification always fails
 
-*   **Debug steps:**
-    1.  Check API endpoint accessibility
-    2.  Verify authentication credentials
-    3.  Test API calls manually with curl/Postman
-    4.  Check for rate limiting
-    5.  Validate request/response format
+- **Debug steps:**
+  1.  Check API endpoint accessibility
+  2.  Verify authentication credentials
+  3.  Test API calls manually with curl/Postman
+  4.  Check for rate limiting
+  5.  Validate request/response format
 
 #### On-Chain Issues
 
 **Issue:** Contract calls failing
 
-*   **Causes:**   Wrong contract address
-    *   Incorrect ABI
-    *   Network connectivity issues
-    *   Invalid method parameters
+- **Causes:** Wrong contract address
+  - Incorrect ABI
+  - Network connectivity issues
+  - Invalid method parameters
 
 **Issue:** Balance checks incorrect
 
-*   **Causes:**   Wrong token decimals
-    *   Incorrect unit conversion
-    *   Contract not implementing standard interface
+- **Causes:** Wrong token decimals
+  - Incorrect unit conversion
+  - Contract not implementing standard interface
 
 ### Debug Tools
 
@@ -2074,7 +2084,7 @@ Implement multiple checks to prevent Sybil attacks:
 
 #### Contract Debugging
 
-* * *
+---
 
 ## Security Checklist
 
@@ -2082,45 +2092,45 @@ Before submitting your PR, verify:
 
 ### Code Security
 
-*   No sensitive data logged to console
-*   All external API responses validated
-*   Proper error handling without internal detail exposure
-*   No hardcoded secrets or API keys
-*   Secure record data (no PII stored)
+- No sensitive data logged to console
+- All external API responses validated
+- Proper error handling without internal detail exposure
+- No hardcoded secrets or API keys
+- Secure record data (no PII stored)
 
 ### OAuth Security (if applicable)
 
-*   OAuth scopes properly validated
-*   Access tokens not stored as instance variables
-*   Proper handling of expired/invalid tokens
-*   Redirect URI validation implemented
+- OAuth scopes properly validated
+- Access tokens not stored as instance variables
+- Proper handling of expired/invalid tokens
+- Redirect URI validation implemented
 
 ### On-Chain Security (if applicable)
 
-*   Multiple RPC endpoints configured
-*   Contract call validation implemented
-*   Proper unit conversion (decimals handling)
-*   Anti-sybil measures (transaction history checks)
+- Multiple RPC endpoints configured
+- Contract call validation implemented
+- Proper unit conversion (decimals handling)
+- Anti-sybil measures (transaction history checks)
 
 ### Testing Security
 
-*   All success scenarios tested
-*   All failure scenarios tested
-*   Error handling tested
-*   Edge cases tested
-*   \>80% code coverage achieved
+- All success scenarios tested
+- All failure scenarios tested
+- Error handling tested
+- Edge cases tested
+- \>80% code coverage achieved
 
 ### Anti-Sybil Measures
 
-*   Account age requirements
-*   Activity/reputation requirements
-*   Email/phone verification checks
-*   Transaction history validation (for on-chain)
-*   Multiple validation criteria implemented
+- Account age requirements
+- Activity/reputation requirements
+- Email/phone verification checks
+- Transaction history validation (for on-chain)
+- Multiple validation criteria implemented
 
 [Implementation Patterns](_building-with-passport_stamps_create-a-stamp_implementation-patterns.md)[OAuth Integration Example](_building-with-passport_stamps_create-a-stamp_examples_oauth-pattern.md)
 
-#### _building-with-passport_stamps_introduction.md
+#### \_building-with-passport_stamps_introduction.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/introduction
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -2139,10 +2149,10 @@ Passport Stamps is an aggregate, real-time verification tool that can enable use
 
 Developers can integrate Passport in a variety of different programs and apps in the web3 ecosystem, as demonstrated by the following use case examples:
 
-*   Sybil resistance for faucets, bundlers and airdrops
-*   Gating access to content, events, polls, or communities
-*   Priority weighting votes
-*   Proving trustworthiness
+- Sybil resistance for faucets, bundlers and airdrops
+- Gating access to content, events, polls, or communities
+- Priority weighting votes
+- Proving trustworthiness
 
 Passport Stamps is a versatile and valuable tool for managing access, promoting transparency, and establishing trust within different web3 environments.
 
@@ -2152,14 +2162,14 @@ Passport Stamps is a versatile and valuable tool for managing access, promoting 
 
 Passport score and Stamp data can be retrieved in two ways:
 
-*   **[Stamps API v2](_building-with-passport_stamps_passport-api.md):** Retrieves the Stamp-based Unique Humanity Score and associated metadata for a specified address.
-*   **[Passport Smart Contracts](_building-with-passport_stamps_smart-contracts.md):** Interacts with a blockchain to retrieve Stamp-based Unique Humanity Scores associated with a specific address.
+- **[Stamps API v2](_building-with-passport_stamps_passport-api.md):** Retrieves the Stamp-based Unique Humanity Score and associated metadata for a specified address.
+- **[Passport Smart Contracts](_building-with-passport_stamps_smart-contracts.md):** Interacts with a blockchain to retrieve Stamp-based Unique Humanity Scores associated with a specific address.
 
 Passport's Stamps-based product can also be delivered to users in a few different ways:
 
-*   **[Passport App (opens in a new tab)](https://app.passport.xyz/):** The standard Passport app that allows users to manage their Stamps and view their Passport score.
-*   **[Passport Embed](_building-with-passport_stamps_passport-embed.md):** A widget that can be embedded on a website or app to allow users to verify their identity.
-*   **[Custom Passport](_building-with-passport_custom-passport.md):** A dashboard that can be customized to the unique needs of your ecosystem.
+- **[Passport App (opens in a new tab)](https://app.passport.xyz/):** The standard Passport app that allows users to manage their Stamps and view their Passport score.
+- **[Passport Embed](_building-with-passport_stamps_passport-embed.md):** A widget that can be embedded on a website or app to allow users to verify their identity.
+- **[Custom Passport](_building-with-passport_custom-passport.md):** A dashboard that can be customized to the unique needs of your ecosystem.
 
 ### Stamps API v2
 
@@ -2181,9 +2191,9 @@ Passport's smart contracts enable you to pull score and Stamp data directly from
 
 To begin your development journey with Human Passport, follow these steps:
 
-* [Get an API key and scorer ID for the APIs](_building-with-passport_stamps_passport-api_getting-access.md)
-* [Use the API playground tool (requires API keys) (opens in a new tab)](https://api.passport.xyz/v2/docs)
-* [Get to "Hello World" with Stamps API v2](_building-with-passport_stamps_passport-api_quick-start-guide.md)
+- [Get an API key and scorer ID for the APIs](_building-with-passport_stamps_passport-api_getting-access.md)
+- [Use the API playground tool (requires API keys) (opens in a new tab)](https://api.passport.xyz/v2/docs)
+- [Get to "Hello World" with Stamps API v2](_building-with-passport_stamps_passport-api_quick-start-guide.md)
 
 By following these steps, you'll be well-equipped to start integrating Passport into your platform.
 
@@ -2191,7 +2201,7 @@ If you have questions or need support, you can chat with us on our [developer su
 
 [Changelog](_overview_changelog.md)[Scoring thresholds](_building-with-passport_stamps_major-concepts_scoring-thresholds.md)
 
-#### _building-with-passport_stamps_major-concepts_deduplicating-stamps.md
+#### \_building-with-passport_stamps_major-concepts_deduplicating-stamps.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/major-concepts/deduplicating-stamps
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -2238,7 +2248,7 @@ The LIFO deduplication strategy has several benefits for Passport holders and de
 
 [Credential Map and Weights](_building-with-passport_stamps_major-concepts_credential-map-and-weights.md)[Stamp and score expiry](_building-with-passport_stamps_major-concepts_expirations.md)
 
-#### _building-with-passport_stamps_major-concepts_educating-users.md
+#### \_building-with-passport_stamps_major-concepts_educating-users.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/major-concepts/educating-users
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -2328,13 +2338,13 @@ Some examples include:
 
 ### Where to go from here?
 
-*   Read more about [how Passport works](_overview_why-passport-xyz.md)
-*   Get you own Passport at [https://app.passport.xyz (opens in a new tab)](https://app.passport.xyz/)
-*   You can join the [Passport Developer Telegram (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh) and ask questions to the developers, users and wider community
+- Read more about [how Passport works](_overview_why-passport-xyz.md)
+- Get you own Passport at [https://app.passport.xyz (opens in a new tab)](https://app.passport.xyz/)
+- You can join the [Passport Developer Telegram (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh) and ask questions to the developers, users and wider community
 
 [API pagination](_building-with-passport_stamps_major-concepts_api-pagination.md)[Introduction](_building-with-passport_stamps_passport-api_introduction.md)
 
-#### _building-with-passport_stamps_major-concepts_expirations.md
+#### \_building-with-passport_stamps_major-concepts_expirations.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/major-concepts/expirations
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -2365,7 +2375,7 @@ You can read more detail about onchain Samp and score expiry [here](_building-wi
 
 [Deduplicating Stamps](_building-with-passport_stamps_major-concepts_deduplicating-stamps.md)[API pagination](_building-with-passport_stamps_major-concepts_api-pagination.md)
 
-#### _building-with-passport_stamps_major-concepts_scoring-thresholds.md
+#### \_building-with-passport_stamps_major-concepts_scoring-thresholds.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/major-concepts/scoring-thresholds
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -2394,7 +2404,7 @@ Learn more about custom Scorers in our [tutorial](_building-with-passport_stamps
 
 [Introduction](_building-with-passport_stamps_introduction.md)[Credential Map and Weights](_building-with-passport_stamps_major-concepts_credential-map-and-weights.md)
 
-#### _building-with-passport_stamps_passport-api-v1_api-reference.md
+#### \_building-with-passport_stamps_passport-api-v1_api-reference.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/api-reference
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -2421,9 +2431,9 @@ You will start off with Tier 1, and will need to [request higher rate limits (op
 
 There are several key concepts you should be aware of when using the Stamps API:
 
-*   **Timeouts:** The Stamps API endpoints have a timeout of 60 seconds. This means that if a request to one of these endpoints does not receive a response within 60 seconds, the request will be aborted. If your request times out, you should set up retry logic by calling the API again after a short delay, typically increasing the delay for each subsequent retry.
-*   **Pagination:** Some requests return a large amount of data. To effectively retrieve this data, you will need to paginate the response. For more information, see [API pagination](_building-with-passport_major-concepts_api-pagination.md).
-*   **Data dictionary:** We have put together a [data dictionary](_building-with-passport_major-concepts_data-dictionary.md) that you can use to better understand each field that delivers with the response payloads from the Stamps API endpoints.
+- **Timeouts:** The Stamps API endpoints have a timeout of 60 seconds. This means that if a request to one of these endpoints does not receive a response within 60 seconds, the request will be aborted. If your request times out, you should set up retry logic by calling the API again after a short delay, typically increasing the delay for each subsequent retry.
+- **Pagination:** Some requests return a large amount of data. To effectively retrieve this data, you will need to paginate the response. For more information, see [API pagination](_building-with-passport_major-concepts_api-pagination.md).
+- **Data dictionary:** We have put together a [data dictionary](_building-with-passport_major-concepts_data-dictionary.md) that you can use to better understand each field that delivers with the response payloads from the Stamps API endpoints.
 
 ## Available endpoints
 
@@ -2440,13 +2450,13 @@ To get a Passport score from an ETH address, follow these steps:
 
 Use the following endpoints to receive Stamps data:
 
-* [Retrieve Stamps verified by a single address](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-stamps-verified-by-a-single-address)
-    `GET /registry/stamps/{address}`
-* [Retrieve all Stamps available in Passport](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-all-stamps-available-in-passport) `GET /registry/stamp-metadata`
+- [Retrieve Stamps verified by a single address](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-stamps-verified-by-a-single-address)
+  `GET /registry/stamps/{address}`
+- [Retrieve all Stamps available in Passport](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-all-stamps-available-in-passport) `GET /registry/stamp-metadata`
 
 Use the following endpoint to receive staking information
 
-* [Retrieve GTC staking amounts](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-gtc-staking-amounts) `GET /registry/gtc-stake/{address}`
+- [Retrieve GTC staking amounts](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-gtc-staking-amounts) `GET /registry/gtc-stake/{address}`
 
 ### Retrieve a signing message
 
@@ -2478,7 +2488,7 @@ Use this endpoint to retrieve the last submitted score for one Ethereum address.
 
 You can use the [multiple address](_building-with-passport_stamps_passport-api-v1_api-reference.md#retrieve-previously-submitted-scores-of-all-submitted-addresses) endpoint if you'd like to retrieve the latest submitted scores for all addresses that have been submitted to the scorer using the POST endpoint.
 
-> GET /registry/score/{scorer\_id}/{address}
+> GET /registry/score/{scorer_id}/{address}
 
 > API users may find the scores returned by `registry/score` sometimes differs from the score displayed in the app. If this happens, simply refresh the Passport score by making a POST request to [resubmit/refresh the address's score](_building-with-passport_stamps_passport-api-v1_api-reference.md#submit-and-retrieve-latest-score-for-a-single-address).
 
@@ -2488,7 +2498,7 @@ You must submit a Passport to be scored via the [Submit for scoring](_building-w
 
 Use this endpoint to retrieve the last submitted score for all Ethereum addresses that have been submitted (POST endpoint) to your scorer.
 
-> GET /registry/score/{scorer\_id}
+> GET /registry/score/{scorer_id}
 
 #### Query parameters
 
@@ -2496,8 +2506,8 @@ You can also add a query to return all the last submitted scores for a given add
 
 The two possible query parameters are `last_score_timestamp_gt` and `last_score_timestamp_gte`.
 
-*   `last_score_timestamp_gt` (standing for 'greater than'): This parameter returns the address' last submitted scores that were submitted to your scorer instance _after_ the specified time.
-*   `last_score_timestamp_gt` (standing for 'greater than or equal'): This parameter returns the address' last submitted scores that were submitted to your scorer instance _after or at the same time as_ the specified time.
+- `last_score_timestamp_gt` (standing for 'greater than'): This parameter returns the address' last submitted scores that were submitted to your scorer instance _after_ the specified time.
+- `last_score_timestamp_gt` (standing for 'greater than or equal'): This parameter returns the address' last submitted scores that were submitted to your scorer instance _after or at the same time as_ the specified time.
 
 For example:
 
@@ -2527,19 +2537,19 @@ We are planning on releasing a new version of the GTC staking endpoint. Please f
 
 [https://forms.gle/VbDBNTvb99emaSUV9 (opens in a new tab)](https://forms.gle/VbDBNTvb99emaSUV9)
 
-* * *
+---
 
 This endpoint returns both self (`stakes`) and community (`xstakeAggregates`) staking amounts for a specified address and round. It also breaks down staking amounts based on round ID.
 
 Our round IDs correspond to the different Gitcoin Grants rounds, and can be found at the following link: [Round IDs (opens in a new tab)](https://github.com/passportxyz/id-staking/blob/8782b2b7138c2b41644a74384d75bca56316317d/packages/react-app/src/components/RoundSelector.jsx#L4-L10)
 
-> GET /registry/gtc-stake/{address}/{round\_id}
+> GET /registry/gtc-stake/{address}/{round_id}
 
 If you have questions about the API you can ask them in our [developer support channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh).
 
 [Introduction](_building-with-passport_stamps_passport-api-v1_introduction.md)[Data dictionary](_building-with-passport_stamps_passport-api-v1_data-dictionary.md)
 
-#### _building-with-passport_stamps_passport-api-v1_data-dictionary.md
+#### \_building-with-passport_stamps_passport-api-v1_data-dictionary.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/data-dictionary
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -2560,7 +2570,7 @@ A `credential` is a struct returned in the Stamp object. It has its own sub-fiel
 
 [API reference](_building-with-passport_stamps_passport-api-v1_api-reference.md)[Tutorials (v1)](_building-with-passport_stamps_passport-api-v1_tutorials.md)
 
-#### _building-with-passport_stamps_passport-api-v1_introduction.md
+#### \_building-with-passport_stamps_passport-api-v1_introduction.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/introduction
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -2584,15 +2594,15 @@ You can learn more about the differences between v1 and v2 via our [migration gu
 
 ## Available v1 endpoints
 
-| Endpoint action | Endpoint |
-| --- | --- |
-| Retrieval of signing messages | `GET /registry/signing-message` |
-| Submitting Passports for scoring or refresh | `POST /registry/submit-passport` |
-| Retrieval of scores for one address | `GET /registry/score/{scorer_id}/{address}` |
-| Retrieval of scores for multiple addresses | `GET /registry/score/{scorer_id}` |
-| Retrieval of Stamps linked to Passports | `GET /registry/stamps/{address}` |
-| Retrieval of all available Stamps | `GET /registry/stamp-metadata` |
-| Retreival of community staking amounts | `GET /registry/gtc-stake/{address}` |
+| Endpoint action                             | Endpoint                                    |
+| ------------------------------------------- | ------------------------------------------- |
+| Retrieval of signing messages               | `GET /registry/signing-message`             |
+| Submitting Passports for scoring or refresh | `POST /registry/submit-passport`            |
+| Retrieval of scores for one address         | `GET /registry/score/{scorer_id}/{address}` |
+| Retrieval of scores for multiple addresses  | `GET /registry/score/{scorer_id}`           |
+| Retrieval of Stamps linked to Passports     | `GET /registry/stamps/{address}`            |
+| Retrieval of all available Stamps           | `GET /registry/stamp-metadata`              |
+| Retreival of community staking amounts      | `GET /registry/gtc-stake/{address}`         |
 
 Learn more about each of these endpoints on our [API Reference](_building-with-passport_stamps_passport-api-v1_api-reference.md) page.
 
@@ -2600,23 +2610,23 @@ Learn more about each of these endpoints on our [API Reference](_building-with-p
 
 Learn more about the Stamps API v1:
 
-* [API reference](_building-with-passport_stamps_passport-api-v1_api-reference.md)
-* [Data dictionary](_building-with-passport_stamps_passport-api-v1_data-dictionary.md)
+- [API reference](_building-with-passport_stamps_passport-api-v1_api-reference.md)
+- [Data dictionary](_building-with-passport_stamps_passport-api-v1_data-dictionary.md)
 
 [Migrate: v1 to v2](_building-with-passport_stamps_passport-api_migrate.md)[API reference](_building-with-passport_stamps_passport-api-v1_api-reference.md)
 
-#### _building-with-passport_stamps_passport-api-v1_tutorials.md
+#### \_building-with-passport_stamps_passport-api-v1_tutorials.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/tutorials
 > Scraped: 1/9/2026, 1:31:56 PM
 
 This section includes several tutorials for integrating Human Passport into your apps with v1 of the API.
 
-* [Gating access with Passport scores](_building-with-passport_stamps_passport-api-v1_tutorials_gating-access-with-passport-scores.md)
-* [Retrieve Passport data and display it to your UI](_building-with-passport_stamps_passport-api-v1_tutorials_integrating-stamps-and-scorers.md)
-* [How to retrieve, handle and display Stamp metadata in a simple app](_building-with-passport_stamps_passport-api-v1_tutorials_working-with-stamp-metadata.md)
-* [Requiring a Passport score for airdrop claim](_building-with-passport_stamps_passport-api-v1_tutorials_requiring-a-passport-score-for-airdrop-claim.md)
-* [Integrating onchain Stamp data using smart contracts](_building-with-passport_stamps_passport-api-v1_tutorials_integrating-onchain-stamp-data.md)
+- [Gating access with Passport scores](_building-with-passport_stamps_passport-api-v1_tutorials_gating-access-with-passport-scores.md)
+- [Retrieve Passport data and display it to your UI](_building-with-passport_stamps_passport-api-v1_tutorials_integrating-stamps-and-scorers.md)
+- [How to retrieve, handle and display Stamp metadata in a simple app](_building-with-passport_stamps_passport-api-v1_tutorials_working-with-stamp-metadata.md)
+- [Requiring a Passport score for airdrop claim](_building-with-passport_stamps_passport-api-v1_tutorials_requiring-a-passport-score-for-airdrop-claim.md)
+- [Integrating onchain Stamp data using smart contracts](_building-with-passport_stamps_passport-api-v1_tutorials_integrating-onchain-stamp-data.md)
 
 ## Where to start
 
@@ -2660,7 +2670,7 @@ The app is built using [Next.js (opens in a new tab)](https://nextjs.org/), [Cha
 
 [Data dictionary](_building-with-passport_stamps_passport-api-v1_data-dictionary.md)[Protecting access with Passport scores](_building-with-passport_stamps_passport-api-v1_tutorials_gating-access-with-passport-scores.md)
 
-#### _building-with-passport_stamps_passport-api-v1_tutorials_client-side-scoring.md
+#### \_building-with-passport_stamps_passport-api-v1_tutorials_client-side-scoring.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/tutorials/client-side-scoring
 > Scraped: 1/9/2026, 1:31:58 PM
@@ -2744,7 +2754,7 @@ Now you know how Passport calculates its scores and have seen how to update the 
 
 [Requiring a Passport score for airdrop claim](_building-with-passport_stamps_passport-api-v1_tutorials_requiring-a-passport-score-for-airdrop-claim.md)[Custom Passport](_building-with-passport_stamps_custom-passport.md)
 
-#### _building-with-passport_stamps_passport-api-v1_tutorials_gating-access-with-passport-scores.md
+#### \_building-with-passport_stamps_passport-api-v1_tutorials_gating-access-with-passport-scores.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/tutorials/gating-access-with-passport-scores
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -2753,10 +2763,10 @@ Now you know how Passport calculates its scores and have seen how to update the 
 
 In this guide, you'll learn how to gate an application using Passport XYZ. Specifically, you will:
 
-*   Fetch a score using the Stamps API
-*   Examine best practices for retrieving Passport scores
-*   Implement gating so that some content is only available to users with scores above a threshold
-*   Redirect users to instructions for improving their Passport scores
+- Fetch a score using the Stamps API
+- Examine best practices for retrieving Passport scores
+- Implement gating so that some content is only available to users with scores above a threshold
+- Redirect users to instructions for improving their Passport scores
 
 This tutorial is a more detailed version of a video tutorial put together by Nader Dabit. Check out his video and related sample code at the following links:
 
@@ -2779,11 +2789,11 @@ You can find the code from this tutorial in this [GitHub repo (opens in a new ta
 
 The app will work as follows:
 
-*   When the user visits the sample app, they have access to three tabs - one to welcome them and two containing learning material about Web3 and DAOs.
-*   A fourth tab will contain information about how the user can join your DAO.
-*   The user will connect their wallet and Passport XYZ to the app. Their score will be calculated automatically.
-*   If their score meets a threshold, the fourth tab will contain instructions and links that will enable them to join the DAO.
-*   If the score does not meet the threshold, we'll withold the instructions and instead the tab will contain instructions for increasing their Passport score.
+- When the user visits the sample app, they have access to three tabs - one to welcome them and two containing learning material about Web3 and DAOs.
+- A fourth tab will contain information about how the user can join your DAO.
+- The user will connect their wallet and Passport XYZ to the app. Their score will be calculated automatically.
+- If their score meets a threshold, the fourth tab will contain instructions and links that will enable them to join the DAO.
+- If the score does not meet the threshold, we'll withold the instructions and instead the tab will contain instructions for increasing their Passport score.
 
 This simple example demonstrates the principles you would use to gate a real app using Passport XYZ.
 
@@ -2916,12 +2926,12 @@ Here is what your user sees if their Passport Score is lower than 20:
 
 This tutorial walked you through building a basic Passport-gated application. You used Next.js to create a simple educational page about Web3 and DAOs, with a special section that invited users to join a secret Passport DAO - but only if their Passport score is above your threshold! By following this tutorial you learned:
 
-*   How to create a Scorer instance and a Stamps API key
-*   How to use instantiate a `provider` and call its API
-*   How to connect a user's Ethereum wallet to your application and store their address in your app's state
-*   How to submit a Passport to the Passport XYZ registry using the Stamps API
-*   How to retrieve a user's Passport score using the Stamps API
-*   How to use the score to conditionally render some content ("Passport gating")
+- How to create a Scorer instance and a Stamps API key
+- How to use instantiate a `provider` and call its API
+- How to connect a user's Ethereum wallet to your application and store their address in your app's state
+- How to submit a Passport to the Passport XYZ registry using the Stamps API
+- How to retrieve a user's Passport score using the Stamps API
+- How to use the score to conditionally render some content ("Passport gating")
 
 ### Further Reading
 
@@ -2929,7 +2939,7 @@ For more on Passport XYZ, you can keep browsing this website, or you can join th
 
 [Tutorials (v1)](_building-with-passport_stamps_passport-api-v1_tutorials.md)[Integrating Stamps and Scorers](_building-with-passport_stamps_passport-api-v1_tutorials_integrating-stamps-and-scorers.md)
 
-#### _building-with-passport_stamps_passport-api-v1_tutorials_integrating-stamps-and-scorers.md
+#### \_building-with-passport_stamps_passport-api-v1_tutorials_integrating-stamps-and-scorers.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/tutorials/integrating-stamps-and-scorers
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -3091,7 +3101,7 @@ Of course the app we created here has the bare minimum functionality required to
 
 [Protecting access with Passport scores](_building-with-passport_stamps_passport-api-v1_tutorials_gating-access-with-passport-scores.md)[Working with Stamp metadata](_building-with-passport_stamps_passport-api-v1_tutorials_working-with-stamp-metadata.md)
 
-#### _building-with-passport_stamps_passport-api-v1_tutorials_requiring-a-passport-score-for-airdrop-claim.md
+#### \_building-with-passport_stamps_passport-api-v1_tutorials_requiring-a-passport-score-for-airdrop-claim.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/tutorials/requiring-a-passport-score-for-airdrop-claim
 > Scraped: 1/9/2026, 1:31:59 PM
@@ -3102,8 +3112,8 @@ Airdrops are a prevalent token distribution method, attracting 'airdrop farmers'
 
 This guide will cover the following topics:
 
-*   Fetching Passport scores from the Stamps API
-*   Using Passport scores to regulate access to an airdrop
+- Fetching Passport scores from the Stamps API
+- Using Passport scores to regulate access to an airdrop
 
 You can find the code from this tutorial in this [GitHub repo (opens in a new tab)](https://github.com/passportxyz/passport-scorer/tree/main/examples/airdrop):
 
@@ -3201,7 +3211,7 @@ Adding Passport protection to your airdrop serves as a last line of defense agai
 
 [Working with Stamp metadata](_building-with-passport_stamps_passport-api-v1_tutorials_working-with-stamp-metadata.md)[Custom client-side Passport scoring](_building-with-passport_stamps_passport-api-v1_tutorials_client-side-scoring.md)
 
-#### _building-with-passport_stamps_passport-api-v1_tutorials_working-with-stamp-metadata.md
+#### \_building-with-passport_stamps_passport-api-v1_tutorials_working-with-stamp-metadata.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api-v1/tutorials/working-with-stamp-metadata
 > Scraped: 1/9/2026, 1:31:59 PM
@@ -3293,7 +3303,7 @@ This walk-through guide demonstrated how to retrieve and handle Stamp metadata. 
 
 [Integrating Stamps and Scorers](_building-with-passport_stamps_passport-api-v1_tutorials_integrating-stamps-and-scorers.md)[Requiring a Passport score for airdrop claim](_building-with-passport_stamps_passport-api-v1_tutorials_requiring-a-passport-score-for-airdrop-claim.md)
 
-#### _building-with-passport_stamps_passport-api_api-reference.md
+#### \_building-with-passport_stamps_passport-api_api-reference.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api/api-reference
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -3304,9 +3314,9 @@ You can also experiment with the Stamps API using our [API playground tool (open
 
 In the examples below, replace the following placeholder values with your actual data:
 
-*   `{scorer_id}` - Your Scorer ID from the developer portal
-*   `{address}` - The Ethereum address you want to score
-*   `{API_key}` - Your API key from the developer portal
+- `{scorer_id}` - Your Scorer ID from the developer portal
+- `{address}` - The Ethereum address you want to score
+- `{API_key}` - Your API key from the developer portal
 
 ## Authentication
 
@@ -3328,9 +3338,9 @@ Access starts with Tier 1. If you need an elevation, please [request higher rate
 
 There are several key concepts you should be aware of when using the Stamps API:
 
-*   **Timeouts:** The Stamps API endpoints have a timeout of 60 seconds. This means that if a request to one of these endpoints does not receive a response within 60 seconds, the request will be aborted. If your request times out, you should set up retry logic by calling the API again after a short delay, typically increasing the delay for each subsequent retry.
-*   **Pagination:** Some requests return a large amount of data. To effectively retrieve this data, you will need to paginate the response. For more information, see [API pagination](_building-with-passport_stamps_major-concepts_api-pagination.md).
-*   **Data dictionary:** For definitions of the data types used in Stamps API v2, see the [Data dictionary](_building-with-passport_stamps_major-concepts_data-dictionary.md) page.
+- **Timeouts:** The Stamps API endpoints have a timeout of 60 seconds. This means that if a request to one of these endpoints does not receive a response within 60 seconds, the request will be aborted. If your request times out, you should set up retry logic by calling the API again after a short delay, typically increasing the delay for each subsequent retry.
+- **Pagination:** Some requests return a large amount of data. To effectively retrieve this data, you will need to paginate the response. For more information, see [API pagination](_building-with-passport_stamps_major-concepts_api-pagination.md).
+- **Data dictionary:** For definitions of the data types used in Stamps API v2, see the [Data dictionary](_building-with-passport_stamps_major-concepts_data-dictionary.md) page.
 
 ## Available endpoints
 
@@ -3342,7 +3352,7 @@ This is the primary endpoint that integrators should use.
 
 This endpoint will return the latest score and Stamp data for a single address.
 
-> GET /v2/stamps/{scorer\_id}/score/{address}
+> GET /v2/stamps/{scorer_id}/score/{address}
 
 Learn more about the [data dictionary](_building-with-passport_stamps_major-concepts_data-dictionary.md).
 
@@ -3352,7 +3362,7 @@ This endpoint will return the last requested historical score and Stamp data for
 
 For example, if you requested a score on 2024-12-01 using the `GET /v2/stamps/{scorer_id}/score/{address}` endpoint, then use this historical score endpoint to request the score for the same address on 2024-12-05, you will receive the score and Stamp data for 2024-12-01 for that address. If you have not requested a score for a specified address using the `GET /v2/stamps/{scorer_id}/score/{address}` endpoint, you will not be able to receive a historical score for that address.
 
-> GET /v2/stamps/{scorer\_id}/score/{address}/history
+> GET /v2/stamps/{scorer_id}/score/{address}/history
 
 #### Query parameters
 
@@ -3374,13 +3384,13 @@ If you would like to retrieve just the Stamps that are connected to a specified 
 
 > GET /v2/stamps/metadata
 
-* * *
+---
 
 If you have questions about the API, please reach out to us in our [developer support channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh).
 
 [Quick start](_building-with-passport_stamps_passport-api_quick-start-guide.md)[Data dictionary](_building-with-passport_stamps_passport-api_data-dictionary.md)
 
-#### _building-with-passport_stamps_passport-api_migrate.md
+#### \_building-with-passport_stamps_passport-api_migrate.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api/migrate
 > Scraped: 1/9/2026, 1:31:56 PM
@@ -3389,11 +3399,11 @@ Migrating to Stamps API V2 is designed to be straightforward. This guide outline
 
 But first, why should you migrate?
 
-*   Retrieve user scores with a single, intuitive GET request.
-*   Utilize new endpoints to access historical scores and Stamp data.
-*   Gain access to more data to proactively prevent and resolve misunderstandings.
-*   Retrieve both binary and numeric scores within the same payload
-*   Benefit from a more unified API endpoint URI structure.
+- Retrieve user scores with a single, intuitive GET request.
+- Utilize new endpoints to access historical scores and Stamp data.
+- Gain access to more data to proactively prevent and resolve misunderstandings.
+- Retrieve both binary and numeric scores within the same payload
+- Benefit from a more unified API endpoint URI structure.
 
 If you'd prefer to learn by doing, please visit our [API playground (opens in a new tab)](https://api.passport.xyz/v2/docs) to see the changes in action. If you'd prefer to learn via our reference docs, please visit our [API reference](_building-with-passport_stamps_passport-api_api-reference.md).
 
@@ -3412,8 +3422,8 @@ In August 2024, the Passport workstream spun out of Gitcoin, creating Passport X
 
 We have been working on separating our infrastructure from Gitcoin, and the API base URL is finally getting its update.
 
-*   Previous Base URL: [https://api.passport.gitcoin.co (opens in a new tab)](https://api.passport.gitcoin.co/)
-*   New Base URL: [https://api.passport.xyz (opens in a new tab)](https://api.passport.xyz/)
+- Previous Base URL: [https://api.passport.gitcoin.co (opens in a new tab)](https://api.passport.gitcoin.co/)
+- New Base URL: [https://api.passport.xyz (opens in a new tab)](https://api.passport.xyz/)
 
 **Action Required:** Update all instances of the base URL in your application to the new URL.
 
@@ -3423,20 +3433,20 @@ We have been working on separating our infrastructure from Gitcoin, and the API 
 
 In V1, retrieving a user's score involved:
 
-*   Submitting the Passport for scoring using a POST request.
-*   Retrieving the score using a GET request.
+- Submitting the Passport for scoring using a POST request.
+- Retrieving the score using a GET request.
 
 This process was counterintuitive and could lead to confusion and stale scores if only the GET endpoint was used.
 
 ### What's new in v2
 
-*   **Single GET Request:** Retrieve the latest score and Stamp data with one GET request.
-*   **No POST Required:** Eliminates the need to submit the Passport for scoring.
+- **Single GET Request:** Retrieve the latest score and Stamp data with one GET request.
+- **No POST Required:** Eliminates the need to submit the Passport for scoring.
 
 ### Endpoint changes
 
-*   **From V1:** `POST /registry/submit-passport`
-*   **To V2:** `GET /v2/stamps/{scorer_id}/score/{address}`
+- **From V1:** `POST /registry/submit-passport`
+- **To V2:** `GET /v2/stamps/{scorer_id}/score/{address}`
 
 **Action Required:** Replace any `POST /registry/submit-passport` requests with GET requests to the new endpoint.
 
@@ -3450,13 +3460,14 @@ We've adopted a more consistent, object-oriented design for our API endpoints.
 
 ### New Feature in V2
 
-*   **Endpoint:** GET /v2/stamps/{scorer\_id}/score/{address}/history
-*   **Functionality:** Retrieve a user's score and Stamp data from a specific date and time.
+- **Endpoint:** GET /v2/stamps/{scorer_id}/score/{address}/history
+- **Functionality:** Retrieve a user's score and Stamp data from a specific date and time.
 
 Note: Access to this endpoint requires your API key to be allowlisted.
 
-**Action Required for use:**   **Request Access:** Fill out the [access request form (opens in a new tab)](https://forms.gle/4GyicBfhtHW29eEu8) to have your API key allowlisted.
-*   **Update Implementation:** Incorporate the new endpoint into your application if you need historical data.
+**Action Required for use:** **Request Access:** Fill out the [access request form (opens in a new tab)](https://forms.gle/4GyicBfhtHW29eEu8) to have your API key allowlisted.
+
+- **Update Implementation:** Incorporate the new endpoint into your application if you need historical data.
 
 ## Unified Scorer types
 
@@ -3464,15 +3475,15 @@ Note: Access to this endpoint requires your API key to be allowlisted.
 
 In V1, you had to choose between two Scorer types:
 
-*   Unique Humanity
-*   Unique Humanity: Binary
+- Unique Humanity
+- Unique Humanity: Binary
 
 This differentiation added complexity and could lead to confusion.
 
 ### What's New in V2
 
-*   **Unified Scoring:** Both numeric and binary scores are included in all payloads.
-*   **Simplified Choices:** No need to choose a Scorer type; you can use the score that best fits your application.
+- **Unified Scoring:** Both numeric and binary scores are included in all payloads.
+- **Simplified Choices:** No need to choose a Scorer type; you can use the score that best fits your application.
 
 ### Example v2 Payload
 
@@ -3484,8 +3495,8 @@ This differentiation added complexity and could lead to confusion.
 
 To prevent multiple Passports from verifying the same credential (enhancing security against Sybil attacks), Stamps are [deduplicated](_building-with-passport_stamps_major-concepts_deduplicating-stamps.md) across addresses.
 
-*   **New Field:** `dedup`
-*   **Purpose:** Indicates whether a Stamp has been deduplicated and thus does not contribute to the score.
+- **New Field:** `dedup`
+- **Purpose:** Indicates whether a Stamp has been deduplicated and thus does not contribute to the score.
 
 #### Example
 
@@ -3493,16 +3504,18 @@ In the above example, you'll notice that the Discord Stamp is [deduplicated](_bu
 
 You will also see that the ENS Stamp was not deduplicated, meaning the 0.408 score was included in the user's overall unique humanity score.
 
-**Action Required:**   **Handle Deduplication:** Update your application to interpret the dedup field and inform users if their Stamps are affected.
-*   **User Communication:** Consider displaying warnings to users about deduplicated Stamps.
+**Action Required:** **Handle Deduplication:** Update your application to interpret the dedup field and inform users if their Stamps are affected.
+
+- **User Communication:** Consider displaying warnings to users about deduplicated Stamps.
 
 ### Stamp expiration date
 
-*   **New Field:** `expiration_date` for each credential.
-*   **Purpose:** Indicates when each specific Stamp will expire.
+- **New Field:** `expiration_date` for each credential.
+- **Purpose:** Indicates when each specific Stamp will expire.
 
-**Action required:**   **Monitor Expirations:** Use the `expiration_date` to notify users about upcoming Stamp expirations.
-*   **Update Logic:** Ensure your application considers Stamp expiration dates in its functionality.
+**Action required:** **Monitor Expirations:** Use the `expiration_date` to notify users about upcoming Stamp expirations.
+
+- **Update Logic:** Ensure your application considers Stamp expiration dates in its functionality.
 
 ## Next Steps Checklist
 
@@ -3517,7 +3530,7 @@ If you have questions or need support, you can chat with us on our [developer su
 
 [Status and error codes](_building-with-passport_stamps_passport-api_status-and-error-codes.md)[Introduction](_building-with-passport_stamps_passport-api-v1_introduction.md)
 
-#### _building-with-passport_stamps_passport-api_quick-start-guide.md
+#### \_building-with-passport_stamps_passport-api_quick-start-guide.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/passport-api/quick-start-guide
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -3548,12 +3561,12 @@ It's worthwhile to note that you can manually set your own [score threshold](_bu
 
 ### Next Steps
 
-* [Review the API Reference to learn more about the available endpoints](_building-with-passport_stamps_passport-api_api-reference.md)
-* [Get support via our Telegram channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh)
+- [Review the API Reference to learn more about the available endpoints](_building-with-passport_stamps_passport-api_api-reference.md)
+- [Get support via our Telegram channel (opens in a new tab)](https://t.me/+Mcp9RsRV7tVmYjZh)
 
 [Getting access](_building-with-passport_stamps_passport-api_getting-access.md)[API reference](_building-with-passport_stamps_passport-api_api-reference.md)
 
-#### _building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md
+#### \_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/smart-contracts/integrating-onchain-stamp-data
 > Scraped: 1/9/2026, 1:31:59 PM
@@ -3562,10 +3575,10 @@ In this tutorial, you'll learn how to show different content to users depending 
 
 Specifically, you will:
 
-*   Fetch user Stamp data from the blockchain using the Human Passport smart contract stack
-*   Use Stamp data to generate your own Passport score, using Passport's Stamp weights.
-*   Conditionally display a user's Passport data depending on their onchain data.
-*   Redirect users to instructions for improving their Passport scores and getting their Stamps onchain.
+- Fetch user Stamp data from the blockchain using the Human Passport smart contract stack
+- Use Stamp data to generate your own Passport score, using Passport's Stamp weights.
+- Conditionally display a user's Passport data depending on their onchain data.
+- Redirect users to instructions for improving their Passport scores and getting their Stamps onchain.
 
 You can learn more about Passport's available smart contracts and the typical developer flow via our [contract reference page](_building-with-passport_stamps_contract-reference.md).
 
@@ -3583,9 +3596,9 @@ You can find the code from this tutorial in this [GitHub repo (opens in a new ta
 
 The app will work as follows:
 
-*   When the user visits the sample app, they have access to several tabs - one to welcome them and then more where they can check their onchain data. The second tab shows whether there is any onchain data for the connected user. The third shows what Stamps the user has. The final tab shows the user's Passport score.
-*   The user will connect their wallet and Human Passport to the app. Their Stamp data and Passport score will be retrieved from the blockchain and displayed in the UI.
-*   If the user does not have any Stamps, the tabs contain information about how to create a Passport, add Stamps and migrate them onchain.
+- When the user visits the sample app, they have access to several tabs - one to welcome them and then more where they can check their onchain data. The second tab shows whether there is any onchain data for the connected user. The third shows what Stamps the user has. The final tab shows the user's Passport score.
+- The user will connect their wallet and Human Passport to the app. Their Stamp data and Passport score will be retrieved from the blockchain and displayed in the UI.
+- If the user does not have any Stamps, the tabs contain information about how to create a Passport, add Stamps and migrate them onchain.
 
 This simple example demonstrates the principles you would use to gate a real app using Human Passport onchain.
 
@@ -3627,16 +3640,16 @@ Otherwise, the `create-next-app` boilerplate code is quite standard. There is a 
 
 Getting Passport data requires instantiating the `decoder` contract and calling its `getPassport` function. The `ethers` library provides everything we need to instantiate the contract. Create a contract using `new ethers.Contract()` passing the contract address, ABI and the provider object as arguments. One complication is that the ABI is divided up into sections specific to each chain where the contract has been deployed, so you actually need to pass a specifier with the hex-encoded chain ID too. Here are the hex-encoded chain IDs for each chain:
 
-*   Arbitrum: `0xa4b1`
-*   BaseGoerli: `0x1a433`
-*   Ethereum: `0x1`
-*   Linea: `0xe704`
-*   Optimism: `0x1a4`
-*   Optimism Sepolia: `0xaa37dc`
-*   Scroll: `0x82750`
-*   Scroll Sepolia: `0x8274f`
-*   ZkSync: `0x144`
-*   ZkSync Sepolia: `0x12c`
+- Arbitrum: `0xa4b1`
+- BaseGoerli: `0x1a433`
+- Ethereum: `0x1`
+- Linea: `0xe704`
+- Optimism: `0x1a4`
+- Optimism Sepolia: `0xaa37dc`
+- Scroll: `0x82750`
+- Scroll Sepolia: `0x8274f`
+- ZkSync: `0x144`
+- ZkSync Sepolia: `0x12c`
 
 Once the contract instance exists, you can simply call `getPassport` passing in the user address, which is stored in your app's state. If the function call returns some Stamp data, you can set the `hasStampData` flag to `true` and return the data.
 
@@ -3662,11 +3675,11 @@ The boilerplate code includes a basic UI that pulls in components from `tab-cont
 
 You can browse the contents of `tab-contents.tsx` to see how the `stamp` and `score` data is used to render content. Conceptually, this is what's happening in each tab:
 
-*   **Home**: a general introduction that renders identically for any user
-*   **About onchain Stamps**: Information about onchain Stamps that renders identically for any user
-*   **Are your Stamps onchain?**: If the user has onchain Stamps, has connected their wallet and queried their Passport, the app will render a congratulatory message and confirm that they have onchain Stamps. If the user has _not_ queried their Passport or they don't have any onchain Stamps they see some sad emojis and a message informing them that they have either forgotten to connect or they don't have any onchain Stamps. They are directed to the Passport app to migrate their Stamps.
-*   **Browse your Stamps**: If the user has onchain Stamps, has connected their wallet and queried their Passport, the app will render each Stamp in the browser. If the user has _not_ queried their Passport or they don't have any onchain Stamps they see some sad emojis and a message informing them that they have either forgotten to connect or they don't have any onchain Stamps. They are directed to the Passport app to migrate their Stamps.
-*   **See your score**: If the user has onchain Stamps, has connected their wallet and queried their Passport, the app will render their Passport score. If the user has _not_ queried their Passport or they don't have any onchain Stamps they see some sad emojis and a message informing them that they have either forgotten to connect or they don't have any onchain Stamps. They are directed to the Passport app to migrate their Stamps.
+- **Home**: a general introduction that renders identically for any user
+- **About onchain Stamps**: Information about onchain Stamps that renders identically for any user
+- **Are your Stamps onchain?**: If the user has onchain Stamps, has connected their wallet and queried their Passport, the app will render a congratulatory message and confirm that they have onchain Stamps. If the user has _not_ queried their Passport or they don't have any onchain Stamps they see some sad emojis and a message informing them that they have either forgotten to connect or they don't have any onchain Stamps. They are directed to the Passport app to migrate their Stamps.
+- **Browse your Stamps**: If the user has onchain Stamps, has connected their wallet and queried their Passport, the app will render each Stamp in the browser. If the user has _not_ queried their Passport or they don't have any onchain Stamps they see some sad emojis and a message informing them that they have either forgotten to connect or they don't have any onchain Stamps. They are directed to the Passport app to migrate their Stamps.
+- **See your score**: If the user has onchain Stamps, has connected their wallet and queried their Passport, the app will render their Passport score. If the user has _not_ queried their Passport or they don't have any onchain Stamps they see some sad emojis and a message informing them that they have either forgotten to connect or they don't have any onchain Stamps. They are directed to the Passport app to migrate their Stamps.
 
 ### Run the app
 
@@ -3692,7 +3705,7 @@ Now you can use the principle demonstrated here to build creatively and integrat
 
 [Quick start](_building-with-passport_stamps_smart-contracts_quick-start-guide.md)[Attestation schema](_building-with-passport_stamps_smart-contracts_attestation-schema.md)
 
-#### _building-with-passport_stamps_smart-contracts_onchain-expirations.md
+#### \_building-with-passport_stamps_smart-contracts_onchain-expirations.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/smart-contracts/onchain-expirations
 > Scraped: 1/9/2026, 1:31:58 PM
@@ -3717,7 +3730,7 @@ Here's an example of a [score attestation (opens in a new tab)](https://optimism
 
 [Attestation schema](_building-with-passport_stamps_smart-contracts_attestation-schema.md)[Onchain testing](_building-with-passport_stamps_smart-contracts_test-mode.md)
 
-#### _building-with-passport_stamps_smart-contracts_quick-start-guide.md
+#### \_building-with-passport_stamps_smart-contracts_quick-start-guide.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/smart-contracts/quick-start-guide
 > Scraped: 1/9/2026, 1:31:58 PM
@@ -3737,9 +3750,9 @@ You can use a block explorer to find the Passport smart contracts and query thei
 
 Available methods:
 
-*   The `getPassport` method will provide the Stamps owned by the given address in the browser.
-*   The `getScore` method will provide the user's score as a 4 digit number. Divide this by 100 to get the user's unique humanity score.
-*   There are also several lower level functions that give access to encoded data and intermediate values.
+- The `getPassport` method will provide the Stamps owned by the given address in the browser.
+- The `getScore` method will provide the user's score as a 4 digit number. Divide this by 100 to get the user's unique humanity score.
+- There are also several lower level functions that give access to encoded data and intermediate values.
 
 Here's what a response from `getPassport` function on the block explorer looks like:
 
@@ -3751,9 +3764,9 @@ You can also query the API programmatically from the terminal or in an app.
 
 The steps are:
 
-*   1.  instantiate a web3 provider
-*   1.  instantiate the decoder contract
-*   1.  call the contract functions
+- 1.  instantiate a web3 provider
+- 1.  instantiate the decoder contract
+- 1.  call the contract functions
 
 Here's a minimal example of how to call the `getPassport()` and `getScore()` methods using `Web3js` in a Javascript app:
 
@@ -3793,7 +3806,7 @@ If you have more questions you can chat in our [developer support channel on Tel
 
 [Introduction](_building-with-passport_stamps_smart-contracts_introduction.md)[Tutorial](_building-with-passport_stamps_smart-contracts_integrating-onchain-stamp-data.md)
 
-#### _building-with-passport_stamps_smart-contracts_test-mode.md
+#### \_building-with-passport_stamps_smart-contracts_test-mode.md
 
 > Source: https://docs.passport.xyz/building-with-passport/stamps/smart-contracts/test-mode
 > Scraped: 1/9/2026, 1:31:58 PM
@@ -3830,8 +3843,8 @@ To work in Test Mode, developers simply have to switch their development environ
 
 The available test networks are:
 
-* [Optimism Sepolia (opens in a new tab)](https://sepolia-optimism.etherscan.io/)
-* [Linea Goerli (opens in a new tab)](https://docs.linea.build/)
+- [Optimism Sepolia (opens in a new tab)](https://sepolia-optimism.etherscan.io/)
+- [Linea Goerli (opens in a new tab)](https://docs.linea.build/)
 
 ## Testing on mainnet forks
 
@@ -3841,7 +3854,7 @@ For example, the latest stable block for OP mainnet is 115525426. Your test netw
 
 [Onchain expirations](_building-with-passport_stamps_smart-contracts_onchain-expirations.md)[Contract reference](_building-with-passport_stamps_smart-contracts_contract-reference.md)
 
-#### _overview_active-integrations.md
+#### \_overview_active-integrations.md
 
 > Source: https://docs.passport.xyz/overview/active-integrations
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -3892,7 +3905,7 @@ If we missed a partner, please feel free to submit an issue or open up a pull re
 
 [Use Cases](_overview_use-cases.md)[Key Terms](_overview_key-terms.md)
 
-#### _overview_changelog.md
+#### \_overview_changelog.md
 
 > Source: https://docs.passport.xyz/overview/changelog
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -3939,10 +3952,10 @@ You can learn more about the models in the [Models API documentation](_building-
 
 We made several updates to Onchain Passport based on developer feedback.
 
-*   We have reduced the number of onchain attestations that we write for users from two to just one.
-*   We have updated the [Onchain Passport attestation schema](_building-with-passport_smart-contracts_attestation-schema.md) to be more developer-friendly.
-*   We have deprecated the hash that was returned with the decoder contract's `getPassport` method.
-*   We've introduced a new method, `getScore` (0xdaadd662), which accepts a scorer ID (communityID) and user address, and returns the current score of a user for that scorer. This can be used by partners who are using [custom scores](_building-with-passport_stamps_custom-passport.md). At this time, there is no way to request Stamp-specific Custom Passport data from onchain.
+- We have reduced the number of onchain attestations that we write for users from two to just one.
+- We have updated the [Onchain Passport attestation schema](_building-with-passport_smart-contracts_attestation-schema.md) to be more developer-friendly.
+- We have deprecated the hash that was returned with the decoder contract's `getPassport` method.
+- We've introduced a new method, `getScore` (0xdaadd662), which accepts a scorer ID (communityID) and user address, and returns the current score of a user for that scorer. This can be used by partners who are using [custom scores](_building-with-passport_stamps_custom-passport.md). At this time, there is no way to request Stamp-specific Custom Passport data from onchain.
 
 ## Context
 
@@ -3950,7 +3963,7 @@ We produced the Changelog as part of the March 12th, 2025 release of Passport. W
 
 [Key Terms](_overview_key-terms.md)[Introduction](_building-with-passport_stamps_introduction.md)
 
-#### _overview_key-terms.md
+#### \_overview_key-terms.md
 
 > Source: https://docs.passport.xyz/overview/key-terms
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -3971,9 +3984,10 @@ Web3 citizens interface with the Passport Protocol through the Passport holder d
 
 "Passport gating" means integrating the Passport Protocol into an app for the purpose of screening accounts to keep out bots, bad actors, or simply real people who don't meet a certain [threshold](_building-with-passport_stamps_major-concepts_scoring-thresholds.md) of trustworthiness.
 
-**Usage:**   "I like how this project gated its community with Human Passport. I'm going to ask the project owner for their gating algorithm, so I can use it for inspiration."
-*   "Some examples of Passport-gated dApps include: Snapshot, Bankless Academy, and Gitcoin Grants."
-*   "Because this community is gated with Human Passport, it is able to ask for pieces of proof of not just identity via services like BrightID, but also reputation via services like POAP."
+**Usage:** "I like how this project gated its community with Human Passport. I'm going to ask the project owner for their gating algorithm, so I can use it for inspiration."
+
+- "Some examples of Passport-gated dApps include: Snapshot, Bankless Academy, and Gitcoin Grants."
+- "Because this community is gated with Human Passport, it is able to ask for pieces of proof of not just identity via services like BrightID, but also reputation via services like POAP."
 
 See our [tutorials](_building-with-passport_stamps_passport-api-v1_tutorials.md) to learn how to gate your project.
 
@@ -4039,17 +4053,17 @@ A Sybil is a fake user. Many applications require confidence that each of their 
 
 [Active Integrations](_overview_active-integrations.md)[Changelog](_overview_changelog.md)
 
-#### _overview_use-cases.md
+#### \_overview_use-cases.md
 
 > Source: https://docs.passport.xyz/overview/use-cases
 > Scraped: 1/9/2026, 1:31:55 PM
 
 Human Passport's developer platform enables several key use cases:
 
-*   _Protect access_ to rewards, governance, communication channels, marketplaces, and developer tools.
-*   _Demonstrate trustworthiness_ to enable users to make better decisions about their online interaction
-*   _Weigh user activities based on Passport score_
-*   _Improve Passport’s user experience_
+- _Protect access_ to rewards, governance, communication channels, marketplaces, and developer tools.
+- _Demonstrate trustworthiness_ to enable users to make better decisions about their online interaction
+- _Weigh user activities based on Passport score_
+- _Improve Passport’s user experience_
 
 ## Passport use cases
 
@@ -4059,12 +4073,12 @@ Human Passport's developer platform enables several key use cases:
 
 #### Sub use cases
 
-*   Quadratic funding matching donation pools
-*   NFTs
-*   Airdrops
-*   Faucets
-*   Quests
-*   Special access
+- Quadratic funding matching donation pools
+- NFTs
+- Airdrops
+- Faucets
+- Quests
+- Special access
 
 #### Description
 
@@ -4074,12 +4088,12 @@ By protecting access to Passport holders that have a score over a certain [thres
 
 #### Active integrators
 
-* [Gitcoin Grants (opens in a new tab)](https://www.gitcoin.co/grants-stack)
-* [Bankless Academy (opens in a new tab)](https://www.gitcoin.co/blog/bankless-academy-a-gitcoin-passport-case-study)
-* [CyberConnect (opens in a new tab)](https://www.gitcoin.co/blog/gitcoin-passoort-cyberconnect-case-study)
-* [Galxe (opens in a new tab)](https://www.gitcoin.co/blog/gitcoin-passport-galxe)
-* [Shapeshift (opens in a new tab)](https://www.gitcoin.co/blog/protecting-shapeshifts-op-rewards-program-a-case-study)
-* [Linea (opens in a new tab)](https://www.gitcoin.co/blog/lineas-human-first-campaign-using-gitcoin-passport)
+- [Gitcoin Grants (opens in a new tab)](https://www.gitcoin.co/grants-stack)
+- [Bankless Academy (opens in a new tab)](https://www.gitcoin.co/blog/bankless-academy-a-gitcoin-passport-case-study)
+- [CyberConnect (opens in a new tab)](https://www.gitcoin.co/blog/gitcoin-passoort-cyberconnect-case-study)
+- [Galxe (opens in a new tab)](https://www.gitcoin.co/blog/gitcoin-passport-galxe)
+- [Shapeshift (opens in a new tab)](https://www.gitcoin.co/blog/protecting-shapeshifts-op-rewards-program-a-case-study)
+- [Linea (opens in a new tab)](https://www.gitcoin.co/blog/lineas-human-first-campaign-using-gitcoin-passport)
 
 ![Protecting governance](https://docs.passport.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fprotect-governance.d8942c66.png&w=3840&q=75)
 
@@ -4087,8 +4101,8 @@ By protecting access to Passport holders that have a score over a certain [thres
 
 #### Sub use cases
 
-*   Submitting proposals
-*   Voting
+- Submitting proposals
+- Voting
 
 #### Description
 
@@ -4096,8 +4110,8 @@ Running a DAO is hard enough without Sybils submitting proposals and influencing
 
 #### Active integrators
 
-* [Discourse (opens in a new tab)](https://passport.human.tech/blog/how-to-protect-your-discourse-forum-from-bots-and-sybils-with-human-passport)
-*   Snapshot
+- [Discourse (opens in a new tab)](https://passport.human.tech/blog/how-to-protect-your-discourse-forum-from-bots-and-sybils-with-human-passport)
+- Snapshot
 
 ![Protecting communications](https://docs.passport.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fprotect-communication.27b8c485.png&w=3840&q=75)
 
@@ -4105,8 +4119,8 @@ Running a DAO is hard enough without Sybils submitting proposals and influencing
 
 #### Sub use cases
 
-*   Provide specific roles and permissions
-*   Block unwanted inbounds
+- Provide specific roles and permissions
+- Block unwanted inbounds
 
 #### Description
 
@@ -4114,10 +4128,10 @@ Tired of low-quality inbounds or contributions to a communication channel? Prote
 
 #### Active integrators
 
-* [Discourse (opens in a new tab)](https://passport.human.tech/blog/how-to-protect-your-discourse-forum-from-bots-and-sybils-with-human-passport)
-* [Guild (opens in a new tab)](https://www.gitcoin.co/blog/guild-xyz-and-gitcoin-passport-partner)
-*   Collab.land
-*   Metaforo
+- [Discourse (opens in a new tab)](https://passport.human.tech/blog/how-to-protect-your-discourse-forum-from-bots-and-sybils-with-human-passport)
+- [Guild (opens in a new tab)](https://www.gitcoin.co/blog/guild-xyz-and-gitcoin-passport-partner)
+- Collab.land
+- Metaforo
 
 ![Protecting a marketplace](https://docs.passport.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fprotect-marketplace.1058442f.png&w=3840&q=75)
 
@@ -4125,9 +4139,9 @@ Tired of low-quality inbounds or contributions to a communication channel? Prote
 
 #### Sub use cases
 
-*   NFTs
-*   Concert tickets
-*   Other products and services
+- NFTs
+- Concert tickets
+- Other products and services
 
 #### Description
 
@@ -4139,16 +4153,16 @@ You’ve got a marketplace that is free and open for users to create and sell co
 
 #### Sub use cases
 
-*   Demonstrate user trustworthiness
-*   Prove user activity on web2/3
+- Demonstrate user trustworthiness
+- Prove user activity on web2/3
 
 There are many situations where a user would benefit from being able to judge for themselves whether another user is trustworthy or not. By displaying Passport scores and verified Stamps, you can help your users make better decisions about who they interact with on the web.
 
 #### Active integrators
 
-* [{R}elinked (opens in a new tab)](https://www.gitcoin.co/blog/building-reputation-on-r-elinkd)
-*   Rarimo
-*   Sismo
+- [{R}elinked (opens in a new tab)](https://www.gitcoin.co/blog/building-reputation-on-r-elinkd)
+- Rarimo
+- Sismo
 
 ![Weighing activities](https://docs.passport.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fweigh-activities.e465003a.png&w=3840&q=75)
 
@@ -4160,7 +4174,7 @@ You have functionality where users help to select which content or ideas are pri
 
 #### Active integrators
 
-*   Gitcoin Grants
+- Gitcoin Grants
 
 ![Improving UX](https://docs.passport.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fimprove%20experience.fe316cb4.png&w=3840&q=75)
 
@@ -4180,7 +4194,7 @@ Please feel free to reach out to us on our [Passport Developer Telegram (opens i
 
 [Why Human Passport?](_overview_why-human-passport.md)[Active Integrations](_overview_active-integrations.md)
 
-#### _overview_why-human-passport.md
+#### \_overview_why-human-passport.md
 
 > Source: https://docs.passport.xyz/overview/why-human-passport
 > Scraped: 1/9/2026, 1:31:55 PM
@@ -4232,13 +4246,13 @@ The core Passport Stamps and Passport Embed offerings are free, but additional [
 
 You can also apply to [become a Stamp provider](_building-with-passport_stamps_create-a-stamp.md).
 
-* * *
+---
 
 ### Passport Embed
 
 Passport Embed is an embeddable React component that enables you to add Passport's Stamps-based verification directly on your website or dApp, ensuring that users can verify their identity without having to leave the protected user flow.
 
-* * *
+---
 
 ### Passport Models
 
@@ -4248,7 +4262,7 @@ The model scores made available by the [Models API](_building-with-passport_mode
 
 Passport Models can be used as a quick primary verification method for your community to pass high-quality users. It can also be used alongside Passport Stamps, enabling an frictionless experience to those that pass the Models check, and a secondary verification option with the Stamp-based verification system.
 
-* * *
+---
 
 ### Data services
 
@@ -4256,16 +4270,15 @@ Human Passport also offers data services to partners who need to better understa
 
 These data services include the following types of analyses for each address provided:
 
-*   Sybil classification using Passport Models
-*   Sybil clustering analysis
-*   Diamond hands analysis
-*   Custom analysis requested by specific partners
+- Sybil classification using Passport Models
+- Sybil clustering analysis
+- Diamond hands analysis
+- Custom analysis requested by specific partners
 
 As part of these engagements, the Passport data team will provide actionable recommendations, as well as embed with your team to make sure you know how to use the data services effectively.
 
-* * *
+---
 
 ## Get involved
 
 [Why Human Passport?](_overview_why-human-passport.md)
-

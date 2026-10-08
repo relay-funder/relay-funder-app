@@ -43,7 +43,10 @@ export function loginCallbackUrl() {
       return window.location.href;
     }
     paramCallbackUrl = params.get('callbackUrl') ?? '/dashboard';
-    if (paramCallbackUrl.startsWith('/') && !paramCallbackUrl.startsWith('//')) {
+    if (
+      paramCallbackUrl.startsWith('/') &&
+      !paramCallbackUrl.startsWith('//')
+    ) {
       return paramCallbackUrl;
     }
   } catch {

@@ -674,20 +674,26 @@ export async function POST(req: Request) {
             createError instanceof Prisma.PrismaClientKnownRequestError &&
             createError.code === 'P2002'
           ) {
-            logVerbose('User creation race condition - fetching existing user', {
-              prefixId,
-              logAddress,
-            });
+            logVerbose(
+              'User creation race condition - fetching existing user',
+              {
+                prefixId,
+                logAddress,
+              },
+            );
             user = await db.user.findUnique({
               where: { address: normalizedUserAddress },
             });
 
             if (!user) {
-              logError('User creation failed and user not found after race condition', {
-                prefixId,
-                logAddress,
-                userAddress: normalizedUserAddress,
-              });
+              logError(
+                'User creation failed and user not found after race condition',
+                {
+                  prefixId,
+                  logAddress,
+                  userAddress: normalizedUserAddress,
+                },
+              );
               throw new ApiNotFoundError(
                 `Failed to create or find user for address ${userAddress}`,
               );

@@ -23,9 +23,8 @@ async function augmentWithTokenTransfers(
   transactions: BlockExplorerTransactionList,
 ): Promise<BlockExplorerTransactionList> {
   try {
-    const tokenTransfers = await getBlockExplorerAddressTokenTransfers(
-      treasuryAddress,
-    );
+    const tokenTransfers =
+      await getBlockExplorerAddressTokenTransfers(treasuryAddress);
     const relevantTransfers = tokenTransfers.filter(
       (t) => t.tokenSymbol === 'USDC' || t.tokenSymbol === 'USDT',
     );

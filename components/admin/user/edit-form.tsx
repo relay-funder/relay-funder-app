@@ -441,8 +441,7 @@ export function AdminUserEditForm({ address }: { address: string }) {
             <p className="text-xs text-muted-foreground">
               {Array.isArray(user.roles) &&
               user.roles.filter(
-                (r) =>
-                  r !== 'user' && r !== 'admin' && r !== 'content_editor',
+                (r) => r !== 'user' && r !== 'admin' && r !== 'content_editor',
               ).length
                 ? `Other roles (preserved): ${user.roles.filter((r) => r !== 'user' && r !== 'admin' && r !== 'content_editor').join(', ')}`
                 : 'Select one or more roles below.'}

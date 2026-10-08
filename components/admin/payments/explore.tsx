@@ -200,7 +200,9 @@ function PaymentDetailsModal({ payment }: { payment: AdminPaymentListItem }) {
     if (payment.pledgeExecutionStatus !== 'PENDING') return false;
     if (!payment.pledgeExecutionLastAttempt) return true; // No last attempt = stuck
 
-    const retryWindowCutoff = new Date(Date.now() - PLEDGE_PENDING_RETRY_WINDOW_MS);
+    const retryWindowCutoff = new Date(
+      Date.now() - PLEDGE_PENDING_RETRY_WINDOW_MS,
+    );
     const lastAttempt = new Date(payment.pledgeExecutionLastAttempt);
     return lastAttempt < retryWindowCutoff;
   };
