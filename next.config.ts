@@ -2,6 +2,12 @@ import type { NextConfig } from 'next';
 import { NEXT_PUBLIC_PINATA_GATEWAY_URL } from './lib/constant';
 
 const nextConfig: NextConfig = {
+  env: {
+    // Expose the Sentry DSN to the browser (instrumentation-client.ts).
+    // Only NEXT_PUBLIC_* values are inlined into client bundles, and a DSN
+    // is safe to make public.
+    NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN ?? '',
+  },
   images: {
     remotePatterns: [
       {

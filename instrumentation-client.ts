@@ -4,12 +4,12 @@
 
 import { Sentry } from '@/lib/sentry';
 
-if (process.env.SENTRY_DSN) {
+if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   const environment =
     process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV;
 
   Sentry.init({
-    dsn: process.env.SENTRY_DSN,
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     tracesSampleRate: environment === 'production' ? 0.1 : 1.0,
     debug: environment !== 'production',
     environment: environment,
