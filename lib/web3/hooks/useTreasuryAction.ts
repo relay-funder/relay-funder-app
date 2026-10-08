@@ -25,7 +25,9 @@ export function useTreasuryAction(functionName: TreasuryActionFunctionName) {
   const { writeContractAsync: writeContract } = useWriteContract();
 
   const execute = useCallback(
-    async ({ treasuryAddress }: TreasuryActionParams): Promise<TreasuryActionResult> => {
+    async ({
+      treasuryAddress,
+    }: TreasuryActionParams): Promise<TreasuryActionResult> => {
       setError(null);
       setLastTxHash(undefined);
 

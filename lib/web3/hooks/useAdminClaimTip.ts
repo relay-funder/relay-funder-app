@@ -1,10 +1,15 @@
-import { useTreasuryAction, TreasuryActionParams, TreasuryActionResult } from './useTreasuryAction';
+import {
+  useTreasuryAction,
+  TreasuryActionParams,
+  TreasuryActionResult,
+} from './useTreasuryAction';
 
 export type ClaimTipParams = TreasuryActionParams;
 export type ClaimTipResult = TreasuryActionResult;
 
 export function useAdminClaimTip() {
-  const { execute, isExecuting, error, lastTxHash } = useTreasuryAction('claimTip');
+  const { execute, isExecuting, error, lastTxHash } =
+    useTreasuryAction('claimTip');
 
   return {
     claimTip: execute,

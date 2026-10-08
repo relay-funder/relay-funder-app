@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
-import { useWriteContract, ethers, readContract, wagmiConfig } from '@/lib/web3';
+import {
+  useWriteContract,
+  ethers,
+  readContract,
+  wagmiConfig,
+} from '@/lib/web3';
 import { KeepWhatsRaisedABI } from '@/contracts/abi/KeepWhatsRaised';
 import { USD_CONFIG } from '@/lib/constant/treasury';
 
@@ -45,7 +50,10 @@ export function useExecuteKeepWhatsRaisedWithdrawal() {
         setIsExecuting(true);
 
         // Parse requested amount to wei (assuming USD decimals)
-        const requestedAmountWei = ethers.parseUnits(amount, USD_CONFIG.DECIMALS);
+        const requestedAmountWei = ethers.parseUnits(
+          amount,
+          USD_CONFIG.DECIMALS,
+        );
 
         // Query on-chain available amount to avoid precision mismatches
         const availableAmountWei = (await readContract(wagmiConfig, {

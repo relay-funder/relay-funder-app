@@ -349,7 +349,8 @@ export async function getBlockExplorerAddressTokenTransfers(
     const data = (await response.json()) as {
       items?: BlockExplorerAddressTokenTransferRaw[];
     };
-    const rawTransfers: BlockExplorerAddressTokenTransferRaw[] = data.items || [];
+    const rawTransfers: BlockExplorerAddressTokenTransferRaw[] =
+      data.items || [];
 
     if (rawTransfers.length === 0) {
       return [];
@@ -376,7 +377,9 @@ export async function getBlockExplorerAddressTokenTransfers(
           }
         }
 
-        const blockNumber = parseInt(transfer.block || transfer.block_number || '0');
+        const blockNumber = parseInt(
+          transfer.block || transfer.block_number || '0',
+        );
 
         const tokenSymbol = transfer.token?.symbol || 'UNKNOWN';
         const tokenAddress = transfer.token?.address || '';
@@ -408,7 +411,10 @@ export async function getBlockExplorerAddressTokenTransfers(
           to: transferTo,
         } satisfies AddressTokenTransfer;
       })
-      .filter((t) => t.transactionHash.startsWith('0x') && t.transactionHash.length === 66);
+      .filter(
+        (t) =>
+          t.transactionHash.startsWith('0x') && t.transactionHash.length === 66,
+      );
   } catch (error) {
     logVerbose('Error fetching block explorer token transfers:', error);
     return [];

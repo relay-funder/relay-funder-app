@@ -113,10 +113,7 @@ export function PageNavMenuUser() {
               >
                 {name.short}
               </span>
-              <div
-                title="Logout"
-                className="p-1"
-              >
+              <div title="Logout" className="p-1">
                 <LogOut className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-red-600" />
               </div>
             </div>

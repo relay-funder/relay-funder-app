@@ -30,7 +30,9 @@ describe('useAdminDisburseFees', () => {
     const { useAdminDisburseFees } = await import('./useAdminDisburseFees');
     const { disburseFees } = useAdminDisburseFees();
 
-    const result = await disburseFees({ treasuryAddress: '0x1234567890123456789012345678901234567890' });
+    const result = await disburseFees({
+      treasuryAddress: '0x1234567890123456789012345678901234567890',
+    });
 
     expect(result.success).toBe(true);
     expect(result.hash).toBe('0xdef456');

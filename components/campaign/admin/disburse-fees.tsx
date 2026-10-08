@@ -27,7 +27,9 @@ export function CampaignAdminDisburseFeesButton({
       return;
     }
 
-    const result = await disburseFees({ treasuryAddress: campaign.treasuryAddress });
+    const result = await disburseFees({
+      treasuryAddress: campaign.treasuryAddress,
+    });
 
     if (result.success) {
       toast({

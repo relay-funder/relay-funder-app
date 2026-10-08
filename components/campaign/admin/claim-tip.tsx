@@ -27,7 +27,9 @@ export function CampaignAdminClaimTipButton({
       return;
     }
 
-    const result = await claimTip({ treasuryAddress: campaign.treasuryAddress });
+    const result = await claimTip({
+      treasuryAddress: campaign.treasuryAddress,
+    });
 
     if (result.success) {
       toast({
@@ -37,20 +39,24 @@ export function CampaignAdminClaimTipButton({
     } else {
       toast({
         title: 'Error',
-        description: result.error || 'Failed to claim tips. Tips may only be available after campaign deadline.',
+        description:
+          result.error ||
+          'Failed to claim tips. Tips may only be available after campaign deadline.',
         variant: 'destructive',
       });
     }
   }, [campaign.treasuryAddress, claimTip, toast]);
 
   // Only show for campaigns with treasury that are completed, failed, or past deadline
-  const campaignEndTime = campaign.endTime ? new Date(campaign.endTime).getTime() : 0;
+  const campaignEndTime = campaign.endTime
+    ? new Date(campaign.endTime).getTime()
+    : 0;
   const isPastDeadline = campaignEndTime > 0 && Date.now() > campaignEndTime;
-  const isEligible = campaign.treasuryAddress && (
-    campaign.status === 'COMPLETED' ||
-    campaign.status === 'FAILED' ||
-    isPastDeadline
-  );
+  const isEligible =
+    campaign.treasuryAddress &&
+    (campaign.status === 'COMPLETED' ||
+      campaign.status === 'FAILED' ||
+      isPastDeadline);
 
   if (!isEligible) {
     return null;

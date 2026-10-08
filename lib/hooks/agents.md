@@ -47,3 +47,4 @@ export function useTreasuryBalance(param?: string | null) {
     refetchInterval: 60000,
   });
 }
+```

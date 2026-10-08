@@ -100,8 +100,7 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
     const contributionTotals = parsedDistribution.reduce(
       (sum, item) => ({
         nContributions: sum.nContributions + item.nContributions,
-        nUniqueContributors:
-          sum.nUniqueContributors + item.nUniqueContributors,
+        nUniqueContributors: sum.nUniqueContributors + item.nUniqueContributors,
       }),
       { nContributions: 0, nUniqueContributors: 0 },
     );
@@ -277,7 +276,7 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                 <TableRow>
                   <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Campaign</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">
+                  <TableHead className="hidden text-right md:table-cell">
                     Donations
                   </TableHead>
                   <TableHead className="hidden text-right md:table-cell">
@@ -287,7 +286,7 @@ export function RoundQfPreview({ round, isAdmin }: RoundQfPreviewProps) {
                     Contributions
                   </TableHead>
                   <TableHead className="text-right">Matching Amount</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">
+                  <TableHead className="hidden text-right md:table-cell">
                     Total
                   </TableHead>
                   <TableHead className="hidden text-right md:table-cell">

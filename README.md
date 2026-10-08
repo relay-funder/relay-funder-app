@@ -8,7 +8,6 @@
 
 Relay Funder uses quadratic funding rounds where individuals and match-fund sponsors can directly support verified campaigns. Using Celo stablecoins bridged to Ethereum (USDT) Relay Funder enables transparent, auditable fund flows for humanitarian and development projects.
 
-
 ## Prerequisites
 
 - [pnpm](https://pnpm.io/) (locked in as the package manager)

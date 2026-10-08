@@ -189,22 +189,18 @@ export function calculateQfDistribution(
         `[QF Calc] No contributions found, returning zero allocations`,
       );
 
-    campaignScores.forEach(({
-      id,
-      title,
-      totalDonations,
-      nUniqueContributors,
-      nContributions,
-    }) => {
-      distribution.push({
-        id,
-        title,
-        matchingAmount: '0',
-        totalDonations: formatUnits(totalDonations, tokenDecimals),
-        nUniqueContributors,
-        nContributions,
-      });
-    });
+    campaignScores.forEach(
+      ({ id, title, totalDonations, nUniqueContributors, nContributions }) => {
+        distribution.push({
+          id,
+          title,
+          matchingAmount: '0',
+          totalDonations: formatUnits(totalDonations, tokenDecimals),
+          nUniqueContributors,
+          nContributions,
+        });
+      },
+    );
     return {
       totalAllocated: '0',
       totalDonations: formatUnits(grandTotalDonations, tokenDecimals),
@@ -218,14 +214,7 @@ export function calculateQfDistribution(
 
   const preliminaryAllocations = campaignScores.map(
     (
-      {
-        id,
-        title,
-        score,
-        totalDonations,
-        nUniqueContributors,
-        nContributions,
-      },
+      { id, title, score, totalDonations, nUniqueContributors, nContributions },
       i,
     ) => {
       const amount = (matchingPool * score) / totalScore;

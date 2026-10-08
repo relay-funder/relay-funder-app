@@ -138,7 +138,9 @@ export async function PATCH(req: Request) {
     }
 
     // Parse and validate dates
-    const parsedStartTime = startTime ? parseDate(startTime, 'startTime') : null;
+    const parsedStartTime = startTime
+      ? parseDate(startTime, 'startTime')
+      : null;
     const parsedEndTime = endTime ? parseDate(endTime, 'endTime') : null;
 
     // Validate date range if both are provided
@@ -149,12 +151,16 @@ export async function PATCH(req: Request) {
     // Validate against existing campaign dates when only one date is provided
     if (parsedEndTime && !parsedStartTime && instance.startTime) {
       if (parsedEndTime <= instance.startTime) {
-        throw new ApiParameterError('endTime must be after the existing startTime');
+        throw new ApiParameterError(
+          'endTime must be after the existing startTime',
+        );
       }
     }
     if (parsedStartTime && !parsedEndTime && instance.endTime) {
       if (instance.endTime <= parsedStartTime) {
-        throw new ApiParameterError('startTime must be before the existing endTime');
+        throw new ApiParameterError(
+          'startTime must be before the existing endTime',
+        );
       }
     }
 
