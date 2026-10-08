@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { DbCampaign } from '@/types/campaign';
 import { useCampaignStatsFromInstance } from '@/hooks/use-campaign-stats';
 import { useCampaignMatchFunding } from '@/lib/hooks/useCampaignMatchFunding';
@@ -22,6 +24,16 @@ export function CampaignCardFundingTotal({
     campaign,
   });
   const { matchFunding, isPending } = useCampaignMatchFunding(campaign?.id);
+  // Controlled so a tap opens the breakdown on touch screens, where there
+  // is no hover. The tag sits inside the card link, so taps must not
+  // navigate.
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
+
+  const openBreakdown = (event: MouseEvent | KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsBreakdownOpen(true);
+  };
 
   if (isPending) {
     return <div className="h-7 w-32 animate-pulse rounded-md bg-muted" />;
@@ -34,17 +46,29 @@ export function CampaignCardFundingTotal({
       </span>
       {matchFunding > 0 && (
         <TooltipProvider delayDuration={100}>
-          <Tooltip>
+          <Tooltip open={isBreakdownOpen} onOpenChange={setIsBreakdownOpen}>
             <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="rounded-md bg-quantum/10 px-2 py-0.5 font-medium text-quantum"
-                onClick={(event) => event.preventDefault()}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="Show donations and matching"
+                className="cursor-pointer rounded-md bg-quantum/10 px-2 py-0.5 font-medium text-quantum"
+                onClick={openBreakdown}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    openBreakdown(event);
+                  }
+                }}
               >
                 with matching
-              </button>
+              </span>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+            >
               <div className="grid grid-cols-[auto_auto] gap-x-4 tabular-nums">
                 <span>Donations</span>
                 <span className="text-right">{amountRaised}</span>
