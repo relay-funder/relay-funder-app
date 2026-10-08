@@ -54,7 +54,7 @@ if (shouldInitSentry) {
   // lib/sentry-dev.ts -> lib/sentry.ts which you need to
   // disable if you want to test/debug sentry in dev-mode
   // eslint-disable-next-line
-  const { withSentryConfig } = require('@sentry/nextjs');
+  const { withSentryConfig } = require('@sentry/nextjs/config');
 
   const sentryConfig = withSentryConfig(nextConfig, {
     // For all available options, see:
@@ -78,14 +78,18 @@ if (shouldInitSentry) {
     // side errors will fail.
     tunnelRoute: '/monitoring',
 
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
+    webpack: {
+      // Automatically tree-shake Sentry logger statements to reduce bundle size
+      treeshake: {
+        removeDebugLogging: true,
+      },
 
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
+      // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+      // See the following for more information:
+      // https://docs.sentry.io/product/crons/
+      // https://vercel.com/docs/cron-jobs
+      automaticVercelMonitors: true,
+    },
   });
 
   console.log(' ▲ sentry loading');
