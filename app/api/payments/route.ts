@@ -1,6 +1,13 @@
 import { db } from '@/server/db';
 import { checkAuth } from '@/lib/api/auth';
-import { ApiAuthNotAllowed, ApiNotFoundError } from '@/lib/api/error';
+import {
+  ApiAuthNotAllowed,
+  ApiConflictError,
+  ApiNotFoundError,
+  ApiParameterError,
+} from '@/lib/api/error';
+import { verifyWalletPledge } from '@/lib/api/pledges/verify-wallet-pledge';
+import { isDummy } from '@/lib/web3';
 import { response, handleError } from '@/lib/api/response';
 import { getUser } from '@/lib/api/user';
 import { getCampaignForPayment } from '@/lib/api/campaigns';
@@ -143,6 +150,46 @@ export async function PATCH(req: Request) {
     if (instance.userId !== user.id) {
       throw new ApiAuthNotAllowed('Session not allowed to modify this payment');
     }
+
+    if (data.status === 'confirmed' && !isDummy) {
+      // Gateway payments (Daimo, Stripe) are confirmed by their webhooks, never by the client
+      if (instance.provider) {
+        throw new ApiAuthNotAllowed(
+          'Gateway payments cannot be confirmed by the client',
+        );
+      }
+      const transactionHash = data.transactionHash ?? instance.transactionHash;
+      if (!transactionHash) {
+        throw new ApiParameterError('transactionHash is required to confirm');
+      }
+      const duplicate = await db.payment.findFirst({
+        where: {
+          transactionHash,
+          status: 'confirmed',
+          id: { not: instance.id },
+        },
+        select: { id: true },
+      });
+      if (duplicate) {
+        throw new ApiConflictError(
+          'Transaction already used by another payment',
+        );
+      }
+      const campaign = await db.campaign.findUnique({
+        where: { id: instance.campaignId },
+        select: { treasuryAddress: true },
+      });
+      if (!campaign?.treasuryAddress) {
+        throw new ApiNotFoundError('Campaign treasury not found');
+      }
+      await verifyWalletPledge({
+        transactionHash,
+        treasuryAddress: campaign.treasuryAddress,
+        backerAddress: user.address,
+        amount: instance.amount,
+      });
+    }
+
     const payment = await db.payment.update({
       where: { id: data.paymentId },
       data: {
