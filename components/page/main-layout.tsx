@@ -18,7 +18,10 @@ export function PageMainLayout({ children }: { children: React.ReactNode }) {
       <PageSidebar />
       <div
         className={cn(
-          'flex flex-1 flex-col transition-all duration-300 ease-in-out',
+          // min-w-0 stops one long unbreakable line (e.g. a truncated title)
+          // from widening the page past the viewport, where overflow-x-hidden
+          // clips it with no way to scroll (#483).
+          'flex min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out',
           // Desktop: margin based on sidebar state
           // Mobile: no margin, content flows naturally
           'md:ml-0',
